@@ -67,7 +67,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | `kb/facts.jsonl` | `F-` | One record per row/item in `PASS.md`, hash-chained to its exact source lines |
 | `kb/target-facts.jsonl` | `T-` | One record per numbered requirement in `TARGET.md` |
 | `kb/reference-facts.jsonl` | `REF-` | `docs/reference/composable-plan.md`, status `reference` — an example followed, never a fact |
-| `kb/research.jsonl` | `X-` | 658 search records merged from `kb/research/*.jsonl`; every one is `search-only` — no page fetch has been verified in this environment |
+| `kb/research.jsonl` | `X-` | 660 search records merged from `kb/research/*.jsonl`; every one is `search-only` — no page fetch has been verified in this environment |
 | `kb/entities.jsonl` | `E-` | 184 named things the facts are about (capabilities, adapters, standards, …) |
 | `kb/edges.jsonl` | `R-` (rel) | 109 typed links between entities, each citing the fact that states the link |
 | `kb/decisions.jsonl` | `D-` | 110 decisions lifted from `docs/decomposition.md` by line |
@@ -162,7 +162,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | | |
 |---|---|
 | 1 | 810 of 2725 rows across every `skill.json` (29.7%) are `origin: proposed`: this repo's own design, under the 30% stick, not sourced facts. |
-| 2 | No standard's version has been verified against its published spec: all 658 research records are `search-only`, because page fetch is blocked here (STATUS rows 14 and 45). The standard stick is recorded absent by the owner for all 16 elements. |
+| 2 | No standard's version has been verified against its published spec: all 660 research records are `search-only`, because page fetch is blocked here (STATUS rows 14 and 45). The standard stick is recorded absent by the owner for all 16 elements. |
 | 3 | Every harness's live adapter is claimed, not measured; no run has reached the host from a session (STATUS row 37). |
 | 4 | 48 of 103 definitions of done are still claimed; 55 have a measured run. |
 | 5 | Every reviewer to date is a model (Sonnet or Opus); one Sonnet review missed both planted defects and was discarded and re-run. `HUMAN-REVIEW.md` is the first human pass. |

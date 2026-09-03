@@ -39,7 +39,7 @@ Nothing new is learned between sizes. Only how much of each step the caller chos
 
 Each step is itself a document, so the shape recurses. There is no separate plan format and task format, and nothing is translated between levels. If a framework's hard case needs a new mental model, its easy case was underspecified rather than simple.
 
-## 4. Simplicity by composition: what the caller never has to write
+## 3. Simplicity by composition: what the caller never has to write
 
 TARGET.md asks for two things at once: the platform has to be simple to use (`T-t3-01`, `T-t3-02`) and composability has to hide the complexity (`T-t2-01`). The reference treats those as one requirement. Simplicity is not a thin front end over a complex configuration. It is the direct result of three mechanisms, each of which removes a whole class of things a caller would otherwise have to configure before starting.
 

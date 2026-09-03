@@ -1,0 +1,351 @@
+{
+  "name": "build-solution-architecture",
+  "layer": "build",
+  "wave": 1,
+  "description": "The solution-architecture lens applied before a section is built: one blueprint that lists the standards at play with a version or unverified, enumerates every state type exhaustively before pruning, fills the four-door entry matrix, reads each component through its capability's adapter boundary, maps what a change breaks, is myopia-checked by an independent reviewer, turns everything uncited into a triaged gap with a research query, and counts what a builder must read. Load it before writing or revising docs/architecture/blueprint.json, before a section's skills are authored, when someone asks where does this state live, who owns it, which door reaches it, or what breaks if we swap this, when a design is about to name a component instead of a capability, when a review hands back findings on an architecture record, and when an architecture claim has no citation behind it.",
+  "purpose": {
+    "text": "Produce, before a section is built, one blueprint that shows where the impacts are, because standards, systems and components will all change.",
+    "origin": "sourced",
+    "sources": [
+      "T-t7-04"
+    ],
+    "quote": "Standards will change, systems will change, and components will change; the harness shows where the impacts are."
+  },
+  "contract": {
+    "shapes": [
+      {
+        "name": "Blueprint, top level (proposed)",
+        "origin": "proposed",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "title": "Solution architecture blueprint, top level (proposed)",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "standards_at_play",
+            "state_types",
+            "entry_matrix",
+            "tool_entries",
+            "impact_map",
+            "myopia_check",
+            "open_questions",
+            "gaps",
+            "usability",
+            "provenance"
+          ],
+          "properties": {
+            "standards_at_play": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/entry"
+              }
+            },
+            "state_types": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/entry"
+              }
+            },
+            "entry_matrix": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/entry"
+              }
+            },
+            "tool_entries": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/entry"
+              }
+            },
+            "impact_map": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/entry"
+              }
+            },
+            "myopia_check": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/entry"
+              }
+            },
+            "open_questions": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/entry"
+              }
+            },
+            "gaps": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/entry"
+              }
+            },
+            "usability": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/entry"
+              }
+            },
+            "provenance": {
+              "type": "object",
+              "required": [
+                "kb_source_sha256",
+                "kb_heads"
+              ],
+              "properties": {
+                "kb_source_sha256": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                "kb_heads": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "$defs": {
+            "entry": {
+              "type": "object",
+              "description": "One row. It lists resolving kb ids under \"sources\" with a \"quote\" that is a verbatim substring of one of them, or it carries \"status\": \"gap\", or its text says proposed. The per-section columns are in references/blueprint-shape.md.",
+              "anyOf": [
+                {
+                  "required": [
+                    "sources"
+                  ]
+                },
+                {
+                  "required": [
+                    "status"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "invariants": [
+      {
+        "text": "Every row is one of three kinds and there is no fourth: it cites kb ids that all resolve, or it carries status gap, or its text says proposed (proposed: the rule tools/blueprint_check.py enforces).",
+        "origin": "proposed"
+      },
+      {
+        "text": "A row's quote is a verbatim substring of one of the records that same row cites; a quote that is only near the record fails (proposed: the rule tools/blueprint_check.py enforces).",
+        "origin": "proposed"
+      },
+      {
+        "text": "A row counts as sourced only when every id it cites resolves, so one unknown id makes the whole row unsourced rather than partly sourced (proposed: the rule tools/blueprint_check.py enforces).",
+        "origin": "proposed"
+      },
+      {
+        "text": "Every status gap row outside gaps[] is represented in gaps[], matched by its where prefix or its claim text, so a gap cannot be admitted in one section and hidden from the gap count (proposed: the rule tools/blueprint_check.py enforces).",
+        "origin": "proposed"
+      },
+      {
+        "text": "provenance.kb_heads equal the heads in kb/meta.json; a blueprint built against a stale knowledge base fails the check before its content is read (proposed: the rule tools/blueprint_check.py enforces).",
+        "origin": "proposed"
+      },
+      {
+        "text": "Every state row carries a pinning risk, because the blueprint is an overlay across components and never pins the integration to one of them.",
+        "origin": "sourced",
+        "sources": [
+          "T-t7-01"
+        ],
+        "quote": "it never pins the integration to a component"
+      },
+      {
+        "text": "Every component row is read through the capability that owns it and names the adapter boundary that hides it, never the other way round.",
+        "origin": "sourced",
+        "sources": [
+          "T-t7-02"
+        ],
+        "quote": "Every harness call goes through the capability interface, and the component sits behind an adapter."
+      },
+      {
+        "text": "As agentic-stack fixes it for skills, products belong in the adapter column only; in a blueprint that column is the component field of a tool entry, and no caller action, state row or entry-matrix cell may name one.",
+        "origin": "sourced",
+        "sources": [
+          "F-part-c-09"
+        ],
+        "quote": "Products belong in the adapter column only."
+      }
+    ]
+  },
+  "instructions": [
+    {
+      "step": 1,
+      "action": "Enumerate the standards at play first: one row per standard with the capabilities it governs, what it fixes, what it leaves open, and a version or the literal word unverified. Never write a version you did not read in a record.",
+      "why": "agentic-stack holds the rule that each interface names the standard that governs it; the blueprint is where that is checked across the whole surface at once, and an unread version number is a fabrication rather than a citation.",
+      "origin": "sourced",
+      "sources": [
+        "F-b1-03",
+        "F-part-c-10"
+      ],
+      "quote": "Cite the standard and its version."
+    },
+    {
+      "step": 2,
+      "action": "Enumerate every state type exhaustively before pruning any of them, one row each with owner capability, home today taken from PASS.md or the word gap, ideal home, lifetime, the boundaries it crosses, and its pinning risk.",
+      "why": "Pruning before enumerating is how a state kind disappears without anyone deciding it should; the pinning-risk column is where the never-pin-the-integration test is applied per state, and home today is a host fact, so it is read from the inventory or recorded as absent.",
+      "origin": "sourced",
+      "sources": [
+        "T-t7-01",
+        "F-meta-02"
+      ],
+      "quote": "it never pins the integration to a component"
+    },
+    {
+      "step": 3,
+      "action": "Fill the entry matrix: the four doors, a human, an event, a schedule and an external system or agent per the work-intake contract, against every state each door touches, with the minimal caller action and what the platform stamps without being asked.",
+      "why": "One shape across four doors is only true if it is written out door by door; a state with no row under any door is a guarantee the builder has no way to learn about, and a caller action of nothing is the honest entry for a guarantee the platform applies rather than the caller requests.",
+      "origin": "sourced",
+      "sources": [
+        "T-t6-02",
+        "F-b4-01"
+      ],
+      "quote": "All four enter through the same shape."
+    },
+    {
+      "step": 4,
+      "action": "Write each component as a tool entry through its capability lens: the adapter boundary as what it exposes and what it hides, what must stay loose, what would pin the platform to it, the second adapter, and the minimal harness call.",
+      "why": "A component read through its own feature list becomes the architecture; read through the interface, it is one adapter behind a call that can be made in isolation and then linked to the others.",
+      "origin": "sourced",
+      "sources": [
+        "T-t7-02",
+        "T-t7-03"
+      ],
+      "quote": "Each component has a minimal call in isolation, and the same calls are linked across the composable elements."
+    },
+    {
+      "step": 5,
+      "action": "Build the impact map: for each change that can realistically land, list the affected adapters, the affected tests, the affected skills, and whether the core is untouched.",
+      "why": "A change whose blast radius is not written down is discovered during the change; the whether-the-core-is-untouched column is the standing check that a swap really is a swap of one adapter.",
+      "origin": "sourced",
+      "sources": [
+        "T-t7-04",
+        "T-t7-05"
+      ],
+      "quote": "Changing a component means swapping its adapter, and the conformance run proves the interface held."
+    },
+    {
+      "step": 6,
+      "action": "Hand the finished draft to an independent reviewer for a myopia check that returns findings by severity and, separately, a missing-state-types list; then apply or decline each finding in a revision record naming the rows it touched.",
+      "why": "The author of a blueprint cannot see what it never named; a target toward perfection is only reached by someone else reading it and by the revision that answers them row by row.",
+      "origin": "sourced",
+      "sources": [
+        "T-t7-06",
+        "T-t4-04"
+      ],
+      "quote": "This direction is a target toward perfection, not a fixed definition; improve on it."
+    },
+    {
+      "step": 7,
+      "action": "Turn anything uncited into a gap row with a research query, never into an invented value, and triage every gap into three classes: a standard-version gap, a does-a-standard-exist gap, and a host fact the owner decides.",
+      "why": "The two research classes are closed by real search results or recorded as none found, while a host-absent fact is design work no search can settle, so mixing them sends a researcher after an answer that does not exist.",
+      "origin": "sourced",
+      "sources": [
+        "T-t8-02",
+        "T-t8-01"
+      ],
+      "quote": "Standard-version gaps and does-a-standard-exist gaps are closed by research with real search results, or recorded as none found."
+    },
+    {
+      "step": 8,
+      "action": "Close with a usability budget: per door, count the blueprint rows and the skill files a builder must read for the simplest task, state the budget those counts are measured against, name the load path that would meet it, and mark each row met or not met.",
+      "why": "Simplicity that is asserted is not measured; a count per door separates the caller-facing claim, which the one-declaration common case meets, from the builder-facing one, which nothing had measured before the budget was written.",
+      "origin": "sourced",
+      "sources": [
+        "T-t3-02",
+        "T-t3-01"
+      ],
+      "quote": "It cannot be daunting or overly complex, or no one will use it."
+    },
+    {
+      "step": 9,
+      "action": "Run python3 tools/blueprint_check.py before and after every revision and fix every error it names; record the counts it prints (entries, sourced, gaps, listed gaps, errors) in the revision record.",
+      "why": "Proposed: the checker is the definition of a well-formed blueprint, and the printed counts are the only claim about coverage that is not an impression.",
+      "origin": "proposed"
+    },
+    {
+      "step": 10,
+      "action": "Open references/blueprint-shape.md only when you need the column list for one section or the checker's error strings; the rows above are enough to produce and revise a blueprint without it.",
+      "why": "Proposed: progressive disclosure keeps the discipline readable and the per-section column lists out of the body.",
+      "origin": "proposed"
+    }
+  ],
+  "best_practices": [
+    {
+      "text": "Before writing no second adapter is recorded, or any other absence, open the skill named as that capability's owner and read its contract: the myopia review found a second adapter already recorded in a skill for a surface the blueprint called unrecorded, in the same sentence as the gap (proposed: reconcile absences against the owning skill, not against memory).",
+      "origin": "proposed"
+    },
+    {
+      "text": "Label entries with the enumeration the blueprint actually cites and say which one it is: the four consumption entries are a human, an event, a schedule (time), and an external system or agent, which is not the same list as the three ways in, and a table whose labels match neither cannot be read against the contract it names.",
+      "origin": "sourced",
+      "sources": [
+        "T-t6-02"
+      ],
+      "quote": "a human, an event, a schedule (time), and an external system or agent"
+    },
+    {
+      "text": "A state type named in prose is not in the blueprint: a kind mentioned in a self-review paragraph carries no owner, no lifetime and no pinning risk until it is promoted to a row with the same columns as every other, so promote it or say in the row why it stays prose (proposed: from the missing-state-types list the myopia review returned).",
+      "origin": "proposed"
+    },
+    {
+      "text": "Count what a builder must read per door rather than asserting the design is simple; a number can be compared against a budget and an impression cannot.",
+      "origin": "sourced",
+      "sources": [
+        "T-t3-02"
+      ],
+      "quote": "no one will use it"
+    },
+    {
+      "text": "Record what could not be decided and the evidence that would decide it as an open question in the blueprint itself, never as a silent default in a row.",
+      "origin": "sourced",
+      "sources": [
+        "F-part-c-06"
+      ],
+      "quote": "What you could not decide, and what evidence would decide it."
+    }
+  ],
+  "definition_of_done": {
+    "criterion": "python3 tools/blueprint_check.py docs/architecture/blueprint.json",
+    "expected": "279 entries, 268 sourced, 28 gaps, 37 listed gaps, 0 errors; exit 0",
+    "breakage": "On a temp copy of the blueprint, add a nonexistent knowledge-base id to one entry's sources: entry_matrix[0].sources becomes [\"T-t6-02\", \"F-none-99\"], then run the checker against the copy and restore.",
+    "expected_failure": "exit 1 with: error: entry_matrix[0]: unknown source F-none-99; 279 entries, 267 sourced, 28 gaps, 37 listed gaps, 1 errors. The sourced count falls by one because a row counts as sourced only when every id it cites resolves. Measured 2026-09-03 in session session_01XDYnrM4HZbMdASzsqN4j96 on a scratchpad copy; the checked-in blueprint was never edited and still reports 279 entries, 268 sourced, 28 gaps, 37 listed gaps, 0 errors.",
+    "status": "measured",
+    "sources": [
+      "F-part-c-04"
+    ],
+    "quote": "A criterion nothing can fail is not a criterion"
+  },
+  "composes_with": {
+    "builds_on": [
+      "agentic-stack"
+    ],
+    "used_by": []
+  },
+  "open_questions": [
+    {
+      "question": "Is the builder-facing usability budget the platform's to own, or is the simplicity requirement scoped to the caller only?",
+      "evidence": "The measured reads per door for the simplest task, against a stated budget, beside the caller-side count for the same task; the owner decides whether the builder-side number is a platform obligation or a note.",
+      "default": "Until the owner decides, record both counts, mark the builder rows not met, and treat the builder budget as proposed rather than as a gate.",
+      "sources": [
+        "T-t3-01"
+      ],
+      "quote": "It has to be simple to use."
+    }
+  ],
+  "provenance": {
+    "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+    "kb_heads": {
+      "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+      "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+      "target_facts": "d8d320915a16345ef23952ba083c15c27330f2923120a765b62a5f2596be1325",
+      "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+    },
+    "author": "session session_01XDYnrM4HZbMdASzsqN4j96"
+  }
+}

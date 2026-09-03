@@ -2,7 +2,7 @@
 
 **Status: reference only. Not a definition.** This is one team's worked answer to the problems this platform is being built to solve, distilled from seven source notes dated 2026-08-31 and consolidated here on 2026-09-03. It describes a possible future state. Nothing in it has been run against this repository. PASS.md and TARGET.md remain the sources of truth; where this page and they disagree, they are right.
 
-Every statement below is **claimed** unless it is marked measured with a PASS.md id. The three measured findings it leans on are the ones PASS.md A7 already records (`F-a7-02`, `F-a7-03`, `F-a7-04`). Products appear only in the one adapter column of section 7, per `F-part-c-09`.
+Every statement below is **claimed** unless it is marked measured with a PASS.md id. The three measured findings it leans on are the ones PASS.md A7 already records (`F-a7-02`, `F-a7-03`, `F-a7-04`). Products appear only in the one adapter column of section 8, per `F-part-c-09`.
 
 **What to take from it:** the shapes, and the failures more than the shapes. **What to leave:** the field names, the layer count, and the specific engines.
 
@@ -39,7 +39,53 @@ Nothing new is learned between sizes. Only how much of each step the caller chos
 
 Each step is itself a document, so the shape recurses. There is no separate plan format and task format, and nothing is translated between levels. If a framework's hard case needs a new mental model, its easy case was underspecified rather than simple.
 
-## 3. The core example: one document, four doors
+## 4. Simplicity by composition: what the caller never has to write
+
+TARGET.md asks for two things at once: the platform has to be simple to use (`T-t3-01`, `T-t3-02`) and composability has to hide the complexity (`T-t2-01`). The reference treats those as one requirement. Simplicity is not a thin front end over a complex configuration. It is the direct result of three mechanisms, each of which removes a whole class of things a caller would otherwise have to configure before starting.
+
+| Mechanism | Removes the need to | The caller writes instead |
+|---|---|---|
+| Smart defaults | decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger | `intent:`, and one word of `profile:` if the default bundle is wrong |
+| Composition by name | spell out loops, gates, rules, views, or the internals of a sub-plan | a name someone already defined: `plan: fix-module@v3`, `view: diff-summary` |
+| Late binding | settle every structural decision before any work can begin | an `assumptions:` block; work outside the blast radius proceeds |
+
+### 3.1 Smart defaults: write only what differs
+
+Every field except `intent` has a default, and every default comes from exactly one of three layers: the caller's override, the capability's default, or the platform's default. That fixed precedence is what makes defaults trustworthy rather than magic. A caller can always ask where a value came from and get one answer.
+
+A size-1 caller writing one line of intent gets, without asking: a budget ceiling, a deadline, an iteration bound, a model class, containment, an acceptance check, a ledger path, telemetry, and provenance. None of it is optional and none of it is theirs to wire, which is PASS.md rule 7 read from the caller's side (`F-b1-08`, `F-b4-01`). The cross-cutting guarantees being applied rather than requested is as much a simplicity feature as a safety one.
+
+There is no cliff between the simple path and the expert path. An override on any field is legal, is logged, and is tagged non-conformant. The caller who needs `model: frontier` on one step writes that one key and nothing else changes.
+
+### 3.2 Composition by name: borrow expertise instead of restating it
+
+A profile is one word for a bundle of money, clock, iteration bound and tier that someone worked out once. A capability definition carries its own defaults, checks, containment and tier, so a step verb brings its configuration with it. A sub-plan reference brings a whole resolved tree, with its own loops, rules and views, on one line.
+
+This is what lets one aspect be improved without touching the rest (`T-t2-02`). A driver file swaps a vendor for every caller at once. A better `fix-module@v4` improves every plan that names it. A new view makes a gate decidable for everyone who uses it. None of those changes touch a single caller's document.
+
+The caller's document therefore stays the same size as the platform grows. New capability arrives as new legal values for fields that already exist, never as new fields. The test in section 1 is the test for this section too: can the whole interface be learned once?
+
+### 3.3 Late binding: start before everything is decided
+
+The third blocker to moving quickly is not configuration but decision. A plan that cannot start until the storage engine, the algorithm and the vendor are all chosen waits on the slowest choice. Late binding lets the caller name the decision, state what is assumed in its place, say what will validate it, and start.
+
+The platform then computes which steps actually depend on how the decision goes, holds those, and runs everything else. In the worked case in section 6.4 that is four hours of real work done while a day-long bake-off is still out, with the rework exposure printed on the card before anything is spent. The caller wrote one assumptions block and one edge annotation per affected step.
+
+### 3.4 The ladder of effort
+
+Each rung is additive. Nothing learned on one rung is discarded on the next.
+
+| Caller wants | Writes | Learns new |
+|---|---|---|
+| a thing done | one line of intent | nothing |
+| a plan with a gate | five fields, one `gate:` with its `view:` | the five field names |
+| a nested or fanned-out plan | the same, plus `unit:` and `plan:` where needed | two optional keys |
+| a plan that starts before a decision lands | the same, plus `assumptions:` and edge kinds | one block, three edge words |
+| to break a rule | any field, overridden | that overrides are logged |
+
+The repo's own `build-simplicity-budget` skill states the same discipline as a count: one declaration for the common case, options additive with defaults, and an escape hatch that hands full control back. Read against that budget, the reference's common case is one required field, and every rung above it is the options tier. Any change that adds a second required field is a regression against this page, not an improvement to it.
+
+## 4. The core example: one document, four doors
 
 ### 3.1 What the caller writes
 
@@ -132,7 +178,7 @@ trace:    {run_id: t-9f2a, trace_id: 4bf9...}
 
 Plus, on disk: the resolved manifest, the card exactly as approved, one artifact per step, and the ledger append. Nothing requires reading a transcript.
 
-## 4. The six stages
+## 5. The six stages
 
 The session is the clerk. It frames, gathers, gates and delivers. It never runs the work and never judges the result.
 
@@ -147,7 +193,7 @@ The session is the clerk. It frames, gathers, gates and delivers. It never runs 
 
 Gather runs **before** the gate. Resolution being pure and free is what lets the card carry real numbers rather than an estimate of an estimate (`F-b1-06`). A dead instrument is a gather-time failure, not a run-time one.
 
-## 5. Composition: four mechanisms, and where each breaks
+## 6. Composition: four mechanisms, and where each breaks
 
 Composition is not one idea. It is four mechanisms with four failure modes, and a platform needs all four to be more than a task runner.
 
@@ -299,7 +345,7 @@ Three things do not appear at any depth, by design: the judging criterion, the r
 
 Anything on the wire is readable by the thing being judged. A leaked comparison target is something to imitate rather than beat. A leaked history of rejected attempts is a map of what to avoid saying rather than what to avoid doing. If these can travel with the work, every verdict below that point is self-graded. This is PASS.md rule 6 (`F-b1-07`), enforced at four independent points in the source: a criterion may not ride on the wire, be echoed inside a verdict, be inlined rather than referenced, or be reachable by a path the executing side could dereference.
 
-## 6. Observation and control across depth
+## 7. Observation and control across depth
 
 | Depth | Visible | Carrier |
 |---|---|---|
@@ -313,7 +359,7 @@ Anything on the wire is readable by the thing being judged. A leaked comparison 
 
 **Mid-run human input at depth is a real constraint, not a detail.** A depth-3 plan with four gates is exactly the case that makes "who may answer a gate, over what wire" load-bearing. The common workaround, run each stage as its own workflow, is a constraint the source names rather than hides.
 
-## 7. Swap seams, with exit cost
+## 8. Swap seams, with exit cost
 
 A seam is only real if you can state what breaks when you use it. Products appear here and nowhere else on this page.
 
@@ -323,13 +369,13 @@ A seam is only real if you can state what breaks when you use it. Products appea
 | Gateway | LiteLLM | any gateway with the same shape | provider-specific passthrough routes are not portable |
 | Model admission | a host-side broker over vsock | any host-side broker | the held-out-judge pattern uses the same mechanism, so swapping costs both |
 | Isolation | Firecracker with jailer | container or workspace-level containment | isolation profiles resolve to weaker guarantees; scope enforcement degrades |
-| Agent runtime | goose, claude-code, cursor over ACP | any harness speaking the same agent protocol | trace continuity is runtime-dependent (section 6) |
+| Agent runtime | goose, claude-code, cursor over ACP | any harness speaking the same agent protocol | trace continuity is runtime-dependent (section 7) |
 | Durable execution | Temporal | any durable executor | nothing; the contract above it is unchanged. The cleanest seam |
 | Telemetry | OpenTelemetry plus Langfuse | any OTLP collector | nothing. The safest swap |
 
 The pattern to take: write the exit cost next to every dependency **before** adopting it. Two of the seven cost nothing to leave. Knowing which two is the difference between a stack you can evolve and one you can only rewrite. This is rule 3 (`F-b1-04`) with the price attached.
 
-## 8. The dissection method: hop by hop
+## 9. The dissection method: hop by hop
 
 The source's fourth note walks a minimal plan through twenty hops, from submit to ledger append, and asks the same questions at each. The method is more reusable than the walk.
 
@@ -351,7 +397,7 @@ Two findings from the walk transfer directly:
 - **"Uncalled" hides the work.** A hop first recorded as "zero callers" turned out, on reading the code, to meet six requirements already and four more by bespoke means. The gap was narrower and differently shaped than "nothing exists". Recon before answer, every time.
 - **Contradictions are resolved by 1-3-1**, the same protocol TARGET.md T5.2 names (`T-t5-02`): state the problem, three candidate solutions, pick one, rate it on evidence, standard, stack, constraint and reversibility, and name a closing action for every rating that is not green. All amber is the fake: it means the success criterion is undefined.
 
-## 9. The rubric
+## 10. The rubric
 
 Six criteria. Each has a failure mode that is easy to spot once named.
 
@@ -366,7 +412,7 @@ Six criteria. Each has a failure mode that is easy to spot once named.
 
 R-5 is the one that quietly fails. A vendor name in the caller's document means the abstraction leaked all the way to the top.
 
-## 10. What the source itself declares open
+## 11. What the source itself declares open
 
 Stated because a reference that hides its gaps is marketing. None of these are solved in the source.
 
@@ -381,13 +427,15 @@ Stated because a reference that hides its gaps is marketing. None of these are s
 | Typed edges in the work graph | every blast-radius number is wrong until this lands |
 | Only one of the four doors runs | the other three all wait on one missing caller |
 
-## 11. Mapping onto this repository
+## 12. Mapping onto this repository
 
 How the reference's concepts land on PASS.md Part B, TARGET.md, and the skills in `docs/skill-manifest.json`. The right-hand column is where the concept is a gap here too.
 
 | Reference concept | Here | Skill | Gap here |
 |---|---|---|---|
 | the four fields, recursing per step | Document (`F-b2-02`) | `core-document` | recursion of the step shape is not stated |
+| smart defaults with fixed precedence | `T-t2-01`, `T-t3-01`, rule 7 (`F-b1-08`) | `build-simplicity-budget`, `cap-consumption` | precedence stated as caller, capability, platform |
+| improve one aspect by changing one file | `T-t2-02` | `cap-capability-packaging` | |
 | resolution as a free pure function before the gate | Planner (`F-b2-03`), rule 5 | `core-planner` | cost contribution per kind, summed across depth |
 | ordering, interface, implementation edges | Graph (`F-b2-04`) | `core-graph` | blast radius over implementation edges only; depth bound at resolve |
 | held-out instrument, blindness, relativity | Judge (`F-b2-05`), rule 6 | `core-judge` | the three things that never travel with the work, as a stated rule |
@@ -402,7 +450,7 @@ How the reference's concepts land on PASS.md Part B, TARGET.md, and the skills i
 | `assumptions:` with `validated_by` and `while_unresolved` | none | none | the whole late-binding mechanism |
 | hop-by-hop dissection and rollup | `T-t5-02`, ceremonies | `build-ceremony` | the four requirement tags |
 
-## 12. What to take, and what to leave
+## 13. What to take, and what to leave
 
 **Take:** the closed-schema, open-vocabulary rule. Difficulty levels that use the same shape. Exit costs written next to every dependency before adoption. The grader never visible to the graded. Counting what executed, not what passed (`F-a7-03`, measured). Typed edges and blast radius over implementation edges only.
 

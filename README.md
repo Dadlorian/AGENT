@@ -12,7 +12,7 @@ The target architecture in `PASS.md` Part B, built as a set of linked Claude Cod
 | `docs/decomposition.md` | The Part C decomposition strategy: build order, Dispatch and State designs, definitions of done with their breakages, second adapters, open questions |
 | `docs/skill-manifest.json` | Every skill, its layer, wave, links, and definition of done. The contract the skills are built from |
 | `docs/skill-graph.md` | Generated map of how the skills compose |
-| `docs/reference/composable-plan.md` | Reference only: one team's worked example of a composable plan (four doors, nesting, fan-out, late binding), mapped onto this repo's vocabulary. A possible future state, not a definition |
+| `docs/reference/composable-plan.md` | Reference only: one team's worked example of a composable plan, and how smart defaults, composition by name and late binding keep it simple for the caller (four doors, nesting, fan-out, late binding), mapped onto this repo's vocabulary. A possible future state, not a definition |
 | `.claude/skills/agentic-stack/` | The root contract: vocabulary, the seven rules as tests, claimed versus measured, definition of done, layering |
 | `.claude/skills/core-*` | One skill per core component: Document, Planner, Graph, Judge, Ledger |
 | `.claude/skills/cap-*` | One skill per capability interface, naming its standard, today's adapter, and a second adapter |

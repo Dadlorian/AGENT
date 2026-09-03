@@ -493,7 +493,17 @@ def git(*args) -> str:
 
 
 def ledger_append(payload: dict) -> int:
+    """Append one chained record. Holds an exclusive lock on kb/ledger.lock for the whole read-then-append,
+    so two agents appending at once cannot both read the same tail and mint the same id (seen on 2026-09-03)."""
     import datetime
+    import fcntl
+    lock = LEDGER.with_suffix(".lock")
+    with lock.open("w") as lk:
+        fcntl.flock(lk, fcntl.LOCK_EX)
+        return _ledger_append_locked(payload, datetime)
+
+
+def _ledger_append_locked(payload: dict, datetime) -> int:
     recs = read_jsonl(LEDGER) if LEDGER.is_file() else []
     prev = recs[-1]["hash"] if recs else "genesis"
     rec = {"id": f"L-{len(recs) + 1:05d}", "type": "ledger", "time": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),

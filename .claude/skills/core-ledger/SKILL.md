@@ -288,7 +288,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `core-document`, `cap-errors`
+Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors`, `core-document`
 
 Used by: `core-ledger-implement`, `seam-state`, `xc-audit-trail`
 

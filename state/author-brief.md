@@ -38,12 +38,13 @@ Content expectations per layer:
 - compose-: instructions are the recipe for assembling lower layers; invariants are what a composition must preserve (rules 5, 6, 7); best_practices are the composer's judgment.
 - build-: instructions are the discipline as steps with the reason for each; the definition_of_done proves the discipline itself can fail.
 
-Keep each skill.json focused, and treat these as checked budgets, not aspirations: 6 to 10 instructions, 3 to 10 invariants, 3 to 8 best practices, and roughly 3 to 10 rows in any table. Long material - a full JSON Schema, a table of standards, worked examples - goes in references/<file>.md in the skill dir, with a proposed instruction saying when to open it and stating that the skill body is enough without it. A schema longer than about 25 rendered lines is long material: put a summary shape in contract.shapes and the full one in references/; if the material was dropped or never needed, delete the references/ directory rather than shipping an empty one. These are checked: tools/validate_skills.py warns when instructions, invariants or best_practices fall outside the budget, so clear every warning naming your skills before you close them.
+Two facets per item, not three. `<item>` is the ideal definition and also carries the usability section (how a human, an agent and an event reach it; minimal inputs and outputs; a worked call per way in; a worked rejection), with anything long in `<item>/references/usage.md` behind one proposed instruction saying when to open it; `<item>-implement` is how it is built here. There is no `-use` facet: the 21 planned ones were folded into their ideal skills on 2026-09-03 (kb/ceremonies/consolidation-review.json). The caller doctrine identical across all of them - the four entries of T6.2 through one envelope, one result or one problem object, compose upward, change configuration rather than adding an argument - is stated once in `cap-consumption`, the shared consumption contract: read it before writing a usability section, and name it instead of restating it.
+
+Keep each skill.json focused, and treat these as checked budgets, not aspirations: 6 to 15 instructions on an ideal skill that carries the usability section and 6 to 10 on any other (tools/validate_skills.py still warns above 10; on those ideals the warning is expected and the reference file is the answer), 3 to 10 invariants, 3 to 8 best practices, and roughly 3 to 10 rows in any table. Long material - a full JSON Schema, a table of standards, worked examples - goes in references/<file>.md in the skill dir, with a proposed instruction saying when to open it and stating that the skill body is enough without it. A schema longer than about 25 rendered lines is long material: put a summary shape in contract.shapes and the full one in references/; if the material was dropped or never needed, delete the references/ directory rather than shipping an empty one. These are checked: tools/validate_skills.py warns when instructions, invariants or best_practices fall outside the budget, so clear every warning naming your skills before you close them.
 
 ## Defects found in ceremonies 1-9 - do not repeat them
 
-Findings from waves 1 through 4c. Each cost a fix; none should recur. Items 2, 4 and 14 recurred across
-ceremonies, so each carries the sharper check that would have caught it.
+Findings from waves 1 through 4c. Each cost a fix; none should recur. Items 2, 4 and 14 recurred across ceremonies, so each carries the sharper check that would have caught it.
 
 1. There are SEVEN layers, not six: root, core, cap, xc, seam, compose, build. `root` is reserved for
    agentic-stack alone (schema enum and validator both know it); count them there before you write the count.
@@ -69,7 +70,7 @@ ceremonies, so each carries the sharper check that would have caught it.
 8. State an enumeration ONCE per skill and have every other row point at that list rather than re-list it.
    TARGET.md T1 lists three ways in (human, agent, event) and T6.2 four entries (human, event, schedule,
    external system or agent); they are different lists, so name which one you are citing.
-9. A cap- ideal skill (no -implement or -use suffix) carries its own adapters[] pair and a definition_of_done
+9. A cap- ideal skill (no -implement suffix) carries its own adapters[] pair and a definition_of_done
    over both asserting `adapters_run >= 2`. Defer the pair to -implement only when PASS.md's adapter-today
    column is literally *absent*, then say so in an open_question citing that row, as cap-identity does.
 10. Adapting a sibling's template: reread the prose, not only the code fences, for a noun belonging to the donor skill (a "runtime" in a durable-execution skill). Nothing checks it.
@@ -79,10 +80,10 @@ ceremonies, so each carries the sharper check that would have caught it.
 12. An E- id in an adapter row's sources belongs to the same capability row as the adapter: E-adapter-jsonl-hash-
    chain (State persistence, F-b3-17) in a Provenance row sends a reader to the wrong B3 row. Siblings of your
    own capability are fine; warns when the entity's kb sources do not overlap the row's.
-13. When your manifest note says the ideal facet "also carries the usability section" there is no -use sibling
-   to carry it, so meet a -use skill's bar: a worked instance for EACH of TARGET T1's three ways in (declared_by
-   / actor `user:`, `agent:`, `service:` or `schedule:`) and a worked rejection as an actual
-   `urn:agentic:problem:` object, not a prose rule pointing at cap-errors. Warns per missing piece.
+13. Every ideal facet carries the usability section, so meet its bar: a worked instance for EACH of TARGET T1's
+   three ways in (declared_by / actor `user:`, `agent:`, `service:` or `schedule:`) and a worked rejection as an
+   actual `urn:agentic:problem:` object, not a prose rule pointing at cap-errors. The worked calls may live in
+   references/usage.md, which the check reads too. Warns per missing piece where the manifest note says so.
 14. A problem `type` is not yours to invent. Before you write `urn:agentic:problem:<suffix>` anywhere - a worked
    failure, an expected_failure, a refusal table - check it against the ten-row closed registry in
    docs/decomposition.md section 2.1.6 and reuse the row that fits (a scope refusal IS `policy-denied`). If none
@@ -99,14 +100,10 @@ ceremonies, so each carries the sharper check that would have caught it.
 
 ## What worked in waves 1 to 4c - keep doing it
 
-- Every sourced quote verified as a verbatim substring of its cited record: 73/73 in wave 1, 430/430 in wave 4a,
-  122/122 in wave 4c, no invented problem types in 4b or 4c. Copy quotes out of `kb.py show`, never retype them.
-- Definitions of done were honestly labelled: claimed where the tool does not exist yet, measured only where
-  the exact error strings were produced in a run and the session and date are named.
-- Each design rule is a pass/fail test stated once in the root contract and built on, not re-derived: the
-  pattern for every shared fact.
-- Reviewers re-ran the definitions of done in waves 1a to 3c and reproduced the recorded output and breakage
-  exactly. Write the criterion so someone else can run it from the skill alone, red where nothing runs.
+- Every sourced quote verified as a verbatim substring of its cited record: 73/73 in wave 1, 430/430 in wave 4a, 122/122 in wave 4c, no invented problem types in 4b or 4c. Copy quotes out of `kb.py show`, never retype them.
+- Definitions of done were honestly labelled: claimed where the tool does not exist yet, measured only where the exact error strings were produced in a run and the session and date are named.
+- Each design rule is a pass/fail test stated once in the root contract and built on, not re-derived: the pattern for every shared fact.
+- Reviewers re-ran the definitions of done in waves 1a to 3c and reproduced the recorded output and breakage exactly. Write the criterion so someone else can run it from the skill alone, red where nothing runs.
 
 ## Reply
 

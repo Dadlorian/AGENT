@@ -1,17 +1,22 @@
 #!/usr/bin/env python3
-"""Expand docs/skill-manifest.json into three facets per item and emit the loop's sections.
+"""Expand docs/skill-manifest.json into two facets per item and emit the loop's sections.
 
 Usage:
-  python3 tools/manifest_facets.py expand      rewrite docs/skill-manifest.json with <item>, <item>-implement, <item>-use
+  python3 tools/manifest_facets.py expand      rewrite docs/skill-manifest.json with <item> and <item>-implement
   python3 tools/manifest_facets.py sections    write state/loop-args.json (sections grouped by wave, with kb ids and facets)
   python3 tools/manifest_facets.py check       link symmetry and wave order
 
 Facet rules (proposed convention):
-  <item>            the ideal definition; keeps the original entry's links
+  <item>            the ideal definition; keeps the original entry's links, and carries the usability section
+                    (how a human, an agent and an event reach it; minimal inputs/outputs; worked calls; failure shape)
   <item>-implement  builds_on: <item>, build-adapter-pair, build-definition-of-done (+ build-evidence-record)
-  <item>-use        builds_on: <item>, <item>-implement   (cap- layer only; other layers fold usability into the ideal facet)
   sections are capped at 5 items; a larger wave is split into wave-Na, wave-Nb, ...
   build- skills and agentic-stack are not expanded (they are disciplines, not areas).
+
+There is no -use facet. The 21 planned cap- -use skills were folded into their ideal skills on 2026-09-03
+(kb/ceremonies/consolidation-review.json, plan step 6): measured across the 20 written ones, the caller
+material was either specific to one capability - which belongs to the skill that owns the contract, with the
+worked calls in <item>/references/usage.md - or identical across capabilities, which is now cap-consumption.
 """
 from __future__ import annotations
 
@@ -65,23 +70,16 @@ def expand() -> int:
         base = s["name"]
         impl = {"name": f"{base}-implement", "layer": s["layer"], "wave": s["wave"] + 1, "facet": "implement",
                 "purpose": f"How to implement {base} on our stack: today's adapter, the second adapter, migration, cross-cutting wiring, definition of done with breakage.",
-                "builds_on": [base] + [d for d in IMPL_DEPS if d in by], "used_by": [f"{base}-use"],
+                "builds_on": [base] + [d for d in IMPL_DEPS if d in by], "used_by": [],
                 "definition_of_done": s.get("definition_of_done", ""), "notes_for_author": s.get("notes_for_author", "")}
-        use = {"name": f"{base}-use", "layer": s["layer"], "wave": s["wave"] + 2, "facet": "use",
-               "purpose": f"How a human, an agent, or an event uses {base}: minimal inputs and outputs, worked examples, failure shape, what it composes with.",
-               "builds_on": [base, f"{base}-implement"], "used_by": [],
-               "definition_of_done": "", "notes_for_author": "TARGET.md T1-T3 govern this facet: three entry points, hidden complexity, simple to use."}
         for k in ("capability", "standard", "adapter_today", "second_adapter"):
             if k in s:
                 impl[k] = s[k]
         s["facet"] = "ideal"
-        s["used_by"] = sorted(set(s["used_by"]) | ({impl["name"], use["name"]} if s["layer"] == "cap" else {impl["name"]}))
-        if s["layer"] == "cap":
-            new += [impl, use]
-        else:
-            impl["used_by"] = []
-            s["notes_for_author"] = (s.get("notes_for_author", "") + " The ideal facet also carries the usability section (how a human, an agent, and an event reach it; minimal inputs/outputs; failure shape) since this layer has no separate -use skill.").strip()
-            new += [impl]
+        s["used_by"] = sorted(set(s["used_by"]) | {impl["name"]})
+        impl["used_by"] = []
+        s["notes_for_author"] = (s.get("notes_for_author", "") + " The ideal facet also carries the usability section (how a human, an agent, and an event reach it; minimal inputs/outputs; worked calls; failure shape), since there is no -use skill in any layer.").strip()
+        new += [impl]
         for d in IMPL_DEPS:
             if d in by:
                 by[d]["used_by"] = sorted(set(by[d]["used_by"]) | {impl["name"]})
@@ -89,8 +87,10 @@ def expand() -> int:
         if s["layer"] == "build":
             s["facet"] = "discipline"
     m["skills"] += new
-    # waves: implement/use of an item may now exceed a downstream ideal that builds on the ideal only; that is fine.
-    m["facets"] = {"ideal": "the ideal definition of the area", "implement": "how to implement it on our stack", "use": "how a composer uses it", "discipline": "authoring disciplines (build- layer)"}
+    # waves: the implement facet of an item may now exceed a downstream ideal that builds on the ideal only; that is fine.
+    m["facets"] = {"ideal": "the ideal definition of the area, which also carries the usability section",
+                   "implement": "how to implement it on our stack",
+                   "discipline": "authoring disciplines (build- layer)"}
     MANIFEST.write_text(json.dumps(m, indent=2, ensure_ascii=False) + "\n")
     print(f"expanded to {len(m['skills'])} skills")
     return 0 if check(m) else 1
@@ -117,12 +117,12 @@ def sections() -> int:
         if s["layer"] == "build" and s["facet"] == "discipline":
             base = s["name"]
         else:
-            base = re.sub(r"-(implement|use)$", "", s["name"])
+            base = re.sub(r"-implement$", "", s["name"])
         it = items.setdefault(base, {"name": base, "layer": s["layer"], "wave": None, "kb_ids": None, "facets": []})
         it["facets"].append({"skill": s["name"], "facet": s["facet"]})
         if s["facet"] in ("ideal", "discipline"):
             it["wave"] = s["wave"]; it["kb_ids"] = kb_ids(s)
-    order = {"ideal": 0, "discipline": 0, "implement": 1, "use": 2}
+    order = {"ideal": 0, "discipline": 0, "implement": 1}
     secs = {}
     for it in items.values():
         it["facets"].sort(key=lambda f: order[f["facet"]])

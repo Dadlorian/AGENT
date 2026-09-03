@@ -150,9 +150,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `cap-telemetry`, `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`
+Builds on: `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`, `cap-telemetry`
 
-Used by: `cap-telemetry-use`
+Used by: -
 
 ## Open questions
 

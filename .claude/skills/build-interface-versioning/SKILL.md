@@ -198,7 +198,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-skill-authoring`, `build-adapter-pair`, `build-definition-of-done`, `build-research-record`, `build-ceremony`
+Builds on: `agentic-stack`, `build-adapter-pair`, `build-ceremony`, `build-definition-of-done`, `build-research-record`, `build-skill-authoring`
 
 Used by: -
 

@@ -263,7 +263,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `xc-idempotency-lease`, `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`
+Builds on: `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`, `xc-idempotency-lease`
 
 Used by: -
 

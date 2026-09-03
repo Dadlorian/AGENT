@@ -171,7 +171,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `xc-identity-delegation`, `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`
+Builds on: `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`, `xc-identity-delegation`
 
 Used by: -
 

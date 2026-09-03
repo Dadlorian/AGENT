@@ -138,9 +138,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `cap-policy`, `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`
+Builds on: `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`, `cap-policy`
 
-Used by: `cap-policy-use`
+Used by: -
 
 ## Open questions
 

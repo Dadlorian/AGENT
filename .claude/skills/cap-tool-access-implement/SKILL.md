@@ -196,9 +196,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `cap-tool-access`, `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`
+Builds on: `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`, `cap-tool-access`
 
-Used by: `cap-tool-access-use`
+Used by: -
 
 ## Open questions
 

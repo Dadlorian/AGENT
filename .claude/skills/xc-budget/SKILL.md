@@ -181,7 +181,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `cap-model-access`, `cap-errors`
+Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors`, `cap-model-access`
 
 Used by: `compose-loop`, `core-planner`, `seam-dispatch`, `xc-budget-implement`, `xc-enforcement-chain`
 

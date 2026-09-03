@@ -296,7 +296,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `build-research-record`, `build-ceremony`, `cap-errors`, `cap-document-validation`, `cap-capability-packaging`, `cap-provenance`
+Builds on: `agentic-stack`, `build-adapter-pair`, `build-ceremony`, `build-definition-of-done`, `build-research-record`, `build-skill-authoring`, `cap-capability-packaging`, `cap-document-validation`, `cap-errors`, `cap-provenance`
 
 Used by: `build-entry-conformance`, `cap-capability-registry-implement`, `compose-improvement-loop`
 

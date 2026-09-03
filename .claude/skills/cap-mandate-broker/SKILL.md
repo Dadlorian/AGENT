@@ -286,7 +286,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `build-research-record`, `build-ceremony`, `cap-errors`, `cap-identity`, `cap-policy`, `cap-provenance`
+Builds on: `agentic-stack`, `build-adapter-pair`, `build-ceremony`, `build-definition-of-done`, `build-research-record`, `build-skill-authoring`, `cap-errors`, `cap-identity`, `cap-policy`, `cap-provenance`
 
 Used by: `cap-mandate-broker-implement`
 

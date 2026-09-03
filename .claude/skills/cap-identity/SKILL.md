@@ -176,7 +176,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `cap-errors`
+Builds on: `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors`
 
 Used by: `cap-human-interaction`, `cap-identity-implement`, `cap-mandate-broker`, `cap-memory`, `xc-identity-delegation`, `xc-tenancy`
 

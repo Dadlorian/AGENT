@@ -255,7 +255,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `cap-policy`, `cap-errors`
+Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors`, `cap-policy`
 
 Used by: `seam-dispatch`, `xc-enforcement-chain`, `xc-policy-gate-implement`
 

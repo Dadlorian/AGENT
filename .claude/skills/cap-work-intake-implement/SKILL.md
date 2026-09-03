@@ -207,9 +207,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `cap-work-intake`, `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`
+Builds on: `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`, `cap-work-intake`
 
-Used by: `cap-work-intake-use`
+Used by: -
 
 ## Open questions
 

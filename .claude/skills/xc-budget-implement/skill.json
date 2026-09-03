@@ -6,10 +6,18 @@
   "purpose": {
     "text": "Turn the guarantee in xc-budget into something that runs here: two enforcement points behind one ceiling, the second one drawing from a platform-held lease before each dispatch so that spend outside the model gateway is bounded too, migrated in without a window in which nothing stops a call.",
     "origin": "sourced",
-    "sources": ["F-b4-02", "F-a4-07"],
+    "sources": [
+      "F-b4-02",
+      "F-a4-07"
+    ],
     "quote": "Every unit of work carries a ceiling"
   },
-  "entities": ["E-concern-budget", "E-adapter-litellm", "E-swap-candidate-any-keyed-lease-store", "E-service-gateway-db-1"],
+  "entities": [
+    "E-concern-budget",
+    "E-adapter-litellm",
+    "E-swap-candidate-any-keyed-lease-store",
+    "E-service-gateway-db-1"
+  ],
   "contract": {
     "shapes": [
       {
@@ -23,14 +31,31 @@
           "minItems": 3,
           "examples": [
             [
-              { "axis": "unit_of_resource_granted", "today_value": "spend allowance on one key within a time window", "second_value": "a reservation against one root unit of work's ceiling", "measured": false },
-              { "axis": "locus_of_durability_and_verification", "today_value": "the gateway's own spend ledger", "second_value": "the platform's append-only state, verifiable at a pinned head", "measured": false },
-              { "axis": "processes_required_for_progress", "today_value": "the gateway must be reachable for the ceiling to bind", "second_value": "the draw happens before dispatch and binds even when no metered call follows", "measured": false }
+              {
+                "axis": "unit_of_resource_granted",
+                "today_value": "spend allowance on one key within a time window",
+                "second_value": "a reservation against one root unit of work's ceiling",
+                "measured": false
+              },
+              {
+                "axis": "locus_of_durability_and_verification",
+                "today_value": "the gateway's own spend ledger",
+                "second_value": "the platform's append-only state, verifiable at a pinned head",
+                "measured": false
+              },
+              {
+                "axis": "processes_required_for_progress",
+                "today_value": "the gateway must be reachable for the ceiling to bind",
+                "second_value": "the draw happens before dispatch and binds even when no metered call follows",
+                "measured": false
+              }
             ]
           ]
         },
         "origin": "proposed",
-        "sources": ["F-b1-04"]
+        "sources": [
+          "F-b1-04"
+        ]
       },
       {
         "name": "budget-conformance report (proposed; the fields the definition of done asserts on)",
@@ -41,57 +66,108 @@
           "type": "object",
           "additionalProperties": false,
           "description": "Proposed. Written per adapter and once across adapters, so a green run names what it actually checked rather than only its exit code.",
-          "required": ["adapter", "dispatches_checked", "roots", "unbounded", "terminated_on_budget", "overshoot_violations", "enforcement_point_observed"],
+          "required": [
+            "adapter",
+            "dispatches_checked",
+            "roots",
+            "unbounded",
+            "terminated_on_budget",
+            "overshoot_violations",
+            "enforcement_point_observed"
+          ],
           "properties": {
-            "adapter": { "type": "string", "description": "The entity id of the enforcement adapter under test." },
-            "dispatches_checked": { "type": "integer", "minimum": 0 },
-            "roots": { "type": "integer", "minimum": 0 },
-            "unbounded": { "type": "integer", "minimum": 0, "description": "Dispatches with a null or absent ceiling." },
-            "terminated_on_budget": { "type": "integer", "minimum": 0 },
-            "overshoot_micros_max": { "type": "integer", "minimum": 0 },
-            "overshoot_violations": { "type": "integer", "minimum": 0 },
-            "enforcement_point_observed": { "type": "string", "description": "Read from the refusal that came back, never from the binding that selected the adapter." },
-            "adapters_run": { "type": "integer", "minimum": 0 }
+            "adapter": {
+              "type": "string",
+              "description": "The entity id of the enforcement adapter under test."
+            },
+            "dispatches_checked": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "roots": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "unbounded": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Dispatches with a null or absent ceiling."
+            },
+            "terminated_on_budget": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "overshoot_micros_max": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "overshoot_violations": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "enforcement_point_observed": {
+              "type": "string",
+              "description": "Read from the refusal that came back, never from the binding that selected the adapter."
+            },
+            "adapters_run": {
+              "type": "integer",
+              "minimum": 0
+            }
           }
         },
         "origin": "proposed",
-        "sources": ["F-a7-03"]
+        "sources": [
+          "F-a7-03"
+        ]
       }
     ],
     "invariants": [
       {
         "text": "Proposed: the two enforcement points differ on three of build-adapter-pair's axes - unit_of_resource_granted, locus_of_durability_and_verification and processes_required_for_progress - recorded in the shape above. Another gateway with per-key caps would agree with today's on all three, so swapping to it would test a vendor and not the guarantee.",
         "origin": "proposed",
-        "sources": ["F-b1-04"],
+        "sources": [
+          "F-b1-04"
+        ],
         "quote": "Swappability is a tested property, not an intention."
       },
       {
         "text": "agentic-stack and build-adapter-pair state design rule 1 (F-b1-02). Its consequence here: which enforcement point refused a call is configuration, and no core code, no workflow and no caller branches on it; a refusal names its enforcement point in the report, not in a field a caller can read and route on.",
         "origin": "sourced",
-        "sources": ["F-b1-02"],
+        "sources": [
+          "F-b1-02"
+        ],
         "quote": "The core imports interfaces, never implementations"
       },
       {
         "text": "agentic-stack states that what runs is substrate (F-part-c-11). Its consequence here: the scoped keys that already cap spend on this host are not replaced, they become the first enforcement point, and the platform-held lease is added beside them rather than in place of them.",
         "origin": "sourced",
-        "sources": ["F-part-c-11"],
+        "sources": [
+          "F-part-c-11"
+        ],
         "quote": "Part A is substrate, not scope. Do not propose replacing what runs."
       },
       {
         "text": "xc-budget states the ceiling and its placement (F-b4-02). What this adds on this stack: one enforcement point is not enough, because a cap that lives at the model gateway bounds only what crosses the gateway, and a run also spends on isolation, tool calls and delegated descendants that never appear in a completion request.",
         "origin": "sourced",
-        "sources": ["F-b4-02", "X-xc-budget-001"],
+        "sources": [
+          "F-b4-02",
+          "X-xc-budget-001"
+        ],
         "quote": "Exceeding it terminates the unit, not the platform"
       },
       {
         "text": "Proposed: the migration never has a window in which nothing stops a call. The existing key caps keep enforcing while the lease is introduced, both run together over the same corpus, and only then does the lease become authoritative for the root ceiling with the key caps left in place as a backstop.",
         "origin": "proposed",
-        "sources": ["F-a4-07"]
+        "sources": [
+          "F-a4-07"
+        ]
       },
       {
         "text": "build-evidence-record owns the record's contents (F-a5-04). What this adds: every statement in this skill about how an enforcement point behaves is claimed until the conformance report and its evidence record exist, and a reworded sentence never upgrades a label.",
         "origin": "sourced",
-        "sources": ["F-a5-04"],
+        "sources": [
+          "F-a5-04"
+        ],
         "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
       }
     ]
@@ -102,7 +178,10 @@
       "action": "Build today's enforcement point as a thin binding onto the scoped keys the model gateway already carries: map one root unit of work to the key group its class prefix resolves to, read the remaining allowance before dispatch, and treat the gateway's refusal as the authoritative stop.",
       "why": "xc-budget records that this property is already measured on this substrate (F-a4-07): the keys stop spend rather than noting it. Building on the mechanism that already refuses calls is the smaller change and it starts the pair from a real enforcement point rather than an intention.",
       "origin": "sourced",
-      "sources": ["F-a4-07", "F-a1-04"],
+      "sources": [
+        "F-a4-07",
+        "F-a1-04"
+      ],
       "quote": "verified to terminate spend rather than merely record it"
     },
     {
@@ -110,7 +189,10 @@
       "action": "Proposed: build the second enforcement point as a platform-held reservation lease. Reserve the priced floor of a dispatch from the root's remaining ceiling before the dispatch starts, write the reservation through the state seam, reconcile it with the actual cost afterwards, and expire an unreconciled reservation at the unit's deadline plus grace.",
       "why": "Proposed: this breaks the assumption that the model gateway is the only place spend occurs. A reservation taken before dispatch binds work that never reaches the gateway at all, and the expiry is what stops a crashed unit from holding a root's ceiling forever.",
       "origin": "proposed",
-      "sources": ["F-b3-16", "F-b4-02"]
+      "sources": [
+        "F-b3-16",
+        "F-b4-02"
+      ]
     },
     {
       "step": 3,
@@ -169,30 +251,40 @@
     {
       "text": "Test the ceiling by watching a call be refused, never by reading the configured limit. The one measurement on file for this boundary is that a limit which stops spend and a limit which records it look identical in configuration and differ entirely in effect.",
       "origin": "sourced",
-      "sources": ["F-a4-07"],
+      "sources": [
+        "F-a4-07"
+      ],
       "quote": "hard budget cap, verified to terminate spend rather than merely record it"
     },
     {
       "text": "agentic-stack already states the structurally-green-gate finding (F-a7-03), and xc-budget draws the consequence for a budget corpus. What this adds at the code level: report the counts per enforcement point, because a corpus replayed through two adapters can leave one of them with nothing to refuse and still exit green.",
       "origin": "sourced",
-      "sources": ["F-a7-03"],
+      "sources": [
+        "F-a7-03"
+      ],
       "quote": "Those establish well-formedness, not correctness"
     },
     {
       "text": "Proposed: reconcile from actuals and never from the reservation. Copying the reserved figure into the reconciled one produces a ledger that always balances and a ceiling that drifts by exactly the estimation error, which is the failure that is hardest to see because nothing ever disagrees.",
       "origin": "proposed",
-      "sources": ["X-end-to-end-047"]
+      "sources": [
+        "X-end-to-end-047"
+      ]
     },
     {
       "text": "Expect the two enforcement points to disagree in the shadow step and treat the difference as the finding rather than as noise: the draws the lease refuses and the gateway never saw are the spend that a gateway-only cap was always missing. The records on file describe that gateway pattern as the converged one, which is why the gap is easy to overlook.",
       "origin": "sourced",
-      "sources": ["X-xc-budget-001"],
+      "sources": [
+        "X-xc-budget-001"
+      ],
       "quote": "a dedicated AI gateway sits between application code and provider APIs"
     },
     {
       "text": "Keep the conformance suite in the enforcement path rather than beside it. xc-budget states why this layer exists (F-a6-04); what this adds is the code-level trap: a budget suite replaying a stored corpus never touches the path a live dispatch takes, so wire it to the same draw the dispatcher calls.",
       "origin": "sourced",
-      "sources": ["F-a6-04"],
+      "sources": [
+        "F-a6-04"
+      ],
       "quote": "Conformance checks exist; not wired into the enforcement path"
     }
   ],
@@ -204,7 +296,11 @@
       "cannot": "Proposed: cannot bound spend that does not cross the gateway - isolation time, tool calls, and any descendant that never issues a completion request - and cannot express one ceiling per root unit of work, because its unit is a key within a time window rather than a run tree. It also binds only while the gateway is reachable.",
       "swap_procedure": "Select the enforcement point by configuration, replay the same corpus of dispatches through both, and compare the refusal sets: assert that every refusal the gateway produced is also produced by the lease, and record the refusals only the lease produced as the gap the pair exists to expose. Read the enforcement point from the refusal, not from the binding.",
       "status": "claimed",
-      "sources": ["F-b3-03", "F-a4-07", "F-a1-04"],
+      "sources": [
+        "F-b3-03",
+        "F-a4-07",
+        "F-a1-04"
+      ],
       "quote": "Gateway config, virtual keys, spend ledger"
     },
     {
@@ -214,7 +310,11 @@
       "cannot": "Proposed: cannot know a cost the provider has not reported yet, so it holds an estimate between dispatch and reconciliation and can over-reserve; cannot refuse a call that bypasses dispatch entirely; and needs its own expiry, because a unit that crashes while holding a lease would otherwise consume the root's ceiling permanently.",
       "swap_procedure": "Proposed: the axes that differ are unit_of_resource_granted (a key's allowance in a window versus a reservation against one root's ceiling), locus_of_durability_and_verification (the gateway's spend ledger versus the platform's append-only state at a pinned head) and processes_required_for_progress (the gateway must be reachable versus a draw that binds before any metered call). Select by configuration with no code edit between runs, then compare both reports against the same declared gaps.",
       "status": "claimed",
-      "sources": ["F-b3-16", "F-b4-02", "F-b1-04"],
+      "sources": [
+        "F-b3-16",
+        "F-b4-02",
+        "F-b1-04"
+      ],
       "quote": "any keyed lease store"
     }
   ],
@@ -224,11 +324,19 @@
     "breakage": "Make `budget` optional in the dispatch request schema, submit one dispatch without it into the same corpus, and change nothing else.",
     "expected_failure": "The non-null assertion fails and unbounded dispatches appear: `unbounded` becomes 1 for both enforcement points, the run exits non-zero naming the dispatch id with the null ceiling, and `adapters_run` stays 2 with `dispatches_checked` at or above 100 - which is what shows the ceiling went missing at the envelope rather than one enforcement point having failed to run.",
     "status": "claimed",
-    "sources": ["F-part-c-04", "F-b4-02"],
+    "sources": [
+      "F-part-c-04",
+      "F-b4-02"
+    ],
     "quote": "A criterion nothing can fail is not a criterion"
   },
   "composes_with": {
-    "builds_on": ["xc-budget", "build-adapter-pair", "build-definition-of-done", "build-evidence-record"],
+    "builds_on": [
+      "build-adapter-pair",
+      "build-definition-of-done",
+      "build-evidence-record",
+      "xc-budget"
+    ],
     "used_by": []
   },
   "open_questions": [
@@ -236,14 +344,19 @@
       "question": "Budget has no capability row in PASS.md B3, so it has no adapter or swap-candidate entity of its own, and the second enforcement point here is recorded against the keyed lease store named as the swap candidate for leases. Should Budget get its own entity pair?",
       "evidence": "1-3-1 applied (TARGET T5), the same way xc-budget records its own standard-entity gap: (a) add E-adapter-gateway-virtual-key and E-swap-candidate-platform-budget-lease, which needs a knowledge-base rebuild and would invalidate the provenance heads of every skill already written; (b) record the pair against the existing gateway and keyed-lease-store entities and say so in the row, which is what this skill does; (c) leave the pair to a later wave, which would leave this guarantee with one enforcement point. Recommendation followed: (b). The question closes when a ceremony rebuilds the knowledge base and the two entities exist.",
       "default": "Keep the pair on the existing entities, with the reason stated in the adapter row so a reader is not sent to the wrong capability's row.",
-      "sources": ["F-b3-16", "T-t5-02"],
+      "sources": [
+        "F-b3-16",
+        "T-t5-02"
+      ],
       "quote": "When a problem comes up, use 1-3-1"
     },
     {
       "question": "How much overshoot does the pre-check actually allow on this stack, and how much latency does it add per call? (xc-budget carries the granularity question; this is the measurement that closes it)",
       "evidence": "Run the corpus with high per-call cost variance through both enforcement points and record `overshoot_micros_max` and the added per-call latency for each. If the lease's overshoot exceeds one call's worth, the priced floor is the wrong quantity to reserve and the reservation should be the priced ceiling instead.",
       "default": "Reserve the priced floor and assert overshoot is at most one call's worth, which is the bound the definition of done already checks.",
-      "sources": ["F-b1-06"],
+      "sources": [
+        "F-b1-06"
+      ],
       "quote": "Cost is knowable before commitment"
     }
   ],

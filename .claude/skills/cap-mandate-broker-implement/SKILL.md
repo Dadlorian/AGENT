@@ -160,9 +160,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `cap-mandate-broker`, `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`
+Builds on: `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`, `cap-mandate-broker`
 
-Used by: `cap-mandate-broker-use`
+Used by: -
 
 ## Open questions
 

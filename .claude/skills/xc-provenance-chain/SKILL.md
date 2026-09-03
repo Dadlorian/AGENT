@@ -238,7 +238,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `cap-provenance`, `build-evidence-record`
+Builds on: `agentic-stack`, `build-definition-of-done`, `build-evidence-record`, `build-skill-authoring`, `cap-provenance`
 
 Used by: `seam-dispatch`, `seam-state`, `xc-audit-trail`, `xc-provenance-chain-implement`
 

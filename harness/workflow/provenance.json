@@ -1,0 +1,67 @@
+{
+  "harness": "workflow",
+  "owner_skill": "cap-durable-execution-implement",
+  "co_skills": ["compose-loop-implement", "compose-approval-implement"],
+  "blueprint_tool_entry": "Temporal (data directory present, server not listening)",
+  "capability": "durable execution and scheduling",
+  "standard": "none for durability; RFC 5545 for recurrence (unverified, and not exercised here)",
+  "kb_ids": [
+    "F-a6-02", "F-b3-04", "F-b1-02", "F-b1-04", "F-b1-07",
+    "F-b4-02", "F-b4-03", "F-b4-06", "F-b4-07", "F-b4-08",
+    "F-a2-01", "F-a5-03", "F-a7-02", "F-a7-03", "F-a7-04",
+    "F-b5-05", "F-part-c-04", "F-part-c-11",
+    "T-t1-01", "T-t1-02", "T-t1-03", "T-t2-02", "T-t6-02", "T-t7-02", "T-t9-06",
+    "E-capability-durable-execution", "E-not-running-temporal", "E-adapter-temporal"
+  ],
+  "research_ids": [
+    "X-cap-durable-execution-001",
+    "X-cap-durable-execution-002",
+    "X-cap-durable-execution-006",
+    "X-compose-approval-005",
+    "X-entry-composition-024"
+  ],
+  "adapters": {
+    "dryrun": {
+      "executor_marker": "in-process-journal/0.1",
+      "effect_commit_mode": "keyed_effect",
+      "replay_determinism_required": true,
+      "processes_required_for_progress": 1,
+      "resume_derivation": "fold-whole-history"
+    },
+    "second": {
+      "executor_marker": "queue-state-machine/0.1",
+      "effect_commit_mode": "same_transaction",
+      "replay_determinism_required": false,
+      "processes_required_for_progress": 1,
+      "resume_derivation": "read-materialised-state",
+      "differs_in_execution_model": [
+        "effect_commit_mode: keyed_effect vs same_transaction",
+        "resume_derivation: fold the whole history vs read the last materialised state row",
+        "replay_determinism_required: true vs false"
+      ]
+    },
+    "live": {
+      "executor_marker": "workflow-engine-frontend/unverified",
+      "effect_commit_mode": "keyed_effect",
+      "replay_determinism_required": true,
+      "processes_required_for_progress": 2,
+      "resume_derivation": "replay-server-history"
+    }
+  },
+  "measured": {
+    "dryrun": "bash harness/workflow/test.sh -> passed 19, failed 0; conformance 28/28 against the dry-run executor, including a real SIGKILL at the side-effecting step, resume at the first incomplete step, exactly one effect row counted from effects.jsonl, budget recomputed from the committed records, and one correlation id across the crash",
+    "swap": "conformance 28/28 before with executor_marker in-process-journal/0.1 and 28/28 after with executor_marker queue-state-machine/0.1, read from the running executor and from the journal it wrote; adapters_run=2, distinct_markers=2, the same 28 cases on both sides, and call.py unchanged across the swap",
+    "breakage": "conformance --break-idempotency exits non-zero on both executors: 14 steps committed instead of 8, steps_replayed 0, the gate parked twice, and duplicate_effects=1 on the keyed-effect executor; resume_point_at_start stays above 0, so the kill still landed"
+  },
+  "claimed": [
+    "live mode until run on the host: the frontend named by WORKFLOW_ADDR is not listening here (PASS.md A6), the SDK is not importable, and every operation below the reachability probe in adapters/live.py has never been executed against a running server",
+    "the mapping of begin_run, checkpoint_step, resume_point, read_run, park_gate and record_decision onto that engine, stated in the header of adapters/live.py",
+    "the standard row: no standard governs durability, and the recurrence standard named in the blueprint is unverified and not exercised by this harness"
+  ],
+  "definition_of_done": {
+    "criterion": "bash harness/workflow/test.sh exits 0 with conformance green against both executors, distinct executor markers read from the running executor, and adapters_run=2",
+    "breakage": "python3 conformance.py --adapter dryrun --adapter second --break-idempotency: the step record is written with the step id alone and nothing else is changed",
+    "expected_failure": "both executors report failures, so the defect reads as being in the step record rather than in one engine",
+    "status": "measured"
+  }
+}

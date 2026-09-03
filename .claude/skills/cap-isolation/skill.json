@@ -212,7 +212,7 @@
         "quote": "a unit of work runs isolated, per the OCI Runtime Spec"
       },
       {
-        "text": "Proposed: a unit is expressed as declared resources and declared egress, never as a machine configuration. A field that only a hardware-virtualised adapter could honour - boot arguments, a block-device layout, a guest kernel - is an adapter detail that has leaked into the contract, and its presence is what design rule 3 (F-b1-04, stated by build-adapter-pair) exists to expose.",
+        "text": "Proposed: a unit is expressed as declared resources and declared egress, never as a machine configuration. A field that only a hardware-virtualised adapter could honour - boot arguments, a block-device layout, a guest kernel - is an adapter detail that has leaked into the contract, and its presence is what design rule 3 (F-b1-04, stated by build-adapter-pair) exists to expose. Research query: does the OCI Runtime Spec's own config-schema.json enumerate a field set that separates a portable resource declaration from a hypervisor-only machine description?",
         "origin": "proposed",
         "sources": [
           "F-b1-04",
@@ -220,7 +220,7 @@
         ]
       },
       {
-        "text": "Proposed: what runs inside the unit is opaque to how the unit is contained. The interface takes a document handle and a declaration, never an agent, a runtime or a tool surface, because a containment boundary coupled to one kind of payload is a sandbox that can only ever run that payload.",
+        "text": "Proposed: what runs inside the unit is opaque to how the unit is contained. The interface takes a document handle and a declaration, never an agent, a runtime or a tool surface, because a containment boundary coupled to one kind of payload is a sandbox that can only ever run that payload. Research query: is there a recorded PASS.md or TARGET.md fact stating isolation's contract in these exact opaque-payload terms, beyond the isolation-row template already cited?",
         "origin": "proposed",
         "sources": [
           "F-b3-18"
@@ -287,7 +287,7 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: machine configuration in every form - guest kernel and its boot arguments, block-device or root-filesystem layout, host paths, hypervisor control sockets, vCPU and megabyte counts. A caller able to set one of these has bound the platform to hardware virtualisation and made the second adapter unbuildable.",
+        "text": "Proposed: machine configuration in every form - guest kernel and its boot arguments, block-device or root-filesystem layout, host paths, hypervisor control sockets, vCPU and megabyte counts. A caller able to set one of these has bound the platform to hardware virtualisation and made the second adapter unbuildable. Research query: does the second adapter's own configuration surface (X-cap-isolation-004/005) name any of these fields as required, which would mean the exclusion list needs a documented exception rather than a flat ban?",
         "origin": "proposed",
         "sources": [
           "F-b3-18"
@@ -311,11 +311,12 @@
         "quote": "which holds the real key and picks the endpoint"
       },
       {
-        "text": "Proposed: the criterion a unit's output will be judged against never travels in the isolation declaration, in the document handle the unit is given, or in anything readable from inside the jail. agentic-stack states design rule 6 (F-b1-07); the consequence here is that a contained unit is the one place where the graded work and its grading rule would otherwise share a filesystem, so inspect_containment asserts on containment from outside and the unit reads nothing about how its result will be scored.",
-        "origin": "proposed",
+        "text": "The criterion a unit's output will be judged against never travels in the isolation declaration, in the document handle the unit is given, or in anything readable from inside the jail: an agent sees its outcome, never the criterion it is judged against. agentic-stack states design rule 6 (F-b1-07); the consequence here (proposed) is that a contained unit is the one place where the graded work and its grading rule would otherwise share a filesystem, so inspect_containment asserts on containment from outside and the unit reads nothing about how its result will be scored.",
+        "origin": "sourced",
         "sources": [
           "F-b1-07"
-        ]
+        ],
+        "quote": "An agent sees its outcome, never the criterion it is judged against."
       }
     ]
   },
@@ -334,7 +335,7 @@
     {
       "step": 2,
       "action": "Express the unit as declared resources and declared egress. Before adding any field, ask whether an adapter with no kernel, no filesystem unless one is granted and no network stack could honour it; if it could not, the field is adapter detail and does not go in.",
-      "why": "Proposed. This is the one test that keeps the contract portable: a declaration is something several execution models can satisfy, while a machine description is something only one can, and the difference is invisible until the second adapter is attempted.",
+      "why": "Proposed. This is the one test that keeps the contract portable: a declaration is something several execution models can satisfy, while a machine description is something only one can, and the difference is invisible until the second adapter is attempted. Research query: has this admit-time portability test been run against the second adapter's actual configuration surface to confirm it flags the right fields?",
       "origin": "proposed",
       "sources": [
         "F-b1-04",
@@ -440,14 +441,14 @@
       "quote": "Those establish well-formedness, not correctness"
     },
     {
-      "text": "Proposed: keep the resource profile a name that the adapter resolves, not a set of numbers the caller chose. The moment a caller writes megabytes and vCPU counts it has described a machine, and the profile stops being something a capability-granting adapter can interpret at all.",
+      "text": "Proposed: keep the resource profile a name that the adapter resolves, not a set of numbers the caller chose. The moment a caller writes megabytes and vCPU counts it has described a machine, and the profile stops being something a capability-granting adapter can interpret at all. Research query: what named-profile convention (e.g. small/medium/large) do existing sandbox-as-a-service offerings use, so the profile enum here is not invented from nothing?",
       "origin": "proposed",
       "sources": [
         "F-b3-18"
       ]
     },
     {
-      "text": "Proposed: keep the claimed and the verified apart in this capability specifically. One containment row on the substrate is recorded as verified live and the rest of that sandbox is recorded claimed, so a conformance suite that only re-asserts the verified row adds nothing and a design that treats the claimed rows as measured is overstating what is known.",
+      "text": "Proposed: keep the claimed and the verified apart in this capability specifically. One containment row on the substrate is recorded as verified live and the rest of that sandbox is recorded claimed, so a conformance suite that only re-asserts the verified row adds nothing and a design that treats the claimed rows as measured is overstating what is known. Research query: has the egress-blocking half of the definition_of_done fixture actually been run and recorded as measured, or does it remain claimed alongside the rest?",
       "origin": "proposed",
       "sources": [
         "F-a3-06",

@@ -38,12 +38,12 @@ Content expectations per layer:
 - compose-: instructions are the recipe for assembling lower layers; invariants are what a composition must preserve (rules 5, 6, 7); best_practices are the composer's judgment.
 - build-: instructions are the discipline as steps with the reason for each; the definition_of_done proves the discipline itself can fail.
 
-Keep each skill.json focused, and treat these as checked budgets, not aspirations: 6 to 10 instructions, 3 to 10 invariants, 3 to 8 best practices, and roughly 3 to 10 rows in any table. Long material - a full JSON Schema, a table of standards, worked examples - goes in references/<file>.md in the skill dir, with a proposed instruction saying when to open it and stating that the skill body is enough without it. A schema longer than about 25 rendered lines is long material: put a summary shape in contract.shapes and the full one in references/. These are checked: tools/validate_skills.py warns when instructions, invariants or best_practices fall outside the budget, so clear every warning naming your skills before you close them.
+Keep each skill.json focused, and treat these as checked budgets, not aspirations: 6 to 10 instructions, 3 to 10 invariants, 3 to 8 best practices, and roughly 3 to 10 rows in any table. Long material - a full JSON Schema, a table of standards, worked examples - goes in references/<file>.md in the skill dir, with a proposed instruction saying when to open it and stating that the skill body is enough without it. A schema longer than about 25 rendered lines is long material: put a summary shape in contract.shapes and the full one in references/; if the material was dropped or never needed, delete the references/ directory rather than shipping an empty one. These are checked: tools/validate_skills.py warns when instructions, invariants or best_practices fall outside the budget, so clear every warning naming your skills before you close them.
 
-## Defects found in ceremonies 1-7 - do not repeat them
+## Defects found in ceremonies 1-8 - do not repeat them
 
-Review findings from waves 1, 1a, 2, 3a, 3b, 3c and 4a. Each cost a fix; none should recur. Items 2, 4 and
-14 recurred across ceremonies or skills, so each carries the sharper check that would have caught it.
+Review findings from waves 1, 1a, 2, 3a, 3b, 3c, 4a and 4b. Each cost a fix; none should recur. Items 2, 4
+and 14 recurred across ceremonies or skills, so each carries the sharper check that would have caught it.
 
 1. There are SEVEN layers, not six: root, core, cap, xc, seam, compose, build. `root` is reserved for
    agentic-stack alone (schema enum and validator both know it); count them there before you write the count.
@@ -66,11 +66,10 @@ Review findings from waves 1, 1a, 2, 3a, 3b, 3c and 4a. Each cost a fix; none sh
    than the highest kb/ceremonies/ceremony-NN-review.json on disk. A number a caller hands you that is already
    taken belongs to a closed ceremony; take the next unused one and say so in a numbering_note. The same N ties
    the review, improve, lessons, ledger and known-issues records together (`python3 tools/ceremony_check.py`).
-   Stale six sections running now: list the directory before you write anything.
-8. State an enumeration ONCE per skill and have every other row point at that list rather than re-list it:
-   cap-errors-use named three entry kinds in an invariant while asserting four in the same sentence. TARGET.md
-   T1 lists three ways in (human, agent, event) and T6.2 lists four entries (human, event, schedule, external
-   system or agent); they are different lists, so name which one you are citing.
+   Stale seven sections running now: list the directory before you write anything.
+8. State an enumeration ONCE per skill and have every other row point at that list rather than re-list it.
+   TARGET.md T1 lists three ways in (human, agent, event) and T6.2 four entries (human, event, schedule,
+   external system or agent); they are different lists, so name which one you are citing.
 9. A cap- ideal skill (no -implement or -use suffix) carries its own adapters[] pair and a definition_of_done
    that runs over both and asserts `adapters_run >= 2`. Defer the pair to -implement only when PASS.md's
    adapter-today column is literally *absent*, then say so in an open_question citing that row, as cap-identity
@@ -86,27 +85,28 @@ Review findings from waves 1, 1a, 2, 3a, 3b, 3c and 4a. Each cost a fix; none sh
 13. When your manifest note says the ideal facet "also carries the usability section" there is no -use sibling
    to carry it, so meet the same bar a -use skill does: a worked instance for EACH of TARGET T1's three ways
    in (declared_by / actor `user:`, `agent:`, `service:` or `schedule:`) and a worked rejection as an actual
-   `urn:agentic:problem:` object, not a prose rule pointing at cap-errors. The validator now warns per missing
-   piece. core-document named the rule three times and shipped two producers and no rejection instance.
+   `urn:agentic:problem:` object, not a prose rule pointing at cap-errors. The validator warns per piece.
 14. A problem `type` is not yours to invent. Before you write `urn:agentic:problem:<suffix>` anywhere - a worked
    failure example, an expected_failure, a refusal table - check the suffix against the ten-row closed registry
    in docs/decomposition.md section 2.1.6, and reuse the row that fits (a scope refusal IS `policy-denied`). If
-   none fits, do what core-graph did for `graph-assertion-invalid`: an open_question stating the row you would
-   add, the suffix marked "proposed and pending registration" in the same sentence that states it, and the
-   registered type an implementation returns until the row lands. The validator warns per unmarked suffix: four
-   -use skills in wave 4a minted one, and fourteen skills in earlier waves had done the same unnoticed.
+   none fits, do what core-graph did: an open_question stating the row you would add, the suffix marked
+   "proposed and pending registration" in the same sentence that states it, and the registered type an
+   implementation returns until the row lands. The validator warns per unmarked suffix.
+15. A contract.standards row's `version` is a value a reader scans, not the sentence explaining it: put the
+   version a record actually names, or "unverified", in `version`, and which record named it, whether the
+   specification was fetched and which skill owns the row in `version_note`, which renders as a footnote
+   under the Standards table. The validator warns above 60 characters.
 
-## What worked in waves 1 to 4a - keep doing it
+## What worked in waves 1 to 4b - keep doing it
 
-- Every sourced quote verified as a verbatim substring of its cited record, 73 for 73 in wave 1 and 430 rows
-  for 430 in wave 4a. Copy the quote out of `kb.py show`, never retype it.
+- Every sourced quote verified as a verbatim substring of its cited record, 73 for 73 in wave 1 and 430 for
+  430 in wave 4a; wave 4b invented no problem type at all. Copy the quote out of `kb.py show`, never retype it.
 - Definitions of done were honestly labelled: claimed where the tool does not exist yet, measured only where
   the exact error strings were produced in a run and the session and date are named.
 - Each design rule is a pass/fail test stated once in the root contract and built on, not re-derived; that
   is the pattern to follow for every shared fact.
-- Reviewers re-ran the definitions of done in waves 1a, 3a, 3b and 3c and reproduced the recorded output and
-  exit codes exactly, breakage included, leaving the tree clean. Write the criterion so someone else can run
-  it from the skill alone, and record it as starting red where the capability does not run at all today.
+- Reviewers re-ran the definitions of done in waves 1a to 3c and reproduced the recorded output, exit codes and
+  breakage exactly. Write the criterion so someone else can run it from the skill alone, red where nothing runs.
 
 ## Reply
 

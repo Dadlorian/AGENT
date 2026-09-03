@@ -1,0 +1,344 @@
+{
+  "lens": "entry-composition",
+  "entry_points": [
+    {
+      "actor": "human",
+      "shape": "Interactive session over a typed event stream: the caller opens a session/thread, sends a prompt, and receives a stream of typed events (message deltas, tool-call lifecycle, state snapshots) over HTTP/SSE/WebSocket or JSON-RPC over stdio. Same shape whether the client is a chat UI, an IDE, or a CLI.",
+      "standard": "Agent Client Protocol (JSON-RPC 2.0, editor<->agent) and AG-UI (Agent-User Interaction Protocol, event-stream over HTTP/SSE/WebSockets)",
+      "sources": ["X-entry-composition-008", "X-entry-composition-009", "X-entry-composition-010", "X-entry-composition-020", "X-entry-composition-021"]
+    },
+    {
+      "actor": "human",
+      "shape": "Mid-run approval / input request: the running unit pauses at a defined point, emits a prompt plus a schema for the expected answer, and resumes on a follow-up message keyed by the same correlation id. The decision vocabulary is small (approve, edit, reject, respond).",
+      "standard": "MCP elicitation/create (spec revision 2025-06-18) and the A2A task state input-required; no cross-protocol approval standard found",
+      "sources": ["X-entry-composition-016", "X-entry-composition-014", "X-entry-composition-023", "X-entry-composition-022", "X-entry-composition-054"]
+    },
+    {
+      "actor": "human",
+      "shape": "Manual trigger of a declared unit of work: the same declaration that lists automatic triggers also declares a manual one with typed inputs, and the surface renders those inputs as a form. No separate UI is authored.",
+      "standard": "none found (GitHub Actions workflow_dispatch is prior art, not a standard); RFC 5545 RRULE covers the schedule sibling",
+      "sources": ["X-entry-composition-044", "X-entry-composition-045", "X-entry-composition-049"]
+    },
+    {
+      "actor": "agent",
+      "shape": "Task submission to an addressable endpoint: the caller reads a machine-readable capability advertisement, sends a message, and gets back either an immediate reply or a task with a lifecycle (submitted, working, input-required, completed, canceled, failed) tracked by polling, SSE, or a registered webhook.",
+      "standard": "A2A (Agent2Agent), JSON-RPC 2.0 over HTTPS; Agent Card for discovery; PushNotificationConfig for webhook callback",
+      "sources": ["X-entry-composition-011", "X-entry-composition-012", "X-entry-composition-013"]
+    },
+    {
+      "actor": "agent",
+      "shape": "Tool invocation against a published endpoint: the platform exposes itself as an MCP server at a fixed path, so any MCP-speaking agent discovers and calls its capabilities without writing an integration. Control over model access stays on the client side via sampling.",
+      "standard": "Model Context Protocol (revision 2025-06-18)",
+      "sources": ["X-entry-composition-018", "X-entry-composition-019", "X-entry-composition-017"]
+    },
+    {
+      "actor": "event",
+      "shape": "One envelope, many producers: each producer gets an ingress adapter that converts its native payload into a single internal envelope carrying required context attributes; downstream routing filters on those attributes rather than parsing per-source bodies. Delivery is HTTP POST plus a registration handshake and an authorization model.",
+      "standard": "CloudEvents v1.0.2 (HTTP protocol binding and HTTP webhook specification)",
+      "sources": ["X-entry-composition-001", "X-entry-composition-002", "X-entry-composition-003", "X-entry-composition-004", "X-entry-composition-007"]
+    },
+    {
+      "actor": "event",
+      "shape": "Broker/trigger decoupling: producers emit into a broker, consumers register triggers with attribute filters, and neither knows the other. Schedules and git events are just further producers on the same path; a schedule is a single portable recurrence string.",
+      "standard": "CloudEvents v1.0.2 as the envelope; RFC 5545 RRULE for recurrence; Knative Eventing broker/trigger as prior art, not a standard",
+      "sources": ["X-entry-composition-006", "X-entry-composition-049", "X-entry-composition-057"]
+    },
+    {
+      "actor": "event",
+      "shape": "Everything-is-an-event framing: entry, resumption and human decisions are all events on one bus, so the same wait primitive covers a webhook, an approval and a user action, and queue/worker machinery never reaches the author.",
+      "standard": "none found (Inngest, Restate and ADK ambient agents are convergent prior art)",
+      "sources": ["X-entry-composition-028", "X-entry-composition-029", "X-entry-composition-026", "X-entry-composition-005"]
+    }
+  ],
+  "composition_primitives": [
+    {
+      "name": "Driving adapter onto one port",
+      "what_user_writes": "Nothing at the core; the platform ships one adapter per entry technology (chat/CLI, agent protocol, webhook, schedule, git event) and every adapter calls the same core port.",
+      "hides": "Per-transport parsing, auth, signature verification and retry semantics; lets an entry technology be added or upgraded without touching the core or the other entries.",
+      "prior_art": "Hexagonal architecture (ports and adapters): driving/primary adapters are UIs, HTTP/gRPC requests, CLI commands and test scripts. Argo Events EventSources do this concretely for events.",
+      "sources": ["X-entry-composition-042", "X-entry-composition-043", "X-entry-composition-004"]
+    },
+    {
+      "name": "Trigger declaration",
+      "what_user_writes": "A list of triggers under one key on the unit of work: a push/git event, a schedule string, a manual entry with typed inputs. One declaration, several sibling entries.",
+      "hides": "Listener provisioning, endpoint exposure, form rendering for the manual case, and normalisation of the incoming payload into the shape the body sees.",
+      "prior_art": "GitHub Actions `on:` with push/schedule/workflow_dispatch and declared inputs rendered as form elements; n8n trigger nodes; ADK ambient-agent trigger endpoints that normalise into one JSON structure.",
+      "sources": ["X-entry-composition-044", "X-entry-composition-045", "X-entry-composition-057", "X-entry-composition-005"]
+    },
+    {
+      "name": "Sequence / parallel / loop operators",
+      "what_user_writes": "Three or four deterministic operators over typed steps, either as objects (SequentialAgent, ParallelAgent, LoopAgent) or as a method chain (.then, .parallel, .branch, .dowhile).",
+      "hides": "Scheduling, fan-out/fan-in, result gathering, and iteration bookkeeping; the operators are model-free even when the steps they compose are agents.",
+      "prior_art": "Google ADK workflow agents; Mastra workflow control flow.",
+      "sources": ["X-entry-composition-031", "X-entry-composition-032", "X-entry-composition-033"]
+    },
+    {
+      "name": "Agent + handoff + guardrail",
+      "what_user_writes": "An agent (instructions plus tools), a handoff to delegate to another agent, and a guardrail to validate inputs/outputs. Deliberately a small closed set.",
+      "hides": "The agent loop itself, routing between agents, and validation wiring — while keeping the loop visible enough to debug.",
+      "prior_art": "OpenAI Agents SDK: \"a very small set of primitives ... few enough primitives to make it quick to learn\".",
+      "sources": ["X-entry-composition-030"]
+    },
+    {
+      "name": "Pause / resume (interrupt + command)",
+      "what_user_writes": "One call inside a step to pause with a payload, and one call from outside to resume with a decision. Or, at the smallest scale, one boolean on a tool declaration.",
+      "hides": "Checkpointing, state persistence, who is holding the execution handle (CLI, web UI, API consumer), and the unbounded wait.",
+      "prior_art": "LangGraph interrupt() plus Command(resume=...); Pydantic AI requires_approval=True; Inngest step.waitForEvent; Temporal signal into a running workflow.",
+      "sources": ["X-entry-composition-022", "X-entry-composition-054", "X-entry-composition-029", "X-entry-composition-024"]
+    },
+    {
+      "name": "Durable step",
+      "what_user_writes": "Ordinary sequential code wrapped in a step call; the long human wait is written inline rather than split across jobs.",
+      "hides": "Persistence, memoisation of completed steps, replay after crash or deploy, and retry.",
+      "prior_art": "Inngest step.run/step.waitForEvent with memoised state; Temporal deterministic replay letting \"do work -> wait for human -> continue\" be one workflow.",
+      "sources": ["X-entry-composition-029", "X-entry-composition-025", "X-entry-composition-027"]
+    },
+    {
+      "name": "Capability attachment",
+      "what_user_writes": "One line attaching a capability (durable execution, telemetry, policy) to an already-written agent or workflow; the body is unchanged.",
+      "hides": "The identity of the backing engine, so the same agent runs on any of several durable-execution adapters.",
+      "prior_art": "Pydantic AI: Temporal, DBOS, Prefect and Restate are attached to an agent with a single API attachment.",
+      "sources": ["X-entry-composition-053"]
+    },
+    {
+      "name": "Declarative unit document",
+      "what_user_writes": "A JSON/YAML document naming agents, flows, nodes and tools, portable across runtimes and validated by a schema.",
+      "hides": "Runtime-specific wiring; the same document executes on more than one engine.",
+      "prior_art": "Open Agent Specification (Agent Spec).",
+      "sources": ["X-entry-composition-052"]
+    },
+    {
+      "name": "Packaged capability unit with progressive loading",
+      "what_user_writes": "A directory with one file whose front matter has two required fields (name, description); deeper material lives in optional reference files.",
+      "hides": "Everything past tier one until it is needed — only name and description are resident at startup, the body loads on trigger, references load on use.",
+      "prior_art": "Agent Skills specification and its three-tier progressive disclosure model.",
+      "sources": ["X-entry-composition-035", "X-entry-composition-036"]
+    },
+    {
+      "name": "Shareable module registry",
+      "what_user_writes": "An import of a published module rather than a copied script; composition units are versioned and reused like library code.",
+      "hides": "Distribution, versioning and the internals of the module being composed.",
+      "prior_art": "Daggerverse as a public registry of reusable Dagger modules; Dagger as a runtime for composable workflows in ordinary languages.",
+      "sources": ["X-entry-composition-056", "X-entry-composition-055"]
+    }
+  ],
+  "simplicity_criteria": [
+    {
+      "criterion": "Small, closed set of primitives, and the count is a stated goal rather than an accident",
+      "why": "A leading SDK states the target directly: enough features to be worth using, but few enough primitives to be quick to learn. The counter-case is documented too — deep primitive sprawl is what developers cite when leaving a framework.",
+      "sources": ["X-entry-composition-030", "X-entry-composition-040"]
+    },
+    {
+      "criterion": "Layered surface: one-call default, then options, then an escape hatch",
+      "why": "The practical implementation of progressive disclosure in an API is three tiers — flag, options, closure — with sensible defaults and override rather than mandatory configuration of every parameter.",
+      "sources": ["X-entry-composition-038", "X-entry-composition-039", "X-entry-composition-037"]
+    },
+    {
+      "criterion": "Bounded resident surface: only metadata is loaded until something is needed",
+      "why": "Agent Skills makes this measurable — roughly 30-50 tokens per skill resident at startup, body on trigger, references on use. A budget per tier turns 'simple' into a check.",
+      "sources": ["X-entry-composition-036", "X-entry-composition-035"]
+    },
+    {
+      "criterion": "The minimum implementation is a handful of handlers",
+      "why": "An ACP agent is roughly initialize, newSession and prompt plus a connect call; a skill is one file with two required fields. Counting the required handlers/fields is a concrete measure of how daunting entry is.",
+      "sources": ["X-entry-composition-010", "X-entry-composition-035"]
+    },
+    {
+      "criterion": "No client library of ours is required to enter",
+      "why": "Standard, LSP-shaped JSON-RPC and plain HTTP POST plus a standard envelope mean a caller integrates with tools it already has; a platform that ships an MCP server makes any compliant agent a first-class caller with no bespoke work.",
+      "sources": ["X-entry-composition-009", "X-entry-composition-007", "X-entry-composition-019"]
+    },
+    {
+      "criterion": "One concept per idea, reused across contexts",
+      "why": "One wait primitive covering approval, webhook and user action; one 'trigger' concept covering external events and schedules; one envelope replacing five parsers and five signature schemes.",
+      "sources": ["X-entry-composition-029", "X-entry-composition-057", "X-entry-composition-003"]
+    },
+    {
+      "criterion": "The mechanism stays visible; abstraction must not obscure what is happening",
+      "why": "The recorded complaints about agent frameworks are not about too few features but about high-level constructs that obscure what happens under the hood, introduce non-intuitive patterns, and force the framework's mental model.",
+      "sources": ["X-entry-composition-041", "X-entry-composition-040"]
+    },
+    {
+      "criterion": "Simplicity is relative to assumed baseline knowledge, not to whether the surface is visual",
+      "why": "A visual canvas is still reported as unsuitable for non-technical users when it assumes comfort with APIs, JSON and data structures. The daunting-ness test must name the assumed baseline.",
+      "sources": ["X-entry-composition-058"]
+    },
+    {
+      "criterion": "The long or awkward path is written as the short one",
+      "why": "Durable execution lets an unbounded human wait be expressed as ordinary sequential code that survives restarts, instead of being split into jobs and reassembled by the author.",
+      "sources": ["X-entry-composition-025", "X-entry-composition-029"]
+    },
+    {
+      "criterion": "Declared inputs generate the human surface",
+      "why": "A manual trigger with declared inputs is rendered as form elements automatically, so a human entry point costs a schema rather than a UI project.",
+      "sources": ["X-entry-composition-045", "X-entry-composition-016"]
+    }
+  ],
+  "gaps_vs_pass": [
+    {
+      "gap": "Part B names no standard for the interactive human surface. B3 covers Work intake (A2A, CloudEvents) and Agent runtime (ACP, which is the platform driving an agent), but nothing governs the chat/CLI/approval-screen channel a person actually holds — the streaming event shape, session identity, and how a person sees progress. T1.1 is therefore satisfied only as 'submit a job', not as 'enter the system'.",
+      "target_requirement": "T-t1-01",
+      "pass_section": "B3",
+      "proposed_capability": "Human interaction surface — one capability interface for an interactive session that streams typed events (message, tool-call lifecycle, state snapshot) to whatever client a person is holding, with a CLI adapter and a browser/SSE adapter as the required pair.",
+      "proposed_layer": "cap",
+      "governing_standard": "AG-UI (Agent-User Interaction Protocol) over HTTP/SSE/WebSockets; Agent Client Protocol for the editor-shaped client",
+      "sources": ["X-entry-composition-020", "X-entry-composition-021", "X-entry-composition-008", "X-entry-composition-010"]
+    },
+    {
+      "gap": "Approval / human-in-the-loop appears nowhere in Part B — not as a capability in B3, not as a cross-cutting concern in B4, not as a seam in B5. Yet a platform where a person must enter mid-run needs a defined pause point, a schema for what is being asked, a resume path keyed to the unit, and a bounded decision vocabulary. Part B's Judge is about grading a finished result, not about pausing for a person.",
+      "target_requirement": "T-t1-01",
+      "pass_section": "none",
+      "proposed_capability": "Interaction/approval — a pause primitive that emits (prompt, response JSON Schema, correlation id) and a resume primitive that accepts one of approve / edit / reject / respond, with the state checkpointed by the platform.",
+      "proposed_layer": "cap",
+      "governing_standard": "MCP elicitation/create (2025-06-18) for the schema-typed ask; A2A task state input-required plus follow-up on the same context id for the pause/resume path",
+      "sources": ["X-entry-composition-016", "X-entry-composition-014", "X-entry-composition-023", "X-entry-composition-022", "X-entry-composition-054"]
+    },
+    {
+      "gap": "B3's Agent runtime row is outbound only — ACP with goose as adapter is the platform driving an agent. Nothing in Part B obliges the platform to be enterable BY an external agent: no Agent Card to publish, no task lifecycle to honour, no PushNotificationConfig to accept, no MCP server surface. T1.2 requires the inbound direction.",
+      "target_requirement": "T-t1-02",
+      "pass_section": "B3",
+      "proposed_capability": "Agent ingress — the platform serves an A2A endpoint (Agent Card, message send, task lifecycle, push-notification registration) and an MCP server endpoint, so an external agent enters with tools it already has.",
+      "proposed_layer": "seam",
+      "governing_standard": "A2A (JSON-RPC 2.0 over HTTPS) and Model Context Protocol 2025-06-18",
+      "sources": ["X-entry-composition-011", "X-entry-composition-012", "X-entry-composition-013", "X-entry-composition-018", "X-entry-composition-019"]
+    },
+    {
+      "gap": "Part B never states a single internal entry envelope. B3's Work intake row lists four adapters (CLI, git event, HTTP, schedule) but not the shape they normalise onto, and human and agent entries are in different rows entirely. Without one envelope, T2.3's 'whichever entry point was used' has nothing to hang on and every cross-cutting concern must be re-implemented per adapter.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B3",
+      "proposed_capability": "Entry envelope — one internal record every driving adapter produces, carrying the CloudEvents required context attributes (id, source, specversion, type) plus actor, correlation id, budget ceiling and idempotency key; all routing and all cross-cutting concerns read only this record.",
+      "proposed_layer": "seam",
+      "governing_standard": "CloudEvents v1.0.2 core context attributes and HTTP protocol binding",
+      "sources": ["X-entry-composition-001", "X-entry-composition-003", "X-entry-composition-004", "X-entry-composition-005", "X-entry-composition-015"]
+    },
+    {
+      "gap": "Part B has no composition primitives at all. B2's five core components are data (Document), pure functions (Planner, Judge), a graph and a ledger — none of which is something a user writes to express 'do these in order', 'fan out', 'loop until', or 'ask a human here'. T2.1 says composability hides complexity, but Part B does not say what the user composes with. Every comparable framework exposes three to six such operators.",
+      "target_requirement": "T-t2-01",
+      "pass_section": "B2",
+      "proposed_capability": "Composition operators — a closed set of deterministic, model-free operators (sequence, parallel, loop/until, branch, approve) over typed steps, expressible both as document steps and as a chained API, with the operator being the single place cross-cutting concerns attach.",
+      "proposed_layer": "compose",
+      "governing_standard": "none found as a standard; Open Agent Specification is the nearest declarative prior art, ADK workflow agents and Mastra control flow the nearest API prior art",
+      "sources": ["X-entry-composition-031", "X-entry-composition-032", "X-entry-composition-033", "X-entry-composition-052", "X-entry-composition-030"]
+    },
+    {
+      "gap": "B1's seven design rules are entirely about swappability and none is about learnability. Nothing in Part B bounds how much a user must know, states a default-first/options/escape-hatch layering, or sets a budget for resident surface. T3.1 and T3.2 are therefore unfalsifiable as written — there is no test a daunting design would fail.",
+      "target_requirement": "T-t3-01",
+      "pass_section": "B1",
+      "proposed_capability": "An eighth design rule plus its check: the common case is one call or one declaration with defaults; options are additive; an escape hatch hands full control back. Machine-checkable as (a) count of concepts needed for a first successful run, (b) resident metadata budget per unit, (c) required handlers/fields for a minimum implementation.",
+      "proposed_layer": "build",
+      "governing_standard": "none found; progressive disclosure as a named pattern, with Agent Skills' three-tier model as the measurable instance",
+      "sources": ["X-entry-composition-037", "X-entry-composition-038", "X-entry-composition-039", "X-entry-composition-036", "X-entry-composition-010"]
+    },
+    {
+      "gap": "B1 rule 4 ('A caller needs no client library we wrote') is asserted but has no entry-point test. T3.2's 'no one will use it' failure mode is exactly the one this rule guards against, and Part C's demand for a machine-checkable definition of done plus deliberate breakage is not applied to entry.",
+      "target_requirement": "T-t3-02",
+      "pass_section": "B1",
+      "proposed_capability": "Entry conformance suite — for each of the three actors, a run that enters the platform using only third-party tooling (a plain HTTP client posting a CloudEvent, an off-the-shelf A2A/MCP client, a terminal), plus a deliberately broken adapter that the suite must fail on.",
+      "proposed_layer": "build",
+      "governing_standard": "CloudEvents v1.0.2, A2A, MCP 2025-06-18 conformance",
+      "sources": ["X-entry-composition-007", "X-entry-composition-019", "X-entry-composition-009", "X-entry-composition-041"]
+    },
+    {
+      "gap": "B3 marks Identity 'absent' while B4 requires every action to name an actor with explicit delegation chains. Identity has to be established at the entry adapter — that is the only place the human, the calling agent, and the event producer are distinguishable — so an absent Identity adapter is specifically an entry-surface hole, not a later concern.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B4",
+      "proposed_capability": "Actor binding at entry — each driving adapter attaches an actor and, where the caller is acting for someone, a delegation chain, onto the entry envelope before any planning or spend.",
+      "proposed_layer": "xc",
+      "governing_standard": "RFC 8693 OAuth 2.0 Token Exchange — the act claim, nested to express a delegation chain",
+      "sources": ["X-entry-composition-048", "X-entry-composition-042", "X-entry-composition-015"]
+    },
+    {
+      "gap": "B3 marks Errors 'absent' and B4 requires typed, machine-readable errors. With three different entry protocols, a refusal or failure must render identically to a human client, an agent client and a webhook caller, or each entry grows its own error dialect. Part B does not say the error shape is shared across entry points.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B3",
+      "proposed_capability": "One problem-detail type registry used by every driving adapter, so a policy refusal, a budget termination and a validation failure carry the same machine-readable type whichever way the caller entered.",
+      "proposed_layer": "xc",
+      "governing_standard": "RFC 9457 Problem Details for HTTP APIs (July 2023)",
+      "sources": ["X-entry-composition-046", "X-entry-composition-042"]
+    },
+    {
+      "gap": "B3's Idempotency row admits 'key on the wire, no lease', and B4 requires every externally-triggered action to be safe to replay. Three entry actors means three key-derivation problems: a human retry, an agent resend, and a webhook redelivery are not the same event, and the standard already anticipates this with the idempotency fingerprint.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B4",
+      "proposed_capability": "Keyed lease store behind the Idempotency capability, with a per-adapter key derivation rule (caller-supplied key where the protocol carries one, fingerprint of selected payload elements where it does not) and attach-to-in-flight semantics on duplicate.",
+      "proposed_layer": "xc",
+      "governing_standard": "draft-ietf-httpapi-idempotency-key-header-07 (Idempotency-Key field and idempotency fingerprint)",
+      "sources": ["X-entry-composition-047", "X-entry-composition-027", "X-entry-composition-002"]
+    },
+    {
+      "gap": "Part B assumes that adopting standards at the boundary delivers the B4 guarantees. It does not: the interoperability protocols can carry governance-related messages as opaque payloads but cannot interpret, validate or enforce their semantics. B1 rule 2 ('adopt the standard whole') therefore under-specifies the entry adapter, which must enforce budget, policy and audit itself.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B4",
+      "proposed_capability": "Entry gate — a single point through which every driving adapter passes, applying policy decision, budget ceiling assignment, provenance stamping and telemetry attribute injection before the Planner sees the request; adopting a protocol never bypasses it.",
+      "proposed_layer": "xc",
+      "governing_standard": "Rego/OPA for the decision; OTLP with GenAI semantic conventions for the attributes; the protocols themselves supply no governance semantics",
+      "sources": ["X-entry-composition-059", "X-entry-composition-060", "X-entry-composition-050"]
+    },
+    {
+      "gap": "B3 adopts 'OTLP · GenAI semantic conventions' as a governing standard without noting maturity. Every gen_ai.* attribute, span, metric and event in the official registry is still Development status, so a design that binds correlation and cross-cutting telemetry tightly to those names inherits their churn — particularly at entry, where the correlation attributes are minted.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B3",
+      "proposed_capability": "Pin the GenAI convention version in the telemetry adapter and keep the platform's own correlation attributes (entry id, actor, delegation chain, budget) independent of it, so a convention revision changes one adapter and not the entry envelope.",
+      "proposed_layer": "cap",
+      "governing_standard": "OTLP; OpenTelemetry GenAI semantic conventions (Development status as of mid-2026)",
+      "sources": ["X-entry-composition-051", "X-entry-composition-050", "X-entry-composition-015"]
+    },
+    {
+      "gap": "B3's Scheduling row names RFC 5545 recurrence rules with Temporal schedules as the adapter, but nothing connects a firing schedule to the entry path: a schedule that fires must produce the same envelope, actor and idempotency key as any other entry, or the platform has a fourth, privileged way in. Part B also does not say a human manual trigger is the sibling of the schedule.",
+      "target_requirement": "T-t1-03",
+      "pass_section": "B3",
+      "proposed_capability": "Schedules and manual triggers declared as sibling entries on the same unit, both producing the standard entry envelope; the schedule as a single portable recurrence string and the manual trigger as a typed input schema the surface renders.",
+      "proposed_layer": "compose",
+      "governing_standard": "RFC 5545 RRULE for recurrence; CloudEvents v1.0.2 for the produced envelope",
+      "sources": ["X-entry-composition-049", "X-entry-composition-044", "X-entry-composition-045", "X-entry-composition-001"]
+    },
+    {
+      "gap": "B2's Document is described only as 'declared intent, definition of done, steps' with JSON Schema 2020-12 validation. There is no statement that the document is the same artifact whichever entry point produced it, no portability target, and no relationship between 'steps' and any composition operator. This is the artifact a user actually writes, and it is the least specified thing in Part B relative to T3.1.",
+      "target_requirement": "T-t3-01",
+      "pass_section": "B2",
+      "proposed_capability": "One Document schema that every entry adapter produces and that carries the composition operators as its step vocabulary, so a human, an agent and an event all yield the same declarable artifact and the same thing is reviewable, diffable and replayable.",
+      "proposed_layer": "core",
+      "governing_standard": "JSON Schema 2020-12 for validation; Open Agent Specification as the portability prior art",
+      "sources": ["X-entry-composition-052", "X-entry-composition-005", "X-entry-composition-026"]
+    },
+    {
+      "gap": "Part B has no capability-packaging story for composition units beyond 'skill files'. B3's Capability packaging row names the Agent Skills spec, but nothing says composition units (workflows, loops, agents) are packaged, versioned and discoverable the same way — which is what makes composition scale past one repository and what makes progressive disclosure enforceable per unit.",
+      "target_requirement": "T-t2-01",
+      "pass_section": "B3",
+      "proposed_capability": "Uniform packaging for every composable unit — one file with required name and description resident, body on trigger, references on use — published to a registry rather than copied, with the tier budgets as the machine-checkable simplicity test.",
+      "proposed_layer": "compose",
+      "governing_standard": "Agent Skills specification (three-tier progressive disclosure)",
+      "sources": ["X-entry-composition-035", "X-entry-composition-036", "X-entry-composition-056"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Should the internal entry envelope literally be a CloudEvent (specversion/id/source/type plus extension attributes), or a platform record that a CloudEvents adapter maps onto? A literal CloudEvent buys off-the-shelf routing and filtering; a platform record avoids forcing human turns and agent tasks into an event shape they do not naturally have.",
+      "deciding_evidence": "A worked mapping of an ACP/AG-UI interactive turn and an A2A task-status change onto CloudEvents context attributes, showing whether required attributes (source, type) can be filled without inventing values, plus a measurement of whether attribute-based routing actually gets used for human entries."
+    },
+    {
+      "question": "Is there a standard for the human-facing surface that this platform should adopt whole under B1 rule 2, or is AG-UI still too young and CopilotKit-centred to be a governing standard rather than a candidate adapter?",
+      "deciding_evidence": "Governance and adoption evidence for AG-UI comparable to what exists for A2A (donated to the Linux Foundation, versioned specification, multiple independent implementations); absent that, the interface should be ours with AG-UI as one of two adapters."
+    },
+    {
+      "question": "Does approval belong as its own capability interface, as a cross-cutting concern in B4, or as a composition operator? The prior art splits: MCP and A2A treat it as a protocol state, LangGraph and Inngest treat it as a primitive inside the flow, Pydantic AI treats it as tool metadata.",
+      "deciding_evidence": "Write the same approval three ways against the proposed core and check which one keeps the Planner pure (B1 rule 5) and keeps the criterion invisible to the graded agent (B1 rule 6) — an approval expressed as a step is visible to the agent in a way a platform-applied gate is not."
+    },
+    {
+      "question": "How many composition operators are enough? ADK ships three plus LLM routing, Mastra ships four chainable methods, the OpenAI Agents SDK ships three primitives and no explicit control flow at all.",
+      "deciding_evidence": "Express the platform's own build sequence (Part C item 1) using each candidate operator set and count the cases that need an escape hatch; the smallest set with no escape hatch in the common cases wins."
+    },
+    {
+      "question": "What is the honest baseline knowledge this platform assumes, and does the target audience have it? 'Simple' was shown to be relative to assumed comfort with APIs, JSON and data structures, not to whether the surface is visual.",
+      "deciding_evidence": "A stated persona plus a timed first-run measurement: time and concept count from zero to a successful run for each of the three entry actors, with a pass threshold declared before the measurement."
+    },
+    {
+      "question": "Can B5's Dispatch contract be satisfied by adopting the A2A task lifecycle rather than designing an original request/result shape? B5 claims no standard exists, but A2A already specifies states, cancellation, structured payloads and a webhook callback for exactly one unit of agent work.",
+      "deciding_evidence": "A clause-by-clause check of B5's six required Dispatch elements (request shape, result shape, cancellation, timeout and budget enforcement, partial results, failure return) against the A2A specification, listing which are absent — budget enforcement and typed failure are the likely holes, and the governance-gap analysis predicts they are."
+    },
+    {
+      "question": "Should the platform's entry adapters emit provenance at entry (who entered, with what inputs, under which code version) or only at artifact production, given B4 requires attribution verifiable with a tool we did not write?",
+      "deciding_evidence": "An attempt to verify an end-to-end chain with an off-the-shelf attestation verifier for a run entered three different ways; if the entry step is missing the chain does not resolve to an actor."
+    }
+  ]
+}

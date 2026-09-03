@@ -11,7 +11,7 @@ Every shape here is JSON Schema 2020-12, the dialect named in the skill's Standa
 | `sequence` | `op` `id` `steps` | `steps[]` | order: each child sees the results of the ones before it | proposed |
 | `parallel` | `op` `id` `branches` | `branches[]` | fan-out and fan-in; `tolerate.failed` is how many units may fail | proposed |
 | `loop` | `op` `id` `max_iterations` `exit_when` `body` | `body` | bounded repetition with three terminations | proposed |
-| `approval` | `op` `id` `asks` `view` `decisions` `returns` | none | park, and resume on a decision returned on the same correlation id | proposed |
+| `approval` | `op` `id` `asks` `view` `decisions` `returns` | none | park, and resume on a decision returned on the same correlation id; `decisions` is the four-member enum compose-approval's ApprovalGate.outcomes states (`approve`, `edit`, `reject`, `return_with_notes`), and `return_to_step_id` is required when `return_with_notes` is included | proposed |
 | `agent` | `op` `id` `agent` `input_from` `task` | none | one call to a declared profile; the profile picks the model class | proposed |
 | `judge` | `op` `id` `of` `criterion_ref` | none | grade a step against a criterion the graded step never sees | proposed |
 
@@ -94,16 +94,18 @@ Six rows, and the set is closed: `python3 tools/kb.py show REF-1-02` is the rule
       "type": "object",
       "additionalProperties": false,
       "required": ["op", "id", "asks", "view", "decisions", "returns"],
-      "description": "Park the unit and wait for a person to return a decision on the same correlation id. The wait is not a budget cost. `view` is required: a gate with no view is not decidable (REF-10-05).",
+      "description": "Park the unit and wait for a person to return a decision on the same correlation id. The wait is not a budget cost. `view` is required: a gate with no view is not decidable (REF-10-05). `decisions` is this operator's caller-facing narrowing of compose-approval's ApprovalGate.outcomes - the identical four-member enum, return_with_notes included - and `return_to_step_id` is required whenever `return_with_notes` is one of the declared decisions, naming the step re-entered with the decider's notes (compose-approval's ApprovalGate.return_to_step_id).",
       "properties": {
         "op": {"const": "approval"},
         "id": {"$ref": "#/$defs/id"},
         "asks": {"type": "string", "minLength": 1},
         "view": {"type": "string", "minLength": 1},
         "decisions": {"type": "array", "minItems": 2,
-                      "items": {"enum": ["approve", "edit", "reject"]}},
+                      "items": {"enum": ["approve", "edit", "reject", "return_with_notes"]}},
         "returns": {"type": "object", "additionalProperties": false, "required": ["fields"],
                     "properties": {"fields": {"type": "object"}}},
+        "return_to_step_id": {"type": "string",
+                    "description": "Required when decisions includes return_with_notes."},
         "on_reject": {"enum": ["stop", "continue"], "default": "stop"}
       }
     },

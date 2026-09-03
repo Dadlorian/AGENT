@@ -129,9 +129,26 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
         "decisions",
         "returns"
       ],
+      "description": "decisions is this operator's caller-facing narrowing of compose-approval's ApprovalGate.outcomes: same four-member enum, same return_with_notes value. return_to_step_id is required when decisions includes return_with_notes, matching compose-approval's ApprovalGate.return_to_step_id.",
       "properties": {
         "op": {
           "const": "approval"
+        },
+        "decisions": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "enum": [
+              "approve",
+              "edit",
+              "reject",
+              "return_with_notes"
+            ]
+          }
+        },
+        "return_to_step_id": {
+          "type": "string",
+          "description": "The step re-entered with the decider's notes when return_with_notes fires; required exactly when decisions includes return_with_notes (compose-approval's GateOutcome.outcome=return_with_notes)."
         }
       }
     },
@@ -179,7 +196,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**termination (proposed shape for the machine-readable fields the loop and fan-out invariants below name)** (proposed; sources: -)
+**termination (proposed shape for the machine-readable fields the loop and fan-out invariants below name; reason reuses compose-loop's LoopOutcome.terminated_by vocabulary verbatim rather than re-deriving it)** (proposed; sources: -)
 
 ```json
 {
@@ -199,13 +216,13 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
     },
     "reason": {
       "enum": [
-        "exit_verdict",
+        "verdict_pass",
         "iteration_ceiling",
         "budget_ceiling",
         "tolerate_exceeded",
-        "cap",
         "approval_rejected"
-      ]
+      ],
+      "description": "verdict_pass, iteration_ceiling and budget_ceiling are compose-loop's own three LoopOutcome.terminated_by values, named identically here so a nested loop and a bare compose-loop declaration report the same string for the same event. tolerate_exceeded (parallel) and approval_rejected (approval) are this operator set's own reasons; compose-loop never emits either. There is no separate bare 'cap' value: a cap termination is always one of iteration_ceiling or budget_ceiling."
     },
     "outcome": {
       "enum": [
@@ -213,7 +230,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
         "failure",
         "escalated"
       ],
-      "description": "A stop is a success and a cap is an escalation; collapsing them into one halt loses the difference."
+      "description": "Extends compose-loop's two-way stop/cap split rather than replacing it: verdict_pass is a stop and reports success; iteration_ceiling and budget_ceiling are a cap and report escalated. failure is a third, non-escalating class that applies only to tolerate_exceeded and approval_rejected - reasons a bare compose-loop declaration never produces - so a loop nested inside a composition still only ever reports success or escalated, exactly as compose-loop's own outcome space requires."
     },
     "iterations_run": {
       "type": "integer",
@@ -265,6 +282,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
       "type": "boolean",
       "default": false,
       "description": "A caller override is legal and is recorded; it is never silent."
+    },
+    "non_conformant": {
+      "type": "boolean",
+      "default": false,
+      "description": "Set true whenever override is true. REF-3-2-11 states an override is legal, logged, and tagged non-conformant; this field is where that tag is written, so the record captures not only that an override happened but that it is marked as one."
     }
   }
 }
@@ -277,13 +299,14 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: the operator set is closed and its vocabularies are open. core-document already states the closed-schema, open-vocabulary rule for the declared artifact (REF-1-01, REF-1-02); the consequence for the step vocabulary is exact - a new capability widens what the agent, criterion_ref, view or profile field of an existing operator may legally say, and never adds a seventh operator, because a seventh operator is new syntax in the one place a caller has to learn. | proposed | `REF-1-01`, `REF-1-02`, `REF-1-03` "No field is added, and no syntax is added to the call." |
 | Proposed: operators nest because a step is itself a document. core-document states the recursion (REF-2-05); the consequence here is mechanical - every operator's child slot takes any step, including one of its own kind, so a sub-plan needs no second format, nothing is translated between levels, and depth is a property of the instance rather than of the schema. | proposed | `REF-2-05` "There is no separate plan format and task format, and nothing is translated between levels." |
 | Proposed: the operators are model-free and deterministic. Which child runs next is decided by the document and by verdicts already recorded, never by a model reading the situation, so the same document over the same results always takes the same path; prior art shows deterministic composition is separable from model choice even when the nodes being composed are agents. | proposed | `X-entry-composition-032`, `X-entry-composition-031` "is deterministic in how it executes its sub-agents" |
-| Proposed: every loop is bounded, and there is no unbounded loop operator to write. A loop ends on its exit verdict, on its iteration ceiling, or on the budget ceiling, whichever comes first, and the termination record names which of the three fired; PASS.md B4 fixes the third of those, since exceeding a ceiling terminates the unit rather than the platform. | proposed | `F-b4-02`, `X-compose-loop-001` "Exceeding it terminates the unit, not the platform" |
-| Proposed, following the reference example in docs/reference/composable-plan.md: a stop and a cap are opposites and are never collapsed into one halt. A stop firing means the step is done and terminates it as a success; a cap firing means the step ran long and terminates it as a failure that escalates to a human, and one shared halt loses exactly the difference a reader needs. | proposed | `REF-5-3-08`, `REF-5-3-03`, `REF-5-3-04` "are opposites and must not be collapsed" |
+| Proposed: every loop is bounded, and there is no unbounded loop operator to write. compose-loop states the vocabulary once, as LoopOutcome.terminated_by: a loop ends on verdict_pass, on iteration_ceiling, or on budget_ceiling, whichever comes first, and this operator's termination record reuses those three names rather than re-deriving them; PASS.md B4 fixes the third of those, since exceeding a ceiling terminates the unit rather than the platform. | proposed | `F-b4-02`, `X-compose-loop-001` "Exceeding it terminates the unit, not the platform" |
+| Proposed, following the reference example in docs/reference/composable-plan.md and stated identically by compose-loop's termination_class invariant: a stop and a cap are opposites and are never collapsed into one halt. A stop firing (verdict_pass) means the step is done and terminates it as a success; a cap firing (iteration_ceiling or budget_ceiling) means the step ran long and terminates it as a failure that escalates to a human, and one shared halt loses exactly the difference a reader needs. | proposed | `REF-5-3-08`, `REF-5-3-03`, `REF-5-3-04` "are opposites and must not be collapsed" |
 | Proposed, following the same reference: failure tolerance belongs to the fan-out, not to the unit and not to the plan, so the tolerate member sits on the parallel operator and nowhere else. On a unit you cannot say that any failure is fatal, and on a plan you cannot say that two of forty may fail; the fan-out is the only level where the count means anything. | proposed | `REF-5-3-07`, `REF-5-3-02` "Failure tolerance is a property of the fan-out, not the unit and not the plan." |
 | Proposed: depth is bounded and the bound is checked while the composition is resolved, not while it runs. core-graph already states this for the typed structure (REF-5-2-13); the consequence for the vocabulary is that a nested operator that would pass the limit is refused before any step executes, which is the only point at which refusing is free. | proposed | `REF-5-2-13`, `REF-5-3-05` "A sub-plan that would nest past the limit is refused before anything executes." |
 | Proposed: cost sums up the tree. Every operator declares its own cost contribution and a parent's estimate is the sum of its children's, never a figure of the parent's own, so a nested composition can be reconciled rather than trusted; the transferable test is to price a three-level composition, price each child independently, and add them up. | proposed | `REF-5-2-12`, `REF-5-2-14` "A parent estimate that is its own guess rather than the sum of its children is fiction the moment anything nests." |
 | Proposed: every operator field a caller did not write resolves from exactly one of three layers, in a precedence that is fixed and total. cap-consumption states the precedence for the platform as a whole (REF-3-2-11); the consequence here is per field and per step - the caller's override first, then the capability default the operator's verb brings with it, then the platform default - and resolved_default returns which one answered, so no value in a composed document is magic. | proposed | `REF-3-2-11`, `REF-3-1-01` "caller override, then capability default, then platform default" |
 | Proposed: no operator mints root work. cap-consumption states that of the four entries the internal one steers and never starts (REF-3-4-15); the consequence for composition is that a loop, a judge verdict or an approval decision may steer the run it is already inside and may never open a new one, so every unit of work still traces to the human, schedule or outside event that entered, and a self-improving composition has a ceiling it cannot raise from within. | proposed | `REF-3-4-15`, `REF-3-4-10` "Every unit of work therefore traces back to a person, a clock, or an outside event." |
+| Proposed: the approval operator's decisions enum is the caller-facing narrowing of compose-approval's own four-outcome vocabulary, never an independent one. compose-approval states as an invariant that a gate has exactly four outcomes and only one of them, return_with_notes, puts work back into the graph; this operator's decisions enum names the identical four values, and a decisions array containing return_with_notes requires return_to_step_id, naming the step re-entered with the decider's notes, exactly as compose-approval's ApprovalGate.return_to_step_id does for a full gate record. Fields this operator does not carry - decider, deadline_at, response_schema - resolve from the platform default the approval capability applies rather than from the caller, per the resolved_default precedence invariant above. | proposed | `F-a2-01`, `REF-3-2-11` |
 
 ### Deliberately not exposed
 

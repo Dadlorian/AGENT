@@ -1,0 +1,33 @@
+{
+  "harness": "xc-enforcement-chain",
+  "owner_skill": "xc-enforcement-chain-implement",
+  "co_skills": ["xc-enforcement-chain", "cap-work-intake-implement", "cap-consumption"],
+  "blueprint_tool_entry": "the four producers and the one envelope PASS.md and the end-to-end example carry today: CLI, git event, HTTP and schedule behind one work-intake capability (F-b3-08), driven by examples/end-to-end/run.py, which applies correlation, identity, budget, idempotency, provenance and typed errors in order without the caller asking. The points the chain is built on are the blueprint's approve.service, OPA, host-side model broker and gateway-litellm-1 entries",
+  "capability": "enforcement chain",
+  "standard": "none adopted; the ordered chain of cross-cutting checks every entry passes is this repo's design, stated by TARGET T2.3 and T6.2 and by the concerns table of PASS.md B4 (F-b4-01), with RFC 9457 problem details as the one refusal shape (docs/decomposition.md 2.1.6)",
+  "kb_ids": ["T-t2-03", "T-t6-02", "F-b4-01", "F-b1-02", "F-b1-04", "F-b1-08", "F-b3-08",
+             "F-a1-05", "F-a2-01", "F-a3-07", "F-a3-08", "F-a4-07", "F-a5-03", "F-a5-04",
+             "F-a6-04", "F-a6-05", "F-a6-06", "F-part-c-04", "F-part-c-11"],
+  "research_ids": ["X-cross-structure-020"],
+  "entities": ["E-concern-budget", "E-concern-identity", "E-concern-policy", "E-concern-provenance",
+               "E-concern-telemetry", "E-concern-errors", "E-concern-idempotency", "E-rule-b1-7",
+               "E-not-running-identity", "E-not-running-typed-errors",
+               "E-not-running-policy-in-the-gate-path", "E-host-unit-approve-service",
+               "E-swap-candidate-out-of-process-enforcement-sidecar"],
+  "measured": {
+    "dryrun": "conformance PASSED: 13/13 against the in-process point: adapter=in-process chain ways_in=human,event,schedule,external points=admission,dispatch,call units_checked=104 metered_units=96 slots_missing=0 out_of_order=0 missing_inverse=0 ungated_metered_calls=0 chain_context_missing=0 slots_noop_by_absent_owner=592",
+    "swap": "conformance PASSED: 26/26 with --adapter dryrun --adapter second, adapters_run=2, 3 axes differing (locus_of_traversal, processes_required_for_progress, reach_over_unmodified_workloads), identical chain records digest from both enforcement points, and no code change between the two runs (same tree hash before and after)",
+    "breakage": "one door unbound from the admission point: exit 1 with chain_context_missing=26 and ungated_metered_calls=26 for the event door alone, 0 on both counts for human, schedule and external, units_checked=104, adapters_run=2, and the 26 unbound calls still spending in process while the out-of-process point refused every one of them",
+    "gate": "bash harness/xc-enforcement-chain/test.sh -> passed 36, failed 0"
+  },
+  "claimed": [
+    "live mode until run on the host: the approval unit at admission, the decision engine, the gateway's scoped key and the host broker are reached only through the environment variables in README.md, and nothing about their routes or payloads is on file",
+    "the second enforcement point as an operator-run admission endpoint (CHAIN_EDGE_URL): the placement, the refusal of anything it did not issue and the refusal when it is unreachable are measured here as a child process, not against a deployed sidecar",
+    "the slot list, the three points and the chain-context shape are marked proposed in xc-enforcement-chain: PASS.md B4 states the cross-cutting concerns as a table of contracts, not as a chain of calls",
+    "`enforced_by` is this harness's one declared extension member of the problem object; the registry rows themselves are the closed set in docs/decomposition.md 2.1.6"
+  ],
+  "notes": [
+    "Three of the six slots have no owner running on this host (identity, policy, and typed errors as a capability): they record a no-op with the reason and are counted as slots_noop_by_absent_owner=592 over the corpus. They are never reported as passed, and a slot that did report passed with no owner running is counted as fail_open_slots.",
+    "Tenancy and correlation are not extra slots: the principal is bound at identity.resolve and refused at policy.decide and budget.reserve (xc-tenancy), and the correlation is stamped at telemetry.open and carried into provenance.open (xc-correlation)."
+  ]
+}

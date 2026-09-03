@@ -1,0 +1,566 @@
+{
+  "instrument": "Future-State Conformance Questionnaire",
+  "version": "1.0",
+  "grades": "a future-state architecture deliverable produced in response to the brief",
+  "angle_templates": {
+    "declaration": {
+      "label": "Declaration",
+      "template": "Where does the deliverable state the contract for **{name}**? Quote the contract, not a description of it.",
+      "fails_when": "the property is named but never specified"
+    },
+    "demonstration": {
+      "label": "Demonstration",
+      "template": "Show one worked case of **{name}** in operation, including what it refuses or how it fails. A happy path alone does not answer this.",
+      "fails_when": "the property is specified but never exercised, so its edges are unknown"
+    },
+    "falsification": {
+      "label": "Falsification",
+      "template": "What observation would prove **{name}** is not true of this design, and what in the deliverable could be inspected or run to attempt it?",
+      "fails_when": "the property is unfalsifiable, which makes it an intention rather than a contract"
+    },
+    "substitution": {
+      "label": "Substitution",
+      "template": "Name a second adapter for **{name}** that is materially different from the first, and state what about the interface would have to change if it were adopted. If nothing would change, say how you know.",
+      "fails_when": "the interface is shaped around its current implementation and only looks swappable"
+    }
+  },
+  "properties": [
+    {
+      "id": "R1",
+      "source": "B1 rule 1",
+      "group": "Design rules",
+      "name": "the core importing interfaces and never implementations",
+      "answered_by": "the core's import surface, module boundary, or dependency declaration",
+      "angles": ["declaration", "demonstration", "falsification"],
+      "overrides": {
+        "falsification": {
+          "question": "Name one implementation type that appears anywhere in the core's own signatures. If none does, state how that is enforced rather than merely intended.",
+          "why": "An architecture diagram showing interfaces is not evidence; the import surface is. A rule with no enforcement point degrades on the first deadline."
+        }
+      }
+    },
+    {
+      "id": "R2",
+      "source": "B1 rule 2",
+      "group": "Design rules",
+      "name": "each interface naming the standard that governs it",
+      "answered_by": "the capability table's standard column, with version",
+      "angles": ["declaration", "demonstration", "falsification"],
+      "overrides": {
+        "falsification": {
+          "question": "For each interface where a standard is cited, was the standard's relevant section actually read, and which section? For each where none is cited, what was searched?",
+          "why": "A standard named but unread is a citation, not an adoption. Sixty-six novelty claims in a comparable exercise turned out to be recall rather than retrieval, and one genuine fetch overturned a claim outright."
+        }
+      }
+    },
+    {
+      "id": "R3",
+      "source": "B1 rule 3",
+      "group": "Design rules",
+      "name": "swappability as a tested property rather than an intention",
+      "answered_by": "a second adapter design per interface, not a list of candidate product names",
+      "angles": ["declaration", "demonstration", "falsification"],
+      "overrides": {
+        "demonstration": {
+          "question": "For one interface, show the second adapter in enough detail that its differences from the first are visible. Naming a product is not a second adapter.",
+          "why": "The brief's own table already lists swap candidates. Restating that list proves nothing that was not already true before the work started."
+        },
+        "falsification": {
+          "question": "Which interface would be hardest to re-adapt, and what specifically about its shape makes that so?",
+          "why": "A design where every interface is claimed equally swappable has not been tested against any of them."
+        }
+      }
+    },
+    {
+      "id": "R4",
+      "source": "B1 rule 4",
+      "group": "Design rules",
+      "name": "a caller needing no client library we wrote",
+      "answered_by": "the integration surface a third party would code against",
+      "angles": ["declaration", "demonstration", "falsification"]
+    },
+    {
+      "id": "R5",
+      "source": "B1 rule 5",
+      "group": "Design rules",
+      "name": "cost being knowable before commitment, with planning as a pure function",
+      "answered_by": "the planner's signature and its declared side-effect freedom",
+      "angles": ["declaration", "demonstration", "falsification"],
+      "overrides": {
+        "falsification": {
+          "question": "What would a planner call have to do for the purity claim to be false, and does anything in the design prevent it? Name the enforcement, not the convention.",
+          "why": "Purity asserted in prose and unenforced in the type or call surface is a comment. The first probe added for convenience breaks it silently."
+        }
+      }
+    },
+    {
+      "id": "R6",
+      "source": "B1 rule 6",
+      "group": "Design rules",
+      "name": "the grader never being visible to the graded",
+      "answered_by": "the dispatch payload's field list, shown to contain no criterion-shaped field",
+      "angles": ["declaration", "demonstration", "falsification"],
+      "overrides": {
+        "falsification": {
+          "question": "List every field that reaches an executing agent. Which of them could carry, hint at, or be used to infer the criterion it will be judged against?",
+          "why": "This invariant spans the whole architecture rather than sitting inside one boundary, so it fails by accumulation: one convenience field at a time. The moment the executing side can infer its criterion, every verdict produced afterwards stops being held out."
+        }
+      }
+    },
+    {
+      "id": "R7",
+      "source": "B1 rule 7",
+      "group": "Design rules",
+      "name": "cross-cutting guarantees being applied by the platform, not requested by the caller",
+      "answered_by": "the call surface, shown to have no opt-out parameter for any cross-cutting concern",
+      "angles": ["declaration", "demonstration", "falsification"],
+      "overrides": {
+        "falsification": {
+          "question": "Is there any path by which a caller obtains execution without one of these guarantees attached? Include internal callers, retries, and administrative paths.",
+          "why": "Guarantees are usually skippable through the back door built for testing, and that door becomes the fast path under pressure."
+        }
+      }
+    },
+
+    {
+      "id": "K1",
+      "source": "B2 Document",
+      "group": "Owned core",
+      "name": "Document as declared intent, definition of done, and steps",
+      "answered_by": "the document schema",
+      "angles": ["declaration", "demonstration", "falsification"]
+    },
+    {
+      "id": "K2",
+      "source": "B2 Planner",
+      "group": "Owned core",
+      "name": "Planner as a pure function from document to plan and cost",
+      "answered_by": "the planner's signature and cost model",
+      "angles": ["declaration", "demonstration", "falsification"],
+      "overrides": {
+        "demonstration": {
+          "question": "Show one document priced, including a case the planner refuses to price and what it returns instead.",
+          "why": "A planner that prices everything has no failure mode, which means it has no opinion about what it cannot know."
+        }
+      }
+    },
+    {
+      "id": "K3",
+      "source": "B2 Graph",
+      "group": "Owned core",
+      "name": "Graph as typed nodes and typed edges of existence, interface and implementation",
+      "answered_by": "the node and edge type definitions",
+      "angles": ["declaration", "demonstration", "falsification"],
+      "overrides": {
+        "falsification": {
+          "question": "Construct an edge the type system should reject, and show what rejects it.",
+          "why": "A type system described but not exercised against an illegal case is a naming convention."
+        }
+      }
+    },
+    {
+      "id": "K4",
+      "source": "B2 Judge",
+      "group": "Owned core",
+      "name": "Judge as a pure function from result and criterion to verdict",
+      "answered_by": "the judge's signature and verdict vocabulary",
+      "angles": ["declaration", "demonstration", "falsification"],
+      "overrides": {
+        "falsification": {
+          "question": "Show a result the judge must fail, and confirm it does. Then show that the criterion was not derivable from the result itself.",
+          "why": "A check whose expectation is derived from the thing it checks asserts a constant. It passes forever and is indistinguishable from a working check until it matters."
+        }
+      }
+    },
+    {
+      "id": "K5",
+      "source": "B2 Ledger",
+      "group": "Owned core",
+      "name": "Ledger as append-only across runs and the deduplication authority",
+      "answered_by": "the ledger row shape and its duplicate-key behaviour",
+      "angles": ["declaration", "demonstration", "falsification"],
+      "overrides": {
+        "declaration": {
+          "question": "State the deduplication key exactly, and what happens on a second write at that key.",
+          "why": "Without a stated key a retry either double-charges or skips work it never did, and both outcomes look like success from outside."
+        }
+      }
+    },
+
+    {
+      "id": "C01",
+      "source": "B3 Isolation",
+      "group": "Capability interfaces",
+      "name": "isolation of a unit of work",
+      "answered_by": "the isolation interface contract and its adapter table",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"],
+      "overrides": {
+        "falsification": {
+          "question": "Separate the authority required to start an isolated unit from the authority required to communicate with it. Are they the same? If the design assumes they are, what makes that true?",
+          "why": "On a comparable stack these are different gates. A policy rule granted a privilege-free start while the process binding the control socket refused to run unprivileged, producing units that boot cleanly and cannot be driven. Both halves read as complete answers on their own."
+        }
+      }
+    },
+    {
+      "id": "C02",
+      "source": "B3 Model access",
+      "group": "Capability interfaces",
+      "name": "model access behind a completions-shaped interface",
+      "answered_by": "the model access interface contract and its adapter table",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"],
+      "overrides": {
+        "falsification": {
+          "question": "Does the interface distinguish a call the gateway routes and reshapes from one it passes through to a provider's native API? State which capabilities and which authentication scheme exist on each.",
+          "why": "A capability was once reported absent from an entire gateway after checking only the reshaping path; the native API had supported it all along through a passthrough route on the same gateway. Authentication also differs per route, and sending the wrong scheme returns an error indistinguishable from a bad credential."
+        }
+      }
+    },
+    {
+      "id": "C03",
+      "source": "B3 Durable execution",
+      "group": "Capability interfaces",
+      "name": "durable execution of long-running work",
+      "answered_by": "the durable execution interface contract and its adapter table",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"],
+      "overrides": {
+        "falsification": {
+          "question": "Where do model calls and other nondeterministic operations sit relative to code the engine replays? Name the boundary that keeps them out.",
+          "why": "A durable engine re-executes its own code to rebuild state. A nondeterministic call inside that code breaks replay, and the failure is intermittent and appears in production rather than in tests. This is the most common way a first design of this shape is wrong."
+        }
+      }
+    },
+    {
+      "id": "C04",
+      "source": "B3 Agent runtime",
+      "group": "Capability interfaces",
+      "name": "agent runtime behind an agent protocol",
+      "answered_by": "the agent runtime interface contract and its adapter table",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"],
+      "overrides": {
+        "falsification": {
+          "question": "Is any state required to resume work keyed to one vendor's session format? And does a recorded result about the runtime carry the build version it was produced against?",
+          "why": "A vendor resume key welds the runtime to one supplier regardless of what the adapter table claims. Separately, five recorded failures on a comparable stack all predated the installed build by five hours: the entire result was stale, nothing caught it, and no verdict recorded the version it was produced against."
+        }
+      }
+    },
+    {
+      "id": "C05",
+      "source": "B3 Tool access",
+      "group": "Capability interfaces",
+      "name": "tool access behind a tool protocol",
+      "answered_by": "the tool access interface contract and its adapter table",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"],
+      "overrides": {
+        "demonstration": {
+          "question": "Show one tool registered and reached through the interface, and one call the interface refuses.",
+          "why": "An endpoint that is live, authenticated and has zero tools registered satisfies every structural check while delivering nothing. Reachability is the property, not availability."
+        }
+      }
+    },
+    {
+      "id": "C06",
+      "source": "B3 Capability packaging",
+      "group": "Capability interfaces",
+      "name": "capability packaging behind a portable definition format",
+      "answered_by": "the packaging interface contract and its adapter table",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"]
+    },
+    {
+      "id": "C07",
+      "source": "B3 Work intake",
+      "group": "Capability interfaces",
+      "name": "work intake from conformant producers",
+      "answered_by": "the intake interface contract and its adapter table",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"]
+    },
+    {
+      "id": "C08",
+      "source": "B3 Document validation",
+      "group": "Capability interfaces",
+      "name": "document validation against a published schema dialect",
+      "answered_by": "the validation interface contract and its adapter table",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"]
+    },
+    {
+      "id": "C09",
+      "source": "B3 Telemetry",
+      "group": "Capability interfaces",
+      "name": "telemetry emitted on an open wire format",
+      "answered_by": "the telemetry interface contract and its adapter table",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"],
+      "overrides": {
+        "falsification": {
+          "question": "Is there one identifier that resolves in every plane a unit of work touches, and is correlation established at dispatch rather than reconstructed afterwards? Name the planes and confirm the identifier resolves in each.",
+          "why": "An identifier present in three planes out of four answers no question, and the missing plane is always the one needed during an incident. Reconstruction from timing is a guess that is confidently wrong under concurrency, which is the only condition where it is needed."
+        }
+      }
+    },
+    {
+      "id": "C10",
+      "source": "B3 Policy",
+      "group": "Capability interfaces",
+      "name": "policy decisions behind a decision API",
+      "answered_by": "the policy interface contract and its adapter table",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"],
+      "overrides": {
+        "demonstration": {
+          "question": "Show the exact point in the execution path where a policy decision is consulted, and show one refusal occurring before any spend.",
+          "why": "Policy engines are routinely present, conformant and not wired into the enforcement path. A named engine in a capability table is not a gate; the call site is."
+        }
+      }
+    },
+    {
+      "id": "C11",
+      "source": "B3 Provenance",
+      "group": "Capability interfaces",
+      "name": "provenance as verifiable attestation",
+      "answered_by": "the provenance interface contract and its adapter table",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"],
+      "overrides": {
+        "falsification": {
+          "question": "Can an artifact's attestation be verified by a tool the design's authors did not write? Name the tool.",
+          "why": "Self-verified provenance is a log. The brief asks for verifiability with an independent tool, which is a materially stronger claim."
+        }
+      }
+    },
+    {
+      "id": "C12",
+      "source": "B3 Errors",
+      "group": "Capability interfaces",
+      "name": "errors as typed, machine-readable values",
+      "answered_by": "the error interface contract and its adapter table",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"],
+      "overrides": {
+        "falsification": {
+          "question": "Is there any path where a caller must parse prose to determine what happened? Include timeouts, upstream provider errors and cancellation.",
+          "why": "Error typing usually holds on the paths that were designed and fails on the ones inherited from an adapter, which are exactly the paths that fire in production."
+        }
+      }
+    },
+    {
+      "id": "C13",
+      "source": "B3 Identity",
+      "group": "Capability interfaces",
+      "name": "identity of actors, including delegated agent actors",
+      "answered_by": "the identity interface contract and its adapter table",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"],
+      "overrides": {
+        "declaration": {
+          "question": "State the field that carries actor identity, where it originates, and how a delegation chain is represented when an agent acts on behalf of a human.",
+          "why": "Systems of this shape frequently have no identity field anywhere at all, and the absence is invisible because nothing fails without it until an audit asks who did something."
+        }
+      }
+    },
+    {
+      "id": "C14",
+      "source": "B3 Scheduling",
+      "group": "Capability interfaces",
+      "name": "scheduling on a published recurrence format",
+      "answered_by": "the scheduling interface contract and its adapter table",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"],
+      "overrides": {
+        "falsification": {
+          "question": "What starts a run? If the answer is a person, say so plainly.",
+          "why": "A cadence with a human trigger is an intention rather than a mechanism, and it does not survive the first week nobody is looking."
+        }
+      }
+    },
+    {
+      "id": "C15",
+      "source": "B3 Idempotency",
+      "group": "Capability interfaces",
+      "name": "idempotency of externally-triggered actions",
+      "answered_by": "the idempotency interface contract and its adapter table",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"],
+      "overrides": {
+        "falsification": {
+          "question": "The brief records a key on the wire with no lease. What happens when two callers present the same key concurrently?",
+          "why": "A key without a lease is a convention between well-behaved callers. Concurrency is precisely the case it was introduced to handle."
+        }
+      }
+    },
+    {
+      "id": "C16",
+      "source": "B3 State persistence",
+      "group": "Capability interfaces",
+      "name": "state persistence behind a storage-neutral interface",
+      "answered_by": "the persistence interface contract and its adapter table",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"]
+    },
+
+    {
+      "id": "X1",
+      "source": "B4 Budget",
+      "group": "Cross-cutting, applied not requested",
+      "name": "a budget ceiling on every unit, terminating the unit and not the platform",
+      "answered_by": "the enforcement point and what it does on breach",
+      "angles": ["declaration", "demonstration", "falsification"],
+      "overrides": {
+        "falsification": {
+          "question": "Is spend observable on every route a unit can take, and how would the design detect a route where it is not?",
+          "why": "A real, successful call on one stack's default lane moved recorded spend by exactly zero. The ceiling was proven on one route and unproven on the route actually in use, which makes the cap a claim rather than a control."
+        }
+      }
+    },
+    {
+      "id": "X2",
+      "source": "B4 Identity",
+      "group": "Cross-cutting, applied not requested",
+      "name": "every action naming an actor, with explicit delegation chains",
+      "answered_by": "the action record's actor field and chain representation",
+      "angles": ["declaration", "demonstration", "falsification"]
+    },
+    {
+      "id": "X3",
+      "source": "B4 Policy",
+      "group": "Cross-cutting, applied not requested",
+      "name": "deterministic refusal before execution rather than after spend",
+      "answered_by": "the ordering of the policy check against the first billable operation",
+      "angles": ["declaration", "demonstration", "falsification"]
+    },
+    {
+      "id": "X4",
+      "source": "B4 Provenance",
+      "group": "Cross-cutting, applied not requested",
+      "name": "every artifact attributable to code version, inputs and actor",
+      "answered_by": "the artifact record's provenance fields",
+      "angles": ["declaration", "demonstration", "falsification"]
+    },
+    {
+      "id": "X5",
+      "source": "B4 Telemetry",
+      "group": "Cross-cutting, applied not requested",
+      "name": "correlation riding on explicit attributes rather than trace parentage",
+      "answered_by": "the attribute set carried at dispatch",
+      "angles": ["declaration", "demonstration", "falsification"]
+    },
+    {
+      "id": "X6",
+      "source": "B4 Errors",
+      "group": "Cross-cutting, applied not requested",
+      "name": "errors never parsed from prose",
+      "answered_by": "the error value shape at every boundary",
+      "angles": ["declaration", "demonstration", "falsification"]
+    },
+    {
+      "id": "X7",
+      "source": "B4 Idempotency",
+      "group": "Cross-cutting, applied not requested",
+      "name": "every externally-triggered action safe to replay",
+      "answered_by": "the replay behaviour per entry point",
+      "angles": ["declaration", "demonstration", "falsification"]
+    },
+
+    {
+      "id": "S1",
+      "source": "B5 Dispatch",
+      "group": "Seams with no standard to adopt",
+      "name": "Dispatch, where one unit of agent work executes and returns one result",
+      "answered_by": "the dispatch contract: request shape, result shape, cancellation, timeout and budget enforcement, partial results, failure return",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"],
+      "overrides": {
+        "declaration": {
+          "question": "State all six parts the brief names: request shape, result shape, cancellation semantics, timeout and budget enforcement, partial-result handling, and what a failure returns. Missing parts are the answer, so name them.",
+          "why": "The brief calls this one of two places where original design effort is warranted. A partial contract here is the difference between agent execution being pluggable and not."
+        },
+        "falsification": {
+          "question": "What exactly does cancellation guarantee: that a signal was delivered, or that no further output will arrive? And what happens to work already in flight?",
+          "why": "Those are different promises and only one is useful to a caller. On a comparable stack the stronger guarantee held, with a cancel landing at eight seconds against a forty-five second tool call and no frames afterwards, but it had to be measured. A design saying it supports cancellation has said almost nothing."
+        }
+      }
+    },
+    {
+      "id": "S2",
+      "source": "B5 State",
+      "group": "Seams with no standard to adopt",
+      "name": "State, where the graph and the ledger persist",
+      "answered_by": "the state contract: write model, concurrency and single-writer guarantee, integrity mechanism, retention, query surface",
+      "angles": ["declaration", "demonstration", "falsification", "substitution"],
+      "overrides": {
+        "declaration": {
+          "question": "State all five parts the brief names: write model, concurrency and single-writer guarantee, integrity mechanism, retention, and the query surface a planner needs. Missing parts are the answer, so name them.",
+          "why": "The brief calls this the second of two places warranting original design. The hash chain is named as the valuable idea and the file as disposable, so a design that keeps the file and loses the chain has inverted the brief."
+        },
+        "falsification": {
+          "question": "Count the distinct payload contracts that cross this boundary, and compare that to the number the boundary's own contract declares. Do they match?",
+          "why": "This is the check that found a real defect in a comparable corpus: a durability layer declaring two payload shapes, stating in as many words that nothing else crossed it, while a third shape crossed it anyway. Every individual document was valid; the disagreement appears only when both sides are read together."
+        }
+      }
+    },
+
+    {
+      "id": "A1",
+      "source": "Part C output 1",
+      "group": "The ask",
+      "name": "an ordered build sequence separating real dependencies from apparent ones",
+      "answered_by": "the sequence itself, with a stated reason per ordering constraint",
+      "angles": ["declaration", "demonstration", "falsification"],
+      "overrides": {
+        "falsification": {
+          "question": "Name one ordering in the sequence that looks required and is not, and say what makes it merely apparent.",
+          "why": "A sequence where every edge is claimed necessary has not been interrogated. The brief asks specifically for the separation, so producing only a list leaves the required work undone."
+        }
+      }
+    },
+    {
+      "id": "A2",
+      "source": "Part C output 2",
+      "group": "The ask",
+      "name": "a first-cut design for both seams, with the prior-art search stated",
+      "answered_by": "the two designs, plus what was searched where novelty is claimed",
+      "angles": ["declaration", "demonstration", "falsification"],
+      "overrides": {
+        "falsification": {
+          "question": "Where novelty is claimed, was the search a retrieval or a recollection? Name what was fetched and which section was read.",
+          "why": "In a comparable exercise sixty-six novelty claims were recall, because the processes producing them had no network access. When one was finally checked properly a published standard overturned it outright, specifying the structure the design claimed as new, with properties the new version could not provide."
+        }
+      }
+    },
+    {
+      "id": "A3",
+      "source": "Part C output 3",
+      "group": "The ask",
+      "name": "a machine-checkable definition of done per piece, with the deliberate breakage that proves the check can fail",
+      "answered_by": "per piece: the check, and the input that makes it fail",
+      "angles": ["declaration", "demonstration", "falsification"],
+      "overrides": {
+        "demonstration": {
+          "question": "For one piece, show the check failing on the deliberate breakage. Not the breakage described, the check failing.",
+          "why": "The brief states it plainly: a criterion nothing can fail is not a criterion."
+        },
+        "falsification": {
+          "question": "Is any definition of done already satisfied by the state of things before the work it grades has been done?",
+          "why": "A batch of generated tasks on a comparable stack carried acceptance patterns that every one already matched in the target files. Each would have passed having changed nothing, while the surrounding machinery graded the criterion's shape and never evaluated it against the file."
+        }
+      }
+    },
+    {
+      "id": "A4",
+      "source": "Part C output 4",
+      "group": "The ask",
+      "name": "a second adapter for at least three capabilities, chosen to prove the interface is not shaped around its current implementation",
+      "answered_by": "three second-adapter designs, each materially different from the first",
+      "angles": ["declaration", "demonstration", "falsification"],
+      "overrides": {
+        "falsification": {
+          "question": "For each of the three, what does the second adapter do differently enough that the interface had to accommodate it? If the answer is nothing, the interface was not tested.",
+          "why": "The brief's own capability table already lists swap candidates. Restating those names satisfies the letter of the request and none of its purpose."
+        }
+      }
+    },
+    {
+      "id": "A5",
+      "source": "Part C output 5",
+      "group": "The ask",
+      "name": "what could not be decided, and what evidence would decide it",
+      "answered_by": "the list of undecided items, each with its deciding evidence",
+      "angles": ["declaration", "demonstration", "falsification"],
+      "overrides": {
+        "declaration": {
+          "question": "Where is the list of undecided items? The brief calls this a required output, not an apology, so an empty list is itself an answer that needs defending.",
+          "why": "A deliverable with nothing undecided has either resolved every open question in the domain or has stopped noticing them. The second is far more common."
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,251 @@
+{
+  "status_row": 61,
+  "reviewer": "61-review-c",
+  "skills": [
+    "core-document-implement",
+    "core-graph-implement",
+    "core-ledger-implement",
+    "seam-state-implement",
+    "xc-audit-trail-implement",
+    "xc-budget-implement",
+    "xc-compensation-implement",
+    "xc-correlation-implement"
+  ],
+  "validation": {
+    "core-document-implement": "0 errors, 3 warnings (sourced row restates and extends: instructions[2] 'What this adds'; best_practices[0] 'already state'; best_practices[3] 'already states')",
+    "core-graph-implement": "0 errors, 2 warnings (best_practices[0] 'already state'; best_practices[2] 'already states')",
+    "core-ledger-implement": "0 errors, 2 warnings (best_practices 'already states' x2)",
+    "seam-state-implement": "0 errors, 0 warnings",
+    "xc-audit-trail-implement": "0 errors, 4 warnings (instructions[0], instructions[4], contract.invariants[4] 'What this adds', best_practices[0] 'already states')",
+    "xc-budget-implement": "0 errors, 6 warnings (4 restates-and-extends; restates F-b1-02 under the same quote as agentic-stack, build-adapter-pair without naming it; restates F-part-c-04 under the same quote as agentic-stack without naming it)",
+    "xc-compensation-implement": "0 errors, 1 warning (best_practices 'What this adds')",
+    "xc-correlation-implement": "0 errors, 0 warnings"
+  },
+  "harness_runs": [
+    {"skill": "core-document-implement", "criterion": "bash harness/document-validation/test.sh && python3 harness/document-validation/conformance.py --adapter dryrun --adapter second", "exit": 0, "tail": "conformance PASSED: 28/28 cases, 2 binding(s)"},
+    {"skill": "core-graph-implement", "criterion": "bash harness/core-graph/test.sh && python3 harness/core-graph/conformance.py --adapter dryrun --adapter second && python3 harness/core-graph/conformance.py --cross-store dryrun second", "exit": 0, "tail": "\"verdict_mismatches\": 0"},
+    {"skill": "core-ledger-implement", "criterion": "bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second && bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second", "exit": 0, "tail": "provenance 26/26, state-persistence 22/22, 2 binding(s) each"},
+    {"skill": "seam-state-implement", "criterion": "bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second", "exit": 0, "tail": "conformance PASSED: 22/22 cases, 2 binding(s)"},
+    {"skill": "xc-audit-trail-implement", "criterion": "bash harness/xc-audit-trail/test.sh", "exit": 0, "tail": "chain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False / passed 18, failed 0"},
+    {"skill": "xc-budget-implement", "criterion": "bash harness/gateway/test.sh && python3 harness/gateway/conformance.py --adapter dryrun --adapter second", "exit": 0, "tail": "conformance PASSED: 24/24 cases, 2 binding(s)"},
+    {"skill": "xc-compensation-implement", "criterion": "bash harness/xc-compensation/test.sh && python3 harness/xc-compensation/conformance.py --register dryrun && python3 harness/xc-compensation/conformance.py --register second", "exit": 0, "tail": "conformance PASSED: 25/25 cases, 1 register(s), adapters_run=2"},
+    {"skill": "xc-correlation-implement", "criterion": "bash harness/observability/test.sh", "exit": 0, "tail": "passed 37, failed 0"}
+  ],
+  "findings": [
+    {
+      "id": "R61C-001",
+      "skill": "core-document-implement",
+      "location": "definition_of_done.expected_failure",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "The criterion is 'bash harness/document-validation/test.sh && python3 .../conformance.py ...'. test.sh itself runs conformance.py internally (harness/document-validation/test.sh:19,51) against the same interface.py the breakage edits, so breaking DIALECT_2020_12 fails test.sh and the '&&' short-circuits before the named conformance.py ever runs. The recorded breakage_output ends 'passed 12, failed 12', which is test.sh's own summary; the expected_failure's 'conformance.py exits 1 ... dropping to 6/28 cases (3 passed per binding, cases_passed=3 each)' is output the chain cannot produce.",
+      "fix": "Rewrite expected_failure to describe what the chain actually prints (test.sh's failing dialect checks and its 'passed 12, failed 12' line), or make the criterion run conformance.py first so the counts named are observable."
+    },
+    {
+      "id": "R61C-002",
+      "skill": "core-document-implement",
+      "location": "definition_of_done.criterion",
+      "severity": "medium",
+      "kind": "dod",
+      "evidence": "The criterion string is byte-identical to cap-document-validation-implement's, and the measured_run output is that harness's validation cases. The pair this skill claims (adapters[0] E-adapter-jsonl-hash-chain / adapters[1] E-swap-candidate-relational), the digest computed at construction (instructions[3]) and the criterion-leak lint (instructions[7]) are exercised only by the round-trip tool that definition_of_done.expected marks 'Proposed tool (not run)'. Nothing measured tests the store pair or the digest claim.",
+      "fix": "Either measure the round-trip over the two store bindings, or state in expected that the measured criterion proves only the shared validation boundary and label the store-pair claims claimed."
+    },
+    {
+      "id": "R61C-003",
+      "skill": "core-document-implement",
+      "location": "definition_of_done.expected",
+      "severity": "low",
+      "kind": "dod",
+      "evidence": "expected promises 'one binding=dryrun and one binding=second line each showing cases=14 passed=14'. The run prints 'adapter=<name> ... cases=14 passed=14'; no line beginning 'binding=' is emitted by the criterion.",
+      "fix": "Quote the adapter= lines the harness actually prints."
+    },
+    {
+      "id": "R61C-004",
+      "skill": "core-graph-implement",
+      "location": "definition_of_done.expected_failure",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "breakage widens check_edge_type's implementation rule (harness/core-graph/interface.py:113-119), the breakage docs/decomposition.md section 3.1 row C3 names, whose consequence is 'false_accepts becomes non-zero'. expected_failure instead describes a retraction fault: 'That binding now folds to a graph value missing the retracted edge and the record that withdrew it, the two bindings disagree on every structure containing a retraction, verdict_mismatches becomes non-zero'. A widened type rule removes no retraction and makes no binding disagree with the other; 'That binding' has no antecedent because the breakage is not binding-specific. The recorded breakage_output confirms the real signal: 'the widened checker admits the counterexample and the oracle still flags it ... oracle reports false_accepts=1 while the checker reports 0'.",
+      "fix": "Replace expected_failure with the false_accepts/oracle-mismatch outcome the breakage produces, or move the retraction text to the row whose breakage removes a retraction."
+    },
+    {
+      "id": "R61C-005",
+      "skill": "core-graph-implement",
+      "location": "definition_of_done.expected_failure",
+      "severity": "medium",
+      "kind": "dod",
+      "evidence": "Same short-circuit as R61C-001: test.sh runs conformance.py and the cross-store check internally (harness/core-graph/test.sh:15,47,74) over the edited interface.py, so it fails first and the two standalone conformance.py commands in the criterion never execute. The recorded breakage_output ends 'passed 14, failed 6', test.sh's summary; the 'verdict_mismatches becomes non-zero ... the other binding still reports false_accepts=0' report is never printed by the chain.",
+      "fix": "Describe test.sh's failing steps, or reorder the chain so the report named is the one produced."
+    },
+    {
+      "id": "R61C-006",
+      "skill": "core-graph-implement",
+      "location": "definition_of_done.expected",
+      "severity": "medium",
+      "kind": "dod",
+      "evidence": "expected describes only the proposed tools/graph_conformance.py output ('one line per binding of the form binding=<role> graphs_folded=10000 ...'). The criterion that is actually run and labelled measured prints test.sh's 'passed <n>, failed 0', 'conformance PASSED: 20/20 cases, 2 binding(s)' and a cross-store JSON report; none of that appears in expected, unlike the sibling rows (core-ledger, seam-state, xc-budget) which quote both.",
+      "fix": "State the harness's real output first, then the proposed tool's, as the sibling skills do."
+    },
+    {
+      "id": "R61C-007",
+      "skill": "core-graph-implement",
+      "location": "instructions[0]",
+      "severity": "low",
+      "kind": "unsupported",
+      "evidence": "The row anchors on X-core-graph-004, whose status is 'search-only' with read=null: a JGraphT abstract-page snippet that was never fetched. The quote is verbatim, but it supports 'graph interfaces separate operations from storage' generally, not the build rule the action states (a checker module that imports no persistence code, enforced by the build).",
+      "fix": "Lean the row on F-b1-02 alone and mark the prior-art clause proposed, or upgrade X-core-graph-004 to a fetched record."
+    },
+    {
+      "id": "R61C-008",
+      "skill": "core-ledger-implement",
+      "location": "definition_of_done.expected_failure",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "The criterion chains four commands with '&&' starting with harness/provenance/test.sh, which runs conformance.py internally (harness/provenance/test.sh:15,44) against the interface.py the breakage edits (DIGEST regex, line 43). The recorded breakage_output ends 'passed 10, failed 17' - test.sh's summary - so the named provenance conformance.py never ran, and neither did the two state-persistence commands. expected_failure describes the provenance conformance.py refusals ('could not be reached', 'subjects[0].digest must match sha256:<64 hex>') and asserts 'the state-persistence half is untouched throughout', when in fact that half is never executed at all.",
+      "fix": "Describe test.sh's failure, and say the state-persistence commands are skipped by the short-circuit rather than untouched."
+    },
+    {
+      "id": "R61C-009",
+      "skill": "core-ledger-implement",
+      "location": "adapters[0]",
+      "severity": "medium",
+      "kind": "restatement",
+      "evidence": "The skill takes cap-state-persistence's pair as its own (E-adapter-jsonl-hash-chain today / E-swap-candidate-relational second) and its criterion is cap-provenance-implement's and cap-state-persistence-implement's harnesses verbatim, yet neither sibling is named anywhere in the skill (only seam-state is). core-document-implement and core-graph-implement both name cap-state-persistence in the equivalent row.",
+      "fix": "Name cap-state-persistence(-implement) and cap-provenance-implement in the adapter rows and the definition of done as the owners of the pair and the harnesses being borrowed."
+    },
+    {
+      "id": "R61C-010",
+      "skill": "core-ledger-implement",
+      "location": "definition_of_done.expected",
+      "severity": "medium",
+      "kind": "dod",
+      "evidence": "Every claim this skill owns - identity computed above the store (contract.invariants[2]), uniqueness enforced above the binding (contract.invariants[3]), the replay projection and terminal-key rule (instructions[3]), the criterion-leak lint (instructions[7]) - is asserted only by tools/ledger_conformance.py, which expected marks 'Proposed tool (not run)'. The measured criterion checks provenance envelopes and state-persistence appends and can pass with none of the ledger behaviour built.",
+      "fix": "Add a measured assertion over replay_answer_mismatches / terminal_records_for_key, or label the ledger-specific outcome claimed and say the measured half proves only the store and provenance boundaries."
+    },
+    {
+      "id": "R61C-011",
+      "skill": "seam-state-implement",
+      "location": "definition_of_done.expected_failure",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "harness/state-persistence/test.sh runs conformance.py internally (lines 15,44) over the interface.py the breakage edits (LEAF_PREFIX, line 76), so it fails first and the standalone conformance.py in the '&&' chain never runs. The recorded breakage_output ends 'passed 14, failed 6', test.sh's summary, while expected_failure describes 'conformance.py exits 1 ... dropping to 20/22 cases (10/11 passed on that binding)' - counts the chain never prints.",
+      "fix": "State test.sh's failing steps as the observed failure, or put conformance.py first in the chain."
+    },
+    {
+      "id": "R61C-012",
+      "skill": "seam-state-implement",
+      "location": "instructions[4]",
+      "severity": "low",
+      "kind": "uncited",
+      "evidence": "The why cites X-cross-structure-053 ('seam-state requires proofs an outsider can take rather than a self-report (X-cross-structure-053)') but the row's sources are ['X-cross-structure-052','F-b4-05']. The id resolves and supports the sentence, but it is quoted in prose without being cited in the row.",
+      "fix": "Add X-cross-structure-053 to the row's sources."
+    },
+    {
+      "id": "R61C-013",
+      "skill": "seam-state-implement",
+      "location": "open_questions[0], open_questions[1]",
+      "severity": "low",
+      "kind": "uncited",
+      "evidence": "Both rows carry sources (F-b5-05; X-seam-state-004 and F-b1-06) with no quote field, the only two sourced rows across the eight skills with a citation and no anchoring quote; every open_questions row in the other seven carries one.",
+      "fix": "Add the verbatim quote each cited record anchors, or drop the citation and mark the row proposed."
+    },
+    {
+      "id": "R61C-014",
+      "skill": "xc-audit-trail-implement",
+      "location": "definition_of_done.expected_failure",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "expected_failure says the breakage makes 'independent becomes false and scheduled becomes false ... while adapters_run stays 2'. The passing run already reports exactly that state: harness/xc-audit-trail/test.sh:84-85 asserts 'adapters_run == 1' and 'independent is False and scheduled is False' as its pass condition, and the clean run I made prints 'chain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False / passed 18, failed 0'. The failure signature is indistinguishable from the green run, and adapters_run is 1 rather than the 2 the text says stays.",
+      "fix": "Describe the signal the harness actually flips under the breakage (a tampered entry going unreported while the gate expects a break) and correct adapters_run to 1."
+    },
+    {
+      "id": "R61C-015",
+      "skill": "xc-audit-trail-implement",
+      "location": "definition_of_done.expected",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "expected promises 'one line per store of the form store=<entity> entries_checked=100 ... external_verifications=1 scheduled_runs_observed=1 ... independent=true scheduled=true ... followed by adapters_run=2'. The criterion (bash harness/xc-audit-trail/test.sh, the only command) prints one line: 'chain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False', and asserts those values. The stated expected output can never be produced by the criterion it is attached to, yet the row is labelled measured.",
+      "fix": "Split expected into what the harness measures today (24 entries, one adapter, independent False) and what the proposed tools/conformance_audit_trail.py would assert, marked not run."
+    },
+    {
+      "id": "R61C-016",
+      "skill": "xc-audit-trail-implement",
+      "location": "definition_of_done.measured_run",
+      "severity": "medium",
+      "kind": "dod",
+      "evidence": "breakage says 'make the scan's chain check never fire (the comparison of each entry's prev and hash against the recomputed values)' - interface.py:206. The recorded breakage_output shows a different breakage: '3. deliberate breakage: the scan's schedule declaration is gone, called inline from the writer ... the failure names the identity: the writer's, not a scanner's', which is the harness's own embedded step. The measured_run does not match its breakage text.",
+      "fix": "Record a run of the stated breakage, or restate the breakage as the wiring fault the harness embeds."
+    },
+    {
+      "id": "R61C-017",
+      "skill": "xc-audit-trail-implement",
+      "location": "definition_of_done.status",
+      "severity": "medium",
+      "kind": "dod",
+      "evidence": "status is 'measured' and a measured_run is attached (clean_exit 0, breakage_exit 1), while expected_failure states 'Claimed: no audit entry, projection, scan, schedule or conformance tool is built on this stack, so neither run has been performed.' The row asserts both labels at once, which is the claimed-versus-measured distinction the skill's own contract.invariants[4] insists on.",
+      "fix": "Keep measured for the harness run and scope the claimed sentence to the proposed tool by name."
+    },
+    {
+      "id": "R61C-018",
+      "skill": "xc-budget-implement",
+      "location": "best_practices[5]",
+      "severity": "high",
+      "kind": "unsupported",
+      "evidence": "The row reads in full 'Every unit of work must be retried three times before it is reported as failed.', origin sourced, sources ['F-b1-02'], quote 'The core imports interfaces, never implementations'. The quote is verbatim in F-b1-02, but F-b1-02 is design rule 1 and says nothing about retries; no record in the knowledge base sets a retry count, and a fixed three-retry rule contradicts the typed-refusal and ceiling behaviour this skill builds (a budget-exhausted refusal must not be retried). validate_skills.py also flags it: 'restates F-b1-02 under the same quote as agentic-stack, build-adapter-pair, without naming it'.",
+      "fix": "Delete the row; if a retry policy is wanted, it belongs to cap-errors / seam-dispatch and needs its own record."
+    },
+    {
+      "id": "R61C-019",
+      "skill": "xc-budget-implement",
+      "location": "best_practices[6]",
+      "severity": "medium",
+      "kind": "padding",
+      "evidence": "'A criterion nothing can fail is not a criterion, so every gate carries a breakage.' is F-part-c-04's sentence with a clause appended, and instructions[6] already points at build-definition-of-done for the same rule; the row names neither owner. validate_skills.py flags 'restates F-part-c-04 under the same quote as agentic-stack, without naming it'.",
+      "fix": "Delete the row - instructions[6] already carries the pointer."
+    },
+    {
+      "id": "R61C-020",
+      "skill": "xc-budget-implement",
+      "location": "definition_of_done.expected_failure",
+      "severity": "medium",
+      "kind": "dod",
+      "evidence": "harness/gateway/test.sh runs conformance.py internally (lines 15,45) over the interface.py the breakage edits (ceiling comparison, line 235), so test.sh fails first and the standalone conformance.py never runs. The recorded breakage_output ends 'passed 16, failed 9', test.sh's summary, while expected_failure describes 'conformance.py exits 1 ... dropping to 22/24 cases (11/12 passed on each binding, refusals=1 instead of 2)'.",
+      "fix": "Describe test.sh's failing ceiling case, or reorder the chain."
+    },
+    {
+      "id": "R61C-021",
+      "skill": "xc-budget-implement",
+      "location": "adapters[0]",
+      "severity": "medium",
+      "kind": "restatement",
+      "evidence": "adapters[0] is the model-access adapter and the definition_of_done criterion is cap-model-access-implement's gateway harness verbatim ('bash harness/gateway/test.sh && python3 harness/gateway/conformance.py --adapter dryrun --adapter second'), but cap-model-access(-implement) is named nowhere in the skill; the row refers only to 'the model gateway PASS.md B3 names in the model-access row'.",
+      "fix": "Name cap-model-access-implement as the owner of the adapter row and the harness this facet borrows."
+    },
+    {
+      "id": "R61C-022",
+      "skill": "xc-compensation-implement",
+      "location": "definition_of_done.measured_run",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "The recorded breakage_output ends with 'Traceback ... AssertionError: anchor block not found in _declare; second.py changed shape' - the stated edit to harness/xc-compensation/adapters/second.py could not be applied to the file as it stands (the method is at second.py:68). Before that the output shows test.sh's own summary 'passed 14, failed 8', so under the '&&' chain neither 'conformance.py --register dryrun' nor '--register second' executed. expected_failure's outcome ('exit non-zero for that register ... the first register still passes and adapters_run still reports 2') is therefore unobservable from this criterion, and the recorded run is not a run of the stated breakage.",
+      "fix": "Re-anchor the breakage on the current second.py, record a run of it, and describe the per-register failure the chain can actually print."
+    },
+    {
+      "id": "R61C-023",
+      "skill": "xc-compensation-implement",
+      "location": "definition_of_done.expected_failure",
+      "severity": "medium",
+      "kind": "dod",
+      "evidence": "status is 'measured' with a measured_run attached, while the last sentence of expected_failure reads 'Claimed: no register exists on this stack and this tool is not written, so neither run has been performed here.' The two labels contradict each other on the same row.",
+      "fix": "Scope the claimed sentence to the proposed tools/conformance/compensation.py and leave the harness run measured."
+    }
+  ],
+  "metrics": {
+    "rows_checked": 221,
+    "sourced": 145,
+    "proposed": 56,
+    "quotes_verified": 174,
+    "harness_runs": 9
+  },
+  "summary": "All eight criteria were run once and all eight exit 0; every sourced quote is a verbatim substring of at least one cited record (174/174). The defects are concentrated in the definitions of done. Five skills (core-document, core-graph, core-ledger, seam-state, xc-budget) describe an expected_failure in terms of a standalone conformance.py that the '&&' chain never reaches, because each harness test.sh runs the same conformance internally over the file the breakage edits and fails first. xc-audit-trail's expected and expected_failure both name output its criterion cannot produce - its stated failure signature (independent False, scheduled False) is what the passing gate asserts, and its expected promises entries_checked=100 and adapters_run=2 against a run that prints 24 and 1. core-graph's expected_failure describes a retraction fault its edge-rule breakage cannot cause. xc-compensation's recorded breakage failed to apply at all. xc-budget carries one invented uncited rule (three retries) under a mismatched quote plus a reworded restatement of build-definition-of-done. xc-correlation-implement is clean: its expected, breakage and expected_failure all match the run."
+}

@@ -40,7 +40,7 @@
         {
           "id": "isolation-q1",
           "angle": "presence",
-          "question": "Is there a named isolation capability whose contract cites the runtime specification and a version, and does every unit of work reach execution through it?",
+          "question": "Proposed question: Is there a named isolation capability whose contract cites the runtime specification and a version, and does every unit of work reach execution through it?",
           "evidence_expected": "The interface definition showing the specification and version it claims, plus an execution record for one unit showing it ran inside an isolated runtime.",
           "aligned_looks_like": "The contract names the specification and a version, and every execution path - not only the one used for untrusted input - resolves through that interface.",
           "misaligned_looks_like": "Isolation is described only in deployment configuration or prose, no version is claimed, or one or more execution paths run work directly on the host.",
@@ -54,7 +54,7 @@
         {
           "id": "isolation-q2",
           "angle": "depth",
-          "question": "Which distinguishing fields of the runtime configuration are actually set per unit of work - read-only root filesystem, explicit mount set, user and namespace mapping, CPU, memory and process limits, network posture, and the hardware configuration where a virtual-machine class runtime serves - and where does each value come from?",
+          "question": "Proposed question: Which distinguishing fields of the runtime configuration are actually set per unit of work - read-only root filesystem, explicit mount set, user and namespace mapping, CPU, memory and process limits, network posture, and the hardware configuration where a virtual-machine class runtime serves - and where does each value come from?",
           "evidence_expected": "The generated runtime configuration for one real unit, with a line-by-line account of which field came from the unit's declaration and which is a default, and the run that shows a limit being enforced.",
           "aligned_looks_like": "The configuration is derived from the unit's declared needs, is restrictive by default, denies host networking and privilege unless declared, and every non-default is justified; a limit breach is observably enforced.",
           "misaligned_looks_like": "The configuration is the runtime's default, or is privileged, shares the host network or mounts the host filesystem broadly; nothing distinguishes one unit's sandbox from another's.",
@@ -69,7 +69,7 @@
         {
           "id": "isolation-q3",
           "angle": "boundary",
-          "question": "Do two adapters from genuinely different isolation classes pass the same conformance suite, and does the core import only the interface?",
+          "question": "Proposed question: Do two adapters from genuinely different isolation classes pass the same conformance suite, and does the core import only the interface?",
           "evidence_expected": "The conformance suite, a run of it against both adapters, and a dependency listing or import graph showing the core has no reference to either implementation.",
           "aligned_looks_like": "The second adapter breaks a different assumption than the first - for example a hardware-virtualised boundary against a syscall-interception boundary, or a locally hosted runtime against one on hardware the build does not own - and the swap is exercised in an automated gate, not by hand.",
           "misaligned_looks_like": "There is one adapter; or the second is the same class from a different vendor; or the core reaches an implementation's control API directly, so the interface is decorative.",
@@ -85,7 +85,7 @@
         {
           "id": "isolation-q4",
           "angle": "guarantees",
-          "question": "Which cross-cutting guarantees ride on the sandbox lifecycle without the caller asking - a ceiling that terminates the unit and not the platform, an actor named on every sandbox start including delegated agent actors, a policy decision taken before the sandbox boots, telemetry spanning the lifecycle, and provenance binding produced artifacts to the code version, inputs and actor?",
+          "question": "Proposed question: Which cross-cutting guarantees ride on the sandbox lifecycle without the caller asking - a ceiling that terminates the unit and not the platform, an actor named on every sandbox start including delegated agent actors, a policy decision taken before the sandbox boots, telemetry spanning the lifecycle, and provenance binding produced artifacts to the code version, inputs and actor?",
           "evidence_expected": "A telemetry record for one sandbox lifecycle showing actor, correlation and budget attributes; a refusal captured before boot; and an artifact record naming the code version, inputs and actor that produced it.",
           "aligned_looks_like": "All five are applied by the platform, are present identically for a unit no caller configured, and a ceiling breach terminates that unit alone.",
           "misaligned_looks_like": "Limits or attribution are optional arguments a caller may omit, refusal happens after the sandbox has already spent resources, or a sandbox can start with no named actor.",
@@ -102,7 +102,7 @@
         {
           "id": "isolation-q5",
           "angle": "usage",
-          "question": "How does a caller obtain isolation from each of the four entries - a human, an event, a schedule, an external system or agent - and what is declared to cross the boundary in each case?",
+          "question": "Proposed question: How does a caller obtain isolation from each of the four entries - a human, an event, a schedule, an external system or agent - and what is declared to cross the boundary in each case?",
           "evidence_expected": "One unit of work driven through all four entries with the resulting runtime configurations placed side by side, plus the declared inventory of inputs, outputs, credentials and egress for each.",
           "aligned_looks_like": "One code path serves all four, the configuration is identical except for identity and budget, and what crosses the boundary is declared per unit rather than inherited from the host environment.",
           "misaligned_looks_like": "Interactive work runs unisolated for convenience while only externally triggered work is sandboxed, or each entry builds its own configuration, or host credentials and network are visible inside the sandbox by default.",
@@ -117,7 +117,7 @@
         {
           "id": "isolation-q6",
           "angle": "direction",
-          "question": "Does the build use machine-state lifecycle operations - pause, resume, and fork of a paused sandbox - where the isolation class offers them, and is it free of the errors the window has ruled out?",
+          "question": "Proposed question: Does the build use machine-state lifecycle operations - pause, resume, and fork of a paused sandbox - where the isolation class offers them, and is it free of the errors the window has ruled out?",
           "evidence_expected": "A run in which a long-running or idle unit is suspended and later resumed from saved state, or a paused sandbox is forked for parallel attempts, together with the timing and the interface signature that makes the operation optional per class.",
           "aligned_looks_like": "Suspension, resumption and forking are capability operations with a defined answer when an adapter cannot serve them, and the security boundary chosen for untrusted output is not a shared kernel.",
           "misaligned_looks_like": "Untrusted agent output runs behind a shared-kernel boundary; or long-running work is kept alive by holding a machine idle because no suspend exists; or the core assumes one implementation's snapshot API.",
@@ -147,7 +147,7 @@
       "source": "F-b3-03",
       "name": "Model access",
       "standard": {
-        "name": "OpenAI-compatible completions",
+        "name": "Completions wire convention (see F-b3-03)",
         "settledness": "contested",
         "why": "The request shape is a de facto convention rather than a published specification, and inside the window at least two shapes are live at once: the message-based completion format, which its originator says will remain supported indefinitely as an industry standard, and an item-and-response format that agentic work is moving toward. A second family is served alongside it - gateways expose an Anthropic-style messages endpoint and translate to and from the OpenAI-compatible format - so a build cannot treat any single wire format as the settled one. The property to hold is that the core imports a model-access capability and never a wire format.",
         "cites": [
@@ -178,13 +178,13 @@
           "X-litmus-a-008",
           "X-litmus-a-009"
         ],
-        "quote": "In 2026, OpenAI-compatible APIs have become the de facto standard"
+        "quote": "quietly dropped the cache directive on the floor - no error, no warning"
       },
       "questions": [
         {
           "id": "model-access-q1",
           "angle": "presence",
-          "question": "Is there a model-access capability with a declared request and response contract, and is every model call in the build made through it?",
+          "question": "Proposed question: Is there a model-access capability with a declared request and response contract, and is every model call in the build made through it?",
           "evidence_expected": "The interface definition, and a search across the executing code showing no direct provider call sites outside the adapters.",
           "aligned_looks_like": "One contract, every call routed through it, and the wire convention it speaks named explicitly with the format variant it targets.",
           "misaligned_looks_like": "Model calls are made in several places with provider-specific code, or the contract exists but some paths bypass it.",
@@ -198,7 +198,7 @@
         {
           "id": "model-access-q2",
           "angle": "depth",
-          "question": "Which mechanisms beyond a plain completion are exercised and verified - streaming, tool-call turns, schema-constrained structured output, cache directives, reasoning effort, and a usage record separating prompt, cached, reasoning and completion tokens?",
+          "question": "Proposed question: Which mechanisms beyond a plain completion are exercised and verified - streaming, tool-call turns, schema-constrained structured output, cache directives, reasoning effort, and a usage record separating prompt, cached, reasoning and completion tokens?",
           "evidence_expected": "For each mechanism, a request and response pair captured at the boundary showing the directive sent and the provider-reported effect returned; and for cost, a reconciliation of the build's recorded usage against the provider-reported usage fields for the same call.",
           "aligned_looks_like": "Each mechanism is exercised on both adapters, and the effect is verified from the response - a cache hit is observed, not hoped for - with reasoning tokens counted in cost.",
           "misaligned_looks_like": "Only plain completions are used; or directives are set in the request and never checked in the response; or cost is estimated locally from visible text, so reasoning-heavy calls are under-counted.",
@@ -212,7 +212,7 @@
         {
           "id": "model-access-q3",
           "angle": "boundary",
-          "question": "Do two adapters with different execution models pass one conformance suite, and does the same suite catch semantic loss in translation - a directive dropped, a usage field missing - rather than only checking that a response came back?",
+          "question": "Proposed question: Do two adapters with different execution models pass one conformance suite, and does the same suite catch semantic loss in translation - a directive dropped, a usage field missing - rather than only checking that a response came back?",
           "evidence_expected": "The conformance suite, its results on both adapters, and at least one case in the suite that fails when a translated directive does not take effect.",
           "aligned_looks_like": "The second adapter differs in execution model rather than being another catalogue of the same shape, and the suite asserts on semantics, not just on a non-empty response.",
           "misaligned_looks_like": "One adapter; or a second that is a different vendor of the same hosted shape; or a suite whose assertions a translation layer could pass while silently discarding directives.",
@@ -228,7 +228,7 @@
         {
           "id": "model-access-q4",
           "angle": "guarantees",
-          "question": "Are the ceiling, the named actor, the pre-execution policy decision, the telemetry attributes and the replay-safety of a retried call applied by the platform on every model call, with no way for a caller to decline them?",
+          "question": "Proposed question: Are the ceiling, the named actor, the pre-execution policy decision, the telemetry attributes and the replay-safety of a retried call applied by the platform on every model call, with no way for a caller to decline them?",
           "evidence_expected": "A telemetry record for one call showing model served, routing or fallback decision, actor, correlation and cost; a refusal recorded before any spend; and evidence that a retried call did not double-charge or double-act.",
           "aligned_looks_like": "A unit that exceeds its ceiling is terminated while the platform continues; a refusal is deterministic and precedes the call; every call is attributable to an actor and a correlation.",
           "misaligned_looks_like": "Budgets are advisory, enforced only by a downstream provider, or expressed as a caller-supplied argument; refusal happens after the tokens are spent; fallback is invisible in the record so cost cannot be attributed to the model that actually served.",
@@ -246,7 +246,7 @@
         {
           "id": "model-access-q5",
           "angle": "usage",
-          "question": "How does a caller make a model call from each of the four entries, what is the minimum they must supply, and how does the call compose with cost estimation before commitment?",
+          "question": "Proposed question: How does a caller make a model call from each of the four entries, what is the minimum they must supply, and how does the call compose with cost estimation before commitment?",
           "evidence_expected": "The same task driven from a human entry, an event, a schedule and an external caller, with the call sites shown; plus the estimate produced before execution and the recorded actual cost for the same unit.",
           "aligned_looks_like": "The caller names a capability and a task, never a provider or a model identifier, the field set is the same at all four entries, and an estimate is produced by a pure function before anything is spent and is later reconciled against the actual.",
           "misaligned_looks_like": "A caller must select a provider or model, or must pass credentials, or must use a client library the build wrote; or cost is only knowable after the run.",
@@ -262,7 +262,7 @@
         {
           "id": "model-access-q6",
           "angle": "direction",
-          "question": "Is the interface shaped so that a move from the message-based format to an item-and-response format, or the addition of a second wire family, is an adapter change rather than a core change - and does anything in the core assume one format?",
+          "question": "Proposed question: Is the interface shaped so that a move from the message-based format to an item-and-response format, or the addition of a second wire family, is an adapter change rather than a core change - and does anything in the core assume one format?",
           "evidence_expected": "The interface's own type definitions, an account of which fields are format-specific, and a demonstration or a written migration path showing what a second wire family would require.",
           "aligned_looks_like": "The interface speaks in turns, items and typed results of its own, adapters translate, and adding a second wire family touches only adapters and their conformance runs.",
           "misaligned_looks_like": "The core's types are one provider's request and response objects renamed; or the build has bet on a single format with no stated exit; or per-provider branches sit above the boundary.",
@@ -328,7 +328,7 @@
         {
           "id": "durable-execution-q1",
           "angle": "presence",
-          "question": "Is there a written contract for a multi-step unit of work that names its own step, checkpoint and resume-point vocabulary, and does it cover all six things the specification requires - request shape, result shape, cancellation, timeout and budget enforcement, partial results, and what a failure returns?",
+          "question": "Proposed question: Is there a written contract for a multi-step unit of work that names its own step, checkpoint and resume-point vocabulary, and does it cover all six things the specification requires - request shape, result shape, cancellation, timeout and budget enforcement, partial results, and what a failure returns?",
           "evidence_expected": "The contract document or interface definition, mapped item by item against those six requirements.",
           "aligned_looks_like": "All six are specified in the platform's own vocabulary, and the contract is what the executors implement rather than a description of what one of them happens to do.",
           "misaligned_looks_like": "There is no contract and each execution path checkpoints in its own way; or a contract exists but leaves cancellation, partial results or failure shape undefined.",
@@ -343,7 +343,7 @@
         {
           "id": "durable-execution-q2",
           "angle": "depth",
-          "question": "How are non-deterministic results handled across a restart: is a model call, tool result, clock reading or retrieval journaled at first execution and replayed from the journal, or is it re-executed on recovery?",
+          "question": "Proposed question: How are non-deterministic results handled across a restart: is a model call, tool result, clock reading or retrieval journaled at first execution and replayed from the journal, or is it re-executed on recovery?",
           "evidence_expected": "A recorded run that was killed mid-flight and resumed, with the journal showing which results were replayed and which steps re-ran, and the count of outward calls made before and after the restart.",
           "aligned_looks_like": "Every non-deterministic result is recorded once and reused on recovery; the resumed run makes no duplicate outward call and produces the same intermediate values it had before the crash.",
           "misaligned_looks_like": "Recovery re-runs completed steps and calls the outside world twice; or the design assumes model calls are replayable; or checkpointing exists only between whole runs, so a crash loses everything since the start.",
@@ -357,7 +357,7 @@
         {
           "id": "durable-execution-q3",
           "angle": "guarantees",
-          "question": "Do the ceiling, the actor and delegation chain, the pre-execution refusal, the correlation attributes and the provenance chain survive a restart, and does a resumed run continue under the budget it had left?",
+          "question": "Proposed question: Do the ceiling, the actor and delegation chain, the pre-execution refusal, the correlation attributes and the provenance chain survive a restart, and does a resumed run continue under the budget it had left?",
           "evidence_expected": "A crash-and-resume run showing budget remaining before and after, the actor and correlation attributes on both sides of the discontinuity, and the provenance record linking artifacts produced after the resume to the same inputs and code version.",
           "aligned_looks_like": "The resumed run continues with the remaining ceiling, the same named actor and delegation chain, and one unbroken correlation and provenance chain; exceeding the ceiling terminates that unit and nothing else.",
           "misaligned_looks_like": "A resume starts with a fresh budget, loses the actor or delegation chain, opens a new correlation, or produces artifacts that cannot be tied back to the inputs of the original run.",
@@ -374,7 +374,7 @@
         {
           "id": "durable-execution-q4",
           "angle": "boundary",
-          "question": "Do two executors with genuinely different execution models pass one conformance suite, and does that suite include a real crash rather than a simulated one?",
+          "question": "Proposed question: Do two executors with genuinely different execution models pass one conformance suite, and does that suite include a real crash rather than a simulated one?",
           "evidence_expected": "The conformance suite, its results against both executors, and the run in which a process is killed mid-step and the unit completes correctly on resume.",
           "aligned_looks_like": "One executor uses an external server process and the other has none, both pass unmodified, and the crash test is part of the automated gate; the core imports neither executor.",
           "misaligned_looks_like": "One executor; or a second that is a different product of the same architecture; or a suite whose durability claim rests on an exit code with no step actually interrupted.",
@@ -390,7 +390,7 @@
         {
           "id": "durable-execution-q5",
           "angle": "usage",
-          "question": "How does a caller start, observe, cancel and resume a multi-step unit from each of the four entries, and what does an externally triggered replay of the same unit do?",
+          "question": "Proposed question: How does a caller start, observe, cancel and resume a multi-step unit from each of the four entries, and what does an externally triggered replay of the same unit do?",
           "evidence_expected": "The same multi-step unit driven from a human entry, an event, a schedule and an external caller; a cancellation issued mid-step and the result it returned; and a replayed external trigger with the effects counted.",
           "aligned_looks_like": "One field set at every entry, cancellation returns a defined result rather than an exception, a replayed trigger is recognised and produces no second effect, and a schedule-driven run is indistinguishable downstream from a human-driven one.",
           "misaligned_looks_like": "Cancellation is best-effort with an undefined result, a replayed external trigger runs the work again, or one entry has its own bespoke start path.",
@@ -405,7 +405,7 @@
         {
           "id": "durable-execution-q6",
           "angle": "direction",
-          "question": "Is the contract written in vocabulary the build owns rather than in the vocabulary of whichever engine is installed, and is there a stated exit if that engine is replaced?",
+          "question": "Proposed question: Is the contract written in vocabulary the build owns rather than in the vocabulary of whichever engine is installed, and is there a stated exit if that engine is replaced?",
           "evidence_expected": "The contract's type names and error names set beside the installed executor's API, plus the written migration path and the evidence that the second executor was built against the contract and not against the first executor's shape.",
           "aligned_looks_like": "No engine-specific concept - worker registration, task queue names, replay determinism rules - appears in the contract; the exit is written down and demonstrated by the second executor.",
           "misaligned_looks_like": "The contract is one engine's SDK with the names changed; or the interface requires deterministic replayable code, which forecloses executors that journal instead; or there is no stated exit because the engine is assumed permanent.",
@@ -476,7 +476,7 @@
         {
           "id": "agent-runtime-q1",
           "angle": "presence",
-          "question": "Is agent execution reached through one named capability that cites the protocol and a protocol version, and does every path that runs an agent go through it?",
+          "question": "Proposed question: Is agent execution reached through one named capability that cites the protocol and a protocol version, and does every path that runs an agent go through it?",
           "evidence_expected": "The interface definition with the protocol version it claims, plus an inventory of every code path that starts agent work showing each resolves through that interface.",
           "aligned_looks_like": "One capability, one declared protocol version, and no execution path that spawns an agent by its own means.",
           "misaligned_looks_like": "Several execution paths with no contract between them; or a contract that names no protocol and no version.",
@@ -492,7 +492,7 @@
         {
           "id": "agent-runtime-q2",
           "angle": "depth",
-          "question": "Which of the protocol's distinguishing mechanisms are actually used - session setup, a prompt turn closed by a typed stop reason, streamed session updates carrying message chunks and tool-call status, permission requests, and session restoration - and which are stubbed?",
+          "question": "Proposed question: Which of the protocol's distinguishing mechanisms are actually used - session setup, a prompt turn closed by a typed stop reason, streamed session updates carrying message chunks and tool-call status, permission requests, and session restoration - and which are stubbed?",
           "evidence_expected": "A captured transcript of one real turn showing the update stream and the terminating stop reason, plus the list of protocol methods implemented, stubbed or refused with the reason for each.",
           "aligned_looks_like": "The turn ends with a typed stop reason that the caller branches on; updates stream as the turn runs rather than arriving as one final blob; permission requests are real and answered; anything unimplemented is refused explicitly rather than silently ignored.",
           "misaligned_looks_like": "The protocol is used as a transport for a single request and reply, stop reasons are collapsed to success or failure, updates are synthesised after the fact, or unimplemented methods fail in undefined ways.",
@@ -506,7 +506,7 @@
         {
           "id": "agent-runtime-q3",
           "angle": "usage",
-          "question": "How is one turn started, observed, permitted and cancelled from each of the four entries, and what answers a permission request when no human is present?",
+          "question": "Proposed question: How is one turn started, observed, permitted and cancelled from each of the four entries, and what answers a permission request when no human is present?",
           "evidence_expected": "The same task run from a human entry, an event, a schedule and an external caller, with the permission exchanges shown for each, and the recorded outcome when a permission request arrived in a non-interactive run.",
           "aligned_looks_like": "All four use one path; permission requests in non-interactive runs are resolved deterministically from policy before the turn or answered by a defined non-interactive profile; nothing hangs waiting for a click.",
           "misaligned_looks_like": "Scheduled or event-driven runs block on a prompt no one can answer, or silently auto-approve everything; or interactive runs use a different code path from the others.",
@@ -522,7 +522,7 @@
         {
           "id": "agent-runtime-q4",
           "angle": "boundary",
-          "question": "Does a second adapter serve the same turn interface without an interactive session - a headless, remote or batch runner - and does one conformance suite pass against both, including cancellation?",
+          "question": "Proposed question: Does a second adapter serve the same turn interface without an interactive session - a headless, remote or batch runner - and does one conformance suite pass against both, including cancellation?",
           "evidence_expected": "The conformance suite, results against both adapters, and specifically a cancellation case showing the cancelled stop reason returned and outstanding permission requests resolved as cancelled on each.",
           "aligned_looks_like": "The second adapter breaks the interactivity assumption rather than being another interactive agent, and cancellation mid-tool-call terminates promptly with the defined result on both.",
           "misaligned_looks_like": "One adapter; or a second that is another interactive agent of the same shape; or cancellation that passes on one adapter and hangs or times out on the other.",
@@ -539,7 +539,7 @@
         {
           "id": "agent-runtime-q5",
           "angle": "guarantees",
-          "question": "Do the ceiling, the actor with its delegation chain, the deterministic pre-turn policy decision, the telemetry attributes and the provenance record attach to the turn itself without the caller requesting them, and is the criterion a turn is judged against kept out of the turn?",
+          "question": "Proposed question: Do the ceiling, the actor with its delegation chain, the deterministic pre-turn policy decision, the telemetry attributes and the provenance record attach to the turn itself without the caller requesting them, and is the criterion a turn is judged against kept out of the turn?",
           "evidence_expected": "A telemetry record for one turn showing actor, delegation chain, correlation and budget; a refusal recorded before the turn began; the provenance record for an artifact the turn produced; and the prompt or context actually sent, shown not to contain the grading criterion.",
           "aligned_looks_like": "All are applied by the platform, a turn exceeding its ceiling is terminated while the platform continues, refusal precedes spend, and the agent sees its outcome but never the criterion it is judged against.",
           "misaligned_looks_like": "Budget or identity are optional arguments; refusal happens after the turn has spent tokens; the grading criterion is visible to the agent being graded; or a turn can run with no named actor.",
@@ -557,7 +557,7 @@
         {
           "id": "agent-runtime-q6",
           "angle": "direction",
-          "question": "Is the seam positioned to survive the layering that is consolidating - a turn interface that neither depends on one agent product nor forecloses a host-side or remote protocol - and is there a written exit if the protocol changes?",
+          "question": "Proposed question: Is the seam positioned to survive the layering that is consolidating - a turn interface that neither depends on one agent product nor forecloses a host-side or remote protocol - and is there a written exit if the protocol changes?",
           "evidence_expected": "The interface's own types set beside the protocol's message types, an account of which concepts are the build's own and which are borrowed, and the written exit describing what changes if the protocol version moves or a different protocol serves at this layer.",
           "aligned_looks_like": "The build owns the turn, the stop reason set and the failure shape; the protocol is a transport an adapter speaks; a version change or a second protocol is confined to adapters.",
           "misaligned_looks_like": "The core's types are the protocol's wire messages; or the seam is defined per agent product; or the interface requires a live session, a stream or a human callback that a headless runner could never provide.",
@@ -628,7 +628,7 @@
         {
           "id": "tool-access-q1",
           "angle": "presence",
-          "question": "Is every external tool an agent can reach exposed through the protocol, with a declared protocol revision, and is there any other way for an agent to call out?",
+          "question": "Proposed question: Is every external tool an agent can reach exposed through the protocol, with a declared protocol revision, and is there any other way for an agent to call out?",
           "evidence_expected": "The declared protocol revision, the list of tool surfaces reachable by an agent, and evidence that no direct outward call path exists beside them.",
           "aligned_looks_like": "One protocol, one declared revision, and every outward tool call goes through it - including internal ones, which are servers like any other.",
           "misaligned_looks_like": "Some tools are reached through the protocol and others through bespoke calls; or no revision is declared so it cannot be judged which mechanisms apply.",
@@ -643,7 +643,7 @@
         {
           "id": "tool-access-q2",
           "angle": "depth",
-          "question": "For remote tool surfaces, which authorization and transport mechanisms are actually in force - the streamable transport rather than the deprecated event stream, OAuth 2.1 with PKCE, protected-resource and authorization-server metadata discovery, and resource indicators binding the token to one server on issue and on refresh?",
+          "question": "Proposed question: For remote tool surfaces, which authorization and transport mechanisms are actually in force - the streamable transport rather than the deprecated event stream, OAuth 2.1 with PKCE, protected-resource and authorization-server metadata discovery, and resource indicators binding the token to one server on issue and on refresh?",
           "evidence_expected": "A captured authorization exchange for one remote surface including the refresh, showing the resource indicator present in both; and the transport actually negotiated.",
           "aligned_looks_like": "Every mechanism is present and verified from the exchange itself, including the resource indicator on refresh, and tool results are validated against declared output schemas rather than read as prose.",
           "misaligned_looks_like": "The deprecated event-stream transport is in use; authorization is a shared secret or a bearer token with no audience binding; the resource indicator is present on issue but dropped on refresh; results are parsed out of free text.",
@@ -658,7 +658,7 @@
         {
           "id": "tool-access-q3",
           "angle": "usage",
-          "question": "How does a caller cause a tool to be used from each of the four entries, and how is tool exposure decided for a given turn as the number of reachable tools grows?",
+          "question": "Proposed question: How does a caller cause a tool to be used from each of the four entries, and how is tool exposure decided for a given turn as the number of reachable tools grows?",
           "evidence_expected": "The same tool-using task driven from a human entry, an event, a schedule and an external caller; plus a measurement of context tokens consumed by tool definitions at two very different toolset sizes.",
           "aligned_looks_like": "One path serves all four; the set of tools entering a turn is selected by declared toolset or by search, and measured context cost is roughly flat as the catalogue grows by an order of magnitude.",
           "misaligned_looks_like": "Every reachable tool definition is loaded into every turn, so context cost grows with the catalogue and selection accuracy falls; or each entry wires tools differently.",
@@ -672,7 +672,7 @@
         {
           "id": "tool-access-q4",
           "angle": "guarantees",
-          "question": "Are policy, identity and delegation, budget, correlation, provenance and replay-safety applied to every tool call by the platform, with the decision taken per tool and per actor before the call rather than after?",
+          "question": "Proposed question: Are policy, identity and delegation, budget, correlation, provenance and replay-safety applied to every tool call by the platform, with the decision taken per tool and per actor before the call rather than after?",
           "evidence_expected": "A refusal record showing a tool call denied before execution with the actor, tool and rule identified; a telemetry record for an allowed call carrying actor, delegation chain, correlation and cost; and a replayed externally triggered call shown to have had no second effect.",
           "aligned_looks_like": "Refusal is deterministic and precedes any outward effect; the delegated agent actor is named distinctly from the human who authorised it; outward-effecting calls carry idempotency keys.",
           "misaligned_looks_like": "Policy is enforced inside individual tool servers or after the effect; the agent's calls are attributed to a human with no delegation chain; a replayed trigger causes the tool to act twice.",
@@ -688,7 +688,7 @@
         {
           "id": "tool-access-q5",
           "angle": "boundary",
-          "question": "Does the tool-access capability sit behind an interface with a proven second implementation, so that swapping a tool surface - or the client that speaks the protocol - is not a core change?",
+          "question": "Proposed question: Does the tool-access capability sit behind an interface with a proven second implementation, so that swapping a tool surface - or the client that speaks the protocol - is not a core change?",
           "evidence_expected": "The conformance suite for the capability, results against two implementations that differ in more than their catalogue, and evidence the core references no implementation directly.",
           "aligned_looks_like": "The second implementation differs in execution model - for example a locally hosted surface against a remote one behind full authorization - and the same suite passes against both unmodified.",
           "misaligned_looks_like": "There is one client or one server treated as the tool layer; or the core imports a specific server's client code; or the second implementation is the same server run twice.",
@@ -703,7 +703,7 @@
         {
           "id": "tool-access-q6",
           "angle": "direction",
-          "question": "Is the build free of the patterns the window has ruled out - the deprecated transport, flows that need a sticky server session, optional authorization, unbounded tool exposure - and is it positioned for the stateless, extension-framed direction the revision set?",
+          "question": "Proposed question: Is the build free of the patterns the window has ruled out - the deprecated transport, flows that need a sticky server session, optional authorization, unbounded tool exposure - and is it positioned for the stateless, extension-framed direction the revision set?",
           "evidence_expected": "A statement per pattern of whether it is present, with the configuration or transcript that proves it; plus a demonstration that a tool server can be restarted or replaced mid-conversation without breaking a turn.",
           "aligned_looks_like": "None of the ruled-out patterns is present; a server can be scaled or replaced between round trips because nothing depends on server-side session affinity; extensions are declared through the framework rather than as private fields.",
           "misaligned_looks_like": "Anything that requires a server to hold conversational state; the deprecated transport; authorization treated as optional for internal surfaces; or private protocol extensions invented instead of declared.",
@@ -770,7 +770,7 @@
         {
           "id": "capability-packaging-q1",
           "angle": "presence",
-          "question": "Are reusable capabilities packaged in the portable directory shape the specification defines - a manifest with the required frontmatter fields, a body, and optional executable, reference and asset subdirectories - such that a runtime the build does not control could load one unchanged?",
+          "question": "Proposed question: Are reusable capabilities packaged in the portable directory shape the specification defines - a manifest with the required frontmatter fields, a body, and optional executable, reference and asset subdirectories - such that a runtime the build does not control could load one unchanged?",
           "evidence_expected": "One package's directory listing and manifest, plus the specification version it claims, and a statement of any field or layout the build added beyond the spec.",
           "aligned_looks_like": "The shape is the spec's, the required fields are present and meaningful, and any addition is an optional extra that a conformant runtime can ignore without the package breaking.",
           "misaligned_looks_like": "Packages carry a private format, or depend on fields or a directory layout no other runtime would understand, so portability is claimed but untestable.",
@@ -785,7 +785,7 @@
         {
           "id": "capability-packaging-q2",
           "angle": "depth",
-          "question": "Is loading actually tiered - metadata resident, body on trigger, references on demand - and what is the measured resident cost per package and the cost of a full load?",
+          "question": "Proposed question: Is loading actually tiered - metadata resident, body on trigger, references on demand - and what is the measured resident cost per package and the cost of a full load?",
           "evidence_expected": "A measurement of tokens or bytes resident per package across the whole catalogue, plus a trace of one task showing when the body and then a reference file were loaded.",
           "aligned_looks_like": "The three tiers are observable in a real run, the resident cost per package is a measured number rather than an estimate, and reference material demonstrably does not enter context until it is needed.",
           "misaligned_looks_like": "Everything in the package is loaded whenever the package is available; or the tiers exist in the file layout but the runtime concatenates them anyway; or nobody has measured the resident cost.",
@@ -799,7 +799,7 @@
         {
           "id": "capability-packaging-q3",
           "angle": "guarantees",
-          "question": "Before a package is loaded, is its integrity digest matched and its publisher signature verified, is the load decision a policy decision, and is what was loaded recorded in the provenance of whatever the run produced?",
+          "question": "Proposed question: Before a package is loaded, is its integrity digest matched and its publisher signature verified, is the load decision a policy decision, and is what was loaded recorded in the provenance of whatever the run produced?",
           "evidence_expected": "The resolution record for one load showing the name, the version constraint, the resolved version, the digest and the signature verification result; a refusal for an unsigned or digest-mismatched package; and an artifact's provenance record naming the packages in force when it was produced.",
           "aligned_looks_like": "Verification is mandatory and precedes load, a failure is a deterministic refusal rather than a warning, and the set of packages in force is part of what an artifact is attributable to.",
           "misaligned_looks_like": "Packages are loaded from wherever they were found with no digest or signature check; verification is advisory; or an artifact cannot be traced back to the package versions that shaped it.",
@@ -816,7 +816,7 @@
         {
           "id": "capability-packaging-q4",
           "angle": "boundary",
-          "question": "Is a package resolved by name and a version constraint through one resolver that can serve both a local directory and a remote registry, and is the second source proven rather than planned?",
+          "question": "Proposed question: Is a package resolved by name and a version constraint through one resolver that can serve both a local directory and a remote registry, and is the second source proven rather than planned?",
           "evidence_expected": "The resolver interface, a conformance run against both a directory source and a registry source, and a search of the executing code for path joins used to locate a package.",
           "aligned_looks_like": "One resolution point, two sources differing in where the bytes come from and what identity means, both passing the same suite, and no component constructing a path to find a package.",
           "misaligned_looks_like": "Loading is a filesystem walk in several components; or a registry source is described as future work; or the second source is the same directory mounted elsewhere.",
@@ -832,7 +832,7 @@
         {
           "id": "capability-packaging-q5",
           "angle": "usage",
-          "question": "How does a capability get selected and loaded for work arriving from each of the four entries, and how do two packages compose when a task needs both?",
+          "question": "Proposed question: How does a capability get selected and loaded for work arriving from each of the four entries, and how do two packages compose when a task needs both?",
           "evidence_expected": "The same task driven from a human entry, an event, a schedule and an external caller with the packages loaded in each recorded; plus one task requiring two packages, showing the order, the combined resident cost and how a conflict between them was resolved.",
           "aligned_looks_like": "Selection is the same mechanism at every entry and does not depend on a human describing which package to use; composition is defined, and a conflict has a stated resolution rather than last-writer-wins.",
           "misaligned_looks_like": "Packages load only for interactive work, or a scheduled run must name files explicitly while a human's run does not; composition is undefined and two packages silently contradict each other.",
@@ -846,7 +846,7 @@
         {
           "id": "capability-packaging-q6",
           "angle": "direction",
-          "question": "Are packages versioned so a breaking change is visible before load, and is there a way to withdraw or roll back a bad version - the governance the open registries lack?",
+          "question": "Proposed question: Are packages versioned so a breaking change is visible before load, and is there a way to withdraw or roll back a bad version - the governance the open registries lack?",
           "evidence_expected": "The version scheme in use with an example of a breaking change and how it was signalled, the record of a rollback or withdrawal, and the resolution behaviour for a consumer pinned to a withdrawn version.",
           "aligned_looks_like": "Versions separate breaking changes from compatible additions and safe fixes, consumers resolve by constraint, and a withdrawn version stops resolving while existing pins get a deterministic refusal rather than silence.",
           "misaligned_looks_like": "Packages are unversioned or versioned only by edit date; a change is shipped by editing a package in place; there is no way to take a bad version back, and consumers cannot tell what they got.",

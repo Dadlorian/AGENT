@@ -9,3 +9,5 @@
 | 64 | Skill structure review | An independent review against the Agent Skills guidance proposes the organisation | Blocked | Owner decision on option C |
 | 66 | Phase 6: litmus questionnaire | Future state and questions stated in isolation per B3 and B4 row | In progress | Crew of four plus skill author running |
 | 67 | Litmus assessment | Every question answered with evidence and scored | Not started | Awaiting go |
+| 68 | Conformance questionnaire | Every question answered in isolation, checker at zero failures | Not started | Awaiting go |
+| 69 | Combined reading | Both answer sets joined per PASS.md row, neither reads the other | Not started | Awaiting rows 67 and 68 |

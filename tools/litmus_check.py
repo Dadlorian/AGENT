@@ -82,7 +82,8 @@ def repo_names() -> list[str]:
     for p in (ROOT / "tools").glob("*.py"):
         names.add(p.name)
     names.update(["STATUS.md", "STATUS-ARCHIVE.md", "OWNER.md", "HUMAN-REVIEW.md", "kb/ceremonies", "skill.json", "SKILL.md",
-                  "docs/guides", "docs/acceptance", "examples/end-to-end", "state/briefs", "agentic-stack"])
+                  "docs/guides", "docs/acceptance", "examples/end-to-end", "state/briefs", "agentic-stack",
+                  "full-stack-questionair", "Conformance Questionnaire", "conformance-answer", "check_answers", "properties.json"])  # the owner's separate instrument; the two never name each other
     return sorted(names, key=len, reverse=True)
 
 

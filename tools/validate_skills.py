@@ -12,10 +12,11 @@ Errors (exit 1):
   - a product name outside an adapter section in a core-, compose-, or build- skill,
     or outside an adapter section in a cap-, xc-, or seam- skill
   - a referenced scripts/ references/ assets/ path that does not exist
-  - if a manifest is given: skill in manifest with no directory, or directory not in manifest
+  - if a manifest is given: a skill directory that is not in the manifest
 Warnings:
   - body over 500 lines
   - no "claimed" or "measured" label anywhere in a skill that states facts about the host
+  - a manifest skill whose directory has not been written yet
 """
 from __future__ import annotations
 
@@ -137,6 +138,10 @@ def main() -> int:
             warnings.append(f"{name}: no claimed/measured label anywhere")
 
     all_names = set(dirs) | {ROOT_SKILL}
+    manifest_names: set[str] = set()
+    if args.manifest.is_file():
+        manifest_names = {s["name"] for s in json.loads(args.manifest.read_text())["skills"]}
+    all_names |= manifest_names  # forward references to unwritten manifest skills are allowed
     for name, (bo, ub) in links.items():
         for b in bo:
             if b not in all_names:
@@ -149,12 +154,10 @@ def main() -> int:
             elif u in links and name not in links[u][0]:
                 errors.append(f"{name} says used by {u}, but {u} does not list {name} under builds on")
 
-    if args.manifest.is_file():
-        m = json.loads(args.manifest.read_text())
-        mnames = {s["name"] for s in m["skills"]}
-        for missing in sorted(mnames - set(dirs)):
-            errors.append(f"manifest lists {missing} but no skill directory exists")
-        for extra in sorted(set(dirs) - mnames - {ROOT_SKILL}):
+    if manifest_names:
+        for missing in sorted(manifest_names - set(dirs)):
+            warnings.append(f"manifest lists {missing} but no skill directory exists yet")
+        for extra in sorted(set(dirs) - manifest_names - {ROOT_SKILL}):
             errors.append(f"skill directory {extra} is not in the manifest")
 
     for w in warnings:

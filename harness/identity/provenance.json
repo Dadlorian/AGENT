@@ -1,0 +1,35 @@
+{
+  "owner_skill": "cap-identity-implement",
+  "co_skills": ["cap-identity", "xc-identity-delegation-implement", "cap-mandate-broker"],
+  "blueprint_tool_entry": null,
+  "blueprint_tool_entry_note": "absent today per PASS.md B3 (F-b3-14). PASS.md A6 records no identity field anywhere in the system (F-a6-05), so adapters/live.py is a stub that says so, reached through the environment variables that would name an issuer or a workload API socket.",
+  "capability": "identity",
+  "standard": "OAuth 2.0 Token Exchange (RFC 8693) and workload identity, SPIFFE/SPIRE shape (versions on file unverified)",
+  "kb_ids": [
+    "F-a3-05", "F-a3-07", "F-a3-08", "F-a6-05", "F-a7-02",
+    "F-b1-02", "F-b1-04", "F-b1-07", "F-b3-14", "F-b4-03", "F-b4-07",
+    "T-t2-03", "T-t3-01", "T-t6-02", "T-t7-02", "T-t7-03", "T-t7-05", "T-t9-06", "T-t10-07"
+  ],
+  "research_ids": [
+    "X-cap-identity-002", "X-cap-identity-005", "X-cap-identity-007", "X-cap-identity-008",
+    "X-cross-structure-006", "X-cross-structure-034", "X-cross-structure-035",
+    "X-cross-structure-036", "X-cross-structure-038",
+    "X-end-to-end-032", "X-entry-composition-048",
+    "X-cap-mandate-broker-002", "X-cap-mandate-broker-006", "X-gap-a-004"
+  ],
+  "measured": {
+    "dryrun": "bash harness/identity/test.sh on 2026-09-03: passed 46, failed 0. conformance PASSED 16/16 against the exchange adapter with a 50-action delegation-chain corpus (actions_checked=50, missing_subject=0, short_chains=0, cyclic=0, executing_unit_mismatch=0, selected_by=configuration); the minimal call is 20 lines of caller code counted by harness/caller_lines.py and names no adapter storage; the issued credential carries three hops, current actor first, rooted in a hop obtained_via direct, with scope narrowing read:incident+call:model+write:ledger -> read:incident+call:model -> call:model and lifetimes 3600 -> 1800 -> 1200 -> 900 -> 300 seconds; a hop that widens scope is refused 403 policy-denied rule_id scope-must-narrow at platform-pre-issue with nothing issued; extending a lifetime is 403 lifetime-must-not-extend; repeating an actor is 403 chain-must-be-acyclic; an expired or self-asserted-root credential is 401 identity-untrusted, not retryable; DRYRUN_FAIL=1 returns adapter-unavailable 503; ADAPTER=live exits 2 naming the absence.",
+    "swap": "conformance PASSED 16/16 before (dryrun, presented-credential exchange, authority-call per verification) and 16/16 after (second, platform-fact attestation, local trust bundle) with the same 16 cases; sha256 of interface.py+call.py+conformance.py+trust.json identical across both runs (7be68c98b7300e764653c552ab5c73dd7c6514553e6fd58f4197374d69294080), so the swap was configuration; 6 axes differ (root of trust, verification locus, credential form, authority calls 153 vs 0, the declared unsupported form, the marker) while 10 contract facts are byte-identical (the chain, the lifetimes, the enforcement point, the four corpus counters, the case counts); call.py ran unchanged on both and read the same three-hop chain, with authority calls 3 vs 0; the pair run over both bindings reports adapters_run=2, selected_by=configuration, and a non-empty unsupported list for each.",
+    "breakage": "IDENTITY_BREAK=forward-token makes one hop forward the incoming credential unchanged instead of exchanging it for the agent actor. The exchange binding exits 1 with short_chains=1 and executing_unit_mismatch=1 over the same 50 actions, naming action-001 and the chain ['service:intake', 'user:corey'] it found; the attestation binding stays green at 0 and 0, because a document that names the unit it attested cannot be forwarded. The suite passes again once the hop is restored, so the breakage was the defect and not the run."
+  },
+  "claimed": [
+    "live mode: there is nothing to measure. PASS.md B3 records the adapter for Identity as absent and PASS.md A6 records no identity field anywhere in the system, so adapters/live.py has never reached an issuer from here",
+    "the token-exchange request in adapters/live.py: the grant type urn:ietf:params:oauth:grant-type:token-exchange and the subject_token/actor_token pair are sourced (X-cap-identity-002, X-cross-structure-036); the response field names access_token and expires_in, and whether a returned token's act claims can be read back into a chain, are unverified from this environment",
+    "the SVID fetch protocol behind WORKLOAD_API_SOCKET is not implemented: adapters/second.py probes the socket and returns a typed refusal rather than inventing a wire protocol it has never spoken",
+    "both standards' versions are unverified: every record on file for RFC 8693 (X-cap-identity-002, X-cross-structure-036) and for workload identity (X-cap-identity-005, X-cap-identity-007, X-gap-a-004) is a search result, not a fetched specification; docs/acceptance/matrix.json already records the standard stick as absent by owner while fetch is blocked here",
+    "chain order, current actor first and root last, is this repo's convention taken from the entry envelope and cap-identity's ActorIdentity shape; whether RFC 8693's act-claim nesting fixes that order is an open question recorded in cap-identity and not settled here",
+    "the second adapter serves delegate because it is the document-with-claims form cap-identity-implement records as an open question; an X.509 form would declare delegate unsupported instead, which this harness has not run",
+    "the scope-widening refusal is typed policy-denied 403 with rule_id scope-must-narrow because the closed registry in docs/decomposition.md 2.1.6 has no scope row; cap-mandate-broker records credential-audience-mismatch as proposed and pending registration, and this harness invents no type of its own",
+    "the trust material in trust.json is a fixture, not a key: nothing here is a real credential, and no secret of any kind is stored in this harness"
+  ]
+}

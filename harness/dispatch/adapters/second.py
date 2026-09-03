@@ -89,8 +89,19 @@ def worker(job_path: str) -> int:
     outcome = run_steps(job["request"], job["plan"], StepLog(job["log"]),
                         core.example.DryRunAdapter().complete,
                         lambda: False, job["prior"])
-    with open(job["result_path"], "w") as fh:
+    # Written atomically: the poller in execute_unit learns the result exists
+    # by os.path.exists(result_path), and open()+dump() would let it see that
+    # name the instant it is created (truncated to zero bytes) rather than
+    # once it is complete - a race that reads as a JSONDecodeError or a
+    # FileNotFoundError depending on timing. Writing to a same-directory temp
+    # file first and renaming into place means the final name never appears
+    # until the content behind it is whole; os.replace is one atomic syscall
+    # on POSIX, so there is no window in which the name exists but the body
+    # does not.
+    tmp_path = job["result_path"] + f".{os.getpid()}.tmp"
+    with open(tmp_path, "w") as fh:
         json.dump(outcome, fh)
+    os.replace(tmp_path, job["result_path"])
     return 0
 
 

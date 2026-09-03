@@ -1,0 +1,29 @@
+PLAN  triage-and-fix: 13 steps, worst case 750000 micros, shortest finishing path 350000, ceiling 50000
+step           op        agent                   model_class  est_micros
+-------------  --------  ----------------------  -----------  ----------
+triage         agent     triage-router           i-fast       15000     
+repro          agent     repro-extractor         f-grunt      0         
+logs           agent     log-bulk-summarizer     b-deep       15000     
+dedup          agent     dedup-checker           f-smoke      0         
+fix#1          agent     code-fixer              cli-         200000    
+fix-judge#1    judge     -                       -            0         
+fix#2          agent     code-fixer              cli-         200000    
+fix-judge#2    judge     -                       -            0         
+fix#3          agent     code-fixer              cli-         200000    
+fix-judge#3    judge     -                       -            0         
+brief          agent     risk-escalator          i-escalate   60000     
+ship-approval  approval  -                       -            0         
+regression     agent     regression-test-author  cli-         60000     
+PROBLEM (application/problem+json):
+{
+  "type": "urn:agentic:problem:budget-exhausted",
+  "title": "A step would cross the budget ceiling",
+  "status": 402,
+  "detail": "shortest finishing path costs 350000, ceiling is 50000; refused before execution",
+  "retryable": false,
+  "correlation": {
+    "run_id": "run-human-0001",
+    "correlation_id": "corr-human-0001",
+    "depth": 0
+  }
+}

@@ -75,18 +75,21 @@ def derive() -> dict:
         key = element.lower().replace(" ", "-")
         ideal, impl = skill(f"cap-{key}"), skill(f"cap-{key}-implement")
         std = next((s for s in standards if fid in (s.get("sources") or [])), None)
-        harness = by_cap.get(key) or by_cap.get(element.lower())
+        harness = next((h for c, h in by_cap.items() if c and element.lower() in c), None)
         o = origins(ideal, {}) if ideal else {}
         share = (o.get("proposed", 0) / max(1, o.get("proposed", 0) + o.get("sourced", 0))) if ideal else None
         dod = ((impl or {}).get("definition_of_done") or {}).get("status")
         guide = GUIDES / f"{key}.md"
+        guide_runs = guide.is_file() and "runnable: yes" in guide.read_text() and any(
+            (ROOT / c.split()[0]).is_file() or (ROOT / c.split()[1]).is_file()
+            for c in re.findall(r"`([^`]+)`", guide.read_text().split("## Runnable")[-1].split("## Definition")[0]) if len(c.split()) > 1)
         std_version = std.get("version", "") if std else "no standard entry"
         sticks = {
             "sourced": {"holds": share is not None and share <= SOURCED_MAX, "value": f"{round(100 * share)} percent proposed" if share is not None else "no ideal skill", "stick": "T-t9-02"},
             "measured": {"holds": dod == "measured", "value": dod or "no implement skill", "stick": "T-t9-04"},
             "swap": {"holds": bool(harness) and "swap" in json.dumps(plan.get("rules", [])).lower(), "value": harness["name"] if harness else "no harness", "stick": "T-t9-06"},
             "standard": {"holds": bool(std) and "unverified" not in std_version and "search" not in std_version and "none" not in std_version, "value": std_version, "stick": "T-t9-09"},
-            "guide": {"holds": guide.is_file(), "value": str(guide.relative_to(ROOT)) if guide.is_file() else "absent", "stick": "T-t10-07"},
+            "guide": {"holds": guide_runs, "value": (str(guide.relative_to(ROOT)) + (" (runnable)" if guide_runs else " (no runnable example)")) if guide.is_file() else "absent", "stick": "T-t10-07"},
         }
         for k, why in (absent.get(key) or {}).items():
             if k in sticks:
@@ -127,7 +130,7 @@ def render(m: dict) -> str:
           "| Measured | the implement skill's definition of done has a measured run | T9.4 |",
           "| Swap | a harness covers the element and its plan records the swap rule | T9.6 |",
           "| Standard | the version record was fetched, not only searched | T9.9 |",
-          "| Guide | docs/guides/<element>.md exists | T10.7 |", ""]
+          "| Guide | docs/guides/<element>.md exists and its runnable section names a command on disk | T10.7 |", ""]
     return "\n".join(L) + "\n"
 
 

@@ -23,3 +23,4 @@
 | 19 | Problem-type registry | Every refusal a skill emits has a row | Open | 5 missing |
 | 20 | Consumption link | cap-consumption links to cap-work-intake | Open | Unlinked |
 | 21 | Continuous improvement loop | One iteration per fire moves a metric and checkpoints | Not started | Awaiting go |
+| 22 | Status table discipline | STATUS.md passes its checker on every edit | Done | 21 rows, 0 errors |

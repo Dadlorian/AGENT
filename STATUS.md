@@ -17,7 +17,6 @@
 | 26 | Workflow harness | One durable flow survives a crash and resumes | Open | Not started |
 | 27 | Linked harness | One document runs through all four harnesses | Open | Not started |
 | 28 | Impact map | A component swap lists every affected adapter, test, and skill | Open | Not started |
-| 35 | Skill reconciliation | Every written skill agrees with the blueprint | In progress | 3 reviewers running |
 | 37 | Live run access | Harness live mode runs against the host from a session | Blocked | Owner decision |
 | 41 | Planted-defect reviews | Every review catches both planted defects | In progress | plant.py ready |
 | 42 | Sourcing pass | Proposed rows are under 30 percent | Not started | Queued |

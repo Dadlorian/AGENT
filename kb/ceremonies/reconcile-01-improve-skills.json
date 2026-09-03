@@ -1,0 +1,59 @@
+{
+  "improver": "sonnet",
+  "group": "core-xc-skills",
+  "scope": "core-*, seam-*, build-*, xc-*, compose-* skill.json files named in reconcile-01-review-core.json and reconcile-01-review-xc.json findings with change_to \"skill\", plus the explicitly directed owns-no-state / owns-state additions. cap-* skills, docs/architecture/blueprint.json and docs/skill-manifest.json were not touched.",
+  "applied": [
+    {
+      "id": "RX-001",
+      "change": "xc-policy-gate: the 'gated entry' worked-instances shape gained a fourth example for entry.kind=schedule (actor schedule:nightly-fault-sweep, admission rule allow-scheduled-sweep), the shape's name and description were rewritten to name T6.2's four doors instead of 'the three ways in', and its sources were replaced with T-t6-02 (the superseded T-t1-01/02/03 three-ways-in citation removed) per the reconciliation instruction to cite T6.2 rather than T1's narrower list.",
+      "files": [".claude/skills/xc-policy-gate/skill.json"]
+    },
+    {
+      "id": "RX-002",
+      "change": "xc-identity-delegation: the ActorBindingByWayIn shape gained a fourth worked instance for way_in=schedule, with the actor attributed to the schedule's registrant (user:corey) and a delegation_chain hop recording the firing schedule via workload_attestation, per entry_matrix[33]'s rule that an unattended run still names an actor. minItems raised 3 to 4, name/description reworded to T6.2's four doors, sources replaced with T-t6-02.",
+      "files": [".claude/skills/xc-identity-delegation/skill.json"]
+    },
+    {
+      "id": "RX-003",
+      "change": "xc-provenance-chain: the AttestationRecordedInstances shape gained a fourth record for actor schedule:nightly-fault-sweep (run-schedule-0001), the shape's caption changed from 'TARGET T1 names three ways in' to T6.2's four doors, and sources changed from T-t1-01/02/03 to T-t6-02 (T-t2-03 kept, unrelated to door count).",
+      "files": [".claude/skills/xc-provenance-chain/skill.json"]
+    },
+    {
+      "id": "RX-004",
+      "change": "xc-correlation: definition_of_done's correlation_audit.py invocation gained --entry schedule (fourth flag) and its entries_run assertion changed from 3 to 4, so the schedule branch the StampedAtEntry fixture already demonstrated is now actually exercised by the measured criterion. StampedAtEntry's caption and sources were corrected to name T6.2's four doors and cite T-t6-02 instead of T-t1-01/02/03.",
+      "files": [".claude/skills/xc-correlation/skill.json"]
+    },
+    {
+      "id": "RX-005",
+      "change": "xc-typed-errors: definition_of_done's typed_errors_audit.py invocation gained --entry schedule and its per_entry-length assertion changed from 3 to 4. FailureAtEveryEntry's caption and sources were corrected to name T6.2's four doors and cite T-t6-02 (T-t2-03 kept) instead of the T-t1 three-ways-in list.",
+      "files": [".claude/skills/xc-typed-errors/skill.json"]
+    },
+    {
+      "id": "owns-no-state-by-design (directed addition, mirrors review-xc.json's skills_owning_nothing list and finding RX-010)",
+      "change": "Added one proposed invariant each to compose-operators, compose-improvement-loop, xc-enforcement-chain and xc-typed-errors stating that the skill owns no state type of its own and why (compose-operators: a pure translation into the work graph core-graph already owns; compose-improvement-loop: its candidate/revision/promotion sequence reuses compose-loop's iteration record and cap-evaluation's case/verdict/baseline rather than persisting anything new; xc-enforcement-chain: every record its six slots produce belongs to the guarantee occupying that slot; xc-typed-errors: the problem object's shape and registry belong to cap-errors, this layer adds only the placement rule). To stay within the 3-10 invariant budget after adding a row, compose-operators' loop-termination-bound and nesting-depth-bound invariants were merged into one (both concern the same 'bounded before execution' rule), and xc-typed-errors' 'caller cannot decline' sourced invariant absorbed its adjacent 'declining is inexpressible' proposed invariant as a consequence clause. Net invariant counts: 10, 10, 10, 10 respectively - all within budget, no new warnings.",
+      "files": [
+        ".claude/skills/compose-operators/skill.json",
+        ".claude/skills/compose-improvement-loop/skill.json",
+        ".claude/skills/xc-enforcement-chain/skill.json",
+        ".claude/skills/xc-typed-errors/skill.json"
+      ]
+    },
+    {
+      "id": "owns-scan-report-and-evidence-bundle (directed addition, mirrors finding RX-009)",
+      "change": "Added a proposed invariant to xc-audit-trail naming the scan operation's monitor report (entries_checked, chain_breaks, inclusion_proofs_checked, consistency_proofs_checked, oldest_retained_entry_age_days) and the evidence operation's evidence bundle (one entry, its inclusion proof and the signed sealed head) as two persisted artifacts this guarantee owns, matching the blueprint agent's parallel state_types addition for the same gap.",
+      "files": [".claude/skills/xc-audit-trail/skill.json"]
+    }
+  ],
+  "declined": [
+    {
+      "id": "RC-009",
+      "why": "change_to is \"skill\" but the finding's own change field says 'No change needed' - build-adapter-pair, build-definition-of-done and build-entry-conformance are correctly process disciplines that own no state and are already cited by name from the core/seam skills that use their discipline. Recorded here to close the loop rather than silently skipped; no skill.json edited."
+    },
+    {
+      "id": "RX-006, RX-007, RX-008, RX-009 (blueprint half), RX-010 (blueprint half)",
+      "why": "change_to \"blueprint\" - these correct docs/architecture/blueprint.json's state_types/impact_map prose (compose-loop's termination-count citation, bare owner_capability nouns, missing audit-trail and compose-operators/compose-improvement-loop rows). Out of this group's scope, which is skill.json files only; the blueprint agent owns that side. Where the orchestrating instruction directed a mirrored skill-side addition regardless of change_to (RX-009's audit-trail state, RX-010's owns-nothing skills), that mirror was applied above."
+    }
+  ],
+  "validator_result": "python3 tools/render_skill.py --all (all 102 skills rendered, no errors). python3 tools/validate_skills.py --only <name> for each of the 9 edited skills (xc-policy-gate, xc-identity-delegation, xc-provenance-chain, xc-correlation, xc-typed-errors, xc-audit-trail, xc-enforcement-chain, compose-operators, compose-improvement-loop): 0 errors on every skill; xc-correlation and compose-operators show 0 warnings, the other seven show only pre-existing restate-and-extend (MECH-2) warnings on instructions/best_practices rows this ceremony did not touch (verified by locating each warned fragment's JSON path - none fall inside the shapes, definition_of_done or invariants entries edited here). No new warning was introduced by any applied change; invariant counts after editing stayed within the 3-10 budget on every skill (all at 10 except the untouched-invariant-count skills, which are unchanged).",
+  "summary": "Applied all 5 change_to=skill findings from reconcile-01-review-xc.json (RX-001..RX-005): xc-policy-gate and xc-identity-delegation each gained a worked schedule-door instance and now cite T-t6-02 instead of the superseded T-t1 three-ways-in list (severity block, fixed first); xc-provenance-chain gained the same schedule instance (fix); xc-correlation and xc-typed-errors had their definition_of_done conformance commands extended to run --entry schedule so the schedule branch their fixtures already showed is actually measured. Per direct instruction, also added proposed owns-no-state invariants to compose-operators, compose-improvement-loop, xc-enforcement-chain and xc-typed-errors, and a proposed owns-state invariant to xc-audit-trail naming its scan report and evidence bundle, mirroring the blueprint agent's parallel state_types work. Declined RC-009 (no-op finding, recorded for completeness) and the blueprint-side halves of RX-006 through RX-010 as out of this group's file scope."
+}

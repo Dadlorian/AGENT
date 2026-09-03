@@ -49,3 +49,8 @@ Stated by the platform owner on 2026-09-03 as the baseline target. PASS.md Part 
 4. Standards will change, systems will change, and components will change; the harness shows where the impacts are.
 5. Changing a component means swapping its adapter, and the conformance run proves the interface held.
 6. This direction is a target toward perfection, not a fixed definition; improve on it.
+
+## T8. Decisions
+
+1. The twelve host-fact gaps in docs/architecture/gap-triage.json are absent on the host today and are design work, not facts to research.
+2. Standard-version gaps and does-a-standard-exist gaps are closed by research with real search results, or recorded as none found.

@@ -1,0 +1,458 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Dadlorian/AGENT/schemas/skill.schema.json",
+  "title": "Structured skill",
+  "description": "A skill is data. SKILL.md is rendered from this file by tools/render_skill.py. Every statement cites knowledge-base records (F- facts, E- entities, R- edges) or is explicitly marked origin=proposed.",
+  "type": "object",
+  "required": [
+    "name",
+    "layer",
+    "description",
+    "purpose",
+    "instructions",
+    "definition_of_done",
+    "composes_with",
+    "provenance"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^(agentic-stack|(core|cap|xc|seam|compose|build)-[a-z0-9]+(-[a-z0-9]+)*)$"
+    },
+    "layer": {
+      "enum": [
+        "root",
+        "core",
+        "cap",
+        "xc",
+        "seam",
+        "compose",
+        "build"
+      ]
+    },
+    "wave": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "description": {
+      "type": "string",
+      "minLength": 40,
+      "maxLength": 1024
+    },
+    "purpose": {
+      "$ref": "#/$defs/sourced"
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^E-"
+      },
+      "uniqueItems": true
+    },
+    "contract": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "standards": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "entity",
+              "version",
+              "version_status",
+              "sources"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "entity": {
+                "type": "string",
+                "pattern": "^E-standard-"
+              },
+              "version": {
+                "type": "string"
+              },
+              "version_status": {
+                "enum": [
+                  "verified",
+                  "unverified"
+                ]
+              },
+              "url": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "sources": {
+                "$ref": "#/$defs/ids"
+              }
+            }
+          }
+        },
+        "operations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "input",
+              "output",
+              "origin"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "input": {
+                "type": "string"
+              },
+              "output": {
+                "type": "string"
+              },
+              "origin": {
+                "$ref": "#/$defs/origin"
+              },
+              "sources": {
+                "$ref": "#/$defs/ids"
+              },
+              "quote": {
+                "$ref": "#/$defs/quote"
+              }
+            },
+            "$ref": "#/$defs/sourced_rule"
+          }
+        },
+        "shapes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "name",
+              "schema",
+              "origin"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "schema": {
+                "type": "object"
+              },
+              "origin": {
+                "$ref": "#/$defs/origin"
+              },
+              "sources": {
+                "$ref": "#/$defs/ids"
+              },
+              "quote": {
+                "$ref": "#/$defs/quote"
+              }
+            },
+            "$ref": "#/$defs/sourced_rule"
+          }
+        },
+        "invariants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourced"
+          }
+        },
+        "not_exposed": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/sourced"
+          }
+        }
+      }
+    },
+    "instructions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "step",
+          "action",
+          "why",
+          "origin"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "step": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "action": {
+            "type": "string"
+          },
+          "why": {
+            "type": "string"
+          },
+          "origin": {
+            "$ref": "#/$defs/origin"
+          },
+          "sources": {
+            "$ref": "#/$defs/ids"
+          },
+          "quote": {
+            "$ref": "#/$defs/quote"
+          }
+        },
+        "$ref": "#/$defs/sourced_rule"
+      }
+    },
+    "best_practices": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/sourced"
+      }
+    },
+    "adapters": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "entity",
+          "role",
+          "maps_to",
+          "cannot",
+          "swap_procedure",
+          "status",
+          "sources",
+          "quote"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "entity": {
+            "type": "string",
+            "pattern": "^E-(adapter|swap-candidate)-"
+          },
+          "role": {
+            "enum": [
+              "today",
+              "second"
+            ]
+          },
+          "maps_to": {
+            "type": "string"
+          },
+          "cannot": {
+            "type": "string"
+          },
+          "swap_procedure": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "claimed",
+              "measured"
+            ]
+          },
+          "sources": {
+            "$ref": "#/$defs/ids"
+          },
+          "quote": {
+            "$ref": "#/$defs/quote"
+          }
+        }
+      }
+    },
+    "definition_of_done": {
+      "type": "object",
+      "required": [
+        "criterion",
+        "expected",
+        "breakage",
+        "expected_failure",
+        "status"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "criterion": {
+          "type": "string"
+        },
+        "expected": {
+          "type": "string"
+        },
+        "breakage": {
+          "type": "string"
+        },
+        "expected_failure": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "claimed",
+            "measured"
+          ]
+        },
+        "sources": {
+          "$ref": "#/$defs/ids"
+        },
+        "quote": {
+          "$ref": "#/$defs/quote"
+        }
+      }
+    },
+    "composes_with": {
+      "type": "object",
+      "required": [
+        "builds_on",
+        "used_by"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "builds_on": {
+          "$ref": "#/$defs/names"
+        },
+        "used_by": {
+          "$ref": "#/$defs/names"
+        }
+      }
+    },
+    "open_questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "question",
+          "evidence",
+          "default"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "evidence": {
+            "type": "string"
+          },
+          "default": {
+            "type": "string"
+          },
+          "sources": {
+            "$ref": "#/$defs/ids"
+          },
+          "quote": {
+            "$ref": "#/$defs/quote"
+          }
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "kb_source_sha256",
+        "kb_heads"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kb_source_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "kb_heads": {
+          "type": "object",
+          "required": [
+            "facts",
+            "entities",
+            "edges"
+          ],
+          "properties": {
+            "facts": {
+              "type": "string"
+            },
+            "entities": {
+              "type": "string"
+            },
+            "edges": {
+              "type": "string"
+            }
+          }
+        },
+        "author": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "ids": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[FER]-"
+      },
+      "uniqueItems": true
+    },
+    "names": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"
+      },
+      "uniqueItems": true
+    },
+    "origin": {
+      "enum": [
+        "sourced",
+        "proposed"
+      ],
+      "description": "sourced: every claim in the text is backed by the listed kb records. proposed: our design, not in PASS.md; must say so in the text."
+    },
+    "sourced_rule": {
+      "if": {
+        "properties": {
+          "origin": {
+            "const": "sourced"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "sources",
+          "quote"
+        ],
+        "properties": {
+          "sources": {
+            "minItems": 1
+          }
+        }
+      }
+    },
+    "sourced": {
+      "type": "object",
+      "required": [
+        "text",
+        "origin"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "origin": {
+          "$ref": "#/$defs/origin"
+        },
+        "sources": {
+          "$ref": "#/$defs/ids"
+        },
+        "quote": {
+          "$ref": "#/$defs/quote"
+        }
+      },
+      "$ref": "#/$defs/sourced_rule"
+    },
+    "quote": {
+      "type": "string",
+      "minLength": 8,
+      "description": "Verbatim substring of one cited fact's text. Checked mechanically; a quote that is not in a cited fact fails validation."
+    }
+  }
+}

@@ -1,0 +1,908 @@
+{
+  "layers": {
+    "core": "The five owned components of PASS.md B2, Document, Planner, Graph, Judge and Ledger, each importing capability interfaces only and naming no product.",
+    "cap": "One skill per capability interface in PASS.md B3: it names the governing standard and version, defines the contract the core imports, and ships two adapters whose execution models differ.",
+    "xc": "One skill per cross-cutting concern in PASS.md B4, seven in total rather than grouped, because each has a distinct enforcement point, a distinct check, and a distinct way to fail open; the matching cap- skill defines the interface while the xc- skill defines the placement that a caller cannot decline, and merging the two is what produced conformance checks that exist outside the enforcement path (claimed, per PASS.md A6).",
+    "seam": "The two boundaries with no standard to adopt, Dispatch and State, where original design effort is warranted and where the platform's weight sits.",
+    "compose": "Assemblies of lower layers into a workflow, a bounded loop, a parked approval and an agent; a composition introduces no new interface.",
+    "build": "The disciplines every author in this repo uses regardless of layer: definition of done with a breakage, adapter pairing, evidence recording that keeps claimed and measured apart, and the skill authoring convention."
+  },
+  "skills": [
+    {
+      "name": "build-definition-of-done",
+      "layer": "build",
+      "wave": 1,
+      "purpose": "Make every piece of work carry a criterion, a breakage that makes the criterion fail, and the measured output of both.",
+      "builds_on": [
+        "agentic-stack"
+      ],
+      "used_by": [
+        "cap-agent-runtime",
+        "cap-capability-packaging",
+        "cap-document-validation",
+        "cap-durable-execution",
+        "cap-errors",
+        "cap-idempotency",
+        "cap-identity",
+        "cap-isolation",
+        "cap-model-access",
+        "cap-policy",
+        "cap-provenance",
+        "cap-scheduling",
+        "cap-state-persistence",
+        "cap-telemetry",
+        "cap-tool-access",
+        "cap-work-intake",
+        "compose-agent",
+        "compose-approval",
+        "compose-loop",
+        "compose-workflow",
+        "core-document",
+        "core-graph",
+        "core-judge",
+        "core-ledger",
+        "core-planner",
+        "seam-dispatch",
+        "seam-state",
+        "xc-budget",
+        "xc-correlation",
+        "xc-idempotency-lease",
+        "xc-identity-delegation",
+        "xc-policy-gate",
+        "xc-provenance-chain",
+        "xc-typed-errors"
+      ],
+      "definition_of_done": "decomposition.md section 3.5 row B1",
+      "notes_for_author": "Assert on a non-zero count of things actually checked, never on an exit code alone. PASS.md A7 finding 2 is a pipeline that was structurally green with every behavioural stage skipped (measured, per PASS.md A7)."
+    },
+    {
+      "name": "build-adapter-pair",
+      "layer": "build",
+      "wave": 1,
+      "purpose": "Choose a second adapter that breaks a different assumption than the first, and record how the two execution models differ.",
+      "builds_on": [
+        "agentic-stack"
+      ],
+      "used_by": [
+        "cap-agent-runtime",
+        "cap-capability-packaging",
+        "cap-document-validation",
+        "cap-durable-execution",
+        "cap-errors",
+        "cap-idempotency",
+        "cap-identity",
+        "cap-isolation",
+        "cap-model-access",
+        "cap-policy",
+        "cap-provenance",
+        "cap-scheduling",
+        "cap-state-persistence",
+        "cap-telemetry",
+        "cap-tool-access",
+        "cap-work-intake",
+        "seam-dispatch",
+        "seam-state"
+      ],
+      "definition_of_done": "decomposition.md section 3.5 row B2",
+      "notes_for_author": "A different vendor of the same shape proves nothing. The differs-in-execution-model field is mandatory and empty means the pair is rejected. See decomposition.md section 4."
+    },
+    {
+      "name": "build-evidence-record",
+      "layer": "build",
+      "wave": 1,
+      "purpose": "Record what was actually run, so a claim is never laundered into a measurement.",
+      "builds_on": [
+        "agentic-stack"
+      ],
+      "used_by": [
+        "cap-provenance",
+        "compose-loop",
+        "seam-dispatch",
+        "seam-state",
+        "xc-correlation",
+        "xc-provenance-chain"
+      ],
+      "definition_of_done": "decomposition.md section 3.5 row B3",
+      "notes_for_author": "Fields follow the evidence records already in use: script SHA-256, git commit, tree hash under test, dirty flag (claimed, per PASS.md A5). Add the claimed-or-measured label. A result from a dirty tree may never be labelled measured."
+    },
+    {
+      "name": "build-skill-authoring",
+      "layer": "build",
+      "wave": 1,
+      "purpose": "Fix the shape of a skill in this repo: layer prefix, Composes with section, and a cited standard with a version or the literal phrase version unverified.",
+      "builds_on": [
+        "agentic-stack"
+      ],
+      "used_by": [
+        "cap-agent-runtime",
+        "cap-capability-packaging",
+        "cap-document-validation",
+        "cap-durable-execution",
+        "cap-errors",
+        "cap-idempotency",
+        "cap-identity",
+        "cap-isolation",
+        "cap-model-access",
+        "cap-policy",
+        "cap-provenance",
+        "cap-scheduling",
+        "cap-state-persistence",
+        "cap-telemetry",
+        "cap-tool-access",
+        "cap-work-intake",
+        "compose-agent",
+        "compose-approval",
+        "compose-loop",
+        "compose-workflow",
+        "core-document",
+        "core-graph",
+        "core-judge",
+        "core-ledger",
+        "core-planner",
+        "seam-dispatch",
+        "seam-state",
+        "xc-budget",
+        "xc-correlation",
+        "xc-idempotency-lease",
+        "xc-identity-delegation",
+        "xc-policy-gate",
+        "xc-provenance-chain",
+        "xc-typed-errors"
+      ],
+      "definition_of_done": "decomposition.md section 3.5 row B4",
+      "notes_for_author": "Never invent a version number. If you are unsure, write version unverified. Products appear only in adapter fields and Part A quotations."
+    },
+    {
+      "name": "cap-errors",
+      "layer": "cap",
+      "wave": 2,
+      "purpose": "Give every failure in the platform one machine-readable shape so no caller ever parses prose.",
+      "capability": "Errors",
+      "standard": "RFC 9457 Problem Details for HTTP APIs",
+      "adapter_today": "in-process problem-details library",
+      "second_adapter": "gateway filter mapping upstream failures into application/problem+json without touching the service",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-adapter-pair",
+        "build-skill-authoring"
+      ],
+      "used_by": [
+        "cap-agent-runtime",
+        "cap-capability-packaging",
+        "cap-durable-execution",
+        "cap-idempotency",
+        "cap-identity",
+        "cap-isolation",
+        "cap-model-access",
+        "cap-policy",
+        "cap-provenance",
+        "cap-scheduling",
+        "cap-state-persistence",
+        "cap-telemetry",
+        "cap-tool-access",
+        "cap-work-intake",
+        "core-document",
+        "core-graph",
+        "core-judge",
+        "core-ledger",
+        "seam-dispatch",
+        "seam-state",
+        "xc-budget",
+        "xc-policy-gate",
+        "xc-typed-errors"
+      ],
+      "definition_of_done": "decomposition.md section 3.2 row P12",
+      "notes_for_author": "The type registry in decomposition.md section 2.1.6 is closed. Extending it means adding a row there first. Typed errors are absent today (claimed, per PASS.md A6), so this skill starts from nothing rather than migrating something."
+    },
+    {
+      "name": "cap-document-validation",
+      "layer": "cap",
+      "wave": 2,
+      "purpose": "Validate any declared shape against a published schema dialect, with a validator that passes the official test suite.",
+      "capability": "Document validation",
+      "standard": "JSON Schema 2020-12",
+      "adapter_today": "Python jsonschema validator",
+      "second_adapter": "compiled-schema validator in a different language runtime, for example a Rust or Go 2020-12 implementation",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-adapter-pair",
+        "build-skill-authoring"
+      ],
+      "used_by": [
+        "cap-capability-packaging",
+        "cap-policy",
+        "cap-tool-access",
+        "cap-work-intake",
+        "core-document"
+      ],
+      "definition_of_done": "decomposition.md section 3.2 row P8",
+      "notes_for_author": "Does not build on cap-errors: JSON Schema 2020-12 defines its own output formats, and mapping those into problem details is the consumer's job. Keeping that separation is what lets the validator be swapped for one in another language runtime."
+    },
+    {
+      "name": "cap-isolation",
+      "layer": "cap",
+      "wave": 3,
+      "purpose": "Run a unit of work with declared resources and declared egress, so that what runs inside is opaque to how it is contained.",
+      "capability": "Isolation",
+      "standard": "OCI Runtime Spec v1.2 or later; search indicates v1.3.0 is current (version unverified)",
+      "adapter_today": "Firecracker microVM",
+      "second_adapter": "WebAssembly component sandbox run through an OCI-conformant shim",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-adapter-pair",
+        "build-skill-authoring",
+        "cap-errors"
+      ],
+      "used_by": [
+        "compose-agent",
+        "seam-dispatch"
+      ],
+      "definition_of_done": "decomposition.md section 3.2 row P1",
+      "notes_for_author": "Express declared resources and declared egress, never a machine configuration. Any field only a virtual machine can honour is a leak. Egress defaults off and no real secret enters the unit (claimed, per PASS.md A3). Whether the second adapter can claim full OCI conformance is open question 5."
+    },
+    {
+      "name": "cap-model-access",
+      "layer": "cap",
+      "wave": 3,
+      "purpose": "Obtain a completion from a class of model without naming a vendor, and without the caller knowing whether the call is synchronous.",
+      "capability": "Model access",
+      "standard": "OpenAI-compatible chat completions, de facto, no ratified specification (version unverified)",
+      "adapter_today": "OpenAI-compatible gateway (LiteLLM)",
+      "second_adapter": "provider-native asynchronous batch submission with claim-and-poll",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-adapter-pair",
+        "build-skill-authoring",
+        "cap-errors"
+      ],
+      "used_by": [
+        "xc-budget"
+      ],
+      "definition_of_done": "decomposition.md section 3.2 row P2",
+      "notes_for_author": "Model a completion as a future with a claim ticket, so synchronous and batch are one interface. Callers request a class, never a vendor (claimed, per PASS.md A4). The OpenAI-shaped batch route already failed once by branching on three provider names (claimed, per PASS.md A4); do not reproduce that shape."
+    },
+    {
+      "name": "cap-durable-execution",
+      "layer": "cap",
+      "wave": 3,
+      "purpose": "Let a multi-step unit of work survive a crash and resume at the first incomplete step.",
+      "capability": "Durable execution",
+      "standard": "none published; see decomposition.md section 2 (searched, none found)",
+      "adapter_today": "external workflow orchestrator with deterministic replay (Temporal)",
+      "second_adapter": "in-process transactional step log over a relational database",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-adapter-pair",
+        "build-skill-authoring",
+        "cap-errors"
+      ],
+      "used_by": [
+        "compose-workflow",
+        "seam-dispatch"
+      ],
+      "definition_of_done": "decomposition.md section 3.2 row P3",
+      "notes_for_author": "No published standard exists; search query 8 in decomposition.md found none (claimed). Express step, key, checkpoint, resume point and nothing more. Anything that only makes sense under deterministic replay is an orchestrator detail. The orchestrator is present but not listening today (claimed, per PASS.md A6), which is the reason the interface must not assume a server."
+    },
+    {
+      "name": "cap-agent-runtime",
+      "layer": "cap",
+      "wave": 3,
+      "purpose": "Drive an agent through one prompt turn and learn why the turn stopped.",
+      "capability": "Agent runtime",
+      "standard": "Agent Client Protocol (protocol version unverified; TypeScript SDK v0.21.1 seen in search results)",
+      "adapter_today": "ACP agent over JSON-RPC on stdio (goose)",
+      "second_adapter": "single-shot non-interactive agent with no client callbacks",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-adapter-pair",
+        "build-skill-authoring",
+        "cap-errors"
+      ],
+      "used_by": [
+        "compose-agent",
+        "seam-dispatch"
+      ],
+      "definition_of_done": "decomposition.md section 3.2 row P4",
+      "notes_for_author": "The unit is a prompt turn with a stop reason. Everything interactive, including permission callbacks and streaming, is negotiated at session start and optional. Cancel mid-tool-call ends the turn in about 8 seconds against a 45 second operation with zero trailing frames (measured, per PASS.md A3); that number is where the 10 second default grace window came from."
+    },
+    {
+      "name": "cap-tool-access",
+      "layer": "cap",
+      "wave": 3,
+      "purpose": "Let a unit of work reach tools published by anyone, over a protocol no caller needs our library to speak.",
+      "capability": "Tool access",
+      "standard": "Model Context Protocol, specification revision 2026-07-28 (claimed)",
+      "adapter_today": "in-house MCP endpoint",
+      "second_adapter": "any third-party MCP server reached over the same client",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-adapter-pair",
+        "build-skill-authoring",
+        "cap-errors",
+        "cap-document-validation"
+      ],
+      "used_by": [
+        "compose-agent"
+      ],
+      "definition_of_done": "decomposition.md section 3.2 row P5",
+      "notes_for_author": "The criterion must assert a non-zero tool count as well as conformance. An endpoint that is live, authenticated and has zero tools registered passes conformance and does nothing (claimed, per PASS.md A6)."
+    },
+    {
+      "name": "cap-capability-packaging",
+      "layer": "cap",
+      "wave": 3,
+      "purpose": "Package a capability so a conformant runtime we did not write can load it.",
+      "capability": "Capability packaging",
+      "standard": "Agent Skills spec, published as an open standard (version unverified)",
+      "adapter_today": "filesystem skill directories",
+      "second_adapter": "registry-served skill packages distributed as OCI artifacts",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-adapter-pair",
+        "build-skill-authoring",
+        "cap-errors",
+        "cap-document-validation"
+      ],
+      "used_by": [
+        "compose-agent"
+      ],
+      "definition_of_done": "decomposition.md section 3.2 row P6",
+      "notes_for_author": "The spec requires only name and description in frontmatter (claimed). This repo adds the Composes with link check on top; keep the two separable so the packaging check stays spec-conformant rather than repo-specific."
+    },
+    {
+      "name": "cap-work-intake",
+      "layer": "cap",
+      "wave": 3,
+      "purpose": "Accept a job from any producer and turn it into one canonical document, whatever the producer was.",
+      "capability": "Work intake",
+      "standard": "CloudEvents v1.0.2 (version unverified) and A2A protocol v1.0 (version unverified; specification text could not be fetched, domain egress-blocked)",
+      "adapter_today": "CloudEvents over HTTP from CLI, git events and schedules",
+      "second_adapter": "A2A message producer mapped into the canonical envelope",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-adapter-pair",
+        "build-skill-authoring",
+        "cap-errors",
+        "cap-document-validation"
+      ],
+      "used_by": [
+        "compose-approval",
+        "compose-workflow"
+      ],
+      "definition_of_done": "decomposition.md section 3.2 row P7",
+      "notes_for_author": "Idempotency and scheduling are apparent dependencies, not real ones: a schedule is one producer among several and the replay lease is applied above by xc-idempotency-lease. Whether both envelope formats stay first-class is open question 10."
+    },
+    {
+      "name": "cap-telemetry",
+      "layer": "cap",
+      "wave": 3,
+      "purpose": "Emit traces and metrics in a form any collector can ingest, with correlation carried explicitly.",
+      "capability": "Telemetry",
+      "standard": "OTLP (version unverified) and OpenTelemetry GenAI semantic conventions (pre-stable; version unverified)",
+      "adapter_today": "OTLP SDK exporting to a trace UI and ingestion API (Langfuse)",
+      "second_adapter": "plain OTLP collector writing to a columnar store with no LLM-specific interface",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-adapter-pair",
+        "build-skill-authoring",
+        "cap-errors"
+      ],
+      "used_by": [
+        "xc-correlation"
+      ],
+      "definition_of_done": "decomposition.md section 3.2 row P9",
+      "notes_for_author": "Do not build on trace parentage. W3C trace context does not survive the agent boundary; a depth-3 task tree produces three unrelated root traces (measured, per PASS.md A7 finding 1). GenAI semantic conventions are pre-stable with every attribute at Development stability as of mid-2026 (claimed), so cite them as unstable."
+    },
+    {
+      "name": "cap-policy",
+      "layer": "cap",
+      "wave": 3,
+      "purpose": "Get a deterministic allow-or-deny decision, with the rule that decided it, from a policy engine.",
+      "capability": "Policy",
+      "standard": "Rego policy language with a decision API; no ratified standard (version unverified)",
+      "adapter_today": "Open Policy Agent",
+      "second_adapter": "Cedar policy engine behind the same decision API",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-adapter-pair",
+        "build-skill-authoring",
+        "cap-errors",
+        "cap-document-validation"
+      ],
+      "used_by": [
+        "xc-policy-gate"
+      ],
+      "definition_of_done": "decomposition.md section 3.2 row P10",
+      "notes_for_author": "This skill defines the decision API only. Where the decision is consulted belongs to xc-policy-gate. Conformance checks exist today and are not wired into the enforcement path (claimed, per PASS.md A6); that is what happens when the two are treated as one thing."
+    },
+    {
+      "name": "cap-provenance",
+      "layer": "cap",
+      "wave": 3,
+      "purpose": "Produce a signed statement about an artifact that a tool we did not write can verify.",
+      "capability": "Provenance",
+      "standard": "in-toto Attestation Framework v1 (version unverified), DSSE (version unverified), SLSA v1.0 (v1.1 unverified)",
+      "adapter_today": "append-only JSONL evidence records wrapped in DSSE envelopes",
+      "second_adapter": "keyless signing with a public transparency log (Sigstore)",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-adapter-pair",
+        "build-skill-authoring",
+        "cap-errors",
+        "build-evidence-record"
+      ],
+      "used_by": [
+        "xc-provenance-chain"
+      ],
+      "definition_of_done": "decomposition.md section 3.2 row P11",
+      "notes_for_author": "The criterion must run an external verifier, not ours. If verification needs our store, the requirement in PASS.md B4 is not met. Evidence records and attestations are different things: build-evidence-record is note-taking, this is a signed envelope."
+    },
+    {
+      "name": "cap-identity",
+      "layer": "cap",
+      "wave": 3,
+      "purpose": "Name the actor behind every action, including delegated agent actors, with an explicit chain.",
+      "capability": "Identity",
+      "standard": "OAuth 2.0 Token Exchange RFC 8693, plus workload identity",
+      "adapter_today": "OIDC provider issuing exchanged tokens",
+      "second_adapter": "SPIFFE/SPIRE workload attestation issuing X.509-SVIDs",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-adapter-pair",
+        "build-skill-authoring",
+        "cap-errors"
+      ],
+      "used_by": [
+        "xc-identity-delegation"
+      ],
+      "definition_of_done": "decomposition.md section 3.2 row P13",
+      "notes_for_author": "There is no identity field anywhere in the system today (claimed, per PASS.md A6), so this starts from nothing rather than migrating something, and the P13 check starts red by construction. Do not build on the policy engine; policy consumes identity, not the reverse."
+    },
+    {
+      "name": "cap-scheduling",
+      "layer": "cap",
+      "wave": 3,
+      "purpose": "Compute when a recurring unit of work is due, as a pure function of a rule and a window.",
+      "capability": "Scheduling",
+      "standard": "RFC 5545 recurrence rules",
+      "adapter_today": "orchestrator-native schedules",
+      "second_adapter": "standalone RFC 5545 evaluator driving a queue",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-adapter-pair",
+        "build-skill-authoring",
+        "cap-errors"
+      ],
+      "used_by": [
+        "compose-approval"
+      ],
+      "definition_of_done": "decomposition.md section 3.2 row P14",
+      "notes_for_author": "Test vectors must include both DST boundaries, a leap day and a BYSETPOS rule, because a fixed-interval cron passes everything else. Do not source recurrence from an orchestrator's scheduler; that makes the orchestrator unswappable for a reason unrelated to orchestration."
+    },
+    {
+      "name": "cap-idempotency",
+      "layer": "cap",
+      "wave": 3,
+      "purpose": "Make a repeated external request produce one execution and one answer.",
+      "capability": "Idempotency",
+      "standard": "Idempotency-Key HTTP header field, draft-ietf-httpapi-idempotency-key-header-07, expired, never an RFC (claimed)",
+      "adapter_today": "idempotency key carried on the wire with no lease",
+      "second_adapter": "conditional-write lease store on a transactional database",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-adapter-pair",
+        "build-skill-authoring",
+        "cap-errors"
+      ],
+      "used_by": [
+        "xc-idempotency-lease"
+      ],
+      "definition_of_done": "decomposition.md section 3.2 row P15",
+      "notes_for_author": "The header convention expired without becoming an RFC (claimed), so adopt the field name and specify the lease semantics ourselves in decomposition.md section 2.1.6. Today the key is on the wire with no lease (claimed, per PASS.md B3); the key alone deduplicates nothing."
+    },
+    {
+      "name": "cap-state-persistence",
+      "layer": "cap",
+      "wave": 3,
+      "purpose": "Put an opaque record somewhere durable, get it back, and prove nobody changed it.",
+      "capability": "State persistence",
+      "standard": "none published for the store; RFC 9162 for integrity, RFC 8785 for canonical bytes",
+      "adapter_today": "hash-chained append-only line-delimited JSON",
+      "second_adapter": "content-addressed Merkle log with inclusion and consistency proofs over an object store",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-adapter-pair",
+        "build-skill-authoring",
+        "cap-errors"
+      ],
+      "used_by": [
+        "seam-state",
+        "xc-idempotency-lease"
+      ],
+      "definition_of_done": "decomposition.md section 3.2 row P16",
+      "notes_for_author": "Defined over opaque records. This interface must not know that a record is a graph edge or a ledger entry; that is seam-state's job. Express integrity as give me a proof about this record at this head, never as rehash the whole log, or the object-store adapter is unimplementable."
+    },
+    {
+      "name": "core-document",
+      "layer": "core",
+      "wave": 4,
+      "purpose": "Declare intent, a definition of done and steps as validated data, before anything reads it.",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "cap-document-validation",
+        "cap-errors"
+      ],
+      "used_by": [
+        "core-graph",
+        "core-judge",
+        "core-ledger",
+        "core-planner",
+        "seam-dispatch"
+      ],
+      "definition_of_done": "decomposition.md section 3.1 row C1",
+      "notes_for_author": "Core skill: no product name may appear. The document is written before any consumer exists, and it must be, because a planner that shapes the document has made planning impure. The definition of done lives here; the criterion text does not travel to the graded unit (see core-judge)."
+    },
+    {
+      "name": "core-graph",
+      "layer": "core",
+      "wave": 5,
+      "purpose": "Compose typed nodes and typed existence, interface and implementation edges, with validity decidable in memory.",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "core-document",
+        "cap-errors"
+      ],
+      "used_by": [
+        "core-planner",
+        "seam-state"
+      ],
+      "definition_of_done": "decomposition.md section 3.1 row C3",
+      "notes_for_author": "Core skill: zero outward dependencies, no product names. Persistence is a separate seam. If this skill acquires a storage engine's shape, the boundary has been drawn wrong."
+    },
+    {
+      "name": "core-judge",
+      "layer": "core",
+      "wave": 5,
+      "purpose": "Turn a result and a hidden criterion into a verdict, as a pure function.",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "core-document",
+        "cap-errors"
+      ],
+      "used_by": [
+        "compose-loop",
+        "seam-dispatch"
+      ],
+      "definition_of_done": "decomposition.md section 3.1 row C4",
+      "notes_for_author": "Design rule 6 is the whole point: the criterion never appears in anything the graded unit can read. The C4 check greps recorded dispatch requests for the criterion string and expects zero matches. Whether the judge runs inside or outside isolation is open question 6; the default is outside."
+    },
+    {
+      "name": "core-ledger",
+      "layer": "core",
+      "wave": 5,
+      "purpose": "Keep an append-only record across runs and be the single authority on whether work was already done.",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "core-document",
+        "cap-errors"
+      ],
+      "used_by": [
+        "seam-state"
+      ],
+      "definition_of_done": "decomposition.md section 3.1 row C5",
+      "notes_for_author": "Append-only means a duplicate key never overwrites. The dedup query is what stops a planner re-planning finished work, so it is part of the state query surface in decomposition.md section 2.2.5."
+    },
+    {
+      "name": "xc-typed-errors",
+      "layer": "xc",
+      "wave": 5,
+      "purpose": "Enforce that no failure anywhere is discovered by matching strings.",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "cap-errors"
+      ],
+      "used_by": [
+        "seam-dispatch"
+      ],
+      "definition_of_done": "decomposition.md section 3.4 row X6",
+      "notes_for_author": "The check is a grep over the tree outside the problem-details parser. An adapter whose untyped-failure count is non-zero is not conformant; do not let it be waved through as a known gap."
+    },
+    {
+      "name": "xc-correlation",
+      "layer": "xc",
+      "wave": 5,
+      "purpose": "Enforce that every emitted signal carries the explicit run and root dispatch identifiers.",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "cap-telemetry",
+        "build-evidence-record"
+      ],
+      "used_by": [
+        "seam-dispatch"
+      ],
+      "definition_of_done": "decomposition.md section 3.4 row X5",
+      "notes_for_author": "This exists because injecting TRACEPARENT does not work: the agent mints its own root trace and a depth-3 tree yields three unrelated roots (measured, per PASS.md A7 finding 1). Permit more than one trace id; do not permit a missing run identifier. Resource attribute versus span attribute is open question 8."
+    },
+    {
+      "name": "xc-identity-delegation",
+      "layer": "xc",
+      "wave": 5,
+      "purpose": "Enforce that every action names an actor and every delegated action carries an explicit, acyclic chain.",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "cap-identity"
+      ],
+      "used_by": [
+        "seam-dispatch"
+      ],
+      "definition_of_done": "decomposition.md section 3.4 row X2",
+      "notes_for_author": "Delegation chains are ordered oldest hop first and must terminate at a root workload identity. The chain is data carried by dispatch; dispatch does not define it."
+    },
+    {
+      "name": "xc-policy-gate",
+      "layer": "xc",
+      "wave": 5,
+      "purpose": "Enforce that refusal is deterministic and happens before any metered call.",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "cap-policy",
+        "cap-errors"
+      ],
+      "used_by": [
+        "seam-dispatch"
+      ],
+      "definition_of_done": "decomposition.md section 3.4 row X3",
+      "notes_for_author": "The check is a timestamp ordering assertion with zero inversions plus a spend delta of exactly zero on a denied dispatch. Consulting policy in parallel with the first call fails it, which is the failure this skill exists to prevent."
+    },
+    {
+      "name": "xc-provenance-chain",
+      "layer": "xc",
+      "wave": 5,
+      "purpose": "Enforce that every artifact has an attestation whose subject digest matches it.",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "cap-provenance",
+        "build-evidence-record"
+      ],
+      "used_by": [
+        "seam-dispatch",
+        "seam-state"
+      ],
+      "definition_of_done": "decomposition.md section 3.4 row X4",
+      "notes_for_author": "Orphan artifacts, meaning an output digest with no attestation, are the failure mode. Chaining attestations to a sealed log head belongs to seam-state; producing and signing them belongs here."
+    },
+    {
+      "name": "xc-budget",
+      "layer": "xc",
+      "wave": 5,
+      "purpose": "Enforce a spend ceiling on every unit of work, outside the unit, terminating the unit and not the platform.",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "cap-model-access",
+        "cap-errors"
+      ],
+      "used_by": [
+        "compose-loop",
+        "core-planner",
+        "seam-dispatch"
+      ],
+      "definition_of_done": "decomposition.md section 3.4 row X1",
+      "notes_for_author": "A unit that enforces its own ceiling can decline to. Scoped keys already terminate spend rather than record it (measured, per PASS.md A4), so match that model. on_exceed is a const in the request schema, not an enum: there is no opt-out to express. Granularity is open question 7."
+    },
+    {
+      "name": "xc-idempotency-lease",
+      "layer": "xc",
+      "wave": 5,
+      "purpose": "Enforce that every externally-triggered action acquires a keyed lease, so a replay produces one execution.",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "cap-idempotency",
+        "cap-state-persistence"
+      ],
+      "used_by": [
+        "compose-approval",
+        "seam-dispatch"
+      ],
+      "definition_of_done": "decomposition.md section 3.4 row X7",
+      "notes_for_author": "Deliberately built on the persistence interface rather than on the ledger, so any store with a conditional write can provide the lease. Leases must expire, or a crashed owner blocks a key forever."
+    },
+    {
+      "name": "core-planner",
+      "layer": "core",
+      "wave": 6,
+      "purpose": "Turn a document into a plan and a cost, as a pure function that completes before any execution begins.",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "core-document",
+        "core-graph",
+        "xc-budget"
+      ],
+      "used_by": [
+        "compose-workflow"
+      ],
+      "definition_of_done": "decomposition.md section 3.1 row C2",
+      "notes_for_author": "The load-bearing non-dependency of the whole design: the planner must not call a model. The C2 check counts network connects under strace and expects zero. Cost estimates come from a cost table and historical quantiles supplied as data. This is settled by design rule 5 and is not reopened by evidence that estimates would improve."
+    },
+    {
+      "name": "seam-dispatch",
+      "layer": "seam",
+      "wave": 6,
+      "purpose": "Execute one unit of agent work under a declared ceiling and return one typed result whose partial progress is already durable.",
+      "capability": "Dispatch",
+      "standard": "none published; assembled from A2A v1.0 task lifecycle (version unverified), Agent Client Protocol stop reasons (version unverified), RFC 9457, and draft-ietf-httpapi-idempotency-key-header-07",
+      "adapter_today": "control-protocol dispatcher over vsock into a local microVM",
+      "second_adapter": "HTTP dispatcher into a hosted single-shot sandbox with no session and no callbacks",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "build-adapter-pair",
+        "build-evidence-record",
+        "core-document",
+        "core-judge",
+        "cap-isolation",
+        "cap-agent-runtime",
+        "cap-durable-execution",
+        "cap-errors",
+        "xc-budget",
+        "xc-policy-gate",
+        "xc-identity-delegation",
+        "xc-correlation",
+        "xc-typed-errors",
+        "xc-provenance-chain",
+        "xc-idempotency-lease"
+      ],
+      "used_by": [
+        "compose-workflow"
+      ],
+      "definition_of_done": "decomposition.md section 3.3 row S1",
+      "notes_for_author": "Full design in decomposition.md section 2.1, including all four schema sketches. Do not invent a state machine or a stop-reason vocabulary: adopt the A2A task lifecycle and the ACP stop reasons and add only budget_exhausted, deadline_exceeded, policy_denied, cancel_timeout and adapter_unavailable. Three implementations exist today with no contract between them (claimed, per PASS.md B5); the conformance suite must be able to single out one failing adapter."
+    },
+    {
+      "name": "seam-state",
+      "layer": "seam",
+      "wave": 6,
+      "purpose": "Persist the graph and the ledger as one append-only tamper-evident log, written by one writer per run and read at a pinned snapshot.",
+      "capability": "State",
+      "standard": "none published for the store; RFC 9162 Certificate Transparency 2.0, RFC 8785 JSON Canonicalization Scheme, in-toto Attestation Framework v1 (version unverified), DSSE (version unverified)",
+      "adapter_today": "hash-chained append-only JSONL with a single file writer",
+      "second_adapter": "Merkle log over an object store with a fencing-lease writer and O(log n) proofs",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "build-adapter-pair",
+        "build-evidence-record",
+        "core-graph",
+        "core-ledger",
+        "cap-state-persistence",
+        "xc-provenance-chain",
+        "cap-errors"
+      ],
+      "used_by": [
+        "compose-workflow"
+      ],
+      "definition_of_done": "decomposition.md section 3.3 row S2",
+      "notes_for_author": "Full design in decomposition.md section 2.2. Keep the hash chain, add Merkle inclusion and consistency proofs on top; whether to replace or wrap is open question 3 and the default is wrap. Every planner query takes at_head and is deterministic at that head, which is what makes design rule 5 checkable. Redaction is a tombstone that preserves the record digest, never a deletion."
+    },
+    {
+      "name": "compose-workflow",
+      "layer": "compose",
+      "wave": 7,
+      "purpose": "Assemble a plan into a sequence of dispatches whose every step is durable before the next begins.",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "seam-dispatch",
+        "seam-state",
+        "core-planner",
+        "cap-durable-execution",
+        "cap-work-intake"
+      ],
+      "used_by": [
+        "compose-approval",
+        "compose-loop"
+      ],
+      "definition_of_done": "decomposition.md section 3.5 row M1",
+      "notes_for_author": "Checkpoint after each step, not after the workflow. A workflow is expressible over any durable-execution adapter including a queue plus a state machine, and must be, because the orchestrator it would otherwise assume is currently down (claimed, per PASS.md A6)."
+    },
+    {
+      "name": "compose-loop",
+      "layer": "compose",
+      "wave": 8,
+      "purpose": "Assemble dispatch, judgement and a ceiling into a bounded iteration that always terminates for a nameable reason.",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "build-evidence-record",
+        "compose-workflow",
+        "core-judge",
+        "xc-budget"
+      ],
+      "used_by": [
+        "compose-agent"
+      ],
+      "definition_of_done": "decomposition.md section 3.5 row M2",
+      "notes_for_author": "Exactly three termination conditions are allowed: a pass verdict, an iteration ceiling, a budget ceiling. Any run that terminates for a fourth reason, or does not terminate, is a defect. The criterion stays hidden from the loop body."
+    },
+    {
+      "name": "compose-approval",
+      "layer": "compose",
+      "wave": 8,
+      "purpose": "Assemble a workflow that parks on a durable state record and resumes exactly once on an external event.",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "compose-workflow",
+        "cap-work-intake",
+        "cap-scheduling",
+        "xc-idempotency-lease"
+      ],
+      "used_by": [],
+      "definition_of_done": "decomposition.md section 3.5 row M3",
+      "notes_for_author": "Separate from compose-workflow because the resume is externally triggered and therefore must be idempotent and time-bounded, which an internal step transition is not. Human-in-the-loop is currently designed around an orchestrator that is not listening (claimed, per PASS.md A6), so do not define parking in that orchestrator's terms."
+    },
+    {
+      "name": "compose-agent",
+      "layer": "compose",
+      "wave": 9,
+      "purpose": "Assemble a bounded loop, a declared tool surface and a packaged capability set into one isolated agent.",
+      "builds_on": [
+        "agentic-stack",
+        "build-definition-of-done",
+        "build-skill-authoring",
+        "compose-loop",
+        "cap-agent-runtime",
+        "cap-tool-access",
+        "cap-capability-packaging",
+        "cap-isolation"
+      ],
+      "used_by": [],
+      "definition_of_done": "decomposition.md section 3.5 row M4",
+      "notes_for_author": "Built last because it is the widest consumer, not because it is the most important. Every dependency is an interface by this point; if you find yourself naming a product here, a lower layer is incomplete. Design rule 6 is checked again at this level: the criterion must be absent from everything the unit can read."
+    }
+  ]
+}

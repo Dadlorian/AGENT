@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | 1 | `PASS.md` states current state (Part A) and a target architecture (Part B): a five-piece core, capability interfaces, cross-cutting guarantees, and two seams. |
-| 2 | `TARGET.md` extends that into a composability baseline and the measuring sticks (T1 to T10); this repo is `PASS.md` Part B built out as 102 linked Claude Code skills (101 under `docs/skill-manifest.json` plus the `agentic-stack` root the manifest excludes by design), 28 harnesses that prove each stack element swaps behind its interface, and 16 integration guides. |
+| 2 | `TARGET.md` extends that into a composability baseline and the measuring sticks (T1 to T10); this repo is `PASS.md` Part B built out as 103 linked Claude Code skills (102 under `docs/skill-manifest.json` plus the `agentic-stack` root the manifest excludes by design), 28 harnesses that prove each stack element swaps behind its interface, and 16 integration guides. |
 | 3 | Every claim a skill makes is either cited to a knowledge-base record with a verbatim quote, or marked `proposed`; nothing is asserted from memory. |
 | 4 | `STATUS.md` is the owner's single view of what is open; `STATUS-ARCHIVE.md` holds every closed row with its commit. `OWNER.md` holds the owner's corrections, one line each. |
 
@@ -35,7 +35,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | xc | 22 | 7 cross-cutting guarantees a caller cannot decline (budget, identity, policy, provenance, telemetry/correlation, errors, idempotency), each an ideal + implement pair. |
 | seam | 4 | Dispatch and State — the 2 boundaries with no standard to adopt, so original design was warranted. |
 | compose | 10 | Assembling workflows, loops, approvals and agents from the layers below; introduces no new interface. |
-| build | 12 | Authoring disciplines every skill in this repo follows: definition of done with a breakage, adapter pairing, evidence recording, ceremony, solution architecture, skill authoring itself. |
+| build | 13 | Authoring disciplines every skill in this repo follows: definition of done with a breakage, adapter pairing, evidence recording, ceremony, solution architecture, the litmus questionnaire, skill authoring itself. |
 
 `docs/skill-graph.md` draws the `builds_on` edges as focal groups, each kept under the mermaid rendering limits.
 
@@ -67,7 +67,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | `kb/facts.jsonl` | `F-` | One record per row/item in `PASS.md`, hash-chained to its exact source lines |
 | `kb/target-facts.jsonl` | `T-` | One record per numbered requirement in `TARGET.md` |
 | `kb/reference-facts.jsonl` | `REF-` | `docs/reference/composable-plan.md`, status `reference` — an example followed, never a fact |
-| `kb/research.jsonl` | `X-` | 555 search records merged from `kb/research/*.jsonl`; every one is `search-only` — no page fetch has been verified in this environment |
+| `kb/research.jsonl` | `X-` | 658 search records merged from `kb/research/*.jsonl`; every one is `search-only` — no page fetch has been verified in this environment |
 | `kb/entities.jsonl` | `E-` | 184 named things the facts are about (capabilities, adapters, standards, …) |
 | `kb/edges.jsonl` | `R-` (rel) | 109 typed links between entities, each citing the fact that states the link |
 | `kb/decisions.jsonl` | `D-` | 110 decisions lifted from `docs/decomposition.md` by line |
@@ -91,6 +91,17 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | Naming | Every agent, scope claim and record is named by its STATUS row id (`61-review-c`), per `OWNER.md` |
 | Where lessons go | `state/lessons.jsonl` (17 rows) and `state/author-brief.md`; the briefs a crew reads are under `state/briefs/` |
 | Trend | `python3 tools/ceremony_check.py` — findings-per-skill fell from 1.00 (ceremony 1) to 0.00–0.14 by ceremonies 8–10 |
+
+## The litmus questionnaire
+
+| | |
+|---|---|
+| What | A self-reflection on `PASS.md` B3 and B4: for each of the 16 capability interfaces and 7 cross-cutting concerns, the idealistic future state a build could reach inside the window (2026-03-03 to 2026-09-03), tool-agnostic where the standard allows, asked from up to six angles because how a standard is used matters more than whether it is used |
+| Where | `docs/litmus/questionnaire.md` (rendered) from `docs/litmus/questionnaire.json`; the owner's frame (closed scale, angles, settledness, rules, isolation) in `docs/litmus/frame.json`; the discipline in `.claude/skills/build-litmus-questionnaire/` |
+| How it was written | Four crew members, each reading only `PASS.md` Part B and the web, never what this repo built; `tools/litmus_check.py` refuses any text naming a skill, harness, tool or doc here, and any product outside the direction fields |
+| Scale | -1 misaligned (an error to correct), 0 absent, 1 exists, 2 aligned, 3 leading |
+| Check | `python3 tools/litmus_check.py check` → `23 sections, 140 questions, 0 errors` |
+| Next | STATUS row 67: one isolated assessor per section answers every question with evidence and a score; misaligned scores are errors, absent and exists are the measured gap |
 
 ## Human review
 
@@ -128,6 +139,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | `tools/harness_accept.py` | Accept one finished harness: run its gate, merge its plan entry, release its claims, regenerate matrix and guides |
 | `tools/final_acceptance.py` | Derive every T9 and T10 stick at one commit; `--write` stores `docs/acceptance/final.json` |
 | `tools/blueprint_check.py` | Hold `docs/architecture/blueprint.json` to the source-of-truth rule |
+| `tools/litmus_check.py` | Check, merge and render the litmus questionnaire: coverage of every B3 row and B4 concern, angles, citations, contamination |
 | `tools/skill_graph.py` | Generate `docs/skill-graph.md` from every `skill.json` as focal groups, each counted against the mermaid edge and text limits; exit 1 when one would not render |
 | `tools/manifest_facets.py` | Expand `docs/skill-manifest.json` into ideal/implement facets and emit the loop's sections |
 | `tools/gaps.py` | Aggregate research gaps into `docs/research/gaps.json`, and with `--apply`, add gap skills to the manifest |
@@ -136,7 +148,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 
 | Check | Command | Expected |
 |---|---|---|
-| Every skill valid | `python3 tools/validate_skills.py` | `102 skills checked, 0 errors, 0 warnings` |
+| Every skill valid | `python3 tools/validate_skills.py` | `103 skills checked, 0 errors, 0 warnings` |
 | Knowledge base intact | `python3 tools/kb.py verify` | chain and source-line checks pass |
 | Ledger intact | `python3 tools/kb.py ledger-verify` | `190 records, chain intact` |
 | Every stick holds | `python3 tools/final_acceptance.py` | `15 of 15 hold` (runs all 28 harness gates) |
@@ -150,9 +162,9 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | | |
 |---|---|
 | 1 | 810 of 2725 rows across every `skill.json` (29.7%) are `origin: proposed`: this repo's own design, under the 30% stick, not sourced facts. |
-| 2 | No standard's version has been verified against its published spec: all 555 research records are `search-only`, because page fetch is blocked here (STATUS rows 14 and 45). The standard stick is recorded absent by the owner for all 16 elements. |
+| 2 | No standard's version has been verified against its published spec: all 658 research records are `search-only`, because page fetch is blocked here (STATUS rows 14 and 45). The standard stick is recorded absent by the owner for all 16 elements. |
 | 3 | Every harness's live adapter is claimed, not measured; no run has reached the host from a session (STATUS row 37). |
-| 4 | 47 of 102 definitions of done are still claimed; 55 have a measured run. |
+| 4 | 48 of 103 definitions of done are still claimed; 55 have a measured run. |
 | 5 | Every reviewer to date is a model (Sonnet or Opus); one Sonnet review missed both planted defects and was discarded and re-run. `HUMAN-REVIEW.md` is the first human pass. |
-| 6 | `state/grandfathered.json` lists all 102 skills, exempting them from two validator rules that no skill currently needs. |
-| 7 | The skill layout (102 skills, ideal/implement pairs) awaits the owner's choice among the options in `kb/ceremonies/64-structure-review.json` (STATUS row 64). |
+| 6 | `state/grandfathered.json` lists 102 of the 103 skills, exempting them from two validator rules that no skill currently needs. |
+| 7 | The skill layout (103 skills, ideal/implement pairs) awaits the owner's choice among the options in `kb/ceremonies/64-structure-review.json` (STATUS row 64). |

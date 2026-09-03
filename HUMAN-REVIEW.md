@@ -10,7 +10,7 @@ Run these from the repo root. If any last line differs, stop and start the revie
 
 | Command | Proves | Last line today |
 |---|---|---|
-| `python3 tools/validate_skills.py` | every skill conforms to the schema and every quote is in the knowledge base | `102 skills checked, 0 errors, 0 warnings` |
+| `python3 tools/validate_skills.py` | every skill conforms to the schema and every quote is in the knowledge base | `103 skills checked, 0 errors, 0 warnings` |
 | `python3 tools/kb.py verify` | the knowledge base still matches `PASS.md`, `TARGET.md` and the reference doc line for line | `kb verified: chains intact, ...` |
 | `python3 tools/kb.py ledger-verify` | no run record was altered or dropped | `ledger verified: 190 records, chain intact` |
 | `python3 tools/final_acceptance.py` | every measuring stick in `TARGET.md` T9 and T10 holds; runs all 28 harnesses | `15 of 15 hold` |
@@ -30,7 +30,7 @@ Run these from the repo root. If any last line differs, stop and start the revie
 | `STATUS-ARCHIVE.md` | Every Done row with the date and commit it closed at. | Pick three archived rows and reproduce their Result from the commands in this checklist. | A Result that the command no longer reproduces at HEAD. |
 | `README.md` | The map of the repo. | Every number in it should come from a command in section 1. | A count in the README that a command does not print. |
 
-## 3. `.claude/skills/` (102 skills)
+## 3. `.claude/skills/` (103 skills)
 
 Each skill is a directory: `skill.json` (the data, the only thing authored), `SKILL.md` (rendered from it, never edited), and for 74 of them `references/` (registries and usage notes the skill points at).
 
@@ -48,13 +48,13 @@ Sample at least one skill per layer (`agentic-stack`, one `core-`, one `cap-` pa
 1. **The description in the frontmatter.** It says when to load the skill. Would you load it for the task it names, and only then? A description that fires on every task is a defect; so is one that never fires.
 2. **Two sourced rows.** Pick any two rows marked `sourced`. Run `python3 tools/kb.py show <id>` on the first id in the Evidence cell and confirm the quoted words appear in that record's `text`. The validator does this for every row; you are checking that the quote supports the statement, which no tool can.
 3. **Two proposed rows.** A proposed row is this repo's own design. Does the text say so, and is it a design choice rather than a fact someone should have looked up? A proposed row that reads as a fact is a research gap.
-4. **The definition of done.** Read `criterion`: it must be a command you can paste. `status: measured` means `tools/measure.py` ran it and `measured_run.commit` names the commit. Paste the criterion and compare with `expected`. `status: claimed` means nobody has run it; 47 of 102 are still claimed (STATUS rows 16 and 37 say why).
+4. **The definition of done.** Read `criterion`: it must be a command you can paste. `status: measured` means `tools/measure.py` ran it and `measured_run.commit` names the commit. Paste the criterion and compare with `expected`. `status: claimed` means nobody has run it; 48 of 103 are still claimed (STATUS rows 16 and 37 say why).
 5. **Adapters** (`cap-` and `seam-` only). The today adapter names what runs on the host per `PASS.md` B3; the second names a different execution model. `cannot` should be a real limitation, not a compliment.
 6. **`builds_on` and `composes_with`.** Follow one link. The linked skill should add something this one does not restate.
 
 A problem looks like: a quote not in the record; a proposed row written as a fact; a criterion with prose in it; a measured skill whose criterion fails at HEAD; a description that would load on any task; an ideal skill and its `-implement` sibling that say the same thing twice.
 
-Open question for you: `state/grandfathered.json` lists all 102 skills, which lets the validator keep restatement findings as warnings rather than errors, and lets `status: measured` stand without a run. Today no skill needs either exemption (0 warnings; every measured skill has a run). Emptying the list makes both rules hard errors from here on.
+Open question for you: `state/grandfathered.json` lists 102 of the 103 skills, which lets the validator keep restatement findings as warnings rather than errors, and lets `status: measured` stand without a run. Today no skill needs either exemption (0 warnings; every measured skill has a run). Emptying the list makes both rules hard errors from here on.
 
 ## 4. `kb/` (the knowledge base)
 
@@ -63,7 +63,7 @@ Open question for you: `state/grandfathered.json` lists all 102 skills, which le
 | `facts.jsonl` | `F-` | one record per row of `PASS.md`, with its line range and hash | 109 |
 | `target-facts.jsonl` | `T-` | one record per numbered item of `TARGET.md` | 47 |
 | `reference-facts.jsonl` | `REF-` | `docs/reference/composable-plan.md`, an example, never a fact | 208 |
-| `research.jsonl` | `X-` | web search records merged from `kb/research/*.jsonl` (56 files) | 555 |
+| `research.jsonl` | `X-` | web search records merged from `kb/research/*.jsonl` (60 files) | 658 |
 | `entities.jsonl`, `edges.jsonl` | `E-`, `R-` | the things the facts name and the typed links between them | 184, 109 |
 | `decisions.jsonl` | `D-` | decisions lifted from `docs/decomposition.md` by line | 110 |
 | `architecture.jsonl` | `A-` | the blueprint imported as entities and edges | 803 |

@@ -40,3 +40,12 @@ Stated by the platform owner on 2026-09-03 as the baseline target. PASS.md Part 
 4. Multiple models are used through one gateway, and a fleet of GPUs serves local models; callers request a model class, not a vendor.
 5. Each agent is defined up front by what it is good at, so callers know how to call it and how to sequence it.
 6. The target scale is well over a hundred agents running at a time, working together, managing state, breaking problems down, and self-improving where they can.
+
+## T7. Harness
+
+1. The harness is an overlay that integrates across every component fluidly; it never pins the integration to a component.
+2. Every harness call goes through the capability interface, and the component sits behind an adapter.
+3. Each component has a minimal call in isolation, and the same calls are linked across the composable elements.
+4. Standards will change, systems will change, and components will change; the harness shows where the impacts are.
+5. Changing a component means swapping its adapter, and the conformance run proves the interface held.
+6. This direction is a target toward perfection, not a fixed definition; improve on it.

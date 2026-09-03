@@ -24,3 +24,9 @@
 | 20 | Consumption link | cap-consumption links to cap-work-intake | Open | Unlinked |
 | 21 | Continuous improvement loop | One iteration per fire moves a metric and checkpoints | Not started | Awaiting go |
 | 22 | Status table discipline | STATUS.md passes its checker on every edit | Done | 21 rows, 0 errors |
+| 23 | Containment harness | One turn runs in a microVM through the interface and cancels | Open | Not started |
+| 24 | Gateway harness | One completion by class runs under a scoped cap | Open | Not started |
+| 25 | Observability harness | One trace carries correlation on explicit attributes | Open | Not started |
+| 26 | Workflow harness | One durable flow survives a crash and resumes | Open | Not started |
+| 27 | Linked harness | One document runs through all four harnesses | Open | Not started |
+| 28 | Impact map | A component swap lists every affected adapter, test, and skill | Open | Not started |

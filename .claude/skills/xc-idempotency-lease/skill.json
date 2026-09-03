@@ -379,7 +379,7 @@
         "quote": "Swappability is a tested property, not an intention."
       },
       {
-        "text": "The one rejection is the registered conflict type carried in the platform's failure object, so a caller branches on a type rather than on words. cap-errors owns the shape and the closed registry; this layer only fixes when the conflict is raised, which is a repeat key under a different payload digest.",
+        "text": "The one rejection is the registered conflict type carried in the platform's failure object, so a caller branches on a type rather than on words. cap-idempotency carries this rule for the replay contract and cap-errors owns the shape and the closed registry; this layer only fixes when the conflict is raised, which is a repeat key under a different payload digest.",
         "origin": "sourced",
         "sources": [
           "F-b4-07",
@@ -388,7 +388,7 @@
         "quote": "Typed and machine-readable. Never parsed from prose"
       },
       {
-        "text": "Consequence of TARGET T2.3: the claim is applied across the whole structure, not only at the door. An action that is externally triggered at a resumed step, a delivered approval or a re-fired recurrence acquires its own lease at that boundary, or replay safety stops at the first hop.",
+        "text": "Consequence of TARGET T2.3, which cap-idempotency already carries for the replay claim: the claim is applied across the whole structure, not only at the door. An action that is externally triggered at a resumed step, a delivered approval or a re-fired recurrence acquires its own lease at that boundary, or replay safety stops at the first hop.",
         "origin": "sourced",
         "sources": [
           "T-t2-03",
@@ -494,7 +494,7 @@
     {
       "step": 7,
       "action": "Return the conflict as the registered problem object with status 409 and retryable false, and never as a message a caller has to read.",
-      "why": "cap-errors owns the failure object and holds the type registry closed; this guarantee supplies one registered row of it. A second failure format minted here would be one more thing every client has to learn for a case that is not special.",
+      "why": "cap-idempotency carries this typed-failure rule for the replay contract (F-b4-07), and cap-errors owns the failure object and holds the type registry closed; this guarantee supplies one registered row of it. A second failure format minted here would be one more thing every client has to learn for a case that is not special.",
       "origin": "sourced",
       "sources": [
         "F-b4-07"
@@ -532,7 +532,7 @@
       "quote": "Content hashing detects duplicates; an idempotency key identifies one intended operation."
     },
     {
-      "text": "agentic-stack already states the structurally-green-gate finding (F-a7-03). What it adds here: a lease check that ran over a corpus in which no request ever repeated reports the same green as one that caught a duplicate, so assert the keys actually checked and the duplicates actually attached, never the exit code alone.",
+      "text": "agentic-stack already states the structurally-green-gate finding (F-a7-03). What it adds here, as this skill's own proposed consequence: a lease check that ran over a corpus in which no request ever repeated reports the same green as one that caught a duplicate, so assert the keys actually checked and the duplicates actually attached, never the exit code alone.",
       "origin": "sourced",
       "sources": [
         "F-a7-03"
@@ -540,7 +540,7 @@
       "quote": "Those establish well-formedness, not correctness"
     },
     {
-      "text": "agentic-stack already states the silently-discarded-configuration finding (F-a7-04). What it adds here: a lease duration written where the documentation says is not a lease duration in force, so prove the placement by observing a second execution being prevented and an expired key being reclaimed, not by reading the setting that declares them.",
+      "text": "agentic-stack already states the silently-discarded-configuration finding (F-a7-04). What it adds here, as this skill's own proposed consequence: a lease duration written where the documentation says is not a lease duration in force, so prove the placement by observing a second execution being prevented and an expired key being reclaimed, not by reading the setting that declares them.",
       "origin": "sourced",
       "sources": [
         "F-a7-04"
@@ -565,10 +565,10 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "Proposed tool, built with the first implementation of this placement (docs/decomposition.md section 3.4 row X7): `python3 tools/conformance/lease_placement.py --entries examples/end-to-end/entries --corpus out/actions.jsonl --kill-owner-at 0.5 --report out/lease.json`. Over a corpus replayed through each of the three ways in it asserts that every externally-triggered action has a lease record carrying a non-null owner and a non-null expires_at, that no two executions share a key within a scope, that a duplicate answered while the first execution was still running was attached rather than executed, and that a lease whose owner was killed mid-execution is reclaimable once its expiry has passed. It reports `keys_checked`, `unleased_actions`, `owners_missing`, `expiries_missing`, `duplicate_executions`, `attached_in_flight`, `reclaimed` and `ways_in_covered`, and asserts `keys_checked > 0`, `unleased_actions == 0`, `owners_missing == 0`, `expiries_missing == 0`, `duplicate_executions == 0`, `attached_in_flight >= 1`, `reclaimed >= 1` and `ways_in_covered == 3`.",
-    "expected": "exit 0 and one summary line `keys_checked=<n> unleased_actions=0 owners_missing=0 expiries_missing=0 duplicate_executions=0 attached_in_flight=<k> reclaimed=<r> ways_in_covered=3`, with `k` and `r` both greater than zero so the attach assertion and the reclaim assertion each had something to assert on.",
-    "breakage": "Let the lease expiry be unbounded: set `expires_at` to null on acquisition, leave everything else including the owner and the fencing token in place, and re-run the same command.",
-    "expected_failure": "exit non-zero with `expiries_missing` equal to the number of leases taken and `reclaimed == 0`: the owner killed mid-execution never releases its key, so the reclaimability assertion fails and the key stays held forever, while `keys_checked` holds its value and `ways_in_covered` stays 3, which is what shows the failure is the missing expiry rather than a corpus that was never replayed. Claimed: no lease is taken before execution today and this tool is not written, so neither run has been performed here.",
+    "criterion": "python3 harness/idempotency/conformance.py --adapter dryrun --adapter second",
+    "expected": "exit 0, last line `conformance PASSED: 16/16 cases, 2 binding(s)`, with one line per binding reading `adapter=<entity> cases=8 passed=8 supports_in_flight=<declared> overlapped=<n>`: the lease binding answers a duplicate in flight and reclaims a key past its window, and the binding that declares no lease reports overlapped=0 rather than being widened until both pass. What this run stands in for: the criterion this facet carried before ceremony 61 (finding R61B-018) moved its prose out of the criterion field, which is the check this guarantee ultimately needs and which nothing on disk runs yet - Proposed tool, built with the first implementation of this placement (docs/decomposition.md section 3.4 row X7): `python3 tools/conformance/lease_placement.py --entries examples/end-to-end/entries --corpus out/actions.jsonl --kill-owner-at 0.5 --report out/lease.json`. Over a corpus replayed through each of the three ways in it asserts that every externally-triggered action has a lease record carrying a non-null owner and a non-null expires_at, that no two executions share a key within a scope, that a duplicate answered while the first execution was still running was attached rather than executed, and that a lease whose owner was killed mid-execution is reclaimable once its expiry has passed. It reports `keys_checked`, `unleased_actions`, `owners_missing`, `expiries_missing`, `duplicate_executions`, `attached_in_flight`, `reclaimed` and `ways_in_covered`, and asserts `keys_checked > 0`, `unleased_actions == 0`, `owners_missing == 0`, `expiries_missing == 0`, `duplicate_executions == 0`, `attached_in_flight >= 1`, `reclaimed >= 1` and `ways_in_covered == 3`. Expected of that check: exit 0 and one summary line `keys_checked=<n> unleased_actions=0 owners_missing=0 expiries_missing=0 duplicate_executions=0 attached_in_flight=<k> reclaimed=<r> ways_in_covered=3`, with `k` and `r` both greater than zero so the attach assertion and the reclaim assertion each had something to assert on.",
+    "breakage": "sed -i 's/entry_kind, retention_s)$/entry_kind, 0)/' harness/idempotency/interface.py -- every claim is built with a zero-length retention window, so a key is releasable the instant it is taken and a lease bounds nothing. Restore with git checkout harness/idempotency/interface.py.",
+    "expected_failure": "exit 1 on both bindings at the retention case with `expired before its window elapsed`, while the fresh, duplicate and conflict cases stay green - which is what shows the failure is the missing window rather than a claim path that stopped running. Status claimed: tools/measure.py has recorded neither run for this pair here. The breakage the prose criterion above stood for, and what it expected: Let the lease expiry be unbounded: set `expires_at` to null on acquisition, leave everything else including the owner and the fencing token in place, and re-run the same command. exit non-zero with `expiries_missing` equal to the number of leases taken and `reclaimed == 0`: the owner killed mid-execution never releases its key, so the reclaimability assertion fails and the key stays held forever, while `keys_checked` holds its value and `ways_in_covered` stays 3, which is what shows the failure is the missing expiry rather than a corpus that was never replayed. Claimed: no lease is taken before execution today and this tool is not written, so neither run has been performed here.",
     "status": "claimed",
     "sources": [
       "F-part-c-04",

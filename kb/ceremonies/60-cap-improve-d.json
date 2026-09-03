@@ -1,0 +1,35 @@
+{
+  "status_row": 60,
+  "improver": "60-cap-improve-d",
+  "review_record": "kb/ceremonies/60-cap-review-d.json",
+  "applied": [
+    {
+      "id": "R60D-001",
+      "change": "Applied by the 60-repair correction (ledger L-00119, commit bf17237), not by this improver. The review was right: harness/human-interaction/store.py line 182 carried a dead `if False:` guard left behind when git checkout failed to restore an untracked harness file, so the correlation-id-mismatch refusal never executed and the recorded clean run could not be reproduced. The repair removed the guard, re-measured cap-human-interaction-implement with tools/measure.py, and replaced measured_run (now commit bf17237, clean_exit 0, breakage_exit 1, restored true). Verified once here, not re-measured: `bash harness/human-interaction/test.sh && python3 harness/human-interaction/conformance.py --surface dryrun --surface second` exits 0, test.sh reports passed 39 failed 0, and the conformance tail reproduces the recorded clean_output verbatim - `resumed_on_same_correlation=4 edit_changed_artifact=True duplicate_resumes=0 untyped_refusals=0` then `adapters_run=2 failures=0`. No skill file changed for this finding.",
+      "files": []
+    },
+    {
+      "id": "R60D-002",
+      "change": "Applied by the 60-repair correction (ledger L-00119, commit bf17237), not by this improver. Same root cause on the other harness: harness/evaluation/interface.py line 319 was left broken by the unrestored breakage. The repair fixed the file, rewrote the criterion away from the non-repeatable `--adapter` flag the review flagged to two separate runs - `bash harness/evaluation/test.sh && ADAPTER=dryrun python3 harness/evaluation/conformance.py && ADAPTER=second python3 harness/evaluation/conformance.py` - re-measured, and moved status from claimed to measured with a breakage_output that now differs from clean_output (clean_exit 0 ending `conformance PASSED: 22/22 cases, adapter=second`; breakage_exit 1 ending `passed 47, failed 8`). tools/measure.py now digests the tree before and after and refuses to label measured when the restore did not restore. Verified once here, not re-measured: the criterion exits 0, test.sh reports passed 55 failed 0, and both adapters report `conformance PASSED: 22/22 cases` (adapter=dryrun, then adapter=second). No skill file changed for this finding.",
+      "files": []
+    },
+    {
+      "id": "R60D-003",
+      "change": "Split per the R59A-009 precedent. cap-evaluation instructions step 6 stays origin=sourced with its F-b1-07 quote and now carries only the restatement with its owner named: 'Design rule 6 is agentic-stack's, and core-judge holds it for the runtime verdict (F-b1-07): the grader is never visible to the graded, and an evaluation harness inherits that rule unchanged.' 'already states' was dropped because that phrase is what the restate-and-extend check keys on; the owner is still named, so the restatement is still traceable. The uncited extension moved into a new origin=proposed step 7 with sources F-b1-07 and no quote of its own: give a case a rubric handle and no field a rubric body could be written into, because an evaluation harness is the one component structurally placed to break rule 6 - it holds both the rubric and the case input - plus the research query a proposed convention requires. Steps renumbered; instructions went 8 to 9 rows, inside the 6-10 budget. The new row matches what the harness already checks (conformance C11c, 'a case has a rubric handle and nowhere to put a rubric body').",
+      "files": [".claude/skills/cap-evaluation/skill.json", ".claude/skills/cap-evaluation/SKILL.md"]
+    },
+    {
+      "id": "R60D-004",
+      "change": "Split the same way. cap-human-interaction-implement contract.invariants[4] stays origin=sourced with its F-b4-08 quote and now states only the inherited rule with its owner named: 'A decision is safe to replay: cap-human-interaction holds the replay rule for a decision (F-b4-08), and nothing in this build weakens it - a decision delivered twice leaves the run in the state one delivery would have left it in.' The build-specific consequence moved into a new origin=proposed invariants[5], sources F-b4-08 and E-concern-idempotency: the lease on the decision's idempotency key and the state transition are one write and not two, with the three-deliveries example and the window a split write opens, plus its research query. Invariants went 8 to 9 rows, inside the 3-10 budget. The skill's definition_of_done, which cites the same F-b4-08 quote, was not touched.",
+      "files": [".claude/skills/cap-human-interaction-implement/skill.json", ".claude/skills/cap-human-interaction-implement/SKILL.md"]
+    }
+  ],
+  "declined": [],
+  "validator_after": {
+    "cap-evaluation": "0 errors, 1 warnings",
+    "cap-evaluation-implement": "0 errors, 1 warnings",
+    "cap-human-interaction": "0 errors, 1 warnings",
+    "cap-human-interaction-implement": "0 errors, 0 warnings"
+  },
+  "notes": "Both restate-and-extend warnings the review raised are gone. Three warnings remain, none of them a review finding and none of them an authored claim I may edit under this step. cap-evaluation and cap-human-interaction each keep the ideal-facet 'criterion is not a pure shell command' notice, which lives in definition_of_done and is out of scope for this step. cap-evaluation-implement carries a warning new since the review - 'states urn:agentic:problem:case-set-unresolved, which has no row in the closed registry in docs/decomposition.md section 2.1.6' - whose sole occurrence in the file is inside definition_of_done.measured_run.clean_output, i.e. captured harness output written by tools/measure.py during the 60-repair re-measure, not a claim an author made. Fixing it means either registering the type in docs/decomposition.md or teaching the validator to skip measured_run output; both are outside the four files this scope names."
+}

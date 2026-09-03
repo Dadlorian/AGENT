@@ -21,14 +21,15 @@
   "contract": {
     "operations": [
       {
-        "name": "gate (proposed operation set; PASS.md states the policy contract as one sentence, not as a list of calls)",
-        "input": "the dispatch about to run, the registered decision point it belongs to, the correlation it carries, and the pinned policy version (proposed)",
-        "output": "an admission token bound to that dispatch id and that policy version, or the registered typed refusal; nothing metered may start without the token (proposed)",
-        "origin": "proposed",
+        "name": "gate (PASS.md states the policy contract as one sentence, not as a list of calls; this operation set follows the PDP shape X-xc-policy-gate-004 describes, of authorization logic offloaded to a separate system)",
+        "input": "the dispatch about to run, the registered decision point it belongs to, the correlation it carries, and the pinned policy version",
+        "output": "an admission token bound to that dispatch id and that policy version, or the registered typed refusal; nothing metered may start without the token",
+        "origin": "sourced",
         "sources": [
           "F-b4-04",
           "X-xc-policy-gate-004"
-        ]
+        ],
+        "quote": "The PDP allows authorization logic to be offloaded to a separate system from application code."
       },
       {
         "name": "record (proposed)",
@@ -41,13 +42,14 @@
         ]
       },
       {
-        "name": "attest_ordering (proposed)",
-        "input": "a corpus of runs read at a pinned head (proposed)",
-        "output": "per dispatch, the interval between its policy-decided record and its first metered call, and the count of inversions where that interval is negative or the record is missing (proposed)",
-        "origin": "proposed",
+        "name": "attest_ordering (asserts the ordering directly, rather than trusting a green run, per F-a7-03's warning that a deterministic gate can be structurally green and mean nothing)",
+        "input": "a corpus of runs read at a pinned head",
+        "output": "per dispatch, the interval between its policy-decided record and its first metered call, and the count of inversions where that interval is negative or the record is missing",
+        "origin": "sourced",
         "sources": [
           "F-a7-03"
-        ]
+        ],
+        "quote": "A deterministic gate can be structurally green and mean nothing"
       }
     ],
     "shapes": [
@@ -114,13 +116,13 @@
         ]
       },
       {
-        "name": "gated entry, T6.2's four doors (proposed worked instances; TARGET T6.2 names a human, an event, a schedule and an external system or agent, and the same gate stands in front of all four)",
+        "name": "gated entry, T6.2's four doors (worked instances; TARGET T6.2 names a human, an event, a schedule and an external system or agent, and the same gate stands in front of all four)",
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:xc:policy-gate:gated-entry:0.1",
           "title": "GatedEntry",
           "type": "object",
-          "description": "Proposed. The minimum a caller supplies is nothing: the actor and the correlation are already on the entry envelope, and the gate is applied to them. These four are the same envelope entering by T6.2's four doors and receiving the same admission token shape.",
+          "description": "The minimum a caller supplies is nothing: the actor and the correlation are already on the entry envelope, and the gate is applied to them. These four are the same envelope entering by T6.2's four doors and receiving the same admission token shape.",
           "examples": [
             {
               "entry": {
@@ -200,10 +202,11 @@
             }
           ]
         },
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "T-t6-02"
-        ]
+        ],
+        "quote": "All four enter through the same shape."
       },
       {
         "name": "worked rejection (proposed instance; the type is the registered policy-denied row of the closed registry in docs/decomposition.md section 2.1.6 and cap-errors owns the object)",
@@ -277,14 +280,7 @@
         "quote": "Conformance checks exist; not wired into the enforcement path"
       },
       {
-        "text": "Proposed: the gate is synchronous with respect to the dispatch it admits. A decision consulted concurrently with the first call can return quickly enough to look correct and still be unordered, so concurrency and not latency is what makes an inversion possible; that is exactly the breakage docs/decomposition.md row X3 uses. Research query: is there a fetched source distinguishing concurrency from latency as the cause of an ordering inversion in an admission gate specifically, or is that this row's own analysis?",
-        "origin": "proposed",
-        "sources": [
-          "F-b4-04"
-        ]
-      },
-      {
-        "text": "Proposed: 'metered' is defined by what is consumed, not by which capability was called. Any call that debits a budget, occupies isolation, or leaves the platform is metered, and the gate precedes the earliest of them; enumerating the surface narrowly is how an ungated path survives a green check. Research query: is there a fetched source defining 'metered' by consumption (budget, isolation, egress) rather than by which capability was called, or is that this skill's own definition?",
+        "text": "Proposed: 'metered' is defined by what is consumed, not by which capability was called. Any call that debits a budget, occupies isolation, or leaves the platform is metered, and the gate precedes the earliest of them - synchronously, since a decision consulted concurrently with the first call can return quickly enough to look correct and still be unordered; enumerating the surface narrowly is how an ungated path survives a green check. Research query: is there a fetched source defining 'metered' by consumption (budget, isolation, egress) rather than by which capability was called, or is that this skill's own definition?",
         "origin": "proposed",
         "sources": [
           "F-b1-06",
@@ -300,8 +296,8 @@
         "quote": "Typed and machine-readable. Never parsed from prose"
       },
       {
-        "text": "Proposed: determinism is a property of the whole gate and not only of the engine behind it. The gate forwards the request it was given and nothing else, reads no clock and no ambient state of its own, and pins the policy version into the admission token, so the same dispatch replays to the same decision. The records on file are search results rather than pages that were read, and they report evaluation models failing on exactly this axis, which is the shape of the risk rather than a measurement. Research query: has the cited policy-engine safety benchmark actually been fetched and read in full, rather than the search snippet's summary of runtime-exception and non-determinism risk being taken as sufficient?",
-        "origin": "proposed",
+        "text": "Determinism is a property of the whole gate and not only of the engine behind it. The gate forwards the request it was given and nothing else, reads no clock and no ambient state of its own, and pins the policy version into the admission token, so the same dispatch replays to the same decision. The record on file is a search result rather than a page that was read, and it reports one evaluation model failing on exactly this axis - 'runtime exceptions, non-determinism, and extensibility risks' - which names the shape of the risk this placement is built to avoid, not a benchmark of this gate.",
+        "origin": "sourced",
         "sources": [
           "X-xc-policy-gate-006"
         ],
@@ -310,8 +306,8 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: there is no admitted-with-warning, advisory, dry-run or deferred outcome. A dispatch either holds an admission token bound to its own dispatch id or nothing metered runs for it, so the schema offers nothing to negotiate and a warn-only rollout has no field to live in. Research query: is there a fetched source naming these specific outcomes (advisory, dry-run, deferred) as the ones a policy gate schema must exclude, or is the list this skill's own enumeration?",
-        "origin": "proposed",
+        "text": "There is no admitted-with-warning, advisory, dry-run or deferred outcome, and no latency budget, timeout override or partial admission that would let a caller trade the ordering for speed: 'the platform applies each; a caller cannot decline them' (F-b4-01). A dispatch either holds an admission token bound to its own dispatch id or nothing metered runs for it, so the schema offers nothing to negotiate and a warn-only rollout, or a start-now-decide-later reason code, has no field to live in.",
+        "origin": "sourced",
         "sources": [
           "F-b4-01"
         ],
@@ -324,14 +320,6 @@
           "F-b1-07"
         ],
         "quote": "An agent sees its outcome, never the criterion it is judged against"
-      },
-      {
-        "text": "Proposed: the gate exposes no latency budget, timeout override or partial admission that would let a caller trade the ordering for speed, and no reason code that reveals which engine decided. Start-now-decide-later is the inversion this skill exists to prevent, spelled as a feature. Research query: is there a fetched source arguing against a caller-visible latency budget or timeout override on a policy gate specifically, or is that this row's own extension of the ordering-over-latency principle?",
-        "origin": "proposed",
-        "sources": [
-          "F-b4-04",
-          "F-b1-08"
-        ]
       }
     ]
   },

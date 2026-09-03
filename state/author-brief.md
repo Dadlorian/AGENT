@@ -130,3 +130,6 @@ A definition_of_done.criterion is one shell command chain, nothing else; prose g
 
 ## Agent briefs (2026-09-03)
 Launch messages point an agent at one file under state/briefs/ (source, measure, review, improve) instead of the six records it used to read; the brief digests OWNER.md, the ceremony template and the method notes. Regenerate the briefs when a rule changes.
+
+## Lesson 60 (capability layer acceptance, 2026-09-03)
+Commit a harness before measuring against it, so a restore can restore; measure.py now refuses otherwise. The harness a criterion runs must exercise what its expected field describes. Split restate-and-extend rows: the extension is its own proposed row.

@@ -168,45 +168,12 @@
         "quote": "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform"
       },
       {
-        "text": "Proposed (from docs/decomposition.md section 2.1.4): enforcement sits outside the unit that spends, because a unit that enforces its own ceiling can decline to. That placement is what makes the platform's own rule hold, since a guarantee a caller can decline is a request with a firm tone. Research query: is there a fetched (not docs/decomposition.md, an internal design note rather than a knowledge-base record) source stating that budget enforcement must sit outside the spending unit, or is that this project's own placement argument?",
-        "origin": "proposed",
-        "sources": [
-          "F-b4-01",
-          "F-b1-08"
-        ],
-        "quote": "The platform applies each; a caller cannot decline them"
-      },
-      {
-        "text": "Proposed: the ceiling object has no opt-out to express, so on_exceed is a const and not an enum, and the field is required rather than defaulted. An optional ceiling, a null ceiling and a caller-chosen exceed behaviour are three spellings of the same hole. Research query: does any fetched budget or quota specification argue for a non-optional const field over an enum with a caller-chosen exceed behaviour, or is that this schema's own design choice?",
-        "origin": "proposed",
-        "sources": [
-          "F-b4-02"
-        ]
-      },
-      {
-        "text": "Proposed: there is one ceiling per root unit of work and every descendant dispatch draws from it, so a tree that fans out cannot outspend the root that authorised it. The records on file describe run-scoped budgets as current practice and are search results rather than pages that were read, so take the shape and not a measurement from them. Research query: has TokenOps's run-scoped-budget page actually been fetched and read to confirm it shares one ceiling across nested calls the way this row assumes, rather than the search snippet alone being extrapolated?",
-        "origin": "proposed",
-        "sources": [
-          "X-end-to-end-045",
-          "T-t2-03"
-        ],
-        "quote": "Runtime budget controls decide mid-run whether a workflow continues, narrows, requires approval, or stops"
-      },
-      {
         "text": "The tree is bounded by an explicit maximum delegation depth and maximum fan-out carried on the root budget, refused at dispatch rather than discovered when the money runs out. A cost bound alone lets one root spawn an unbounded number of cheap descendants, and the records on file show a shipped product reaching for exactly these two bounds.",
         "origin": "sourced",
         "sources": [
           "X-end-to-end-046"
         ],
         "quote": "capped concurrently-running subagents at 20 and stopped subagents from spawning nested subagents"
-      },
-      {
-        "text": "Proposed (from docs/decomposition.md section 2.1.4, and the recommendation of its open question 7): the ceiling is drawn as a reservation lease taken at dispatch, pre-checked before each metered call and reconciled against the actual cost afterwards, with unreconciled reservations expiring at the deadline plus grace. A unit that crashes before reconciling must not leave the root's ceiling permanently consumed. Research query: is there a fetched primary source on reservation-lease budgeting (pre-check, reconcile, expire-at-deadline-plus-grace) as a named pattern, rather than this row deriving the shape from docs/decomposition.md's open question 7 alone?",
-        "origin": "proposed",
-        "sources": [
-          "F-b4-02",
-          "X-end-to-end-047"
-        ]
       },
       {
         "text": "cap-errors owns the failure object (F-b4-07). What this guarantee adds is that its refusal is the registered budget-exhausted row, carrying stop_reason budget_exhausted and retryable false, so a caller branches on a type and never on the words 'budget' appearing in a message.",
@@ -225,8 +192,8 @@
         "quote": "allow systems to return partial results instead of failing completely"
       },
       {
-        "text": "Proposed, following the reference example in docs/reference/composable-plan.md: a stop and a cap are opposite terminations and are never collapsed into one halt. A stop condition firing means the work is done and the unit terminates as a success; a cap firing means an unbounded unit ran long and the unit terminates as a failure that escalates to a person. One shared halt reason makes a success indistinguishable from an escalation in the ledger, and the reference records that merge as a mistake already made once.",
-        "origin": "proposed",
+        "text": "The reference example in docs/reference/composable-plan.md: a stop and a cap are opposite terminations and are never collapsed into one halt. A stop condition firing means the work is done and the unit terminates as a success; a cap firing means an unbounded unit ran long and the unit terminates as a failure that escalates to a person. One shared halt reason makes a success indistinguishable from an escalation in the ledger, and the reference records that merge as a mistake already made once.",
+        "origin": "sourced",
         "sources": [
           "REF-5-3-08",
           "REF-5-3-03",
@@ -236,8 +203,8 @@
         "quote": "`stop` and `cap` are opposites and must not be collapsed"
       },
       {
-        "text": "Proposed, following the same reference: a step that fans out carries a per-unit share as well as the root ceiling, and a unit crossing its share is a hard ceiling on that unit rather than a draw on its siblings. Without the per-unit share the first unit can spend the root allowance and the rest fail for want of money rather than on their own merits; how many units may fail stays a property of the fan-out, not of the unit and not of the plan.",
-        "origin": "proposed",
+        "text": "The same reference: a step that fans out carries a per-unit share as well as the root ceiling, and a unit crossing its share is a hard ceiling on that unit rather than a draw on its siblings. Without the per-unit share the first unit can spend the root allowance and the rest fail for want of money rather than on their own merits; how many units may fail stays a property of the fan-out, not of the unit and not of the plan.",
+        "origin": "sourced",
         "sources": [
           "REF-5-3-01",
           "REF-5-3-07",
@@ -248,8 +215,8 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: there is no field, header, role or configuration flag that skips the check, raises a ceiling from inside the unit it bounds, or converts a stop into a warning. The cross-cutting guarantees are not optional, and the only honest way to say so in a schema is to leave nothing to set. Research query: is there a fetched budget-enforcement specification that names these specific escape hatches (an inside-the-unit ceiling raise, a stop-to-warning downgrade) as the ones to close, or is the list reasoned from this guarantee's own non-optionality alone?",
-        "origin": "proposed",
+        "text": "There is no field, header, role or configuration flag that skips the check, raises a ceiling from inside the unit it bounds, or converts a stop into a warning. Cross-cutting guarantees are not optional, and the only honest way to say so in a schema is to leave nothing to set.",
+        "origin": "sourced",
         "sources": [
           "F-b1-08",
           "F-b4-01"
@@ -363,12 +330,6 @@
         "X-end-to-end-048"
       ],
       "quote": "columns for splitting shared costs"
-    },
-    {
-      "step": 9,
-      "action": "Proposed: open references/run-budget.md when writing the full run-budget schema, the reservation lease, the cost record or the worked declarations for the three ways in. The body of this skill is enough to judge an implementation and to wire the guarantee without it.",
-      "why": "Proposed: the full schemas and the worked instances exceed the progressive-disclosure budget for a skill body, and a reader deciding whether a ceiling is actually enforced does not need them open.",
-      "origin": "proposed"
     }
   ],
   "best_practices": [

@@ -53,3 +53,4 @@
 | 57 | Final acceptance | Scorecard and acceptance matrix hold at one commit | Done | Folded into row 63 | 2026-09-03 873cb2b |
 | 58 | Phase 0: owner decisions | Sticks the environment blocks are recorded absent | Done | Standard stick absent on 16 elements | 2026-09-03 873cb2b |
 | 59 | Phase 1: build disciplines | Ceremony closes with every stick met or recorded absent | Done | 12 skills at zero warnings, 10 measured | 2026-09-03 16d354c |
+| 60 | Phase 2: capabilities | Each element has a guide, a measured run and a sourced skill | Done | 16 of 16 elements accepted, 37 findings applied | 2026-09-03 e8caef0 |

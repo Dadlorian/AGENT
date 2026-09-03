@@ -11,7 +11,7 @@
 | 19 | Problem-type registry | Every refusal a skill emits has a row | Open | 5 missing |
 | 20 | Consumption link | cap-consumption links to cap-work-intake | Open | Unlinked |
 | 21 | Continuous improvement loop | One iteration per fire moves a metric and checkpoints | Not started | Awaiting go |
-| 23 | Containment harness | One turn runs in a microVM through the interface and cancels | In progress | Author running |
+| 23 | Containment harness | One turn runs in a microVM through the interface and cancels | In progress | Dry run passes 23 checks, live claimed |
 | 26 | Workflow harness | One durable flow survives a crash and resumes | In progress | Author running |
 | 27 | Linked harness | One document runs through all four harnesses | Open | Not started |
 | 28 | Impact map | A component swap lists every affected adapter, test, and skill | Open | Not started |

@@ -1,0 +1,34 @@
+{
+  "owner_skill": "cap-isolation-implement",
+  "co_skills": ["cap-agent-runtime-implement"],
+  "blueprint_tool_entry": "firecracker-cell@.service (Firecracker microVM per agent)",
+  "kb_ids": [
+    "F-a2-02", "F-a2-03",
+    "F-a3-01", "F-a3-02", "F-a3-03", "F-a3-04", "F-a3-05", "F-a3-06", "F-a3-07", "F-a3-08", "F-a3-09",
+    "F-a6-06", "F-a7-02", "F-a7-04",
+    "F-b1-02", "F-b1-04", "F-b3-02", "F-b3-05", "F-b3-18",
+    "F-b4-01", "F-b4-02", "F-b4-03", "F-b4-04", "F-b4-06", "F-b4-07",
+    "F-meta-04", "F-part-c-04", "F-part-c-11",
+    "E-capability-isolation", "E-standard-oci-runtime-spec", "E-standard-agent-client-protocol",
+    "E-adapter-firecracker-microvm", "E-adapter-goose",
+    "E-swap-candidate-gvisor", "E-swap-candidate-hosted-sandbox-services",
+    "E-swap-candidate-any-acp-speaking-agent"
+  ],
+  "research_ids": [
+    "X-cap-isolation-001", "X-cap-isolation-002", "X-cap-isolation-004", "X-cap-isolation-005",
+    "X-cap-agent-runtime-001", "X-cap-agent-runtime-002", "X-gap-a-001"
+  ],
+  "standard": "OCI Runtime Spec for containment (v1.2 or later, unverified: X-cap-isolation-002 is search-only and the specification was not fetched here). Agent Client Protocol for the turn (wire protocol v1, v2 Draft since 2026-07-20, unverified: X-gap-a-001 and X-cap-agent-runtime-002 are search-only). RFC 9457 problem details for every refusal.",
+  "measured": {
+    "dryrun": "bash harness/containment/test.sh on 2026-09-03: passed 23, failed 0. Section 1 runs the full conformance suite against the dry-run adapter, 19 of 19 checks pass, and the minimal call returns stop_reason=cancelled with a containment report of jail_mode=0700, owner_in_host_passwd=False, egress 3 made and 3 blocked, secrets_seen_inside=0, observed_from=host.",
+    "swap": "Conformance before with dryrun (out/before.json) and after with the second adapter (out/after.json) both exit 0, selected by configuration with no code edited between the runs; the combined run (out/swap.json) reports adapters_run=2 and every cross-adapter check holds: the containment marker read back from the running unit differs between the two technologies, the output digest and exit status are equal across them, and differs_in_execution_model is non-empty on four axes - unit_of_resource_granted, start_and_teardown_cost, processes_required_for_progress and prompt_cancellation.",
+    "breakage": "Two, one per skill's definition of done, both measured. A: adding 0.0.0.0/0 to the default declaration's egress allowlist in binding.json and changing nothing else makes egress_blocked 0 against egress_made 3 under both adapters, the equality assertion fails for each, and the run exits 1 while jail mode, output digest, marker and identity assertions still pass. B: raising the cancel poll interval to 30s against a 0.5s grace makes the adapter that offers cancellation report cancel_timeout with declared_gap_honoured=false and exit 1, while the single-shot adapter still passes with cancel_timeout and declared_gap_honoured=true, so a runtime that claimed cancellation and missed it is told apart from one that never claimed it."
+  },
+  "claimed": [
+    "live mode until run on the host: adapters/live.py has never been executed against firecracker-cell@.service or goose, so the systemd start and stop commands, the jail path, the broker counter file, the ACP transport choice and the stop-reason mapping are unverified there",
+    "the ACP method names other than session/cancel: PASS.md records session/cancel and JSON-RPC over stdio, not initialize, session/new or session/prompt",
+    "the second adapter's containment technology: it runs here as a faithful stub, so its execution model is declared and asserted but the capability-granting sandbox behind SECOND_SHIM_CMD has not been reached",
+    "both standard versions: the OCI Runtime Spec and Agent Client Protocol records are search-only, never fetched from this environment",
+    "the dry-run adapter's containment is simulated in one process, so the jail mode, the owning identity and the egress counters are asserted from outside the unit but not across a hardware boundary"
+  ]
+}

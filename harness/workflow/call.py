@@ -66,15 +66,18 @@ def main() -> int:
                   "--decision", "approve:agent:release-bot", "--deliveries", "10")
     done = json.load(open(os.path.join(out_dir, "attempt-2.json")))
     effects = [json.loads(l) for l in open(os.path.join(out_dir, "effects.jsonl"))]
+    journal = [json.loads(l) for l in open(os.path.join(out_dir, "journal.jsonl"))]
+    parked = sum(1 for r in journal if r["kind"] == "gate-parked")
+    applied = sum(1 for r in journal if r["kind"] == "gate-decided")
     # --------------------------------------------------------------------
     print(f"\nADAPTER={adapter}  executor_marker={done['executor_marker']}  "
           f"({done['effect_commit_mode']})")
     rows = [("attempt 1", f"killed at publish (rc {rc1})", "-", "-"),
             ("attempt 2", f"resumed at step {done['resume_point_at_start']} (rc {rc2})",
              f"{done['steps_replayed']} replayed", f"{done['steps_executed']} run"),
-            ("gate", f"{done['gates_parked']} parked, 10 deliveries each",
-             f"{done['resumes_per_gate_max']} resume per gate",
-             ),
+            ("gate", f"{parked} parked, 10 deliveries each",
+             f"{applied} decisions applied",
+             f"{done['gates_parked']} re-parked after the crash"),
             ("loop", done["loop"]["terminated_by"], f"{done['loop']['iterations_run']} iterations",
              done["loop"]["termination_class"]),
             ("effect", f"{len(effects)} row(s) in effects.jsonl", "1 expected", "no repeat"),

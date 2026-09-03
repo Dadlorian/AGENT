@@ -1,0 +1,214 @@
+{
+  "reviewer": "sonnet",
+  "group": "xc-compose",
+  "findings": [
+    {
+      "id": "RX-001",
+      "skill": "xc-policy-gate",
+      "blueprint_ref": "entry_matrix[37] (schedule, policy decision); state_types[25]",
+      "severity": "block",
+      "disagreement": "entry_matrix requires a policy decision to be taken at admission on the schedule door ('Refuses at admission when a rule says so - an incident window, for instance - before any spend'), and xc-enforcement-chain's own worked corpus explicitly covers all four T6.2 doors ('--ways-in human,event,schedule,external'). But xc-policy-gate's own worked-instances shape ('gated entry, the three ways in') is a 3-item array with only human, external and event examples; schedule is entirely absent, and its sources cite only T-t1-01/02/03 (TARGET T1's older three-ways-in list: human, agent, event), never T-t6-02. A builder or reviewer reading xc-policy-gate alone cannot see that the gate is ever demonstrated on the door that mints its own root work and its own standing spend.",
+      "sourced_side": "blueprint",
+      "change_to": "skill",
+      "change": "Add a fourth worked instance to xc-policy-gate's 'gated entry' shape for entry.kind=schedule (the entry_matrix's own incident-window refusal example is ready-made for this), and add T-t6-02 to that shape's sources alongside T-t1-01/02/03.",
+      "sources": ["T-t6-02", "T-t1-01", "T-t1-02", "T-t1-03"]
+    },
+    {
+      "id": "RX-002",
+      "skill": "xc-identity-delegation",
+      "blueprint_ref": "entry_matrix[33] (schedule, identity and delegation chain); state_types[23]",
+      "severity": "block",
+      "disagreement": "entry_matrix's schedule row for identity and delegation chain says the platform 'Attributes the run to whoever registered the schedule, so an unattended run still names an actor' - a distinct binding rule from the other three doors. xc-identity-delegation's 'ActorBindingByWayIn' shape is declared 'minItems: 3' and its example array has exactly three entries (human, agent, event); schedule is never worked, and its sources are T-t1-01/02/03 only, never T-t6-02. Compare xc-idempotency-lease and xc-budget, both of which correctly work all four doors including an explicit schedule instance and cite T-t6-02.",
+      "sourced_side": "blueprint",
+      "change_to": "skill",
+      "change": "Add a fourth ActorBindingByWayIn example for way_in=schedule showing the actor set to the schedule's registrant (schedule:<name> or the registering user, per entry_matrix[33]'s rule), raise minItems to 4, and add T-t6-02 to the shape's sources.",
+      "sources": ["T-t6-02", "T-t1-01", "T-t1-02", "T-t1-03"]
+    },
+    {
+      "id": "RX-003",
+      "skill": "xc-provenance-chain",
+      "blueprint_ref": "entry_matrix[62,68,74,80] (provenance attestation, all four doors); state_types[21]",
+      "severity": "fix",
+      "disagreement": "entry_matrix stamps 'provenance attestation' identically on all four doors (rows 62 human, 68 event, 74 schedule, 80 external). xc-provenance-chain's 'worked instances, one per way in' shape is explicitly captioned 'TARGET T1 names three ways in and the same record shape covers all three, which is the whole claim', carries exactly three examples (human, agent, event), and cites only T-t1-01/02/03 - never T-t6-02. Schedule-triggered artifacts are never shown getting a provenance attestation, contradicting the entry_matrix row that says they do.",
+      "sourced_side": "blueprint",
+      "change_to": "skill",
+      "change": "Add a fourth worked instance for entry_kind=schedule to xc-provenance-chain's AttestationRecordedInstances array, change the shape's caption from 'three ways in' to T6.2's four doors, and cite T-t6-02.",
+      "sources": ["T-t6-02", "T-t1-01", "T-t1-02", "T-t1-03"]
+    },
+    {
+      "id": "RX-004",
+      "skill": "xc-correlation",
+      "blueprint_ref": "entry_matrix[34] (schedule, correlation record); definition_of_done",
+      "severity": "fix",
+      "disagreement": "xc-correlation's own StampedAtEntry shape does include a fourth, schedule example (schedule:nightly-fault-sweep) even though its caption mislabels the set as 'TARGET T1's three ways in' and its sources cite only T-t1-01/02/03 (never T-t6-02, despite the schedule example those ids cannot ground). Worse, its definition_of_done conformance command is `tools/conformance/correlation_audit.py --entry human --entry agent --entry event --depth 3` - three --entry flags, no --entry schedule - so the measured criterion never actually exercises the schedule branch the shape claims to demonstrate, unlike xc-enforcement-chain's DoD which runs `--ways-in human,event,schedule,external`.",
+      "sourced_side": "blueprint",
+      "change_to": "skill",
+      "change": "Relabel StampedAtEntry's caption and cite T-t6-02 (its schedule example is already present and correct); add `--entry schedule` to the correlation_audit.py invocation in definition_of_done so the measured criterion covers all four doors.",
+      "sources": ["T-t6-02", "T-t1-01", "T-t1-02", "T-t1-03"]
+    },
+    {
+      "id": "RX-005",
+      "skill": "xc-typed-errors",
+      "blueprint_ref": "entry_matrix[12,28,... error / problem object, all four doors]; definition_of_done",
+      "severity": "fix",
+      "disagreement": "Same pattern as xc-correlation: FailureAtEveryEntry's own example array already includes a schedule:nightly-fault-sweep instance, but the shape's caption says 'what comes back to a human, to an agent and to an event or a schedule, which are TARGET T1's three ways in' (naming four things while calling them three), its sources are T-t1-01/02/03 + T-t2-03 only (no T-t6-02), and definition_of_done's conformance command is `tools/conformance/typed_errors_audit.py --entry human --entry agent --entry event` - again no --entry schedule, so the string-matching audit and the type-consistency check the DoD actually runs never touches the schedule door.",
+      "sourced_side": "blueprint",
+      "change_to": "skill",
+      "change": "Fix the FailureAtEveryEntry caption to name T6.2's four doors and cite T-t6-02; add `--entry schedule` to the typed_errors_audit.py invocation in definition_of_done.",
+      "sources": ["T-t6-02", "T-t1-01", "T-t1-02", "T-t1-03", "T-t2-03"]
+    },
+    {
+      "id": "RX-006",
+      "skill": "compose-loop",
+      "blueprint_ref": "state_types[12] (loop iteration)",
+      "severity": "nit",
+      "disagreement": "state_types[12]'s state text says the record carries 'which of the three terminations ended the loop', matching compose-loop's terminated_by enum (verdict_pass, iteration_ceiling, budget_ceiling - exactly three members). But the row's cited quote, 'stop firing means done, cap firing means escalate' (REF-5-3-08), documents compose-loop's separate two-valued termination_class enum (stop, cap), not the three-valued terminated_by enum the state text actually describes; none of the row's three sources (F-b2-05, F-b4-02, REF-5-3-08) mentions three terminations or names verdict_pass/iteration_ceiling/budget_ceiling. The row's own evidence proves a different, narrower claim than the one it's attached to.",
+      "sourced_side": "blueprint",
+      "change_to": "blueprint",
+      "change": "Either narrow state_types[12]'s text to the two termination classes the quote actually supports ('stop or cap ended the loop'), or add a source that names the three terminated_by reasons (compose-loop's own contract shape, or a new kb record) alongside the existing quote so 'three' is grounded.",
+      "sources": ["F-b2-05", "F-b4-02", "REF-5-3-08"]
+    },
+    {
+      "id": "RX-007",
+      "skill": "cap-errors, xc-typed-errors",
+      "blueprint_ref": "state_types[33] (error / problem object)",
+      "severity": "fix",
+      "disagreement": "owner_capability on state_types[33] is the bare word 'errors', which does not disambiguate between cap-errors (which owns the problem-object shape and the closed type registry) and xc-typed-errors (which owns the cross-cutting placement guarantee - every boundary must produce one, never a string match). impact_map[12] correctly lists both cap-errors and xc-typed-errors together for this exact state kind; state_types[33] should carry the same dual citation instead of the single ambiguous noun.",
+      "sourced_side": "blueprint",
+      "change_to": "blueprint",
+      "change": "Reword state_types[33].owner_capability to 'cap-errors, enforced at every boundary by xc-typed-errors', matching how state_types[30] already qualifies correlation ('correlation, under the telemetry concern').",
+      "sources": ["F-a6-06", "F-b4-07", "X-cap-errors-002"]
+    },
+    {
+      "id": "RX-008",
+      "skill": "cap-policy, xc-policy-gate, cap-identity, xc-identity-delegation, cap-provenance, xc-provenance-chain",
+      "blueprint_ref": "state_types[21,23,25,48]",
+      "severity": "nit",
+      "disagreement": "Three more owner_capability values in this group's state rows are bare capability nouns that don't name which of a cap-* skill and its xc-* enforcement wrapper is meant: row25 'policy' (cap-policy vs xc-policy-gate), row23 'identity, with the chain guarantee' and row48 'identity, with the mandate broker issuing against it' (cap-identity vs xc-identity-delegation vs cap-mandate-broker), and row21 'provenance' (cap-provenance vs xc-provenance-chain). impact_map[16] and impact_map[14] already show the correct pattern by listing both skills together for policy and identity changes.",
+      "sourced_side": "blueprint",
+      "change_to": "blueprint",
+      "change": "Reword these owner_capability values to name both the capability and its enforcement wrapper explicitly, e.g. row25 -> 'cap-policy, gated at every enforcement point by xc-policy-gate'; row23 -> 'cap-identity, chained by xc-identity-delegation'; row21 -> 'cap-provenance, swept by xc-provenance-chain'.",
+      "sources": ["F-a5-05", "F-a6-04", "F-b4-04", "F-a6-05", "F-b4-03", "F-a5-04", "F-b4-05"]
+    },
+    {
+      "id": "RX-009",
+      "skill": "xc-audit-trail",
+      "blueprint_ref": "state_types (no row); xc-audit-trail purpose",
+      "severity": "fix",
+      "disagreement": "xc-audit-trail's own contract defines two distinct proposed artifacts beyond the ledger it reads - a scan report (its 'scan' operation, run on a schedule, checking retention, chain-continuity and third-party verifiability) and an evidence bundle (its 'evidence' operation, what leaves the platform for an outside auditor). Neither artifact has a state_types row: 'audit trail' never appears as an owner_capability anywhere in state_types, and no row's 'state' field names a scan report or an evidence bundle. Enumeration before pruning is the rule this lens states first, and a compliance-facing skill with a read-only write path (its own not_exposed says there is no write operation on the trail itself) is exactly the kind of state a builder would otherwise never learn exists.",
+      "sourced_side": "skill",
+      "change_to": "blueprint",
+      "change": "Add two state_types rows: 'audit-trail scan report' and 'audit evidence bundle', both owner_capability xc-audit-trail, home_today gap, read_by including operators and external auditors, sourced to xc-audit-trail's own purpose citations.",
+      "sources": ["F-b4-03", "F-b4-05", "T-t2-03"]
+    },
+    {
+      "id": "RX-010",
+      "skill": "compose-improvement-loop, compose-operators",
+      "blueprint_ref": "state_types (no row); impact_map (no row)",
+      "severity": "nit",
+      "disagreement": "compose-improvement-loop and compose-operators never appear as an owner_capability in any of the 54 state_types rows, and neither name (nor any close paraphrase) appears in affected_skills across all 21 impact_map rows - the only two skills in the whole xc-compose group with zero presence in both sections. compose-operators' own vocabulary (compose, to_graph, price, step_of) builds work graphs that core-graph owns as state (state_types[5]), and compose-improvement-loop reuses compose-loop's and cap-evaluation's state verbatim by its own account, so a case can be made that both are stateless composition layers by design - but that reading is nowhere written down, so it cannot be told apart from an omission.",
+      "sourced_side": "blueprint",
+      "change_to": "blueprint",
+      "change": "Either add one impact_map row for 'the workflow-operator vocabulary changes (a pattern is added or an operator's field set changes)' naming compose-operators and core-graph, and one for 'the improvement-loop's candidate/revision/promotion sequence changes' naming compose-improvement-loop, compose-loop and cap-evaluation - or record explicitly in open_questions that these two compositions are deliberately stateless, so the absence reads as a decision rather than a gap.",
+      "sources": []
+    }
+  ],
+  "owner_name_fixes": [
+    {
+      "state": "error / problem object",
+      "current_owner_capability": "errors",
+      "issue": "bare capability noun, does not name cap-errors vs xc-typed-errors",
+      "suggested_owner": "cap-errors, enforced by xc-typed-errors"
+    },
+    {
+      "state": "policy decision",
+      "current_owner_capability": "policy",
+      "issue": "bare capability noun, does not name cap-policy vs xc-policy-gate",
+      "suggested_owner": "cap-policy, gated by xc-policy-gate"
+    },
+    {
+      "state": "identity and delegation chain",
+      "current_owner_capability": "identity, with the chain guarantee",
+      "issue": "prose qualifier, not the exact skill name xc-identity-delegation",
+      "suggested_owner": "cap-identity, chained by xc-identity-delegation"
+    },
+    {
+      "state": "consent and standing authorisation grant",
+      "current_owner_capability": "identity, with the mandate broker issuing against it",
+      "issue": "two capabilities jammed into one owner field",
+      "suggested_owner": "xc-identity-delegation, issued via cap-mandate-broker"
+    },
+    {
+      "state": "provenance attestation",
+      "current_owner_capability": "provenance",
+      "issue": "bare capability noun, does not name cap-provenance vs xc-provenance-chain",
+      "suggested_owner": "cap-provenance, swept by xc-provenance-chain"
+    },
+    {
+      "state": "loop iteration",
+      "current_owner_capability": "loop composition over dispatch, judge and budget",
+      "issue": "prose description standing in for the skill name",
+      "suggested_owner": "compose-loop"
+    },
+    {
+      "state": "parked approval",
+      "current_owner_capability": "human interaction, with the gate declared by the approval composition",
+      "issue": "two capabilities jammed into one owner field",
+      "suggested_owner": "cap-human-interaction, gated by compose-approval"
+    },
+    {
+      "state": "agent profile record",
+      "current_owner_capability": "capability registry, declared by the agent composition",
+      "issue": "two capabilities jammed into one owner field",
+      "suggested_owner": "cap-capability-registry, declared by compose-agent"
+    },
+    {
+      "state": "concurrency admission and backpressure queue",
+      "current_owner_capability": "the agent composition for the declared bound, isolation for the slot, tenancy for the share",
+      "issue": "three capabilities jammed into one owner field rather than a single named owner",
+      "suggested_owner": "cap-isolation"
+    }
+  ],
+  "skills_owning_nothing": [
+    "xc-audit-trail",
+    "xc-enforcement-chain",
+    "xc-typed-errors",
+    "compose-improvement-loop",
+    "compose-operators"
+  ],
+  "load_path": [
+    {
+      "door": "human",
+      "task": "wire the human door end to end so one line of intent is honoured with every guarantee applied",
+      "today_rows": 23,
+      "today_skills": 47,
+      "proposed_skills": ["agentic-stack", "cap-work-intake", "cap-consumption", "xc-enforcement-chain", "xc-tenancy", "xc-correlation", "xc-typed-errors"],
+      "meets_budget": true
+    },
+    {
+      "door": "event",
+      "task": "wire the event door so a producer's native event is normalised and honoured with every guarantee applied",
+      "today_rows": 23,
+      "today_skills": 45,
+      "proposed_skills": ["agentic-stack", "cap-work-intake", "cap-consumption", "xc-enforcement-chain", "xc-tenancy", "xc-correlation", "xc-typed-errors"],
+      "meets_budget": true
+    },
+    {
+      "door": "schedule",
+      "task": "wire the schedule door so one firing of a recurrence rule is a run with its own identity, ceiling and key",
+      "today_rows": 23,
+      "today_skills": 47,
+      "proposed_skills": ["agentic-stack", "cap-scheduling", "cap-work-intake", "cap-consumption", "xc-enforcement-chain", "xc-tenancy", "xc-correlation", "xc-typed-errors"],
+      "meets_budget": true
+    },
+    {
+      "door": "external",
+      "task": "wire the external door so a partner's task runs under a pre-authorised ceiling and returns one result or one problem object",
+      "today_rows": 22,
+      "today_skills": 45,
+      "proposed_skills": ["agentic-stack", "cap-work-intake", "cap-consumption", "xc-enforcement-chain", "xc-identity-delegation", "cap-mandate-broker", "xc-tenancy", "xc-correlation", "xc-typed-errors"],
+      "meets_budget": true
+    }
+  ],
+  "summary": "Compared all 11 xc-* and 5 compose-* ideal/implement pairs against the blueprint: the enforcement-chain's six slots and cap-work-intake's four doors agree with each other and with most of the group (xc-enforcement-chain, xc-budget, xc-idempotency-lease, xc-tenancy, xc-compensation, xc-audit-trail all correctly work or cite all four T6.2 doors), but xc-policy-gate and xc-identity-delegation each genuinely omit a schedule worked instance (severity block), xc-provenance-chain omits one too (fix), and xc-correlation/xc-typed-errors have the schedule example but an unrun DoD flag and a stale T1-only citation (fix); 9 blueprint owner_capability values are bare or jammed prose rather than a skill name, and xc-audit-trail, xc-enforcement-chain, xc-typed-errors, compose-improvement-loop and compose-operators own no state_types row. A load path within the budget of 11 exists for all four doors once the guarantees are read through xc-enforcement-chain as one skill rather than six."
+}

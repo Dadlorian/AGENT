@@ -21,9 +21,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 |---|---|---|---|---|
 | `E-standard-rfc-9457-problem-details` | unverified | unverified | - | `F-b3-13`, `X-cap-errors-001` |
 | `E-standard-cloudevents` | unverified | unverified | - | `F-b3-08` |
+| `E-standard-openapi-asyncapi` | OpenAPI 3.1.0 (2021-02-17); AsyncAPI 3.0.0, 3.1.0 minor | unverified | - | `F-b1-05`, `X-gap-a-006` |
 
 - `E-standard-rfc-9457-problem-details` version note: The failure half of the caller contract. Cited from the capability row that names the standard and from a search-only record; the RFC text was not fetched from this environment. cap-errors owns this row and its closed type registry; this skill only fixes what a caller does with the object.
 - `E-standard-cloudevents` version note: The entry half. The envelope's wire format belongs to cap-work-intake, which owns the intake row; this skill names it only so a caller knows the shape is a published event format rather than a house format, and the version was not verified here.
+- `E-standard-openapi-asyncapi` version note: Entity id proposed, pending registration in kb/entities.jsonl (no E-standard row exists there yet; the equivalent architecture-layer record is A-standard-openapi-and-asyncapi-descriptions). X-gap-a-006 (search-only, not fetched): "AsyncAPI 3.0.0 is now available and OpenAPI 3.1.0 was released on February 17, 2021. AsyncAPI 3.1.0 is a minor release with no breaking changes". Describes what a caller reads to know the call card's shape, per F-b1-05's no-client-library rule. Row owned by cap-consumption.
 
 ### Operations
 

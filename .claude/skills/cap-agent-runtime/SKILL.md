@@ -27,9 +27,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-agent-client-protocol` | unverified | unverified | - | `F-b3-05`, `X-cap-agent-runtime-001`, `X-cap-agent-runtime-004` |
+| `E-standard-agent-client-protocol` | wire protocol v1 stable; v2 Draft since 2026-07-20 | unverified | - | `F-b3-05`, `X-cap-agent-runtime-001`, `X-cap-agent-runtime-004`, `X-gap-a-001` |
 
-- `E-standard-agent-client-protocol` version note: protocol version unverified; a search-only record describes the protocol as an open JSON-RPC standard at v1 stable with SDKs in five languages, and the manifest carries a TypeScript SDK version seen in search results. The specification itself was not fetched from this environment.
+- `E-standard-agent-client-protocol` version note: X-gap-a-001 (search-only, not fetched): "On July 20, 2026, the ACP team released the first Draft of version 2 of the Agent Client Protocol." v1 stability and SDK languages per X-cap-agent-runtime-001/-004. Row owned by cap-agent-runtime.
 
 ### Operations
 

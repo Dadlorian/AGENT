@@ -34,9 +34,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 |---|---|---|---|---|
 | `E-standard-cloudevents` | unverified | unverified | https://cloudevents.io/ | `F-b3-08`, `X-cap-work-intake-001`, `X-cap-work-intake-005` |
 | `E-standard-a2a-messaging` | unverified | unverified | https://a2a-protocol.org/latest/ | `F-b3-08`, `X-cap-work-intake-002` |
+| `E-standard-openapi-asyncapi` | OpenAPI 3.1.0 (2021-02-17); AsyncAPI 3.0.0, 3.1.0 minor | unverified | - | `F-b1-05`, `X-gap-a-006` |
 
 - `E-standard-cloudevents` version note: the manifest records CloudEvents v1.0.2 for this row; every research record on file for it is search-only and the specification text was not fetched from this environment, so no version string is asserted here
 - `E-standard-a2a-messaging` version note: the manifest records A2A protocol v1.0 for this row and notes that the specification text could not be fetched because the domain was egress-blocked; both records on file are search-only, so no version string is asserted here
+- `E-standard-openapi-asyncapi` version note: Same proposed entity id as cap-consumption's row (pending registration in kb/entities.jsonl; architecture-layer equivalent is A-standard-openapi-and-asyncapi-descriptions). X-gap-a-006 (search-only, not fetched): "AsyncAPI 3.0.0 is now available and OpenAPI 3.1.0 was released on February 17, 2021. AsyncAPI 3.1.0 is a minor release with no breaking changes". Describes the normalisation contract this skill owns. Row owned by cap-work-intake.
 
 ### Operations
 

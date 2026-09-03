@@ -153,7 +153,8 @@ class Driver:
             if not self.ex.effects.has(key):
                 self.ex.effects.append(key, {**effect, "step_id": step_id,
                                              "run_key": self.run_key})
-        if self.opts.crash_at == step_id:
+        base = step_id.split("@")[0].split("#")[0]
+        if self.opts.crash_at in (step_id, base):
             sys.stderr.write(f"CRASH: kill -9 at step {step_id} before its checkpoint\n")
             sys.stderr.flush()
             os.kill(os.getpid(), signal.SIGKILL)
@@ -364,7 +365,9 @@ def main(argv=None) -> int:
     ap.add_argument("--adapter", default=os.environ.get("ADAPTER", "dryrun"))
     ap.add_argument("--out", default=os.path.join(HERE, "out"))
     ap.add_argument("--result", default="")
-    ap.add_argument("--crash-at", default=None, help="kill -9 at this step, before its checkpoint")
+    ap.add_argument("--crash-at", default=None,
+                    help="kill -9 at this step id, or at the first step with this base id, "
+                         "before its checkpoint is written")
     ap.add_argument("--decision", action="append", default=[],
                     help="outcome[:actor], one per gate ask, e.g. return_with_notes:agent:bot")
     ap.add_argument("--decider", default="user:corey")

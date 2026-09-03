@@ -374,16 +374,25 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "The manifest row for this piece, made precise and run over the implementation pair above: `python3 tools/conformance/enforcement_chain.py --adapter today --adapter second --corpus out/units.jsonl --points admission,dispatch,call --ways-in human,event,schedule,external --min-units 100 --report out/chain-implement.json` (proposed tool, built with the first chained point), the implementation selected by configuration with no code edit between runs. Per implementation it asserts every unit has a chain context at every point it crossed, all six declared slots present with strictly increasing `seq` in declared order, every slot unwound on exit in the reverse order including on failed units, and `adapter_observed` read from the refusal rather than the binding. Across implementations it asserts `adapters_run >= 2`, `units_checked >= 100`, `metered_units > 0`, all four of TARGET T6.2's entries and all three points covered, and `slots_missing == out_of_order == missing_inverse == ungated_metered_calls == chain_context_missing == 0`.",
-    "expected": "exit 0 and one line per implementation of the form `adapter=<entity> ways_in=human,event,schedule,external points=admission,dispatch,call units_checked=100 metered_units=<m> slots_missing=0 out_of_order=0 missing_inverse=0 ungated_metered_calls=0 chain_context_missing=0 slots_noop_by_absent_owner=<n> adapter_observed=<entity>`, followed by `adapters_run=2`, with `metered_units` greater than zero on both so each assertion had something to assert on.",
-    "breakage": "Remove the chain binding from one door only: unbind the event producer's intake path from the admission point, leaving the human, schedule and external doors wired and both implementations otherwise untouched, and replay the same corpus through all four doors.",
+    "criterion": "bash harness/xc-enforcement-chain/test.sh && python3 harness/xc-enforcement-chain/conformance.py --adapter dryrun --adapter second --min-units 100",
+    "expected": "What the run proves: The manifest row for this piece, made precise and run over the implementation pair above: `python3 tools/conformance/enforcement_chain.py --adapter today --adapter second --corpus out/units.jsonl --points admission,dispatch,call --ways-in human,event,schedule,external --min-units 100 --report out/chain-implement.json` (proposed tool, built with the first chained point), the implementation selected by configuration with no code edit between runs. Per implementation it asserts every unit has a chain context at every point it crossed, all six declared slots present with strictly increasing `seq` in declared order, every slot unwound on exit in the reverse order including on failed units, and `adapter_observed` read from the refusal rather than the binding. Across implementations it asserts `adapters_run >= 2`, `units_checked >= 100`, `metered_units > 0`, all four of TARGET T6.2's entries and all three points covered, and `slots_missing == out_of_order == missing_inverse == ungated_metered_calls == chain_context_missing == 0`. | exit 0 and one line per implementation of the form `adapter=<entity> ways_in=human,event,schedule,external points=admission,dispatch,call units_checked=100 metered_units=<m> slots_missing=0 out_of_order=0 missing_inverse=0 ungated_metered_calls=0 chain_context_missing=0 slots_noop_by_absent_owner=<n> adapter_observed=<entity>`, followed by `adapters_run=2`, with `metered_units` greater than zero on both so each assertion had something to assert on.",
+    "breakage": "In harness/xc-enforcement-chain/interface.py, unbind the event door's intake path from the admission point (meter the unit and continue before the chain runs, the same edit the gate applies to a copy in its step 4), run the criterion (chain_context_missing and ungated_metered_calls become non-zero for the event door alone and the gate exits 1), then git checkout harness/xc-enforcement-chain/interface.py.",
     "expected_failure": "exit 1 with `chain_context_missing` and `ungated_metered_calls` non-zero for `ways_in=event` alone, naming the unit ids that reached work with no context, while the human, schedule and external doors stay at zero on every count, `adapters_run` stays 2 and `units_checked` stays at or above 100 - which is what shows one binding was lost rather than the corpus having gone unread or an implementation having failed to run.",
-    "status": "claimed",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
       "F-b1-08"
     ],
-    "quote": "A criterion nothing can fail is not a criterion"
+    "quote": "A criterion nothing can fail is not a criterion",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "5dd855c",
+      "clean_exit": 0,
+      "clean_output": "ion of the corpus, not of the run: records_digest=db7461f6c118 on both runs\nadapter=out-of-process chain (an admitting process the traffic must cross) ways_in=human,event,schedule,external points=admission,dispatch,call units_checked=104 metered_units=96 slots_missing=0 out_of_order=0 missing_inverse=0 ungated_metered_calls=0 chain_context_missing=0 slots_noop_by_absent_owner=592 adapter_observed=out-of-process chain (an admitting process the traffic must cross)\nadapters_run=2\n  ok   identical chain records from 2 enforcement points (db7461f6c118), differing on 2 loci\nconformance PASSED: 26/26",
+      "breakage_exit": 1,
+      "breakage_output": "uct name outside adapters/ and the env-var table\n  ok   product scan over the shipped tree exits 0 (0)\n  ok   0 hits outside adapters/\n4. deliberate breakage: one door's intake path is unbound from the admission point\n  ok   the unbound-door run exits non-zero (1)\nevent: chain_context_missing=26 ungated_metered_calls=26; human/schedule/external: 0 on both counts; units_checked=104 adapters_run=2; unbound calls that still spent in process: 26, refused out of process\n  ok   the breakage names the one door that lost its binding (0)\n  ok   the run names the case that broke it\n\npassed 25, failed 11",
+      "restored": true
+    }
   },
   "composes_with": {
     "builds_on": [

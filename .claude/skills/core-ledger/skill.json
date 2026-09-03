@@ -491,12 +491,19 @@
   ],
   "best_practices": [
     {
-      "text": "agentic-stack and build-definition-of-done already state the green-gate finding (F-a7-03). What it adds here: a chain that verifies has been shown intact, not complete - an entry that was never appended is invisible to every verification - so a passing chain check must be reported alongside the count of entries it covered and never on its own.",
+      "text": "agentic-stack and build-definition-of-done own the green-gate finding (F-a7-03): a deterministic gate can be structurally green and mean nothing, having run with every behavioural stage skipped.",
       "origin": "sourced",
       "sources": [
         "F-a7-03"
       ],
       "quote": "with every behavioural stage skipped"
+    },
+    {
+      "text": "Proposed, this facet's own consequence: a chain that verifies has been shown intact, not complete - an entry that was never appended is invisible to every verification - so a passing chain check is reported alongside the count of entries it covered and never on its own. Research query: is there a recorded fact behind the missing-entry blind spot of a hash chain, or is that this skill's own extension of F-a7-03?",
+      "origin": "proposed",
+      "sources": [
+        "F-a7-03"
+      ]
     },
     {
       "text": "Turn every contended write into an append rather than a competing update; the prior art for event-sourced ledgers treats this as the core mechanical change, and it is also what makes two writers' outcomes distinguishable after the fact instead of one silently winning.",
@@ -533,8 +540,8 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.1 row C5, made precise. Proposed tool, built with this component: `python3 tools/ledger_check.py --log out/ledger.jsonl --replay-key <k> --criteria criteria.txt --report out/ledger-check.json`. It folds the log from empty and asserts the computed head equals the stored sealed head, then resubmits a unit whose idempotency_key is already terminal, asserting `entries_checked > 0`, `head_match == true`, `terminal_records_for_key == 1`, `records_appended_on_replay == 0` and `criterion_leaks == 0`.",
-    "expected": "exit 0 and one report line of the form `entries_checked=<n> head_match=true terminal_records_for_key=1 records_appended_on_replay=0 criterion_leaks=0`, with n greater than zero and the replayed key echoed.",
+    "criterion": "bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second && bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second",
+    "expected": "exit 0, `conformance PASSED: 26/26 cases, 2 binding(s)` from the provenance half, then `passed 20, failed 0` and `conformance PASSED: 22/22 cases, 2 binding(s)` from the state half. Between them they carry row C5's chain assertions on disk: a record read back at its own head, `an inclusion proof verifies without the whole log`, a tampered record named at its index (`chain_break_at went from -1 to 2, the tampered record`), and `two writers racing for the same head never fork the log`. It is the gate core-ledger-implement owns. Claimed, stated as the gap: `tools/ledger_check.py` does not exist, so `entries_checked=<n> head_match=true terminal_records_for_key=1 records_appended_on_replay=0 criterion_leaks=0` has never been produced; the terminal-key replay and the criterion-leak scan in particular are asserted nowhere on disk. The criterion above was run on 2026-09-03 and exited 0.",
     "breakage": "Make the ledger overwrite rather than append on a duplicate key, changing nothing else.",
     "expected_failure": "The recomputed head diverges from the stored head so `head_match` becomes false, the entry that was overwritten is gone while the entries chained behind it still commit to it, the dispatch-record count for the key becomes 2, and the run exits non-zero with `entries_checked` unchanged - so the report names the key and the sequence number where recomputation first diverged rather than only that something failed.",
     "status": "claimed",

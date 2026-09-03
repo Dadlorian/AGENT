@@ -267,7 +267,7 @@
           "F-b2-03",
           "F-b1-06"
         ],
-        "quote": "pure function `document \u2192 plan + cost`"
+        "quote": "pure function `document → plan + cost`"
       },
       {
         "text": "The definition of done lives in the document, but its criterion text does not travel with the work. agentic-stack and build-definition-of-done state design rule 6 (F-b1-07); the consequence here is that criterion_of is the Judge's path only, and a criterion string reachable from a dispatch request, a document handle given to a graded unit, or a step payload is a defect in this component, not in the Judge.",
@@ -445,7 +445,7 @@
         "F-b3-13",
         "F-b4-07"
       ],
-      "quote": "\u2014 adopt the RFC directly"
+      "quote": "— adopt the RFC directly"
     },
     {
       "step": 8,
@@ -471,12 +471,19 @@
   ],
   "best_practices": [
     {
-      "text": "cap-document-validation already states the well-formedness finding (F-a7-03). What it adds here: a document that validates has been shown declarable, not achievable, so a schema pass must never be reported as an approval or as progress against the definition of done.",
+      "text": "cap-document-validation owns the well-formedness finding (F-a7-03): the checks a schema pass runs establish well-formedness, not correctness.",
       "origin": "sourced",
       "sources": [
         "F-a7-03"
       ],
       "quote": "Those establish well-formedness, not correctness"
+    },
+    {
+      "text": "Proposed, this facet's own consequence: a document that validates has been shown declarable, not achievable, so a schema pass must never be reported as an approval or as progress against the definition of done. Research query: is there a recorded fact behind the stronger reading - a passing schema check taken as progress against a definition of done - or is that this skill's own extension of F-a7-03?",
+      "origin": "proposed",
+      "sources": [
+        "F-a7-03"
+      ]
     },
     {
       "text": "Proposed: treat digest equality across the ways in as a standing test, not a design intention. The cheapest way to lose it is a courtesy default - a priority, a timestamp, a normalised title - added by one intake path and by no other. Research query: is there a recorded regression where a courtesy default broke digest equality across entry paths, or is this a hypothetical risk with no incident behind it?",
@@ -511,8 +518,8 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.1 row C1, made precise: `document-validate --schema urn:agentic:core:document:0.1 fixtures/positive/*.json fixtures/negative/*.json` exits 0 and reports `positive=12 passed`, `negative=9 rejected` and `checked>0`, where the negative corpus includes `missing-dod.json` (no definition_of_done) and `criterion-in-payload.json` (criterion text inside a step payload).",
-    "expected": "exit 0 and the three lines `positive=12 passed`, `negative=9 rejected`, `checked=21`.",
+    "criterion": "bash harness/document-validation/test.sh && python3 harness/document-validation/conformance.py --adapter dryrun --adapter second",
+    "expected": "exit 0, `passed 24, failed 0` from the gate and `conformance PASSED: 28/28 cases, 2 binding(s)` from the conformance run over both bindings. That is docs/decomposition.md section 3.1 row C1 as it exists on disk: a declared shape is checked against a published dialect through one interface, a malformed document is refused before it runs, and the dialect in effect is read from the adapter rather than assumed. It is the gate core-document-implement owns; this facet names it because the row C1 tool this facet describes is not built. Claimed, stated as the gap: there is no `document-validate` command and no `fixtures/positive` or `fixtures/negative` corpus anywhere in this repository, so `positive=12 passed`, `negative=9 rejected` and `checked=21` over a negative corpus holding `missing-dod.json` (no definition_of_done) and `criterion-in-payload.json` (criterion text inside a step payload) have never been produced by any run. The criterion above was run on 2026-09-03 and exited 0.",
     "breakage": "Remove `\"definition_of_done\"` from the schema's `required` array and re-run, changing nothing else.",
     "expected_failure": "The negative fixture `missing-dod.json` now validates, the negative count drops to `negative=8 rejected`, the asserted count of 9 is not met, and the run exits non-zero.",
     "status": "claimed",

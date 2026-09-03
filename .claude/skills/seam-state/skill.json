@@ -59,7 +59,7 @@
           "F-b3-12",
           "X-cross-structure-052"
         ],
-        "quote": "in-toto \u00b7 SLSA \u00b7 DSSE"
+        "quote": "in-toto · SLSA · DSSE"
       }
     ],
     "operations": [
@@ -450,7 +450,7 @@
         "quote": "a manual edit between runs is detectable"
       },
       {
-        "text": "Redaction is a tombstone that preserves the record digest, never a deletion: proposed, from docs/decomposition.md section 2.2.4. The chain commits to the digest of the canonical body and never to the body, so replacing a body with a tombstone that records who redacted it and under what authority leaves every chain digest and every inclusion proof still verifying. A store that cannot do this ends up choosing between compliance and integrity. Research query: see the docs/decomposition.md citability research query on the sibling instruction row above \u2014 does a citable kb record state the tombstone-preserves-digest rule this row currently sources only to an external design doc?",
+        "text": "Redaction is a tombstone that preserves the record digest, never a deletion: proposed, from docs/decomposition.md section 2.2.4. The chain commits to the digest of the canonical body and never to the body, so replacing a body with a tombstone that records who redacted it and under what authority leaves every chain digest and every inclusion proof still verifying. A store that cannot do this ends up choosing between compliance and integrity. Research query: see the docs/decomposition.md citability research query on the sibling instruction row above — does a citable kb record state the tombstone-preserves-digest rule this row currently sources only to an external design doc?",
         "origin": "proposed",
         "sources": [
           "F-b5-05"
@@ -576,7 +576,7 @@
     },
     {
       "step": 7,
-      "action": "Implement retention as three classes - chain, body, payload - with a hold flag, and implement deletion as a tombstone that preserves the record id and records the authority for the removal. The table is in references/state-seam.md. Research query: docs/decomposition.md is not a citable kb id under this schema (only F-, E-, R-, T-, X- and REF- ids qualify) \u2014 does PASS.md or TARGET.md state a retention-class or tombstone requirement anywhere that would let this row cite a real kb record instead of an external design doc?",
+      "action": "Implement retention as three classes - chain, body, payload - with a hold flag, and implement deletion as a tombstone that preserves the record id and records the authority for the removal. The table is in references/state-seam.md. Research query: docs/decomposition.md is not a citable kb id under this schema (only F-, E-, R-, T-, X- and REF- ids qualify) — does PASS.md or TARGET.md state a retention-class or tombstone requirement anywhere that would let this row cite a real kb record instead of an external design doc?",
       "why": "Proposed, from docs/decomposition.md section 2.2.4. One retention policy for all three classes will be wrong for two of them, and a redaction that removes the record instead of the body breaks every chain digest and inclusion proof after it, which is how a store comes to be asked to choose between compliance and integrity.",
       "origin": "proposed",
       "sources": [
@@ -695,12 +695,12 @@
         "X-cross-structure-052",
         "E-swap-candidate-object-store"
       ],
-      "quote": "object store \u00b7 relational \u00b7 event log"
+      "quote": "object store · relational · event log"
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.3 row S2, made runnable: `python3 tools/conformance/state_seam.py --adapter jsonl-hash-chain --runs 2 --repeats 100 --report out/seam-state-a.json` then the same command with `--adapter merkle-object-store --report out/seam-state-b.json`, the adapter chosen by configuration with no code edit between runs. Each run makes two assertions. (a) The consistency proof between run N's sealed head and run N+1's sealed head verifies with an external Merkle verifier we did not write, invoked as a subprocess with no access to our reader. (b) Every planner projection is snapshot-pinned: run each of the eight projections 100 times at a fixed `at_head` while a second writer appends concurrently to the same run, and assert all 100 results per projection are byte-identical. Assert `adapters_run == 2`, `projections_checked == 8`, `concurrent_appends_observed > 0` and `selected_by == \"configuration\"`.",
-    "expected": "both runs exit 0; each report shows `consistency_proof_verified == true`, `external_verifier_exit == 0`, `projections_checked == 8`, `distinct_results_per_projection == [1,1,1,1,1,1,1,1]`, `concurrent_appends_observed > 0`, and the merged report shows `adapters_run == 2` with the same sealed head digest under both adapters for the same record sequence.",
+    "criterion": "bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second",
+    "expected": "exit 0, `passed 20, failed 0` from the gate and `conformance PASSED: 22/22 cases, 2 binding(s)` over the in-memory chained log and the content-addressed merkle log over an object store, the binding chosen by configuration (`nothing but the binding changed between the two runs`). Three of this facet's assertions are on disk there: `a pinned snapshot does not see a later write`, `an inclusion proof verifies without the whole log`, and `two writers racing for the same head never fork the log`. It is the gate seam-state-implement owns. Claimed, stated as the gap: `tools/conformance/state_seam.py` does not exist, so `projections_checked == 8`, `distinct_results_per_projection == [1,1,1,1,1,1,1,1]` at 100 repeats against a concurrent writer, `concurrent_appends_observed > 0` and a consistency proof checked by an external Merkle verifier run as a subprocess have never been produced here. The criterion above was run on 2026-09-03 and exited 0.",
     "breakage": "Let one projection - `open_dispatches` - resolve the head itself and read live instead of reading at the `at_head` it was passed. Change nothing else: same adapters, same record sequence, same command.",
     "expected_failure": "Exit 1 under both adapters. That projection's 100 results diverge as soon as the concurrent writer appends, so `distinct_results_per_projection` becomes greater than 1 in exactly that position while assertion (a) still passes, isolating the fault to the query surface rather than to the integrity mechanism. Two nearby readings are also failures, not passes: `concurrent_appends_observed == 0` means the race never happened and the pinning was never tested, and an `external_verifier_exit == 0` obtained by handing the verifier our own head rather than the stored records proves nothing. Claimed: neither adapter is written, tools/conformance/state_seam.py does not exist, and no run has been performed here.",
     "status": "claimed",

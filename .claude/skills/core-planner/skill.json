@@ -493,7 +493,7 @@
         "F-b3-13",
         "F-b4-07"
       ],
-      "quote": "\u2014 adopt the RFC directly"
+      "quote": "— adopt the RFC directly"
     },
     {
       "step": 8,
@@ -525,7 +525,7 @@
   ],
   "best_practices": [
     {
-      "text": "agentic-stack and build-definition-of-done already state the green-gate finding (F-a7-03). What it adds here: a plan that validates has been shown well-formed, not affordable, so a schema pass must never be reported as an approval, and the number a reviewer approves is the worst case rather than the floor.",
+      "text": "agentic-stack and build-definition-of-done state the green-gate finding (F-a7-03). What it adds here, as this facet's own consequence and proposed: a plan that validates has been shown well-formed, not affordable, so a schema pass must never be reported as an approval, and the number a reviewer approves is the worst case rather than the floor.",
       "origin": "sourced",
       "sources": [
         "F-a7-03"
@@ -533,7 +533,7 @@
       "quote": "Those establish well-formedness, not correctness"
     },
     {
-      "text": "agentic-stack already states the configuration finding (F-a7-04). What it adds here: record the digest of the cost table actually in effect at plan time on the plan itself, because a table written in the documented place and overridden by a stored row produces a plan that reviews identically and prices differently.",
+      "text": "agentic-stack states the configuration finding (F-a7-04). What it adds here, as this facet's own consequence and proposed: record the digest of the cost table actually in effect at plan time on the plan itself, because a table written in the documented place and overridden by a stored row produces a plan that reviews identically and prices differently.",
       "origin": "sourced",
       "sources": [
         "F-a7-04"
@@ -574,8 +574,8 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.1 row C2, made precise. Proposed tool, built with this component: `strace -f -e trace=connect,sendto -o out/plan.trace python3 tools/plan.py --document fixtures/plan/checkout-500s.json --head H --cost-inputs fixtures/plan/cost-inputs.json --out out/plan-<n>.json`, run twice with the same document, head and cost inputs, then `python3 tools/plan_purity.py --trace out/plan.trace --plan out/plan-1.json --plan out/plan-2.json --report out/plan-purity.json`. It asserts the two plan files are byte-identical, that the count of AF_INET and AF_INET6 connects in the trace is exactly 0, that `steps_priced > 0`, and that `criterion_leaks == 0`.",
-    "expected": "exit 0 and one summary line `runs=2 plan_digest=sha256:<hex> identical=yes connects_inet=0 steps_priced=<n> criterion_leaks=0`, with `steps_priced` greater than zero so the identity assertion had a priced plan to assert on.",
+    "criterion": "python3 harness/dispatch/conformance.py --adapter dryrun --adapter second",
+    "expected": "exit 0, both adapters printing the same `plan_digest=4bce5f723c26`, then `adapters_run=2 migrated_paths=3 plan_digest_mismatches=0 verdict_mismatches=0 distinct_markers=2`. Four of that run's assertions are row C2 on disk: `P1 the same document at the same head plans byte-identically`, `P2 the planner opened no internet socket` (`connects_inet == 0`, from a socket guard inside the run), `P3 the plan priced steps rather than asserting on an empty plan`, and `P4 a step with no cost row at this head is refused, not estimated`. The command is the dispatch harness, whose plan-entry names core-planner among its co-skills. Claimed, stated as the gap: `tools/plan.py` and `tools/plan_purity.py` do not exist and nothing here runs under `strace`, so `runs=2 plan_digest=sha256:<hex> identical=yes connects_inet=0 steps_priced=<n> criterion_leaks=0` has never been produced, and purity is asserted by a guard inside the run rather than by a trace taken from outside it. The criterion above was run on 2026-09-03 and exited 0.",
     "breakage": "Make the planner call the model-access interface to estimate one step's cost, and change nothing else.",
     "expected_failure": "`connects_inet` becomes non-zero, the two plans diverge on the sampled estimate so `identical=no` and the digests differ, and the run exits non-zero while `steps_priced` stays greater than zero - so the report names the estimate that was sampled rather than only that something failed.",
     "status": "claimed",

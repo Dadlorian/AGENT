@@ -4,7 +4,7 @@
   "wave": 5,
   "description": "The Dispatch seam as it should be: one unit of agent work executes under a declared ceiling and returns one typed result whose partial progress is already durable, with the request shape, the result shape, cancellation, ceiling enforcement, partial results, the context a unit receives and folds back, and what a failure returns. It also carries the caller's view - how a person, an agent and an event reach it, the smallest call, and the refusal. Load it when deciding how a unit of agent work is started, bounded, cancelled or resumed; when asking 'what happens to the work already done if this run is killed', 'why did this unit stop', 'what does a retry of this re-do', or 'can we run this somewhere else without changing the caller'; when a request may arrive twice and must execute once; when the context handed down to a sub-unit or the summary handed back is about to be left implicit; and whenever a dispatcher is about to invent its own state names, its own stop reasons or its own error body.",
   "purpose": {
-    "text": "Fix one contract for executing a single unit of agent work and returning one result, so agent execution is pluggable: the request, the result, cancellation, the ceilings, the partial and the failure are the seam's, and what runs the unit is an adapter.",
+    "text": "Fix one contract for executing a single unit of agent work and returning one result, so agent execution is pluggable, the F-b5-03 sentence xc-identity-delegation also carries: the request, the result, cancellation, the ceilings, the partial and the failure are the seam's, and what runs the unit is an adapter.",
     "origin": "sourced",
     "sources": [
       "F-b5-02",
@@ -542,7 +542,7 @@
           "F-b5-02",
           "E-seam-dispatch"
         ],
-        "quote": "**Dispatch** \u2014 one unit of agent work executes and returns one result."
+        "quote": "**Dispatch** — one unit of agent work executes and returns one result."
       },
       {
         "text": "This is one of the two boundaries agentic-stack names as having no standard to adopt (F-b5-01), so the design effort spent here is warranted; what that buys is an obligation, because the seam must specify all six of the request shape, the result shape, cancellation semantics, timeout and budget enforcement, partial-result handling and what a failure returns. A dispatcher that specifies five of the six is not this seam.",
@@ -665,7 +665,7 @@
         "X-seam-dispatch-001",
         "F-b5-01"
       ],
-      "quote": "each long-running interaction is a Task with an explicit state machine (SUBMITTED \u2192 WORKING \u2192 COMPLETED/FAILED/CANCELED/REJECTED/INPUT_REQUIRED/AUTH_REQUIRED)"
+      "quote": "each long-running interaction is a Task with an explicit state machine (SUBMITTED → WORKING → COMPLETED/FAILED/CANCELED/REJECTED/INPUT_REQUIRED/AUTH_REQUIRED)"
     },
     {
       "step": 2,
@@ -725,7 +725,7 @@
     {
       "step": 7,
       "action": "Carry correlation as explicit members of the request and of every result, span, log record and problem object it produces, and stamp them at dispatch rather than inheriting them.",
-      "why": "agentic-stack and xc-correlation already state the trace-context finding (F-a7-02). What this seam adds: dispatch is the boundary the finding was measured at, so the correlation members belong in the request shape here and a sub-dispatch re-stamps them rather than relying on parentage.",
+      "why": "agentic-stack and xc-correlation state the trace-context finding (F-a7-02). What this seam adds, as its own consequence and proposed: dispatch is the boundary the finding was measured at, so the correlation members belong in the request shape here and a sub-dispatch re-stamps them rather than relying on parentage.",
       "origin": "sourced",
       "sources": [
         "F-a7-02"
@@ -746,7 +746,7 @@
     {
       "step": 9,
       "action": "Choose the second adapter on execution model, not on brand: something with no host-side session to hold open, no callbacks and nothing to cancel mid-call, so any requirement that was really a property of today's executor fails immediately. Run one conformance suite over both, and require it to name which adapter failed.",
-      "why": "build-adapter-pair states that the second adapter exists to prove the first is not load-bearing (F-b1-04). What this adds here: three implementations exist today with no contract between them, so a suite that reports a single aggregate pass would leave the seam exactly as unpluggable as it is now.",
+      "why": "build-adapter-pair states that the second adapter exists to prove the first is not load-bearing (F-b1-04), and xc-identity-delegation carries the same F-b5-03 sentence about the three implementations this seam stands in front of. What this adds here, as this seam's own consequence and proposed: those three share no contract, so a suite that reports a single aggregate pass would leave the seam exactly as unpluggable as it is now.",
       "origin": "sourced",
       "sources": [
         "F-b1-04",
@@ -763,7 +763,7 @@
   ],
   "best_practices": [
     {
-      "text": "agentic-stack already states the green-gate finding (F-a7-03). What it adds here: a unit that reached a terminal state establishes well-formedness, not correctness, so reaching a terminal state is never on its own a pass.",
+      "text": "agentic-stack states the green-gate finding (F-a7-03). What it adds here, as this seam's own consequence and proposed: a unit that reached a terminal state establishes well-formedness, not correctness, so reaching a terminal state is never on its own a pass.",
       "origin": "sourced",
       "sources": [
         "F-a7-03"
@@ -775,7 +775,7 @@
       "origin": "proposed"
     },
     {
-      "text": "agentic-stack and cap-agent-runtime already state the silent-configuration finding (F-a7-04). What it adds here: read back the grace window, the isolation profile and the ceiling the adapter actually applied from the recorded step, not from the request you sent, because an adapter that silently floors a ten-second grace at sixty looks identical to one that honoured it until the day a cancel matters.",
+      "text": "agentic-stack and cap-agent-runtime state the silent-configuration finding (F-a7-04). What it adds here, as this seam's own consequence and proposed: read back the grace window, the isolation profile and the ceiling the adapter actually applied from the recorded step, not from the request you sent, because an adapter that silently floors a ten-second grace at sixty looks identical to one that honoured it until the day a cancel matters.",
       "origin": "sourced",
       "sources": [
         "F-a7-04"
@@ -837,8 +837,8 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "Proposed tool, built with the first implementation of this seam: `python3 tools/conformance_dispatch.py --adapter today --adapter second --report out/dispatch-conformance.json`. Per adapter it asserts five things: a malformed request is rejected with problem type `urn:agentic:problem:document-invalid`; a cancel issued mid-run reaches a terminal state within `deadline.cancel_grace_s`; a request whose spend ceiling is exceeded terminates with `stop_reason: \"budget_exhausted\"` and a recorded spend that is non-zero and at most the ceiling; an interrupted run leaves `partial: true` with at least one output carrying a non-null `recorded_at_head`; and every failure body is served as `application/problem+json` with a `type` present in the closed registry in docs/decomposition.md section 2.1.6. Across adapters it asserts `adapters_run >= 2`, and per adapter `assertions_run > 0` and `untyped == 0`.",
-    "expected": "exit 0 and one line per adapter of the form `adapter=<today|second> assertions_run=5 failed=0 untyped=0`, followed by `adapters_run=2`. The report names each adapter separately; there is no aggregate pass line.",
+    "criterion": "python3 harness/dispatch/conformance.py --adapter dryrun --adapter second",
+    "expected": "exit 0 and one line per adapter of the form `adapter=<dryrun|second> marker=<marker> assertions_run=33 failed=0 untyped=0`, then `adapters_run=2 migrated_paths=3 plan_digest_mismatches=0 verdict_mismatches=0 distinct_markers=2`. The report names each adapter separately; there is no aggregate pass line. The five assertions this facet states are in that run as S1 to S5: a malformed request refused with `urn:agentic:problem:document-invalid` and no step recorded; a cancel reaching a terminal state inside `deadline.cancel_grace_s`; a ceiling crossed terminating with `budget_exhausted` and a spend that is non-zero and at most the ceiling; an interrupted run left `partial` with an output whose `recorded_at_head` is not null; and every failure body typed from the closed registry (`untyped=0`). Claimed, stated as the gap: `tools/conformance_dispatch.py` does not exist - `harness/dispatch/conformance.py` is the on-disk equivalent, and its two bindings are a session-held in-process shim and a queue-and-poll one-shot rather than two production dispatchers. The criterion above was run on 2026-09-03 and exited 0.",
     "breakage": "Have one adapter return its native error object instead of problem details - the same body, served as `application/json` with the adapter's own field names - and change nothing else, then re-run.",
     "expected_failure": "The failure-shape assertion fails for that adapter only: `untyped` becomes non-zero for it, the run exits non-zero, and the report names which adapter broke while the other still reports `failed=0 untyped=0`. That the suite singles out one adapter is the point, because the state this replaces is three implementations with no contract between them.",
     "status": "claimed",

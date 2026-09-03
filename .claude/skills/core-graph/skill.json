@@ -410,13 +410,13 @@
     {
       "step": 6,
       "action": "Return every rejection as the problem shape cap-errors defines, carrying the offending edge_id, both endpoint kinds and the rule that refused it; never raise a bare type error across this boundary, and never invent a problem type suffix at the call site.",
-      "why": "cap-errors owns the closed registry and the standard behind it, and core-document already adopts it for a refused declaration (F-b3-13, F-b4-07). What this adds: a rejection is the only thing a caller ever sees from this component, so it is where a graph author either gets a machine-readable refusal or a sentence.",
+      "why": "cap-errors owns the closed registry and the standard behind it, and core-document adopts it for a refused declaration (F-b3-13, F-b4-07). What this adds is this facet's own consequence, proposed: a rejection is the only thing a caller ever sees from this component, so it is where a graph author either gets a machine-readable refusal or a sentence.",
       "origin": "sourced",
       "sources": [
         "F-b3-13",
         "F-b4-07"
       ],
-      "quote": "\u2014 adopt the RFC directly"
+      "quote": "— adopt the RFC directly"
     },
     {
       "step": 7,
@@ -442,12 +442,19 @@
   ],
   "best_practices": [
     {
-      "text": "agentic-stack and build-definition-of-done already state the green-gate finding (F-a7-03). What it adds here: a graph that validates has been shown well-typed, not composable - a walk that finds no implementation for a declared interface is a valid graph and a failed composition - so a passing type check must never be reported as evidence that the work can be planned.",
+      "text": "agentic-stack and build-definition-of-done own the green-gate finding (F-a7-03): the structural stages of a gate establish well-formedness, not correctness.",
       "origin": "sourced",
       "sources": [
         "F-a7-03"
       ],
       "quote": "Those establish well-formedness, not correctness"
+    },
+    {
+      "text": "Proposed, this facet's own consequence: a graph that validates has been shown well-typed, not composable - a walk that finds no implementation for a declared interface is a valid graph and a failed composition - so a passing type check must never be reported as evidence that the work can be planned. Research query: does any recorded fact state the well-typed-versus-composable distinction for a dependency graph, or is that this skill's own extension of F-a7-03?",
+      "origin": "proposed",
+      "sources": [
+        "F-a7-03"
+      ]
     },
     {
       "text": "Validate nodes first, then edges, so that an edge rejection is never a symptom of an endpoint whose kind was never checked; the prior art for graph type conformance identifies conforming nodes first and uses that to check edges by the same procedure.",
@@ -483,8 +490,8 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.1 row C3, made precise. Proposed tool, built with this component: `python3 tools/graph_typecheck.py --generate 10000 --seed 1 --report out/graph-validity.json`. It runs the property test over 10,000 generated graphs whose generator emits both an `implementation` edge whose target node is not of kind `interface` and an `existence` edge between two `implementation` nodes, and asserts `rejections > 0`, `false_accepts == 0`, `nodes_checked > 0` and `edges_checked > 0`, with no store configured in the environment.",
-    "expected": "exit 0 and one report line of the form `graphs=10000 nodes_checked=<n> edges_checked=<m> rejections=<r> false_accepts=0`, with n, m and r each greater than zero and the seed echoed.",
+    "criterion": "bash harness/core-graph/test.sh && python3 harness/core-graph/conformance.py --adapter dryrun --adapter second && python3 harness/core-graph/conformance.py --cross-store dryrun second",
+    "expected": "exit 0, `passed 20, failed 0` from the gate, `conformance PASSED: 20/20 cases, 2 binding(s)` from the two-binding run, and a cross-store report ending `\"verdict_mismatches\": 0`. Both bindings print `property test: 300 generated graphs, rejections > 0, false_accepts == 0 (core-graph DoD): graphs=1 edges_attempted=300 rejections=176 false_accepts=0 seed=1`, which is row C3's assertion - rejections above zero, no false accept, the seed echoed - at the size the harness runs. It is the gate core-graph-implement owns. Claimed, stated as the gap: `tools/graph_typecheck.py` does not exist, so the 10,000-graph run this facet describes (`graphs=10000 nodes_checked=<n> edges_checked=<m> rejections=<r> false_accepts=0`) has never been performed; the on-disk gate generates 300 edges per binding, not 10,000 graphs. The criterion above was run on 2026-09-03 and exited 0.",
     "breakage": "Widen the edge type check to accept any node kind as an `implementation` target, changing nothing else.",
     "expected_failure": "A counterexample - an `implementation` edge pointing at a node of kind `document` - is found in under 100 generated cases, `false_accepts` becomes non-zero, `rejections` drops by the count of that class, and the run exits non-zero while `nodes_checked` and `edges_checked` are unchanged, so the report names which rule was widened rather than only that something failed.",
     "status": "claimed",

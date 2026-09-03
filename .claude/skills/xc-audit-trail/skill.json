@@ -379,7 +379,7 @@
         ]
       },
       {
-        "text": "The criterion a result is judged against never appears in an entry, a monitor report or an evidence bundle. agentic-stack states design rule 6 (F-b1-07); the consequence here is that an entry over a judged action records the actor, the action and the verdict and stops there, so reading one's own audit trail is not a way around the grader rule.",
+        "text": "The criterion a result is judged against never appears in an entry, a monitor report or an evidence bundle. agentic-stack states design rule 6 (F-b1-07), and cap-provenance and cap-scheduling carry the same sentence for their own records; the consequence here is that an entry over a judged action records the actor, the action and the verdict and stops there, so reading one's own audit trail is not a way around the grader rule.",
         "origin": "sourced",
         "sources": [
           "F-b1-07"
@@ -447,7 +447,7 @@
     {
       "step": 6,
       "action": "Append the monitor report itself to the trail, and assert on its counts - entries_checked, actors_missing, correlation_missing, chain_breaks, consistency_proofs_checked - rather than on the scan's exit status.",
-      "why": "agentic-stack already states the structurally-green-gate finding (F-a7-03): those establish well-formedness, not correctness. A scan over an empty window reports exactly what a clean window reports, and a monitor whose runs are not themselves recorded cannot be shown to have run at all.",
+      "why": "agentic-stack states the structurally-green-gate finding (F-a7-03): those establish well-formedness, not correctness. What this guarantee adds, as its own consequence and proposed: a scan over an empty window reports exactly what a clean window reports, and a monitor whose runs are not themselves recorded cannot be shown to have run at all.",
       "origin": "sourced",
       "sources": [
         "F-a7-03",
@@ -468,7 +468,7 @@
     {
       "step": 8,
       "action": "Publish sealed heads and retained statements where a party holding none of our credentials can fetch them, and prove the path by running at least one check with our own reader unavailable.",
-      "why": "cap-provenance sets the criterion and xc-provenance-chain already states it for artifact digests (F-b4-05): every artifact is attributable to the code version, inputs and actor that produced it, verifiable with a tool we did not write. Its consequence for a trail is sharper than for a single artifact - a verification served from our own index proves our index is self-consistent, which is precisely the claim a party investigating us would not accept.",
+      "why": "cap-provenance sets the criterion and xc-provenance-chain states it for artifact digests (F-b4-05): every artifact is attributable to the code version, inputs and actor that produced it, verifiable with a tool we did not write. Its consequence for a trail, proposed here, is sharper than for a single artifact - a verification served from our own index proves our index is self-consistent, which is precisely the claim a party investigating us would not accept.",
       "origin": "sourced",
       "sources": [
         "F-b4-05",
@@ -497,7 +497,7 @@
   ],
   "best_practices": [
     {
-      "text": "Give the monitor its own identity and its own schedule, and check both from the report rather than from the configuration. agentic-stack already states the silently-overridden-configuration finding (F-a7-04): a monitor declared as independent in a file is not a monitor that ran independently, and independence is the one property this guarantee cannot verify after the fact.",
+      "text": "Give the monitor its own identity and its own schedule, and check both from the report rather than from the configuration. agentic-stack states the silently-overridden-configuration finding (F-a7-04): a monitor declared as independent in a file is not a monitor that ran independently. What it adds here, as this guarantee's own consequence and proposed: independence is the one property this guarantee cannot verify after the fact.",
       "origin": "sourced",
       "sources": [
         "F-a7-04",
@@ -540,8 +540,8 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "Proposed tool, built with the first implementation of this guarantee: `python3 tools/conformance_audit_trail.py --trail <trail> --from-head <h0> --to-head <h1> --min-entries 100 --retention-floor-days 180 --external-verifier <third-party in-toto/DSSE verifier> --report out/audit-trail.json`. It reads every entry in the window, and asserts `entries_checked >= 100`, `actors_missing == 0`, `correlation_missing == 0`, `chain_breaks == 0`, `consistency_proofs_checked >= 1`, `external_verifications > 0` with our own reader unavailable, `oldest_retained_entry_age_days >= 180`, that `entry_kinds_seen` contains all four of TARGET T6.2's entries (user, agent, service and schedule, the identity capability's spelling of human, external, event and schedule), and that `independent` and `scheduled` were read from what the scan actually ran under. A window with no `schedule` entry has not exercised the one door that starts root work rather than steering it, and the assertion fails on that gap rather than passing over T1's narrower three.",
-    "expected": "exit 0 and one summary line `entries_checked=100 actors_missing=0 correlation_missing=0 chain_breaks=0 consistency_proofs_checked=1 external_verifications=1 oldest_retained_entry_age_days=180 entry_kinds_seen=user,agent,service,schedule independent=true scheduled=true`.",
+    "criterion": "bash harness/xc-audit-trail/test.sh",
+    "expected": "exit 0, `passed 18, failed 0`, and the scan line `chain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False`. The gate reads every entry in the window, asserts on the counters rather than on an exit code, and its tamper case shows a chain break being named rather than passed over. Claimed, and the counters themselves state the gap: `entries_checked=24` against the 100 this facet asserts, `independent=False` and `scheduled=False` because no monitor identity and no schedule exist here, no retention floor is measured (`oldest_retained_entry_age_days >= 180` is asserted nowhere), no third-party in-toto/DSSE verifier is invoked with our own reader unavailable, and `entry_kinds_seen` covering user, agent, service and schedule is not checked. `tools/conformance_audit_trail.py` does not exist; this gate, which xc-audit-trail-implement owns, is the nearest thing that runs. The criterion above was run on 2026-09-03 and exited 0.",
     "breakage": "Flip one byte inside a historical entry that the window covers - one character of an actor name is enough - leave every other entry untouched, and let the monitor reach its next scheduled run.",
     "expected_failure": "`chain_breaks` becomes 1, the scan names the entry whose chain digest no longer verifies, exits non-zero and emits the typed problem document, while `entries_checked` stays at or above 100 and `actors_missing` stays 0 - which is what shows the failure is the altered record rather than a window that was never read. Claimed: no audit entry, monitor, schedule or conformance tool exists on this stack today. The nearest analogue that does run here was measured separately over this repository's own chained run ledger and is recorded in the adapter row of xc-audit-trail-implement.",
     "status": "claimed",

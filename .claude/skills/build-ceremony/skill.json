@@ -41,33 +41,6 @@
     ],
     "operations": [
       {
-        "name": "review",
-        "input": "the section name, the artifacts the section produced on disk, and the traces of the runs that produced them",
-        "output": "one review record conforming to the review-record shape: findings with id, skill, location, severity, category, finding, evidence quote and suggested_change, plus metrics and what_worked (proposed operation)",
-        "origin": "proposed",
-        "sources": [
-          "T-t4-04"
-        ]
-      },
-      {
-        "name": "improve",
-        "input": "the review record and the artifacts it names",
-        "output": "one improve record conforming to the improve-record shape: every finding id resolved as applied (with the change and the files touched) or declined (with the reason), plus brief_changes, metrics_after and lessons_for_next_section (proposed operation)",
-        "origin": "proposed",
-        "sources": [
-          "T-t4-04"
-        ]
-      },
-      {
-        "name": "carry",
-        "input": "the improve record's lessons_for_next_section and brief_changes",
-        "output": "the persistent learning store and the author brief the next section reads before it starts (proposed operation)",
-        "origin": "proposed",
-        "sources": [
-          "X-build-ceremony-005"
-        ]
-      },
-      {
         "name": "continue",
         "input": "a written improve record",
         "output": "the next section, started without waiting for approval of the ceremony",
@@ -201,14 +174,6 @@
         "quote": "Do not stop at ceremonies; run them and continue."
       },
       {
-        "text": "Proposed: a ceremony number is a counter global to the repository, not a per-section one. It is one more than the highest ceremony-NN-review.json on disk, it is never reused and never reset, and the same N ties the review record, the improve record, the lessons row, the ledger record and any known-issues file together. A caller that derives the number from its own position in a run is corrected, not obeyed, because obeying it overwrites a closed ceremony. Research query: no prior-art search has been run for a numbering convention for chained review/improve record pairs (versus, e.g., how migration or changelog tooling numbers sequential entries).",
-        "origin": "proposed"
-      },
-      {
-        "text": "Proposed: a decline is recorded with its reason in the same record. There is no silent third disposition, and a finding is never removed from the review record to make the improve record close. Research query: unresearched; no prior-art search has been run for a two-state (applied/declined) resolution requirement in a review-finding tracker.",
-        "origin": "proposed"
-      },
-      {
         "text": "findings are raised against the contract a skill states, not against whatever implementation currently sits behind it, per design rule 1 as agentic-stack states it (F-b1-02, E-rule-b1-1). A review that only reports what today's adapter does has reviewed the adapter, not the skill.",
         "origin": "sourced",
         "sources": [
@@ -285,8 +250,8 @@
     },
     {
       "step": 6,
-      "action": "Write one improve record conforming to the improve-record shape defined above, resolving every finding id as applied or declined per the decline invariant; then re-render and re-validate every skill the improve step touched and record the validator result in metrics_after (proposed).",
-      "why": "Proposed: the rendered skill file is generated, so an improvement that is not re-rendered leaves the readable artifact contradicting its own data and the ceremony would have made the repository worse. The resolution shape and the decline rule are stated once, in the Shapes section and the decline invariant, and are not repeated here.",
+      "action": "Write one improve record conforming to the improve-record shape defined above: every finding id resolved as applied, with the change and files touched, or declined, with a reason, exactly once across the two lists and never a third disposition. Then re-render and re-validate every skill the improve step touched and record the validator result in metrics_after (proposed).",
+      "why": "Proposed: the rendered skill file is generated, so an improvement that is not re-rendered leaves the readable artifact contradicting its own data and the ceremony would have made the repository worse. The resolution shape is stated once, in the Shapes section, and is not repeated here.",
       "origin": "proposed"
     },
     {
@@ -320,15 +285,6 @@
         "T-t5-03"
       ],
       "quote": "define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation"
-    },
-    {
-      "step": 10,
-      "action": "Open references/ceremony-records.md only when writing a ceremony checker or adding a field to either record; the two summary shapes above are enough to run a ceremony by hand (proposed).",
-      "why": "Proposed: the discipline has to stay small enough to be used, and a reader who meets a full field-level schema first will treat the ceremony as overhead.",
-      "origin": "proposed",
-      "sources": [
-        "T-t3-02"
-      ]
     }
   ],
   "best_practices": [
@@ -358,10 +314,6 @@
     },
     {
       "text": "Proposed: when the same defect appears in more than one skill of a section, change the author brief once rather than patching each skill, and record the brief change; the wave-1 ceremony found one shared fact independently re-derived in four skills, which is a brief defect wearing four costumes. Research query: unresearched beyond this repo's own wave-1 ceremony record; no external precedent for a shared-defect-to-brief-change rule has been searched.",
-      "origin": "proposed"
-    },
-    {
-      "text": "Proposed: one finding names one location. A finding phrased about the section as a whole has no file to touch, so it can only be declined or restated, and it wastes the improve step either way. Research query: unresearched; our own record-keeping convention, no external precedent for a one-finding-one-location requirement has been searched.",
       "origin": "proposed"
     }
   ],

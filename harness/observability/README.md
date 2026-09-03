@@ -22,7 +22,7 @@ One run, one trace, reassembled by grouping on an attribute and never by trace p
 |---|---|
 | Run it | `ADAPTER=dryrun python3 harness/observability/call.py` |
 | Swap the backend | `ADAPTER=second python3 harness/observability/call.py` — configuration only, no code edit |
-| What the caller writes | `enter(kind="human", intent={...}, payload={...})` — 32 lines between the `BEGIN caller code` and `END caller code` markers, asserted under 40 by `test.sh` |
+| What the caller writes | `enter(kind="human", intent={...}, payload={...})` — 17 lines below the `>>> CALLER CODE` marker, counted and asserted under 40 by `harness/caller_lines.py` from `test.sh` |
 | What the platform stamps, unasked | correlation record (`run_id`, `root_dispatch_id`, `depth`, `entry_kind`), budget ceiling, idempotency key, actor subject |
 | What comes back | one result, or one problem object — never both, never a third kind |
 | What it prints | one row per signal with its level, its own minted trace id, and its `run.id`, then the proof line |
@@ -69,7 +69,7 @@ One run, one trace, reassembled by grouping on an attribute and never by trace p
 | 3. the minimal call | The caller's output is byte-identical whichever adapter answered, so nothing downstream can tell them apart. |
 | 4. deliberate breakage | Stop re-stamping at the child-dispatch boundary and let the child agent mint its own identifiers: both adapters exit 1 with `levels_covered == 1`, `run_id_groups == 0`, `spans_missing_run_id == 2`, identically — which locates the fault in the dispatch path rather than in either adapter, and reproduces PASS.md A7 finding 1. |
 | 5. the failure path | An unreachable adapter and an unknown run answer with RFC 9457 problem details typed from the closed registry; a type still marked proposed falls back to the registered one rather than being minted. No traceback reaches the caller. |
-| 6. the boundary in the source | No product name in `interface.py`, `call.py` or `conformance.py`; caller code under 40 lines; the unit shape has nowhere to put a parent span, so no implementation can quietly rely on parentage. |
+| 6. the boundary in the source | No product name in `interface.py`, `call.py` or `conformance.py`; caller code 17 lines, under 40, naming no adapter storage (`harness/caller_lines.py`); the unit shape has nowhere to put a parent span, so no implementation can quietly rely on parentage. |
 
 ## What would pin the integration, and how the boundary avoids it
 

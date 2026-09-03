@@ -16,9 +16,9 @@
 | `adapters/dryrun.py` | 49 | Deterministic completions in process. No network, no spend, same bytes every run. Failure path on `DRYRUN_FAIL=1` |
 | `adapters/live.py` | 97 | Today's component: POST `/v1/chat/completions` at `GATEWAY_URL` with `GATEWAY_KEY`, via `urllib` behind a guarded import. Product names live here |
 | `adapters/second.py` | 145 | The second serving path: provider-native asynchronous batch, claim-and-poll. Submit returns pending, claim polls, cost is committed then reconciled, nothing is stoppable |
-| `call.py` | 78 | The minimal call. 17 lines between the CALLER CODE markers; everything else is the platform stamping the envelope |
+| `call.py` | 85 | The minimal call. 13 lines below the `>>> CALLER CODE` marker, counted by `harness/caller_lines.py`; everything above it is the platform stamping the envelope |
 | `conformance.py` | 269 | The 12 cases every adapter passes, plus the product-name scan over code |
-| `test.sh` | 109 | The gate: 24 checks in dry run, the swap proof, and one deliberate breakage |
+| `test.sh` | 112 | The gate: 25 checks in dry run, the swap proof, and one deliberate breakage |
 | `provenance.json` | — | Owner skill, co-skill, blueprint entry, kb ids, what is measured and what is claimed |
 
 ## The minimal call
@@ -57,7 +57,7 @@
 | # | Check | What it proves |
 |---|---|---|
 | 1 | Conformance, dry-run adapter, 12/12 | Class routing, the cap, the refusals, idempotency, cancel and the marker all hold with no network |
-| 1b | Caller code is 17 lines, under 40 | One call is one call; the stamps are the platform's work, not the caller's |
+| 1b | Caller code is 13 lines, under 40, and names no adapter storage | One call is one call; the stamps are the platform's work, not the caller's. Both are measured by `harness/caller_lines.py`, the one method all five harnesses share |
 | 1b | `VENDOR=…` exits 2 with `document-invalid` 422 | A request naming a vendor is refused, and nothing was dispatched |
 | 1b | `CEILING_MICROS=100` exits 2 with `budget-exhausted` 402 | A request over its cap is refused before the call, at `platform-pre-dispatch`, with no spend incurred |
 | 1b | `MODEL_CLASS=gpt-4o` exits 2 | A vendor's model name is not a routing class |
@@ -104,7 +104,7 @@
 
 | Claim | Status |
 |---|---|
-| Dry-run conformance, the swap proof and the breakage | Measured by `test.sh`: 24 checks, 0 failures |
+| Dry-run conformance, the swap proof and the breakage | Measured by `test.sh`: 25 checks, 0 failures |
 | Live mode against `GATEWAY_URL` | Claimed. The request shape, the cost field and the correlation headers are unverified against a real endpoint |
 | `unit_micros_per_1k` prices in `routing.json` | Proposed test fixtures. Only the free class is a fact (PASS.md A4) |
 | The standard, "OpenAI-compatible completions" | Version unverified: every record on file for it is a search result, not a fetched page |

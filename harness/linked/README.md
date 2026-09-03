@@ -23,9 +23,9 @@ and no component is named in any file of this harness.
 | `doors.py` | 116 | The one subject document and the four producers. Every door builds its envelope with the same code, so a door cannot grow a member of its own |
 | `components.py` | 142 | How the four component harnesses are reached: one import window per component, an adapter wrapper so a lazy import finds its own package, and the four environment variables that select adapters |
 | `linked.py` | 369 | The platform: the ledger a replay is decided against, the pure plan, the one `submit`, the contained turn whose outward call is one completion, and the run read back |
-| `call.py` | 83 | The minimal call. 9 lines of caller code between the two markers |
+| `call.py` | 84 | The minimal call. 18 lines of caller code below the `>>> CALLER CODE` marker, counted by `harness/caller_lines.py` |
 | `conformance.py` | 271 | The 23 cases any set of adapters must pass, and the report the swap proof compares |
-| `test.sh` | 140 | The gate: 31 checks in dry run, the swap proof, the one-at-a-time swaps, the breakage |
+| `test.sh` | 139 | The gate: 32 checks in dry run, the swap proof, the one-at-a-time swaps, the breakage |
 | `provenance.json` | — | Owner skill, co-skills, kb and research ids, what is measured and what is claimed |
 | `out/` | written | Reports, the ledger, the executor journal, per-unit jails, run logs |
 
@@ -86,7 +86,7 @@ owns its table. `test.sh --live` skips with the list of what is unset.
 | # | Check | What it proves |
 |---|---|---|
 | 1 | The minimal call, 4 doors | One document reaches the same resolved plan through a person, an event, a clock and another agent |
-| 1b | 9 lines of caller code | The stamps, the plan, the ceiling, the trace and the checkpoints are the platform's work |
+| 1b | 18 lines of caller code, naming no component's storage | The stamps, the plan, the ceiling, the trace and the checkpoints are the platform's work. Counted by `harness/caller_lines.py`, the one method all five harnesses share; the number rose because presentation and the four doors' inputs are now inside the marked region in every harness, not because the caller writes more |
 | 2 | Conformance, 23/23 | A1–A8 cross-door, B1–B6 linkage, C1–C4 budget, D1–D2 replay, E1–E2 typed refusals, F1 no product name |
 | 3 | Swap all four to `second` | The same 23 cases pass with four different implementations and `call.py` byte-identical |
 | 3b | Swap one at a time | Exactly one marker moves per swap: the other three components do not notice |

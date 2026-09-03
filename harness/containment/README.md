@@ -24,9 +24,9 @@ technology sits behind an adapter and is chosen by configuration.
 | `adapters/live.py` | 272 | Today's component: Firecracker microVM cells started through systemd, goose driven over the Agent Client Protocol on stdio or a unix socket. Reached only through the env vars below |
 | `adapters/second.py` | 191 | The second containment technology: capability grants instead of a machine, single-shot runtime, no cancellation. Faithful stub here; `SECOND_SHIM_CMD` execs a real shim |
 | `binding.json` | 20 | Configuration. Which adapter, the default declaration, the turn's timings, the tuning both breakages edit |
-| `call.py` | 180 | The minimal call. 17 lines of caller code between the two banner comments; everything above them is the platform |
+| `call.py` | 183 | The minimal call. 17 lines of caller code below the `>>> CALLER CODE` marker, counted by `harness/caller_lines.py`; everything above it is the platform |
 | `conformance.py` | 221 | The same cases against any adapter, plus the cross-adapter assertions only a swap can make |
-| `test.sh` | 152 | The gate: 23 checks, dry run by default, `--live` for the host |
+| `test.sh` | 157 | The gate: 25 checks, dry run by default, `--live` for the host |
 | `out/` | written | Conformance reports, per-unit jails, run logs |
 
 ## The minimal call

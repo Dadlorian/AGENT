@@ -239,8 +239,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Item | Origin | Evidence |
 |---|---|---|
 | The criterion the work done under this authority will be judged against. agentic-stack states design rule 6 (F-b1-07); on this interface it forbids exactly one thing: a mandate states bounds - a ceiling, destinations, a validity period - and neither a mint request, a credential handle, nor a mandate's bounds ever carries the criterion the outcome will be scored on. | sourced | `F-b1-07` "An agent sees its outcome, never the criterion it is judged against" |
-| Proposed: the credential bytes, the signing keys, and the issuer's key store. A caller receives a handle and a mandate; anything that could be replayed by whoever reads a log line is not part of what this interface returns. | proposed | - |
-| Proposed: the token service endpoint, the transport to it, and which key signed a given mandate. A caller names a destination and an action class; where the authority came from is the adapter's business. | proposed | - |
+| The credential bytes, the signing keys, and the issuer's key store. A caller receives a handle and a mandate; anything that could be replayed by whoever reads a log line is not part of what this interface returns. | sourced | `X-cap-mandate-broker-007` "ensuring the agent never holds the credential" |
+| The token service endpoint, the transport to it, and which key signed a given mandate. A caller names a destination and an action class; where the authority came from is the adapter's business. agentic-stack and cap-errors both state the rule this follows (F-part-c-09). | sourced | `F-part-c-09` "Products belong in the adapter column only." |
 
 ## Instructions
 
@@ -263,8 +263,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | agentic-stack and build-definition-of-done already state the structurally-green finding (F-a7-03). What it adds here: assert destinations_probed, mandates_verified and sandbox_credential_sightings as numbers, because a broker conformance run configured with a single destination and no expired fixture refuses nothing, sees nothing, and exits zero. | sourced | `F-a7-03` "Those establish well-formedness, not correctness." |
 | Adopt the exchange standard whole rather than building a minting endpoint of our own: it is already a standardized request-and-response for obtaining a security token from an authority acting as a token service, which is precisely the operation here. | sourced | `X-cap-mandate-broker-001` "a standardized HTTP- and JSON-based mechanism for clients to request and obtain security tokens from authorization servers acting as Security Token Services" |
 | Carry the tenant on the authority itself and on everything that reasons about it, rather than deriving it later from whoever is calling. | sourced | `X-cap-mandate-broker-006` "with Org IDs encoded into every token, every log line, and every policy evaluation" |
-| Proposed: log the handle, the destination and the expiry; never the credential and never the signature material. A handle is designed to be worthless to a reader, which is what makes it safe to correlate on. | proposed | - |
-| Proposed: keep a mandate small enough that a party outside this platform can read all of it. A mandate whose bounds only make sense next to our internal identifiers is not independently checkable, whatever it is signed with. | proposed | - |
+| Proposed: log the handle, the destination and the expiry; never the credential and never the signature material. A handle is designed to be worthless to a reader, which is what makes it safe to correlate on. Research query: does the credential-brokering pattern on file (X-cap-mandate-broker-007) or the identity-delegation guarantee say what a proxy is permitted to log about a token it attaches, which this row could cite instead of asserting a fresh logging rule? | proposed | - |
+| Keep a mandate small enough that a party outside this platform can read all of it. A mandate whose bounds only make sense next to our internal identifiers is not independently checkable, whatever it is signed with. | sourced | `X-cap-mandate-broker-005` "verification doesn't depend on contacting the issuer" |
 
 ## Adapters
 

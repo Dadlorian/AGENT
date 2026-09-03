@@ -12,21 +12,21 @@ with no side effect repeated.
 | 1. Run the gate | `bash harness/workflow/test.sh` |
 | 2. Watch the call | `ADAPTER=dryrun python3 harness/workflow/call.py` |
 | 3. Swap the executor | `ADAPTER=second python3 harness/workflow/call.py` |
-| 4. Read the receipt | `cat harness/workflow/out/call-dryrun/journal.jsonl` |
+| 4. Read the receipt | `python3 -c "import sys; sys.path.insert(0,'harness/workflow'); from interface import load_executor; print(load_executor('dryrun','harness/workflow/out/call-dryrun').read_receipt('wf-release-publish-2026-09-03'))"` |
 
 ## Files
 
 | File | Lines | What it is |
 |---|---|---|
-| `interface.py` | 253 | The capability interface: envelope, step record, run state, gate record, gate outcome, loop outcome, typed problem, and `DurableExecutor` with `begin_run`, `checkpoint_step`, `resume_point`, `read_run`, `park_gate`, `record_decision`. No product name |
-| `adapters/journal.py` | 117 | The store the two in-process executors share: an append-only hash-chained journal and the effect table someone else counts. `fsync` per append, which is what makes the crash real |
-| `adapters/dryrun.py` | 129 | Dry-run executor: an in-process state machine journaled to a file. `keyed_effect`, resume by folding the whole history |
-| `adapters/second.py` | 166 | Second executor: a queue plus a state machine on the same journal. `same_transaction`, resume by reading the last materialised state row |
-| `adapters/live.py` | 133 | Today's component, reached only through the env vars below. Probes, then reports `adapter-unavailable`. The only file besides the env table that names a product |
-| `flow.py` | 414 | The declared flow and the driver: one attempt per process, every guarantee attached around the step and around the restart |
-| `call.py` | 96 | The minimal call: build the envelope, pick the adapter, crash, resume, print the table |
+| `interface.py` | 308 | The capability interface: envelope, step record, run state, receipt, gate record, gate outcome, loop outcome, typed problem, `load_executor`, and `DurableExecutor` with `begin_run`, `checkpoint_step`, `resume_point`, `read_run`, `read_receipt`, `park_gate`, `record_decision`. No product name |
+| `adapters/journal.py` | 140 | The store the two in-process executors share: an append-only hash-chained journal and the effect table someone else counts. `fsync` per append, which is what makes the crash real; every read re-reads the file, so a run that crashed in another process is visible through the same handle |
+| `adapters/dryrun.py` | 158 | Dry-run executor: an in-process state machine journaled to a file. `keyed_effect`, resume by folding the whole history |
+| `adapters/second.py` | 179 | Second executor: a queue plus a state machine on the same journal. `same_transaction`, resume by reading the last materialised state row |
+| `adapters/live.py` | 148 | Today's component, reached only through the env vars below. Probes, then reports `adapter-unavailable`. The only file besides the env table that names a product |
+| `flow.py` | 407 | The declared flow and the driver: one attempt per process, every guarantee attached around the step and around the restart. **`begin_run`, `checkpoint_step`, `park_gate`, `record_decision` and `read_run` are called here, not in `call.py`** — a crash has to be a process death, so the flow runs as a subprocess |
+| `call.py` | 126 | The minimal call: build the envelope, bind one executor, crash, resume, and read the run back with two interface calls of its own — `resume_point` after the crash and `read_receipt` after the resume. It opens no journal, queue or effect file |
 | `conformance.py` | 258 | The nine cases every executor must pass, and the report the swap proof compares |
-| `test.sh` | 93 | The gate: conformance, the swap proof, the deliberate breakage |
+| `test.sh` | 105 | The gate: conformance, the swap proof, the deliberate breakage |
 | `provenance.json` | — | Which skills, kb ids, research ids and standard this rests on; what is measured and what is claimed |
 
 ## The minimal call
@@ -37,17 +37,18 @@ with no side effect repeated.
 | 2 | `build_envelope()` — kind, entry id, intent, payload | stamps the correlation id, the budget ceiling, the idempotency key and the actor onto the same envelope |
 | 3 | `attempt(entry, adapter, …, "--crash-at", "publish")` | runs the flow to the irreversible step and dies there with `kill -9` |
 | 4 | `attempt(entry, adapter, …)` | rereads the journal, resumes at the first incomplete step, recomputes the budget from the committed records, re-attaches the correlation id from the record, and does not ask the human again |
-| 5 | reads `outcome`, `effects.jsonl` | one effect row, whichever executor answered |
+| 5 | `executor.resume_point(run_key)` after the crash, `executor.read_receipt(run_key)` after the resume | answers where a restart continues, what it spent, how many gates were parked and decided, and the effect rows the run committed — from wherever that executor keeps its state, never from a path the caller knows |
 
 Output, identical under both executors apart from the marker line:
 
 | Row | Dry run | Second adapter |
 |---|---|---|
 | attempt 1 | killed at publish (rc -9) | killed at publish (rc -9) |
+| crash | resume_point 10 read through the interface, 10 steps committed, 210000 micros spent | same |
 | attempt 2 | resumed at step 10, 10 replayed, 2 run | resumed at step 10, 10 replayed, 2 run |
 | gate | 2 parked, 10 deliveries each, 2 decisions applied, 0 re-parked | same |
 | loop | verdict_pass, 1 iteration, stop | same |
-| effect | 1 row in `effects.jsonl` | 1 row |
+| effect | 1 effect row on the receipt | 1 row |
 | budget | 240000 spent, 1260000 left of 1500000 | same |
 | marker | `in-process-journal/0.1` (keyed_effect) | `queue-state-machine/0.1` (same_transaction) |
 
@@ -88,6 +89,10 @@ open — which is the only live behaviour measured here.
 
 | Check | Proves |
 |---|---|
+| 1b caller code is 21 lines, under 40 | measured by `harness/caller_lines.py`, the one method all five harnesses use, so the number is comparable across them instead of being counted four ways |
+| 1b the caller names no adapter storage | the same script fails `call.py` if it names a `.jsonl`, `.db` or `.sqlite` file: T7.2 as a check, not a habit. Reading the journal by path is exactly what a hosted executor would break |
+| 1b the receipt's effect count equals the count from outside | the new interface read tells the truth: the gate counts the rows itself and compares. An executor's own tally is what a caller reads, never what proves it honest |
+| A0 the resume point was read through the interface | after a real `kill -9` in another process, `resume_point` answers from the store rather than from this process's memory |
 | A1 the kill landed (`rc -9`) | the crash is a process death, not a return value; a suite whose kill silently failed passes everything else |
 | A2–A3 resumed at the first incomplete step | the run continued where it stopped instead of starting again |
 | A4 committed steps were skipped | work already durable is not re-executed |
@@ -124,7 +129,7 @@ present, server not listening)*:
 | A contract that assumes a server is reachable | the interface is served today by an executor with no server; the live adapter's first honest behaviour is to report itself unavailable, so "the orchestrator is down" is a typed failure of one adapter, not an outage of the capability |
 | A gate defined in the engine's signal vocabulary | the parked gate is a record in the journal, the deadline is an occurrence, and a decision is deduplicated by a gate-scoped key. Which wire carried it is recorded in `delivered_over` for audit, and nothing branches on it |
 | An executor that brings its own retry policy, budget or audit trail | budget, correlation, identity and idempotency attach in `flow.py` around the step and around the restart. An executor's own copy would be a second, declinable one |
-| A caller that can tell which executor answered | `call.py` prints the marker and nothing else changes. Selecting an executor is configuration; `flow.py`'s only branch on an executor is on its **declared** `effect_commit_mode`, never on its name |
+| A caller that can tell which executor answered, or that knows where the executor keeps its state | `call.py` prints the marker, reads the run back through `resume_point` and `read_receipt`, and opens no file of the executor's. Selecting an executor is configuration; `flow.py`'s only branch on an executor is on its **declared** `effect_commit_mode`, never on its name |
 
 Impact, per the blueprint's impact map: replacing the durable executor touches
 the durable-execution adapter, the crash-and-resume run and the idempotency-lease

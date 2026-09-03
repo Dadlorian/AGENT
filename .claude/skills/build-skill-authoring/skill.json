@@ -33,11 +33,11 @@
     ],
     "invariants": [
       {
-        "text": "Proposed: every skill is a directory under .claude/skills containing skill.json; SKILL.md is the render of that file and is never edited by hand, so the prose cannot drift from the data.",
+        "text": "Proposed: every skill is a directory under .claude/skills containing skill.json; SKILL.md is the render of that file and is never edited by hand, so the prose cannot drift from the data. Research query: capability-packaging spec conventions for whether a package's rendered documentation must be a generated artifact rather than a hand-authored file.",
         "origin": "proposed"
       },
       {
-        "text": "Proposed: every statement in a skill carries exactly one origin. origin=sourced requires at least one F-, E- or R- id and a quote that is a verbatim substring of one cited record; origin=proposed requires the word proposed in its own text. There is no third kind, and an unmarked sentence is a validation error, not a style problem.",
+        "text": "Proposed: every statement in a skill carries exactly one origin. origin=sourced requires at least one F-, E- or R- id and a quote that is a verbatim substring of one cited record; origin=proposed requires the word proposed in its own text. There is no third kind, and an unmarked sentence is a validation error, not a style problem. Research query: spec-conformant packaging literature on requiring exactly one of a cited-evidence or a marked-design status per statement, with no unmarked third state.",
         "origin": "proposed"
       },
       {
@@ -74,17 +74,17 @@
         "quote": "Cite the standard and its version"
       },
       {
-        "text": "Proposed: where a version has not been read from the published spec in this environment, the skill writes version_status unverified and the literal phrase version unverified rather than a number, because an invented version is a fabrication that reads exactly like a fact.",
+        "text": "Proposed: where a version has not been read from the published spec in this environment, the skill writes version_status unverified and the literal phrase version unverified rather than a number, because an invented version is a fabrication that reads exactly like a fact. Research query: standards-tracking practice on the literal placeholder a spec-conformant record writes when a cited standard's version was never fetched.",
         "origin": "proposed"
       },
       {
-        "text": "Proposed: every skill records the PASS.md sha256 and the three knowledge-base chain heads it was built against, and its composes_with equals its docs/skill-manifest.json entry exactly, so a stale or unlinked skill fails validation instead of passing quietly.",
+        "text": "Proposed: every skill records the PASS.md sha256 and the three knowledge-base chain heads it was built against, and its composes_with equals its docs/skill-manifest.json entry exactly, so a stale or unlinked skill fails validation instead of passing quietly. Research query: provenance-chain practice on binding a generated artifact's declared dependency links to a single source-of-truth manifest rather than letting them diverge.",
         "origin": "proposed"
       }
     ],
     "not_exposed": [
       {
-        "text": "Proposed: the knowledge-base text itself is not republished inside a skill. A row carries ids plus one verbatim quote; a reader who needs the rest runs python3 tools/kb.py show <id>, which keeps the skill short and keeps PASS.md the single copy.",
+        "text": "Proposed: the knowledge-base text itself is not republished inside a skill. A row carries ids plus one verbatim quote; a reader who needs the rest runs python3 tools/kb.py show <id>, which keeps the skill short and keeps PASS.md the single copy. Research query: capability-packaging spec on whether a package should embed its cited source text or only a resolvable reference to it.",
         "origin": "proposed"
       }
     ]
@@ -92,7 +92,7 @@
   "instructions": [
     {
       "step": 1,
-      "action": "Load the agentic-stack root contract, then read your skill's entry in docs/skill-manifest.json: layer, wave, purpose, builds_on, used_by, definition_of_done row and notes_for_author.",
+      "action": "Load the agentic-stack root contract, then read your skill's entry in docs/skill-manifest.json: layer, wave, purpose, builds_on, used_by, definition_of_done row and notes_for_author. Not externally researchable: this is this repo's own manifest-first authoring order (docs/skill-manifest.json before skill.json).",
       "why": "Proposed: those fields are already decided by docs/decomposition.md, and the validator compares your composes_with against the manifest entry exactly. Deciding them again in skill.json only produces an error.",
       "origin": "proposed"
     },
@@ -118,13 +118,13 @@
     },
     {
       "step": 4,
-      "action": "Write skill.json in the order schemas/skill.schema.json lists its properties: name, layer, wave, description, purpose, entities, contract, instructions, best_practices, adapters, definition_of_done, composes_with, open_questions, provenance. Omit an optional block rather than filling it with padding, and write the description to say both what the skill covers and the situations that must load it, in 40 to 1024 characters, naming the triggering artifacts (a file, a layer, a schema, an onboarding author) rather than a topic.",
+      "action": "Write skill.json in the order schemas/skill.schema.json lists its properties: name, layer, wave, description, purpose, entities, contract, instructions, best_practices, adapters, definition_of_done, composes_with, open_questions, provenance. Omit an optional block rather than filling it with padding, and write the description to say both what the skill covers and the situations that must load it, in 40 to 1024 characters, naming the triggering artifacts (a file, a layer, a schema, an onboarding author) rather than a topic. Research query: JSON Schema authoring practice on writing an object's fields in the order its schema declares them, for diffability.",
       "why": "Proposed: a fixed order makes two skills diffable against each other and makes a missing block visible at a glance, and the schema's additionalProperties:false rejects any field you invent. The description is the only part read before the skill is loaded, so a vague one means the skill is never opened at the moment it was needed.",
       "origin": "proposed"
     },
     {
       "step": 5,
-      "action": "For each statement pick one origin and stop. origin=sourced: list the ids you actually read and set quote to a span you copied out of one of them character for character. origin=proposed: say proposed in the text and claim nothing about PASS.md.",
+      "action": "For each statement pick one origin and stop. origin=sourced: list the ids you actually read and set quote to a span you copied out of one of them character for character. origin=proposed: say proposed in the text and claim nothing about PASS.md. Research query: citation-checking practice on requiring a quote to be copied character for character rather than retyped from memory.",
       "why": "Proposed: the quote is checked as a substring of a cited record, so a paraphrased quote fails; and a proposed row that omits the word reads as sourced to a human even though no id backs it.",
       "origin": "proposed"
     },
@@ -152,30 +152,30 @@
     },
     {
       "step": 8,
-      "action": "Set composes_with.builds_on and composes_with.used_by to the manifest entry's lists, unchanged. Choose builds_on narrowly: name only the skills whose contract you actually rely on, never the whole layer.",
+      "action": "Set composes_with.builds_on and composes_with.used_by to the manifest entry's lists, unchanged. Choose builds_on narrowly: name only the skills whose contract you actually rely on, never the whole layer. Research query: dependency-graph practice on keeping a composed unit's builds_on link list narrow to what its contract actually uses, versus naming a whole layer.",
       "why": "Proposed: these links are the architecture graph, the validator requires them symmetric and equal to the manifest, and a skill that builds on everything forces a reader to load everything, which defeats loading skills narrowly.",
       "origin": "proposed"
     },
     {
       "step": 9,
-      "action": "To add a skill that is not in the manifest: add it to docs/decomposition.md first, then to docs/skill-manifest.json with name, layer, wave, purpose, builds_on, used_by, a definition_of_done row and notes_for_author, adding this skill's name to the used_by list of each skill it builds on; its wave must be strictly greater than the wave of everything in its builds_on. Add a new layer prefix only when none of the seven existing layers can hold it - root (reserved for the root contract alone, which the schema and the validator allow for no other skill), core, cap, xc, seam, compose, build - and then edit the schema's name pattern and layer enum, LAYERS in tools/validate_skills.py, and the layers block in docs/skill-manifest.json in the same change.",
+      "action": "To add a skill that is not in the manifest: add it to docs/decomposition.md first, then to docs/skill-manifest.json with name, layer, wave, purpose, builds_on, used_by, a definition_of_done row and notes_for_author, adding this skill's name to the used_by list of each skill it builds on; its wave must be strictly greater than the wave of everything in its builds_on. Add a new layer prefix only when none of the seven existing layers can hold it - root (reserved for the root contract alone, which the schema and the validator allow for no other skill), core, cap, xc, seam, compose, build - and then edit the schema's name pattern and layer enum, LAYERS in tools/validate_skills.py, and the layers block in docs/skill-manifest.json in the same change. Research query: layered-architecture practice on when a new top-level partition is warranted versus fitting a new unit into an existing one.",
       "why": "Proposed: the manifest is generated from the decomposition and must not drift from it; a wave that does not exceed its dependencies claims a skill can be authored before the contract it quotes exists, and the validator rejects the asymmetric half of a one-sided link. The prefix set is the top-level partition of the repo, so an eighth layer re-partitions every existing skill's meaning: a skill that merely feels new almost always belongs to an existing layer, and root is not available, it is taken.",
       "origin": "proposed"
     },
     {
       "step": 10,
-      "action": "Keep the rendered SKILL.md inside the progressive-disclosure budget: hold to roughly 3 to 10 rows per table, and move long material (a full schema, a table of standards, worked examples) into references/ inside the skill directory, named from the row that points at it. If the material you planned for references/ was dropped or never needed, delete the directory: an empty references/ is dead scaffolding, and the validator warns about it. Then render with `python3 tools/render_skill.py .claude/skills/<name>` and run `python3 tools/validate_skills.py`, fixing every error and every warning naming your skill; only warnings about skills not written yet may remain.",
+      "action": "Keep the rendered SKILL.md inside the progressive-disclosure budget: hold to roughly 3 to 10 rows per table, and move long material (a full schema, a table of standards, worked examples) into references/ inside the skill directory, named from the row that points at it. If the material you planned for references/ was dropped or never needed, delete the directory: an empty references/ is dead scaffolding, and the validator warns about it. Then render with `python3 tools/render_skill.py .claude/skills/<name>` and run `python3 tools/validate_skills.py`, fixing every error and every warning naming your skill; only warnings about skills not written yet may remain. Research query: progressive-disclosure practice on a numeric per-table row ceiling for a rendered reference document, and when material must move to a linked file.",
       "why": "Proposed: SKILL.md is loaded whole whenever the skill is loaded, so material a reader needs only sometimes should cost nothing until it is opened - and it is a build artifact of skill.json, so the validator re-renders your data and compares, and a hand edit to SKILL.md is reported as stale rather than silently kept. The budget is a checked warning, not advice: this skill was itself over it at 13 instructions until ceremony 6.",
       "origin": "proposed"
     }
   ],
   "best_practices": [
     {
-      "text": "Proposed: one purpose per skill. If the purpose sentence needs an and, it is two skills; splitting keeps each one loadable on its own and keeps the links meaningful.",
+      "text": "Proposed: one purpose per skill. If the purpose sentence needs an and, it is two skills; splitting keeps each one loadable on its own and keeps the links meaningful. Research query: software-module design practice on one-responsibility-per-unit as a splitting rule (the 'and' test) for reusable components.",
       "origin": "proposed"
     },
     {
-      "text": "Proposed: compose by name, not by copy. A skill names its neighbour under builds_on and cites the same knowledge-base ids; it never restates the neighbour's rows, so a change lands in one place.",
+      "text": "Proposed: compose by name, not by copy. A skill names its neighbour under builds_on and cites the same knowledge-base ids; it never restates the neighbour's rows, so a change lands in one place. Not externally researchable: this is the compose-by-name-not-by-copy rule this repo's own author brief and validator state as a defect check.",
       "origin": "proposed"
     },
     {
@@ -187,11 +187,12 @@
       "quote": "Products belong in the adapter column only"
     },
     {
-      "text": "Proposed: do not restate a fact a skill under builds_on already states. The green-gate finding (F-a7-03) is stated once in the agentic-stack root contract; cite it from there and add only what is new here, namely that a skill's check asserts on a non-zero count of things actually checked rather than on an exit code.",
-      "origin": "proposed",
+      "text": "Do not restate a fact a skill under builds_on has stated elsewhere. The green-gate finding - that a deterministic gate can be structurally green and mean nothing, because those checks establish well-formedness, not correctness - is held once in the agentic-stack root contract (F-a7-03); cite it from there and add only what is new here, namely that a skill's check asserts on a non-zero count of things actually checked rather than on an exit code.",
+      "origin": "sourced",
       "sources": [
         "F-a7-03"
-      ]
+      ],
+      "quote": "Those establish well-formedness, not correctness."
     },
     {
       "text": "Record what you could not source as an open question with the evidence that would decide it and the default until then, instead of filling the gap with a plausible sentence.",
@@ -202,7 +203,7 @@
       "quote": "A required output, not an apology"
     },
     {
-      "text": "Proposed: a contract.standards row's version field is a value a reader scans, not the sentence explaining it. Put the version string a record actually names, or 'unverified', in version; put which record named it, whether the specification was fetched, and which skill owns the row in version_note, which renders as a footnote under the Standards table. The validator warns above 60 characters.",
+      "text": "Proposed: a contract.standards row's version field is a value a reader scans, not the sentence explaining it. Put the version string a record actually names, or 'unverified', in version; put which record named it, whether the specification was fetched, and which skill owns the row in version_note, which renders as a footnote under the Standards table. The validator warns above 60 characters. Research query: technical-writing practice on separating a scannable value field from its justifying footnote in a rendered table.",
       "origin": "proposed"
     }
   ],

@@ -139,7 +139,7 @@
     ],
     "invariants": [
       {
-        "text": "Proposed: the two executors differ on three of build-adapter-pair's axes - locus_of_durability_and_verification, processes_required_for_progress and replay_determinism_required - recorded in that skill's differs_in_execution_model field. A candidate that agrees with today's adapter on all three is rejected and another is found.",
+        "text": "Proposed: this pair's differing axes (locus_of_durability_and_verification, processes_required_for_progress, replay_determinism_required) are recorded in the adapters section below and in the second adapter's swap_procedure; this row does not restate them. See build-adapter-pair for why a candidate agreeing with today's adapter on all three is rejected.",
         "origin": "proposed",
         "sources": [
           "F-b1-04"
@@ -187,7 +187,7 @@
         "quote": "a manual edit between runs is detectable"
       },
       {
-        "text": "Proposed: the step key stays a string the caller supplies. The keyed lease that makes a key exclusive is enforcement applied a wave above this interface, so building a lease into the executor here would tie replay safety to one executor and make it unswappable.",
+        "text": "Proposed: the step key stays a string the caller supplies. The keyed lease that makes a key exclusive is enforcement applied a wave above this interface, so building a lease into the executor here would tie replay safety to one executor and make it unswappable. Research query: is there a recorded decision or open question fixing the boundary between a durable-execution step key and a cap-idempotency claim key, so this row can cite that boundary instead of asserting it here?",
         "origin": "proposed",
         "sources": [
           "F-b3-16"
@@ -219,7 +219,7 @@
     {
       "step": 2,
       "action": "Build the second adapter as an in-process transactional step log over a relational database: one row per step, written in the same database transaction as the step's own effect where the effect is a database write, and a resume that is a single query for the first step with no committed row.",
-      "why": "Proposed: this is the pair's proof - durability moves from a separate server's history to a row beside the effect, nothing is replayed, and the number of processes required for a run to advance becomes one. The record on file for the database-backed engine is a search result, so the mechanism is cited and the design consequence is ours.",
+      "why": "Proposed: this is the pair's proof - durability moves from a separate server's history to a row beside the effect, nothing is replayed, and the number of processes required for a run to advance becomes one. The record on file for the database-backed engine is a search result, so the mechanism is cited and the design consequence is ours. Research query: is there a fetched (not search-only) source describing the exact same-transaction step-row mechanism for a relational-database-backed durable executor, which would let this row's mechanism claim itself be cited rather than only the search result that inspired it?",
       "origin": "proposed",
       "sources": [
         "X-cap-durable-execution-006",
@@ -240,11 +240,9 @@
     {
       "step": 4,
       "action": "Migrate one workflow at a time: put the step interface in front of a sequence that today runs start to finish with no checkpoint, keep it running, and count workflows converted. Do not attempt a cutover of all of them, and do not let a converted and an unconverted workflow look alike from the outside.",
-      "why": "Proposed. The consumption reference on file deduplicates a whole completed key and appends zero records on replay, which is the degenerate case of this interface; a half-migrated set where some runs resume mid-sequence and some restart from zero is indistinguishable to whoever reads the code next.",
+      "why": "Proposed. The consumption reference on file deduplicates a whole completed key and appends zero records on replay, which is the degenerate case of this interface; a half-migrated set where some runs resume mid-sequence and some restart from zero is indistinguishable to whoever reads the code next. Research query: is there a recorded migration record (kb/ceremonies or an evidence record) from another capability in this platform that converted callers one at a time behind a shared interface, confirming this is the platform's own established pattern rather than invented here?",
       "origin": "proposed",
-      "sources": [
-        "T-t6-01"
-      ]
+      "sources": []
     },
     {
       "step": 5,
@@ -291,14 +289,14 @@
   ],
   "best_practices": [
     {
-      "text": "Proposed: implement resume before implementing anything else, including retries and parallel steps. Resume is the property the whole capability exists for and the one the definition of done gates on; retries built first will be written against a run that always starts at zero.",
+      "text": "Proposed: implement resume before implementing anything else, including retries and parallel steps. Resume is the property the whole capability exists for and the one the definition of done gates on; retries built first will be written against a run that always starts at zero. Research query: is there a recorded build order or retrospective on this stack showing resume built and proven before retries or parallel steps, rather than this being an un-evidenced preference?",
       "origin": "proposed",
       "sources": [
         "F-b4-08"
       ]
     },
     {
-      "text": "Proposed: make the side-effecting step in the conformance suite genuinely observable - a row appended to a table someone else counts - rather than a counter inside the run. An effect the run itself reports cannot show the run double-counting it.",
+      "text": "Proposed: make the side-effecting step in the conformance suite genuinely observable - a row appended to a table someone else counts - rather than a counter inside the run. An effect the run itself reports cannot show the run double-counting it. Research query: is there a recorded conformance run whose side-effecting step wrote to a table outside the run's own report, confirming this pattern was actually used rather than only recommended?",
       "origin": "proposed",
       "sources": [
         "F-part-c-04"
@@ -313,7 +311,7 @@
       "quote": "Those establish well-formedness, not correctness"
     },
     {
-      "text": "Proposed: let the step log fail the cross-process cases honestly instead of emulating a history server so both executors look alike. An emulated history that drops a run when the process dies is worse than a declared gap, because the conformance run then reports a swap that would not survive a real restart.",
+      "text": "Apply build-adapter-pair: let the second executor fail the cross-process cases honestly instead of emulating a history server so both executors look alike; a declared gap the conformance run asserts on beats a silent emulation that would not survive a real restart. proposed pointer, see that skill.",
       "origin": "proposed",
       "sources": [
         "F-b1-04"

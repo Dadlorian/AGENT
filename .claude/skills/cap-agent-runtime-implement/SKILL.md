@@ -127,7 +127,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Invariant | Origin | Evidence |
 |---|---|---|
-| Proposed: the two runtimes differ on prompt_cancellation and on processes_required_for_progress, in the sense build-adapter-pair defines. One holds a live session for the length of the turn and can be cancelled inside it; the other has one invocation that returns, and nothing to cancel. A pair that agrees on both axes is rejected and a different second runtime is found. | proposed | `F-b1-04` |
+| Proposed: this pair's differing axes (prompt_cancellation, processes_required_for_progress) are recorded in the adapters section below and in each adapter's swap_procedure; this row does not restate them. See build-adapter-pair for why a pair agreeing on both axes is rejected. | proposed | `F-b1-04` |
 | Apply build-adapter-pair: selecting the runtime is configuration, and no core code and no caller branches on which one answered - the swap test agentic-stack states as design rule 1; proposed pointer, see that skill. | proposed | `F-meta-04` "If Part B cannot swap an implementation without touching the core, the boundary is drawn wrong" |
 | The migration target is a contract, not a replacement: agent execution has three implementations today with nothing agreed between them, and it is the boundary that decides whether agent execution is pluggable at all, so the work is bringing those paths in front of one turn interface. | sourced | `F-b5-03` "This is the seam that decides whether agent execution is pluggable at all." |
 | The runtime that runs today becomes today's adapter and is not replaced; agentic-stack states this constraint (F-part-c-11) and the consequence here is that no instruction in this skill asks anyone to swap out what is already executing agents. | sourced | `F-part-c-11` "Part A is substrate, not scope. Do not propose replacing what runs." |
@@ -154,10 +154,10 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Practice | Origin | Evidence |
 |---|---|---|
-| Proposed: implement cancel before implementing streaming. Streaming is a comfort for whoever is watching; cancellation is the property every ceiling above the turn depends on, and it is the one the definition of done gates on. | proposed | `F-b4-02` |
-| Proposed: keep one grace default and store each adapter's observed cancel floor beside it in the binding, so a slow runtime shows up as a number in configuration rather than as an intermittent cancel_timeout in production. | proposed | `F-a3-09` |
+| Proposed: implement cancel before implementing streaming. Streaming is a comfort for whoever is watching; cancellation is the property every ceiling above the turn depends on, and it is the one the definition of done gates on. Research query: is there a recorded run or design note establishing that a cancellation gate was implemented and conformance-tested before streaming on this substrate, rather than the reverse order? | proposed | `F-b4-02` |
+| Proposed: keep one grace default and store each adapter's observed cancel floor beside it in the binding, so a slow runtime shows up as a number in configuration rather than as an intermittent cancel_timeout in production. Research query: is there a recorded measurement of cancel_to_terminal_s across more than one host class that would turn the single observed floor (F-a3-09) into a distribution the default grace and per-adapter floor could be set from? | proposed | `F-a3-09` |
 | agentic-stack already states that callers request a class of model, never a vendor (F-a4-01). What it adds here: the runtime adapter must not pin a model name of its own, or the class request is decided twice and the second decision is invisible to the caller. | sourced | `F-a4-01` "Callers request a class, never a vendor" |
-| Proposed: let the single-shot adapter fail the interactive cases honestly instead of emulating a session so both runtimes look alike. An emulated session that silently drops cancel is worse than a declared gap, because the conformance run then reports a swap that would not survive a real cancellation. | proposed | `F-b1-04` |
+| Apply build-adapter-pair: let the second adapter fail the cases it cannot serve honestly instead of emulating the first so both look alike; a declared gap the conformance run asserts on beats a silent emulation that would not survive a real cancellation. proposed pointer, see that skill. | proposed | `F-b1-04` |
 
 ## Adapters
 

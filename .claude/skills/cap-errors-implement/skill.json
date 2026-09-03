@@ -85,7 +85,7 @@
     ],
     "invariants": [
       {
-        "text": "Proposed: the two adapters differ on processes_required_for_progress, in the sense build-adapter-pair defines. The first raises and renders the problem inside the failing process; the second is a separate process on the response path that never enters the service. A pair that agrees on that axis proves nothing and is rejected.",
+        "text": "Proposed: the two adapters differ on processes_required_for_progress, in the sense build-adapter-pair defines. The first raises and renders the problem inside the failing process; the second is a separate process on the response path that never enters the service. A pair that agrees on that axis proves nothing and is rejected. Research query: is there a recorded conformance run distinguishing the two adapters' process counts on this axis, which would turn this claim from an assertion into a measured finding?",
         "origin": "proposed",
         "sources": [
           "F-b1-04"
@@ -93,17 +93,19 @@
       },
       {
         "text": "Proposed: the swap is configuration. No caller, and no code in the core, selects between the adapters or branches on which one answered; agentic-stack states design rule 1 (F-b1-02) and this is its consequence for the failure path.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-b1-02"
-        ]
+        ],
+        "quote": "The core imports interfaces, never implementations."
       },
       {
         "text": "Proposed: there is nothing to migrate. Typed errors are recorded as Absent, so the work is conversion of untyped failure paths rather than translation of an existing error object, and the count of converted paths is the progress measure.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-a6-06"
-        ]
+        ],
+        "quote": "Typed errors | Absent"
       },
       {
         "text": "A budget refusal lands on the budget-exhausted row because exceeding a ceiling terminates the unit, not the platform: the problem body is what tells the caller which of the two happened.",
@@ -131,10 +133,12 @@
       },
       {
         "text": "Proposed: none of these wirings is optional and none is requested by the caller. agentic-stack states the no-opt-out rule (F-b1-08, F-b4-01); what this adds is that the failure body is where a caller would first notice an opt-out, because a declined guarantee has no registered type to report under.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
-          "F-b4-01"
-        ]
+          "F-b4-01",
+          "F-b1-08"
+        ],
+        "quote": "The platform applies each; a caller cannot decline them"
       },
       {
         "text": "Proposed: every claim in this skill is claimed until the conformance report exists, recorded the way build-evidence-record requires. No adapter here has been run, so nothing about their behaviour may be labelled measured.",
@@ -149,7 +153,7 @@
     {
       "step": 1,
       "action": "Build the first adapter in-process: one library that owns the closed registry, constructs a Problem only from a registered suffix, and refuses construction otherwise. Do not let handlers assemble the object field by field.",
-      "why": "Proposed. If the registry is data the library enforces rather than a table in a document, an unregistered type cannot reach a client at all, which turns the registry invariant in cap-errors into a compile- or construct-time failure instead of a conformance-run finding.",
+      "why": "Proposed. If the registry is data the library enforces rather than a table in a document, an unregistered type cannot reach a client at all, which turns the registry invariant in cap-errors into a compile- or construct-time failure instead of a conformance-run finding. Research query: is there a recorded conformance run in this repository proving that an unregistered problem type actually fails to construct, rather than this being an asserted design intention?",
       "origin": "proposed"
     },
     {
@@ -176,11 +180,12 @@
     {
       "step": 4,
       "action": "Give the second adapter the failing case honestly: it can only see the wire response, so it cannot populate rule_id, causes or the raise-site detail unless the service already emitted them. Declare that gap in the pair's record instead of widening the interface to close it.",
-      "why": "Proposed. Widening the contract so both adapters can satisfy every member is how an interface gets shaped around its implementations; the honest alternative is a declared gap that the conformance suite asserts on.",
-      "origin": "proposed",
+      "why": "build-adapter-pair (F-meta-04) is explicit that a boundary needing a core change to complete a swap is drawn wrong; widening the contract so both adapters can satisfy every member is that failure applied to the failure path, so the honest alternative is a declared gap that the conformance suite asserts on.",
+      "origin": "sourced",
       "sources": [
         "F-meta-04"
-      ]
+      ],
+      "quote": "If Part B cannot swap an implementation without touching the core, the boundary is drawn wrong"
     },
     {
       "step": 5,
@@ -199,11 +204,12 @@
       "step": 6,
       "action": "Proposed: copy the explicit correlation attribute set at dispatch onto every problem body, and assert in the conformance suite that it survives both adapters.",
       "why": "Proposed wiring. agentic-stack states the correlation finding (F-a7-02); the consequence here is that the edge-filter adapter mints its response outside the failing process, so a body that inherits nothing is exactly the case that finding predicts.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "F-a7-02",
         "F-b4-06"
-      ]
+      ],
+      "quote": "Correlation must ride on an explicit resource attribute set at dispatch."
     },
     {
       "step": 7,
@@ -238,25 +244,24 @@
   ],
   "best_practices": [
     {
-      "text": "Proposed: convert the failure paths of the noisiest adapter first. The untyped counter is a whole number, so the fastest route to a meaningful conformance number is the component that produces the most untyped failures, not the one that is easiest to edit.",
+      "text": "Proposed: convert the failure paths of the noisiest adapter first. The untyped counter is a whole number, so the fastest route to a meaningful conformance number is the component that produces the most untyped failures, not the one that is easiest to edit. Research query: is there a recorded count of untyped failure paths per component on this substrate that would let this row name the actual noisiest adapter instead of describing the strategy in the abstract?",
       "origin": "proposed"
     },
     {
-      "text": "Proposed: keep the registry in one place that both adapters read. An edge filter with its own copy of the type list is a second registry, and two registries drift in the direction of whichever one is easier to edit.",
+      "text": "Proposed: keep the registry in one place that both adapters read. An edge filter with its own copy of the type list is a second registry, and two registries drift in the direction of whichever one is easier to edit. Research query: is there a recorded case of an edge adapter drifting from the core registry on this stack or a comparable platform, which would source this as a known failure mode rather than a precaution?",
       "origin": "proposed",
-      "sources": [
-        "X-cap-errors-003"
-      ]
+      "sources": []
     },
     {
-      "text": "Proposed: when an existing library already speaks the older RFC 7807 member set, treat it as an adapter detail and normalise on the way out rather than accepting the older shape into the contract, since RFC 7807 has been succeeded by RFC 9457.",
-      "origin": "proposed",
+      "text": "cap-errors names RFC 7807 as succeeded by RFC 9457 and directs citing the current RFC rather than an older one a dependency's documentation names; applied here: when an existing library speaks the older RFC 7807 member set, treat it as an adapter detail and normalise on the way out rather than accepting the older shape into this facet's contract.",
+      "origin": "sourced",
       "sources": [
         "X-cap-errors-005"
-      ]
+      ],
+      "quote": "RFC 7807 has been succeeded by RFC 9457"
     },
     {
-      "text": "Proposed: give the edge filter a deliberate pass-through test. Its most likely defect is silently forwarding an upstream body it did not understand, which is indistinguishable from success unless a fixture upstream returns something untyped on purpose.",
+      "text": "Proposed: give the edge filter a deliberate pass-through test. Its most likely defect is silently forwarding an upstream body it did not understand, which is indistinguishable from success unless a fixture upstream returns something untyped on purpose. Research query: is there a recorded fixture or conformance case on this stack exercising an untyped pass-through response, confirming this test was actually built rather than only recommended?",
       "origin": "proposed"
     }
   ],

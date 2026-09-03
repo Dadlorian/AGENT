@@ -146,7 +146,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Item | Origin | Evidence |
 |---|---|---|
-| Proposed: the binding itself. Which harness scored a report, where the corpus was resolved from and whether a collector was attached are absent from CaseSet, EvaluationReport and the problem object, so a caller cannot come to depend on the adapter that happens to be selected. cap-evaluation owns the full not-exposed list for this capability, including what the grader rule forbids here. | proposed | `F-b1-02` |
+| Proposed: the binding itself. Which harness scored a report, where the corpus was resolved from and whether a collector was attached are absent from CaseSet, EvaluationReport and the problem object, so a caller cannot come to depend on the adapter that happens to be selected. cap-evaluation owns the full not-exposed list for this capability, including what the grader rule forbids here. Research query: is there a recorded conformance report shape (a binding record schema already in this facet's contract.shapes) that fixes exactly which binding fields exist, so this exclusion can cite that shape by name instead of asserting the list here? | proposed | `F-b1-02` |
 
 ## Instructions
 

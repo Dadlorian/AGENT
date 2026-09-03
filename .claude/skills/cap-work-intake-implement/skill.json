@@ -195,44 +195,46 @@
         "quote": "`git_events`, `approve`, `cells`"
       },
       {
-        "text": "Proposed: the published envelope schema is the migration boundary and does not move. cap-work-intake fixes the canonical envelope and its fields (F-b3-08); every step below changes only which producer builds it, so any step can be reverted without touching a producer that already works.",
+        "text": "Proposed: the published envelope schema is the migration boundary and does not move. cap-work-intake fixes the canonical envelope and its fields (F-b3-08); every step below changes only which producer builds it, so any step can be reverted without touching a producer that already works. Research query: is there a fetched read of the A2A/CloudEvents standard (F-b3-08) that fixes the envelope schema itself as the migration boundary, or is treating cap-work-intake's canonical envelope as the fixed boundary this facet's own reading of its contract?",
         "origin": "proposed",
         "sources": [
           "F-b3-08"
         ]
       },
       {
-        "text": "Proposed: which producer adapter accepts is a configuration value and nothing else, expressed as `selected_by: configuration` in IntakeAdapterConfig above. If choosing the second producer needs a code edit, the two equivalence runs are not the same test and the pair proves nothing.",
+        "text": "Proposed pointer, see build-adapter-pair's design rule 3 (F-b1-04) that swappability is a tested property: the build consequence is that which producer adapter accepts is a configuration value and nothing else, expressed as `selected_by: configuration` in IntakeAdapterConfig above. If choosing the second producer needs a code edit, the two equivalence runs are not the same test and the pair proves nothing.",
         "origin": "proposed",
         "sources": [
           "F-b1-04"
         ]
       },
       {
-        "text": "Proposed: there is exactly one envelope builder, and every mapper goes through it. Two builders become two answers to what an entry carries, and the second answer is always the one written in a hurry for the producer that had a deadline.",
+        "text": "Proposed: there is exactly one envelope builder, and every mapper goes through it. Two builders become two answers to what an entry carries, and the second answer is always the one written in a hurry for the producer that had a deadline. Research query: does F-b4-01's cross-cutting-guarantees finding extend to fixing 'exactly one envelope builder' as a structural requirement, or is one-builder-no-exceptions this facet's own reading of what avoiding a second, hurried answer requires?",
         "origin": "proposed",
         "sources": [
           "F-b4-01"
         ]
       },
       {
-        "text": "Proposed: every statement this facet makes about an adapter's behaviour is claimed until an equivalence run produces it. build-evidence-record owns what an evidence record contains; the consequence here is that the report shape above is the artefact that upgrades a claim, and a report with `producers_run: 1` upgrades nothing about normalisation.",
-        "origin": "proposed",
+        "text": "build-evidence-record owns what an evidence record contains, and F-part-c-08 fixes the claimed-versus-measured distinction. The consequence here: every statement this facet makes about an adapter's behaviour is claimed until an equivalence run produces it - the report shape above is the artefact that upgrades a claim, and a report with `producers_run: 1` upgrades nothing about normalisation.",
+        "origin": "sourced",
         "sources": [
-          "F-b1-04"
-        ]
+          "F-part-c-08"
+        ],
+        "quote": "Distinguish **claimed** from **measured** throughout"
       }
     ],
     "not_exposed": [
       {
-        "text": "Proposed: neither adapter's internals reach the envelope. The request path's headers and status codes, the repository hook's delivery metadata, the agent protocol's own task identifiers and conversation grouping stay inside the mapper; cap-work-intake already fixes the envelope as the whole surface.",
-        "origin": "proposed",
+        "text": "cap-work-intake already fixes the envelope as the whole surface, and F-part-c-09 fixes that products belong in the adapter column only. The build consequence: neither adapter's internals reach the envelope. The request path's headers and status codes, the repository hook's delivery metadata, the agent protocol's own task identifiers and conversation grouping stay inside the mapper.",
+        "origin": "sourced",
         "sources": [
           "F-part-c-09"
-        ]
+        ],
+        "quote": "Products belong in the adapter column only."
       },
       {
-        "text": "Proposed: no configuration flag lets a producer skip the builder or receive a result in its acknowledgement, which is why both are consts in IntakeAdapterConfig. A fast path is exactly how a favoured producer becomes a second, unwired way in.",
+        "text": "Proposed: no configuration flag lets a producer skip the builder or receive a result in its acknowledgement, which is why both are consts in IntakeAdapterConfig. A fast path is exactly how a favoured producer becomes a second, unwired way in. Research query: does F-b4-01 or xc-enforcement-chain fix, with a kb citation, that no configuration flag may let a producer bypass the builder, which would source this row rather than leave it this facet's own restatement of the fast-path danger already used elsewhere in this layer?",
         "origin": "proposed",
         "sources": [
           "F-b4-01"
@@ -244,7 +246,7 @@
     {
       "step": 1,
       "action": "Publish the envelope schema and the equivalence fixture corpus before writing any mapper, and keep the corpus in version control beside the schema.",
-      "why": "Proposed sequencing. The corpus is simultaneously the normalisation test and the swap test, so writing it first means no mapper can be built to its own idea of equivalent; a corpus derived from the producer that already runs would encode that producer's fingerprints as expectations.",
+      "why": "Proposed sequencing. The corpus is simultaneously the normalisation test and the swap test, so writing it first means no mapper can be built to its own idea of equivalent; a corpus derived from the producer that already runs would encode that producer's fingerprints as expectations. Research query: does a fetched read of A2A messaging or CloudEvents (F-b3-08's cited standards) fix publish-schema-and-corpus-before-any-mapper as a required discipline, or is that build ordering this facet's own choice?",
       "origin": "proposed",
       "sources": [
         "F-b3-08"
@@ -264,7 +266,7 @@
     {
       "step": 3,
       "action": "Build the agent-message producer as the second implementation behind the same builder, and give it no privileges the first does not have: no synchronous result, no field of its own, no separate validator.",
-      "why": "Proposed. build-adapter-pair states design rule 3 and cap-work-intake states the axis this pair differs on (F-b3-08, F-b1-04): whether the producer is still there when the job finishes. Granting the agent producer a shortcut would collapse the axis and leave two adapters of the same shape.",
+      "why": "Proposed. build-adapter-pair states design rule 3 and cap-work-intake states the axis this pair differs on (F-b3-08, F-b1-04): whether the producer is still there when the job finishes. Granting the agent producer a shortcut would collapse the axis and leave two adapters of the same shape. Research query: does F-b3-08's 'any conformant producer' row, read from a fetched A2A/CloudEvents source, fix that a second producer gets no field or validator of its own, or is that no-extra-privilege rule this facet's own reading of build-adapter-pair?",
       "origin": "proposed",
       "sources": [
         "F-b1-04",
@@ -274,7 +276,7 @@
     {
       "step": 4,
       "action": "Migrate in three revertible steps and keep both producers live at the end: envelope built and validated but the old path still authoritative, then the envelope authoritative for one producer, then both producers selectable by configuration. Delete neither.",
-      "why": "Proposed migration. Each step is revertible because the schema does not change, and an interface with one surviving implementation drifts back into the shape of whatever runs, which is the failure the pair exists to prevent.",
+      "why": "Proposed migration. Each step is revertible because the schema does not change, and an interface with one surviving implementation drifts back into the shape of whatever runs, which is the failure the pair exists to prevent. Research query: does a migration record for another two-producer capability in this repository already show the same three-stage revertible order (built-not-authoritative, one-producer-authoritative, both-selectable), which would source this order rather than leave it a proposal?",
       "origin": "proposed",
       "sources": [
         "F-b1-04"
@@ -331,7 +333,7 @@
   ],
   "best_practices": [
     {
-      "text": "Proposed: derive the idempotency key in the mapper, never in the builder, and write the derivation rule down per producer. The builder cannot know whether two producer messages are the same act; only the producer's own identifiers can say, and a rule that lives in code review rather than in a table is a rule that changes silently.",
+      "text": "Proposed: derive the idempotency key in the mapper, never in the builder, and write the derivation rule down per producer. The builder cannot know whether two producer messages are the same act; only the producer's own identifiers can say, and a rule that lives in code review rather than in a table is a rule that changes silently. Research query: does F-b4-08's replay-safety contract, read in full, fix that the idempotency key must be derived in the mapper rather than the builder, or is that placement this facet's own reading of who can tell two producer messages apart?",
       "origin": "proposed",
       "sources": [
         "F-b4-08"
@@ -346,21 +348,22 @@
       "quote": "Correlation rides on explicit attributes, not trace parentage"
     },
     {
-      "text": "Proposed: run the equivalence corpus in CI on every change to either mapper, not only at the swap. A normalisation regression has no symptom until two producers submit the same job, which may be months after the change that caused it, and the corpus is the only place it surfaces the same week it is written.",
+      "text": "Proposed: run the equivalence corpus in CI on every change to either mapper, not only at the swap. A normalisation regression has no symptom until two producers submit the same job, which may be months after the change that caused it, and the corpus is the only place it surfaces the same week it is written. Research query: does an evidence-store record already show a normalisation regression surfacing only months after the causing change for another equivalence-checked capability in this repository, which would source this specific failure mode rather than leave it a proposed practice?",
       "origin": "proposed",
       "sources": [
         "F-b1-04"
       ]
     },
     {
-      "text": "Proposed: record each equivalence run as an evidence record naming the adapter, the code version and the corpus hash, and label the result claimed until that record exists. build-evidence-record owns the record's fields; what matters here is that two producers make it easy to report a green run without saying which producer was green.",
-      "origin": "proposed",
+      "text": "build-evidence-record owns the record's fields, and F-part-c-08 fixes the claimed-versus-measured distinction. What matters here: record each equivalence run as an evidence record naming the adapter, the code version and the corpus hash, and label the result claimed until that record exists - two producers make it easy to report a green run without saying which producer was green.",
+      "origin": "sourced",
       "sources": [
-        "F-b1-04"
-      ]
+        "F-part-c-08"
+      ],
+      "quote": "Distinguish **claimed** from **measured** throughout"
     },
     {
-      "text": "Proposed: when a producer asks for a new envelope field, write the mapper that avoids it first and only then discuss the field. Most such requests are the producer's own identifier, its retry counter or its own status, and all three already have somewhere to go.",
+      "text": "Proposed: when a producer asks for a new envelope field, write the mapper that avoids it first and only then discuss the field. Most such requests are the producer's own identifier, its retry counter or its own status, and all three already have somewhere to go. Research query: does F-b3-08's canonical-envelope row, read in full, already list producer identifier, retry counter and status as fields with somewhere to go, or is 'write the mapper that avoids the new field first' this facet's own review discipline?",
       "origin": "proposed",
       "sources": [
         "F-b3-08"

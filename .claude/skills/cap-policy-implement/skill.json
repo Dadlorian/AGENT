@@ -83,37 +83,37 @@
     ],
     "invariants": [
       {
-        "text": "Proposed: the starting point is rule sets that already exist and decide nothing, so the first change is a call site, not a rule language. cap-policy states the recorded state (F-a6-04) and the decision contract (F-b4-04); this facet only builds against them, and treating this as a green-field capability would produce a second rule set beside one nobody consults.",
-        "origin": "proposed",
+        "text": "the starting point is rule sets that already exist and decide nothing, so the first change is a call site, not a rule language. cap-policy states the recorded state (F-a6-04) and the decision contract (F-b4-04); this facet only builds against them, and treating this as a green-field capability would produce a second rule set beside one nobody consults.",
+        "origin": "sourced",
         "sources": [
-          "F-a6-04",
-          "F-b4-04"
-        ]
-      },
-      {
-        "text": "Proposed: both engines implement the identical decide and the identical DecisionRequest and Decision shapes cap-policy fixes, and the serving engine is chosen by configuration with no code edit between runs. build-adapter-pair states design rule 3 (F-b1-04); what this adds is that the selection must appear in the conformance report, because an unobservable swap is indistinguishable from running one engine twice.",
-        "origin": "proposed",
-        "sources": [
-          "F-b1-04"
-        ]
-      },
-      {
-        "text": "Proposed: the decision is taken before the first metered call of the dispatch, and the policy-decided record is written before the call is issued rather than after the outcome is known. A record written afterwards can report a refusal but cannot cause one, which is the difference between the enforcement path and a report about it.",
-        "origin": "proposed",
-        "sources": [
-          "F-b4-04",
           "F-a6-04"
-        ]
+        ],
+        "quote": "Conformance checks exist; not wired into the enforcement path"
       },
       {
-        "text": "Proposed: the input digest is computed over canonical bytes before evaluation, so two engines asked the same question agree on what the question was. Digesting a serialised form would make key ordering or whitespace look like a different request and break the cross-adapter agreement assertion for reasons that have nothing to do with policy.",
+        "text": "Proposed pointer, see build-adapter-pair's design rule 3 (F-b1-04) that swappability is a tested property: the build consequence is that both engines implement the identical decide call and Decision shapes cap-policy fixes, the serving engine is chosen by configuration with no code edit between runs, and the selection must appear in the conformance report, because an unobservable swap is indistinguishable from running one engine twice.",
         "origin": "proposed",
         "sources": [
           "F-b1-04"
         ]
       },
       {
-        "text": "Proposed: the call is wired into the platform's own call path at the registered decision points, never into each caller, and no request field can turn it off. A new entry kind or a new agent therefore inherits consultation by construction, because it reaches execution through the same path.",
+        "text": "cap-policy fixes deterministic refusal before execution, not after spend (F-b4-04). The build consequence: the policy-decided record must be written before the call is issued rather than after the outcome is known - a record written afterwards can report a refusal but cannot cause one, which is the difference between the enforcement path and a report about it.",
+        "origin": "sourced",
+        "sources": [
+          "F-b4-04"
+        ],
+        "quote": "Refusal is deterministic and happens before execution, not after spend"
+      },
+      {
+        "text": "Proposed: the input digest is computed over canonical bytes before evaluation, so two engines asked the same question agree on what the question was. Digesting a serialised form would make key ordering or whitespace look like a different request and break the cross-adapter agreement assertion for reasons that have nothing to do with policy. Research query: does RFC 8785 JSON canonicalization (already governing state-persistence and provenance per F-b5-05) also fix the canonical-bytes-before-digest rule for a policy DecisionRequest specifically, or is that extension this facet's own and still uncovered?",
+        "origin": "proposed",
+        "sources": [
+          "F-b1-04"
+        ]
+      },
+      {
+        "text": "Proposed: the call is wired into the platform's own call path at the registered decision points, never into each caller, and no request field can turn it off. A new entry kind or a new agent therefore inherits consultation by construction, because it reaches execution through the same path. Research query: cap-policy's own instructions row already hands decision placement to xc-policy-gate rather than owning it here (docs/decomposition.md); does xc-policy-gate or xc-enforcement-chain carry a kb-cited row this facet could point to instead of restating placement as its own invariant?",
         "origin": "proposed",
         "sources": [
           "T-t2-03",
@@ -121,18 +121,20 @@
         ]
       },
       {
-        "text": "Proposed: the correlation fields, the actor and the pinned policy_version are stamped onto the DecisionRequest by the platform and are not read from the caller's payload. agentic-stack states the correlation finding (F-a7-02); the consequence here is that a denied dispatch often produces no execution at all, so the decision record is the only place those fields will ever be written for it.",
-        "origin": "proposed",
+        "text": "the correlation fields, the actor and the pinned policy_version are stamped onto the DecisionRequest by the platform and are not read from the caller's payload. agentic-stack states the correlation finding (F-a7-02); the consequence here is that a denied dispatch often produces no execution at all, so the decision record is the only place those fields will ever be written for it.",
+        "origin": "sourced",
         "sources": [
           "F-a7-02"
-        ]
+        ],
+        "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
       },
       {
-        "text": "Proposed: an engine that cannot serve a registered decision point declares that subset rather than answering allow. A documented conformance subset is honest; an engine that reports a decision it did not take is precisely the failure the pair exists to expose.",
-        "origin": "proposed",
+        "text": "build-definition-of-done already names the structurally-green trap (F-a7-03): a gate can pass while asserting nothing. The build consequence here: an engine that cannot serve a registered decision point declares that subset rather than answering allow. A documented conformance subset is honest; an engine that reports a decision it did not take is precisely the failure the pair exists to expose.",
+        "origin": "sourced",
         "sources": [
-          "F-b3-11"
-        ]
+          "F-a7-03"
+        ],
+        "quote": "A deterministic gate can be structurally green and mean nothing"
       },
       {
         "text": "Apply build-evidence-record: the conformance run and its breakage are written to the evidence store naming the code version and the tree hash under test, and stay claimed until they have actually been run here; proposed pointer, see that skill.",
@@ -160,15 +162,15 @@
       "step": 2,
       "action": "Build the first enforcing adapter by wrapping the engine already provisioned for this concern behind decide: post the canonical DecisionRequest to its decision endpoint, read the JSON answer, and map it into the Decision shape. Introduce no new engine and no new store.",
       "why": "Proposed. The engine is already provisioned as the implementation of the policy concern (claimed, per PASS.md A5), so the cheapest correct first step adds the call and the mapping rather than a dependency, and it keeps the first migration step independently revertible.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
-        "F-a5-05",
-        "E-provisioning-concern-policy"
-      ]
+        "F-a5-05"
+      ],
+      "quote": "Rego / Open Policy Agent"
     },
     {
       "step": 3,
-      "action": "Stand up the decision-point registry next, starting with dispatch-admit, and refuse a request naming an unregistered point with the registered document-invalid problem rather than with a deny.",
+      "action": "Stand up the decision-point registry next, starting with dispatch-admit, and refuse a request naming an unregistered point with the registered document-invalid problem rather than with a deny. Research query: is there a fetched (not search-only) source fixing 'dispatch-admit' as the first decision point to register, or is the starting point itself this repository's own design with only the refusal-shape half (cap-document-validation, cap-errors) already covered?",
       "why": "Proposed, following cap-policy's registration rule. A missing registration is a build error in the caller; answering it with a deny would make a wiring mistake look like a policy outcome and would be counted as one.",
       "origin": "proposed",
       "sources": [
@@ -178,7 +180,7 @@
     },
     {
       "step": 4,
-      "action": "Write the policy-decided record at the moment of the decision, carrying rule_id, policy_version, input_digest and the correlation fields, for allow as well as deny, and only then issue the first metered call.",
+      "action": "Write the policy-decided record at the moment of the decision, carrying rule_id, policy_version, input_digest and the correlation fields, for allow as well as deny, and only then issue the first metered call. Research query: does docs/decomposition.md's policy-decided record definition become citable once it is folded into a kb record, or does F-b4-04 cover only the before-execution ordering and not the specific field list (rule_id, policy_version, input_digest)?",
       "why": "Proposed. docs/decomposition.md rows P10 and X3 both assert on that record and on its timestamp relative to the first metered call, so recording after the fact makes the criterion unmeasurable even when the behaviour is right.",
       "origin": "proposed",
       "sources": [
@@ -187,7 +189,7 @@
     },
     {
       "step": 5,
-      "action": "Build the second adapter as an in-process evaluator over a typed entity model that denies by default, serving the same decide call with no wire hop.",
+      "action": "Build the second adapter as an in-process evaluator over a typed entity model that denies by default, serving the same decide call with no wire hop. Research query: does a fetched read of the decision-API standard this capability adopts (F-a5-05) state a deny-by-default posture as a property of the standard itself, rather than of build-adapter-pair's generic swappability axis, which would source the deny-by-default claim specifically?",
       "why": "Proposed second adapter, per the manifest and the recorded swap-candidate column. It breaks a different assumption than the first: the first evaluates an open JSON document out of process and can be reached only over a boundary, while the second evaluates a schema-checked entity model inside the calling process. That is the axis the pair has to differ on for the swap to prove anything.",
       "origin": "proposed",
       "sources": [
@@ -197,7 +199,7 @@
     },
     {
       "step": 6,
-      "action": "Migrate in that order and keep both engines live behind the one call: rules off the path, then the wrapped engine behind decide, then the registry and the record, then consultation moved ahead of the first metered call, then the second engine selected by configuration. Delete neither engine once both exist.",
+      "action": "Migrate in that order and keep both engines live behind the one call: rules off the path, then the wrapped engine behind decide, then the registry and the record, then consultation moved ahead of the first metered call, then the second engine selected by configuration. Delete neither engine once both exist. Research query: does a migration record for another two-engine capability in this repository (cap-model-access-implement, cap-tool-access-implement) already show 'rules off the path, wrapped engine, registry, second engine' as a proven revertible order, which would source this order rather than leave it a proposal?",
       "why": "Proposed migration. Each step is revertible on its own, and keeping both is what keeps the pair testable later; an interface with one surviving implementation drifts back into the shape of whatever runs.",
       "origin": "proposed",
       "sources": [
@@ -208,11 +210,12 @@
       "step": 7,
       "action": "Wire the cross-cutting edges once, at the same place: stamp correlation onto the request, append the decision through the state seam, and hand a denial to the typed-failure path as the registered policy-denied problem. Give no call site a flag that skips any of the three.",
       "why": "Proposed wiring. cap-errors owns the failure shape (F-b4-07) and cap-policy owns the decision; what is left to this facet is that all three edges are attached at one point, because three separately attached edges are three separate places a new call site can forget one.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "F-b4-07",
         "T-t2-03"
-      ]
+      ],
+      "quote": "every cross-cutting concern are managed across the entire structure"
     },
     {
       "step": 8,
@@ -249,14 +252,15 @@
       "quote": "there's no need for engineers to remember extra config steps"
     },
     {
-      "text": "Proposed: verify which bundle is actually serving by reading policy_version off a live Decision, not by reading the bundle file. agentic-stack states the configuration finding (F-a7-04); the specific trap here is that a rule set can be provisioned, reviewed and merged while the engine keeps serving the bundle it loaded at start.",
-      "origin": "proposed",
+      "text": "agentic-stack and build-definition-of-done state the configuration finding (F-a7-04): a configuration row can overlay and replace what a file declares, with the file itself validated and reviewed but never taking effect. The specific trap here: verify which bundle is actually serving by reading policy_version off a live Decision, not by reading the bundle file, because a rule set can be provisioned, reviewed and merged while the engine keeps serving the bundle it loaded at start.",
+      "origin": "sourced",
       "sources": [
         "F-a7-04"
-      ]
+      ],
+      "quote": "overlays and replaces `router_settings` on every gateway load"
     },
     {
-      "text": "Proposed: measure evaluation latency at the decision points on the hot path before the second engine is wired, and record it as evidence. A decision on every metered call is a cost per call, and the pair is much harder to compare once one engine has been tuned and the other has not.",
+      "text": "Proposed: measure evaluation latency at the decision points on the hot path before the second engine is wired, and record it as evidence. A decision on every metered call is a cost per call, and the pair is much harder to compare once one engine has been tuned and the other has not. Research query: does an evidence-store record already show evaluation latency measured before a second adapter was wired for any other capability in this repository, which would source the measure-before-wiring timing rather than leave it a proposed practice?",
       "origin": "proposed",
       "sources": [
         "F-a5-04"

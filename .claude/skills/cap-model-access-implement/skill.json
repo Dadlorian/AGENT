@@ -164,7 +164,7 @@
     ],
     "invariants": [
       {
-        "text": "Proposed: the two adapters differ on three of build-adapter-pair's axes - result_or_claim_ticket, prompt_cancellation and start_and_teardown_cost - recorded in that skill's differs_in_execution_model field. A candidate that agrees with today's adapter on all three is rejected and another is found.",
+        "text": "Proposed pointer, see cap-model-access's invariant that the second adapter must differ from today's on how a result arrives and whether a call in flight can be stopped (F-b1-04): the build consequence is a selection criterion on three of build-adapter-pair's axes - result_or_claim_ticket, prompt_cancellation and start_and_teardown_cost, recorded in that skill's differs_in_execution_model field - and a candidate that agrees with today's adapter on all three is rejected and another is found.",
         "origin": "proposed",
         "sources": [
           "F-b1-04"
@@ -222,12 +222,12 @@
         "quote": "a manual edit between runs is detectable"
       },
       {
-        "text": "Proposed: every statement in this skill about how an adapter behaves is claimed until the conformance report and its evidence record exist. Neither adapter here has been run behind this interface in this repository; the gateway itself is measured as running, which is not the same as measured as conformant. The gateway being up is a measurement about the gateway, not about this interface.",
-        "origin": "proposed",
+        "text": "build-evidence-record and F-part-c-08 state the claimed-versus-measured distinction. The consequence here: every statement in this skill about how an adapter behaves is claimed until the conformance report and its evidence record exist. Neither adapter here has been run behind this interface in this repository; the gateway itself is measured as running, which is not the same as measured as conformant. The gateway being up is a measurement about the gateway, not about this interface.",
+        "origin": "sourced",
         "sources": [
-          "F-part-c-08",
-          "F-a1-02"
-        ]
+          "F-part-c-08"
+        ],
+        "quote": "Distinguish **claimed** from **measured** throughout"
       }
     ]
   },
@@ -245,7 +245,7 @@
     },
     {
       "step": 2,
-      "action": "Build the second adapter as provider-native asynchronous batch submission with claim-and-poll: submit hands the work to a provider's own batch endpoint and returns a pending ticket, claim polls it, and the ticket declares that a cancel cannot be honoured.",
+      "action": "Build the second adapter as provider-native asynchronous batch submission with claim-and-poll: submit hands the work to a provider's own batch endpoint and returns a pending ticket, claim polls it, and the ticket declares that a cancel cannot be honoured. Research query: does any provider's batch-API documentation on file (X-cap-model-access-001..006) describe claim-and-poll semantics and an unhonourable cancel specifically, or only the synchronous completions shape, which would source this row rather than leave it a proposed design?",
       "why": "Proposed: this is the pair's proof - the answer stops being a result and becomes a ticket, cancellation stops being possible, and the cost stops being known when the call returns. Batch on this substrate already runs past the standard's own batch route rather than through it (claimed, per PASS.md A4), so the shape is grounded rather than hypothetical.",
       "origin": "proposed",
       "sources": [
@@ -322,14 +322,14 @@
   ],
   "best_practices": [
     {
-      "text": "Proposed: implement the claim ticket before implementing anything else, including retries, streaming and fallbacks. It is the one shape the fast path does not need and the slow path cannot do without; built afterwards, it becomes a special case bolted onto a synchronous design.",
+      "text": "Proposed: implement the claim ticket before implementing anything else, including retries, streaming and fallbacks. It is the one shape the fast path does not need and the slow path cannot do without; built afterwards, it becomes a special case bolted onto a synchronous design. Research query: does a build-order record for another claim-ticket-bearing capability in this repository (cap-durable-execution-implement, cap-scheduling-implement) already show retries or streaming built before the ticket and failing, which would source this ordering rather than leave it a proposed practice?",
       "origin": "proposed",
       "sources": [
         "F-b1-04"
       ]
     },
     {
-      "text": "Proposed: make the conformance suite's request object a fixture on disk that both adapters receive byte for byte. A request the suite builds per adapter can differ between them without anyone noticing, which is the exact defect the run exists to detect.",
+      "text": "Proposed: make the conformance suite's request object a fixture on disk that both adapters receive byte for byte. A request the suite builds per adapter can differ between them without anyone noticing, which is the exact defect the run exists to detect. Research query: does build-adapter-pair's own conformance-suite guidance name a shared on-disk fixture as the mechanism for byte-identical requests across adapters, which would source this rather than leave it a proposed practice?",
       "origin": "proposed",
       "sources": [
         "F-part-c-04"
@@ -344,7 +344,7 @@
       "quote": "Those establish well-formedness, not correctness"
     },
     {
-      "text": "Proposed: let the batch adapter fail the interactive cases honestly instead of emulating a synchronous call by polling in a loop until it answers. An emulated fast path hides the property the pair exists to prove and turns a four-order-of-magnitude latency difference into a timeout nobody can explain.",
+      "text": "Proposed: let the batch adapter fail the interactive cases honestly instead of emulating a synchronous call by polling in a loop until it answers. An emulated fast path hides the property the pair exists to prove and turns a four-order-of-magnitude latency difference into a timeout nobody can explain. Research query: has a conformance run in this repository already caught a polling emulation hiding a latency difference on another adapter pair, which would source this specific failure mode rather than leave it a proposed practice?",
       "origin": "proposed",
       "sources": [
         "F-b1-04"

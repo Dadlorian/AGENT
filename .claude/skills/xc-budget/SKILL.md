@@ -91,37 +91,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**budget-exhausted refusal (proposed worked instance; the type is the registered row of the closed registry in docs/decomposition.md section 2.1.6 and cap-errors owns the object)** (proposed; sources: `F-b4-07`, `F-b4-02`)
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:agentic:xc:budget:exhausted-instance:0.1",
-  "title": "BudgetExhaustedInstance",
-  "description": "Proposed. The one failure this guarantee returns, shown rather than described. It is a problem object, never prose, and retryable is false because the ceiling does not refill on its own.",
-  "allOf": [
-    {
-      "$ref": "urn:agentic:problem:0.1"
-    }
-  ],
-  "examples": [
-    {
-      "type": "urn:agentic:problem:budget-exhausted",
-      "title": "Budget exhausted",
-      "status": 402,
-      "detail": "step fix#2 would draw 200200 micros against 118300 remaining on root run run-human-0001",
-      "stop_reason": "budget_exhausted",
-      "retryable": false,
-      "correlation": {
-        "run_id": "run-human-0001",
-        "correlation_id": "corr-human-0001",
-        "depth": 1
-      }
-    }
-  ]
-}
-```
-
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -130,8 +99,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | The tree is bounded by an explicit maximum delegation depth and maximum fan-out carried on the root budget, refused at dispatch rather than discovered when the money runs out. A cost bound alone lets one root spawn an unbounded number of cheap descendants, and the records on file show a shipped product reaching for exactly these two bounds. | sourced | `X-end-to-end-046` "capped concurrently-running subagents at 20 and stopped subagents from spawning nested subagents" |
 | cap-errors owns the failure object (F-b4-07). What this guarantee adds is that its refusal is the registered budget-exhausted row, carrying stop_reason budget_exhausted and retryable false, so a caller branches on a type and never on the words 'budget' appearing in a message. | sourced | `F-b4-07` "Typed and machine-readable. Never parsed from prose" |
 | A unit terminated on budget keeps the outputs that were already durable, as a partial rather than a loss. The records on file argue that returning what exists beats returning nothing, and a ceiling that also destroys paid-for work charges twice for one overrun. | sourced | `X-xc-budget-005` "allow systems to return partial results instead of failing completely" |
-| The reference example in docs/reference/composable-plan.md: a stop and a cap are opposite terminations and are never collapsed into one halt. A stop condition firing means the work is done and the unit terminates as a success; a cap firing means an unbounded unit ran long and the unit terminates as a failure that escalates to a person. One shared halt reason makes a success indistinguishable from an escalation in the ledger, and the reference records that merge as a mistake already made once. | sourced | `REF-5-3-08`, `REF-5-3-03`, `REF-5-3-04`, `REF-12-14` "`stop` and `cap` are opposites and must not be collapsed" |
-| The same reference: a step that fans out carries a per-unit share as well as the root ceiling, and a unit crossing its share is a hard ceiling on that unit rather than a draw on its siblings. Without the per-unit share the first unit can spend the root allowance and the rest fail for want of money rather than on their own merits; how many units may fail stays a property of the fan-out, not of the unit and not of the plan. | sourced | `REF-5-3-01`, `REF-5-3-07`, `REF-12-14` "per-unit budget \| the step \| one unit exceeds its share \| throws, hard ceiling" |
+| Proposed, following the reference example in docs/reference/composable-plan.md: a stop and a cap are opposite terminations and are never collapsed into one halt. A stop condition firing means the work is done and the unit terminates as a success; a cap firing means an unbounded unit ran long and the unit terminates as a failure that escalates to a person. One shared halt reason makes a success indistinguishable from an escalation in the ledger, and the reference records that merge as a mistake already made once. | proposed | `REF-5-3-08`, `REF-5-3-03`, `REF-5-3-04`, `REF-12-14` "`stop` and `cap` are opposites and must not be collapsed" |
+| Proposed, following the same reference: a step that fans out carries a per-unit share as well as the root ceiling, and a unit crossing its share is a hard ceiling on that unit rather than a draw on its siblings. Without the per-unit share the first unit can spend the root allowance and the rest fail for want of money rather than on their own merits; how many units may fail stays a property of the fan-out, not of the unit and not of the plan. | proposed | `REF-5-3-01`, `REF-5-3-07`, `REF-12-14` "per-unit budget \| the step \| one unit exceeds its share \| throws, hard ceiling" |
 
 ### Deliberately not exposed
 
@@ -148,7 +117,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 1 | Put the ceiling on the entry envelope, required on every entry, with on_exceed as a const rather than an enum, and reject an envelope that omits it instead of defaulting one in. | The platform applies the guarantee rather than the caller requesting it, so the schema must offer nothing to negotiate. A default ceiling silently invented at intake is an unbounded run wearing a number. | sourced | `F-b4-01`, `F-b4-02` "The platform applies each; a caller cannot decline them" |
 | 2 | Proposed (docs/decomposition.md section 2.1.4): enforce outside the unit. Take a reservation lease at dispatch against the root's remaining ceiling, pre-check every metered call against what the lease still holds, reconcile with the actual cost afterwards, and expire an unreconciled reservation at the deadline plus grace. Research query: see the reservation-lease research query on the budget invariant row below. | A unit that enforces its own ceiling can decline to. cap-model-access records the substrate's measured behaviour here (F-a4-07): scoped keys already stop spend rather than note it, so matching that model is the smaller change, and the lease is what stops a crashed unit from consuming a root's ceiling forever. | proposed | `F-a4-07`, `F-b4-02` "terminate spend rather than merely record it" |
 | 3 | Proposed: carry the root run identifier on every descendant dispatch and decrement the one root ceiling from every one of them, so the delegation tree shares a ceiling rather than each level receiving a fresh one. | Per-key and per-call caps bound a key and a call, not a tree. Every cross-cutting concern is managed across the whole structure whichever entry point was used, and a budget that resets at each hop is managed per hop. | sourced | `T-t2-03`, `X-end-to-end-045` "State, telemetry, and every cross-cutting concern are managed across the entire structure" |
-| 4 | Proposed: set a maximum delegation depth and a maximum fan-out on the root budget and refuse the dispatch that would cross either, rather than letting the cost ceiling discover the runaway afterwards. Research query: has the depth-3/fan-out-20 pair actually been measured against this platform's own delegation tree, or is it carried over unmodified from one search-only record about a different product? | Cost is the slowest of the three signals: a root can spawn an unbounded number of individually cheap descendants and only the depth and fan-out bounds catch that before the spend does. The records on file show these two bounds being added to a shipped agent fleet and then tuned, which is the shape of the problem rather than a value to copy. | proposed | `X-end-to-end-046` "reinstated nesting at a default depth of 3" |
 | 5 | Compare the plan's priced floor with the remaining ceiling before anything is dispatched, and refuse there when the floor already exceeds it, rather than starting work that cannot finish. | Cost is knowable before commitment because planning completes before execution begins, so the cheapest refusal is available for free. The policy row of PASS.md B4 states the analogous rule for refusals, that they are deterministic and happen before execution rather than after spend; this row proposes the same placement for the ceiling. | sourced | `F-b1-06`, `F-b4-04` "Planning is a pure function and completes before execution begins." |
 | 6 | Return the registered budget-exhausted problem object with status 402 and retryable false, set the unit's stop reason to budget_exhausted, and leave every already-durable output in place as a partial. | cap-errors owns the failure object and its closed type registry (F-b4-07); this guarantee only supplies one registered row of it. Discarding durable outputs on the way out would charge for the work twice, once in money and once in the result. | sourced | `F-b4-07`, `X-xc-budget-005` "Typed and machine-readable. Never parsed from prose" |
 | 7 | Wire the identical check on every way in and prove it by replaying one corpus through each: a human entering the system, an agent entering the system, and an internal or external event entering the system. | TARGET T1 names those three ways in, and a guarantee that is only wired on the path someone remembered is declinable by choosing another door. Running one corpus through each door is what turns 'cannot be declined' into a count. cap-model-access states the same record (T-t1-01) for its own boundary; this row is that rule's consequence here. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t2-03` "An internal or external event must be able to enter the system." |

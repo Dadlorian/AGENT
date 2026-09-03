@@ -189,7 +189,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**reaching the guarantee from each of TARGET T1's three ways in (proposed worked instances; minimal inputs and outputs, on the shared entry envelope in examples/end-to-end)** (proposed; sources: `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t6-02`)
+**reaching the guarantee from each of TARGET T6.2's four entries (proposed worked instances; minimal inputs and outputs, on the shared entry envelope in examples/end-to-end)** (proposed; sources: `T-t6-02`, `REF-3-4-10`, `REF-3-4-15`)
 
 ```json
 {
@@ -220,7 +220,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
         }
       },
       {
-        "way_in": "an agent enters the system",
+        "way_in": "an external system or agent enters the system (T6.2's External door; can start a run or steer one)",
         "in": {
           "actor": {
             "subject": "agent:partner-sre-bot"
@@ -236,7 +236,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
         }
       },
       {
-        "way_in": "an internal or external event enters the system",
+        "way_in": "an event enters the system (T6.2's Internal door; steers a run that already exists and never starts one - REF-3-4-10, REF-3-4-15)",
         "in": {
           "actor": {
             "subject": "service:alerting"
@@ -255,7 +255,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
         }
       },
       {
-        "way_in": "a recurrence fires (the fourth entry of the consumption reference, same shape)",
+        "way_in": "a schedule fires (T6.2's Time door; starts a new root run under its own standing allocation and never steers - REF-3-4-10)",
         "in": {
           "actor": {
             "subject": "schedule:nightly-fault-sweep"
@@ -339,7 +339,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: the irreversible class does not produce a compensation, it produces a gate. An effect nothing can reverse is admitted only under a mandate recorded before it runs - cap-mandate-broker owns what a mandate contains and cap-human-interaction the approval an operator gives - so the class declared here is the field those gates fire on rather than a second policy of their own. | proposed | `X-end-to-end-063`, `X-end-to-end-043` "approval gates on irreversible actions are the typical defenses" |
 | The record is append-only and is never edited: a compensation appends a further record referencing the one it undoes, and a class is corrected by declaring a new step, not by rewriting the old declaration. cap-idempotency states that the core already owns an append-only deduplication authority (F-b2-06), and an unwind that could rewrite its own history could also hide an effect it failed to reverse. | sourced | `F-b2-06`, `E-core-component-ledger` "append-only across runs; the deduplication authority" |
 | Proposed: one unwinder per run drives the reverse walk, and the effects being unwound do not listen for each other. A walk that each participant triggers independently has no single place that knows how far it got, which is exactly the state a crash mid-unwind leaves behind. | proposed | `X-xc-compensation-005`, `X-xc-compensation-001` "In orchestration, a single orchestrator manages the transaction flow, invoking services and handling compensations when needed." |
-| The guarantee is applied by the platform at the dispatch boundary and again at every step boundary, never requested by a caller: agentic-stack states rule 7 as a test (F-b1-08), and the consequence here is that there is no argument, flag or handler a caller supplies to obtain unwinding and none to opt out of declaring a class. | sourced | `F-b1-08`, `F-b4-01` "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller" |
+| xc-enforcement-chain names the dispatch point and its own slots as the one place every unit crosses before a call proceeds. This guarantee's declare_effect binds at that same dispatch point and again at the step boundary beneath it - not as a seventh slot of the chain, but as a check riding alongside `budget.reserve` and `idempotency.claim` at the same crossing - so there is no argument, flag or handler a caller supplies to obtain unwinding and none to opt out of declaring a class. | sourced | `F-b1-08`, `F-b4-01` "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller" |
 | Proposed consequence of TARGET T2.3, which xc-idempotency-lease states for the lease: the record and the unwind cover the whole structure, so an effect committed by a resumed step, by a sub-unit two levels down or by a delivered approval declares its class at that boundary. A guarantee held only at the outermost run unwinds only what the outermost run did itself. | proposed | `T-t2-03`, `X-end-to-end-041` "State, telemetry, and every cross-cutting concern are managed across the entire structure" |
 
 ### Deliberately not exposed
@@ -362,7 +362,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | Give every compensating action its own idempotency key and its own lease, derived the same way the forward effect's was, and its own timeout. | xc-idempotency-lease owns the placement; the consequence here is that an unwind interrupted halfway is a duplicate delivery like any other, and a compensation with no timeout turns one unreachable destination into a run that never finishes failing. | sourced | `X-xc-compensation-006`, `F-b4-08` "Every step in a saga should have a timeout" |
 | 7 | Prefer replay to compensation whenever the effect is still held under a live key and the run is resuming rather than being abandoned, and record which of the two happened. | cap-idempotency states the replay contract (F-b4-08); compensating an effect that could have been replayed spends the budget twice and changes the world twice, and a record that does not say which path ran leaves nobody able to tell the two apart afterwards. | sourced | `F-b4-08`, `F-b3-16` "key on the wire, no lease" |
 | 8 | Return every refusal as the platform's typed problem object: an undeclared class as the registered document-invalid, an irreversible step with no mandate as the registered policy-denied carrying a rule id, and an unwind that could not complete as the fallback named in the refusal shape above. | cap-errors holds the type registry closed, and core-document and seam-dispatch already state the typed-failure rule (F-b4-07); this guarantee supplies no new failure format. A caller repairing a declaration branches on a type; a caller told an unwind failed needs a type it can escalate on rather than a sentence to read. | sourced | `F-b4-07` "Typed and machine-readable. Never parsed from prose" |
-| 9 | Prove the guarantee cannot be declined by replaying one corpus through each of TARGET T1's three ways in, killing a run mid-effect in each, and asserting that every committed effect has an earlier compensation record and that every abandoned run either replayed or compensated every record it committed. | A guarantee wired on the path someone remembered is declinable by choosing another door, which is why xc-idempotency-lease replays a corpus through the same three ways in for the lease, and an unwind that is never exercised is a code path nobody has run. Counting the compensations that actually executed is what turns cannot be declined into a number. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03` "An internal or external event must be able to enter the system." |
+| 9 | Prove the guarantee cannot be declined by replaying one corpus through each of TARGET T6.2's four entries - human, event, schedule and external - killing a run mid-effect in each, and asserting that every committed effect has an earlier compensation record and that every abandoned run either replayed or compensated every record it committed. A schedule-entered run starts root work of its own and must be killed mid-effect on its own right, not folded into the event case that only steers. | A guarantee wired on the path someone remembered is declinable by choosing another door, and entry is where doors multiply from T1's three ways in to T6.2's four; an unwind that is never exercised is a code path nobody has run. Counting the compensations that actually executed on all four is what turns cannot be declined into a number rather than a number for three of them. | sourced | `T-t6-02` "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent." |
 | 10 | Open references/usage.md when you need the full compensation record schema, the class table with its worked examples, the unwind report shape or the four entry envelopes in full. Proposed: the body of this skill is enough to wire the guarantee and to judge an implementation of it. | Proposed, progressive disclosure. The class table and the unwind report are long material, and a reader deciding whether an effect can be unwound does not need them open. TARGET T3 warns that something daunting will not be used. | proposed | `T-t3-02` |
 
 ## Best practices
@@ -380,8 +380,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | Proposed tool, built with the first implementation of this placement (docs/decomposition.md section 3.4 has no compensation row; the open question below records the row this would add): `python3 tools/conformance/compensation.py --entries examples/end-to-end/entries --corpus out/effects.jsonl --kill-mid-effect 0.25 --report out/compensation.json`. Over a corpus replayed through each of TARGET T1's three ways in it asserts that every committed effect has a compensation record durable at a strictly earlier head, that every effect-committing step submitted without an irreversibility class was refused with the registered `document-invalid` rather than admitted, that every step classed irreversible carries a mandate reference, and that every run killed mid-effect either replayed the sealed response or ran the declared compensating action for each record it had committed. It reports `effects_checked`, `undeclared_class_admitted`, `records_after_effect`, `irreversible_without_mandate`, `runs_killed`, `replayed`, `compensated`, `unwind_failed` and `ways_in_covered`, and asserts `effects_checked > 0`, `undeclared_class_admitted == 0`, `records_after_effect == 0`, `irreversible_without_mandate == 0`, `runs_killed > 0`, `replayed + compensated == effects committed by killed runs`, `unwind_failed == 0` and `ways_in_covered == 3`. |
-| Expected | exit 0 and one summary line `effects_checked=<n> undeclared_class_admitted=0 records_after_effect=0 irreversible_without_mandate=0 runs_killed=<k> replayed=<r> compensated=<c> unwind_failed=0 ways_in_covered=3`, with `k` greater than zero and `r + c` equal to the number of effects the killed runs had committed, so the unwind assertion had something to assert on. |
+| Criterion | Proposed tool, built with the first implementation of this placement (docs/decomposition.md section 3.4 has no compensation row; the open question below records the row this would add): `python3 tools/conformance/compensation.py --entries examples/end-to-end/entries --corpus out/effects.jsonl --kill-mid-effect 0.25 --report out/compensation.json`. Over a corpus replayed through each of TARGET T6.2's four entries - human, event, schedule, external - it asserts that every committed effect has a compensation record durable at a strictly earlier head, that every effect-committing step submitted without an irreversibility class was refused with the registered `document-invalid` rather than admitted, that every step classed irreversible carries a mandate reference, and that every run killed mid-effect either replayed the sealed response or ran the declared compensating action for each record it had committed. It reports `effects_checked`, `undeclared_class_admitted`, `records_after_effect`, `irreversible_without_mandate`, `runs_killed`, `replayed`, `compensated`, `unwind_failed` and `ways_in_covered`, and asserts `effects_checked > 0`, `undeclared_class_admitted == 0`, `records_after_effect == 0`, `irreversible_without_mandate == 0`, `runs_killed > 0`, `replayed + compensated == effects committed by killed runs`, `unwind_failed == 0` and `ways_in_covered == 4`. |
+| Expected | exit 0 and one summary line `effects_checked=<n> undeclared_class_admitted=0 records_after_effect=0 irreversible_without_mandate=0 runs_killed=<k> replayed=<r> compensated=<c> unwind_failed=0 ways_in_covered=4`, with `k` greater than zero and `r + c` equal to the number of effects the killed runs had committed, so the unwind assertion had something to assert on. |
 | Deliberate breakage | Let an absent irreversibility class default to reversible instead of refusing the document: leave the class optional in the declaration and treat a missing value as reversible everywhere else, and re-run the same command. |
 | Expected failure | exit non-zero with `undeclared_class_admitted` equal to the number of effect-committing steps that declared no class, and `replayed + compensated` short of the effects the killed runs committed by exactly those steps, because an effect silently classed reversible has no compensating action to run and no mandate gate in front of it, while `effects_checked` holds its value and `ways_in_covered` stays 3 - which is what shows the failure is the default rather than a corpus that was never replayed. Claimed: nothing declares an irreversibility class today and this tool is not written, so neither run has been performed here. |
 | Status | claimed |
@@ -389,7 +389,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `build-research-record`, `build-ceremony`, `core-document`, `cap-durable-execution`, `cap-idempotency`, `xc-idempotency-lease`, `seam-dispatch`
+Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `build-research-record`, `build-ceremony`, `core-document`, `cap-durable-execution`, `cap-idempotency`, `xc-idempotency-lease`, `seam-dispatch`, `xc-enforcement-chain`
 
 Used by: `xc-compensation-implement`
 

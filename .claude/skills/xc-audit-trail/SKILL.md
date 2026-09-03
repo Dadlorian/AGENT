@@ -205,6 +205,18 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
       "type": "integer",
       "minimum": 0
     },
+    "entry_kinds_seen": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "user",
+          "agent",
+          "service",
+          "schedule"
+        ]
+      },
+      "description": "TARGET T6.2's four entries as the identity capability spells the actor prefix, not T1's three ways in: a window with no schedule-originated entry has not been checked over a door that starts root work."
+    },
     "independent": {
       "type": "boolean",
       "description": "Read from the identity and credentials the scan actually ran under, never from the configuration that selected them."
@@ -232,7 +244,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | The trail is queryable by correlation id because correlation rides on explicit attributes, not trace parentage, stamped on every entry at the point the platform writes it. A trail that can only be read by walking parent links reproduces the failure A7 finding 1 records, one level down: the entries exist and cannot be gathered. | sourced | `F-b4-06`, `E-concern-telemetry` "Correlation rides on explicit attributes, not trace parentage" |
 | Tamper-evidence is a property of the record plus something that reads it, never of the writer alone. build-definition-of-done states the sentence that a transparency log is tamper-evident but not tamper-proof (X-cross-structure-053); the consequence here is that the scheduled independent scan is part of this guarantee rather than an operational extra, since the point of monitoring is ensuring that the transparency log satisfies the desired properties of immutability and being append-only. | sourced | `X-cross-structure-053` "ensuring that the transparency log satisfies the desired properties of immutability and being append-only" |
 | Proposed: the monitor is independent of the writer in identity, credentials and schedule, and its own runs are entries in the trail it scans. A check that runs inside the process that appends can be disabled by the same fault that would motivate disabling it, and a check whose runs leave no record cannot be told apart from one that has not run since March. | proposed | `X-cross-structure-053`, `F-a5-04` |
-| agentic-stack states design rule 7: telemetry, policy, provenance and budget are applied by the platform, not requested by the caller. Its consequence here is that there is no audit call, no audit flag and no exempt list: the trail is derived from the ledger, identity, provenance and correlation records the platform already writes, so a caller cannot fail to log, and cannot choose not to. | sourced | `F-b1-08`, `F-b4-01` "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller" |
+| agentic-stack states design rule 7: telemetry, policy, provenance and budget are applied by the platform, not requested by the caller. xc-enforcement-chain names the structure that carries this at admission, dispatch and call: an entry has no field for an audit call, an audit flag or an exempt list because there is no field for a bypass of any slot at all. This guarantee's consequence is narrower and specific - the trail is a projection over what four of those six slots already wrote (`identity.resolve` for the actor and delegation chain, `policy.decide` for the outcome, `provenance.open` for the sealed head, `telemetry.open` for the correlation triple), never a second logging call bolted beside them. | sourced | `F-b1-08`, `F-b4-01` "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller" |
 | An audit trail is not telemetry, and the difference is stated rather than assumed: an audit trail can be complete yet still be easy to alter, while a tamper-evident trail is designed to reveal interference. One prior-art record on file describes such a trail as capturing who invoked an AI agent, which tool it called, what policy decision was made, and when it happened, for forensic reconstruction, compliance review, and incident response. | sourced | `X-xc-audit-trail-003`, `X-xc-audit-trail-001` "An audit trail can be complete yet still be easy to alter, while a tamper-evident trail is designed to reveal interference." |
 | Proposed, the operational consequence of that difference: telemetry may sample, may drop under load, may expire on a short window and may be exported best-effort, because a missing span degrades a signal. The trail may do none of those, because a missing entry is itself the finding. Where the two disagree the trail wins, and a run that could not append an entry does not proceed as though it had. | proposed | `F-b4-06`, `X-xc-audit-trail-003` |
 | Retention is stated per class with a named obligation behind it, never inherited from whatever the store defaults to. One record on file names a concrete floor in one regime: under the EU AI Act, high-risk AI systems must automatically log events across their entire lifetime, and deployers must retain those logs for at least six months. Which regime a deployment falls under is a question this skill records rather than answers, and seam-state owns the three retention classes the floor is applied to. | sourced | `X-end-to-end-049`, `X-end-to-end-050` "high-risk AI systems must automatically log events across their entire lifetime, and deployers must retain those logs for at least six months" |
@@ -275,8 +287,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | Proposed tool, built with the first implementation of this guarantee: `python3 tools/conformance_audit_trail.py --trail <trail> --from-head <h0> --to-head <h1> --min-entries 100 --retention-floor-days 180 --external-verifier <third-party in-toto/DSSE verifier> --report out/audit-trail.json`. It reads every entry in the window, and asserts `entries_checked >= 100`, `actors_missing == 0`, `correlation_missing == 0`, `chain_breaks == 0`, `consistency_proofs_checked >= 1`, `external_verifications > 0` with our own reader unavailable, `oldest_retained_entry_age_days >= 180`, that `entry_kinds_seen` contains all three of TARGET T1's ways in, and that `independent` and `scheduled` were read from what the scan actually ran under. |
-| Expected | exit 0 and one summary line `entries_checked=100 actors_missing=0 correlation_missing=0 chain_breaks=0 consistency_proofs_checked=1 external_verifications=1 oldest_retained_entry_age_days=180 entry_kinds_seen=user,agent,service independent=true scheduled=true`. |
+| Criterion | Proposed tool, built with the first implementation of this guarantee: `python3 tools/conformance_audit_trail.py --trail <trail> --from-head <h0> --to-head <h1> --min-entries 100 --retention-floor-days 180 --external-verifier <third-party in-toto/DSSE verifier> --report out/audit-trail.json`. It reads every entry in the window, and asserts `entries_checked >= 100`, `actors_missing == 0`, `correlation_missing == 0`, `chain_breaks == 0`, `consistency_proofs_checked >= 1`, `external_verifications > 0` with our own reader unavailable, `oldest_retained_entry_age_days >= 180`, that `entry_kinds_seen` contains all four of TARGET T6.2's entries (user, agent, service and schedule, the identity capability's spelling of human, external, event and schedule), and that `independent` and `scheduled` were read from what the scan actually ran under. A window with no `schedule` entry has not exercised the one door that starts root work rather than steering it, and the assertion fails on that gap rather than passing over T1's narrower three. |
+| Expected | exit 0 and one summary line `entries_checked=100 actors_missing=0 correlation_missing=0 chain_breaks=0 consistency_proofs_checked=1 external_verifications=1 oldest_retained_entry_age_days=180 entry_kinds_seen=user,agent,service,schedule independent=true scheduled=true`. |
 | Deliberate breakage | Flip one byte inside a historical entry that the window covers - one character of an actor name is enough - leave every other entry untouched, and let the monitor reach its next scheduled run. |
 | Expected failure | `chain_breaks` becomes 1, the scan names the entry whose chain digest no longer verifies, exits non-zero and emits the typed problem document, while `entries_checked` stays at or above 100 and `actors_missing` stays 0 - which is what shows the failure is the altered record rather than a window that was never read. Claimed: no audit entry, monitor, schedule or conformance tool exists on this stack today. The nearest analogue that does run here was measured separately over this repository's own chained run ledger and is recorded in the adapter row of xc-audit-trail-implement. |
 | Status | claimed |
@@ -284,7 +296,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `build-evidence-record`, `build-research-record`, `build-ceremony`, `cap-provenance`, `cap-scheduling`, `core-ledger`, `xc-provenance-chain`, `seam-state`
+Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `build-evidence-record`, `build-research-record`, `build-ceremony`, `cap-provenance`, `cap-scheduling`, `core-ledger`, `xc-provenance-chain`, `seam-state`, `xc-enforcement-chain`
 
 Used by: `xc-audit-trail-implement`
 

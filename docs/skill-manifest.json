@@ -1432,7 +1432,11 @@
       "origin": "research-gap",
       "used_by": [
         "xc-enforcement-chain-implement",
-        "xc-tenancy"
+        "xc-tenancy",
+        "xc-compensation",
+        "xc-audit-trail",
+        "xc-audit-trail-implement",
+        "build-entry-conformance"
       ]
     },
     {
@@ -1476,7 +1480,8 @@
         "cap-durable-execution",
         "cap-idempotency",
         "xc-idempotency-lease",
-        "seam-dispatch"
+        "seam-dispatch",
+        "xc-enforcement-chain"
       ],
       "definition_of_done": "A run killed mid-effect either replays the recorded response or runs the declared compensating step, and a step with no declared irreversibility class fails validation instead of defaulting to reversible.",
       "notes_for_author": "Cite X-end-to-end-041, X-end-to-end-042, X-end-to-end-043 and X-end-to-end-044; target requirement T-t2-03; PASS.md B4. draft-ietf-httpapi-idempotency-key-header-07 (Standards Track Internet-Draft, 15 October 2025) governs the key on the wire; saga-style compensation has no spec, so mark it proposed. The platform holds a keyed lease for the duration of the effect and replays the recorded response rather than the effect. Adapter shapes to compare: a lease held in the durable-execution engine versus a lease in the append-only state store, the second breaking the assumption that the workflow engine is running. The irreversibility class declared here is the field the approval gate fires on (cap-human-interaction, xc-enforcement-chain, compose-approval); the lease mechanism itself stays in cap-idempotency and xc-idempotency-lease. Closes raw gap compensation-and-idempotency-every-side. The ideal facet also carries the usability section (how a human, an agent, and an event reach it; minimal inputs/outputs; failure shape) since this layer has no separate -use skill.",
@@ -1502,7 +1507,8 @@
         "cap-scheduling",
         "core-ledger",
         "xc-provenance-chain",
-        "seam-state"
+        "seam-state",
+        "xc-enforcement-chain"
       ],
       "definition_of_done": "Flipping one byte in a historical record makes the monitor fail on its next scheduled run and emit a typed problem document, and the retained evidence verifies with a third-party in-toto/DSSE verifier after the stated retention minimum.",
       "notes_for_author": "Cite X-cross-structure-050, X-cross-structure-052 and X-cross-structure-053 for the monitor, X-end-to-end-049, X-end-to-end-050, X-end-to-end-051 and X-end-to-end-052 for retention and attestation; target requirement T-t2-03; PASS.md A5 and B4. The governing point is that tamper-evidence is not tamper-proofness: an append-only log delivers its guarantee only if something other than the writer scans it, which is why the monitor runs on a schedule, independently, and why its own runs are themselves evidenced. Standards: Merkle transparency-log inclusion and consistency proofs with Rekor as the reference, in-toto Statement v1 in DSSE envelopes, SLSA v1.1 for the build predicate, with ISO/IEC 42001 and EU AI Act Articles 9-17 as the reason a retention minimum is stated rather than assumed. Adapter shapes to compare: hash-chained JSONL versus a transparency-log-backed store, the second breaking the assumption that the platform holds the only copy of its own chain. Closes raw gaps a-ledger-monitor-a-scheduled-independent and retention-and-attestation-policy-evidenc. The ideal facet also carries the usability section (how a human, an agent, and an event reach it; minimal inputs/outputs; failure shape) since this layer has no separate -use skill.",
@@ -1576,7 +1582,8 @@
         "build-ceremony",
         "cap-work-intake",
         "cap-human-interaction",
-        "cap-capability-registry"
+        "cap-capability-registry",
+        "xc-enforcement-chain"
       ],
       "definition_of_done": "A person at a terminal, an off-the-shelf A2A or MCP client, and a plain HTTP client posting a CloudEvent each drive a task from intake to result with no repository code on the caller side, and the suite fails on the deliberately broken adapter rather than reporting three greens.",
       "notes_for_author": "Cite X-entry-composition-007, X-entry-composition-009, X-entry-composition-019 and X-entry-composition-041 for the three-actor suite, X-end-to-end-035 and X-end-to-end-036 for the description-driven client; target requirements T-t3-01 and T-t3-02; PASS.md B1 and B5. Every entry point ships an OpenAPI or AsyncAPI document and CI drives the run from a client generated from it; the second shape is a raw curl or JSON-RPC script, which breaks the assumption that generation tooling exists for the caller's stack. This is the check behind TARGET.md T1: three entries, one system. Closes raw gaps entry-conformance-suite-for-each-of-the and conformance-check-every-entry-point-ship.",
@@ -2341,7 +2348,8 @@
         "xc-audit-trail",
         "build-adapter-pair",
         "build-definition-of-done",
-        "build-evidence-record"
+        "build-evidence-record",
+        "xc-enforcement-chain"
       ],
       "used_by": [],
       "definition_of_done": "Flipping one byte in a historical record makes the monitor fail on its next scheduled run and emit a typed problem document, and the retained evidence verifies with a third-party in-toto/DSSE verifier after the stated retention minimum.",

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Dadlorian/AGENT/schemas/research.schema.json",
+  "title": "Research record",
+  "description": "One line of kb/research.jsonl. What was searched, what was found, and how far it was verified. Skills cite these by id (X-...) with a verbatim quote from `snippet` or `read`.",
+  "type": "object",
+  "required": ["id", "type", "lens", "topic", "query", "url", "title", "snippet", "status", "agent", "date"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {"type": "string", "pattern": "^X-[a-z0-9]+(-[a-z0-9]+)*-[0-9]{3}$", "description": "X-<lens>-<nnn>"},
+    "type": {"const": "research"},
+    "lens": {"type": "string", "description": "which research agent / angle produced it"},
+    "topic": {"type": "string", "description": "the PASS/TARGET item or gap this informs; cite kb ids in `informs`"},
+    "informs": {"type": "array", "items": {"type": "string", "pattern": "^[FERT]-"}},
+    "query": {"type": "string"},
+    "url": {"type": "string", "format": "uri"},
+    "title": {"type": "string"},
+    "snippet": {"type": "string", "description": "verbatim text from the search result"},
+    "read": {"type": ["string", "null"], "description": "verbatim excerpt if the page could be fetched; null if fetch was blocked"},
+    "status": {"enum": ["search-only", "fetched"], "description": "search-only: title/snippet from a search result; fetched: page content was read"},
+    "claim": {"type": "string", "description": "what this record supports, in one sentence"},
+    "agent": {"type": "string"},
+    "date": {"type": "string", "format": "date"}
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "owner_skill": "cap-tool-access-implement",
+  "co_skills": ["cap-tool-access", "xc-policy-gate-implement"],
+  "blueprint_tool_entry": "the MCP endpoint PASS.md A6 records as live and authenticated with zero tools registered (F-a6-03)",
+  "capability": "tool access",
+  "standard": "Model Context Protocol (version on file: 2026-07-28, unverified)",
+  "kb_ids": [
+    "F-a6-03", "F-a7-02", "F-a7-03",
+    "F-b1-04", "F-b1-05", "F-b1-07",
+    "F-b3-06", "F-b3-09",
+    "F-b4-01", "F-b4-04", "F-b4-07", "F-b4-08",
+    "F-part-c-04", "F-part-c-09", "F-part-c-11",
+    "T-t1-01", "T-t2-02", "T-t3-01",
+    "T-t6-02", "T-t7-02", "T-t7-03", "T-t7-04", "T-t7-05",
+    "T-t9-06", "T-t10-04", "T-t10-05", "T-t10-07"
+  ],
+  "research_ids": [
+    "X-cap-tool-access-001",
+    "X-cap-tool-access-002",
+    "X-cap-tool-access-003",
+    "X-cap-tool-access-004",
+    "X-cross-structure-061"
+  ],
+  "measured": {
+    "dryrun": "bash harness/tool-access/test.sh on 2026-09-03: passed 36, failed 0. conformance PASSED 17/17 cases and 6/6 counts against the dry-run adapter with cases_not_exercised=0, tools_listed=5, schemas_checked=5, schemas_invalid=0, undeclared_refused=1; the minimal call is 15 lines of caller code counted by harness/caller_lines.py and names no adapter storage; the caller discovered the catalogue, cancelled a second call in flight (stopped) and read health serving (tools_listed=5). Five refusals each exit 2 with a typed problem: policy-denied 403 at platform-pre-dispatch for a tool outside the declared surface, arguments-invalid 422 for arguments the published schema rejects, protocol-unsupported 400 for a revision declared per call, budget-exhausted 402 for the second call of a one-call run, adapter-unavailable 503 for an unreachable server.",
+    "swap": "conformance PASSED 17/17 before (dryrun: registered-here, co-located) and 17/17 after (second: published-elsewhere, remote), the same 17 cases with every argument built from the schema each server published; sha256 of interface.py+call.py+conformance.py+binding.json identical across both runs (d55bc58d861649e6a17124b7a8ad362102934869bed9cdeff9a30b267e72edb2), so the swap was configuration; 4 axes differ (catalogue_authority registered-here vs published-elsewhere, call_locality co-located vs remote, catalogue_stability frozen vs re-read-at-every-bind, cancel_outcome stopped vs recorded); the marker read back changed with the binding (catalogue:registered-here -> catalogue:published-elsewhere); tools_listed differs 5 vs 6 while the declared surface is identical and the same tool name is served by both; the second server withdrew a tool between two binds and the catalogue digest moved while the declared surface still held; the same caller code ran unchanged on both.",
+    "breakage": "TOOLS_UNREGISTERED=1 unregisters every tool, leaving the server reachable and authenticated and changing nothing else - the state PASS.md A6 records (F-a6-03). The run exits 1 while conformance_failures stays 0: tools_listed and schemas_checked go 5 -> 0, 11 cases report NOT EXERCISED rather than passing, health reports status=empty instead of green, and the failing assertions are the counts (tools_listed > 0, undeclared_refused >= 1, the declared surface resolved at bind). The green run in step 1 can therefore fail, and it fails on the count rather than on the shape."
+  },
+  "claimed": [
+    "live mode until run on the host: adapters/live.py has never reached the endpoint from here, so the JSON-RPC method names, the MCP-Protocol-Version header, the request shape and the failure mapping are unverified against a real server",
+    "the protocol revision 2026-07-28 is claimed: both records on file for the specification (X-cap-tool-access-001, X-cap-tool-access-002) are search-only, and the standard stick for this element is recorded absent by the owner while page fetch is blocked (STATUS row 45)",
+    "the four JSON-RPC method names in adapters/live.py and adapters/second.py are this harness's proposed mapping of the four operations onto the protocol; each is overridable by environment variable rather than asserted as fact",
+    "the second adapter's networked form until SECOND_SERVER_URL points at a conformant server; the dry run exercises its state machine in process, and its catalogue, its withdrawn tool and its extra required argument are a faithful stub of a catalogue this platform does not control",
+    "the schema checking in interface.py is a declared subset of JSON Schema 2020-12, not the platform's validator: cap-document-validation owns the dialect (F-b3-09) and a real deployment binds that capability here",
+    "the problem registry in interface.py is proposed and local: cap-errors owns the closed one, and `policy-denied` stands in for the unregistered `tool-not-declared` as cap-tool-access records",
+    "the tool-access element's measured and swap sticks are measured by this run in dry-run mode only; the element's guide (docs/guides/tool-access.md) still records runnable: no until the plan row for this harness is merged"
+  ]
+}

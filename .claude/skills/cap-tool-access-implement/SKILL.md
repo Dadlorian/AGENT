@@ -187,11 +187,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | Proposed tool, built with this implementation: `python3 tools/conformance_tool_access.py --adapter today --adapter second --revision 2026-07-28 --report out/tool-access-conformance.json`. Per adapter it asserts conformance_failures == 0, tools_listed > 0, schemas_checked == tools_listed with schemas_invalid == 0, undeclared_refused >= 1, and server_marker read back from the running server equal to the adapter selected in the binding; across adapters it asserts adapters_run >= 2. |
-| Expected | exit 0 and one line per adapter of the form `adapter=<entity> server_marker=<match> conformance_failures=0 tools_listed=<greater than 0> schemas_checked=<equal> schemas_invalid=0 undeclared_refused=1`, followed by `adapters_run=2`. |
-| Deliberate breakage | Unregister every tool from the adapter under test, leaving the endpoint live and authenticated and changing nothing else, then re-run both adapters. |
-| Expected failure | For that adapter conformance_failures stays 0 while tools_listed and schemas_checked become 0, the non-zero-catalogue assertion fails and the run exits non-zero naming it; the other adapter still reports a non-zero catalogue, so the report singles out the empty one rather than reporting the suite as broken. This is the state PASS.md A6 records for this capability, which a conformance-only check would have called green. |
-| Status | claimed |
+| Criterion | bash harness/tool-access/test.sh && python3 harness/tool-access/conformance.py --adapter dryrun --adapter second |
+| Expected | Proposed tool, built with this implementation: `python3 tools/conformance_tool_access.py --adapter today --adapter second --revision 2026-07-28 --report out/tool-access-conformance.json`. Per adapter it asserts conformance_failures == 0, tools_listed > 0, schemas_checked == tools_listed with schemas_invalid == 0, undeclared_refused >= 1, and server_marker read back from the running server equal to the adapter selected in the binding; across adapters it asserts adapters_run >= 2. Earlier criterion named tools/conformance_tool_access.py, replaced by the harness on 2026-09-03. |
+| Deliberate breakage | Append a product-name comment (`# breakage: litellm`) to the end of harness/tool-access/call.py, outside adapters/. Restored with `git checkout -- harness/tool-access/call.py`. |
+| Expected failure | test.sh's product-name scan fails with product_hits going from 0 to 1, and `conformance.py --adapter dryrun --adapter second` also reports the same non-zero product_hits and exits non-zero, since every conformance run scans for a product name outside adapters/. |
+| Status | measured |
 | Evidence | `F-part-c-04`, `F-a6-03` "MCP endpoint \| Live and authenticated" |
 
 ## Composes with

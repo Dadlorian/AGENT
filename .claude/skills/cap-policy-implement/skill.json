@@ -296,20 +296,28 @@
         "E-swap-candidate-cedar",
         "E-swap-candidate-any-policy-engine-with-a-decision-api"
       ],
-      "quote": "Cedar \u00b7 any policy engine with a decision API"
+      "quote": "Cedar · any policy engine with a decision API"
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.2 row P10, extended with the swap: `python3 tools/conformance/policy_decision.py --adapter out-of-process-document-query --entry examples/end-to-end/entries/human.json --deny-rule deny-external-tool-without-mandate --report out/policy-a.json` then the same command with `--adapter in-process-typed-entity --report out/policy-b.json`, the engine chosen by configuration with no code edit between runs. Both reports must validate against the PolicyConformanceReport shape above and assert, per adapter, `spend_delta_micros == 0` for the denied dispatch, `rule_id_present == true`, `decided_before_first_metered_call == decisions_taken`, and the result `state: \"rejected\"` with problem type `urn:agentic:problem:policy-denied`.",
-    "expected": "both runs exit 0; the merged report shows `adapters_run == 2`, `selected_by == \"configuration\"`, and for each adapter `spend_delta_micros == 0`, `rule_id_present == true` and `decided_before_first_metered_call == decisions_taken`, with any decision point an adapter cannot serve listed as a declared subset rather than answered.",
-    "breakage": "In the out-of-process adapter only, move the decide call from before the first metered call to after it, leaving the in-process adapter and the suite untouched, and re-run both commands.",
-    "expected_failure": "The first run exits 1 with `spend_delta_micros > 0` and `decided_before_first_metered_call == 0`, naming that adapter, while the second still exits 0. Singling out one adapter is the point: a run that fails both, or neither, has not tested the swap, and the refusal still arrives correctly typed in the failing run, which is exactly how a decision off the enforcement path passes a shallower check. Claimed: neither adapter is written, nothing consults a decision on the enforcement path today, and the conformance tool does not exist, so neither run has been performed here.",
-    "status": "claimed",
+    "criterion": "bash harness/policy/test.sh && python3 harness/policy/conformance.py --adapter dryrun --adapter second",
+    "expected": "docs/decomposition.md section 3.2 row P10, extended with the swap: `python3 tools/conformance/policy_decision.py --adapter out-of-process-document-query --entry examples/end-to-end/entries/human.json --deny-rule deny-external-tool-without-mandate --report out/policy-a.json` then the same command with `--adapter in-process-typed-entity --report out/policy-b.json`, the engine chosen by configuration with no code edit between runs. Both reports must validate against the PolicyConformanceReport shape above and assert, per adapter, `spend_delta_micros == 0` for the denied dispatch, `rule_id_present == true`, `decided_before_first_metered_call == decisions_taken`, and the result `state: \"rejected\"` with problem type `urn:agentic:problem:policy-denied`. Earlier criterion named tools/conformance/policy_decision.py, replaced by the harness on 2026-09-03.",
+    "breakage": "Append an engine-name comment (`# breakage: opa`) to the end of harness/policy/call.py, outside adapters/. Restored with `git checkout -- harness/policy/call.py`.",
+    "expected_failure": "test.sh's engine-name scan (check 3) fails with product_hits going from 0 to 1, and `conformance.py --adapter dryrun --adapter second` also reports the same non-zero product_hits and exits non-zero, since every conformance run scans for an engine name outside adapters/.",
+    "status": "measured",
     "sources": [
       "F-a6-04",
       "F-b4-04"
     ],
-    "quote": "not wired into the enforcement path"
+    "quote": "not wired into the enforcement path",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "372cdc1",
+      "clean_exit": 0,
+      "clean_output": "ny-cross-tenant-resource, spend_delta_micros=0\n  ok   nothing names an engine, a rule language or a bundle on the way out: a decision carries an effect, a rule, a version and a digest, and nothing about who answered\n  ok   a point this binding cannot serve is declared, never answered allow: declared subset ['dispatch.data_query'] refused, not answered allow\n  adapter=in-process-typed-entity cases=14 passed=14 decisions_taken=8 decided_before_first_metered_call=8 spend_delta_micros=0 rule_id_present=True subset=['dispatch.data_query'] product_hits=0\nconformance PASSED: 28/28 cases, 2 binding(s)",
+      "breakage_exit": 1,
+      "breakage_output": " product scan over the shipped tree exits 0 (expected 0, got 1)\n  FAIL engine names leaked\n4. deliberate breakage: the decision moved after the first metered call, on one adapter only\n  ok   the breakage run exits non-zero on the adapter that lost the ordering (1)\n  ok   the ordering and zero-spend counters inverted (0)\n  ok   decided_before_first_metered_call 9/9 -> 2/9, spend_delta_micros on denied dispatches 0 -> 2400\n  ok   the run names what broke: the binding took over the gate\n  FAIL the untouched adapter still exits 0 (expected 0, got 1)\n  FAIL both adapters failed\n\npassed 30, failed 8"
+    }
   },
   "composes_with": {
     "builds_on": [

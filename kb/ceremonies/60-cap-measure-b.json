@@ -1,0 +1,80 @@
+{
+  "status_row": 60,
+  "ceremony": "60-cap-measure-b",
+  "agent": "sonnet",
+  "date": "2026-09-03",
+  "skills": {
+    "cap-model-access-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "criterion": "bash harness/gateway/test.sh && python3 harness/gateway/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "printf '%s\\n' '# breakage: litellm' >> harness/gateway/call.py (a real product-name leak outside adapters/, restored with git checkout -- harness/gateway/call.py)",
+      "measure_py_last_line": "cap-model-access-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "cap-policy-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "criterion": "bash harness/policy/test.sh && python3 harness/policy/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "printf '%s\\n' '# breakage: opa' >> harness/policy/call.py (a real engine-name leak outside adapters/, restored with git checkout -- harness/policy/call.py)",
+      "measure_py_last_line": "cap-policy-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "cap-provenance-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "criterion": "bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "printf '%s\\n' '# breakage: sigstore' >> harness/provenance/call.py (a real product-name leak outside adapters/, restored with git checkout -- harness/provenance/call.py)",
+      "measure_py_last_line": "cap-provenance-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "cap-scheduling-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "criterion": "bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "python3 <scratchpad>/workflow_breakage.py (a helper script run via tools/measure.py --breakage-cmd; makes Attempt.key() in harness/workflow/flow.py always return None instead of the step idempotency key -- the harness's own --break-idempotency behaviour, made unconditional; restored with git checkout -- harness/workflow/flow.py)",
+      "measure_py_last_line": "cap-scheduling-implement: measured (clean exit 0, breakage exit 1)",
+      "note": "measured against harness/workflow, which harness/plan.json names as owner of cap-durable-execution-implement and, per its capability field 'durable execution and scheduling', co-owner of cap-scheduling-implement. The workflow harness has no RFC 5545 recurrence-vector suite; the gate and conformance run measured here exercise the durable-step/checkpoint/resume machinery the two skills share, not recurrence math specifically."
+    },
+    "cap-state-persistence-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "criterion": "bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "printf '%s\\n' '# breakage: litellm' >> harness/state-persistence/call.py (a real product-name leak outside adapters/, restored with git checkout -- harness/state-persistence/call.py)",
+      "measure_py_last_line": "cap-state-persistence-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "cap-telemetry-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "criterion": "cd harness/observability && bash test.sh && python3 conformance.py --adapter dryrun --report out/tel-a.json && ADAPTER=second python3 conformance.py --report out/tel-b.json && python3 conformance.py --merge out/tel-a.json out/tel-b.json --report out/merged.json",
+      "breakage_cmd": "printf '%s\\n' '# breakage: langfuse' >> harness/observability/call.py (a real product-name leak outside adapters/, caught by test.sh's own grep over interface.py/call.py/conformance.py, restored with git checkout -- harness/observability/call.py)",
+      "measure_py_last_line": "cap-telemetry-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "cap-tool-access-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "criterion": "bash harness/tool-access/test.sh && python3 harness/tool-access/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "printf '%s\\n' '# breakage: litellm' >> harness/tool-access/call.py (a real product-name leak outside adapters/, restored with git checkout -- harness/tool-access/call.py)",
+      "measure_py_last_line": "cap-tool-access-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "cap-work-intake-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "criterion": "bash harness/work-intake/test.sh && python3 harness/work-intake/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "printf '%s\\n' '# breakage: litellm' >> harness/work-intake/call.py (a real product-name leak outside adapters/, restored with git checkout -- harness/work-intake/call.py)",
+      "measure_py_last_line": "cap-work-intake-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "cap-mandate-broker-implement": {
+      "before_status": "claimed",
+      "after_status": "claimed",
+      "criterion": "no change to the shell run named; appended 'Gap: no harness covers this capability yet (STATUS row 60).' to definition_of_done.criterion, plus the reason. harness/identity/provenance.json lists cap-mandate-broker (not cap-mandate-broker-implement) as a co-skill, but identity's README and conformance.py name no mandate check and no destination-bound credential-acceptance check: its delegation cases test scope narrowing, lifetime shortening, acyclicity and single-audience *format*, never whether a credential minted for one destination is accepted at another. cap-mandate-broker-implement's own criterion needs credentials_minted, accepted_at_intended, accepted_at_other, mandates_verified, mandates_accepted and refusals counters that no case in harness/identity/conformance.py produces.",
+      "breakage_cmd": null,
+      "measure_py_last_line": "not run: no harness runs this criterion"
+    },
+    "cap-memory-implement": {
+      "before_status": "claimed",
+      "after_status": "claimed",
+      "criterion": "no change to the shell run named; appended 'Gap: no harness covers this capability yet (STATUS row 60).' to definition_of_done.criterion. No harness in harness/plan.json names cap-memory-implement as owner or co-skill.",
+      "breakage_cmd": null,
+      "measure_py_last_line": "not run: no harness exists for this capability"
+    }
+  },
+  "note": "For all 8 measured skills, definition_of_done.criterion was rewritten to a pure shell command chain running the harness's test.sh gate plus its conformance.py --adapter dryrun --adapter second swap run (observability additionally chains its own --merge step, since its conformance.py takes one --adapter at a time and merges two report files rather than accepting a repeated --adapter flag). The prior prose criterion, which named a proposed tools/conformance_*.py that was never written, was moved into definition_of_done.expected, closing with 'Earlier criterion named tools/<x>.py, replaced by the harness on 2026-09-03.' The breakage and expected_failure fields were rewritten to a real breakage applied directly to each harness's own call.py (outside adapters/, so the harness's own product/engine-name scan -- the same design-rule-1 check named in harness/plan.json's rules and in every one of these harnesses' README 'What each test proves' table -- catches it, both in test.sh's dedicated scan step and inside every conformance.py run since product_hits is folded into every report's pass/fail count), except cap-scheduling-implement, whose breakage instead makes harness/workflow's Attempt.key() always return None, reusing the same defect 60-cap-measure-a used for cap-durable-execution-implement since both skills share the workflow harness. Every breakage was dry-tested by hand first (bash test.sh / conformance.py exiting non-zero with the expected counters), then applied for real only inside tools/measure.py --breakage-cmd/--restore-cmd, and git status on harness/ after every run showed the touched file restored with no diff. render_skill.py and validate_skills.py --only <skill> were run after every edit; all 10 skills in scope validate at 0 errors (pre-existing restatement warnings unrelated to definition_of_done were left as found, matching 60-cap-measure-a). cap-mandate-broker-implement and cap-memory-implement stay claimed with a gap sentence appended to their criterion, per this ceremony's scope instructions. No commit or push was made. Only files touched: the 10 named skill.json/SKILL.md pairs and this record; no other STATUS row, no cap- ideal-facet skill, and no file outside .claude/skills/<these 10>/ or kb/ceremonies/60-cap-measure-b.json was edited."
+}

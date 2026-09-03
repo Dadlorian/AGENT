@@ -383,16 +383,24 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "Proposed tool, built with the first implementation of this interface: `python3 tools/conformance_model_access.py --adapter today --adapter second --request fixtures/model-access/request.json --report out/model-access-conformance.json`. It sends the one request fixture, byte for byte, through the synchronous adapter and the asynchronous batch adapter and asserts per adapter that ticket_state is redeemed, result_schema_valid is true against the single result schema, cost_status is reconciled, budget_reconciled_micros was recomputed rather than copied from budget_reserved_micros, declared_gap_honoured is true, and endpoint_marker read from the response equals the adapter selected in the binding. Across adapters it asserts adapters_run >= 2 and results_validated == adapters_run. It then runs `grep -rIl -E '(litellm|openrouter|gemini|sglang)' src/core/ src/seam/` and asserts product_hits == 0.",
-    "expected": "exit 0 and one line per adapter of the form `adapter=<entity> endpoint_marker=<match> ticket_state=redeemed result_schema=valid cost_status=reconciled declared_gap_honoured=true`, followed by `adapters_run=2 results_validated=2 product_hits=0`.",
-    "breakage": "Add a branch on the adapter name inside the caller so the batch path takes a different code path - one `if adapter == 'litellm'` in the code that submits - change nothing else, then re-run both adapters.",
-    "expected_failure": "The grep over `src/core/` and `src/seam/` lists the caller's file, product_hits becomes non-zero, and the run exits non-zero naming that file: the two adapters are no longer one interface, which is design rule 1 made checkable. adapters_run stays 2 and results_validated stays 2, which is what shows the failure is the branch rather than an adapter that was never exercised.",
-    "status": "claimed",
+    "criterion": "bash harness/gateway/test.sh && python3 harness/gateway/conformance.py --adapter dryrun --adapter second",
+    "expected": "Proposed tool, built with the first implementation of this interface: `python3 tools/conformance_model_access.py --adapter today --adapter second --request fixtures/model-access/request.json --report out/model-access-conformance.json`. It sends the one request fixture, byte for byte, through the synchronous adapter and the asynchronous batch adapter and asserts per adapter that ticket_state is redeemed, result_schema_valid is true against the single result schema, cost_status is reconciled, budget_reconciled_micros was recomputed rather than copied from budget_reserved_micros, declared_gap_honoured is true, and endpoint_marker read from the response equals the adapter selected in the binding. Across adapters it asserts adapters_run >= 2 and results_validated == adapters_run. It then runs `grep -rIl -E '(litellm|openrouter|gemini|sglang)' src/core/ src/seam/` and asserts product_hits == 0. Earlier criterion named tools/conformance_model_access.py, replaced by the harness on 2026-09-03.",
+    "breakage": "Append a product-name comment (`# breakage: litellm`) to the end of harness/gateway/call.py, outside adapters/. Restored with `git checkout -- harness/gateway/call.py`.",
+    "expected_failure": "test.sh's product-name scan (check 3) fails with product_hits going from 0 to 1, and the immediately following `conformance.py --adapter dryrun --adapter second` run also reports product_hits=1 and a non-zero exit, because every conformance run scans the whole harness tree outside adapters/ for a vendor name, not only the --product-scan invocation.",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
       "F-b1-02"
     ],
-    "quote": "The core imports interfaces, never implementations"
+    "quote": "The core imports interfaces, never implementations",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "372cdc1",
+      "clean_exit": 0,
+      "clean_output": "n the way out: ticket carries a class, a state, a result and nothing about who served it\n  ok   cancel says which of two things happened: cancellable=False -> recorded, owed 3132 micros\n  ok   the endpoint marker is read from the response: batch-job-accepted matches the binding\n  ok   routing is a pure function, testable from a table: 5 vectors, no model reachable, no spend\n  adapter=provider-native asynchronous batch (claim-and-poll) cases=12 passed=12 dispatches=7 refusals=2 overshoot_violations=0 endpoint_marker=batch-job-accepted product_hits=0\nconformance PASSED: 24/24 cases, 2 binding(s)",
+      "breakage_exit": 1,
+      "breakage_output": "4d3523922488c7756f0c2ae1831)\n  ok   the same caller code runs on the second adapter (0)\n  ok   the two adapters differ in execution model on 3 or more axes (0)\n  ok   4 axes differ (serving path, submit state, polls, cost timing)\n3. no product name in the interface, the caller or the conformance run\n  FAIL product scan over the shipped tree exits 0 (expected 0, got 1)\n  FAIL product names leaked\n4. deliberate breakage: the caller branches on which adapter answered\n  ok   the breakage run exits non-zero (1)\n  ok   the run names the file that broke it\n  FAIL hits not counted\n\npassed 18, failed 7"
+    }
   },
   "composes_with": {
     "builds_on": [

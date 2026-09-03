@@ -403,18 +403,26 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.2 row P7, extended with the swap: `python3 tools/conformance/intake_equivalence.py --adapter request-pushed-event --job fixtures/intake/one-job.json --report out/intake-a.json` then the same command with `--adapter agent-message --report out/intake-b.json`, the adapter chosen by configuration with no code edit between runs. Both reports must validate against the IntakeEquivalenceReport shape above and assert, per adapter, `distinct_job_digests == 1`, `distinct_entry_ids == producers_run`, `invalid == 0` and `untyped_refusals == 0`; the merged report must show `adapters_run == 2` and `selected_by == \"configuration\"` in both.",
-    "expected": "both runs exit 0; each report shows `distinct_job_digests: 1`, `distinct_entry_ids` equal to `producers_run`, `invalid: 0` and `untyped_refusals: 0`, and the merged report shows `adapters_run: 2`",
-    "breakage": "Let the request-pushed producer's mapper stamp a default `priority` field onto the envelope it builds, leaving the agent-message mapper and the corpus untouched, and re-run both commands.",
-    "expected_failure": "the request-pushed run exits 1 with `distinct_job_digests: 2` and `invalid: 3` naming that adapter, because the stamped field is not in the published schema and the envelope it produces no longer digests to the same value as the corpus expects, while the agent-message run still exits 0. Singling out one adapter is the point: a run that fails both, or neither, has not tested the swap. Claimed: neither mapper, the corpus nor the runner exists here, the typed registry the refusal counter needs is recorded as absent and there is no identity field to build the actor from, so this check starts red by construction.",
-    "status": "claimed",
+    "criterion": "bash harness/work-intake/test.sh && python3 harness/work-intake/conformance.py --adapter dryrun --adapter second",
+    "expected": "docs/decomposition.md section 3.2 row P7, extended with the swap: `python3 tools/conformance/intake_equivalence.py --adapter request-pushed-event --job fixtures/intake/one-job.json --report out/intake-a.json` then the same command with `--adapter agent-message --report out/intake-b.json`, the adapter chosen by configuration with no code edit between runs. Both reports must validate against the IntakeEquivalenceReport shape above and assert, per adapter, `distinct_job_digests == 1`, `distinct_entry_ids == producers_run`, `invalid == 0` and `untyped_refusals == 0`; the merged report must show `adapters_run == 2` and `selected_by == \"configuration\"` in both. Earlier criterion named tools/conformance/intake_equivalence.py, replaced by the harness on 2026-09-03.",
+    "breakage": "Append a product-name comment (`# breakage: litellm`) to the end of harness/work-intake/call.py, outside adapters/. Restored with `git checkout -- harness/work-intake/call.py`.",
+    "expected_failure": "test.sh's product-name scan (check 3) fails with product_hits going from 0 to 1, and `conformance.py --adapter dryrun --adapter second` also reports the same non-zero product_hits and exits non-zero, since every conformance run scans for a product name outside adapters/.",
+    "status": "measured",
     "sources": [
       "F-b3-08",
       "F-b1-04",
       "F-a6-06",
       "F-a6-05"
     ],
-    "quote": "any conformant producer"
+    "quote": "any conformant producer",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "372cdc1",
+      "clean_exit": 0,
+      "clean_output": "d budget attach per door, checked by value: four actors, hops [2, 3, 4], one ceiling 1500000 micros per door\n  ok   intake admits; it does not execute and it does not plan: 4 entries recorded, 0 work started, planning is a pure function outside the adapter\n  ok   the marker is read from the binding that answered: task-message-accepted matches the binding, and reaches no producer\n  producers_run=4 distinct_job_digests=1 distinct_entry_ids=4 invalid=0 untyped_refusals=0 records=4 work_started=0 marker=task-message-accepted product_hits=0 verdict=pass\nconformance PASSED: 30/30 cases, 2 binding(s)",
+      "breakage_exit": 1,
+      "breakage_output": " or the conformance run\n  FAIL product scan over the shipped tree exits 0 (expected 0, got 1)\n  FAIL product names leaked\n4. deliberate breakage: the request-pushed mapper stamps a default field\n  ok   the request-pushed run exits non-zero (1)\n  ok   invalid went from 0 to 4\n  ok   the run names the case that broke it\n  FAIL the agent-message run still exits 0 (expected 0, got 1)\nrequest-pushed: invalid 0 -> 4, verdict fail; agent-message: invalid 0, verdict pass, job digest unchanged (462dd6645fd1)\n  ok   the breakage singles out one adapter and leaves the other green (0)\n\npassed 20, failed 8"
+    }
   },
   "composes_with": {
     "builds_on": [

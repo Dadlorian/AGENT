@@ -360,16 +360,24 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "Proposed tool, built with this implementation: `python3 tools/conformance_tool_access.py --adapter today --adapter second --revision 2026-07-28 --report out/tool-access-conformance.json`. Per adapter it asserts conformance_failures == 0, tools_listed > 0, schemas_checked == tools_listed with schemas_invalid == 0, undeclared_refused >= 1, and server_marker read back from the running server equal to the adapter selected in the binding; across adapters it asserts adapters_run >= 2.",
-    "expected": "exit 0 and one line per adapter of the form `adapter=<entity> server_marker=<match> conformance_failures=0 tools_listed=<greater than 0> schemas_checked=<equal> schemas_invalid=0 undeclared_refused=1`, followed by `adapters_run=2`.",
-    "breakage": "Unregister every tool from the adapter under test, leaving the endpoint live and authenticated and changing nothing else, then re-run both adapters.",
-    "expected_failure": "For that adapter conformance_failures stays 0 while tools_listed and schemas_checked become 0, the non-zero-catalogue assertion fails and the run exits non-zero naming it; the other adapter still reports a non-zero catalogue, so the report singles out the empty one rather than reporting the suite as broken. This is the state PASS.md A6 records for this capability, which a conformance-only check would have called green.",
-    "status": "claimed",
+    "criterion": "bash harness/tool-access/test.sh && python3 harness/tool-access/conformance.py --adapter dryrun --adapter second",
+    "expected": "Proposed tool, built with this implementation: `python3 tools/conformance_tool_access.py --adapter today --adapter second --revision 2026-07-28 --report out/tool-access-conformance.json`. Per adapter it asserts conformance_failures == 0, tools_listed > 0, schemas_checked == tools_listed with schemas_invalid == 0, undeclared_refused >= 1, and server_marker read back from the running server equal to the adapter selected in the binding; across adapters it asserts adapters_run >= 2. Earlier criterion named tools/conformance_tool_access.py, replaced by the harness on 2026-09-03.",
+    "breakage": "Append a product-name comment (`# breakage: litellm`) to the end of harness/tool-access/call.py, outside adapters/. Restored with `git checkout -- harness/tool-access/call.py`.",
+    "expected_failure": "test.sh's product-name scan fails with product_hits going from 0 to 1, and `conformance.py --adapter dryrun --adapter second` also reports the same non-zero product_hits and exits non-zero, since every conformance run scans for a product name outside adapters/.",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
       "F-a6-03"
     ],
-    "quote": "MCP endpoint | Live and authenticated"
+    "quote": "MCP endpoint | Live and authenticated",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "372cdc1",
+      "clean_exit": 0,
+      "clean_output": "ools_listed: schemas_checked=6\n  ok             schemas_invalid == 0: schemas_invalid=0\n  ok             undeclared_refused >= 1: undeclared_refused=1\n  ok             the server marker was read back: server_marker=catalogue:published-elsewhere\n  ok             the declared surface resolved at bind: surface_unresolved=[]\n  adapter=conformant tool server published outside this platform server_marker=match conformance_failures=0 tools_listed=6 schemas_checked=6 schemas_invalid=0 undeclared_refused=1 cases_not_exercised=0 product_hits=0\nadapters_run=2\nconformance PASSED: 34/34 cases, 2 binding(s)",
+      "breakage_exit": 1,
+      "breakage_output": ". no product name in the interface, the caller or the conformance run\n  FAIL product scan over the shipped tree exits 0 (expected 0, got 1)\n  FAIL product names leaked\n4. deliberate breakage: unregister every tool, changing nothing else\n  ok   the breakage run exits non-zero (1)\n  ok   every shape assertion still passes: conformance_failures stays 0\n  ok   tools_listed and schemas_checked went 5 -> 0\n  ok   the run fails on the count and names it\n  ok   health says empty, not green, over a live authenticated server\n  ok   11 cases reported NOT EXERCISED rather than passing\n\npassed 30, failed 6"
+    }
   },
   "composes_with": {
     "builds_on": [

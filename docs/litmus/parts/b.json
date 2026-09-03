@@ -8,11 +8,12 @@
       "standard": {
         "name": "A2A messaging · CloudEvents",
         "settledness": "contested",
-        "why": "Two published standards are live for the same job of getting a unit of work in, and neither has displaced the other. CloudEvents is a CNCF graduated project (graduated 25 January 2024) whose current revision v1.0.2 is backward compatible and unchanged inside the window, which makes it the settled envelope for the event and schedule doors. A2A reached v1.0 in April 2026 under the Linux Foundation with over 150 organisations, and v1.0.1 in May 2026 added an extension mechanism, which makes it the leading but recently-versioned choice for the external-agent door. The ecosystem map for 2026 still lists MCP, A2A, ACP and UCP as separate live protocols under institutional rather than technical convergence, both MCP and A2A having moved under the Linux Foundation's Agentic AI Foundation. So the future state names the property to hold, one normalised envelope behind every door, rather than a winner.",
+        "why": "Two published standards are live for the same job of getting a unit of work in, and neither has displaced the other. CloudEvents is a CNCF graduated project (graduated 25 January 2024) whose current revision v1.0.2 is backward compatible and unchanged inside the window, which makes it the settled envelope for the event and schedule doors. A2A reached v1.0 on 12 March 2026, the release that also introduced signed agent cards, was announced as having over 150 supporting organisations under the Linux Foundation on 9 April 2026, and added an extension mechanism in v1.0.1 in May 2026, which makes it the leading but recently-versioned choice for the external-agent door. The ecosystem map for 2026 still lists MCP, A2A, ACP and UCP as separate live protocols under institutional rather than technical convergence, both MCP and A2A having moved under the Linux Foundation's Agentic AI Foundation. So the future state names the property to hold, one normalised envelope behind every door, rather than a winner.",
         "cites": [
           "X-litmus-b-001",
           "X-litmus-b-002",
-          "X-litmus-b-005"
+          "X-litmus-b-005",
+          "X-litmus-b-026"
         ]
       },
       "future_state": {
@@ -29,13 +30,14 @@
         ]
       },
       "direction": {
-        "text": "Inside the window the external door consolidated onto foundation-governed protocols rather than converging into one: A2A reached v1.0 in April 2026 under the Linux Foundation with over 150 organisations and added an extension mechanism in v1.0.1, and both MCP and A2A now sit under the Agentic AI Foundation launched in December 2025, described as institutional rather than true protocol convergence. The event side did not move: CloudEvents stayed at a backward-compatible v1.0.2 with graduated status, and its distributed-tracing extension is the sanctioned way to carry context across the event door. What is being abandoned is explicit: Custom HTTP endpoints for agent communication in 2026 are creating technical debt. It would be an error now to define a bespoke intake payload per door, to let one door's wire format become the internal shape, or to treat the external-agent door as a private webhook contract that requires the caller to adopt code from this side.",
+        "text": "Inside the window the external door consolidated onto foundation-governed protocols rather than converging into one: A2A reached v1.0 on 12 March 2026, was announced at over 150 supporting organisations under the Linux Foundation on 9 April 2026, and added an extension mechanism in v1.0.1, and both MCP and A2A now sit under the Agentic AI Foundation launched in December 2025, described as institutional rather than true protocol convergence. The event side did not move: CloudEvents stayed at a backward-compatible v1.0.2 with graduated status, and its distributed-tracing extension is the sanctioned way to carry context across the event door. What is being abandoned is explicit: Custom HTTP endpoints for agent communication in 2026 are creating technical debt. It would be an error now to define a bespoke intake payload per door, to let one door's wire format become the internal shape, or to treat the external-agent door as a private webhook contract that requires the caller to adopt code from this side.",
         "origin": "sourced",
         "cites": [
           "X-litmus-b-001",
           "X-litmus-b-002",
           "X-litmus-b-005",
-          "X-litmus-b-006"
+          "X-litmus-b-006",
+          "X-litmus-b-026"
         ],
         "quote": "Custom HTTP endpoints for agent communication in 2026 are creating technical debt."
       },
@@ -270,6 +272,21 @@
             "X-litmus-b-007",
             "X-litmus-b-010"
           ]
+        },
+        {
+          "id": "document-validation-q7",
+          "angle": "depth",
+          "question": "Proposed: Is each boundary schema versioned in its own right, separately from the dialect it is written in, and what does a document written to the previous version of a schema receive once that schema changes?",
+          "evidence_expected": "One schema change carried through: both versions with their identifiers, how an incoming document declares which version it was written to, and the failure object returned for a document that was valid under the old version.",
+          "aligned_looks_like": "Every boundary schema carries its own version identifier distinct from the dialect declaration; a document names the version it targets; a change that breaks an older document yields a typed failure naming the schema, the version and the location that no longer validates, and any period during which both versions are accepted is declared.",
+          "misaligned_looks_like": "Schemas are edited in place with no version of their own, so a change silently rejects documents that were valid the day before; the only version anywhere is the dialect's; the rejection says the document is invalid without saying which version judged it.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-09",
+            "F-b1-03",
+            "F-b4-07",
+            "X-litmus-b-007"
+          ]
         }
       ],
       "gaps": [
@@ -400,8 +417,8 @@
           "id": "telemetry-q6",
           "angle": "direction",
           "question": "Proposed: Is the version of the generative-AI attribute conventions being emitted declared in one place, with a stated way to absorb a rename, given that this vocabulary is pre-stable inside the window?",
-          "evidence_expected": "The single declaration of the emitted convention version, and the record of one convention change absorbed, or a written statement of how one would be.",
-          "aligned_looks_like": "The version is pinned and declared once; a rename upstream is a configuration change and old and new names can be emitted during a transition.",
+          "evidence_expected": "The single declaration of the emitted convention version, and the record of one convention change actually absorbed: the change set, and exported signals from before, during and after the transition.",
+          "aligned_looks_like": "The version is pinned and declared once; a rename upstream was absorbed as a configuration change, with old and new names emitted together during the exercised transition. A written statement of how a rename would be absorbed, with no transition ever exercised, is exists rather than aligned.",
           "misaligned_looks_like": "Convention attribute names are hard-coded across many components with no version recorded, or the vocabulary is treated as stable and pinned to nothing, so an upstream rename silently breaks dashboards.",
           "origin": "proposed",
           "cites": [

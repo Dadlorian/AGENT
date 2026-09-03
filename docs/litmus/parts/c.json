@@ -164,16 +164,15 @@
         ]
       },
       "future_state": {
-        "text": "Every recurring unit of work is declared as a recurrence rule in the standard grammar, stored with an explicit start instant and a named time zone, never as a platform-specific interval string, so that the same rule parsed by any conforming implementation producing the same result is a property the build can rely on when it moves hosts. A schedule is durable, addressable platform state - creatable, inspectable, pausable, editable and backfillable through the same interface at any entry - rather than configuration on a host, and it carries its operational policy with it: what happens when a fire is missed, how far back catch-up may reach, whether overlapping runs are allowed or skipped, and how much jitter spreads a fleet of schedules. Expansion of a rule into concrete fire times sits behind a recurrence capability so the parser can be replaced without touching the core, and each fire produces a unit of work through the same intake path as any other entry, carrying an idempotency key derived from the schedule's identity and the nominal fire time so that a catch-up, an operator backfill and a retry of the same fire converge on one execution.",
-        "origin": "sourced",
+        "text": "The future state proposed for this capability: every recurring unit of work is declared as a recurrence rule in the standard grammar, stored with an explicit start instant and a named time zone, never as a platform-specific interval string, so that the same rule parsed by any conforming implementation producing the same result is a property the build can rely on when it moves hosts. A schedule is durable, addressable platform state - creatable, inspectable, pausable, editable and backfillable through the same interface at any entry - rather than configuration on a host, and its recurrence together with its operational policy - what happens when a fire is missed, how far back catch-up may reach, whether overlapping runs are allowed or skipped, and how much jitter spreads a fleet of schedules - is declared in one portable record that moves between runners intact, so that none of it is inherited from a particular runner's feature set. Expansion of a rule into concrete fire times sits behind a recurrence capability so the parser can be replaced without touching the core, and each fire produces a unit of work through the same intake path as any other entry, carrying - as this section proposes rather than sources - a replay identity derived from the schedule's identity and the nominal fire time so that a catch-up, an operator backfill and a retry of the same fire converge on one execution.",
+        "origin": "proposed",
         "cites": [
           "F-b3-15",
           "F-b3-16",
           "X-litmus-c-006",
           "X-litmus-c-007",
           "X-litmus-c-008"
-        ],
-        "quote": "the same rule parsed by any conforming implementation producing the same result"
+        ]
       },
       "direction": {
         "text": "Inside the window, scheduling moved from host configuration to durable, observable state owned by an execution service: Cadence shipped Schedules in June 2026, where a Schedule lives on the server and can be observed, paused, updated, and backfilled without touching workflow code, with catch-up bounded to a lookback window and dispatch governed by a declared overlap policy; jitter as thundering-herd protection is now discussed as standard practice for scheduled agent workloads. Recurrence-rule services extended the grammar to agent triggers, and conforming RFC 5545 libraries built on modern time-zone-aware date APIs (including RFC 7529 RSCALE support) landed in the window. What is being abandoned: bare per-platform cron strings as the source of truth, and timers with no record of the last fire. It would be an error now to hold schedules only in a host crontab or an in-process timer, to store a rule without its time zone, or to expand recurrence in UTC and treat local wall time as incidental, since the grammar's whole value is portable, zone-correct expansion.",
@@ -268,6 +267,20 @@
             "F-b3-15",
             "F-b1-04",
             "F-b3-18"
+          ]
+        },
+        {
+          "id": "scheduling-q7",
+          "angle": "direction",
+          "question": "Against the direction proposed for this section, is a schedule durable, inspectable state the platform owns rather than host configuration or an in-process timer, and does a fleet of schedules declare its overlap policy and spread its fires rather than arriving as one burst?",
+          "evidence_expected": "The stored set of schedules with what each one declares, the recorded last and next fire for one of them, and the distribution of actual fire times across many schedules sharing a single rule.",
+          "aligned_looks_like": "Schedules are records that can be listed, paused and edited while the platform runs, each carrying its catch-up bound and overlap policy; the last fire is recorded; many schedules on one rule fire spread across an interval by a declared jitter rather than at the same instant.",
+          "misaligned_looks_like": "Schedules live in host configuration or in an in-process timer and vanish with the process; nothing records the last fire, so a missed one cannot be detected; every schedule sharing a rule fires simultaneously; overlap is whatever the runner happens to do.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-15",
+            "X-litmus-c-006",
+            "X-litmus-c-008"
           ]
         }
       ],
@@ -447,16 +460,15 @@
         ]
       },
       "future_state": {
-        "text": "State is one append-only history behind a capability interface, not a file format: a write is an append of an immutable record to a named stream, admitted only if the caller's expected version is still current, so the store arbitrates a single logical writer per stream instead of trusting convention, and a torn or partial record is never visible to a reader. Integrity is stronger than a per-record hash link, because the append-only property of each log is achieved using Merkle Trees: a reader can be given an inclusion proof for one record and a consistency proof that the history it saw yesterday is a prefix of the history today, so an edit, a reorder and a truncation are all detectable, and detectable by an independent verifier that was not written by the platform. Retention is declared per stream, with snapshots or compaction bounding replay cost while the proof structure over the retained history survives, and deletion is itself a recorded, provable event rather than a silent gap. The read surface is stated as operations that cost planning actually needs - a record by identity, a stream from a version, and a materialised projection - so the contract mentions no file, path or layout, and an embedded log, an object store with conditional writes, or a transactional database can each serve behind it unchanged.",
-        "origin": "sourced",
+        "text": "The future state proposed for this boundary: state is one append-only history behind a capability interface, not a file format: a write is an append of an immutable record to a named stream, admitted only if the caller's expected version is still current, so the store arbitrates a single logical writer per stream instead of trusting convention, and a torn or partial record is never visible to a reader. Integrity is stronger than a per-record hash link, because the append-only property of each log is achieved using Merkle Trees: a reader can be given an inclusion proof for one record and a consistency proof that the history it saw yesterday is a prefix of the history today, so an edit, a reorder and a truncation are all detectable, and detectable by an independent verifier that was not written by the platform. Retention is declared per stream, with snapshots or compaction bounding replay cost while the proof structure over the retained history survives, and deletion is itself a recorded, provable event rather than a silent gap. The read surface is stated as operations that cost planning actually needs - as this section proposes rather than sources, a record by identity, a stream from a version, and a materialised projection - so the contract mentions no file, path or layout, and an embedded log, an object store with conditional writes, or a transactional database can each serve behind it unchanged. Every append carries the platform's guarantees with it, so a record names the actor, the correlation and the decision that admitted it whether or not the writer supplied them.",
+        "origin": "proposed",
         "cites": [
           "F-b3-17",
           "F-b5-05",
           "X-litmus-c-013",
           "X-litmus-c-014",
           "X-litmus-c-015"
-        ],
-        "quote": "the append-only property of each log is achieved using Merkle Trees"
+        ]
       },
       "direction": {
         "text": "Inside the window three things settled that a state design should now assume. First, conditional writes reached commodity object storage - S3 supports conditional writes using If-Match with ETag, and this pattern closely resembles a compare-and-swap (CAS) operation and enables optimistic concurrency control without locks - with nearly every other object store already offering preconditions, so a durable append-only log on plain storage with real single-writer arbitration is now ordinary rather than exotic, and write-ahead logs are being moved into the storage layer on that basis. Second, transparency-log technique (RFC 9162 Merkle inclusion and consistency proofs, already extended to key transparency and module mirrors) is being applied directly to agent audit history in 2026 research. Third, event-store practice has converged on expected-version optimistic concurrency, projections as the read surface, and snapshot or policy-driven compaction for retention. What is being abandoned: single-file, single-process state with no concurrency control, and integrity by chained hash alone with no proof of consistency or truncation. It would be an error now to write a contract in terms of a file layout, or to build a chain only the writer's own code can verify by re-reading the whole history.",
@@ -554,6 +566,23 @@
             "F-b5-05",
             "X-litmus-c-015"
           ]
+        },
+        {
+          "id": "state-persistence-q7",
+          "angle": "guarantees",
+          "question": "Against the proposed future state, which cross-cutting guarantees attach at the moment of an append - does every record name the actor and the delegation chain, the correlation and the decision that admitted the write, without the writer supplying them - and can any component append a record naming none of them?",
+          "evidence_expected": "One append record shown in full with the fields the platform stamped and the place on the write path where they are attached, plus the result of two attempts: appending through a component that supplies none of them, and writing to the underlying store directly.",
+          "aligned_looks_like": "Every record carries an actor, the delegation chain where one applies, a correlation identifier and the decision that admitted the write, all stamped on the shared append path; both bypass attempts are refused or are unreachable; any record read back answers who wrote it and under what authority.",
+          "misaligned_looks_like": "A record can be appended with no actor, or with an actor the caller chose for itself; the guarantee fields are optional and some writers omit them; a component reaches the underlying store directly, so a record exists that no guarantee ever touched.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-17",
+            "F-b2-06",
+            "F-b4-01",
+            "F-b4-03",
+            "F-b4-04",
+            "F-b4-06"
+          ]
         }
       ],
       "gaps": [
@@ -583,8 +612,8 @@
         ]
       },
       "future_state": {
-        "text": "Every unit of work is admitted with a ceiling attached by the platform before execution, derived from an estimate produced by pure planning and compared against a policy limit, so refusal happens before spend rather than being discovered afterwards; the ceiling is expressed in units the platform actually measures - tokens, currency, wall time, tool invocations - and is carried on the unit, not held in an account-level cap. Enforcement is continuous rather than periodic: code that checks cumulative token or cost spend before each API call and terminates the agent session when a defined ceiling is hit, with a second checkpoint at the capability boundary so the code inside the unit cannot bypass it, and with sub-units drawing from the parent's remaining ceiling rather than each receiving a fresh one, because multi-agent spend compounds rather than adding. Exhaustion terminates that unit and only that unit: siblings and the platform continue, any partial result is retained and recorded, and the caller receives a typed refusal naming the ceiling, the consumption and the unit - never a truncated success. A resumed, retried or replayed unit continues under the ceiling it had left, and the consumption of every unit is recorded against the same attributes telemetry uses, so the ceiling and the accounting cannot drift apart. The exit, if the accounting attributes are renamed or stabilise differently, is a mapping at the recording boundary rather than a change to where ceilings are enforced.",
-        "origin": "sourced",
+        "text": "The future state proposed for this concern: every unit of work is admitted with a ceiling attached by the platform before execution, derived from an estimate produced by pure planning and compared against a policy limit, so refusal happens before spend rather than being discovered afterwards; the ceiling is expressed in units the platform actually measures - tokens, currency, wall time, tool invocations - and is carried on the unit, not held in an account-level cap. Enforcement is continuous rather than periodic: code that checks cumulative token or cost spend before each API call and terminates the agent session when a defined ceiling is hit, with a second checkpoint at the capability boundary so the code inside the unit cannot bypass it, and with sub-units drawing from the parent's remaining ceiling rather than each receiving a fresh one, because multi-agent spend compounds rather than adding. Exhaustion terminates that unit and only that unit: siblings and the platform continue, any partial result is retained and recorded, and the caller receives a typed refusal naming the ceiling, the consumption and the unit - never a truncated success. A resumed, retried or replayed unit continues under the ceiling it had left - proposed here as a consequence of the ceiling riding on the unit, not as a sourced convention - and the consumption of every unit is recorded against the same attributes telemetry uses, so the ceiling and the accounting cannot drift apart. The exit, if the accounting attributes are renamed or stabilise differently, is a mapping at the recording boundary rather than a change to where ceilings are enforced.",
+        "origin": "proposed",
         "cites": [
           "F-b4-02",
           "F-b1-06",
@@ -592,8 +621,7 @@
           "X-litmus-c-016",
           "X-litmus-c-017",
           "X-litmus-c-019"
-        ],
-        "quote": "code that checks cumulative token or cost spend before each API call and terminates the agent session when a defined ceiling is hit"
+        ]
       },
       "direction": {
         "text": "Inside the window budget control moved from reporting to enforcement. The framing that settled is blunt: the only reliable cost control mechanism is one that enforces a ceiling during the session - not one that estimates costs upfront and hopes; run-scoped enforcement shipped in two major agent platforms a day apart, Anthropic in the session object and AWS at the gateway, which shows the layer is still being chosen while the requirement is not. Alongside it, pre-execution admission is established practice in infrastructure automation - the agent proposes, the estimate is computed, the policy rejects, and nothing is created - and practitioners now describe three layers, a pre-run cost check that can reject, a platform quota, and a hard account backstop, of which only the first two prevent spend rather than reporting it. Token accounting has a standard vocabulary in the OpenTelemetry GenAI conventions but those remain in Development status as of May 2026. What is being abandoned: monthly account caps as the only guard, and per-call limits that do nothing about a loop. It would be an error now to make the budget advisory, to check it only between top-level steps, or to give each spawned sub-agent a fresh ceiling, since sub-agent context feeds back into the orchestrator and compounds.",
@@ -690,6 +718,22 @@
             "F-b1-06",
             "X-litmus-c-019"
           ]
+        },
+        {
+          "id": "concern-budget-q7",
+          "angle": "boundary",
+          "question": "Against the proposed future state, is the unit of measure a declared mapping applied at one recording point, and can the source of measurement be replaced without moving any enforcement point - the exit this section names for a rename of the accounting attributes?",
+          "evidence_expected": "The single place raw usage figures are mapped into the unit a ceiling is expressed in, the list of places a ceiling is enforced, and the change set that replaced the measurement source with a different one, with the same run terminating at the same point before and after.",
+          "aligned_looks_like": "One mapping site names every attribute it consumes, so a rename is a change there and nowhere else; enforcement points import the measured unit and never the source; the swap touches wiring only and enforcement is unmoved and unchanged.",
+          "misaligned_looks_like": "Attribute names are read at each enforcement point, so a rename means editing all of them; the ceiling is expressed in whatever one provider happens to report; replacing the measurement source moves or breaks enforcement; the stated exit has never been exercised.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-02",
+            "F-b1-02",
+            "F-b1-04",
+            "F-b3-10",
+            "X-litmus-c-018"
+          ]
         }
       ],
       "gaps": [
@@ -711,13 +755,14 @@
       "standard": {
         "name": "— (no standard recorded; a platform-applied guarantee)",
         "settledness": "emerging",
-        "why": "Part B records no standard for the guarantee itself, and none governs it, but the direction is visible and converging inside the window. Multi-hop delegation has a standards-based expression - subject token plus nested act claims under RFC 8693 - and cross-organisation calls gained verifiable counterparty identity when A2A v1.0 introduced signed Agent Cards in January 2026. Audit practice has converged on recording two identities per action, the executing identity and the triggering identity, and on task-scoped ephemeral credentials of fifteen to thirty minutes rather than long-lived bearer tokens. Regulation arrived in the window too: the EU AI Act enters full application on 2 August 2026 and Article 12 requires automatic recording of events over a system's lifetime. No single specification ties these together into a guarantee a platform applies to every action, so the future state names the property and its exit: if the claim format changes, only the encoding of the chain changes, not the rule that every action names its actors.",
+        "why": "Part B records no standard for the guarantee itself, and none governs it, but the direction is visible and converging inside the window. Multi-hop delegation has a standards-based expression - subject token plus nested act claims under RFC 8693 - and cross-organisation calls gained verifiable counterparty identity when A2A v1.0, released on 12 March 2026 and so inside the window, introduced signed Agent Cards. Audit practice has converged on recording two identities per action, the executing identity and the triggering identity, and on task-scoped ephemeral credentials of fifteen to thirty minutes rather than long-lived bearer tokens. Regulation arrived in the window too: the EU AI Act enters full application on 2 August 2026 and Article 12 requires automatic recording of events over a system's lifetime. No single specification ties these together into a guarantee a platform applies to every action, so the future state names the property and its exit: if the claim format changes, only the encoding of the chain changes, not the rule that every action names its actors.",
         "cites": [
           "X-litmus-c-020",
           "X-litmus-c-021",
           "X-litmus-c-022",
           "X-litmus-c-023",
-          "X-litmus-c-024"
+          "X-litmus-c-024",
+          "X-litmus-c-025"
         ]
       },
       "future_state": {
@@ -734,14 +779,15 @@
         "quote": "the executing identity, which is the OAuth connection used to make the API call, and the triggering identity, which is the human whose message caused the agent to run"
       },
       "direction": {
-        "text": "Inside the window the requirement hardened from good practice into an audit and compliance obligation. The multi-hop position is now explicit: when an agent calls another agent, the provenance of who authorized the original action must travel with the delegation chain rather than be discarded at the first handoff, carried as a subject token plus nested act claims, with least privilege applied at the per-invocation level. Cross-organisation calls gained verifiable counterparty identity with signed Agent Cards in A2A v1.0 (January 2026). Enterprise architecture has settled on short-lived task-scoped credentials of fifteen to thirty minutes with rotation, per-agent identity governance, and a traceable line back to an accountable human with a way to shut the agent down instantly. The EU AI Act's full application on 2 August 2026, with Article 12's logging requirement, makes attribution a legal matter, not only an operational one. What is being abandoned: fleet-wide shared API keys, long-lived bearer tokens, and audit records whose actor is simply agent. It would be an error now to attribute an agent's actions to the human's own identity, because impersonation erases the acting party and makes the chain unauditable after the fact.",
+        "text": "Inside the window the requirement hardened from good practice into an audit and compliance obligation. The multi-hop position is now explicit: when an agent calls another agent, the provenance of who authorized the original action must travel with the delegation chain rather than be discarded at the first handoff, carried as a subject token plus nested act claims, with least privilege applied at the per-invocation level. Cross-organisation calls gained verifiable counterparty identity with signed Agent Cards in A2A v1.0, released on 12 March 2026; the widely-quoted April 2026 date is the 150-organisation adoption announcement rather than the release. Enterprise architecture has settled on short-lived task-scoped credentials of fifteen to thirty minutes with rotation, per-agent identity governance, and a traceable line back to an accountable human with a way to shut the agent down instantly. The EU AI Act's full application on 2 August 2026, with Article 12's logging requirement, makes attribution a legal matter, not only an operational one. What is being abandoned: fleet-wide shared API keys, long-lived bearer tokens, and audit records whose actor is simply agent. It would be an error now to attribute an agent's actions to the human's own identity, because impersonation erases the acting party and makes the chain unauditable after the fact.",
         "origin": "sourced",
         "cites": [
           "F-b4-03",
           "X-litmus-c-020",
           "X-litmus-c-022",
           "X-litmus-c-023",
-          "X-litmus-c-024"
+          "X-litmus-c-024",
+          "X-litmus-c-025"
         ],
         "quote": "the provenance of who authorized the original action must travel with the delegation chain rather than be discarded at the first handoff"
       },
@@ -762,10 +808,10 @@
         {
           "id": "concern-identity-q2",
           "angle": "depth",
-          "question": "The proposed future state turns on deep use, so: does each action record carry both the identity that executed it and the identity that caused it, plus the ordered chain of intervening actors, or a single conflated actor?",
-          "evidence_expected": "The action records from one run that passes through at least three actors before touching an external resource.",
-          "aligned_looks_like": "Executing and triggering identities are separate fields, the intervening actors appear in order, and each hop's authority is narrower than the one before.",
-          "misaligned_looks_like": "One actor field; or the chain flattened to the nearest caller; or the agent's actions recorded under the human's identity, which is impersonation.",
+          "question": "The proposed future state turns on deep use, so: in the stored record of an action - not in the credential that authorised it - are the executing identity and the triggering identity separate fields, with the intervening actors listed in order, and does the record still say so when read back long after the credential has expired?",
+          "evidence_expected": "The stored action records from one run that passes through at least three actors before touching an external resource, read back from the record store rather than from the request, together with the field that holds each actor.",
+          "aligned_looks_like": "The record itself carries executing and triggering identities as separate fields with the intervening actors in order; the ordering is recoverable from the record alone after the credentials it came from have expired; each recorded hop shows narrower authority than the one before.",
+          "misaligned_looks_like": "One actor field in the record; or the chain flattened to the nearest caller when it was written down; or the agent's actions recorded under the human's identity, which is impersonation; or the chain exists only in the credential and nothing durable retains it.",
           "origin": "proposed",
           "cites": [
             "F-b4-03",
@@ -805,10 +851,10 @@
         {
           "id": "concern-identity-q5",
           "angle": "depth",
-          "question": "The proposed future state turns on deep use, so: are the credentials behind these actions per-invocation and short-lived, and does revoking an agent's identity stop work that is already running under it?",
-          "evidence_expected": "Credential lifetimes and scopes for a sample of actions, and a revocation performed against an agent with work in flight, with the time until its next call fails.",
-          "aligned_looks_like": "Minutes-long, task-scoped credentials; revocation causes the next capability call to fail promptly and the unit to terminate with a typed refusal.",
-          "misaligned_looks_like": "One durable credential per agent or per deployment; revocation only prevents new work while in-flight work continues to completion.",
+          "question": "The proposed future state turns on deep use, so: when an identity is withdrawn while work is already running under it, does that work stop - and is the withdrawal itself recorded against the unit it stopped?",
+          "evidence_expected": "A revocation performed against an agent with work in flight: the time until its next capability call fails, what the unit did between the revocation and that failure, and the record written for the stopped unit.",
+          "aligned_looks_like": "The next capability call after the withdrawal fails, the unit terminates with a typed refusal naming the withdrawn identity, and the record shows who withdrew it and at which point the work stopped.",
+          "misaligned_looks_like": "Withdrawal prevents new work only, while in-flight work runs to completion under the identity that was taken away; or the work stops but nothing records why, so the stop is indistinguishable from a crash.",
           "origin": "proposed",
           "cites": [
             "F-b4-03",

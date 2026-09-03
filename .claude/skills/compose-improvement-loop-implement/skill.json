@@ -2,7 +2,7 @@
   "name": "compose-improvement-loop-implement",
   "layer": "compose",
   "wave": 9,
-  "description": "How the self-improvement loop is actually built here: this repository's own ceremony review-and-improve pass as the first executor - a live session that edits the target file in place and commits, a reviewer's judgment standing in for a gate - a second executor whose sole promotion authority is cap-evaluation's passed outcome and whose only write path is cap-capability-registry's publish, with no session attached; the migration between them; where correlation, an idempotency lease and provenance attach to one candidate iteration; and a definition of done run against this repository's own tools/ceremony_check.py. Load it when writing or reviewing code that seeds, gates or promotes a candidate, when deciding what the second executor should be, when a promotion has to survive with no session attached, when asking whether closed ceremonies already conform to compose-improvement-loop's contract, or when a finding is applied by editing a file directly instead of through a gate.",
+  "description": "How the self-improvement loop is actually built here: this repository's own ceremony review-and-improve pass as the first executor - a live session that edits the target file in place and commits, a reviewer's judgment standing in for a gate - a second executor whose sole promotion authority is cap-evaluation's passed outcome and whose only write path is cap-capability-registry's publish, with no session attached; the migration between them; where correlation, an idempotency lease and provenance attach to one candidate iteration; and a definition of done run against this composition's own conformance harness. Load it when writing or reviewing code that seeds, gates or promotes a candidate, when deciding what the second executor should be, when a promotion has to survive with no session attached, when asking whether closed ceremonies already conform to compose-improvement-loop's contract, or when a finding is applied by editing a file directly instead of through a gate.",
   "purpose": {
     "text": "Proposed: build compose-improvement-loop's candidate lifecycle on two executors that differ in who or what holds promotion authority, and stage the migration from the review-and-improve loop this repository already runs, which closes findings but gates and promotes neither through cap-evaluation nor cap-capability-registry.",
     "origin": "proposed",
@@ -67,23 +67,23 @@
     ],
     "invariants": [
       {
-        "text": "compose-improvement-loop already states that promote_revision writes only to cap-capability-registry, never to a target's checked-out file. Today's executor is non-conformant on exactly this point: build-ceremony's improve record applies a finding by editing the target skill.json and its render directly and committing, which is the in-place edit the ideal facet's invariant on X-cap-capability-registry-007 forbids.",
+        "text": "promote_revision publishes a new cap-capability-registry record and never writes a target's checked-out file. compose-improvement-loop owns this invariant and this build inherits it unchanged: an executor whose promotion is a commit against the target file has not met it, however green its own checks are, which is why stage 3 of the migration below exists.",
         "origin": "sourced",
         "sources": [
-          "T-t4-04"
+          "X-cap-capability-registry-007"
         ],
-        "quote": "improves the skills that produced it, and the loop continues"
+        "quote": "new versioned records rather than in-place edits"
       },
       {
-        "text": "compose-improvement-loop already states that gate_revision runs cap-evaluation's evaluate before a candidate may be promoted. Today's executor has no such call: the review record's severity field and a reviewer's prose stand in for a gate, and nothing here can return outcome=failed on measured evidence the way cap-evaluation's evaluate can.",
+        "text": "A gate outcome, not a reviewer's approval, authorises a promotion: gate_revision runs cap-evaluation's evaluate and only outcome=passed may reach promote_revision. compose-improvement-loop owns that operation and this build inherits it unchanged; an executor that cannot return failed on measured evidence has no gate at all, whatever its review record carries.",
         "origin": "sourced",
         "sources": [
-          "T-t4-04"
+          "X-end-to-end-040"
         ],
-        "quote": "improves the skills that produced it, and the loop continues"
+        "quote": "A regression suite is the gate that makes a self-improvement loop safe to run automatically."
       },
       {
-        "text": "build-evidence-record already states that a result produced from a dirty tree may never carry the label measured, because nobody else can reproduce the tree it ran against (F-a5-04). The consequence owned here: the baseline and breakage runs of tools/ceremony_check.py recorded in this skill's definition of done ran against a working tree where kb/ledger.jsonl and state/lessons.jsonl - two of the three files that command reads - carried unrelated uncommitted changes from a concurrent session, so both runs are labelled claimed despite being real, observed output.",
+        "text": "A result produced from a dirty tree may never carry the label measured, because nobody else can reproduce the tree it ran against. build-evidence-record owns that rule; on this build it decides the status of the Adapters table below, and it is why the today row there is claimed rather than measured.",
         "origin": "sourced",
         "sources": [
           "F-a5-04"
@@ -106,12 +106,13 @@
     {
       "step": 1,
       "action": "Name today's two non-conformances precisely before building anything: no gate_revision call exists, so a reviewer's judgment is the only authority a finding is applied on; and promote_revision writes the target skill.json in place through a git commit, so there is no rollback_to and no prior version to resolve back to if the applied change regresses.",
-      "why": "compose-improvement-loop already states both as invariants of its own contract, under this same quote (T-t4-04); migration begins by naming the gap the thing being wrapped actually has, not by assuming it is close enough to conform.",
+      "why": "compose-improvement-loop owns both of these as invariants of its own contract; this step only locates them in the executor being wrapped, because a migration begins by naming the gap in what already runs rather than by proposing to replace it.",
       "origin": "sourced",
       "sources": [
+        "F-part-c-11",
         "T-t4-04"
       ],
-      "quote": "improves the skills that produced it, and the loop continues"
+      "quote": "Do not propose replacing what runs."
     },
     {
       "step": 2,
@@ -144,7 +145,7 @@
     {
       "step": 5,
       "action": "Wire the cross-cutting concerns to the candidate iteration, not to the section: re-stamp correlation attributes on every candidate's spans and CandidateOutcome, take an idempotency lease on promote_revision so a re-delivered passed EvaluationReport cannot publish a second registry record for the same candidate_id, and record provenance per artifact a promotion produces.",
-      "why": "Correlation must ride on an explicit resource attribute set at dispatch, which agentic-stack records as the measured A7 finding; a candidate iteration is a dispatch boundary, and promote_revision is exactly the step whose retry could otherwise double-publish.",
+      "why": "xc-correlation owns the dispatch-attribute rule, xc-idempotency-lease the keyed lease and xc-provenance-chain the per-artifact record; this step only says where the three attach in this composition. Correlation must ride on an explicit resource attribute set at dispatch, which agentic-stack records as the measured A7 finding; a candidate iteration is a dispatch boundary, and promote_revision is exactly the step whose retry could otherwise double-publish.",
       "origin": "sourced",
       "sources": [
         "F-a7-02"

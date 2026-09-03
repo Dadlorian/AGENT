@@ -232,15 +232,26 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "Proposed tool, run once per registry in one invocation: `python3 tools/agent_conformance.py --profiles examples/end-to-end/agents.json --units 20 --registry in-process --report out/agent-conformance-in-process.json && python3 tools/agent_conformance.py --profiles examples/end-to-end/agents.json --units 20 --registry remote --report out/agent-conformance-remote.json`. Assert adapters_run == 2, units_checked == 20 on each, and criterion_leaks == 0, tool_mismatches == 0, undeclared_skills == 0 on both.",
-    "expected": "in-process: units_checked=20, criterion_leaks=0, tool_mismatches=0, undeclared_skills=0; remote: units_checked=20, criterion_leaks=0, tool_mismatches=0, undeclared_skills=0; adapters_run=2; exit 0",
-    "breakage": "In the in-process registry-binding, skip the call that registers a unit's declared tools[] with the tool-access endpoint before requesting its microVM - admit the unit anyway, with the profile's tools[] recorded only in the admission plan and never passed to the endpoint.",
-    "expected_failure": "tool_mismatches becomes non-zero for every unit admitted through the in-process registry, since the endpoint's actual registered set stays empty while the admission plan claims a non-empty list: `FAIL: unit code-fixer-0007 declared 3 tools, endpoint has 0 registered`, tool_mismatches=20 on that adapter, while criterion_leaks and undeclared_skills stay 0 on the same run and the remote registry's run stays green throughout - isolating the fault to the tool-registration binding rather than to compose-agent's contract. Status claimed: tools/agent_conformance.py, the profile registry and the tool-registration call do not exist in this repository yet, and the tool-access endpoint currently has zero tools registered (F-a6-03), so neither run has been executed.",
-    "status": "claimed",
+    "criterion": "bash harness/linked/test.sh && ADAPTER_CONTAINMENT=second ADAPTER_GATEWAY=second ADAPTER_TRACE=second ADAPTER_WORKFLOW=second python3 harness/linked/conformance.py --report out/linked-swap.json",
+    "expected": "Measured by tools/measure.py at eaca633: exit 0; last lines: counters: {\"doors_checked\": 4, \"manifests_distinct\": 1, \"subjects_distinct\": 1, \"typed_refusals\": 4, \"replay_noops\": 4, \"traces_reassembled\": 4} | verdict pass: 23 of 23 checks pass",
+    "breakage": "In harness/linked/linked.py, break the replay check submit() makes against the ledger so a prior completion is never recognised: sed -i 's/prior = self.ledger.completed(env.idempotency_key)/prior = None/' harness/linked/linked.py. A replay of any door then re-runs the whole unit (re-dispatches the agent turn, re-calls the gateway, writes new durable records) instead of returning the stored result with zero new spend. Restore with git checkout -- harness/linked/linked.py.",
+    "expected_failure": "Measured by tools/measure.py at eaca633: exit 1; last lines:   FAIL the same suite passes again once the door is restored (expected 0, got 1) | passed 20, failed 12",
+    "status": "measured",
     "sources": [
       "F-a6-03"
     ],
-    "quote": "zero tools registered"
+    "quote": "zero tools registered",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "eaca633",
+      "clean_exit": 0,
+      "clean_output": "  ok   call.py exits 0 (0)\n  ok   dry-run conformance exits 0 (0)\n  ok   second-adapter conformance exits 0 (0)\n  ok   the breakage run exits non-zero (nonzero)\n...\n  ok   F1 no product is named in any file of this harness  [[]]\ncounters: {\"doors_checked\": 4, \"manifests_distinct\": 1, \"subjects_distinct\": 1, \"typed_refusals\": 4, \"replay_noops\": 4, \"traces_reassembled\": 4}\nverdict pass: 23 of 23 checks pass",
+      "breakage_exit": 1,
+      "breakage_output": "  ok   call.py exits 0 (0)\n  FAIL dry-run conformance exits 0 (expected 0, got 1)\n  FAIL verdict (expected pass, got fail)\n  FAIL no check failed (expected [], got [\"D1 a replay of every door returns the same result\", \"D2 a replay writes nothing and reaches no component\"])\n  FAIL replays that were no-ops (expected 4, got 0)\n  FAIL second-adapter conformance exits 0 (expected 0, got 1)\n  FAIL verdict after the swap (expected pass, got fail)\n  FAIL ADAPTER_CONTAINMENT=second (rc 1, markers moved 1)\n  FAIL ADAPTER_GATEWAY=second (rc 1, markers moved 1)\n  FAIL ADAPTER_TRACE=second (rc 1, markers moved 1)\n  FAIL ADAPTER_WORKFLOW=second (rc 1, markers moved 1)\n  ok   the breakage run exits non-zero (nonzero)\n...\n  FAIL the same suite passes again once the door is restored (expected 0, got 1)\n\npassed 20, failed 12",
+      "restored": true
+    },
+    "expected_design": "exit 0: the gate's 32 checks pass in dry run, the swap proof holds across all four components at once and one at a time, and the standalone conformance run against all-second adapters reports the same 23/23 cases green with four different markers.",
+    "expected_failure_design": "exit non-zero: D1 (a replay of every door returns the same result) and D2 (a replay writes nothing and reaches no component) both fail, with the durable/dispatch/unit deltas on replay now equal to the original run's deltas instead of [0,0,0]; every per-door and per-component check (A, B, C, E, F) stays green, isolating the fault to the idempotent-replay seam rather than to any one of the four components."
   },
   "composes_with": {
     "builds_on": [

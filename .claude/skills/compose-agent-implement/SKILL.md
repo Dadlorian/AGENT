@@ -108,11 +108,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | Proposed tool, run once per registry in one invocation: `python3 tools/agent_conformance.py --profiles examples/end-to-end/agents.json --units 20 --registry in-process --report out/agent-conformance-in-process.json && python3 tools/agent_conformance.py --profiles examples/end-to-end/agents.json --units 20 --registry remote --report out/agent-conformance-remote.json`. Assert adapters_run == 2, units_checked == 20 on each, and criterion_leaks == 0, tool_mismatches == 0, undeclared_skills == 0 on both. |
-| Expected | in-process: units_checked=20, criterion_leaks=0, tool_mismatches=0, undeclared_skills=0; remote: units_checked=20, criterion_leaks=0, tool_mismatches=0, undeclared_skills=0; adapters_run=2; exit 0 |
-| Deliberate breakage | In the in-process registry-binding, skip the call that registers a unit's declared tools[] with the tool-access endpoint before requesting its microVM - admit the unit anyway, with the profile's tools[] recorded only in the admission plan and never passed to the endpoint. |
-| Expected failure | tool_mismatches becomes non-zero for every unit admitted through the in-process registry, since the endpoint's actual registered set stays empty while the admission plan claims a non-empty list: `FAIL: unit code-fixer-0007 declared 3 tools, endpoint has 0 registered`, tool_mismatches=20 on that adapter, while criterion_leaks and undeclared_skills stay 0 on the same run and the remote registry's run stays green throughout - isolating the fault to the tool-registration binding rather than to compose-agent's contract. Status claimed: tools/agent_conformance.py, the profile registry and the tool-registration call do not exist in this repository yet, and the tool-access endpoint currently has zero tools registered (F-a6-03), so neither run has been executed. |
-| Status | claimed |
+| Criterion | bash harness/linked/test.sh && ADAPTER_CONTAINMENT=second ADAPTER_GATEWAY=second ADAPTER_TRACE=second ADAPTER_WORKFLOW=second python3 harness/linked/conformance.py --report out/linked-swap.json |
+| Expected | Measured by tools/measure.py at eaca633: exit 0; last lines: counters: {"doors_checked": 4, "manifests_distinct": 1, "subjects_distinct": 1, "typed_refusals": 4, "replay_noops": 4, "traces_reassembled": 4} \| verdict pass: 23 of 23 checks pass |
+| Deliberate breakage | In harness/linked/linked.py, break the replay check submit() makes against the ledger so a prior completion is never recognised: sed -i 's/prior = self.ledger.completed(env.idempotency_key)/prior = None/' harness/linked/linked.py. A replay of any door then re-runs the whole unit (re-dispatches the agent turn, re-calls the gateway, writes new durable records) instead of returning the stored result with zero new spend. Restore with git checkout -- harness/linked/linked.py. |
+| Expected failure | Measured by tools/measure.py at eaca633: exit 1; last lines:   FAIL the same suite passes again once the door is restored (expected 0, got 1) \| passed 20, failed 12 |
+| Status | measured |
 | Evidence | `F-a6-03` "zero tools registered" |
 
 ## Composes with

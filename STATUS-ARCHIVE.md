@@ -54,4 +54,4 @@
 | 58 | Phase 0: owner decisions | Sticks the environment blocks are recorded absent | Done | Standard stick absent on 16 elements | 2026-09-03 873cb2b |
 | 59 | Phase 1: build disciplines | Ceremony closes with every stick met or recorded absent | Done | 12 skills at zero warnings, 10 measured | 2026-09-03 16d354c |
 | 60 | Phase 2: capabilities | Each element has a guide, a measured run and a sourced skill | Done | 16 of 16 elements accepted, 37 findings applied | 2026-09-03 e8caef0 |
-| 61 | Phase 3: core, seams, cross-cutting | Ceremony closes with every stick met or recorded absent | Done | 36 skills at zero warnings, 21 measured | 2026-09-03 cdec0de |
+| 61 | Phase 3: core, seams, cross-cutting | Ceremony closes with every stick met or recorded absent | Done | 36 skills at zero warnings, 18 measured | 2026-09-03 cdec0de |

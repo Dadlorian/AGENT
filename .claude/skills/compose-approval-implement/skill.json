@@ -349,16 +349,27 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.5 row M3, made precise and run over the wire pair above: `python3 tools/conformance/approval_gate.py --wire parked-item --wire queued-inbox --deliveries 10 --case approve --case edit --case reject --case return --case expire --late-decision --kill-between-ask-and-decision --report out/approval.json` (proposed tool, built with the first wire), the wire selected by configuration with no code edit between runs. Per wire it asserts `gates_parked == 5`, `views_missing == 0`, `resumes_per_gate_max == 1` under ten deliveries of each decision, `resumed_on_same_correlation == 4`, `return_reentered_named_step == 1`, `expired_gates == 1` returning the registered `deadline-exceeded`, `late_decisions_applied == 0`, `sweeper_source == \"scheduling-occurrence\"`, and `lease_boundary_observed == \"resume-seam\"` read from the granted lease record rather than from the configured binding; across wires it asserts `wires_run >= 2`.",
-    "expected": "exit 0 with one line per wire of the form `wire=<entity> gates_parked=5 views_missing=0 resumes_per_gate_max=1 resumed_on_same_correlation=4 return_reentered_named_step=1 expired_gates=1 late_decisions_applied=0 sweeper_source=scheduling-occurrence lease_boundary_observed=resume-seam`, followed by `wires_run=2`.",
-    "breakage": "Move the lease acquisition out of the shared resume seam and into the parked-item wire's own handler - one binding moved, the lease itself, the gate record, the deadline occurrence and the actor binding all left as they are - and re-run the same command.",
-    "expected_failure": "exit non-zero with `resumes_per_gate_max=10` and `late_decisions_applied=1` on the queued-inbox wire only, whose redeliveries now reach the outcome without passing a claim, while the parked-item wire still reports 1 and 0 because the claim moved into its handler; `lease_boundary_observed` reads `wire:parked-item` on one wire and is absent on the other. Everything else holds: `gates_parked` is still 5, `views_missing` still 0, `expired_gates` still 1, `sweeper_source` unchanged and `wires_run` still 2 - which is what tells a reader the fault was where the claim was bound and not whether the guarantee exists. Claimed: the tool, the fixture and the second wire do not exist here and neither run has been performed.",
-    "status": "claimed",
+    "criterion": "bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second",
+    "expected": "Measured by tools/measure.py at eaca633: exit 0; last lines: adapter=second executor_marker=queue-state-machine/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28 | adapters_run=2 distinct_markers=2",
+    "breakage": "In harness/workflow/adapters/dryrun.py, break the redelivery dedup in record_decision so a prior gate-decided record is never recognised as a duplicate: sed -i 's/for r in prior)/for r in [])/' harness/workflow/adapters/dryrun.py. Ten deliveries of the same decision then each re-apply instead of the first one landing and the rest being no-ops. Restore with git checkout -- harness/workflow/adapters/dryrun.py.",
+    "expected_failure": "Measured by tools/measure.py at eaca633: exit 1; last lines:   FAIL the same suite passes again once the key is restored (expected 0, got 1) | passed 18, failed 5",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
       "F-b1-04"
     ],
-    "quote": "the second exists to prove the first is not load-bearing"
+    "quote": "the second exists to prove the first is not load-bearing",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "eaca633",
+      "clean_exit": 0,
+      "clean_output": "  ok   call.py exits 0 (0)\n  ok   dry-run conformance exits 0 (0)\n  ok   the breakage run exits non-zero (nonzero)\n...\nadapter=dryrun executor_marker=in-process-journal/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28\nadapter=second executor_marker=queue-state-machine/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28\nadapters_run=2 distinct_markers=2",
+      "breakage_exit": 1,
+      "breakage_output": "  ok   call.py exits 0 (0)\n  FAIL dry-run conformance exits 0 (expected 0, got 1)\n  FAIL every check passed (expected [], got [{\"check\": \"F ten deliveries of one decision resume the run once\", \"detail\": \"applied=10\"}])\n  FAIL before: dry-run adapter (expected 0, got 1)\n  FAIL both executors in one report (expected 0, got 1)\n  ok   the breakage run exits non-zero (nonzero)\n  FAIL the same suite passes again once the key is restored (expected 0, got 1)\n...\n  FAIL the same suite passes again once the key is restored (expected 0, got 1)\n\npassed 18, failed 5",
+      "restored": true
+    },
+    "expected_design": "exit 0: the gate's 23 checks pass (including E approve/edit/reject/return, F ten deliveries resume once, G expiry plus a late no-op decision), the swap proof holds across two executor markers, and the standalone conformance run reports adapters_run=2 with the parked-gate cases green on both.",
+    "expected_failure_design": "exit non-zero: check F (ten deliveries of one decision resume the run once) fails with applied=10 instead of 1, which fails out/before.json's zero-failures check inside test.sh and stops the gate short; every other case (gate parking, expiry, return-with-notes re-entry, the swap markers) is unaffected, isolating the fault to the resume seam's decision dedup rather than to parking or expiry."
   },
   "composes_with": {
     "builds_on": [

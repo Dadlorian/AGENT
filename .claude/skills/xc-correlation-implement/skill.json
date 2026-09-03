@@ -314,16 +314,25 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.4 row X5, made precise and run over the adapter pair above: `python3 tools/conformance/correlation_audit.py --adapter in-process-sdk --report out/x5-a.json` then the same command with `--adapter pipeline-processor --report out/x5-b.json` (proposed tool), the adapter chosen by configuration with no code edit between runs. Each run enters a depth-3 task tree once as a human, once as an agent and once as an event, collects every span, log record and problem object recorded for that run identifier, and both reports must validate against the CorrelationConformanceReport shape above and assert, per entry and per signal kind, `missing_run_id == 0`, `missing_root_dispatch_id == 0` and `signals_checked > 0`, plus `levels_covered == 3` and `run_id_groups == 1`; `distinct_trace_ids` is reported and never constrained. Across runs it asserts `adapters_run == 2` and `selected_by == \"configuration\"`.",
-    "expected": "both runs exit 0; each report shows `entries_run == 3`, and for every entry and every signal kind `missing_run_id == 0`, `missing_root_dispatch_id == 0` and `signals_checked > 0`, with `levels_covered == 3` and `run_id_groups == 1`; the merged report shows `adapters_run == 2` and `selected_by == \"configuration\"`, and both reports carry an `evidence_record_ref`.",
-    "breakage": "Remove the re-stamp at the child-dispatch boundary in the platform's dispatch path so a sub-agent emits without re-stamping the resource attributes and relies on parentage instead, leaving both adapters, the fixtures and the command untouched.",
-    "expected_failure": "both runs exit 1 with `missing_run_id` equal to the count of records emitted below the top level, `levels_covered == 1` and `run_id_groups` greater than 1, identically under each adapter, which is what locates the fault in the platform's dispatch path rather than in either implementation; this reproduces PASS.md A7 finding 1. A run where the in-process adapter still exits 0 means the audit read the trace tree to fill the field in; a run where only the pipeline adapter fails means the check was written against the hosted service's query surface. Claimed: no correlation record is stamped anywhere today, the pipeline adapter is not deployed, typed failure bodies do not exist so the problem-object count cannot yet reach `signals_checked > 0`, and the audit tool does not exist, so neither run has been performed here and the check starts red by construction.",
-    "status": "claimed",
+    "criterion": "bash harness/observability/test.sh",
+    "expected": "exit 0, `passed 37, failed 0` (dryrun conformance, the swap proof merging dryrun and second by configuration with adapters_run=2 selected_by=configuration, then the deliberate break-stamp case). Proposed tool (not run): python3 harness/observability/conformance.py --adapter in-process-sdk --report out/x5-a.json then --adapter pipeline-processor --report out/x5-b.json (adapter names as PASS.md A7 calls them), asserting missing_run_id == 0, missing_root_dispatch_id == 0, signals_checked > 0, levels_covered == 3, run_id_groups == 1 per entry and per signal kind, and across runs adapters_run == 2, selected_by == \"configuration\" (docs/decomposition.md section 3.4 row X5).",
+    "breakage": "sed -i '71s#.*#        if level > 0:#' harness/observability/call.py",
+    "expected_failure": "test.sh exits 1 at step 1 already: the dispatch-tree caller re-stamps every level below the root unconditionally (the break_stamp gate is gone), so the clean dryrun run drops levels_covered to 1, run_id_groups above 1, and spans_missing_run_id above 0 before the swap proof or the deliberate breakage step is even reached (26 ok, 11 failed); git checkout -- harness/observability/call.py restores.",
+    "status": "measured",
     "sources": [
       "F-a7-02",
       "F-a6-06"
     ],
-    "quote": "A depth-3 task tree produces three unrelated root traces."
+    "quote": "A depth-3 task tree produces three unrelated root traces.",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "fb96f80",
+      "clean_exit": 0,
+      "clean_output": " breakage (1)\n5. the failure path answers with problem details, never an exception\n  ok   unconfigured live adapter exits 2 (2)\n  ok   answer is problem details\n  ok   typed from the closed registry\n  ok   no traceback reached the caller\n6. the boundary holds in the source, not only at runtime\n  ok   no product name in interface.py, call.py or conformance.py\n  ok   caller code is 17 lines (under 40)\n  ok   the caller names no file in the adapter's own storage\n  ok   parentage is named in the interface only to forbid it\n  ok   the unit shape has nowhere to put a parent span\n\npassed 37, failed 0",
+      "breakage_exit": 1,
+      "breakage_output": "breakage (1)\n5. the failure path answers with problem details, never an exception\n  ok   unconfigured live adapter exits 2 (2)\n  ok   answer is problem details\n  ok   typed from the closed registry\n  ok   no traceback reached the caller\n6. the boundary holds in the source, not only at runtime\n  ok   no product name in interface.py, call.py or conformance.py\n  ok   caller code is 17 lines (under 40)\n  ok   the caller names no file in the adapter's own storage\n  ok   parentage is named in the interface only to forbid it\n  ok   the unit shape has nowhere to put a parent span\n\npassed 26, failed 11",
+      "restored": true
+    }
   },
   "composes_with": {
     "builds_on": [

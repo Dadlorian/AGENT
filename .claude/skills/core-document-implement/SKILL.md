@@ -164,11 +164,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | Proposed tool, built with this component: `python3 tools/document_roundtrip.py --binding bindings/today.json --binding bindings/second.json --corpus fixtures/ --dispatch-log out/recorded-dispatch-requests.jsonl --report out/document-roundtrip.json`. It asserts, per binding, documents_round_tripped >= 21 with byte_mismatches == 0, and across bindings adapters_run >= 2, digest_mismatches == 0 and criterion_leaks == 0. |
-| Expected | exit 0, one line per binding of the form `binding=<role> documents_round_tripped=21 byte_mismatches=0`, then `adapters_run=2 digest_mismatches=0 criterion_leaks=0`. |
-| Deliberate breakage | Make the store in the role today re-serialise the document on write - sort its keys and drop insignificant whitespace - and change nothing else. |
-| Expected failure | The bytes returned by that store no longer equal the bytes it was given, byte_mismatches becomes non-zero for that binding, the two bindings return different digests for the same declaration so digest_mismatches becomes non-zero, and the run exits non-zero while the other binding still reports byte_mismatches=0 - so the report names which store broke rather than only that something did. |
-| Status | claimed |
+| Criterion | bash harness/document-validation/test.sh && python3 harness/document-validation/conformance.py --adapter dryrun --adapter second |
+| Expected | test.sh: exit 0, `passed <n>, failed 0`; conformance.py: exit 0, `conformance PASSED: 28/28 cases, 2 binding(s)`, one binding=dryrun and one binding=second line each showing cases=14 passed=14 product_hits=0. Proposed tool (not run): python3 tools/document_roundtrip.py --binding bindings/today.json --binding bindings/second.json --corpus fixtures/ --dispatch-log out/recorded-dispatch-requests.jsonl --report out/document-roundtrip.json, asserting per binding documents_round_tripped >= 21 with byte_mismatches == 0, and across bindings adapters_run >= 2, digest_mismatches == 0 and criterion_leaks == 0. |
+| Deliberate breakage | sed -i '28s#.*#DIALECT_2020_12 = "https://json-schema.org/draft/2020-12/schema-broken"#' harness/document-validation/interface.py |
+| Expected failure | conformance.py exits 1: both bindings refuse every schema-carrying case as dialect-unsupported because the shared dialect constant no longer matches what the on-disk schemas declare, dropping to 6/28 cases (3 passed per binding, cases_passed=3 each), and test.sh's own dialect checks (step 1, step 4 product-scan aside) fail too; git checkout -- harness/document-validation/interface.py restores. |
+| Status | measured |
 | Evidence | `F-part-c-04`, `F-b1-04` "the deliberate breakage that proves the check can fail" |
 
 ## Composes with

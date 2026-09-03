@@ -268,7 +268,7 @@
         "F-b3-17",
         "F-b1-04"
       ],
-      "quote": "object store \u00b7 relational \u00b7 event log"
+      "quote": "object store · relational · event log"
     },
     {
       "step": 6,
@@ -373,20 +373,29 @@
         "F-b3-17",
         "F-b1-04"
       ],
-      "quote": "object store \u00b7 relational \u00b7 event log"
+      "quote": "object store · relational · event log"
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.1 row C5, run across both bindings. Proposed tool, built with this component: `python3 tools/ledger_conformance.py --binding bindings/today.json --binding bindings/second.json --corpus fixtures/runs/ --replay-key <k> --criteria criteria.txt --report out/ledger-conformance.json`. Per binding it appends the corpus, folds it back from empty and asserts `entries_checked > 0`, `head_match == true`, `terminal_records_for_key == 1` and `records_appended_on_replay == 0`; across bindings it asserts `adapters_run >= 2`, `replay_answer_mismatches == 0` and `criterion_leaks == 0`.",
-    "expected": "exit 0, one line per binding of the form `binding=<role> entries_checked=<n> head_match=true terminal_records_for_key=1 records_appended_on_replay=0`, then `adapters_run=2 replay_answer_mismatches=0 criterion_leaks=0`.",
-    "breakage": "Make the binding in role today overwrite rather than append on a duplicate key - replace the entry that carries the key instead of appending the new one - and change nothing else.",
-    "expected_failure": "That binding's recomputed head no longer equals its stored head because the entries chained behind the overwritten one still commit to it, `head_match` becomes false for that role, the two bindings return different replay states for the duplicated key so `replay_answer_mismatches` becomes non-zero, and the run exits non-zero while the other binding still reports `head_match=true` - so the report names which store broke and at which sequence number, rather than only that something did.",
-    "status": "claimed",
+    "criterion": "bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second && bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second",
+    "expected": "each test.sh: exit 0, `passed <n>, failed 0`; provenance conformance.py: exit 0, `conformance PASSED: 26/26 cases, 2 binding(s)`; state-persistence conformance.py: exit 0, `conformance PASSED: 22/22 cases, 2 binding(s)`. Proposed tool (not run): python3 tools/ledger_conformance.py --binding bindings/today.json --binding bindings/second.json --corpus fixtures/runs/ --replay-key <k> --criteria criteria.txt --report out/ledger-conformance.json, asserting per binding entries_checked > 0, head_match == true, terminal_records_for_key == 1, records_appended_on_replay == 0, and across bindings adapters_run >= 2, replay_answer_mismatches == 0, criterion_leaks == 0 (docs/decomposition.md section 3.1 row C5).",
+    "breakage": "sed -i '43s#.*#DIGEST = re.compile(r\"^sha256:[0-9a-f]{63}$\")#' harness/provenance/interface.py",
+    "expected_failure": "provenance conformance.py exits 1: the dryrun binding cannot be reached at all (its 64-hex digests no longer match the narrowed 63-hex pattern, `could not be reached`), and every case that carries a subject digest is refused document-invalid with `subjects[0].digest must match sha256:<64 hex>`; git checkout -- harness/provenance/interface.py restores and the state-persistence half is untouched throughout.",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
       "F-b1-04"
     ],
-    "quote": "the deliberate breakage that proves the check can fail"
+    "quote": "the deliberate breakage that proves the check can fail",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "f6bd56a",
+      "clean_exit": 0,
+      "clean_output": "r: 2 record(s) of kind 'tagged' at size 18\n  ok   a consistency proof shows the log only grew: size 18 -> 19 verified as a pure extension\n  ok   redact drops the body but the record's proof still verifies: body dropped, record_id unchanged, the same proof still verifies\n  ok   an independent verifier, run as a subprocess, recomputes the same head: 20 records, external root matches the adapter's head, chain_break_at=-1\n  adapter=content-addressed merkle log over an object store (second adapter) cases=11 passed=11 appends=10 refusals=2 product_hits=0\nconformance PASSED: 22/22 cases, 2 binding(s)",
+      "breakage_exit": 1,
+      "breakage_output": "its 0 (0)\n  ok   0 hits outside adapters/\n4. deliberate breakage: the artifact is rebuilt and the statement is not\n  ok   the breakage run exits non-zero (1)\n  FAIL the verifier rejected it on the subject digest, not on our store (expected 0, got 1)\n  ..   Traceback (most recent call last):\n  ..     File \"<stdin>\", line 2, in <module>\n  ..   FileNotFoundError: [Errno 2] No such file or directory: 'out/break-1.json'\n4b. deliberate breakage: the signature is dropped from the envelope\n  ok   the breakage run exits non-zero on the second adapter too (1)\n  FAIL no reason given\n\npassed 10, failed 17",
+      "restored": true
+    }
   },
   "composes_with": {
     "builds_on": [

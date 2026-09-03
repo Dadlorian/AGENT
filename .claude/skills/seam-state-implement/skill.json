@@ -344,21 +344,30 @@
         "X-cross-structure-052",
         "E-swap-candidate-object-store"
       ],
-      "quote": "object store \u00b7 relational \u00b7 event log"
+      "quote": "object store · relational · event log"
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.3 row S2, made runnable over the migrated store: `python3 tools/conformance/state_seam.py --adapter jsonl-hash-chain --runs 2 --repeats 100 --report out/seam-state-a.json` then the same command with `--adapter merkle-object-store --report out/seam-state-b.json`, the adapter chosen by configuration with no code edit between runs. Each run asserts: (a) the consistency proof between run N's sealed head and run N+1's sealed head verifies with an external Merkle verifier invoked as a subprocess, given only the stored records and the two heads; (b) each of the eight projections, run 100 times at a fixed `at_head` while a second writer appends to the same run, returns 100 byte-identical results. Both reports validate against the StateSeamConformanceReport shape above and assert `projections_checked == 8`, `concurrent_appends_observed > 0`, `records_migrated > 0` and `selected_by == \"configuration\"`.",
-    "expected": "both runs exit 0; per adapter `consistency_proof_verified == true`, `external_verifier_exit == 0`, `distinct_results_per_projection == [1,1,1,1,1,1,1,1]`, `concurrent_appends_observed > 0`, and the merged report shows `adapters_run == 2` with the same `sealed_head_digest` under both adapters for the same record sequence.",
-    "breakage": "In the migration, let one stage copy a record's payload into the second adapter without its predecessor link, and re-seal the segment afterwards so the store still answers reads. Change nothing else: same command, same record sequence, same projections.",
-    "expected_failure": "Exit 1 on the migrated adapter only. `distinct_results_per_projection` stays `[1,1,1,1,1,1,1,1]` and `concurrent_appends_observed` stays greater than zero under both adapters, so the query surface is not what moved; the external verifier, given only the stored records and the two heads, exits non-zero there, `consistency_proof_verified` becomes false, the merged report's equal-`sealed_head_digest` assertion fails, and `records_migrated` stays greater than zero so the suite is known to have read the migrated store rather than a fresh one. This is the mirror of seam-state's breakage: there the integrity mechanism held while the query surface failed, here the query surface holds while one migration stage broke the chain. Claimed: neither adapter is written, tools/conformance/state_seam.py does not exist, no migration has been performed, and nothing here has been run on this platform.",
-    "status": "claimed",
+    "criterion": "bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second",
+    "expected": "test.sh: exit 0, `passed <n>, failed 0`; conformance.py: exit 0, `conformance PASSED: 22/22 cases, 2 binding(s)`. Proposed tool (not run): python3 tools/conformance/state_seam.py --adapter jsonl-hash-chain --runs 2 --repeats 100 --report out/seam-state-a.json then --adapter merkle-object-store --report out/seam-state-b.json, asserting projections_checked == 8, concurrent_appends_observed > 0, records_migrated > 0, selected_by == \"configuration\", consistency_proof_verified == true and distinct_results_per_projection == [1,1,1,1,1,1,1,1] on both (docs/decomposition.md section 3.3 row S2).",
+    "breakage": "sed -i '76s#.*#LEAF_PREFIX = b\"\\\\x02\"#' harness/state-persistence/interface.py",
+    "expected_failure": "conformance.py exits 1: the second (content-addressed merkle log) binding's independently recomputed external root no longer matches the adapter's stored head (`external root ... != adapter root ...`), dropping to 20/22 cases (10/11 passed on that binding) while the dryrun binding's hash-chain proof still verifies; git checkout -- harness/state-persistence/interface.py restores.",
+    "status": "measured",
     "sources": [
       "F-b5-05",
       "F-b1-06",
       "F-part-c-04"
     ],
-    "quote": "concurrency and single-writer guarantees"
+    "quote": "concurrency and single-writer guarantees",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "fb96f80",
+      "clean_exit": 0,
+      "clean_output": "r: 2 record(s) of kind 'tagged' at size 18\n  ok   a consistency proof shows the log only grew: size 18 -> 19 verified as a pure extension\n  ok   redact drops the body but the record's proof still verifies: body dropped, record_id unchanged, the same proof still verifies\n  ok   an independent verifier, run as a subprocess, recomputes the same head: 20 records, external root matches the adapter's head, chain_break_at=-1\n  adapter=content-addressed merkle log over an object store (second adapter) cases=11 passed=11 appends=10 refusals=2 product_hits=0\nconformance PASSED: 22/22 cases, 2 binding(s)",
+      "breakage_exit": 1,
+      "breakage_output": "deliberate breakage: one record body edited in place in the store\nappended 5 records, head sha256:b387fc130af4d63ed78d847acceec6466a0ce31d3827879cfd68daa6af9e5bfa\n  ok   before tampering: chain_break_at is -1\n  ok   tampered 9a7b39f77fa01e8d6bf66d60cff92968f09220878635e84a90e2812e285aae21.json in place, record_id unchanged\n{\"count\": 5, \"root_hash\": \"sha256:f735f9be08c412f73916f80294bc30b81466e806b070a5e53f88396335c0444a\", \"chain_break_at\": 2}\nchain_break_at = 2\n  ok   the tampered run reports the edited index (0)\n  ok   chain_break_at went from -1 to 2, the tampered record\n\npassed 14, failed 6",
+      "restored": true
+    }
   },
   "composes_with": {
     "builds_on": [

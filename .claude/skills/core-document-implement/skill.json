@@ -117,7 +117,7 @@
         "sources": [
           "F-b2-02"
         ],
-        "quote": "data \u2014 declared intent, definition of done, steps"
+        "quote": "data — declared intent, definition of done, steps"
       },
       {
         "text": "agentic-stack and build-adapter-pair state the swap test (F-meta-04). The consequence here: both stores are selected by a binding record read as configuration, and if choosing one requires editing a file the core owns, the boundary is drawn wrong and the pair has found the defect it exists to find.",
@@ -334,20 +334,29 @@
         "F-b3-17",
         "F-b1-04"
       ],
-      "quote": "object store \u00b7 relational \u00b7 event log"
+      "quote": "object store · relational · event log"
     }
   ],
   "definition_of_done": {
-    "criterion": "Proposed tool, built with this component: `python3 tools/document_roundtrip.py --binding bindings/today.json --binding bindings/second.json --corpus fixtures/ --dispatch-log out/recorded-dispatch-requests.jsonl --report out/document-roundtrip.json`. It asserts, per binding, documents_round_tripped >= 21 with byte_mismatches == 0, and across bindings adapters_run >= 2, digest_mismatches == 0 and criterion_leaks == 0.",
-    "expected": "exit 0, one line per binding of the form `binding=<role> documents_round_tripped=21 byte_mismatches=0`, then `adapters_run=2 digest_mismatches=0 criterion_leaks=0`.",
-    "breakage": "Make the store in the role today re-serialise the document on write - sort its keys and drop insignificant whitespace - and change nothing else.",
-    "expected_failure": "The bytes returned by that store no longer equal the bytes it was given, byte_mismatches becomes non-zero for that binding, the two bindings return different digests for the same declaration so digest_mismatches becomes non-zero, and the run exits non-zero while the other binding still reports byte_mismatches=0 - so the report names which store broke rather than only that something did.",
-    "status": "claimed",
+    "criterion": "bash harness/document-validation/test.sh && python3 harness/document-validation/conformance.py --adapter dryrun --adapter second",
+    "expected": "test.sh: exit 0, `passed <n>, failed 0`; conformance.py: exit 0, `conformance PASSED: 28/28 cases, 2 binding(s)`, one binding=dryrun and one binding=second line each showing cases=14 passed=14 product_hits=0. Proposed tool (not run): python3 tools/document_roundtrip.py --binding bindings/today.json --binding bindings/second.json --corpus fixtures/ --dispatch-log out/recorded-dispatch-requests.jsonl --report out/document-roundtrip.json, asserting per binding documents_round_tripped >= 21 with byte_mismatches == 0, and across bindings adapters_run >= 2, digest_mismatches == 0 and criterion_leaks == 0.",
+    "breakage": "sed -i '28s#.*#DIALECT_2020_12 = \"https://json-schema.org/draft/2020-12/schema-broken\"#' harness/document-validation/interface.py",
+    "expected_failure": "conformance.py exits 1: both bindings refuse every schema-carrying case as dialect-unsupported because the shared dialect constant no longer matches what the on-disk schemas declare, dropping to 6/28 cases (3 passed per binding, cases_passed=3 each), and test.sh's own dialect checks (step 1, step 4 product-scan aside) fail too; git checkout -- harness/document-validation/interface.py restores.",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
       "F-b1-04"
     ],
-    "quote": "the deliberate breakage that proves the check can fail"
+    "quote": "the deliberate breakage that proves the check can fail",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "f8b9dcd",
+      "clean_exit": 0,
+      "clean_output": "nd validate() of the same schema\n  ok   dialect_in_effect is read from the adapter, never assumed from the file: https://json-schema.org/draft/2020-12/schema\n  ok   keywords_checked is reported and positive: keywords_checked=17\n  ok   nothing names a validator library on the way out: outcome carries valid, dialect, schema_uri, keywords_checked, errors and nothing else\n  adapter=compiled-schema checker (compile once, check many) cases=14 passed=14 prepares=6 schema_reads=0 dialect_in_effect=https://json-schema.org/draft/2020-12/schema product_hits=0\nconformance PASSED: 28/28 cases, 2 binding(s)",
+      "breakage_exit": 1,
+      "breakage_output": "(expected 0, got 2)\n  FAIL the two adapters differ in execution model on 2 or more axes (expected 0, got 1)\n  FAIL AssertionError: only 1 axes differ; the swap would test configuration, not the contract\n3. no validator library name in the interface, the caller or the conformance run\n  ok   library-name scan over the shipped tree exits 0 (0)\n  ok   0 hits outside adapters/\n4. deliberate breakage: a validator library imported directly outside adapters/\n  ok   the breakage run exits non-zero (1)\n  ok   the run names the file that broke it\n  ok   product_hits went from 0 to 1\n\npassed 12, failed 12",
+      "restored": true
+    }
   },
   "composes_with": {
     "builds_on": [

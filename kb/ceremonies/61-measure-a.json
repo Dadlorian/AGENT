@@ -1,0 +1,63 @@
+{
+  "status_row": 61,
+  "ceremony": "61-measure-a",
+  "agent": "sonnet",
+  "date": "2026-09-03",
+  "skills": {
+    "core-document-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "harness": "harness/document-validation",
+      "criterion": "bash harness/document-validation/test.sh && python3 harness/document-validation/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "sed -i '28s#.*#DIALECT_2020_12 = \"https://json-schema.org/draft/2020-12/schema-broken\"#' harness/document-validation/interface.py -- both bindings share this one dialect constant, so every schema-carrying case now sees the on-disk schema's real dialect string as unexpected and is refused dialect-unsupported instead of checked, dropping conformance from 28/28 to 6/28 cases (3/14 per binding). Restored with git checkout -- harness/document-validation/interface.py.",
+      "measure_py_last_line": "core-document-implement: measured (clean exit 0, breakage exit 1)",
+      "ledger_id": "L-00127"
+    },
+    "core-ledger-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "harness": "harness/provenance, harness/state-persistence (co-owner per context-61.md section 6; both gates chained into one criterion)",
+      "criterion": "bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second && bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "sed -i '43s#.*#DIGEST = re.compile(r\"^sha256:[0-9a-f]{63}$\")#' harness/provenance/interface.py -- narrows the digest regex by one hex character so no real sha256 digest matches; the dryrun binding cannot be reached at all and every case naming a subject digest is refused document-invalid, dropping conformance from 26/26 to well under half. Restored with git checkout -- harness/provenance/interface.py; the state-persistence half of the chain is untouched throughout.",
+      "measure_py_last_line": "core-ledger-implement: measured (clean exit 0, breakage exit 1)",
+      "ledger_id": "L-00139 (first attempt L-00128 recorded claimed: the criterion's clean run failed at the state-persistence half before the __pycache__ fix below; re-run after the fix measured cleanly and its own ledger append was lost to the same single-quote-in-shell fault as L-00085/61-measure-b, so this record was appended directly with the same payload measure.py already wrote into skill.json's measured_run)"
+    },
+    "seam-state-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "harness": "harness/state-persistence",
+      "criterion": "bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "sed -i '76s#.*#LEAF_PREFIX = b\"\\x02\"#' harness/state-persistence/interface.py -- the adapter's own head computation and the external verifier subprocess (verify_external.py) both derive the merkle root from this constant, but only the adapter's copy changes, so the second binding's independently recomputed root no longer matches its stored head (\"external root ... != adapter root ...\"), dropping conformance from 22/22 to 20/22 (10/11 on that binding). Restored with git checkout -- harness/state-persistence/interface.py.",
+      "measure_py_last_line": "seam-state-implement: measured (clean exit 0, breakage exit 1)",
+      "ledger_id": "L-00140 (measure.py's own ledger append was lost to the same single-quote fault as L-00085/61-measure-b; appended directly with the payload from skill.json's measured_run)"
+    },
+    "xc-budget-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "harness": "harness/gateway",
+      "criterion": "bash harness/gateway/test.sh && python3 harness/gateway/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "sed -i '235s#.*#        if estimate >= request.ceiling_micros \\* 100:#' harness/gateway/interface.py -- the pre-dispatch ceiling check no longer fires at the real ceiling on either binding, so the case asserting a request over its cap is refused before the call gets a result instead of budget-exhausted, dropping conformance from 24/24 to 22/24 (11/12 per binding, refusals 1 instead of 2). Restored with git checkout -- harness/gateway/interface.py.",
+      "measure_py_last_line": "xc-budget-implement: measured (clean exit 0, breakage exit 1)",
+      "ledger_id": "L-00136"
+    },
+    "xc-correlation-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "harness": "harness/observability",
+      "criterion": "bash harness/observability/test.sh (this harness's own gate already runs conformance dryrun, the configuration swap to second with adapters_run=2/selected_by=configuration, and the deliberate breakage step in one script; conformance.py's --adapter flag is not append-able here so the dual-adapter form used for the other five harnesses does not apply -- read from the README and confirmed against conformance.py's argparse)",
+      "breakage_cmd": "sed -i '71s#.*#        if level > 0:#' harness/observability/call.py -- removes the break_stamp gate so every child dispatch re-mints its own correlation record unconditionally, even on the clean (non-break-stamp) path; the dryrun conformance step at the top of test.sh already fails before the swap proof or the deliberate-breakage step is reached, levels_covered drops to 1 and spans_missing_run_id rises above 0 (37 ok, 0 failed -> 26 ok, 11 failed). Restored with git checkout -- harness/observability/call.py.",
+      "measure_py_last_line": "xc-correlation-implement: measured (clean exit 0, breakage exit 1)",
+      "ledger_id": "L-00141 (measure.py's own ledger append was lost to the same single-quote fault as L-00085/61-measure-b; appended directly with the payload from skill.json's measured_run)"
+    },
+    "xc-idempotency-lease-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "harness": "harness/idempotency",
+      "criterion": "bash harness/idempotency/test.sh && python3 harness/idempotency/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "sed -i '40s#.*#        json.dumps({}, sort_keys=True, separators=(\",\", \":\")).encode()).hexdigest()#' harness/idempotency/interface.py -- the canonical digest() function ignores its argument and always digests {}, so a different payload under the same key is no longer distinguishable from a replay; the case asserting that reuse is refused as a typed conflict fails on both bindings, dropping conformance from 16/16 to 14/16 (7/8 per binding). Restored with git checkout -- harness/idempotency/interface.py.",
+      "measure_py_last_line": "xc-idempotency-lease-implement: measured (clean exit 0, breakage exit 1)",
+      "ledger_id": "L-00142 (measure.py's own ledger append was lost to the same single-quote fault as L-00085/61-measure-b; appended directly with the payload from skill.json's measured_run)"
+    }
+  },
+  "note": "For all 6 skills, definition_of_done.criterion was rewritten from prose naming a proposed, never-written tool to a pure shell command chain running the harness(es) named for that skill in state/briefs/context-61.md section 6: the harness's test.sh gate plus python3 <harness>/conformance.py --adapter dryrun --adapter second, chained with && (two harnesses chained in sequence for core-ledger-implement, since it is co-served by both provenance and state-persistence). xc-correlation-implement is the one exception: observability's conformance.py takes a single non-repeatable --adapter (default from ADAPTER env), not the append-style flag the other five harnesses expose, and its test.sh already runs the dryrun conformance, the second-adapter swap proof (merged with adapters_run=2, selected_by=configuration) and the deliberate breakage in one script, so bash harness/observability/test.sh alone is the real criterion for that harness -- confirmed by reading conformance.py's argparse (--adapter is not action=append there) rather than assumed from the shared example in state/briefs/measure.md. The prior prose criterion for every skill (naming tools/document_roundtrip.py, tools/ledger_conformance.py, tools/conformance/state_seam.py, tools/conformance_budget.py, tools/conformance/correlation_audit.py, tools/conformance/lease_placement.py -- none written) was preserved verbatim inside definition_of_done.expected as 'Proposed tool (not run): ...' so the docs/decomposition.md row references and target assertion names are not lost. breakage and expected_failure were rewritten to one real sed edit against each harness's interface.py (or call.py for observability, since its breakage targets the dispatch-tree caller code rather than the shared interface module), restored with git checkout -- <path>; every breakage was dry-run by hand first (clean run passes, breakage-applied run fails with the stated symptom, git checkout leaves git status clean) before being wired into tools/measure.py --breakage-cmd/--restore-cmd, and each measure.py invocation was run alone, one skill at a time, per the step instructions. A stale harness/state-persistence/__pycache__/interface.cpython-311.pyc, left over from this session's own earlier by-hand breakage trial on that same file (LEAF_PREFIX sed'd to b'\\x02' and then git-checked-out), was being reused by later python3 invocations despite the restored source on disk matching git HEAD byte-for-byte -- confirmed by importing interface.LEAF_PREFIX directly and finding it still read b'\\x02', then by diffing the merkle-root math against verify_external.py's independent reimplementation line by line and finding both correct, before tracing the divergence to the cached .pyc's mtime not being invalidated by git checkout. Deleting every harness/*/__pycache__ (untracked, gitignored) before each measure.py run fixed it; core-ledger-implement's first attempt (before the pycache dirs were found and cleared) failed its clean run and was recorded as claimed at L-00128, then re-run clean after the fix and measured. Separately, four of the six measure.py invocations (core-ledger-implement's successful re-run, seam-state-implement, xc-correlation-implement, xc-idempotency-lease-implement) had their own ledger append silently lost to the same single-quote-inside-a-shell-single-quoted-JSON-argument fault already on file at L-00085/61-measure-b's note (a quote inside the captured criterion/breakage output broke tools/kb.py's shell invocation); each was appended directly afterward via python3 -c importing tools/kb.py's ledger_append(), using the exact result payload measure.py had already written into that skill's skill.json measured_run field, so the ledger record matches what ran. python3 tools/kb.py ledger-verify reports 142 records, chain intact, after these direct appends. render_skill.py and validate_skills.py --only <skill> were run after the definition_of_done edit and again after measure.py's own re-render, for all six skills: all validate at 0 errors, with the same or fewer pre-existing restatement warnings (3, 2, 0, 4, 0, 3 respectively) present both before and after my edit, confirmed against a stash-and-rerun baseline. No commit or push was made. Only files touched: the 6 named skill.json/SKILL.md pairs, this record, and kb/ledger.jsonl (via tools/kb.py ledger and the direct ledger_append calls above); the six harness/*/interface.py and harness/observability/call.py files were edited and restored transiently by tools/measure.py itself and by hand-verification, and __pycache__ directories were deleted (untracked, not committed). xc-tenancy/SKILL.md and xc-tenancy/skill.json show as modified in git status at the end of this run but were never opened or edited by this agent -- that change originates from a concurrent session sharing this working tree."
+}

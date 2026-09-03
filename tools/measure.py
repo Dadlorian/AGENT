@@ -9,6 +9,7 @@ and the breakage run failed), re-renders, and appends a ledger record with both 
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -16,8 +17,19 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 
 
+def clear_bytecode() -> None:
+    """Stale .pyc files survive a git checkout and can serve broken code after a restore (seen 2026-09-03 in
+    harness/state-persistence); every run starts from source."""
+    import shutil
+    for d in ROOT.rglob("__pycache__"):
+        if ".git" not in d.parts:
+            shutil.rmtree(d, ignore_errors=True)
+
+
 def run(cmd: str) -> tuple[int, str]:
-    r = subprocess.run(cmd, shell=True, cwd=ROOT, capture_output=True, text=True)
+    clear_bytecode()
+    env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
+    r = subprocess.run(cmd, shell=True, cwd=ROOT, capture_output=True, text=True, env=env)
     return r.returncode, (r.stdout + r.stderr).strip()[-600:]
 
 
@@ -63,8 +75,10 @@ def main(argv: list[str]) -> int:
     d["measured_run"] = {"by": "tools/measure.py", "commit": run("git rev-parse --short HEAD")[1], **result}
     p.write_text(json.dumps(sk, indent=2, ensure_ascii=False) + "\n")
     run(f"python3 tools/render_skill.py .claude/skills/{name}")
-    ledger = json.dumps({"kind": "measure", "skill": name, "agent": "tools/measure.py", "result": result, "status": d["status"]})
-    run(f"python3 tools/kb.py ledger '{ledger}'")
+    # Append through the library, not a shell string: an output containing a quote broke the shell form (L-00085, L-00139).
+    sys.path.insert(0, str(ROOT / "tools"))
+    from kb import ledger_append
+    ledger_append({"kind": "measure", "skill": name, "agent": "tools/measure.py", "result": result, "status": d["status"]})
     print(f"{name}: {d['status']} (clean exit {rc1}" + (f", breakage exit {result.get('breakage_exit')}" if "breakage_exit" in result else "") + ")")
     return 0 if ok else 1
 

@@ -411,16 +411,25 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.4 row X7, made precise and run over the provider pair above: `python3 tools/conformance/lease_placement.py --provider today --provider second --entries examples/end-to-end/entries --corpus out/actions.jsonl --concurrency 100 --kill-owner-at 0.5 --report out/lease.json` (proposed tool, built with the first claiming provider), the provider selected by configuration with no code edit between runs. Per provider it asserts that every externally-triggered action has a lease record with a non-null owner and a non-null expires_at, that no two executions share a key within a scope, that a duplicate answered while the first execution was still running was attached rather than executed, that a lease whose owner was killed mid-execution is reclaimable once its expiry has passed and that the returning owner's seal is refused on a stale fencing token, and that `provider_observed` was read from the granted lease record rather than from the binding. It asserts per provider `keys_checked > 0`, `unleased_actions == 0`, `owners_missing == 0`, `expiries_missing == 0`, `duplicate_executions == 0`, `attached_in_flight >= 1`, `reclaimed >= 1`, `stale_token_seals_refused >= 1` and `ways_in_covered == 3`, and across providers `adapters_run >= 2`.",
-    "expected": "exit 0 with one line per provider of the form `provider=<entity> keys_checked=<n> unleased_actions=0 owners_missing=0 expiries_missing=0 duplicate_executions=0 attached_in_flight=<k> reclaimed=<r> stale_token_seals_refused=<s> ways_in_covered=3 provider_observed=<entity>`, followed by `adapters_run=2`, with `k`, `r` and `s` greater than zero on both providers so each assertion had something to assert on.",
-    "breakage": "Let the lease expiry be unbounded on one of the two providers: set `expires_at` to null at acquisition there, leave the owner, the fencing token and the other provider untouched, and re-run the same command.",
-    "expected_failure": "exit non-zero for that provider with `expiries_missing` equal to the number of leases it took, `reclaimed == 0` and `stale_token_seals_refused == 0`: the owner killed mid-execution never releases its key, so the reclaimability assertion fails and that key is held forever, while the other provider still passes and `adapters_run` still reports 2 - a run that fails both, or neither, has not tested the swap. Claimed: nothing claims a key before execution today and this tool is not written, so neither run has been performed here.",
-    "status": "claimed",
+    "criterion": "bash harness/idempotency/test.sh && python3 harness/idempotency/conformance.py --adapter dryrun --adapter second",
+    "expected": "test.sh: exit 0, `passed <n>, failed 0`; conformance.py: exit 0, `conformance PASSED: 16/16 cases, 2 binding(s)`. Proposed tool (not run): python3 tools/conformance/lease_placement.py --provider today --provider second --entries examples/end-to-end/entries --corpus out/actions.jsonl --concurrency 100 --kill-owner-at 0.5 --report out/lease.json, asserting per provider keys_checked > 0, unleased_actions == 0, owners_missing == 0, expiries_missing == 0, duplicate_executions == 0, attached_in_flight >= 1, reclaimed >= 1, stale_token_seals_refused >= 1, ways_in_covered == 3, provider_observed read from the granted lease record, and across providers adapters_run >= 2 (docs/decomposition.md section 3.4 row X7).",
+    "breakage": "sed -i '40s#.*#        json.dumps({}, sort_keys=True, separators=(\",\", \":\")).encode()).hexdigest()#' harness/idempotency/interface.py",
+    "expected_failure": "conformance.py exits 1: the canonical digest is constant regardless of payload, so a different payload under the same key is no longer distinguishable from a replay and the idempotency-conflict case is not raised (\"a different payload under the same key was not refused\"), dropping to 14/16 cases (7/8 passed on each binding); git checkout -- harness/idempotency/interface.py restores.",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
       "F-b3-16"
     ],
-    "quote": "A criterion nothing can fail is not a criterion"
+    "quote": "A criterion nothing can fail is not a criterion",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "fb96f80",
+      "clean_exit": 0,
+      "clean_output": "tency-conflict 409\n  ok   20 claims, sequential: exactly one execution: executions=1 duplicates=19\n  ok   20 claims, launched at once: what this binding can prove: lease: executions=1 duplicates=19 overlapped=19\n  ok   retention: a claim past its window is claimable again: held within the window, released after it, then claimable again\n  ok   the outcome carries a digest, never the payload: claim carries payload_digest only; the outcome carries no payload field\n  adapter=conditional-write-lease cases=8 passed=8 supports_in_flight=True overlapped=19\nconformance PASSED: 16/16 cases, 2 binding(s)",
+      "breakage_exit": 1,
+      "breakage_output": "t 8/8\n  ok   nothing but the binding changed between the two runs (e5a258ebdd6ab8303224630fe732a4dad1fd03b9fe6b683cb2ea998e18028b1b)\n  FAIL the same caller code runs on the second adapter (expected 0, got 1)\n  FAIL the two adapters differ in execution model on 2 or more axes (expected 0, got 1)\n  FAIL AssertionError: both bindings must pass the same cases\n3. deliberate breakage: remove the lease acquisition, leave the key on the wire\n  ok   the broken adapter's conformance run exits 1 (1)\n  ok   every concurrent copy won: executions=20, overlapped=0\n  FAIL wrong pass count\n\npassed 5, failed 11",
+      "restored": true
+    }
   },
   "composes_with": {
     "builds_on": [

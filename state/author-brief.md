@@ -121,3 +121,6 @@ Done rows are archived by python3 tools/status_archive.py in the same commit; ro
 Read OWNER.md first: one line per owner correction; each line overrides anything here that contradicts it.
 Before launching an agent the orchestrator claims its file scope with python3 tools/scopes.py; an overlapping claim is refused.
 Every checkpoint runs python3 tools/status_check.py --freshness and fails on a stale row.
+
+## Naming (owner rule, 2026-09-03)
+Every task, agent label, scope claim and ceremony record starts with the STATUS.md row id it serves: 42-sourcing-3a, 28-harness-1-review. scopes.py refuses any other label. Records carry "status_row".

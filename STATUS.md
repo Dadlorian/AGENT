@@ -12,6 +12,7 @@
 | 20 | Consumption link | cap-consumption links to cap-work-intake | Open | Unlinked |
 | 21 | Continuous improvement loop | One iteration per fire moves a metric and checkpoints | Not started | Awaiting go |
 | 37 | Live run access | Harness live mode runs against the host from a session | Blocked | Owner decision |
-| 42 | Sourcing pass | Proposed rows are under 30 percent | In progress | Iteration 2a on 12 skills, iteration 3 on 54 skills |
+| 42 | Sourcing pass | Proposed rows are under 30 percent | Open | Iteration 3 stopped by owner |
 | 48 | Effect table interface | Workflow flow.py reaches the executor effect table only through the interface | Open | Read directly today |
+| 49 | Skill graph | Every diagram renders on GitHub and reads as one focal group | In progress | Splitting by layer and door |
 | 45 | Fetch allowlist | Standards sites are fetchable from the environment | Blocked | Owner decision |

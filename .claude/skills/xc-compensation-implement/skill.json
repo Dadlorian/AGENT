@@ -61,7 +61,7 @@
           "F-b3-04",
           "F-b3-17"
         ],
-        "quote": "Every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing"
+        "quote": "the second exists to prove the first is not load-bearing"
       },
       {
         "name": "compensation-conformance report (proposed; the fields the definition of done asserts on, written per register and once across registers)",
@@ -146,7 +146,7 @@
         "sources": [
           "F-a7-03"
         ],
-        "quote": "Those establish well-formedness, not correctness"
+        "quote": "Our 9-stage pipeline recently ran with every behavioural stage skipped"
       }
     ],
     "invariants": [
@@ -177,7 +177,7 @@
         "quote": "Data directory present; server not listening"
       },
       {
-        "text": "xc-compensation fixes the ordering: the record is durable before the effect. What this adds on this stack is that the ordering is a property of one write path, so declare_effect binds into the single call that commits an effect at the dispatch and step boundaries, not into each operator that happens to make an outbound call. An operator that can reach a destination without crossing that binding can commit an effect the register never saw.",
+        "text": "Proposed: xc-compensation fixes the ordering, that the record is durable before the effect. What this adds on this stack is that the ordering is a property of one write path, so declare_effect binds into the single call that commits an effect at the dispatch and step boundaries, not into each operator that happens to make an outbound call. An operator that can reach a destination without crossing that binding can commit an effect the register never saw.",
         "origin": "proposed",
         "sources": [
           "F-b5-02",
@@ -186,16 +186,16 @@
         "quote": "one unit of agent work executes and returns one result"
       },
       {
-        "text": "Proposed: both registers write the identical record shape and read the identical class vocabulary from one versioned resource, so the swap changes where a compensation is recorded and never which effects are compensable. A register that carried its own class list would make the pair incomparable and the conformance run would be scoring two different corpora.",
+        "text": "Proposed: both registers write the identical record shape and read the identical class vocabulary from one versioned resource, so the swap changes where a compensation is recorded and never which effects are compensable. build-adapter-pair states why that matters (F-b1-04): a register carrying its own class list would make the pair incomparable, and the conformance run would be scoring two different corpora.",
         "origin": "proposed",
         "sources": [
           "F-b1-04",
           "F-b3-17"
         ],
-        "quote": "any keyed lease store"
+        "quote": "Swappability is a tested property, not an intention."
       },
       {
-        "text": "Proposed: the migration never has a window in which an effect is committed with no record behind it. Declaration runs in shadow first, recording what it would have refused while nothing is gated on it; then the declaration gates; then the unwind is turned on at the dispatch boundary and only afterwards at the step boundary, where the sub-units are.",
+        "text": "Proposed: the migration never has a window in which an effect is committed with no record behind it. build-definition-of-done states the cross-cutting scope rule (T-t2-03); here declaration runs in shadow first, recording what it would have refused while nothing is gated on it, then the declaration gates, then the unwind is turned on at the dispatch boundary and only afterwards at the step boundary, where the sub-units are.",
         "origin": "proposed",
         "sources": [
           "T-t2-03",
@@ -251,18 +251,17 @@
     {
       "step": 4,
       "action": "Publish the class vocabulary and the record shape as one versioned resource read by both registers and by the document validator, rather than as constants inside either register.",
-      "why": "The declaration is refused by validation at declare time and re-read by the unwind days later, possibly on the other register; one resource is what keeps those three readings the same. Versioning it is what lets a fourth class be added without silently reclassifying records already written under three.",
+      "why": "xc-compensation states that the class is declared in the document (F-b2-02); the declaration is refused by validation at declare time and re-read by the unwind days later, possibly on the other register, and one resource is what keeps those three readings the same. Versioning it is what lets a fourth class be added without silently reclassifying records already written under three.",
       "origin": "sourced",
       "sources": [
-        "F-b2-02",
-        "F-b1-03"
+        "F-b2-02"
       ],
-      "quote": "Each interface names the standard that governs it"
+      "quote": "declared intent, definition of done, steps"
     },
     {
       "step": 5,
       "action": "Migrate in three stages with no gap: declare in shadow while nothing is gated and count the effect-committing steps that carry no class; then refuse those documents; then turn unwind on at the dispatch boundary and afterwards at the step boundary where sub-units commit their own effects.",
-      "why": "The shadow stage is the only one in which a disagreement about which steps commit effects is cheap, and it produces the inventory that says how much of the existing workflow corpus is unclassified. Turning unwind on everywhere at once would put an untested reverse walk in front of every failure the platform has.",
+      "why": "agentic-stack states the substrate rule (F-part-c-11). Here it means the shadow stage is the only one in which a disagreement about which steps commit effects is cheap, and it produces the inventory that says how much of the existing workflow corpus is unclassified. Turning unwind on everywhere at once would put an untested reverse walk in front of every failure the platform has.",
       "origin": "sourced",
       "sources": [
         "F-part-c-11",
@@ -295,7 +294,7 @@
     {
       "step": 8,
       "action": "Apply build-definition-of-done: run the definition of done below over both registers and then its deliberate breakage, and record both outputs as an evidence record the way build-evidence-record fixes, before calling this facet done; proposed pointer, see those skills.",
-      "why": "build-definition-of-done owns criterion plus deliberate breakage plus both recorded outputs, and build-evidence-record owns what the record names, so this row points at them instead of restating the sentence (consolidation part B, kb/ceremonies/implement-clusters.json).",
+      "why": "build-definition-of-done owns criterion plus deliberate breakage plus both recorded outputs, agentic-stack states the rule itself (F-part-c-04), and build-evidence-record owns what the record names, so this row points at them instead of restating the sentence (consolidation part B, kb/ceremonies/implement-clusters.json).",
       "origin": "proposed",
       "sources": [
         "F-part-c-04"
@@ -305,7 +304,7 @@
   ],
   "best_practices": [
     {
-      "text": "Kill the run inside the effect, not between steps. A harness that only stops runs at step boundaries never produces a committed effect whose record was written late, which is the exact fault the ordering assertion exists to catch and the one this facet's breakage injects.",
+      "text": "Proposed: kill the run inside the effect, not between steps. A harness that only stops runs at step boundaries never produces a committed effect whose record was written late, which is the exact fault the ordering assertion exists to catch and the one this facet's breakage injects.",
       "origin": "proposed",
       "sources": [
         "X-end-to-end-042"
@@ -313,7 +312,7 @@
       "quote": "if a tool call succeeds but the agent crashes before saving state"
     },
     {
-      "text": "Expect the two registers to disagree about ordering under concurrency and treat the difference as the finding rather than as noise: an engine-held journal serialises entries per run while an appended log serialises them per partition, so the interleaving of two sub-units' records may differ. What must not differ is which records were compensated and which were left unwound.",
+      "text": "Expect the two registers to disagree about ordering under concurrency and treat the difference as the finding rather than as noise; build-adapter-pair states why the pair exists at all (F-b1-04). An engine-held journal serialises entries per run while an appended log serialises them per partition, so the interleaving of two sub-units' records may differ. What must not differ is which records were compensated and which were left unwound.",
       "origin": "sourced",
       "sources": [
         "F-b1-04",
@@ -338,7 +337,7 @@
       "quote": "the logical inverse of the one it undoes"
     },
     {
-      "text": "Proposed: exercise an unwind that is itself interrupted, on both registers, and assert it resumes rather than re-running a record already marked compensated. A suite that only interrupts forward work has tested half of what an unwind has to survive.",
+      "text": "Proposed: exercise an unwind that is itself interrupted, on both registers, and assert it resumes rather than re-running a record already marked compensated. xc-compensation states the duplicate-delivery rule this rests on (X-xc-compensation-006); a suite that only interrupts forward work has tested half of what an unwind has to survive.",
       "origin": "proposed",
       "sources": [
         "X-xc-compensation-006"
@@ -409,7 +408,7 @@
     {
       "question": "Who drives a compensating action's retries and timeouts on the second register, which has no timer of its own?",
       "evidence": "Measure, over the killed-run corpus, how many compensating actions fail on first attempt and how many of those succeed on a second within their timeout. If the count is near zero the unwinder can attempt once and report; if it is not, the second register needs a driver above the log and that driver becomes part of the swap rather than of the register.",
-      "default": "Proposed: the unwinder retries within the compensating action's declared timeout and reports unwind-failed after it, so the retry policy lives with the unwind and both registers behave identically. No number is proposed here because none has been measured on this stack.",
+      "default": "Proposed: the unwinder retries within the compensating action's declared timeout and reports unwind-failed after it, so the retry policy lives with the unwind and both registers behave identically. xc-compensation states the timeout rule (X-xc-compensation-006). No number is proposed here because none has been measured on this stack.",
       "sources": [
         "X-xc-compensation-006"
       ],

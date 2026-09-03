@@ -1,0 +1,229 @@
+---
+name: xc-audit-trail-implement
+description: How to build the audit trail on this stack: a first store that is the chained append-only file we already write and check ourselves, a second that puts the record where a party holding none of our credentials can check it, the migration from a tree with no actor, no correlation index, no monitor and no stated retention floor, where identity, correlation, policy, budget, idempotency and typed failures attach to an entry and to a scan, and a definition of done with the wiring fault that makes it fail. Load it when writing or reviewing the code that projects records into a trail, when the integrity check is about to be called from the process that appends, when deciding what the second store should be, when a scan reports zero breaks and nobody can say over how many entries or how far back, or when a history that predates the actor field is about to be presented as attributable.
+---
+
+# xc-audit-trail-implement
+
+Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Source IDs resolve with `python3 tools/kb.py show <id>`.
+
+## Purpose
+
+| Statement | Origin | Evidence |
+|---|---|---|
+| Turn the guarantee xc-audit-trail states into two stores behind one trail contract, chosen the way build-adapter-pair requires so that the second breaks the assumption that we hold the only copy of our own record, with a migration that never claims coverage it does not have, and a run that can actually fail. | sourced | `F-b1-04`, `F-b4-03` "Every interface ships with at least two adapters" |
+
+## Entities
+
+| Entity |
+|---|
+| `E-adapter-jsonl-hash-chain` |
+| `E-swap-candidate-any-attestation-store` |
+| `E-provisioning-concern-task-store` |
+| `E-provisioning-concern-evidence-store` |
+| `E-capability-state-persistence` |
+
+## Contract
+
+### Shapes (JSON Schema 2020-12)
+
+**differs_in_execution_model for this pair (proposed instance of the shape build-adapter-pair defines; the axis names are its closed enum)** (proposed; sources: `F-b1-04`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:xc:audit-trail:pair-axes:0.1",
+  "title": "AuditTrailPairAxes",
+  "description": "Proposed. The three axes on which the two stores differ, stated as properties rather than product names. measured stays false until the swap itself has been executed and recorded.",
+  "type": "array",
+  "minItems": 3,
+  "examples": [
+    [
+      {
+        "axis": "who_can_check_the_record",
+        "today_value": "our own reader recomputes digests over a file we hold; the check is convincing only to someone who already trusts the holder",
+        "second_value": "a party holding none of our credentials verifies an inclusion proof against a signed head, with our reader unavailable",
+        "measured": false
+      },
+      {
+        "axis": "who_holds_the_only_copy",
+        "today_value": "the platform holds the only copy of its own chain, so deleting a window and the check that would notice it is one action",
+        "second_value": "a copy exists that we did not write and cannot rewrite, so a deleted window is visible as a gap to someone else",
+        "measured": false
+      },
+      {
+        "axis": "processes_required_for_progress",
+        "today_value": "none beyond the writer; entries append and verify offline, and a scan can run long after the fact",
+        "second_value": "the external store must be reachable to seal, and an unreachable store refuses the seal rather than deferring it",
+        "measured": false
+      }
+    ]
+  ]
+}
+```
+
+**audit-trail conformance report (proposed; written once per store and once across them, and the fields the definition of done asserts on)** (proposed; sources: `F-a7-03`, `F-b1-04`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:xc:audit-trail:conformance-report:0.1",
+  "title": "AuditTrailConformanceReport",
+  "description": "Proposed. The monitor report of xc-audit-trail plus the three fields only a pair run can carry, so a green run names what it checked, on which store, and under whose identity, rather than only its exit code.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "store",
+    "entries_checked",
+    "chain_breaks",
+    "independent",
+    "scheduled",
+    "store_observed"
+  ],
+  "properties": {
+    "store": {
+      "type": "string",
+      "description": "The entity id of the store under test."
+    },
+    "store_observed": {
+      "type": "string",
+      "description": "Read from what actually answered the query, never from the configuration that selected it."
+    },
+    "from_head": {
+      "type": "string"
+    },
+    "to_head": {
+      "type": "string"
+    },
+    "entries_checked": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "actors_missing": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "correlation_missing": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "chain_breaks": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "coverage_start": {
+      "type": "string",
+      "format": "date-time",
+      "description": "The instant from which the trail is attributable. Records before it are in the chain and are not claimed as audit entries."
+    },
+    "external_verifications": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "oldest_retained_entry_age_days": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "scheduled_runs_observed": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "independent": {
+      "type": "boolean",
+      "description": "Read from the identity and credentials the scan ran under."
+    },
+    "scheduled": {
+      "type": "boolean"
+    },
+    "entry_kinds_seen": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "user",
+          "agent",
+          "service",
+          "schedule"
+        ]
+      }
+    },
+    "adapters_run": {
+      "type": "integer",
+      "minimum": 0
+    }
+  }
+}
+```
+
+### Invariants
+
+| Invariant | Origin | Evidence |
+|---|---|---|
+| Proposed: the two stores differ on three of build-adapter-pair's axes, per the shape above, and the difference that matters is who can check the record. A second file of the same shape in a second directory, scanned by the same reader, would leave the guarantee resting on exactly the assumption it exists to remove. | sourced | `F-b1-04` "the second exists to prove the first is not load-bearing" |
+| xc-audit-trail states the guarantee, the entry shape, the monitor report and the criterion; build-adapter-pair states the rule this pair is built under (F-b1-04). What this skill adds on this stack is that neither store is the guarantee: the guarantee is the assertion that runs over both, and a trail checkable only where our own reader happens to run has not been shown to be checkable at all. | sourced | `F-b1-04`, `F-b4-03` "Swappability is a tested property, not an intention." |
+| agentic-stack states that Part A is substrate (F-part-c-11). Its consequence here: the chained append-only file that runs today is not replaced. It becomes the first store, the trail is a projection over it, and the migration adds an actor, a correlation index, a scheduled scan and a stated retention floor rather than a second log. | sourced | `F-part-c-11`, `F-meta-03` "Part A is substrate, not scope. Do not propose replacing what runs." |
+| Proposed: the migration never widens a claim retroactively. Records written before the actor and correlation fields existed stay in the chain and are not counted as audit entries; the conformance report carries coverage_start, and every assertion about attributability is scoped to entries after it. Backfilling an actor from context is inventing the one field the guarantee exists to carry. | proposed | `F-b4-03`, `F-part-c-08` |
+| agentic-stack states design rule 1 (F-b1-02). Its consequence here: which store answered a query is configuration, and nothing above the trail interface may branch on it. The conformance report carries store_observed precisely so that the branch lives in a test rather than in the platform. | sourced | `F-b1-02` "The core imports interfaces, never implementations" |
+| build-evidence-record owns what a record of a run must contain (F-a5-04). What this adds: every claim in this skill about how a store behaves is claimed until such a record exists for it, with one exception that is labelled measured in the adapter row below and is narrower than the guarantee - it shows a byte-level alteration is detectable in one chained file by its own reader, and nothing about independence, scheduling, retention or outside verification. | sourced | `F-a5-04`, `F-part-c-08` "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty" |
+
+## Instructions
+
+| Step | Action | Why | Origin | Evidence |
+|---|---|---|---|---|
+| 1 | Build the first store as a projection over the chained append-only file that already runs: read its records, emit one audit entry per action-bearing record, and add the actor, delegation chain and correlation triple at the writer rather than in the projection. | build-evidence-record already states what the append-only store on this stack records per run (F-a5-04). Its consequence here: what is missing from that store is not durability but attribution and an index, so the projection adds neither. Adding the actor in the projection would make it derived rather than recorded, and a derived actor is a guess with a timestamp on it. | sourced | `E-provisioning-concern-evidence-store`, `F-a5-04` "Append-only JSONL" |
+| 2 | Proposed: build the second store as an external, third-party-checkable log. Seal each window and publish the signed head there; serve entries against it, so a party holding none of our credentials can check an inclusion proof without asking us for the file. | Proposed. This is what breaks the first store's assumption that we hold the only copy of our own record: under the first, deleting a window and deleting the reader that would notice are the same action, and under the second the gap is visible to someone we cannot reach. | proposed | `F-b1-04`, `F-b4-05` |
+| 3 | Apply build-adapter-pair: record differs_in_execution_model from the shape above, leave measured false until the swap has actually been run, and write each store's gaps down as gaps rather than as caveats; proposed pointer, see that skill. | differs_in_execution_model, its axes and the rule that measured stays false until the swap has run belong to build-adapter-pair, and restating them here would give the repository a second copy of a rule that changes in one place. | proposed | `F-b1-04` |
+| 4 | Proposed: migrate in five stages with no retroactive claim - project existing records into the entry shape read-only; add actor, delegation chain and correlation at the writer and stamp coverage_start; stand the scan up on a schedule under its own read-only identity, reporting counts and refusing nothing; seal and publish heads to the external store; state the retention floor per class and enable holds last. | Proposed. Nothing today is attributable, indexed, scanned or retained to a stated floor, so the early stages buy the counts that tell you whether the later ones are safe. Publishing heads before the actor exists would put a signed statement over a record that cannot answer who, which is a stronger-looking claim than the one the trail can support. | proposed | `F-b4-03`, `F-part-c-08` |
+| 5 | Wire the cross-cutting attachments identically at both stores: the actor and delegation chain on every entry, the run and root dispatch identifiers as explicit attributes rather than parentage, the policy decision that admitted the action, the scan's own cost against a ceiling, and an idempotency key over the head range so a re-run of the same window appends one report rather than two. | xc-audit-trail states the wiring rule (T-t2-03): state, telemetry and every cross-cutting concern are managed across the entire structure, whichever entry point was used. Its consequence at the stores is concrete - an entry carrying a digest but no run identifier joins to nothing, and a re-scanned window that appends a second report makes the trail's own coverage ambiguous. | sourced | `T-t2-03`, `F-b4-06` "every cross-cutting concern are managed across the entire structure, whichever entry point was used" |
+| 6 | Read independent, scheduled and store_observed from what actually ran and answered - the identity the scan authenticated as, the entry kind that started it, the store that served the query - and put those observed values in the conformance report. | agentic-stack already states the silently-overridden-configuration finding (F-a7-04): a report that names the store and the identity it was told to use cannot tell a real swap from a configuration that quietly fell back, which is the one thing a pair run exists to establish. | sourced | `F-a7-04` "Values written to YAML validated, reviewed correctly, and had no runtime effect" |
+| 7 | Apply build-definition-of-done: run the definition of done below over both stores with the same window and then its deliberate breakage, and record both outputs as an evidence record the way build-evidence-record fixes, before calling this facet done; proposed pointer, see those skills. | build-definition-of-done owns criterion plus deliberate breakage plus both recorded outputs, and build-evidence-record owns what the record names, so this row points at them rather than restating a sentence that already has an owner. | proposed | `F-part-c-04` |
+| 8 | Keep every statement in this skill labelled claimed except the one measurement recorded in the adapter row below, and state what that measurement does not cover whenever it is cited. | agentic-stack states the rule that claimed and measured are distinguished throughout (F-a7-01, F-part-c-08), and build-evidence-record owns what upgrading one to the other requires. Its consequence here: a byte-level alteration detected in one chained file by its own reader is evidence for one clause of this guarantee and for none of the others, and letting it stand for the guarantee is exactly that unearned upgrade. | sourced | `F-part-c-08`, `F-a7-01` "Distinguish **claimed** from **measured** throughout" |
+
+## Best practices
+
+| Practice | Origin | Evidence |
+|---|---|---|
+| agentic-stack already states the structurally-green-gate finding (F-a7-03). What it adds here: a pair run over a window containing no entries reports zero breaks twice and looks like proof of a swap, so assert entries_checked and adapters_run before reading chain_breaks as good news. | sourced | `F-a7-03` "Those establish well-formedness, not correctness" |
+| Proposed: give the scan its own credentials before giving it its own schedule. A scan that runs on a timer but authenticates as the writer is independent in the calendar and not in the way that matters, and the calendar is the half a reviewer can see. | proposed | `F-b4-03` |
+| Proposed: prefer widening the window over widening the assertion. The cheapest way to make a trail look sound is to scan only the recent window the writer has not left, so scan across at least one sealed boundary and let a surprise arrive while surprises are still cheap. | proposed | `F-a7-03` |
+| Do not let the first store's self-check be quoted as outside verification. cap-provenance sets the criterion and xc-audit-trail states it for the trail (F-b4-05): the record has to be verifiable with a tool we did not write. On this stack the tool that verifies the chain today is one we wrote, so its green line is a measurement of our file and a claim about everything else. | sourced | `F-b4-05`, `F-part-c-08` "verifiable with a tool we did not write" |
+
+## Adapters
+
+| Adapter | Role | Maps to | Cannot | Swap procedure | Status | Evidence |
+|---|---|---|---|---|---|---|
+| `E-adapter-jsonl-hash-chain` | today | The adapter PASS.md B3 records for state persistence is a JSONL file plus a hash chain, and PASS.md A5 records the task store as JSONL, hash-chained. The first store is that file: entries are appended, each linked to its predecessor, and a reader we wrote recomputes the digests. This repository runs a working instance of exactly that shape in kb/ledger.jsonl, where each record carries the actor, the inputs and outputs, the code commit, the tree hash, a dirty flag and a claimed-or-measured label, chained by prev and hash. | Cannot be checked by anyone who does not hold the file, so it answers our question and not an outsider's. Cannot notice a window that was removed together with the reader, since we hold the only copy. Has no actor-plus-correlation index, no schedule and no stated retention floor today, so three of the four clauses of this guarantee are absent rather than weak. | Select the store by configuration with no code edit between runs, replay the identical window through each, and merge the per-store reports; the merged report must show adapters_run >= 2 and store_observed read from what answered rather than from the binding. Measured here, and only this far: `python3 tools/kb.py ledger-verify` over kb/ledger.jsonl printed `ledger verified: 16 records, chain intact` and exited 0; flipping one character inside the eighth historical record (an actor name, opus-improver to opus-improvor) printed `FAIL: ledger chain broken at L-00008` and exited 1; restoring the file byte for byte (sha256 8a339bce41368f70268908b456dab11f1a67ea7fc4e07665b9d76ddd4f7e2a25) reproduced the clean run. Session xc-audit-trail 2831cb4f, 2026-09-03. What that does not show: 16 records rather than 100, no actor index, no schedule, no independent identity, no retention floor and no outside verifier - the check was run by the same session that can write the file. | measured | `F-b3-17`, `F-a5-03`, `E-provisioning-concern-task-store`, `E-adapter-jsonl-hash-chain` "JSONL, hash-chained" |
+| `E-swap-candidate-any-attestation-store` | second | The recorded swap candidates for the provenance row are a keyless-signing service or any attestation store, and the second store takes the latter: sealed heads are published to an append-only log outside our process, where a valid log can be cryptographically verified by any third-party. The trail interface is unchanged; what changes is where the head that anchors an entry lives and who is able to check it. | Cannot seal while it is unreachable, where the first store appends and verifies offline. Cannot hold what we decline to publish, so it bounds the entries whose heads reach it rather than everything the platform recorded. The axis the pair is chosen for is who can check the record and who holds the only copy: our reader over our file, against a party holding none of our credentials checking a proof. That is a different execution model, not a different product of the same shape. Note that this row and the row above sit on two different PASS.md B3 capability rows - state persistence for the chain, provenance for the published statement - because an audit trail is a guarantee assembled from both rather than one capability of its own; the open question below records that. | Run the identical conformance window against it with the external log standing in for our reader, and assert the same counts plus external_verifications greater than zero with our own reader unmounted. Design rule 3 is stated by agentic-stack and by build-adapter-pair (F-b1-04); what is new here is the axis, not the rule. | claimed | `F-b3-12`, `F-b1-04`, `X-cross-structure-052`, `E-swap-candidate-any-attestation-store` "a valid log can be cryptographically verified by any third-party" |
+
+## Definition of done
+
+| Field | Value |
+|---|---|
+| Criterion | Proposed tool, built with the first store: `python3 tools/conformance_audit_trail.py --adapter today --adapter second --trail <trail> --from-head <h0> --to-head <h1> --min-entries 100 --retention-floor-days 180 --report out/audit-trail.json`, the store selected by configuration with no code edit between runs. Per store it asserts `entries_checked >= 100`, `actors_missing == 0`, `correlation_missing == 0`, `chain_breaks == 0`, `oldest_retained_entry_age_days >= 180`, `external_verifications > 0` with our own reader unmounted, `scheduled_runs_observed >= 1`, and that `independent`, `scheduled` and `store_observed` were read from the identity, the entry kind and the store that actually ran. Across stores it asserts `adapters_run >= 2`. |
+| Expected | exit 0 and one line per store of the form `store=<entity> entries_checked=100 actors_missing=0 correlation_missing=0 chain_breaks=0 oldest_retained_entry_age_days=180 external_verifications=1 scheduled_runs_observed=1 independent=true scheduled=true store_observed=<entity>`, followed by `adapters_run=2`. |
+| Deliberate breakage | Break the wiring rather than the record: delete the scan's schedule declaration and call the scan inline from the appending process at the end of each write, with the scan code, the trail and the window left exactly as they were. |
+| Expected failure | `independent` becomes false and `scheduled` becomes false, `scheduled_runs_observed` drops to 0, and the run exits non-zero naming the identity the scan authenticated as - the writer's. Everything else holds: `chain_breaks` stays 0, `entries_checked` stays at or above 100 and `adapters_run` stays 2, which is what shows the fault is the wiring that makes the check independent rather than anything wrong with the record. Claimed: no audit entry, projection, scan, schedule or conformance tool is built on this stack, so neither run has been performed. The narrower byte-flip measurement recorded in the adapter row above is a different assertion and is not this one. |
+| Status | claimed |
+| Evidence | `F-part-c-04`, `F-a7-03` "A criterion nothing can fail is not a criterion" |
+
+## Composes with
+
+Builds on: `xc-audit-trail`, `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`
+
+Used by: -
+
+## Open questions
+
+| Question | Deciding evidence | Default until then | Evidence |
+|---|---|---|---|
+| The pair above spans two PASS.md B3 capability rows - state persistence for the chained file, provenance for the published statement - because the knowledge base has no capability row for an audit trail. Is that the right way to record it, or should the trail be given a row of its own? | 1-3-1 applied (TARGET T5): (a) pair the chained file with the other swap candidate on its own row, an event log, which is a different store and breaks no assumption about who can check it; (b) pair across the two rows as done here and say so in the row; (c) propose a new capability row, which needs a knowledge-base rebuild and invalidates the provenance heads of every skill already written. Recommendation followed: (b), because the axis the pair must demonstrate is who can check the record, and only the provenance row's candidates supply it. | The pair spans the two rows and the second adapter row says so. The question closes at a ceremony that adds an audit-trail capability row during a rebuild, at which point both rows move. | `T-t5-02`, `F-b3-17` "identify the three best possible solutions that align to the goal" |
+| Does the first store stay in place once heads are published to the external log, or does the external log become the trail? | Measure how many entries never have their head published at all - anything below the sealing granularity, anything held back because publishing the entry would disclose a caller's identifiers - and whether an inclusion proof can be served for them. If that count is non-zero on a representative workload, the local chain is the only thing covering those entries and stays. | Proposed: both stay. The external log is the stronger check where it applies and the local chain is the wider one, and build-adapter-pair's rule (F-b1-04) cuts against removing either before the count exists. | `F-b1-04`, `F-b4-05` "the second exists to prove the first is not load-bearing" |
+
+## Provenance
+
+| Field | Value |
+|---|---|
+| PASS.md sha256 | cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96 |
+| kb facts head | 9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e |
+| kb entities head | 747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604 |
+| kb edges head | a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6 |
+| Author | session xc-audit-trail 2831cb4f, 2026-09-03 |

@@ -95,7 +95,9 @@ def freshness() -> int:
             errs.append(f"row {n}: Done but not archived")
         if "running" in result.lower():
             words = [w.lower() for w in item.split() if len(w) > 3]
-            if not any(any(w in k.lower() for w in words) for k in claims):
+            # Labels start with the STATUS row id (OWNER.md 2026-09-03), so a claim for this row is one whose
+            # label begins with "<n>-"; the older word match on the work item is kept as a fallback.
+            if not any(k.startswith(f"{n}-") or any(w in k.lower() for w in words) for k in claims):
                 errs.append(f"row {n}: says running but no live scope claim matches '{item}'")
     for e in errs:
         print("stale:", e)

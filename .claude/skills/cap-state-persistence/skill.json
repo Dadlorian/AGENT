@@ -324,12 +324,13 @@
         "quote": "append-only across runs; the deduplication authority"
       },
       {
-        "text": "Proposed: records are opaque here. A record carries a kind tag, canonical bytes, a partition and a retention class, and nothing in this interface knows that one is a graph edge and another a ledger entry. The graph and the ledger are folds over the same log, and that projection belongs to the State seam; a store that grows a graph-shaped query has absorbed a consumer's vocabulary and can no longer be swapped for one that has not.",
-        "origin": "proposed",
+        "text": "Records are opaque here. A record carries a kind tag, canonical bytes, a partition and a retention class, and nothing in this interface knows that one is a graph edge and another a ledger entry. The graph and the ledger are folds over the same log, and that projection belongs to the State seam; a store that grows a graph-shaped query has absorbed a consumer's vocabulary and can no longer be swapped for one that has not.",
+        "origin": "sourced",
         "sources": [
           "F-b5-04",
           "E-seam-state"
-        ]
+        ],
+        "quote": "the graph and the ledger persist"
       },
       {
         "text": "Proposed: a record's identity is the digest of its canonical bytes, never its position in a file or a row number, so two independent writers reach the same id for the same fact and a holder can check an id without the store. The canonicalisation scheme is fixed in docs/decomposition.md section 2.2.1; naming it here as a governing standard would be a claim this repository has not verified, so the open question below carries it instead.",
@@ -349,12 +350,13 @@
         "quote": "two concurrent writers trying to append at the same version will fail, and one will need to retry"
       },
       {
-        "text": "Proposed: every read takes a head and is deterministic at it, and there is no default head. This is not ergonomics: design rule 5 (F-b1-06) requires cost to be knowable before commitment, and a pure planning function cannot be pure over a store that moves underneath it. A read without a head is the single change that would make rule 5 unprovable for this platform.",
-        "origin": "proposed",
+        "text": "Every read takes a head and is deterministic at it, and there is no default head. This is not ergonomics: agentic-stack states design rule 5 (F-b1-06), which requires cost to be knowable before commitment, and a pure planning function cannot be pure over a store that moves underneath it. A read without a head is the single change that would make rule 5 unprovable for this platform.",
+        "origin": "sourced",
         "sources": [
           "F-b1-06",
           "F-b5-05"
-        ]
+        ],
+        "quote": "Planning is a pure function and completes before execution begins"
       },
       {
         "text": "Integrity is judged by what an outsider can do, not by what our own reader reports: the target is a log of which a valid log can be cryptographically verified by any third-party. A check only our code can run is an internal consistency check, and confusing the two is the specific failure this capability exists to prevent.",
@@ -379,25 +381,28 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: no operation returns a judging criterion to the thing being judged. agentic-stack states design rule 6 (F-b1-07); the consequence on this interface is that a verdict record stores the verdict and a reference to the criterion, never the criterion body, and read_at offers no selector that would let a graded agent fetch one. A store that hands back whole bodies by kind would deliver the grader's rule to the graded through the back door while every other rule still passed.",
-        "origin": "proposed",
+        "text": "No operation returns a judging criterion to the thing being judged. agentic-stack states design rule 6 (F-b1-07); the consequence on this interface is that a verdict record stores the verdict and a reference to the criterion, never the criterion body, and read_at offers no selector that would let a graded agent fetch one. A store that hands back whole bodies by kind would deliver the grader's rule to the graded through the back door while every other rule still passed.",
+        "origin": "sourced",
         "sources": [
           "F-b1-07"
-        ]
+        ],
+        "quote": "An agent sees its outcome, never the criterion it is judged against."
       },
       {
-        "text": "Proposed: the medium is not part of the contract. Whether a record is a line in a file, a row, an immutable object under a content address or an entry in a stream is invisible to every operation above. A caller that can name a file offset, a table or a bucket has been handed the adapter instead of the interface, and the swap stops being free the moment one does.",
-        "origin": "proposed",
+        "text": "The medium is not part of the contract. Whether a record is a line in a file, a row, an immutable object under a content address or an entry in a stream is invisible to every operation above. A caller that can name a file offset, a table or a bucket has been handed the adapter instead of the interface, and the swap stops being free the moment one does.",
+        "origin": "sourced",
         "sources": [
           "F-b3-17"
-        ]
+        ],
+        "quote": "object store · relational · event log"
       },
       {
-        "text": "Proposed: there is no call that rehashes the whole log. Verification is always a proof about one record at one head. An interface whose only integrity operation is a full scan cannot be implemented over a store whose expensive part is reading every record, so exposing one would make the second adapter unimplementable by construction rather than by choice.",
-        "origin": "proposed",
+        "text": "There is no call that rehashes the whole log. Verification is always a proof about one record at one head. An interface whose only integrity operation is a full scan cannot be implemented over a store whose expensive part is reading every record, so exposing one would make the second adapter unimplementable by construction rather than by choice.",
+        "origin": "sourced",
         "sources": [
           "F-b5-05"
-        ]
+        ],
+        "quote": "the write model, concurrency and single-writer guarantees, the integrity mechanism"
       }
     ]
   },
@@ -417,11 +422,12 @@
       "step": 2,
       "action": "Define the unit as an opaque, kind-tagged fact with canonical bytes, a partition, a retention class and a content-addressed id, and keep every projection out: no graph edge type, no ledger column, no decision field appears in this schema.",
       "why": "Proposed. The moment a projection's vocabulary reaches the record schema, the store and its consumer are one thing, and the second adapter has to reimplement a consumer to be conformant. Opaque records are what make the same interface serve the graph, the ledger and anything a later section adds.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "F-b5-04",
         "F-b3-17"
-      ]
+      ],
+      "quote": "the graph and the ledger persist"
     },
     {
       "step": 3,
@@ -438,11 +444,12 @@
       "step": 4,
       "action": "Give every read a required head argument, and make resolve_head the only call whose answer may change between two invocations.",
       "why": "Proposed. Isolating non-determinism in exactly one call is what makes the planner's purity checkable rather than aspirational: pin once, plan against the pin, and any later divergence is attributable to a named call rather than to the store in general.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "F-b1-06",
         "F-b5-05"
-      ]
+      ],
+      "quote": "the query surface a planner needs"
     },
     {
       "step": 5,
@@ -459,10 +466,11 @@
       "step": 6,
       "action": "Split retention into classes with different lifetimes, and make removal a tombstone that preserves the record id and the chain position while dropping the body.",
       "why": "Proposed, and it is what keeps compliance and integrity from becoming a choice between two. The chain and every proof commit to the digest of the body, never to the body, so a body can be replaced by a tombstone and every earlier proof still verifies; a store without that will eventually be asked to delete something and will have to break itself to do it.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "F-b5-05"
-      ]
+      ],
+      "quote": "the integrity mechanism, retention"
     },
     {
       "step": 7,
@@ -479,10 +487,11 @@
       "step": 8,
       "action": "Send what you were already sending. There is no durability option, no consistency level and no store to name; nothing about persistence is something you opt into.",
       "why": "Proposed usage of the placement this skill fixes. The platform applies this rather than offering it, so a caller-side switch would be a hole rather than a feature, and a caller that could turn it off would eventually be the reason a run cannot be reconstructed.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "F-b1-08"
-      ]
+      ],
+      "quote": "applied by the platform, not requested by the caller"
     },
     {
       "step": 9,
@@ -493,11 +502,12 @@
   ],
   "best_practices": [
     {
-      "text": "Proposed: treat anything that cannot be derived by folding the log from empty as cache rather than state. The Ledger's requirement is to be append-only across runs; the deduplication authority, and a value that only exists because something wrote it to a side table is a value no fold can rebuild after a restart.",
-      "origin": "proposed",
+      "text": "Treat anything that cannot be derived by folding the log from empty as cache rather than state. The Ledger's requirement is to be append-only across runs; the deduplication authority, and a value that only exists because something wrote it to a side table is a value no fold can rebuild after a restart.",
+      "origin": "sourced",
       "sources": [
         "F-b2-06"
-      ]
+      ],
+      "quote": "append-only across runs; the deduplication authority"
     },
     {
       "text": "Keep snapshots on the cache side of that line: snapshots are periodically saved states of an aggregate to speed up event replay, which makes them an optimisation that must be rebuildable and discardable, never the record of what happened.",

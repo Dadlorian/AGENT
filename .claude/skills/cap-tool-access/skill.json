@@ -212,33 +212,36 @@
         "quote": "Live and authenticated, **zero tools registered**"
       },
       {
-        "text": "Proposed: the catalogue is data discovered at run time, never code generated at build time. A unit asks what a binding publishes and gets a list; a platform that compiles the tool list into a client has made every server change a redeploy and has quietly made the second adapter impossible.",
+        "text": "Proposed: the catalogue is data discovered at run time, never code generated at build time. A unit asks what a binding publishes and gets a list; a platform that compiles the tool list into a client has made every server change a redeploy and has quietly made the second adapter impossible. Research query: does the MCP specification (X-cap-tool-access-001) describe the tools/list call as returning live server state specifically to rule out build-time code generation, or is that inference this row's own reading of a runtime discovery call?",
         "origin": "proposed",
         "sources": [
           "X-cap-tool-access-001"
         ]
       },
       {
-        "text": "Proposed: every tool descriptor carries an input schema in the dialect cap-document-validation governs (F-b3-09), and arguments are validated against it before the call leaves the platform. A server that publishes a tool with no schema publishes something this interface cannot call.",
-        "origin": "proposed",
+        "text": "Every tool descriptor carries an input schema in the dialect cap-document-validation governs (F-b3-09), and arguments are validated against it before the call leaves the platform. A server that publishes a tool with no schema publishes something this interface cannot call.",
+        "origin": "sourced",
         "sources": [
           "F-b3-09"
-        ]
+        ],
+        "quote": "JSON Schema 2020-12"
       },
       {
-        "text": "Proposed: the three building blocks stay distinct at the boundary - a tool is called and may change something, a resource is read and changes nothing, a prompt is a template. Collapsing a read into a tool call is what makes policy, budget and idempotency above unable to tell the two apart.",
-        "origin": "proposed",
+        "text": "The three building blocks stay distinct at the boundary - a tool is called and may change something, a resource is read and changes nothing, a prompt is a template. Collapsing a read into a tool call is what makes policy, budget and idempotency above unable to tell the two apart.",
+        "origin": "sourced",
         "sources": [
           "X-cap-tool-access-001",
           "X-cap-tool-access-004"
-        ]
+        ],
+        "quote": "Tools are software functions that an LLM can directly call to gain access to external resource data, Resources are passive data sources that can provide read only access to data for context, and Prompts are pre-built instruction templates"
       },
       {
-        "text": "Proposed: session affinity is not a requirement this interface imposes. The revision the manifest names is described as having a stateless core that scales on ordinary infrastructure, so a binding is addressable rather than pinned, and any adapter that needs a sticky session declares that as its own gap.",
-        "origin": "proposed",
+        "text": "Session affinity is not a requirement this interface imposes. The revision the manifest names is described as having a stateless core that scales on ordinary infrastructure, so a binding is addressable rather than pinned, and any adapter that needs a sticky session declares that as its own gap.",
+        "origin": "sourced",
         "sources": [
           "X-cap-tool-access-002"
-        ]
+        ],
+        "quote": "a stateless core that scales on ordinary HTTP infrastructure"
       },
       {
         "text": "A failed tool call returns the typed problem object cap-errors owns (F-b4-07), never the server's own error text and never a success envelope with a failure written inside it, because a caller that has to read the words to know what happened is parsing prose.",
@@ -269,25 +272,28 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: the criterion a result will be judged against. Design rule 6 forbids it on this interface specifically - it never appears in a tool's arguments, in a tool description a unit can read, or in any resource reachable through a binding the unit holds - because tools are the one surface a unit can enumerate and read at will.",
-        "origin": "proposed",
+        "text": "The criterion a result will be judged against. agentic-stack and cap-document-validation both state design rule 6 (F-b1-07); it forbids it on this interface specifically - it never appears in a tool's arguments, in a tool description a unit can read, or in any resource reachable through a binding the unit holds - because tools are the one surface a unit can enumerate and read at will.",
+        "origin": "sourced",
         "sources": [
           "F-b1-07"
-        ]
+        ],
+        "quote": "An agent sees its outcome, never the criterion it is judged against."
       },
       {
-        "text": "Proposed: which product serves a tool, at what version, on what host, over what transport. None of it appears in a descriptor, a call or a result, so no caller can branch on it; products belong in the adapter rows below.",
-        "origin": "proposed",
+        "text": "Which product serves a tool, at what version, on what host, over what transport. None of it appears in a descriptor, a call or a result, so no caller can branch on it; products belong in the adapter rows below. agentic-stack and cap-errors both state the rule this follows (F-part-c-09).",
+        "origin": "sourced",
         "sources": [
           "F-part-c-09"
-        ]
+        ],
+        "quote": "Products belong in the adapter column only."
       },
       {
-        "text": "Proposed: the server's own credentials and its internal implementation of a tool. A unit learns a tool's name, its effect and its input schema, and nothing about how the work gets done - which is what lets the same name be served by a different server tomorrow.",
-        "origin": "proposed",
+        "text": "The server's own credentials and its internal implementation of a tool. A unit learns a tool's name, its effect and its input schema, and nothing about how the work gets done - which is what lets the same name be served by a different server tomorrow.",
+        "origin": "sourced",
         "sources": [
           "F-b3-06"
-        ]
+        ],
+        "quote": "any MCP server"
       }
     ]
   },
@@ -327,10 +333,11 @@
       "step": 4,
       "action": "Give every unit of work a declared tool surface: the list of tool names it may call, resolved against the catalogue at bind time, with an undeclared name refused before any call is made.",
       "why": "Proposed. A unit that can call whatever a binding happens to publish inherits every future tool anyone registers, which makes both policy and the isolation guarantee above unable to say what the unit could do; the declared list is also the thing a composition can assert on afterwards.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "F-b4-04"
-      ]
+      ],
+      "quote": "Refusal is deterministic and happens before execution, not after spend"
     },
     {
       "step": 5,
@@ -402,14 +409,15 @@
       "quote": "Those establish well-formedness, not correctness"
     },
     {
-      "text": "Proposed: prefer a resource to a tool for anything read-only, and publish a parameterised template rather than one tool per file. A read modelled as a call spends a mutating-call budget, a policy decision and an idempotency key on something that changes nothing.",
-      "origin": "proposed",
+      "text": "Prefer a resource to a tool for anything read-only, and publish a parameterised template rather than one tool per file. A read modelled as a call spends a mutating-call budget, a policy decision and an idempotency key on something that changes nothing.",
+      "origin": "sourced",
       "sources": [
         "X-cap-tool-access-004"
-      ]
+      ],
+      "quote": "Resources are passive data sources that provide read-only access to structured data."
     },
     {
-      "text": "Proposed: treat the catalogue as versioned data and diff it between runs. A tool that quietly disappeared is a behaviour change that no code review will show, and on this capability the observable symptom is a unit that suddenly does less while every check stays green.",
+      "text": "Proposed: treat the catalogue as versioned data and diff it between runs. A tool that quietly disappeared is a behaviour change that no code review will show, and on this capability the observable symptom is a unit that suddenly does less while every check stays green. Research query: has the recorded live endpoint (F-a6-03, zero tools registered) actually been diffed against a later catalogue state to confirm a disappearance is detectable this way, or is that still a hypothetical failure mode?",
       "origin": "proposed",
       "sources": [
         "F-a6-03"

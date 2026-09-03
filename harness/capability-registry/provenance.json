@@ -1,0 +1,33 @@
+{
+  "owner_skill": "cap-capability-registry-implement",
+  "co_skills": ["cap-capability-registry", "cap-capability-packaging-implement"],
+  "blueprint_tool_entry": "today's resolution by directory path in this repository: .claude/skills/ indexed by docs/skill-manifest.json (F-b3-07 \"skill files\"; blueprint state \"registry record and version\", home_today \"capability packages resolved as files on disk\")",
+  "capability": "capability registry",
+  "standard": "MCP Registry API v0.1, in preview (unverified; A-standard-mcp-registry-api)",
+  "kb_ids": [
+    "F-b1-02", "F-b1-04", "F-b1-05", "F-b1-07", "F-b1-08", "F-b3-07", "F-b3-09", "F-b3-13",
+    "F-b4-01", "F-b4-05", "F-b4-07", "F-a5-03", "F-a6-03", "F-a7-02", "F-a7-03", "F-a7-04",
+    "F-meta-04", "F-part-c-04", "F-part-c-08", "F-part-c-10",
+    "T-t1-01", "T-t1-02", "T-t1-03", "T-t2-01", "T-t2-02", "T-t5-02", "T-t6-05",
+    "T-t7-02", "T-t9-06", "T-t10-04", "T-t10-05", "T-t10-07"
+  ],
+  "research_ids": [
+    "X-cap-capability-registry-001", "X-cap-capability-registry-002", "X-cap-capability-registry-005",
+    "X-cap-capability-registry-006", "X-cap-capability-registry-007",
+    "X-end-to-end-023", "X-end-to-end-025", "X-end-to-end-026", "X-end-to-end-069"
+  ],
+  "measured": {
+    "dryrun": "bash harness/capability-registry/test.sh on 2026-09-03: passed 20, failed 0. conformance PASSED 11/11 against the signed-index adapter over three fixture records under one name (acme/widget 1.0.0 good, 1.1.0 unsigned, 1.2.0 digest tampered after signing): records_checked=3 resolved_records=1 served_unverified=0 refusals=2 refusals_typed=2 index_chain_broken=0; the minimal call is 28 lines of caller code and names no adapter storage; it published, resolved by constraint, verified the digest, was refused an in-place edit of 1.0.0, resolved the rollback_to version back to the same record digest, and a forged signature was rejected without reaching the digest check; REGISTRY_FAIL=1 returns adapter-unavailable 503 saying no record was appended.",
+    "swap": "conformance PASSED 11/11 before (dryrun, signed-index) and 11/11 after (second, registry-fetch) with the same 11 cases and identical counters (records_checked=3 resolved_records=1 served_unverified=0 refusals=2 refusals_typed=2 on both); sha256 of interface.py+call.py+conformance.py identical across both runs (99e870bd269376e4e6f97425a970ac2af9033d2e3713caf747337c0b26428ceb), so the swap was configuration; axes differing: resolution (signed-index vs registry-fetch), identity_is (a path plus a version string vs a content digest), network_required (false vs true), trust_anchor (a key this deployment holds vs the registry endpoint's published key) - 4 of 5 compared axes differ; record_divergence=0 across both stores; merged adapters_run=2; the same caller code ran unchanged on both.",
+    "breakage": "one, fails as designed: the digest check is downgraded from a refusal to a logged warning inside verify() (conformance.py --break digest-warning, monkeypatching CapabilityRegistryAdapter.verify for the run), leaving the signature check untouched. The run exits 1 with served_unverified=1 (the digest-tampered 1.2.0 fixture is served) and refusals=1 (the unsigned 1.1.0 fixture is still caught) - the signature refusal surviving is what shows the run distinguishes the two checks rather than passing or failing as a block, matching cap-capability-registry-implement's own definition_of_done breakage almost verbatim.",
+    "live": "bash harness/capability-registry/test.sh --live on 2026-09-03 with SKILLS_DIR=.claude/skills, SKILL_MANIFEST=docs/skill-manifest.json and REGISTRY_KEY_FILE set: passed 23, failed 0. conformance PASSED 11/11 against the live binding; on init it scanned docs/skill-manifest.json (101 named skills) and signed 104 skill.json files under .claude/skills/ as version 1.0.0 records (some skills in the manifest map to more than one skill.json, or the manifest count and directory count differ slightly - not reconciled here), read only, writing nothing back to the tree (confirmed by git status before and after showing the same pre-existing, unrelated diffs and no new ones); the same caller code ran unchanged."
+  },
+  "claimed": [
+    "the MCP Registry API's version: recorded on file as 'v0.1, in preview' (X-cap-capability-registry-001); no fetched page in this environment confirms a later state, so the standard field carries 'unverified' rather than a confirmed release",
+    "public verifiability: hmac-sha256 stands in for a signature because only hashlib and hmac are available here, so the verifying material is the signing key and a holder of it could also sign. The record shape, the digest-then-signature verification order, the immutability check and the swap are real; replacing mac() in interface.py with an asymmetric signer changes that function and the two adapters' _signer/_verifying_material, and nothing else",
+    "the networked form of the second adapter until REGISTRY_URL points at a real route; the dry run exercises its content-addressed identity, its refusal to sign or publish offline (REGISTRY_OFFLINE=1), and its swap in process over an in-memory content-addressed map",
+    "the RFC 9457 problem type for an unverified record: cap-capability-registry's own worked example 2 records urn:agentic:problem:record-unsigned as proposed and not yet registered in docs/decomposition.md 2.1.6; this harness returns the registered identity-untrusted (401) in its place, per that skill's own stated fallback, and carries the proposed type as an extension field",
+    "that a re-run of the live adapter against .claude/skills/ would find the same skill set: measured once on this host on 2026-09-03 (104 skill.json files signed, 0 missing against the manifest's 101 names at scan time); the manifest and the tree both change between sessions in this repository, so this is a snapshot, not a standing guarantee",
+    "the semver-ordering and refuse-then-continue walk in resolve(): cap-capability-registry-implement instruction 3/step 3 states signature-then-digest verification as a precondition of resolution but does not itself specify whether a resolver retries an older candidate after a newer one fails; this harness's choice to walk down within the constraint (rather than fail the whole query) is this implementation's own reading, consistent with the worked-rejection example in skill.json, and is marked here rather than asserted as the standard's requirement"
+  ]
+}

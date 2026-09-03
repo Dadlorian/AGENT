@@ -27,3 +27,4 @@
 | 40 | Load path table | Each door has a generated load path within budget | Done | 4 doors, 7 to 9 skills | 2026-09-03 d07fd7a |
 | 36 | Impact map in knowledge base | A component swap query lists adapters, tests, and skills | Done | 803 records, skill-name owners | 2026-09-03 45e473d |
 | 35 | Skill reconciliation | Every written skill agrees with the blueprint | Done | 26 applied, 17 declined | 2026-09-03 adfabbb |
+| 25 | Observability harness | One trace carries correlation on explicit attributes | Done | 36 checks pass and the swap holds | 2026-09-03 0ef877a |

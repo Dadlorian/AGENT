@@ -268,19 +268,20 @@
         "quote": "Agent runtime** | Agent Client Protocol"
       },
       {
-        "text": "Proposed: the unit is one prompt turn with a stop reason. A turn is over when a terminal frame carrying that reason has arrived, and never because the caller stopped reading, timed out locally, or saw output it liked.",
+        "text": "Proposed: the unit is one prompt turn with a stop reason. A turn is over when a terminal frame carrying that reason has arrived, and never because the caller stopped reading, timed out locally, or saw output it liked. Research query: does the ACP specification (once fetched) define a terminal-frame or session/prompt-response boundary in these exact words, beyond the general prompts/sessions/streaming vocabulary already on file?",
         "origin": "proposed",
         "sources": [
           "X-cap-agent-runtime-002"
         ]
       },
       {
-        "text": "Proposed: every interactive capability - streaming updates, tool-permission callbacks, mid-turn cancellation - is negotiated at session open and defaults to absent. A capability the interface requires is a capability a one-shot runtime can never supply, which is exactly what build-adapter-pair's design rule 3 (F-b1-04) exists to catch.",
-        "origin": "proposed",
+        "text": "Every interactive capability - streaming updates, tool-permission callbacks, mid-turn cancellation - is negotiated at session open and defaults to absent. A capability the interface requires is a capability a one-shot runtime can never supply, which is exactly what build-adapter-pair's design rule 3 (F-b1-04) exists to catch: an interface that ships with only one adapter's assumptions baked in is not proven swappable until a second adapter is attempted.",
+        "origin": "sourced",
         "sources": [
           "F-b1-04",
           "X-cap-agent-runtime-002"
-        ]
+        ],
+        "quote": "Every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing."
       },
       {
         "text": "On the substrate, cancelling mid-tool-call ends the turn in about 8 seconds against a 45 second operation with zero trailing frames. The knowledge base records this row with status claimed, so it is the reference point for the grace window and not a measurement this repository has reproduced.",
@@ -291,26 +292,28 @@
         "quote": "mid-tool-call ends the turn in ~8s against a 45s operation, zero trailing frames"
       },
       {
-        "text": "Proposed: cancel is asynchronous, idempotent and bounded. Late frames are legal until the terminal frame; the window is per request with a default of 10 seconds, chosen as the reference point above plus headroom; and expiry of the window is a failure carrying cancel_timeout, never a clean cancellation, because reporting a hard kill as a cancel hides an adapter that cannot cancel.",
+        "text": "Proposed: cancel is asynchronous, idempotent and bounded. Late frames are legal until the terminal frame; the window is per request with a default of 10 seconds, chosen as the reference point above plus headroom; and expiry of the window is a failure carrying cancel_timeout, never a clean cancellation, because reporting a hard kill as a cancel hides an adapter that cannot cancel. Research query: is there a recorded cancel-latency figure for a second, non-interactive adapter that would confirm the 10-second default is headroom on a shared floor rather than a number fit to the one substrate on file (F-a3-09)?",
         "origin": "proposed",
         "sources": [
           "F-a3-09"
         ]
       },
       {
-        "text": "Proposed: the transport is adapter detail. The local binding of this protocol launches the agent as a subprocess and speaks JSON-RPC over its standard streams, but what the core imports is the turn, so a runtime reached another way serves the same interface unchanged.",
-        "origin": "proposed",
+        "text": "The transport is adapter detail. The local binding of this protocol launches the agent as a subprocess and speaks JSON-RPC over its standard streams, but what the core imports is the turn, so a runtime reached another way serves the same interface unchanged.",
+        "origin": "sourced",
         "sources": [
           "F-a3-03",
           "X-cap-agent-runtime-006"
-        ]
+        ],
+        "quote": "Agent Client Protocol (ACP), JSON-RPC over stdio"
       },
       {
-        "text": "Proposed consequence of design rule 6, which agentic-stack states under F-b1-07: the prompt crossing this boundary carries the task and never the criterion, so a stop reason tells a caller why the loop stopped and never whether the work was acceptable.",
-        "origin": "proposed",
+        "text": "Consequence of design rule 6, which agentic-stack states under F-b1-07: the prompt crossing this boundary carries the task and never the criterion, so a stop reason tells a caller why the loop stopped and never whether the work was acceptable.",
+        "origin": "sourced",
         "sources": [
           "F-b1-07"
-        ]
+        ],
+        "quote": "An agent sees its outcome, never the criterion it is judged against."
       },
       {
         "text": "The swap candidates for this row are a class rather than a list of products, so a caller integrates with any conformant agent; agentic-stack states design rule 4 (F-b1-05) and this row is its consequence here.",
@@ -342,22 +345,24 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: the agent's internal reasoning trace, its tool loop bookkeeping and its own model selection. A caller that reads any of them has bound itself to one runtime, and none of them is needed to know that a turn ended and why.",
+        "text": "Proposed: the agent's internal reasoning trace, its tool loop bookkeeping and its own model selection. A caller that reads any of them has bound itself to one runtime, and none of them is needed to know that a turn ended and why. Research query: does any recorded ACP transcript or the ACP spec text itself name a reasoning-trace or tool-loop field as part of the wire format, which would mean excluding it here is a documented protocol boundary rather than our own choice?",
         "origin": "proposed"
       },
       {
-        "text": "Proposed: which product serves the runtime and at what version. agentic-stack states that products belong in the adapter column only (F-part-c-09); here that means the turn shapes carry no runtime identity a caller could branch on.",
-        "origin": "proposed",
+        "text": "Which product serves the runtime and at what version. agentic-stack states that Part B output must name capabilities and standards, never products (F-part-c-09); here that means the turn shapes carry no runtime identity a caller could branch on.",
+        "origin": "sourced",
         "sources": [
           "F-part-c-09"
-        ]
+        ],
+        "quote": "name capabilities and standards, never products"
       },
       {
-        "text": "Proposed: the criterion a result will be judged against, and any grading verdict. Judging is the core's, not the runtime's, and a prompt that carried the criterion would make design rule 6 unenforceable at the one boundary where the agent can read it.",
-        "origin": "proposed",
+        "text": "The criterion a result will be judged against, and any grading verdict. Judging is the core's, not the runtime's, and a prompt that carried the criterion would make design rule 6 unenforceable at the one boundary where the agent can read it.",
+        "origin": "sourced",
         "sources": [
           "F-b1-07"
-        ]
+        ],
+        "quote": "An agent sees its outcome, never the criterion it is judged against."
       }
     ]
   },
@@ -376,7 +381,7 @@
     {
       "step": 2,
       "action": "Make the prompt turn with a stop reason the unit of the interface, and put every interactive capability behind session negotiation with a false default.",
-      "why": "Proposed. A permission callback that the interface requires is a callback a non-interactive runtime cannot make, so requiring it would shape the contract around whatever runs today; negotiating it turns the same fact into an optional member a caller reads once.",
+      "why": "Proposed. A permission callback that the interface requires is a callback a non-interactive runtime cannot make, so requiring it would shape the contract around whatever runs today; negotiating it turns the same fact into an optional member a caller reads once. Research query: does the ACP session/new payload itself document a false-default convention for optional capabilities, or is that convention invented here?",
       "origin": "proposed",
       "sources": [
         "X-cap-agent-runtime-002"
@@ -385,7 +390,7 @@
     {
       "step": 3,
       "action": "Publish the stop-reason vocabulary as a closed enum in the turn-result shape, adopt the protocol's own reasons for the ordinary endings, and add a value only when the platform can end a turn for a reason the protocol has no cause to carry.",
-      "why": "Proposed. A stop reason is the one field every consumer branches on, so an open set makes the branch unwriteable; and the additions must be visibly ours, because the five adopted values were taken from a design note rather than from the specification text.",
+      "why": "Proposed. A stop reason is the one field every consumer branches on, so an open set makes the branch unwriteable; and the additions must be visibly ours, because the five adopted values were taken from a design note rather than from the specification text. Research query: does the published ACP specification (once fetched, per step 4) enumerate its own stopReason values, and do they match the five this skill assumes?",
       "origin": "proposed",
       "sources": [
         "X-cap-agent-runtime-001"
@@ -405,7 +410,7 @@
     {
       "step": 5,
       "action": "Bound cancellation with a per-request grace window, keep accepting frames until the terminal frame arrives, and set the default from the observed cancel behaviour of the runtime rather than from a round number chosen in advance.",
-      "why": "Proposed. The reference point on the substrate is a turn ending in about 8 seconds against a 45 second operation with zero trailing frames, so 10 seconds is that behaviour plus headroom; a global constant would be wrong for the next adapter, whose floor differs.",
+      "why": "Proposed. The reference point on the substrate is a turn ending in about 8 seconds against a 45 second operation with zero trailing frames, so 10 seconds is that behaviour plus headroom; a global constant would be wrong for the next adapter, whose floor differs. Research query: is there a recorded cancel-latency measurement for the second adapter (a one-shot runtime) that would confirm 10 seconds plus headroom generalises rather than being fit to the one substrate on file?",
       "origin": "proposed",
       "sources": [
         "F-a3-09"
@@ -489,11 +494,11 @@
       "quote": "Those establish well-formedness, not correctness"
     },
     {
-      "text": "Proposed - no record in this knowledge base carries the stop-reason vocabulary, so this is our reading, not a sourced fact: end_turn means the loop stopped, not that the work is right, so a stop reason must never be reported as an approval and never be substituted for the Judge's verdict.",
+      "text": "Proposed - no record in this knowledge base carries the stop-reason vocabulary, so this is our reading, not a sourced fact: end_turn means the loop stopped, not that the work is right, so a stop reason must never be reported as an approval and never be substituted for the Judge's verdict. Research query: does the ACP specification's own stopReason enum carry a value whose name or description could be misread as a verdict, which would make this caution protocol-specific rather than general?",
       "origin": "proposed"
     },
     {
-      "text": "Proposed: measure the cancel floor of each adapter and store it on the negotiated capability set, then require cancel_grace_s to sit at or above it. One global grace constant is a value that is generous for one runtime and impossible for the next.",
+      "text": "Proposed: measure the cancel floor of each adapter and store it on the negotiated capability set, then require cancel_grace_s to sit at or above it. One global grace constant is a value that is generous for one runtime and impossible for the next. Research query: has the second adapter's cancel floor actually been measured and stored yet, or does the negotiated capability set still carry only the one reference point on file (F-a3-09)?",
       "origin": "proposed",
       "sources": [
         "F-a3-09"

@@ -168,7 +168,7 @@
         "quote": "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform"
       },
       {
-        "text": "Proposed (from docs/decomposition.md section 2.1.4): enforcement sits outside the unit that spends, because a unit that enforces its own ceiling can decline to. That placement is what makes the platform's own rule hold, since a guarantee a caller can decline is a request with a firm tone.",
+        "text": "Proposed (from docs/decomposition.md section 2.1.4): enforcement sits outside the unit that spends, because a unit that enforces its own ceiling can decline to. That placement is what makes the platform's own rule hold, since a guarantee a caller can decline is a request with a firm tone. Research query: is there a fetched (not docs/decomposition.md, an internal design note rather than a knowledge-base record) source stating that budget enforcement must sit outside the spending unit, or is that this project's own placement argument?",
         "origin": "proposed",
         "sources": [
           "F-b4-01",
@@ -177,14 +177,14 @@
         "quote": "The platform applies each; a caller cannot decline them"
       },
       {
-        "text": "Proposed: the ceiling object has no opt-out to express, so on_exceed is a const and not an enum, and the field is required rather than defaulted. An optional ceiling, a null ceiling and a caller-chosen exceed behaviour are three spellings of the same hole.",
+        "text": "Proposed: the ceiling object has no opt-out to express, so on_exceed is a const and not an enum, and the field is required rather than defaulted. An optional ceiling, a null ceiling and a caller-chosen exceed behaviour are three spellings of the same hole. Research query: does any fetched budget or quota specification argue for a non-optional const field over an enum with a caller-chosen exceed behaviour, or is that this schema's own design choice?",
         "origin": "proposed",
         "sources": [
           "F-b4-02"
         ]
       },
       {
-        "text": "Proposed: there is one ceiling per root unit of work and every descendant dispatch draws from it, so a tree that fans out cannot outspend the root that authorised it. The records on file describe run-scoped budgets as current practice and are search results rather than pages that were read, so take the shape and not a measurement from them.",
+        "text": "Proposed: there is one ceiling per root unit of work and every descendant dispatch draws from it, so a tree that fans out cannot outspend the root that authorised it. The records on file describe run-scoped budgets as current practice and are search results rather than pages that were read, so take the shape and not a measurement from them. Research query: has TokenOps's run-scoped-budget page actually been fetched and read to confirm it shares one ceiling across nested calls the way this row assumes, rather than the search snippet alone being extrapolated?",
         "origin": "proposed",
         "sources": [
           "X-end-to-end-045",
@@ -193,15 +193,15 @@
         "quote": "Runtime budget controls decide mid-run whether a workflow continues, narrows, requires approval, or stops"
       },
       {
-        "text": "Proposed: the tree is bounded by an explicit maximum delegation depth and maximum fan-out carried on the root budget, refused at dispatch rather than discovered when the money runs out. A cost bound alone lets one root spawn an unbounded number of cheap descendants, and the records on file show a shipped product reaching for exactly these two bounds.",
-        "origin": "proposed",
+        "text": "The tree is bounded by an explicit maximum delegation depth and maximum fan-out carried on the root budget, refused at dispatch rather than discovered when the money runs out. A cost bound alone lets one root spawn an unbounded number of cheap descendants, and the records on file show a shipped product reaching for exactly these two bounds.",
+        "origin": "sourced",
         "sources": [
           "X-end-to-end-046"
         ],
         "quote": "capped concurrently-running subagents at 20 and stopped subagents from spawning nested subagents"
       },
       {
-        "text": "Proposed (from docs/decomposition.md section 2.1.4, and the recommendation of its open question 7): the ceiling is drawn as a reservation lease taken at dispatch, pre-checked before each metered call and reconciled against the actual cost afterwards, with unreconciled reservations expiring at the deadline plus grace. A unit that crashes before reconciling must not leave the root's ceiling permanently consumed.",
+        "text": "Proposed (from docs/decomposition.md section 2.1.4, and the recommendation of its open question 7): the ceiling is drawn as a reservation lease taken at dispatch, pre-checked before each metered call and reconciled against the actual cost afterwards, with unreconciled reservations expiring at the deadline plus grace. A unit that crashes before reconciling must not leave the root's ceiling permanently consumed. Research query: is there a fetched primary source on reservation-lease budgeting (pre-check, reconcile, expire-at-deadline-plus-grace) as a named pattern, rather than this row deriving the shape from docs/decomposition.md's open question 7 alone?",
         "origin": "proposed",
         "sources": [
           "F-b4-02",
@@ -217,8 +217,8 @@
         "quote": "Typed and machine-readable. Never parsed from prose"
       },
       {
-        "text": "Proposed: a unit terminated on budget keeps the outputs that were already durable, as a partial rather than a loss. The records on file argue that returning what exists beats returning nothing, and a ceiling that also destroys paid-for work charges twice for one overrun.",
-        "origin": "proposed",
+        "text": "A unit terminated on budget keeps the outputs that were already durable, as a partial rather than a loss. The records on file argue that returning what exists beats returning nothing, and a ceiling that also destroys paid-for work charges twice for one overrun.",
+        "origin": "sourced",
         "sources": [
           "X-xc-budget-005"
         ],
@@ -248,7 +248,7 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: there is no field, header, role or configuration flag that skips the check, raises a ceiling from inside the unit it bounds, or converts a stop into a warning. The cross-cutting guarantees are not optional, and the only honest way to say so in a schema is to leave nothing to set.",
+        "text": "Proposed: there is no field, header, role or configuration flag that skips the check, raises a ceiling from inside the unit it bounds, or converts a stop into a warning. The cross-cutting guarantees are not optional, and the only honest way to say so in a schema is to leave nothing to set. Research query: is there a fetched budget-enforcement specification that names these specific escape hatches (an inside-the-unit ceiling raise, a stop-to-warning downgrade) as the ones to close, or is the list reasoned from this guarantee's own non-optionality alone?",
         "origin": "proposed",
         "sources": [
           "F-b1-08",
@@ -288,7 +288,7 @@
     },
     {
       "step": 2,
-      "action": "Proposed (docs/decomposition.md section 2.1.4): enforce outside the unit. Take a reservation lease at dispatch against the root's remaining ceiling, pre-check every metered call against what the lease still holds, reconcile with the actual cost afterwards, and expire an unreconciled reservation at the deadline plus grace.",
+      "action": "Proposed (docs/decomposition.md section 2.1.4): enforce outside the unit. Take a reservation lease at dispatch against the root's remaining ceiling, pre-check every metered call against what the lease still holds, reconcile with the actual cost afterwards, and expire an unreconciled reservation at the deadline plus grace. Research query: see the reservation-lease research query on the budget invariant row below.",
       "why": "A unit that enforces its own ceiling can decline to. cap-model-access records the substrate's measured behaviour here (F-a4-07): scoped keys already stop spend rather than note it, so matching that model is the smaller change, and the lease is what stops a crashed unit from consuming a root's ceiling forever.",
       "origin": "proposed",
       "sources": [
@@ -310,7 +310,7 @@
     },
     {
       "step": 4,
-      "action": "Proposed: set a maximum delegation depth and a maximum fan-out on the root budget and refuse the dispatch that would cross either, rather than letting the cost ceiling discover the runaway afterwards.",
+      "action": "Proposed: set a maximum delegation depth and a maximum fan-out on the root budget and refuse the dispatch that would cross either, rather than letting the cost ceiling discover the runaway afterwards. Research query: has the depth-3/fan-out-20 pair actually been measured against this platform's own delegation tree, or is it carried over unmodified from one search-only record about a different product?",
       "why": "Cost is the slowest of the three signals: a root can spawn an unbounded number of individually cheap descendants and only the depth and fan-out bounds catch that before the spend does. The records on file show these two bounds being added to a shipped agent fleet and then tuned, which is the shape of the problem rather than a value to copy.",
       "origin": "proposed",
       "sources": [
@@ -320,14 +320,14 @@
     },
     {
       "step": 5,
-      "action": "Proposed: compare the plan's priced floor with the remaining ceiling before anything is dispatched, and refuse there when the floor already exceeds it, rather than starting work that cannot finish.",
+      "action": "Compare the plan's priced floor with the remaining ceiling before anything is dispatched, and refuse there when the floor already exceeds it, rather than starting work that cannot finish.",
       "why": "Cost is knowable before commitment because planning completes before execution begins, so the cheapest refusal is available for free. The policy row of PASS.md B4 states the analogous rule for refusals, that they are deterministic and happen before execution rather than after spend; this row proposes the same placement for the ceiling.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "F-b1-06",
         "F-b4-04"
       ],
-      "quote": "Refusal is deterministic and happens before execution, not after spend"
+      "quote": "Cost is knowable before commitment. Planning is a pure function and completes before execution begins."
     },
     {
       "step": 6,
@@ -355,7 +355,7 @@
     },
     {
       "step": 8,
-      "action": "Proposed: write the cost record in a published cost-and-usage vocabulary that already models split cost allocation, rather than inventing columns, and keep the estimate and the reconciled actual as separate members.",
+      "action": "Proposed: write the cost record in a published cost-and-usage vocabulary that already models split cost allocation, rather than inventing columns, and keep the estimate and the reconciled actual as separate members. Research query: has FOCUS 1.3's split-cost-allocation dataset actually been fetched and checked against this guarantee's reconcile shape, rather than adopted from a search-only announcement of its ratification?",
       "why": "Splitting one shared cost across the descendants that caused it is exactly the run-scoped problem here, and a ratified specification already has those columns. The records naming it are search results rather than pages that were read, so its version is unverified and no version string is asserted here.",
       "origin": "proposed",
       "sources": [

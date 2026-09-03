@@ -316,7 +316,7 @@
         "quote": "ensuring that the transparency log satisfies the desired properties of immutability and being append-only"
       },
       {
-        "text": "Proposed: the monitor is independent of the writer in identity, credentials and schedule, and its own runs are entries in the trail it scans. A check that runs inside the process that appends can be disabled by the same fault that would motivate disabling it, and a check whose runs leave no record cannot be told apart from one that has not run since March.",
+        "text": "Proposed: the monitor is independent of the writer in identity, credentials and schedule, and its own runs are entries in the trail it scans. A check that runs inside the process that appends can be disabled by the same fault that would motivate disabling it, and a check whose runs leave no record cannot be told apart from one that has not run since March. Research query: is there a fetched (not search-only) record on monitor-independence-from-writer as a distinct requirement, separate from the general 'something must independently monitor a transparency log' recommendation X-cross-structure-053 already gives?",
         "origin": "proposed",
         "sources": [
           "X-cross-structure-053",
@@ -342,7 +342,7 @@
         "quote": "An audit trail can be complete yet still be easy to alter, while a tamper-evident trail is designed to reveal interference."
       },
       {
-        "text": "Proposed, the operational consequence of that difference: telemetry may sample, may drop under load, may expire on a short window and may be exported best-effort, because a missing span degrades a signal. The trail may do none of those, because a missing entry is itself the finding. Where the two disagree the trail wins, and a run that could not append an entry does not proceed as though it had.",
+        "text": "Proposed, the operational consequence of that difference: telemetry may sample, may drop under load, may expire on a short window and may be exported best-effort, because a missing span degrades a signal. The trail may do none of those, because a missing entry is itself the finding. Where the two disagree the trail wins, and a run that could not append an entry does not proceed as though it had. Research query: is there a record contrasting telemetry's sampling/best-effort export behaviour against an audit trail's no-loss requirement, rather than this skill inferring the contrast from telemetry's own correlation clause (F-b4-06)?",
         "origin": "proposed",
         "sources": [
           "F-b4-06",
@@ -368,7 +368,7 @@
         "quote": "verifiable with a tool we did not write"
       },
       {
-        "text": "Proposed: this guarantee owns two persisted artifacts beyond the ledger it reads, neither of which the blueprint's state inventory names today - the scan operation's monitor report (entries_checked, chain_breaks, inclusion_proofs_checked, consistency_proofs_checked, oldest_retained_entry_age_days, appended on its own schedule) and the evidence operation's evidence bundle (one entry, its inclusion proof and the signed sealed head, handed to a party who holds none of our credentials). Recorded here as a row the blueprint's own review should carry too, since enumeration before pruning is the first rule of that lens.",
+        "text": "Proposed: this guarantee owns two persisted artifacts beyond the ledger it reads, neither of which the blueprint's state inventory names today - the scan operation's monitor report (entries_checked, chain_breaks, inclusion_proofs_checked, consistency_proofs_checked, oldest_retained_entry_age_days, appended on its own schedule) and the evidence operation's evidence bundle (one entry, its inclusion proof and the signed sealed head, handed to a party who holds none of our credentials). Recorded here as a row the blueprint's own review should carry too, since enumeration before pruning is the first rule of that lens. Research query: has the blueprint's state inventory actually been re-run since this row was written to confirm the monitor report and evidence bundle are still absent from it, or is the gap only asserted here?",
         "origin": "proposed",
         "sources": [
           "X-cross-structure-053",
@@ -379,7 +379,7 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: there is no write operation on this interface. Nothing a caller, an agent or a workflow can call appends an entry, edits one, marks one as not audit-relevant or suppresses one, because an interface that lets the audited party write the audit is a formatting convention rather than a guarantee.",
+        "text": "Proposed: there is no write operation on this interface. Nothing a caller, an agent or a workflow can call appends an entry, edits one, marks one as not audit-relevant or suppresses one, because an interface that lets the audited party write the audit is a formatting convention rather than a guarantee. Research query: does any fetched (not search-only) audit-log specification state read-only-to-callers as an explicit requirement, rather than this row deriving it from design rule 7's general non-optionality?",
         "origin": "proposed",
         "sources": [
           "F-b1-08",
@@ -387,18 +387,19 @@
         ]
       },
       {
-        "text": "Proposed: payload bodies never enter an entry, only digests and references. The consequence is that the scan proving accountability needs read access to no payload at all, and that a body may later be replaced by a tombstone preserving its identifier - the redaction mechanism seam-state owns - without breaking any proof the trail has already published.",
+        "text": "Proposed: payload bodies never enter an entry, only digests and references - xc-provenance-chain owns the digest-only rule this reuses. The consequence here is that the scan proving accountability needs read access to no payload at all, and a body may later be replaced by a tombstone preserving its identifier - the redaction mechanism seam-state owns.",
         "origin": "proposed",
         "sources": [
           "F-b4-05"
         ]
       },
       {
-        "text": "Proposed: the criterion a result is judged against never appears in an entry, a monitor report or an evidence bundle. agentic-stack states design rule 6 (F-b1-07); the consequence here is that an entry over a judged action records the actor, the action and the verdict and stops there, so reading one's own audit trail is not a way around the grader rule.",
-        "origin": "proposed",
+        "text": "The criterion a result is judged against never appears in an entry, a monitor report or an evidence bundle. agentic-stack states design rule 6 (F-b1-07); the consequence here is that an entry over a judged action records the actor, the action and the verdict and stops there, so reading one's own audit trail is not a way around the grader rule.",
+        "origin": "sourced",
         "sources": [
           "F-b1-07"
-        ]
+        ],
+        "quote": "An agent sees its outcome, never the criterion it is judged against."
       }
     ]
   },
@@ -528,7 +529,7 @@
       "quote": "post-event changes, deletions, or gaps are detectable, preserving evidentiary value"
     },
     {
-      "text": "Retain the verifier alongside the evidence. Proposed: a statement kept for six months whose verification tool, key material or format reader has moved on in the meantime is retained rather than verifiable, so record the verifier version in the monitor report and re-run one historical verification on every scan.",
+      "text": "Retain the verifier alongside the evidence. Proposed: a statement kept for six months whose verification tool, key material or format reader has moved on in the meantime is retained rather than verifiable, so record the verifier version in the monitor report and re-run one historical verification on every scan. Research query: is there a fetched record on verifier/key-material obsolescence for long-retained signed evidence (e.g. in-toto or DSSE key-rotation guidance), rather than this row reasoning from the general six-month retention floor alone?",
       "origin": "proposed",
       "sources": [
         "X-end-to-end-049",

@@ -11,6 +11,10 @@ export const meta = {
 // args: { sections: [{name, items:[{name, layer, kb_ids:[...], facets:[skillName...]}]}], brief: path, date: 'YYYY-MM-DD', startAt: sectionIndex }
 const SUMMARY = { type: 'object', properties: { ok: { type: 'boolean' }, summary: { type: 'string' }, numbers: { type: 'object' } }, required: ['ok', 'summary'] }
 const ROOT = '/home/user/AGENT'
+// Ceremony numbers are a repository-global counter, never per-run and never reused: ceremony 1 (section wave-1)
+// closed before this loop started, so section index s maps to ceremony s + 1 + CEREMONY_BASE. Pass
+// args.ceremonyBase for a repo with a different number of prior ceremonies; 0 for a fresh repo.
+const CEREMONY_BASE = args.ceremonyBase != null ? args.ceremonyBase : 1
 const common = `Work in ${ROOT}. Do not commit or push (a checkpoint agent does that). Skills are data: skill.json per schemas/skill.schema.json, rendered by tools/render_skill.py, checked by tools/validate_skills.py. Every statement is origin=sourced with kb ids and a verbatim quote, or origin=proposed with the word proposed in its text. Never invent a URL, version, fact, or quote. If blocked, apply TARGET.md T5 (1-3-1): define the problem, list the three best goal-aligned solutions, follow the recommendation, and record it; never stop and wait. Date for records: ${args.date}.`
 
 function researchPrompt(section, retry) {
@@ -37,7 +41,7 @@ function reviewPrompt(section, n, skills, failed) {
   return `${common}
 You are the REVIEWER in ceremony ${n} for section "${section.name}". Read TARGET.md, .claude/skills/agentic-stack/SKILL.md, .claude/skills/build-ceremony/SKILL.md if it exists, kb/ceremonies/ceremony-${String(n - 1).padStart(2, '0')}-improve.json if it exists (lessons_for_next_section), and the skill.json of: ${skills.join(', ')} (data only; spot-check ONE SKILL.md against its skill.json to confirm the render matches). Run python3 tools/validate_skills.py once and treat its errors as findings. ${failed && failed.length ? `These items already failed their author's own validation: ${failed.join(', ')}. Start there.` : ''}
 Review each against: the seven B1 rules; TARGET T1-T3 (simple, composable, all three entry points); honesty (each sourced quote supports the row's text; proposed rows say proposed; no claimed-to-measured upgrade without a run); usefulness (a fresh author can follow the instructions; the breakage would really fail); size; description triggering; links (composes_with matches the manifest and the ideal/implement/use facets reference each other correctly).
-Write kb/ceremonies/ceremony-${String(n).padStart(2, '0')}-review.json with the same shape as ceremony-01-review.json (findings with id C${n}-nnn, severity block|fix|nit, category, location, evidence, suggested_change; metrics; brief_improvements; what_worked). Precision over volume.
+Ceremony numbers are repository-global and never reused: if a ceremony-NN record already exists for a different section, use the next unused number instead and say so in your reply. Write kb/ceremonies/ceremony-${String(n).padStart(2, '0')}-review.json with the same shape as ceremony-01-review.json (findings with id C${n}-nnn, severity block|fix|nit, category, location, evidence, suggested_change; metrics; brief_improvements; what_worked). Precision over volume.
 Return JSON: ok, summary (under 80 words: counts by severity and the two most important findings), numbers {block, fix, nit, rows_total, rows_sourced, rows_proposed}.`
 }
 
@@ -45,7 +49,7 @@ function improvePrompt(section, n) {
   return `${common.replace('Do not commit or push (a checkpoint agent does that).', 'You commit and push at the end.')}
 You are the IMPROVER and CHECKPOINT in ceremony ${n} for section "${section.name}". Read kb/ceremonies/ceremony-${String(n).padStart(2, '0')}-review.json, TARGET.md, the brief at ${args.brief}, and each skill.json the findings name.
 Apply every block and fix finding, and the nits you agree with, by editing skill.json files (never SKILL.md; never composes_with). Append one row per ceremony to state/lessons.jsonl: {"ceremony":${n},"section":"${section.name}","lessons":[...],"brief_improvements":[...]} (never trimmed); keep the brief a short pointer under 120 lines and only fold in what changes an author's next action. If the findings show a defect in the root contract, the schema rules, or the ceremony discipline itself, fix that too, since the point of the ceremony is that the producing skills improve. Then: python3 tools/render_skill.py --all && python3 tools/validate_skills.py (zero errors; "not written yet" warnings are fine).
-Write kb/ceremonies/ceremony-${String(n).padStart(2, '0')}-improve.json in the same shape as ceremony-01-improve.json, including lessons_for_next_section. Append a ledger record: python3 tools/kb.py ledger '{"kind":"ceremony","ceremony":${n},"section":"${section.name}","agent":"opus-improver","result":"<applied/declined/validator>","status":"measured"}'
+Ceremony numbers are repository-global and never reused: if a ceremony-NN record already exists for a different section, use the next unused number instead and say so in your reply. Write kb/ceremonies/ceremony-${String(n).padStart(2, '0')}-improve.json in the same shape as ceremony-01-improve.json, including lessons_for_next_section. Append a ledger record: python3 tools/kb.py ledger '{"kind":"ceremony","ceremony":${n},"section":"${section.name}","agent":"opus-improver","result":"<applied/declined/validator>","status":"measured"}'
 Then CHECKPOINT: if python3 tools/validate_skills.py still reports errors, write kb/ceremonies/section-${String(n).padStart(2, '0')}-known-issues.json {"section":"${section.name}","broken":[skill names],"errors":[...]} so later agents will not build on them (delete the file if you cleared everything). Run python3 tools/kb.py verify && python3 tools/kb.py ledger-verify && python3 tools/skill_graph.py && write state/loop.json {"last_completed_section":"${section.name}","ceremony":${n}}; git add -A && git commit -m "Section ${section.name}: skills, research, ceremony ${n}" with trailer lines "Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>" and "Claude-Session: https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96"; git push (retry 4 times with 2s,4s,8s,16s backoff on network errors). Abort the commit if kb verify or ledger-verify failed. Commit with remaining validator errors only when the known-issues file lists them.
 Return JSON: ok (pushed), summary (under 80 words: applied, declined, validator line, commit sha, top lesson), numbers {applied, declined, validator_errors}.`
 }
@@ -54,7 +58,7 @@ const results = []
 const start = args.startAt || 0
 for (let s = start; s < args.sections.length; s++) {
   const section = args.sections[s]
-  const n = s + 1
+  const n = s + 1 + CEREMONY_BASE
   log(`Section ${n}/${args.sections.length}: ${section.name} (${section.items.length} items)`)
   let research = await agent(researchPrompt(section, false), { label: `research:${section.name}`, phase: 'Research', schema: SUMMARY, model: 'haiku', effort: 'medium' })
   const minRec = research && research.numbers && research.numbers.records_min_per_item

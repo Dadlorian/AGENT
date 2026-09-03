@@ -1,0 +1,106 @@
+{
+  "ceremony": 2,
+  "section": "wave-1a",
+  "improver": "opus-improver",
+  "date": "2026-09-03",
+  "applied": [
+    {
+      "finding": "C2-001",
+      "change": "build-ceremony now states how a ceremony is numbered. A new instruction step 3 says N is one counter global to the repository, taken as one more than the highest kb/ceremonies/ceremony-*-review.json on disk, used unchanged for the review record, improve record, lessons row, ledger record and known-issues file, and never reused or reset even when the caller hands a different number. A new proposed invariant sits directly after the 'never a gate that waits' invariant, as the finding suggested, and says a caller that derives N from its own position in a run is corrected rather than obeyed. Step 4 now writes the review record 'under the number from step 3'.",
+      "files": [
+        ".claude/skills/build-ceremony/skill.json",
+        ".claude/skills/build-ceremony/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C2-002",
+      "change": "build-definition-of-done stops re-deriving F-a7-03. contract.invariants[3] now opens 'agentic-stack already states the well-formedness finding (F-a7-03): structural stages settle well-formedness only' and keeps only this skill's own consequence (a verdict of pass may not rest on them alone, which is why the gate-outcome records kind, applicable, ran and checked per stage). Instruction step 3's why was reworded the same way, matching the skill's existing F-b1-07 row and the sibling wave-1a skills.",
+      "files": [
+        ".claude/skills/build-definition-of-done/skill.json",
+        ".claude/skills/build-definition-of-done/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C2-003",
+      "change": "build-research-record no longer marks the repo-wide discipline as sourced to F-part-c-03, whose text is scoped to one ask item. purpose now carries the general claim on X-build-research-record-001 and -002 (quote: 'keeping track of your sources that allow you to collect and store information about sources') and names PASS.md's Dispatch-and-State rule as the narrower instance. contract.invariants[0] and instruction step 6 were flipped to origin=proposed, keeping F-part-c-03 and its quote as the example that licenses the narrow case, with the extension to every lens stated as our convention.",
+      "files": [
+        ".claude/skills/build-research-record/skill.json",
+        ".claude/skills/build-research-record/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C2-004",
+      "change": "build-ceremony's instructions table went from 12 rows to 10, inside the brief's checked budget, while absorbing the new numbering step. Three merges, each of two steps that were one act: old 1+2 (run the ceremony at the end of the section, in the retrospective flow) into one sourced step citing T-t4-04 and X-build-ceremony-008; old 6+9 (write the improve record, then re-render and re-validate what it touched and record the result in metrics_after) as the finding suggested; and old 7+8 (integrate only actionable updates, and write the lessons to the persistent learning store) into one sourced step citing X-build-ceremony-003 and -005. No claim was dropped.",
+      "files": [
+        ".claude/skills/build-ceremony/skill.json",
+        ".claude/skills/build-ceremony/SKILL.md"
+      ]
+    }
+  ],
+  "declined": [],
+  "also_changed": [
+    {
+      "why": "C2-001 is a defect in the ceremony discipline itself, not only in the skill that describes it: the harness computes the ceremony number from the section's position in its own run (const n = s + 1), so every section of this run collides with a ceremony that closed before the run started. Fixing only the skill would leave the next section colliding with this one.",
+      "change": "state/loop-workflow.js now carries CEREMONY_BASE (args.ceremonyBase, defaulting to 1 because ceremony 1 closed before this run) and computes n = s + 1 + CEREMONY_BASE, and both ceremony prompts now open with the rule that ceremony numbers are repository-global and never reused, so an agent handed a taken number takes the next unused one and says so.",
+      "files": [
+        "state/loop-workflow.js"
+      ]
+    },
+    {
+      "why": "A numbering rule nobody checks is a habit. tools/ceremony_check.py already pairs records by N, so it is the place the rule becomes visible.",
+      "change": "tools/ceremony_check.py prints a numbering line: contiguous from 1, no section used by two ceremonies, and each lessons row's section matching its review record's section, or a PROBLEM line naming what does not hold. Run on the current tree it reports 'numbering ok (contiguous from 1, one section each)'.",
+      "files": [
+        "tools/ceremony_check.py"
+      ]
+    },
+    {
+      "why": "The checkpoint step runs tools/skill_graph.py, which crashed with ImportError: it still imported frontmatter and composes_with from validate_skills and grouped skills by the old layer-prefix table, both gone when the validator moved to skill.json data. A broken tool in the checkpoint chain would have blocked every later section. 1-3-1: (a) skip it and note the breakage - rejected, it blocks every checkpoint; (b) delete the tool - rejected, the graph is how a composer sees the links; (c) point it at the same data the validator checks - taken.",
+      "change": "tools/skill_graph.py now reads every skill.json directly (name, layer, description, composes_with) instead of parsing the rendered SKILL.md, and groups by the schema's layer values. It runs clean and wrote docs/skill-graph.md with 7 skills.",
+      "files": [
+        "tools/skill_graph.py",
+        "docs/skill-graph.md"
+      ]
+    }
+  ],
+  "decisions": [
+    {
+      "problem": "This improve step was launched as 'ceremony 1 for section wave-1a' and told to read kb/ceremonies/ceremony-01-review.json and write kb/ceremonies/ceremony-01-improve.json, but ceremony 1 is a closed ceremony for section wave-1 (review and improve records both present, applied 7, referenced by kb/ledger.jsonl L-00002 and by the ceremony-1 row in state/lessons.jsonl). The review of wave-1a is kb/ceremonies/ceremony-02-review.json.",
+      "options": [
+        "Obey the literal instruction and overwrite ceremony-01-improve.json - rejected: it destroys a closed ceremony's record, orphans L-00002, and would leave two different sections claiming ceremony 1 in state/lessons.jsonl, which tools/ceremony_check.py keys by number.",
+        "Stop and ask which number to use - rejected: TARGET.md T5.1, 'Do not stop at ceremonies; run them and continue.'",
+        "Take the next unused number on disk, apply the wave-1a findings from ceremony-02-review.json, and write every record of this ceremony under 2 - taken: it matches what the reviewer already did under the same conflict, keeps review and improve paired, and requires no destructive action."
+      ],
+      "chosen": "Everything this ceremony wrote is numbered 2: kb/ceremonies/ceremony-02-improve.json, the ceremony-2 row in state/lessons.jsonl, the ledger record, and state/loop.json. The rule that produced this choice was then written into build-ceremony, the author brief, the harness and the ceremony checker so the next section does not have to re-derive it.",
+      "sources": [
+        "T-t5-01",
+        "T-t5-02"
+      ],
+      "quote": "define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation"
+    }
+  ],
+  "brief_changes": [
+    "Renamed the defect section to 'Defects found in ceremonies 1-2' and noted that items 2 and 4 recurred in wave 1a, so each now carries the check that would have caught it.",
+    "Item 2 (compose by name, not by copy) now says the rule applies per fact, not only when a fact recurs across several skills, with the concrete check: grep the builds_on skill's skill.json for the kb id before writing the row, and if it is there, open with 'agentic-stack already states this (F-...)' and add only your consequence.",
+    "Item 4 (origin=sourced covers scope) now names the check: run kb.py show and read the whole sentence the quote sits in, including its subject; if your row's subject is wider, the row is proposed. F-part-c-03 is given as the example that was widened.",
+    "Added item 7: ceremony numbers are a repository-global counter, never per-section and never reused; if a caller hands you a taken number, take the next unused one and say so, because obeying it overwrites a closed ceremony. It names tools/ceremony_check.py as the check.",
+    "Added one line to the what-worked section: two wave-1a definitions of done were re-run by the reviewer and reproduced their recorded output and exit codes exactly, breakage included, so criteria should be written to be runnable from the skill alone. The brief is 99 lines, inside the 120-line budget."
+  ],
+  "metrics_after": {
+    "skills": 3,
+    "rows_total": 102,
+    "rows_sourced": 40,
+    "rows_proposed": 62,
+    "validator_errors": 0,
+    "instructions_build_ceremony": 10,
+    "brief_lines": 99,
+    "skill_graph": "wrote docs/skill-graph.md with 7 skills (tool repaired this ceremony)"
+  },
+  "lessons_for_next_section": [
+    "A ceremony number is a repository-global counter: one more than the highest kb/ceremonies/ceremony-NN-review.json on disk, never per-section, never reused. If the prompt hands you a number that is already taken, take the next unused one, say so, and never overwrite a closed record.",
+    "When a finding names a defect in the discipline rather than in one row, fix the thing that generates the defect too: this ceremony changed the skill, the author brief, the harness prompt and the checker, so the next section cannot repeat it by following its instructions.",
+    "Compose by name applies per fact, not per repetition. Before writing a row, grep the builds_on skill's skill.json for the kb id you are about to cite; if it is already there, cite that skill by name and add only your own consequence.",
+    "Before marking a row sourced, read the whole sentence the quote sits in and compare its subject with your row's subject. A record about one ask item does not license a repo-wide discipline; carry the general claim on a record that is general, and keep the narrow record as the example.",
+    "A budget overrun is usually two steps that are one act. Merging them keeps every claim and its citation, which is cheaper than dropping a row: three merges took build-ceremony from 12 instructions to 10 with nothing lost.",
+    "Two definitions of done in this section were re-run by the reviewer and reproduced their recorded output exactly. Write the criterion, the breakage and the expected failure so a reader can run them from the skill alone; that is what makes a measured label checkable rather than asserted."
+  ]
+}

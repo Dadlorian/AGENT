@@ -1,0 +1,104 @@
+{
+  "registry_version": "0.1",
+  "agents": [
+    {
+      "name": "triage-router",
+      "good_at": [
+        "reading one inbound fault report and naming the single failing component plus the fault family in one turn",
+        "extracting the reproduction command and the first in-repo stack frame from a pasted traceback",
+        "deciding which of the declared downstream profiles should see the report next"
+      ],
+      "not_for": "writing a patch, or deciding whether a patch is acceptable",
+      "model_class": "i-fast",
+      "tools": [],
+      "inputs": {"required": ["report_text"], "fields": {"report_text": "string", "source_kind": "string"}},
+      "outputs": {"required": ["component", "fault_family", "repro_command"], "fields": {"component": "string", "fault_family": "string", "repro_command": "string", "confidence": "string"}},
+      "cost_class": "low",
+      "max_concurrency": 64
+    },
+    {
+      "name": "repro-extractor",
+      "good_at": [
+        "turning a stack trace and a repro command into a minimal failing test invocation, offline",
+        "listing the files named in a traceback in the order they were entered"
+      ],
+      "not_for": "anything needing network access or a metered call",
+      "model_class": "f-grunt",
+      "tools": ["read_file", "list_dir"],
+      "inputs": {"required": ["repro_command", "component"], "fields": {"repro_command": "string", "component": "string"}},
+      "outputs": {"required": ["failing_test", "touched_files"], "fields": {"failing_test": "string", "touched_files": "string[]"}},
+      "cost_class": "free",
+      "max_concurrency": 16
+    },
+    {
+      "name": "log-bulk-summarizer",
+      "good_at": [
+        "summarising tens of thousands of log lines into a per-hour error histogram, tolerating minutes of latency",
+        "finding the first occurrence of a fault signature across a retained log window"
+      ],
+      "not_for": "anything a caller is waiting on interactively",
+      "model_class": "b-deep",
+      "tools": ["log_query"],
+      "inputs": {"required": ["fault_family", "window_hours"], "fields": {"fault_family": "string", "window_hours": "integer"}},
+      "outputs": {"required": ["first_seen", "occurrences"], "fields": {"first_seen": "string", "occurrences": "integer", "histogram": "object"}},
+      "cost_class": "low",
+      "max_concurrency": 8
+    },
+    {
+      "name": "dedup-checker",
+      "good_at": [
+        "deciding whether an incoming fault signature matches an already-open incident, cheaply and locally",
+        "returning the open incident id when it matches and an explicit none when it does not"
+      ],
+      "not_for": "judging severity or deciding whether to page anyone",
+      "model_class": "f-smoke",
+      "tools": ["incident_search"],
+      "inputs": {"required": ["fault_family", "component"], "fields": {"fault_family": "string", "component": "string"}},
+      "outputs": {"required": ["duplicate_of"], "fields": {"duplicate_of": "string", "similarity": "string"}},
+      "cost_class": "free",
+      "max_concurrency": 32
+    },
+    {
+      "name": "code-fixer",
+      "good_at": [
+        "editing a repository until a named failing test passes, running the test command between edits",
+        "keeping a patch confined to the files a triage step named"
+      ],
+      "not_for": "deciding whether the patch is good enough to ship, and any change outside the named files",
+      "model_class": "cli-",
+      "tools": ["read_file", "write_file", "run_tests"],
+      "inputs": {"required": ["failing_test", "touched_files", "attempt"], "fields": {"failing_test": "string", "touched_files": "string[]", "attempt": "integer", "previous_verdict": "string"}},
+      "outputs": {"required": ["patch", "test_output"], "fields": {"patch": "string", "test_output": "string"}},
+      "cost_class": "high",
+      "max_concurrency": 4
+    },
+    {
+      "name": "risk-escalator",
+      "good_at": [
+        "writing the one-screen brief a human needs to approve or reject a patch: blast radius, rollback, what is unproven",
+        "naming the single fact that would change the recommendation if it turned out false"
+      ],
+      "not_for": "making the decision itself, or editing code",
+      "model_class": "i-escalate",
+      "tools": [],
+      "inputs": {"required": ["patch", "duplicate_of"], "fields": {"patch": "string", "duplicate_of": "string", "occurrences": "integer"}},
+      "outputs": {"required": ["brief", "recommendation"], "fields": {"brief": "string", "recommendation": "string"}},
+      "cost_class": "medium",
+      "max_concurrency": 8
+    },
+    {
+      "name": "regression-test-author",
+      "good_at": [
+        "writing one regression test that fails before a patch and passes after it, in the repository's existing test style",
+        "naming the test after the fault family so the next occurrence is searchable"
+      ],
+      "not_for": "broad test-suite refactoring or coverage campaigns",
+      "model_class": "cli-",
+      "tools": ["read_file", "write_file", "run_tests"],
+      "inputs": {"required": ["patch", "failing_test"], "fields": {"patch": "string", "failing_test": "string"}},
+      "outputs": {"required": ["test_path", "test_output"], "fields": {"test_path": "string", "test_output": "string"}},
+      "cost_class": "medium",
+      "max_concurrency": 4
+    }
+  ]
+}

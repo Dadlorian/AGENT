@@ -54,6 +54,20 @@ def main() -> int:
         print(f"  known    {'broken: ' + ', '.join(json.loads(known[0].read_text()).get('broken', [])) if known else 'none'}")
         total_rows = (m.get("rows_sourced") or 0) + (m.get("rows_proposed") or 0)
         trend.append((n, (sev["block"] + sev["fix"]) / skills, (m.get("rows_proposed") or 0) / total_rows if total_rows else None))
+    # Ceremony numbers are a repository-global counter: contiguous from 1, never reused, one section per number.
+    nums = [int(re.search(r"ceremony-(\d+)-review", rp.name).group(1)) for rp in reviews]
+    sections = [json.loads(rp.read_text()).get("section") for rp in reviews]
+    problems = []
+    if nums != list(range(1, len(nums) + 1)):
+        problems.append(f"numbers are {nums}, expected {list(range(1, len(nums) + 1))}")
+    dup_sections = sorted({s for s in sections if sections.count(s) > 1})
+    if dup_sections:
+        problems.append("section reused across ceremonies: " + ", ".join(map(str, dup_sections)))
+    for n, sec in zip(nums, sections):
+        ls = lessons.get(n)
+        if ls and ls.get("section") != sec:
+            problems.append(f"lessons row for ceremony {n} says section {ls.get('section')!r}, review says {sec!r}")
+    print("numbering", "ok (contiguous from 1, one section each)" if not problems else "PROBLEM: " + "; ".join(problems))
     print("brief   commits touching state/author-brief.md:", len(brief_commits))
     for c in brief_commits[:6]:
         print("   ", c)

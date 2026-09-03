@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:example:agent-profile:0.1",
+  "title": "Agent profile registry",
+  "description": "Each agent is declared up front by what it is good at, so a caller knows how to call it and how to sequence it (T-t6-05). model_class is a routing class, never a vendor (F-a4-01).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["registry_version", "agents"],
+  "properties": {
+    "registry_version": {"const": "0.1"},
+    "agents": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/profile"}}
+  },
+  "$defs": {
+    "profile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "good_at", "not_for", "model_class", "tools", "inputs", "outputs", "cost_class", "max_concurrency"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,47}$"},
+        "good_at": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 20},
+          "description": "Specific enough to sequence on. 'good at code' is not an entry; 'turns a stack trace into a failing-test command' is."
+        },
+        "not_for": {"type": "string", "minLength": 10, "description": "The call that should go to a different profile."},
+        "model_class": {
+          "type": "string",
+          "pattern": "^(f|i|b|cli)-[a-z0-9-]*$",
+          "description": "Routing class by prefix: f- free local GPU, i- interactive metered, b- asynchronous batch, cli- coding CLI as a model (F-a4-02..F-a4-05). A bare prefix pins the class and leaves the member to the gateway."
+        },
+        "tools": {"type": "array", "items": {"type": "string"}},
+        "inputs": {"$ref": "#/$defs/shape"},
+        "outputs": {"$ref": "#/$defs/shape"},
+        "cost_class": {"enum": ["free", "low", "medium", "high"]},
+        "max_concurrency": {"type": "integer", "minimum": 1, "maximum": 512}
+      }
+    },
+    "shape": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required", "fields"],
+      "properties": {
+        "required": {"type": "array", "items": {"type": "string"}},
+        "fields": {"type": "object", "description": "field name to declared type: string, string[], integer, boolean, object"}
+      }
+    }
+  }
+}

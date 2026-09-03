@@ -201,6 +201,10 @@
         "quote": "Do not stop at ceremonies; run them and continue."
       },
       {
+        "text": "Proposed: a ceremony number is a counter global to the repository, not a per-section one. It is one more than the highest ceremony-NN-review.json on disk, it is never reused and never reset, and the same N ties the review record, the improve record, the lessons row, the ledger record and any known-issues file together. A caller that derives the number from its own position in a run is corrected, not obeyed, because obeying it overwrites a closed ceremony.",
+        "origin": "proposed"
+      },
+      {
         "text": "Proposed: every finding id in the review record appears exactly once across the improve record's applied and declined lists. A finding in neither list, or in both, fails the ceremony check.",
         "origin": "proposed"
       },
@@ -247,26 +251,17 @@
   "instructions": [
     {
       "step": 1,
-      "action": "Run the ceremony at the end of every section, before any work on the next section begins, and treat it as part of the loop rather than an optional wrap-up.",
-      "why": "The method makes the self-improvement loop the way every item is worked through, with the ceremony at the end of each section.",
+      "action": "Run the ceremony at the end of every section, before any work on the next section begins: set the stage, review what happened, generate insights, agree on a small set of improvement actions, and close with clear owners and next steps.",
+      "why": "The method makes the self-improvement loop the way every item is worked through, and the published retrospective flow ends on a bounded action set with owners, which is what separates a retrospective from a discussion.",
       "origin": "sourced",
       "sources": [
-        "T-t4-04"
-      ],
-      "quote": "Work through every item with a self-improvement loop"
-    },
-    {
-      "step": 2,
-      "action": "Set the stage, review what happened, generate insights, agree on a small set of improvement actions, and close with clear owners and next steps.",
-      "why": "This is the published retrospective flow; ending on a bounded action set with owners is what separates a retrospective from a discussion.",
-      "origin": "sourced",
-      "sources": [
+        "T-t4-04",
         "X-build-ceremony-008"
       ],
       "quote": "set the stage, review what happened, generate insights, agree on a small set of improvement actions, and close with clear owners and next steps"
     },
     {
-      "step": 3,
+      "step": 2,
       "action": "Review the artifacts on disk and the traces of the runs that produced them, not the authors' summaries of what they did.",
       "why": "Reflective improvement in the prior art works from the execution trace: it extracts the module's inputs, outputs and reasoning and returns a score plus text feedback, which is credit assignment a summary cannot support.",
       "origin": "sourced",
@@ -277,8 +272,14 @@
       "quote": "From the execution traces, GEPA extracts the module's inputs, outputs, and reasoning, and calls a feedback function which returns a numeric score and text feedback"
     },
     {
+      "step": 3,
+      "action": "Number the ceremony before writing anything: N is one counter global to the repository, never per-section. List kb/ceremonies/ceremony-*-review.json, take one more than the highest N on disk, and use that same N for the review record, the improve record, the row in the learning store, the ledger record and any known-issues file. A number is never reused or reset, even when the caller hands you a different one (proposed).",
+      "why": "Proposed: the number, not the section name, is what pairs a review record with its improve record and what the ceremony checker keys the lessons row, the ledger record and the known-issues file on. A caller that derives N from a position in its own run collides with a closed ceremony and would overwrite it; ceremony 2 of this repository was asked for as ceremony 1 and was renumbered under the 1-3-1 protocol rather than overwriting ceremony 1's closed records.",
+      "origin": "proposed"
+    },
+    {
       "step": 4,
-      "action": "Write one review record conforming to the review-record shape: every finding gets an id, the skill and location it lands on, a severity of block, fix or nit, a category, the finding, a verbatim evidence quote from the artifact, and a suggested change.",
+      "action": "Write one review record under the number from step 3, conforming to the review-record shape: every finding gets an id, the skill and location it lands on, a severity of block, fix or nit, a category, the finding, a verbatim evidence quote from the artifact, and a suggested change.",
       "why": "Proposed: a finding without a location and a verbatim evidence quote can be neither applied nor refuted, so it silently becomes an opinion the next author is free to ignore.",
       "origin": "proposed"
     },
@@ -290,38 +291,23 @@
     },
     {
       "step": 6,
-      "action": "Write one improve record conforming to the improve-record shape, resolving every finding id as applied with its change and the files it touched, or declined with its reason.",
-      "why": "Proposed: applied-or-declined with no third state is what makes the ceremony checkable; an unresolved finding is the failure mode the check exists to catch.",
+      "action": "Write one improve record conforming to the improve-record shape, resolving every finding id as applied with its change and the files it touched, or declined with its reason; then re-render and re-validate every skill the improve step touched and record the validator result in metrics_after (proposed).",
+      "why": "Proposed: applied-or-declined with no third state is what makes the ceremony checkable, and an unresolved finding is the failure mode the check exists to catch. The rendered skill file is generated, so an improvement that is not re-rendered leaves the readable artifact contradicting its own data and the ceremony would have made the repository worse.",
       "origin": "proposed"
     },
     {
       "step": 7,
-      "action": "Integrate only actionable updates into the brief and the skills, rather than accumulating every observation.",
-      "why": "In the reflective loop the Reflector identifies what helped or hurt and the Curator integrates updates into the playbook; the curation step is what keeps the playbook usable rather than merely longer.",
+      "action": "Integrate only actionable updates into the skills and the author brief rather than accumulating every observation, and write the lessons to the persistent learning store the next section reads before it starts.",
+      "why": "In the reflective loop the Reflector identifies what helped or hurt and the Curator integrates updates into the playbook, which is what keeps the playbook usable rather than merely longer; the learning store is the persistent file the next run reads at its start, which is what closes the feedback loop rather than ending it at the review.",
       "origin": "sourced",
       "sources": [
-        "X-build-ceremony-003"
+        "X-build-ceremony-003",
+        "X-build-ceremony-005"
       ],
       "quote": "Reflector reviews the outcome and identifies what helped or hurt, and Curator/Mutator integrates updates into the playbook"
     },
     {
       "step": 8,
-      "action": "Write the lessons to the persistent learning store the next section reads before it starts, and mirror the ones that change how authors work into the author brief.",
-      "why": "A learning store is a persistent file the agent reads at the start of each run and writes lessons to after identifying what went wrong, which is what closes the feedback loop rather than ending it at the review.",
-      "origin": "sourced",
-      "sources": [
-        "X-build-ceremony-005"
-      ],
-      "quote": "A learning store is a persistent file or database the agent reads at the start of each run"
-    },
-    {
-      "step": 9,
-      "action": "Re-render and re-validate every skill the improve step touched, and record the validator result in metrics_after.",
-      "why": "Proposed: the rendered skill file is generated, so an improvement that is not re-rendered leaves the readable artifact contradicting its own data, and the ceremony would have made the repository worse.",
-      "origin": "proposed"
-    },
-    {
-      "step": 10,
       "action": "Record the section's metrics in the review record and the post-improvement metrics in the improve record, using the same counters both times.",
       "why": "Versioning the artifact lets a later reader diff it against the previous version and measure whether it improved, instead of asserting that it did.",
       "origin": "sourced",
@@ -331,7 +317,7 @@
       "quote": "updating a template allows you to diff it against the previous version and measure whether outputs improved"
     },
     {
-      "step": 11,
+      "step": 9,
       "action": "If the ceremony surfaces a blocker, define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation, recording the choice as an open question with its deciding evidence; if no recommendation emerges, drop the two lowest, find two more, and repeat.",
       "why": "The operating protocol fixes this as the response to a problem, so the ceremony resolves and continues instead of parking the section.",
       "origin": "sourced",
@@ -342,7 +328,7 @@
       "quote": "define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation"
     },
     {
-      "step": 12,
+      "step": 10,
       "action": "Open references/ceremony-records.md only when writing a ceremony checker or adding a field to either record; the two summary shapes above are enough to run a ceremony by hand (proposed).",
       "why": "Proposed: the discipline has to stay small enough to be used, and a reader who meets a full field-level schema first will treat the ceremony as overhead.",
       "origin": "proposed",

@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:example:workflow:0.1",
+  "title": "Workflow",
+  "description": "A workflow composed from a closed set of six operators. The set is closed on purpose: few enough primitives to learn in one sitting (T-t3-01, T-t3-02). Budget and correlation are carried by the platform through every operator, never passed by the author (F-b4-01).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["workflow_version", "name", "carries", "root"],
+  "properties": {
+    "workflow_version": {"const": "0.1"},
+    "name": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,47}$"},
+    "description": {"type": "string"},
+    "carries": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["correlation", "budget", "actor", "idempotency"],
+      "description": "Declared so a reader can see it, not so a caller can choose it: every value here is a const.",
+      "properties": {
+        "correlation": {"const": "explicit_attribute_from_entry"},
+        "budget": {"const": "decrement_per_step_from_entry_ceiling"},
+        "actor": {"const": "delegation_chain_from_entry"},
+        "idempotency": {"const": "key_from_entry"}
+      }
+    },
+    "root": {"$ref": "#/$defs/step"}
+  },
+  "$defs": {
+    "step": {
+      "anyOf": [
+        {"$ref": "#/$defs/sequence"},
+        {"$ref": "#/$defs/parallel"},
+        {"$ref": "#/$defs/loop"},
+        {"$ref": "#/$defs/approval"},
+        {"$ref": "#/$defs/agent"},
+        {"$ref": "#/$defs/judge"}
+      ]
+    },
+    "sequence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "id", "steps"],
+      "description": "Run children in order; each sees the results of the ones before it.",
+      "properties": {
+        "op": {"const": "sequence"},
+        "id": {"$ref": "#/$defs/id"},
+        "steps": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/step"}}
+      }
+    },
+    "parallel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "id", "branches"],
+      "description": "Fan out over independent branches, fan in when all have returned. Branch order does not affect the result.",
+      "properties": {
+        "op": {"const": "parallel"},
+        "id": {"$ref": "#/$defs/id"},
+        "branches": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/step"}}
+      }
+    },
+    "loop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "id", "max_iterations", "exit_when", "body"],
+      "description": "Bounded repetition. It ends on the exit condition, on max_iterations, or when the budget ceiling is reached, whichever comes first. There is no unbounded loop operator.",
+      "properties": {
+        "op": {"const": "loop"},
+        "id": {"$ref": "#/$defs/id"},
+        "max_iterations": {"type": "integer", "minimum": 1, "maximum": 25},
+        "exit_when": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["judge_step", "verdict"],
+          "properties": {
+            "judge_step": {"$ref": "#/$defs/id"},
+            "verdict": {"enum": ["pass", "fail"]}
+          }
+        },
+        "body": {"$ref": "#/$defs/step"}
+      }
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "id", "asks", "decisions", "returns"],
+      "description": "Park the unit and wait for a human to return a decision on the same correlation id. The wait is not a budget cost.",
+      "properties": {
+        "op": {"const": "approval"},
+        "id": {"$ref": "#/$defs/id"},
+        "asks": {"type": "string", "minLength": 1},
+        "decisions": {"type": "array", "minItems": 2, "items": {"enum": ["approve", "edit", "reject"]}},
+        "returns": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["fields"],
+          "properties": {"fields": {"type": "object"}}
+        },
+        "on_reject": {"enum": ["stop", "continue"]}
+      }
+    },
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "id", "agent", "input_from", "task"],
+      "description": "Call one declared profile. The profile decides the model class; the step never names a model.",
+      "properties": {
+        "op": {"const": "agent"},
+        "id": {"$ref": "#/$defs/id"},
+        "agent": {"type": "string"},
+        "input_from": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+        "task": {"type": "string", "minLength": 1}
+      }
+    },
+    "judge": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["op", "id", "of", "criterion_ref"],
+      "description": "Grade a step's result against a criterion the graded agent never sees (F-b1-07). criterion_ref is an opaque handle; the criterion body lives outside the workflow.",
+      "properties": {
+        "op": {"const": "judge"},
+        "id": {"$ref": "#/$defs/id"},
+        "of": {"$ref": "#/$defs/id"},
+        "criterion_ref": {"type": "string", "pattern": "^criterion://[a-z0-9./-]+$"}
+      }
+    },
+    "id": {"type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,39}$"}
+  }
+}

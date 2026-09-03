@@ -1,0 +1,98 @@
+{
+  "workflow_version": "0.1",
+  "name": "triage-and-fix",
+  "description": "Decompose one fault report, fan out to three agents at once, loop a fixer against a hidden criterion until it passes or the budget is spent, park for a human, then write the regression test. Uses every operator once.",
+  "carries": {
+    "correlation": "explicit_attribute_from_entry",
+    "budget": "decrement_per_step_from_entry_ceiling",
+    "actor": "delegation_chain_from_entry",
+    "idempotency": "key_from_entry"
+  },
+  "root": {
+    "op": "sequence",
+    "id": "root",
+    "steps": [
+      {
+        "op": "agent",
+        "id": "triage",
+        "agent": "triage-router",
+        "input_from": ["entry.payload"],
+        "task": "Name the failing component, the fault family, and the reproduction command."
+      },
+      {
+        "op": "parallel",
+        "id": "decompose",
+        "branches": [
+          {
+            "op": "agent",
+            "id": "repro",
+            "agent": "repro-extractor",
+            "input_from": ["triage"],
+            "task": "Reduce the reproduction command to one failing test and list the files it touches."
+          },
+          {
+            "op": "agent",
+            "id": "logs",
+            "agent": "log-bulk-summarizer",
+            "input_from": ["triage"],
+            "task": "Count occurrences of this fault family in the retained window and name the first."
+          },
+          {
+            "op": "agent",
+            "id": "dedup",
+            "agent": "dedup-checker",
+            "input_from": ["triage"],
+            "task": "Say whether this matches an open incident, or none."
+          }
+        ]
+      },
+      {
+        "op": "loop",
+        "id": "fix-loop",
+        "max_iterations": 3,
+        "exit_when": {"judge_step": "fix-judge", "verdict": "pass"},
+        "body": {
+          "op": "sequence",
+          "id": "attempt",
+          "steps": [
+            {
+              "op": "agent",
+              "id": "fix",
+              "agent": "code-fixer",
+              "input_from": ["repro", "fix-judge"],
+              "task": "Edit only the named files until the failing test passes, then report the patch and the test output."
+            },
+            {
+              "op": "judge",
+              "id": "fix-judge",
+              "of": "fix",
+              "criterion_ref": "criterion://fix-acceptable/v1"
+            }
+          ]
+        }
+      },
+      {
+        "op": "agent",
+        "id": "brief",
+        "agent": "risk-escalator",
+        "input_from": ["fix", "dedup", "logs"],
+        "task": "Write the one-screen brief a human needs to approve or reject this patch."
+      },
+      {
+        "op": "approval",
+        "id": "ship-approval",
+        "asks": "Approve this patch for the regression-test step, or reject it.",
+        "decisions": ["approve", "edit", "reject"],
+        "returns": {"fields": {"decision": "string", "note": "string"}},
+        "on_reject": "stop"
+      },
+      {
+        "op": "agent",
+        "id": "regression",
+        "agent": "regression-test-author",
+        "input_from": ["fix", "repro"],
+        "task": "Write one regression test that fails before the patch and passes after it."
+      }
+    ]
+  }
+}

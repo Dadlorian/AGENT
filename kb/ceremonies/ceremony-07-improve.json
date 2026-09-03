@@ -1,0 +1,87 @@
+{
+  "ceremony": 7,
+  "section": "wave-4a",
+  "improver": "opus-improver",
+  "date": "2026-09-03",
+  "numbering_note": "Handed in as ceremony 6, which is closed for section wave-3c (kb/ceremonies/ceremony-06-review.json and -improve.json, state/loop.json ceremony=6). Ceremony numbers are a repository-global counter, so this improve record takes 7, matching kb/ceremonies/ceremony-07-review.json's own renumbering and keeping review, improve, lessons, ledger and loop tied to one N under tools/ceremony_check.py. Sixth stale number in a row; the correction lives in state/author-brief.md item 7 because a running workflow executes the code it was launched with.",
+  "applied": [
+    {
+      "finding": "C7-001",
+      "change": "cap-human-interaction-use's failure shape no longer contradicts itself and no longer presents an unregistered type as the wire type. The description now says the ask was closed by its own deadline, the run terminated then with the registered `deadline-exceeded`, and a decision presented afterwards is refused and not retryable, so the example's 409 / retryable false agree with the prose; detail names the close time and the late decision time. `human-ask-expired` is marked proposed and pending registration in docs/decomposition.md section 2.1.6, and a new open_question follows core-graph's pattern exactly: three options weighed (deadline-exceeded, idempotency-conflict, add the row), the recommended row named with its status, retryability and extension members, and the fallback stated - `deadline-exceeded` with the ask id in detail until the row lands, with its retryable member named as the cost that argues for the row.",
+      "files": [
+        ".claude/skills/cap-human-interaction-use/skill.json",
+        ".claude/skills/cap-human-interaction-use/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C7-002",
+      "change": "cap-memory-use now reuses the registered `policy-denied` (403, rule_id `memory.scope.not-held`) for a recall at a scope the actor does not hold, which is exactly that row's 'deterministic pre-execution refusal', and says so; the invented `memory-scope-denied` is gone from the worked example. cap-capability-registry-use and cap-mandate-broker-use keep the descriptive suffix but now meet core-graph's bar: each marks it proposed and pending registration where it is stated, each names `identity-untrusted` as the registered fallback in the shape description and in the definition_of_done's expected_failure, and each carries a new open_question weighing three options and naming the row it would add (`record-unsigned` plus its `record-digest-mismatch` sibling; `credential-audience-mismatch` with audience_minted_for / audience_presented_at). cap-capability-registry-use's pre-existing yanked-version open_question, which named a second unregistered type (`constraint-unsatisfiable`) in passing, was given the same marking and a `document-invalid` fallback.",
+      "files": [
+        ".claude/skills/cap-memory-use/skill.json",
+        ".claude/skills/cap-capability-registry-use/skill.json",
+        ".claude/skills/cap-mandate-broker-use/skill.json",
+        ".claude/skills/cap-memory-use/SKILL.md",
+        ".claude/skills/cap-capability-registry-use/SKILL.md",
+        ".claude/skills/cap-mandate-broker-use/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C7-002 (producing rule)",
+      "change": "Fixed the rule, not only the four rows that broke it. cap-errors, which owns the closed registry, now states in instruction 3 and in its registry invariant what a skill that needs an unrostered type must do: mark the suffix proposed and pending registration in the same sentence that states it, name the registered type an implementation returns meanwhile, and carry the proposed suffix in detail, so no caller branches on a URI no conformant implementation may emit.",
+      "files": [
+        ".claude/skills/cap-errors/skill.json",
+        ".claude/skills/cap-errors/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C7-002 (check)",
+      "change": "tools/validate_skills.py now reads the ten-row registry out of docs/decomposition.md section 2.1.6 (parsed, not hard-coded) and warns per suffix when a skill states urn:agentic:problem:<suffix> that has no row there and no 'pending registration' marker within 1500 characters of where it is stated, in skill.json or any references/*.md of the same skill. Calibrated both ways: over cap-memory-use's pre-fix text it reports exactly memory-scope-denied, and over the fixed tree it is silent; core-graph, which marks its type in an open_question rather than beside the example, passes.",
+      "files": [
+        "tools/validate_skills.py"
+      ]
+    },
+    {
+      "finding": "C7-002 (sibling sweep)",
+      "change": "Ran the new check over the whole repository and cleared what it found: fourteen more skills from waves 2 to 6 stated 30 unregistered suffixes with no marker anywhere. Each now carries one sentence naming the suffixes as proposed and pending registration in docs/decomposition.md section 2.1.6 and the registered type returned until the rows land - cap-capability-packaging-use (package-unresolved -> document-invalid), cap-durable-execution-use (durable-run-unresumable -> idempotency-conflict), cap-model-access-use (no-endpoint-for-class -> adapter-unavailable), cap-provenance-use (attestation-unverifiable -> document-invalid), cap-state-persistence-use (head-moved -> idempotency-conflict, record-unverifiable -> document-invalid), cap-telemetry-use (telemetry-unavailable -> adapter-unavailable), cap-tool-access-use and cap-tool-access (tool-not-declared -> policy-denied, the resolution and schema rows -> document-invalid, the transport rows -> adapter-unavailable), cap-capability-registry-implement (record-unsigned, record-digest-mismatch -> identity-untrusted), cap-human-interaction (human-ask-expired -> deadline-exceeded), cap-mandate-broker (nine rows: the 401 rows -> identity-untrusted, the 403 rows -> policy-denied with a rule_id), cap-memory and cap-memory-implement (memory-scope-denied -> policy-denied, matching cap-memory-use's worked refusal; the malformed-request rows -> document-invalid; memory-item-gone -> idempotency-conflict; memory-store-unavailable -> adapter-unavailable), cap-work-intake (unknown-producer-format -> document-invalid). cap-memory's reference file also claimed its three types were 'Registered against the closed registry cap-errors owns', which was not true of any of them; that sentence is corrected.",
+      "files": [
+        ".claude/skills/cap-capability-packaging-use/skill.json",
+        ".claude/skills/cap-durable-execution-use/skill.json",
+        ".claude/skills/cap-model-access-use/skill.json",
+        ".claude/skills/cap-provenance-use/skill.json",
+        ".claude/skills/cap-state-persistence-use/skill.json",
+        ".claude/skills/cap-telemetry-use/skill.json",
+        ".claude/skills/cap-tool-access-use/skill.json",
+        ".claude/skills/cap-capability-registry-implement/references/implementation-notes.md",
+        ".claude/skills/cap-human-interaction/references/human-interaction-shapes.md",
+        ".claude/skills/cap-mandate-broker/references/mandate-broker-shapes.md",
+        ".claude/skills/cap-memory/references/memory-item.md",
+        ".claude/skills/cap-memory-implement/references/implementation-notes.md",
+        ".claude/skills/cap-tool-access/references/tool-access-shapes.md",
+        ".claude/skills/cap-work-intake/references/intake-envelope.md"
+      ]
+    }
+  ],
+  "declined": [],
+  "brief_changes": [
+    "Added defect item 14: a problem type is not yours to invent - check the suffix against the ten-row closed registry in docs/decomposition.md section 2.1.6 and reuse the row that fits (a scope refusal IS policy-denied); if none fits, do what core-graph did - an open_question stating the row you would add, the suffix marked proposed and pending registration in the same sentence that states it, and the registered fallback named. Names the new per-suffix validator warning and the count it found (four wave-4a -use skills, fourteen earlier skills).",
+    "Retitled the defect section for ceremonies 1-7 and waves 1 to 4a, updated its header note to say items 2, 4 and 14 are the recurring ones, and recorded a sixth consecutive stale ceremony number in item 7.",
+    "Folded wave 4a into the what-worked section (430 rows for 430 verbatim quotes) and compressed items 1, 2, 4, 10, 11, 12 and the re-run bullet to hold the brief at 119 lines, under the 120-line cap."
+  ],
+  "metrics_after": {
+    "rows_total": 430,
+    "rows_sourced": 238,
+    "rows_proposed": 134,
+    "validator_errors": 0,
+    "validator_warnings_repo": 92,
+    "validator_warnings_in_scope": 0,
+    "problem_types_unmarked_repo": 0
+  },
+  "lessons_for_next_section": [
+    "A closed registry is only closed if something checks it. Ten rows were declared closed in wave 2 and by wave 6 nineteen skills had written thirty-five type suffixes against it, each author reasonably believing their case was the exception; the rule had been stated in cap-errors from the start and never enforced.",
+    "Reuse before you propose: a refusal whose status, retryability and trigger already match a registered row is that row (a scope denial IS policy-denied with a rule_id), and a new suffix there only makes two names for one thing.",
+    "When the honest answer is a new row, say what happens before it lands. The fallback is what makes the marker more than an apology, and naming the cost of the fallback - deadline-exceeded telling a caller to retry a run that ended - is the strongest argument for the row you want.",
+    "Two findings in one wave that name four skills and one habit are one finding about the habit. Fix the rule where it is owned (cap-errors), enforce it in the validator, then sweep every sibling in the same session, or the next author learns the rule from the skills that broke it.",
+    "Calibrate a new check on the pre-fix text before trusting a clean run: reverting one skill's marker had to reproduce exactly the suffix the reviewer named, and the fixed tree had to go silent.",
+    "Parse the source of truth rather than restating it: the check reads the ten registry rows out of docs/decomposition.md, so adding a row to the design doc retires the warning automatically and no second copy of the registry can drift."
+  ]
+}

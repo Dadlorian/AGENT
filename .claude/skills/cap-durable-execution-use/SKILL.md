@@ -108,7 +108,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
   "$id": "urn:agentic:cap:durable-execution:example:unresumable",
   "title": "The run exists and cannot be continued",
   "$ref": "urn:agentic:problem:0.1",
-  "description": "A run that cannot be resumed is a failure with a type. It is never quietly restarted from the first step. Branch on type; read detail only to report it.",
+  "description": "A run that cannot be resumed is a failure with a type. It is never quietly restarted from the first step. Branch on type; read detail only to report it. `urn:agentic:problem:durable-run-unresumable` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `idempotency-conflict`, which is also 409 and not retryable, with the run key and the last committed step in detail.",
   "examples": [
     {
       "type": "urn:agentic:problem:durable-run-unresumable",

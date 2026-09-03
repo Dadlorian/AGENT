@@ -62,6 +62,10 @@ Notes (proposed):
 | `max_actions` | all | How many times the mandate may be exercised | `urn:agentic:problem:mandate-exhausted` |
 | `environment` | deploy | Which environment a deploy may land in | `urn:agentic:problem:mandate-destination-out-of-bounds` |
 
+Every refusal type in this table -- `mandate-ceiling-exceeded`, `mandate-destination-out-of-bounds`, `mandate-expired` and
+`mandate-exhausted` -- is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry
+`cap-errors` owns; section 5 below names the registered type each falls back to until its row lands.
+
 `action_class` is closed to `spend`, `deploy` and `send` (proposed). Anything that is not irreversible is a
 scoped credential, not a mandate: minting one is cheap and expiring, and a mandate is a record someone has
 to be able to review months later.
@@ -133,6 +137,12 @@ this interface adds to the registry:
 | `urn:agentic:problem:mandate-destination-out-of-bounds` | 403 | false | The action names a destination the mandate does not list |
 | `urn:agentic:problem:mandate-ceiling-exceeded` | 403 | false | The action would take the total past `ceiling_micros` |
 | `urn:agentic:problem:mandate-signature-invalid` | 401 | false | The signature does not verify against the published key |
+
+Every type in this section and in the bounds table above is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry `cap-errors` owns:
+`credential-audience-mismatch`, `credential-expired`, `mandate-signature-invalid`, `mint-refused-by-policy`,
+`scope-widening-refused`, `mandate-expired`, `mandate-destination-out-of-bounds`, `mandate-ceiling-exceeded` and
+`mandate-exhausted`. Until those rows land, the 401 rows are returned as the registered `identity-untrusted` and the 403 rows
+as `policy-denied` with a `rule_id` naming the bound that refused, and the proposed suffix named in `detail`.
 
 None of them is retryable (proposed). An expired mandate is expired on the second attempt too, and a
 scope-widening request will not start being in scope by being asked again.

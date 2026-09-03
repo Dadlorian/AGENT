@@ -168,18 +168,19 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:agentic:problem:example:memory-scope-denied",
+  "$id": "urn:agentic:cap:memory:example:scope-denied",
   "title": "The scope is not yours",
   "$ref": "urn:agentic:problem:0.1",
-  "description": "Media type application/problem+json. This is not the same as an empty result: empty means nothing was learned at a scope you hold, denied means you asked at a scope you do not.",
+  "description": "Media type application/problem+json. A recall at a scope the actor does not hold is a deterministic pre-execution refusal, which is exactly the registered `policy-denied` row in docs/decomposition.md section 2.1.6, so this example carries that type and its rule_id member rather than a memory-specific suffix cap-errors' closed registry has no row for. This is not the same as an empty result: empty means nothing was learned at a scope you hold, denied means you asked at a scope you do not.",
   "examples": [
     {
-      "type": "urn:agentic:problem:memory-scope-denied",
+      "type": "urn:agentic:problem:policy-denied",
       "title": "The scope is not yours",
       "status": 403,
       "detail": "recall named principal user:dana; the run's actor is user:corey and holds principal user:corey, agent agent:release-reviewer and org org:platform.",
       "retryable": false,
-      "correlation_id": "corr-b-0003"
+      "correlation_id": "corr-b-0003",
+      "rule_id": "memory.scope.not-held"
     }
   ]
 }

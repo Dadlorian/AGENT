@@ -120,7 +120,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
   "$id": "urn:agentic:cap:model-access:example:no-endpoint",
   "title": "The class you asked for has nowhere to go",
   "$ref": "urn:agentic:problem:0.1",
-  "description": "A class that cannot be routed is a failure with a type. It is never quietly answered by a different class. Branch on type; read detail only to report it.",
+  "description": "A class that cannot be routed is a failure with a type. It is never quietly answered by a different class. Branch on type; read detail only to report it. `urn:agentic:problem:no-endpoint-for-class` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `adapter-unavailable`, which is also 503 and retryable, with the unserved class in detail.",
   "examples": [
     {
       "type": "urn:agentic:problem:no-endpoint-for-class",

@@ -146,5 +146,8 @@ own.
 | `urn:agentic:problem:idempotency-conflict` | 409 | The same key arrived with a different job digest |
 | `urn:agentic:problem:policy-denied` | 403 | A rule refused this actor or this workflow reference before anything was admitted |
 
+`unknown-producer-format` is the one row above that is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry `cap-errors` owns; until it lands,
+intake refuses an unmapped format with the registered `document-invalid` and names the declared format in `detail`.
+
 A refusal names the field. Intake is where most producer mistakes surface, and a refusal a producer
 cannot act on turns every new integration into a conversation.

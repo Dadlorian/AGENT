@@ -97,6 +97,11 @@ this boundary raises are, proposed:
 | `urn:agentic:problem:tool-call-failed` | the tool reported a failure, in the transport or inside its own envelope |
 | `urn:agentic:problem:catalogue-empty` | the binding published zero tools |
 
+All six are proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry `cap-errors` owns; until those rows land, `tool-not-declared` is returned
+as the registered `policy-denied` with a `rule_id` naming the declaration rule, `tool-not-found`, `tool-arguments-invalid` and
+`tool-schema-invalid` as `document-invalid`, and `tool-call-failed` and `catalogue-empty` as `adapter-unavailable`, with the
+proposed suffix named in `detail`.
+
 ## 6. Conformance counters
 
 The definition of done in `SKILL.md` asserts on these; the report shape is in

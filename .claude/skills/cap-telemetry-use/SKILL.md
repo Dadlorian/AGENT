@@ -63,7 +63,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
   "$id": "urn:agentic:telemetry:example:unavailable",
   "title": "A run with nothing to show",
   "$ref": "urn:agentic:problem:0.1",
-  "description": "Proposed. Ask for a run whose retention window has passed, or one whose identifier never existed. The answer is RFC 9457 problem details with media type application/problem+json, the shape cap-errors owns. The type below is proposed and needs a row added to that registry before anything may raise it. Note what is not here: a failure to export is never raised at you, because a caller who could see one would start deciding whether telemetry mattered.",
+  "description": "Proposed. Ask for a run whose retention window has passed, or one whose identifier never existed. The answer is RFC 9457 problem details with media type application/problem+json, the shape cap-errors owns. The type below is proposed and needs a row added to that registry before anything may raise it. Note what is not here: a failure to export is never raised at you, because a caller who could see one would start deciding whether telemetry mattered. The type is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns: until `urn:agentic:problem:telemetry-unavailable` has a row, an implementation returns the registered `adapter-unavailable` with the run id and the retention window in detail, accepting that it is 503 and retryable where a passed retention window is neither, which is itself the argument for the row.",
   "examples": [
     {
       "type": "urn:agentic:problem:telemetry-unavailable",

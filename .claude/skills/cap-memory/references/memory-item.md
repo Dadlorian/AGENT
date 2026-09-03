@@ -94,8 +94,10 @@ about (`X-cap-memory-004`, "no temporal validity model with no expiry dates or c
 
 ## 4. Refusal types (proposed)
 
-Registered against the closed registry `cap-errors` owns; the media type is
-`application/problem+json`.
+Problem details in the shape `cap-errors` owns; the media type is `application/problem+json`. All three types below are
+proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry `cap-errors` owns: until those rows land, `memory-scope-denied` is
+returned as the registered `policy-denied` with a `rule_id` naming the scope rule (which is what `cap-memory-use`'s worked
+refusal shows), `memory-staleness-policy-missing` as `document-invalid`, and `memory-item-gone` as `idempotency-conflict`.
 
 | Type | When |
 |---|---|

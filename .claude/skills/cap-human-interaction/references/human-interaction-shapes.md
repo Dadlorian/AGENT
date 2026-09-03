@@ -114,6 +114,9 @@ this capability needs is six; every event carries `type` and `correlation_id`.
 
 ## 5. Refusals (proposed, RFC 9457 problem details)
 
+`human-ask-expired` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry `cap-errors` owns; until that row lands an implementation
+returns the registered `deadline-exceeded` with the ask id in `detail`. `document-invalid` below is already registered.
+
 ```json
 {"type": "urn:agentic:problem:human-ask-expired", "title": "The ask is no longer open", "status": 409,
  "detail": "ask-deploy-0001 expired at 2026-09-03T18:00:00Z; the run terminated with deadline_exceeded.",

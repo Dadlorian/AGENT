@@ -114,7 +114,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**The failure shape (proposed): a decision that arrives too late** (proposed; sources: `F-b3-13`, `X-cap-human-interaction-008`)
+**The failure shape (proposed): a decision that arrives after its ask closed** (proposed; sources: `F-b3-13`, `X-cap-human-interaction-008`)
 
 ```json
 {
@@ -122,13 +122,13 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
   "$id": "urn:agentic:problem:example:human-ask-expired",
   "title": "The ask is no longer open",
   "$ref": "urn:agentic:problem:0.1",
-  "description": "Media type application/problem+json. The run already ended with deadline_exceeded, so there is nothing to resume; a new run is the remedy, not a retry.",
+  "description": "Media type application/problem+json. The ask was closed by its own deadline before any decision arrived, and the run terminated at that point with the registered `deadline-exceeded`; a decision presented afterwards is refused rather than applied, so a new run is the remedy and this problem is not retryable. `urn:agentic:problem:human-ask-expired` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `deadline-exceeded` with the ask id in detail, as the open question below records.",
   "examples": [
     {
       "type": "urn:agentic:problem:human-ask-expired",
       "title": "The ask is no longer open",
       "status": 409,
-      "detail": "ask-deploy-0001 expired at 2026-09-03T18:00:00Z after 8h open; the run terminated with deadline_exceeded.",
+      "detail": "ask-deploy-0001 closed at 2026-09-03T18:00:00Z after 8h open and the run terminated with deadline-exceeded; the decision presented at 2026-09-03T18:04:11Z was not applied.",
       "retryable": false,
       "correlation_id": "corr-human-0001"
     }
@@ -188,6 +188,7 @@ Used by: -
 | Question | Deciding evidence | Default until then | Evidence |
 |---|---|---|---|
 | May an agent be the decider on an ask a person was asked to answer, when the deadline is close? | Count, over real asks, how often an expiry would have been avoided by an agent deciding and how often that agent would have decided differently from the person who eventually did. If the second number is not near zero, an agent fallback is an unlogged policy change. | Proposed: no automatic fallback. An agent decides only when the ask's audience names it, and an ask whose audience is a person expires rather than being answered by something else; expiry is visible in the audit trail, a substituted decider is not. | `X-cap-human-interaction-008` "design explicit timeouts for human steps" |
+| cap-errors' closed problem registry has no row for a decision that arrives after its ask closed, so which type does the refusal carry? | cap-errors requires 1-3-1 rather than minting a suffix at the call site, so the three options were: reuse the registered `deadline-exceeded`, which is 504 and retryable and so tells a caller to retry a run that has already ended; reuse `idempotency-conflict` for its 409, which names a key collision rather than a closed ask and would make a caller parse a conflict it did not cause; or add one row `human-ask-expired` (409, not retryable, extension members ask_id and closed_at) to docs/decomposition.md section 2.1.6 and use it. The third is recommended and is what the failure shape above shows, pending that row. | `urn:agentic:problem:human-ask-expired`, marked proposed and pending registration; until the row lands an implementation returns `deadline-exceeded` with the ask id in detail rather than inventing a type, accepting that its retryable member misdirects a caller, which is itself the argument for adding the row. | `T-t5-02`, `X-cap-human-interaction-008` "define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation" |
 
 ## Provenance
 

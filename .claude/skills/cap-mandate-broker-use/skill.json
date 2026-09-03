@@ -56,7 +56,9 @@
                   "bounds": {
                     "ceiling_micros": 250000000,
                     "currency": "USD",
-                    "destinations": ["payments.partner-co"]
+                    "destinations": [
+                      "payments.partner-co"
+                    ]
                   },
                   "not_before": "2026-09-01T00:00:00Z",
                   "not_after": "2026-09-08T00:00:00Z"
@@ -66,7 +68,9 @@
                 "actor": "agent:invoice-settler",
                 "mint": {
                   "audience": "payments.partner-co",
-                  "scope": ["payments:create"],
+                  "scope": [
+                    "payments:create"
+                  ],
                   "mandate_ref": "mandate-invoice-run-0007",
                   "lifetime_seconds": 300
                 },
@@ -79,10 +83,22 @@
               },
               "verification": {
                 "mandate_id": "mandate-invoice-run-0007",
-                "action": {"action_class": "spend", "destination": "payments.partner-co", "amount_micros": 41500000, "currency": "USD"},
+                "action": {
+                  "action_class": "spend",
+                  "destination": "payments.partner-co",
+                  "amount_micros": 41500000,
+                  "currency": "USD"
+                },
                 "accepted": true,
-                "checks": {"signature_verified": true, "within_validity": true, "within_bounds": true},
-                "verifier": {"is_issuer": false, "contacted_issuer": false}
+                "checks": {
+                  "signature_verified": true,
+                  "within_validity": true,
+                  "within_bounds": true
+                },
+                "verifier": {
+                  "is_issuer": false,
+                  "contacted_issuer": false
+                }
               }
             }
           ]
@@ -95,10 +111,14 @@
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:cap:mandate-broker:example:audience-refused",
           "title": "A credential minted for one destination is worth nothing at another",
-          "description": "An alert enters as an event and the work it triggers reaches a metrics service. A later step tries to reuse the same authority against a deploy endpoint. The second destination refuses it on its own audience check, and the refusal is a problem details object with a type the caller branches on. No retry is attempted, because the answer will not change.",
+          "description": "An alert enters as an event and the work it triggers reaches a metrics service. A later step tries to reuse the same authority against a deploy endpoint. The second destination refuses it on its own audience check, and the refusal is a problem details object with a type the caller branches on. No retry is attempted, because the answer will not change. `urn:agentic:problem:credential-audience-mismatch` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `identity-untrusted`, which is also 401 and not retryable, naming both destinations in detail, as the open question below records.",
           "examples": [
             {
-              "entry": {"kind": "event", "actor": "service:alerting", "correlation_id": "corr-event-0001"},
+              "entry": {
+                "kind": "event",
+                "actor": "service:alerting",
+                "correlation_id": "corr-event-0001"
+              },
               "first_call": {
                 "audience": "metrics.internal",
                 "handle_id": "hdl-2b8d0f61ac33",
@@ -271,7 +291,7 @@
     "criterion": "The smallest round trip, from the repository root, with the proposed broker tool: approve bounds with `python3 tools/broker.py approve --actor user:corey --action-class spend --ceiling-micros 250000000 --currency USD --destination payments.partner-co --not-after 2026-09-08T00:00:00Z`, then act with `python3 tools/broker.py act --actor agent:invoice-settler --destination payments.partner-co --mandate mandate-invoice-run-0007 --amount-micros 41500000 --report out/broker-use.json`. It asserts accepted == true, that the handle's audience is payments.partner-co and its refreshable member is false, that the verification was performed with is_issuer false and contacted_issuer false, and that no credential material appears anywhere in the report.",
     "expected": "exit 0 and one line reading `actor=agent:invoice-settler audience=payments.partner-co accepted=true refreshable=false is_issuer=false contacted_issuer=false credential_in_report=0`.",
     "breakage": "Present the same handle at a second destination: `python3 tools/broker.py act --actor agent:invoice-settler --destination deploy.internal --handle hdl-7c1f9a2e4b60`.",
-    "expected_failure": "exit non-zero with `accepted=false`, and the report carries a problem details body whose type is `urn:agentic:problem:credential-audience-mismatch`, whose retryable member is false, and whose detail names both the destination the handle was minted for and the one it was presented at. The handle is refused rather than accepted with a warning, which is the property a caller is relying on when it does not check anything itself.",
+    "expected_failure": "exit non-zero with `accepted=false`, and the report carries a problem details body whose type is `urn:agentic:problem:credential-audience-mismatch` (proposed and pending registration; `identity-untrusted` until that row lands), whose retryable member is false, and whose detail names both the destination the handle was minted for and the one it was presented at. The handle is refused rather than accepted with a warning, which is the property a caller is relying on when it does not check anything itself.",
     "status": "claimed",
     "sources": [
       "F-part-c-04"
@@ -294,6 +314,16 @@
         "T-t3-02"
       ],
       "quote": "It cannot be daunting or overly complex"
+    },
+    {
+      "question": "cap-errors' closed problem registry has no row for a credential presented at a destination it was not minted for, so which type does the refusal carry?",
+      "evidence": "cap-errors requires 1-3-1 rather than minting a suffix at the call site, so the three options were: reuse the registered `identity-untrusted`, which is 401 and not retryable but names a delegation chain that does not verify, when here the chain verifies and only the audience is wrong; reuse `policy-denied`, which implies a policy rule refused the call when no policy was consulted; or add one row `credential-audience-mismatch` (401, not retryable, extension members audience_minted_for and audience_presented_at) to docs/decomposition.md section 2.1.6 and use it. The third is recommended and is what the worked example and the definition of done show, pending that row.",
+      "default": "`urn:agentic:problem:credential-audience-mismatch`, marked proposed and pending registration; until the row lands an implementation returns `identity-untrusted` with both destinations in detail rather than inventing a type, and a caller mints a new handle for the destination it actually needs.",
+      "sources": [
+        "T-t5-02",
+        "F-b3-13"
+      ],
+      "quote": "define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation"
     }
   ],
   "provenance": {

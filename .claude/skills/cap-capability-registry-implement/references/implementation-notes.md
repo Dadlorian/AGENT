@@ -76,5 +76,9 @@ Three records under one name, published to every configured store:
 | `unsigned` | Signature member absent. | Refused, `urn:agentic:problem:record-unsigned`. |
 | `stale-digest` | Signature verifies over a tree that was then edited. | Refused, `urn:agentic:problem:record-digest-mismatch`. |
 
+`record-unsigned` and `record-digest-mismatch` are proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry `cap-errors` owns; until those rows land an
+adapter refuses with the registered `identity-untrusted` and names the version and the failing check in `detail`, rather than
+minting a suffix at the call site.
+
 `served_unverified` counts any record handed on when either check did not pass. It is the counter the
 definition of done breaks on purpose, by downgrading the digest check to a warning.

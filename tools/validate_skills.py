@@ -31,6 +31,9 @@ Warnings:
   - an ideal facet the manifest gives the usability section, with no -use sibling to carry it, that
     is missing a worked declaration for one of TARGET T1's three ways in or a worked rejection
     (author-brief defect item 13)
+  - a problem type urn:agentic:problem:<suffix> whose suffix has no row in the closed registry in
+    docs/decomposition.md section 2.1.6 and is not marked "pending registration" near where the skill
+    states it, with a registered type named as the fallback (author-brief defect item 14)
 """
 from __future__ import annotations
 
@@ -75,6 +78,42 @@ USABILITY_EVIDENCE = {
     "an event producer (\"service:...\" or \"schedule:...\")": re.compile(r'"(?:service|schedule):[a-z0-9]'),
     "a worked rejection (urn:agentic:problem:...)": re.compile(r"urn:agentic:problem"),
 }
+
+
+# cap-errors keeps the problem-type registry closed: a suffix with no row in docs/decomposition.md
+# section 2.1.6 is a type no conformant implementation may emit. A skill may still name one it needs,
+# the way core-graph names graph-assertion-invalid, but only marked proposed and pending registration
+# with a registered fallback, so no caller branches on a URI that cannot legally come back.
+PROBLEM_RE = re.compile(r"urn:agentic:problem:([a-z][a-z0-9-]+)")
+PENDING = "pending registration"
+PROBLEM_WINDOW = 1500  # chars between the suffix and its marker, within one file of the skill
+DECOMP = ROOT / "docs" / "decomposition.md"
+
+
+def registered_problem_types() -> set[str]:
+    """The suffixes with a row in the closed registry, read from the design doc rather than hard-coded."""
+    types = set()
+    for line in (DECOMP.read_text().splitlines() if DECOMP.is_file() else []):
+        m = re.match(r"\|\s*`([a-z][a-z0-9-]+)`\s*\|\s*(\d{3})\s*\|\s*(yes|no)\s*\|", line.strip())
+        if m:
+            types.add(m.group(1))
+    return types
+
+
+def unmarked_problem_types(skill_dir: Path, registered: set[str]) -> list[str]:
+    """Suffixes this skill states that are neither registered nor marked pending registration."""
+    files = [skill_dir / "skill.json"] + sorted((skill_dir / "references").glob("*.md"))
+    texts = [f.read_text() for f in files if f.is_file()]
+    stated, marked = set(), set()
+    for t in texts:
+        for m in PROBLEM_RE.finditer(t):
+            suffix = m.group(1)
+            if suffix in registered or suffix in ("example",):
+                continue
+            stated.add(suffix)
+            if any(abs(k.start() - m.start()) <= PROBLEM_WINDOW for k in re.finditer(re.escape(PENDING), t)):
+                marked.add(suffix)
+    return sorted(stated - marked)
 
 
 def load_kb() -> tuple[set[str], dict]:
@@ -213,6 +252,7 @@ def main() -> int:
     ap.add_argument("--only", action="append", default=[], help="report only errors/warnings naming these skills (links to others are still loaded)")
     args = ap.parse_args()
     kb_ids, meta = load_kb()
+    REGISTERED_PROBLEMS = registered_problem_types()
     errs: list[str] = []
     warns: list[str] = []
     skills: dict[str, dict] = {}
@@ -301,6 +341,11 @@ def main() -> int:
             if absent:
                 warns.append(f"{name}: manifest gives it the usability section, but nothing in the skill "
                              f"or its references shows {'; '.join(absent)}")
+        # every problem type a skill states resolves to a row in cap-errors' closed registry, or is
+        # marked proposed and pending registration where it is stated (author-brief defect item 14).
+        for suffix in unmarked_problem_types(d, REGISTERED_PROBLEMS):
+            warns.append(f"{name}: states urn:agentic:problem:{suffix}, which has no row in the closed registry in "
+                         f"docs/decomposition.md section 2.1.6 and is not marked '{PENDING}' where it is stated")
         for field, rows, lo, hi in (
             ("instructions", sk.get("instructions", []), 6, 10),
             ("invariants", sk.get("contract", {}).get("invariants", []), 3, 10),

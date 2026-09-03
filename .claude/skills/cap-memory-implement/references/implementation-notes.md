@@ -25,6 +25,11 @@ on read (`expiry_enforcement` must contain `on-read` in the binding record).
 | recall naming a scope the actor does not hold | `urn:agentic:problem:memory-scope-denied` | returning zero would hide a permission bug as an empty result |
 | store unreachable | `urn:agentic:problem:memory-store-unavailable` | empty means "nothing learned"; unavailable means "do not proceed as if nothing was learned" |
 
+`memory-staleness-policy-missing`, `memory-scope-required`, `memory-scope-denied` and `memory-store-unavailable` are proposed and
+pending registration in docs/decomposition.md section 2.1.6, the closed registry `cap-errors` owns; until those rows land an adapter refuses with the registered
+`document-invalid` for the two malformed-request rows, `policy-denied` for the scope refusal and `adapter-unavailable` for an
+unreachable store, naming the proposed suffix in `detail`.
+
 ## 3. Shadow migration (proposed)
 
 There is nothing to migrate from: no memory store appears anywhere in PASS.md's inventory. What is

@@ -36,3 +36,4 @@
 | 27 | Linked harness | One document runs through all four harnesses | Done | 31 checks, swap proof | 2026-09-03 34e24b1 |
 | 28 | Impact map | A component swap lists every affected adapter, test, and skill | Done | 5 harness tests linked | 2026-09-03 34e24b1 |
 | 46 | Swap proof | Each harness section executes one adapter swap | Done | 5 of 5 swaps measured | 2026-09-03 34e24b1 |
+| 41 | Planted-defect reviews | Every review catches both planted defects | Done | Harness review caught 2 of 2 | 2026-09-03 7a956d8 |

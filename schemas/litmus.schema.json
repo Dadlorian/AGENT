@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Dadlorian/AGENT/schemas/litmus.schema.json",
+  "title": "Litmus questionnaire",
+  "description": "docs/litmus/questionnaire.json: the idealistic future state per PASS.md B3 row and B4 concern, asked from several angles and scored on a closed scale. Checked by tools/litmus_check.py; the frame (scale, angles, window, rules) is docs/litmus/frame.json.",
+  "type": "object",
+  "required": ["version", "frame", "sections"],
+  "additionalProperties": false,
+  "properties": {
+    "version": {"type": "string"},
+    "frame": {"type": "object", "description": "a copy of docs/litmus/frame.json at merge time"},
+    "sections": {"type": "array", "items": {"$ref": "#/$defs/section"}}
+  },
+  "$defs": {
+    "cited": {
+      "type": "object",
+      "required": ["text", "origin", "cites"],
+      "properties": {
+        "text": {"type": "string"},
+        "origin": {"enum": ["sourced", "proposed"], "description": "sourced: quote is a verbatim substring of one cited record; proposed: the text says proposed"},
+        "cites": {"type": "array", "items": {"type": "string", "pattern": "^(F|T|X)-[a-z0-9-]+$"}},
+        "quote": {"type": "string"}
+      }
+    },
+    "section": {
+      "type": "object",
+      "required": ["id", "kind", "source", "name", "standard", "future_state", "direction", "questions", "gaps"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"},
+        "kind": {"enum": ["capability", "concern"]},
+        "source": {"type": "string", "pattern": "^F-b[34]-[0-9]{2}$", "description": "the PASS.md row this section reflects on"},
+        "name": {"type": "string"},
+        "part": {"type": "string", "description": "crew part that wrote it (a, b, c, d)"},
+        "standard": {
+          "type": "object",
+          "required": ["name", "settledness", "why", "cites"],
+          "properties": {
+            "name": {"type": "string", "description": "as PASS.md names it; 'none' when the row has no standard"},
+            "settledness": {"enum": ["baseline", "contested", "emerging", "none"]},
+            "why": {"type": "string", "description": "why that settledness, from the research; products may be named here"},
+            "cites": {"type": "array", "items": {"type": "string"}}
+          }
+        },
+        "future_state": {"$ref": "#/$defs/cited", "description": "what a build in the window should be doing with this element; capabilities and standards, never products"},
+        "direction": {"$ref": "#/$defs/cited", "description": "where the standard and its ecosystem are heading inside the window; products may be named as evidence"},
+        "questions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "angle", "question", "evidence_expected", "aligned_looks_like", "misaligned_looks_like", "origin", "cites"],
+            "additionalProperties": false,
+            "properties": {
+              "id": {"type": "string", "pattern": "^[a-z0-9-]+-q[0-9]+$"},
+              "angle": {"enum": ["presence", "depth", "boundary", "guarantees", "usage", "direction"]},
+              "question": {"type": "string"},
+              "evidence_expected": {"type": "string", "description": "what an answerer must produce: an artifact, a trace, a command output, a configuration; tool-agnostic"},
+              "aligned_looks_like": {"type": "string"},
+              "misaligned_looks_like": {"type": "string"},
+              "origin": {"enum": ["sourced", "proposed"]},
+              "cites": {"type": "array", "items": {"type": "string"}},
+              "quote": {"type": "string"}
+            }
+          }
+        },
+        "gaps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["claim", "research_query"],
+            "properties": {"claim": {"type": "string"}, "research_query": {"type": "string"}}
+          }
+        }
+      }
+    }
+  }
+}

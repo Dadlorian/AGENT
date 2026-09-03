@@ -1,0 +1,35 @@
+{
+  "owner_skill": "cap-telemetry-implement",
+  "co_skills": ["xc-correlation-implement"],
+  "blueprint_tool_entry": "observe-langfuse-web-1 and observe-langfuse-worker-1",
+  "kb_ids": [
+    "F-a1-05", "F-a1-06", "F-a7-02", "F-b1-04", "F-b1-05", "F-b1-08",
+    "F-b3-10", "F-b4-06", "F-b4-07",
+    "E-capability-telemetry", "E-concern-telemetry", "E-standard-otlp",
+    "E-standard-genai-semantic-conventions", "E-adapter-langfuse-opentelemetry",
+    "E-swap-candidate-any-otlp-collector", "E-finding-a7-1",
+    "T-t2-03", "T-t3-01", "T-t7-02", "T-t7-05", "T-t9-06"
+  ],
+  "research_ids": [
+    "X-cap-telemetry-001", "X-cross-structure-011", "X-cross-structure-012",
+    "X-entry-composition-050", "X-entry-composition-051"
+  ],
+  "standard": "OTLP with GenAI semantic conventions (unverified)",
+  "measured": {
+    "dryrun": "bash harness/observability/test.sh -> passed 36, failed 0; conformance against dryrun exits 0 with levels_covered 3, run_id_groups 1, distinct_trace_ids 3, spans_missing_run_id 0, spans_missing_root_dispatch_id 0, mapping_version agentic-genai-mapping/0.1 read back off the wire",
+    "swap": "conformance before with dryrun and after with second, selected by ADAPTER= with no code edit; both exit 0 and the merged report shows adapters_run 2, selected_by configuration, and identical levels_covered, run_id_groups, spans_missing_run_id, spans_missing_root_dispatch_id, mapping_version and signals_checked across the pair; semantic_queries_supported differs (true, false), so the pair is not one adapter run twice",
+    "breakage": "conformance --break-stamp against both adapters exits 1 identically with levels_covered 1, run_id_groups 0, spans_missing_run_id 2; call.py --break-stamp exits 1; this reproduces PASS.md A7 finding 1"
+  },
+  "claimed": [
+    "live mode until run on the host: no run of test.sh --live against observe-langfuse-web-1 has been performed, and TRACE_URL/TRACE_KEY are unset here",
+    "the live adapter's urllib transport and read-back path was exercised against a throwaway local HTTP stub during authoring and passed conformance; that is not the host backend and is not recorded as a measurement of live mode",
+    "the OTLP/HTTP JSON body shape in adapters/second.py is proposed: the OTLP specification was not fetched from this environment, and its version stays unverified per E-standard-otlp",
+    "the GenAI attribute vocabulary is pre-stable, so agentic-genai-mapping/0.1 is this platform's own mapping version and not a version of the conventions",
+    "TRACE_QUERY_URL names a read-back contract this harness defines for an operator to point at; it is not a claim about any product's query API",
+    "the second adapter runs its pipeline in process when COLLECTOR_URL is unset: a faithful stub whose wire format and swap procedure are real, with no collector process required here"
+  ],
+  "extensions_to_the_owner_skill_report_shape": [
+    "adapter enum widened from the skill's two roles to the three adapters this harness ships",
+    "spans_missing_root_dispatch_id and signals_checked added, so the co-skill's second required correlation field is counted as well as run.id"
+  ]
+}

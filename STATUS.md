@@ -18,5 +18,5 @@
 | 27 | Linked harness | One document runs through all four harnesses | Open | Not started |
 | 28 | Impact map | A component swap lists every affected adapter, test, and skill | Open | Not started |
 | 35 | Skill reconciliation | Every written skill agrees with the blueprint | In progress | 3 reviewers running |
-| 36 | Impact map in knowledge base | A component swap query lists adapters, tests, and skills | Not started | Queued |
+| 36 | Impact map in knowledge base | A component swap query lists adapters, tests, and skills | In progress | Query works, names pending |
 | 37 | Live run access | Harness live mode runs against the host from a session | Blocked | Owner decision |

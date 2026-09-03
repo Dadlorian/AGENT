@@ -1,0 +1,28 @@
+{
+  "owner_skill": "cap-memory-implement",
+  "co_skills": ["cap-memory"],
+  "blueprint_tool_entry": "absent today: PASS.md's inventory of what is defined but not running is stated because an inventory that omits this is not an inventory (F-a6-01), and memory is in none of its rows",
+  "capability": "memory",
+  "standard": "none found (A-standard-agent-memory-no-ratified-standard-found); the binding record and recall shapes are this repo's design",
+  "kb_ids": [
+    "F-a6-01", "F-b1-04", "F-meta-04", "F-b4-01", "F-part-c-08", "F-b3-13", "F-b2-06",
+    "T-t10-04", "T-t10-05", "T-t10-07"
+  ],
+  "research_ids": [
+    "X-cap-memory-001", "X-cap-memory-002", "X-cap-memory-003", "X-cap-memory-004",
+    "X-cap-memory-005", "X-cap-memory-006", "X-cap-memory-007", "X-cap-memory-008",
+    "X-end-to-end-001", "X-end-to-end-002", "X-end-to-end-003"
+  ],
+  "measured": {
+    "dryrun": "bash harness/memory/test.sh on 2026-09-03: passed 23, failed 0. conformance PASSED 10/10 against the in-memory dry-run adapter and 10/10 against the scope-keyed file adapter (20/20 combined); the minimal call is 27 lines of caller code (under 40) and names no adapter storage file; a write with no expires_at exits refused as staleness-missing 422 with nothing written; a recall naming no scope dimension is refused document-invalid 422; DRYRUN_FAIL=1 returns adapter-unavailable and the failure path exits 2.",
+    "swap": "conformance PASSED 10/10 before (dryrun, ranked-shaped, single mutable list) and 10/10 after (second, exact-key, one file per scope key) with the same 10 cases; sha256 of interface.py+call.py+conformance.py identical across both runs, so the swap was configuration; 5 axes differ (execution_model, retrieval_model, adapter entity, observed marker dryrun-ranked-memory-store vs scope-keyed-file-store, declared_gaps 0 vs 2); the same caller code (call.py) ran unchanged on both, reporting recalled_own_scope=True, expired_excluded=True, cross_scope_excluded=True on each; a combined run over both bindings reported adapters_run=2 stores_reached_distinct=2 result_divergence=0, i.e. the same fixture set written under both bindings recalled the identical item ids at each scope. Separately, bash harness/memory/test.sh --live with MEMORY_LIVE_STORE_PATH set to a scratch directory: 25 checks, 0 failures - the minimal call (write, recall, expiry exclusion, cross-scope exclusion) passed against the live stub's local stand-in; supersede and forget were not exercised there, since adapters/live.py refuses them adapter-unavailable by design (no memory component exists on this host to reach).",
+    "breakage": "in a copy of interface.py under out/breakage/, the line filtering expired items out of MemoryAdapter.recall() (`kept = [it for it in candidates if not _expired(it, at)]`) was replaced with `kept = list(candidates)`, i.e. expiry left to an optional sweep that this harness never calls. Conformance run against both bindings from that copy exits non-zero with expired_served=1 on both, naming the already-expired fixture item as served on a fresh recall, while cross_scope_hits=0 still holds on both - showing the scope predicate (enforced inside each adapter's own _search) and the on-read expiry filter (enforced once, in the shared recall() wrapper) fail for independent reasons, and that the breakage isolates the expiry seam specifically."
+  },
+  "claimed": [
+    "live mode until run against a real host component: adapters/live.py has no memory component to reach at all - PASS.md's blueprint has no memory row (blueprint_tool_entry: absent today) - so it is a stub over a local directory named by MEMORY_LIVE_STORE_PATH; MEMORY_LIVE_ENDPOINT is read and reported in declared_gaps but never dialed",
+    "adapters/live.py's supersede and forget: both refuse adapter-unavailable by construction and were never exercised as passing operations, only as a refusal path",
+    "adapters/second.py against a real concurrent multi-process writer: exercised only sequentially, single-process, in this harness's conformance run; the coarse read-modify-write per scope-key file is declared, not load-tested",
+    "the ranking behaviour of a real hosted, embedding-ranked store: adapters/dryrun.py and adapters/live.py both stand in with a crude keyword-overlap rank; no embedding endpoint was ever reached",
+    "the standard: cap-memory records none found for this capability (a 2026 preprint on memory portability, never fetched from this environment); the item, recall and binding shapes here are this repository's own design"
+  ]
+}

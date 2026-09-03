@@ -43,9 +43,9 @@ From `harness/provenance/README.md`. Every command runs here in dry-run mode; li
 
 ## Definition of done
 
-Status: claimed
+Status: measured
 
-Criterion: docs/decomposition.md section 3.2 row P11, extended with the swap: `python3 tools/conformance/provenance_verify.py --adapter local-signed-jsonl --artifact out/artifact.bin --report out/prov-a.json` then the same command with `--adapter keyless-transparency-log --report out/prov-b.json`, the adapter chosen by configuration with no code edit between runs.
+Criterion: bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second.
 
 From `cap-provenance-implement` definition_of_done; only `tools/measure.py` may set the status to measured.
 

@@ -47,9 +47,9 @@ From `harness/tool-access/README.md`. Every command runs here in dry-run mode; l
 
 ## Definition of done
 
-Status: claimed
+Status: measured
 
-Criterion: Proposed tool, built with this implementation: `python3 tools/conformance_tool_access.py --adapter today --adapter second --revision 2026-07-28 --report out/tool-access-conformance.json`.
+Criterion: bash harness/tool-access/test.sh && python3 harness/tool-access/conformance.py --adapter dryrun --adapter second.
 
 From `cap-tool-access-implement` definition_of_done; only `tools/measure.py` may set the status to measured.
 

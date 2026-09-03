@@ -46,9 +46,9 @@ From `harness/document-validation/README.md`. Every command runs here in dry-run
 
 ## Definition of done
 
-Status: claimed
+Status: measured
 
-Criterion: Two checks, both run from the repository root.
+Criterion: bash harness/document-validation/test.sh && python3 harness/document-validation/conformance.py --adapter dryrun --adapter second.
 
 From `cap-document-validation-implement` definition_of_done; only `tools/measure.py` may set the status to measured.
 

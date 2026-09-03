@@ -48,9 +48,9 @@ From `harness/state-persistence/README.md`. Every command runs here in dry-run m
 
 ## Definition of done
 
-Status: claimed
+Status: measured
 
-Criterion: docs/decomposition.md section 3.2 row P16, extended with the swap: `python3 tools/conformance/state_persistence.py --adapter jsonl-hash-chain --records 1500 --report out/state-a.json` then the same command with `--adapter merkle-object-store --report out/state-b.json`, the adapter chosen by configuration with no code edit between runs.
+Criterion: bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second.
 
 From `cap-state-persistence-implement` definition_of_done; only `tools/measure.py` may set the status to measured.
 

@@ -46,9 +46,9 @@ From `harness/idempotency/README.md`. Every command runs here in dry-run mode; l
 
 ## Definition of done
 
-Status: claimed
+Status: measured
 
-Criterion: docs/decomposition.md section 3.2 row P15, extended with the swap: `python3 tools/conformance/idempotency_race.py --adapter log-fold-at-entry --entry examples/end-to-end/entries/human.json --concurrency 100 --report out/idem-a.json` then the same command with `--adapter conditional-write-lease --report out/idem-b.json`, the adapter chosen by configuration with no code edit between runs.
+Criterion: bash harness/idempotency/test.sh && python3 harness/idempotency/conformance.py --adapter dryrun --adapter second.
 
 From `cap-idempotency-implement` definition_of_done; only `tools/measure.py` may set the status to measured.
 

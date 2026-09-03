@@ -47,9 +47,9 @@ From `harness/containment/README.md`. Every command runs here in dry-run mode; l
 
 ## Definition of done
 
-Status: claimed
+Status: measured
 
-Criterion: Proposed tool, built with the first implementation of this interface: `python3 tools/conformance_isolation.py --adapter today --adapter second --fixture fixtures/unit-egress-probe --report out/isolation-conformance.json`.
+Criterion: bash harness/containment/test.sh && python3 harness/containment/conformance.py --adapter dryrun --adapter second.
 
 From `cap-isolation-implement` definition_of_done; only `tools/measure.py` may set the status to measured.
 

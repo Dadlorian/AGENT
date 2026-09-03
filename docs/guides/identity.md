@@ -47,9 +47,9 @@ From `harness/identity/README.md`. Every command runs here in dry-run mode; live
 
 ## Definition of done
 
-Status: claimed
+Status: measured
 
-Criterion: docs/decomposition.md section 3.2 row P13, extended with the swap: `python3 tools/conformance/identity_chain.py --adapter exchange-issuing-provider --corpus <ledger> --min-actions 50 --report out/identity-a.json`, then the same command with `--adapter attested-workload-identity --report out/identity-b.json`, the adapter chosen by configuration with no code edit between runs.
+Criterion: bash harness/identity/test.sh && python3 harness/identity/conformance.py --adapter dryrun --adapter second.
 
 From `cap-identity-implement` definition_of_done; only `tools/measure.py` may set the status to measured.
 

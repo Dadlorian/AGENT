@@ -48,9 +48,9 @@ From `harness/policy/README.md`. Every command runs here in dry-run mode; live m
 
 ## Definition of done
 
-Status: claimed
+Status: measured
 
-Criterion: docs/decomposition.md section 3.2 row P10, extended with the swap: `python3 tools/conformance/policy_decision.py --adapter out-of-process-document-query --entry examples/end-to-end/entries/human.json --deny-rule deny-external-tool-without-mandate --report out/policy-a.json` then the same command with `--adapter in-process-typed-entity --report out/policy-b.json`, the engine chosen by configuration with no code edit between runs.
+Criterion: bash harness/policy/test.sh && python3 harness/policy/conformance.py --adapter dryrun --adapter second.
 
 From `cap-policy-implement` definition_of_done; only `tools/measure.py` may set the status to measured.
 

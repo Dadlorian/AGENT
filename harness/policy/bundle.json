@@ -1,0 +1,61 @@
+{
+  "_note": "The rule set, as data. Both bindings evaluate this same bundle: one reads it as an open JSON document, the other marshals it into a typed entity model first. The digest of these canonical bytes is the policy_version every decision is pinned to. Proposed: the rules are this harness's fixtures, not a recorded rule set.",
+  "bundle_id": "harness-policy-fixtures",
+  "entity_model": {
+    "_note": "The declared attribute types a typed-entity engine can express a decision over. A rule that reads a path outside this model cannot be translated, and the binding declares that decision point as a subset rather than answering allow.",
+    "Principal": {"subject.id": "string", "subject.tenant": "string", "subject.mandates": "set"},
+    "Action": {"action": "string"},
+    "Resource": {"resource.tenant": "string", "resource.scope": "string", "resource.tool": "string", "resource.workflow_ref": "string"}
+  },
+  "rules": [
+    {
+      "rule_id": "deny-cross-tenant-resource",
+      "decision_point": "*",
+      "effect": "deny",
+      "detail": "the resource belongs to another tenant; one window per principal per resource, refused before execution like any other policy decision",
+      "when": [{"path": "resource.tenant", "op": "ne_field", "value": "subject.tenant"}]
+    },
+    {
+      "rule_id": "deny-external-tool-without-mandate",
+      "decision_point": "dispatch.tool_call",
+      "effect": "deny",
+      "detail": "external tool invocation requires a mandate; none present on this entry",
+      "when": [{"path": "resource.scope", "op": "eq", "value": "external"},
+               {"path": "subject.mandates", "op": "empty"}]
+    },
+    {
+      "rule_id": "allow-external-tool-under-mandate",
+      "decision_point": "dispatch.tool_call",
+      "effect": "allow",
+      "detail": "the subject carries a mandate for this scope",
+      "when": [{"path": "resource.scope", "op": "eq", "value": "external"},
+               {"path": "subject.mandates", "op": "nonempty"}]
+    },
+    {
+      "rule_id": "allow-internal-tool-call",
+      "decision_point": "dispatch.tool_call",
+      "effect": "allow",
+      "detail": "an internal tool inside the subject's own tenant",
+      "when": [{"path": "resource.scope", "op": "eq", "value": "internal"}]
+    },
+    {
+      "rule_id": "allow-entry-in-tenant",
+      "decision_point": "admission.entry",
+      "effect": "allow",
+      "detail": "the entry names a workflow inside the subject's own tenant",
+      "when": [{"path": "resource.workflow_ref", "op": "exists"}]
+    },
+    {
+      "rule_id": "allow-data-query-in-tenant",
+      "decision_point": "dispatch.data_query",
+      "effect": "allow",
+      "detail": "a free-form query inside the subject's own tenant",
+      "when": [{"path": "resource.query", "op": "exists"}]
+    }
+  ],
+  "default": {
+    "effect": "deny",
+    "rule_id": "deny-by-default-no-rule-matched",
+    "detail": "no rule of the pinned bundle matched this request, and the default is deny"
+  }
+}

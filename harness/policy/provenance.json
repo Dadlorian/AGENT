@@ -1,0 +1,30 @@
+{
+  "owner_skill": "cap-policy-implement",
+  "co_skills": ["cap-policy", "xc-policy-gate-implement"],
+  "blueprint_tool_entry": "OPA (Rego) — named as the adapter today (F-b3-11); conformance checks exist, not wired into the enforcement path (F-a6-04)",
+  "capability": "policy",
+  "standard": "Rego / OPA decision API (OPA 1.0 on file, search-sourced; unverified)",
+  "kb_ids": [
+    "F-a5-05", "F-a6-04", "F-a7-02",
+    "F-b1-02", "F-b1-04", "F-b3-09", "F-b3-11", "F-b4-01", "F-b4-04", "F-b4-07",
+    "F-part-c-09", "F-part-c-11",
+    "T-t1-01", "T-t1-02", "T-t1-03", "T-t2-03", "T-t6-02", "T-t7-02", "T-t7-05",
+    "T-t9-06", "T-t10-04", "T-t10-05", "T-t10-07"
+  ],
+  "research_ids": [
+    "X-cap-policy-001", "X-cap-policy-002", "X-cap-policy-004", "X-cap-policy-006",
+    "X-cross-structure-031", "X-gap-a-003"
+  ],
+  "measured": {
+    "dryrun": "bash harness/policy/test.sh on 2026-09-03: passed 38, failed 0. conformance PASSED 14/14 against the dry-run adapter with decisions_taken=9, decided_before_first_metered_call=9, spend_delta_micros=0 and rule_id_present=True; the minimal call is 19 lines of caller code counted by harness/caller_lines.py and names no adapter storage; SCOPE=external exits 2 with policy-denied 403 naming deny-external-tool-without-mandate and spend_delta_micros 0, and the unit of work never ran; DECLINE=1 exits 2 with document-invalid 422 rejecting the bypass field ('there is no advisory mode, no dry-run flag and no bypass on this path'); RESOURCE_TENANT=tenant-other exits 2 by deny-cross-tenant-resource; an unregistered decision point is 422 decision-point-unregistered rather than a default-allow; an unresolvable policy_version is 409; POLICY_FAIL=1 returns adapter-unavailable 503 with no admission.",
+    "swap": "conformance PASSED 14/14 before (dryrun, open JSON document query) and 14/14 after (second, typed entity set) with the same 14 cases and the same fixtures; sha256 of interface.py+call.py+conformance.py+bundle.json+decision_points.json identical across both runs (8c915b4a37f8f76dd501753f1d233e4317da16954860c159444a613e87daceb0), so the swap was configuration; 4 execution-model axes differ (decision model open document vs typed entity set, activation bundle-in-place vs recompiled into the process, processes required endpoint vs none, declared subset [] vs ['dispatch.data_query']); the marker changed with the binding (dryrun-decision -> in-process-decision); decisions_agree=true over every decision asked of both, so the two engines returned the same effect and the same rule_id for the byte-identical request; adapters_run=2 with selected_by=configuration on both report cards; the same caller code ran unchanged on both, and ADAPTER=dryrun,second printed decisions_agree=true.",
+    "breakage": "the breakage cap-policy-implement's definition of done prescribes, applied to a copy under out/breakage/ and to one adapter only: adapters/dryrun.py gains an admit override that runs the metered call first and decides afterwards. That run exits 1 with 7/14 cases, decided_before_first_metered_call falls from 9/9 to 2/9, spend_delta_micros on denied dispatches rises from 0 to 2400, and the run names the override ('the binding overrides admit, so the platform no longer owns the order of the gate'); the untouched second adapter still exits 0 at 14/14, so one adapter was singled out rather than the corpus going unread."
+  },
+  "claimed": [
+    "live mode until run on the host: adapters/live.py has never reached a policy engine from here, so the decision URL, the request wrapper ({\"input\": ...}) and the answer mapping (result.effect / result.allow and result.rule_id) are unverified against a real engine",
+    "the second adapter is a faithful stub of the typed-entity execution model, not a binding to that engine: its shape, its declared conformance subset and its swap procedure are real, the engine is not linked in",
+    "the rule set in bundle.json, the entity model and the three decision points in decision_points.json are proposed fixtures of this harness, not a recorded rule set; the operations decide, activate, explain and register_decision_point are marked proposed in cap-policy because the recorded standard is a language plus a decision API, not a set of calls",
+    "the standard's version is unverified: X-gap-a-003 and X-cap-policy-002 are search results, not fetched pages, and page fetch is blocked in this environment (STATUS row 45)",
+    "PASS.md A6 records that policy is not wired into the enforcement path here (F-a6-04); this harness measures the gate in isolation, and nothing on the platform's own call path consults it yet"
+  ]
+}

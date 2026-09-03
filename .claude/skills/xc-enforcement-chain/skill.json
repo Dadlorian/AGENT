@@ -1,0 +1,521 @@
+{
+  "name": "xc-enforcement-chain",
+  "layer": "xc",
+  "wave": 7,
+  "description": "One ordered interception chain through which every unit of work passes, whichever way it entered: six typed slots applied in one declared order on the way in and in the inverse order on the way out, at three named points - admission before a work item is accepted, dispatch before a unit runs, and call before each model or tool call. Load it when asking where a cross-cutting guarantee is actually applied rather than what it decides, when a new concern needs somewhere to attach, when one door into the platform received a check the others did not, when a tool chosen at runtime reaches the outside without passing anything, when an agent loop has no ceiling on its own iterations, when an irreversible action is about to run on an approval granted earlier for something else, when someone proposes a fast path, a trusted caller or a per-team exemption, or when a review asks what precisely a caller cannot decline.",
+  "purpose": {
+    "text": "xc-typed-errors, xc-budget and xc-correlation each carry one guarantee across every entry point (T-t2-03). This skill fixes the single structure that carries all of them: one ordered chain of typed slots, applied at named enforcement points, entered before anything is spent and unwound in the inverse order on the way out, so that a guarantee is a property of the path rather than of the caller who remembered it.",
+    "origin": "sourced",
+    "sources": [
+      "T-t2-03",
+      "F-b1-08"
+    ],
+    "quote": "State, telemetry, and every cross-cutting concern are managed across the entire structure, whichever entry point was used."
+  },
+  "entities": [
+    "E-concern-budget",
+    "E-concern-identity",
+    "E-concern-policy",
+    "E-concern-provenance",
+    "E-concern-telemetry",
+    "E-concern-errors",
+    "E-concern-idempotency",
+    "E-rule-b1-7",
+    "E-not-running-policy-in-the-gate-path"
+  ],
+  "contract": {
+    "operations": [
+      {
+        "name": "enter (proposed operation set; PASS.md states the cross-cutting concerns as a table of contracts, not as a chain of calls)",
+        "input": "the enforcement point being crossed, the unit about to cross it, and the chain context of the enclosing point if there is one (proposed)",
+        "output": "a chain context carrying one slot record per declared slot in declared order, or the typed refusal of the first slot that refused; nothing metered runs for a unit that holds no chain context for the point it is crossing (proposed)",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-01",
+          "T-t2-03"
+        ]
+      },
+      {
+        "name": "exit (proposed)",
+        "input": "the chain context handed back by enter, and the outcome of the work the point wrapped, success or failure (proposed)",
+        "output": "the same context sealed, with each slot's inverse recorded in the reverse of the entry order, on the failure path as well as the success path (proposed)",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-01"
+        ]
+      },
+      {
+        "name": "attest_chain (proposed)",
+        "input": "a corpus of units read at a pinned state head, and the declared slot order (proposed)",
+        "output": "per unit and per point: which slots ran, in which order, which inverses ran on exit, and counts of slots_missing, out_of_order, missing_inverse and metered calls reached with no chain context (proposed)",
+        "origin": "proposed",
+        "sources": [
+          "F-a7-03"
+        ]
+      }
+    ],
+    "shapes": [
+      {
+        "name": "chain-context (proposed summary shape; the full slot record, the three worked entries and the worked refusal are in references/usage.md)",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:xc:enforcement-chain:context:0.1",
+          "title": "ChainContext",
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Proposed. What one traversal of one enforcement point produces. There is no field for a skipped, advisory or deferred slot, and no field in which a caller may supply the order: the order is declared by the platform and the slot list is closed.",
+          "required": [
+            "point",
+            "unit_id",
+            "correlation",
+            "slots",
+            "entered_seq"
+          ],
+          "properties": {
+            "point": {
+              "enum": ["admission", "dispatch", "call"],
+              "description": "The named enforcement point being crossed. The same chain runs at each."
+            },
+            "unit_id": { "type": "string", "format": "uuid" },
+            "entered_seq": { "type": "integer", "minimum": 0 },
+            "correlation": {
+              "type": "object",
+              "required": ["run_id", "root_dispatch_id"]
+            },
+            "slots": {
+              "type": "array",
+              "minItems": 6,
+              "description": "One record per declared slot, in declared order: identity resolve, policy decide, budget reserve, telemetry open, idempotency claim, provenance open. A slot may record a no-op; it may not be absent.",
+              "items": {
+                "type": "object",
+                "required": ["slot", "seq", "outcome"],
+                "properties": {
+                  "slot": {
+                    "enum": ["identity.resolve", "policy.decide", "budget.reserve", "telemetry.open", "idempotency.claim", "provenance.open"]
+                  },
+                  "seq": { "type": "integer", "minimum": 0 },
+                  "outcome": { "enum": ["passed", "no-op", "refused"] },
+                  "inverse_seq": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Sequence of this slot's inverse on exit. Inverses run in the reverse of the entry order, whatever the outcome of the wrapped work."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b4-01",
+          "F-b1-08"
+        ]
+      },
+      {
+        "name": "chained entry, the three ways in (proposed worked instances; TARGET T1 names a human, an agent and an event, and the same chain stands at the admission point of all three)",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:xc:enforcement-chain:entry:0.1",
+          "title": "ChainedEntry",
+          "type": "object",
+          "description": "Proposed. The minimum a caller supplies is the entry envelope cap-consumption already fixes; the chain is applied to it and there is nothing to add, set or request. What comes back is one result or one problem object. These three are the same envelope entering by three doors and traversing the same six slots.",
+          "examples": [
+            {
+              "entry": { "kind": "human", "actor": { "subject": "user:corey" }, "correlation": { "run_id": "run-h-0001", "root_dispatch_id": "disp-h-0001" } },
+              "chain": { "point": "admission", "unit_id": "disp-h-0001", "slots_run": 6, "refused_at": null }
+            },
+            {
+              "entry": { "kind": "external", "actor": { "subject": "agent:partner-sre-bot" }, "correlation": { "run_id": "run-a-0001", "root_dispatch_id": "disp-a-0001" } },
+              "chain": { "point": "admission", "unit_id": "disp-a-0001", "slots_run": 6, "refused_at": null }
+            },
+            {
+              "entry": { "kind": "event", "actor": { "subject": "service:alerting" }, "correlation": { "run_id": "run-e-0001", "root_dispatch_id": "disp-e-0001" } },
+              "chain": { "point": "admission", "unit_id": "disp-e-0001", "slots_run": 6, "refused_at": null }
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03"
+        ]
+      },
+      {
+        "name": "worked refusal at the call point (proposed instance; the type is the registered budget-exhausted row of the closed registry in docs/decomposition.md section 2.1.6, and cap-errors owns the object)",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:xc:enforcement-chain:refusal:0.1",
+          "title": "ChainRefusalInstance",
+          "description": "Proposed. What a caller actually receives when a slot refuses, shown rather than described. It names the point and the slot, never the engine or process that decided, and it arrives before the call it refused, so the spend for that call is zero.",
+          "allOf": [ { "$ref": "urn:agentic:problem:0.1" } ],
+          "examples": [
+            {
+              "type": "urn:agentic:problem:budget-exhausted",
+              "title": "Budget exhausted",
+              "status": 402,
+              "detail": "enforcement point call, slot budget.reserve: the model call would cross the ceiling of run-e-0001",
+              "dispatch_id": "disp-e-0001",
+              "retryable": false,
+              "correlation": { "run_id": "run-e-0001", "root_dispatch_id": "disp-e-0001", "depth": 2 }
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b4-07",
+          "F-b4-02"
+        ]
+      }
+    ],
+    "invariants": [
+      {
+        "text": "agentic-stack states design rule 7 as a test (F-b1-08): the platform applies the cross-cutting guarantees rather than the caller requesting them. What the chain adds is where 'the platform' is: there is exactly one traversal path from any entry to any metered call, and a call reached without a chain context for its point is a defect that is counted, not a caller's choice.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-08",
+          "E-rule-b1-7"
+        ],
+        "quote": "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller"
+      },
+      {
+        "text": "Proposed: the chain's contents are PASS.md B4's concerns - Budget, Identity, Policy, Provenance, Telemetry, Errors, Idempotency - of which six are ordered slots (identity resolve, policy decide, budget reserve, telemetry open, idempotency claim, provenance open) and the seventh, Errors, is not a slot but the shape every slot's refusal takes, so the chain has one return type and not six.",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-01",
+          "E-concern-budget",
+          "E-concern-identity",
+          "E-concern-policy",
+          "E-concern-provenance",
+          "E-concern-telemetry",
+          "E-concern-errors",
+          "E-concern-idempotency"
+        ],
+        "quote": "These are the difference between a working system and a production one."
+      },
+      {
+        "text": "The order is declared and total: every slot runs at every point in the declared order and each has its inverse on exit in the reverse order, on the failure path as well as the success path. A slot may record a no-op; it may not be absent, because the prior art's whole property is that the interceptors surround the target operation regardless of outcome.",
+        "origin": "sourced",
+        "sources": [
+          "X-xc-enforcement-chain-005"
+        ],
+        "quote": "Interceptors form a chain that always surrounds and invokes a fixed target operation, ensuring every interceptor executes both before and after the target regardless of outcomes."
+      },
+      {
+        "text": "xc-policy-gate owns the rule that refusal precedes spend (F-b4-04). What the chain adds is that the rule holds at three points and not one: admission, dispatch and every model or tool call each take the decision and the reservation before the thing they wrap begins, so a unit admitted once cannot spend unboundedly afterwards.",
+        "origin": "sourced",
+        "sources": [
+          "F-b4-04",
+          "E-concern-policy"
+        ],
+        "quote": "Refusal is deterministic and happens before execution, not after spend"
+      },
+      {
+        "text": "In-path enforcement at the call point is not redundant with the earlier points, because the thing being enforced against is chosen after them: enforcement must sit where the call is actually made, so that a boundary still refuses when everything upstream was satisfied.",
+        "origin": "sourced",
+        "sources": [
+          "X-end-to-end-062"
+        ],
+        "quote": "Infrastructure-level governance provides a hard enforcement boundary even when prompt injection succeeds at the LLM level."
+      },
+      {
+        "text": "xc-typed-errors states that a guarantee holds across the whole structure rather than per entry point (T-t2-03). What the chain adds is that the structure is one object: the same declared slot list, in the same order, at the same three points, whichever of TARGET T1's three ways in was used - so a new door is wired by attaching the chain, never by re-deriving the checks.",
+        "origin": "sourced",
+        "sources": [
+          "T-t2-03",
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03"
+        ],
+        "quote": "3. An internal or external event must be able to enter the system."
+      },
+      {
+        "text": "Proposed: declining is inexpressible rather than forbidden. There is no bypass field, no trusted-caller class, no advisory mode and no per-point exemption in any shape a caller can fill in; the only way a slot does not run is that the platform declared it a no-op for that point, which is recorded in the chain context and counted by the attestation.",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-01",
+          "F-b1-08"
+        ]
+      },
+      {
+        "text": "The call point carries two containment controls that no upstream point can supply: a hard ceiling on autonomous iterations, and an approval gate that fires on any action declared irreversible regardless of an approval granted earlier for the run.",
+        "origin": "sourced",
+        "sources": [
+          "X-end-to-end-063"
+        ],
+        "quote": "Hard caps on autonomous loops, plan-validation checkpoints, and approval gates on irreversible actions are the typical defenses."
+      },
+      {
+        "text": "Proposed, following the reference example in docs/reference/composable-plan.md rather than sourcing it: its stages put the free resolution before the gate and the real spend only after it, which is the same ordering this chain applies at each of its points - everything that can refuse runs before anything that can cost.",
+        "origin": "proposed",
+        "sources": [
+          "REF-5-08",
+          "REF-5-05",
+          "REF-5-06"
+        ]
+      }
+    ],
+    "not_exposed": [
+      {
+        "text": "Proposed: the slot list and its order are not caller-supplied. No entry shape carries a slots array, an order array, a skip list or a point selector, so there is nothing to negotiate and a fast path has no field to live in.",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-01"
+        ]
+      },
+      {
+        "text": "agentic-stack states design rule 6 (F-b1-07). What the chain must not expose: the criterion a result will be judged against never travels in a chain context, a slot record or a refusal. A refusal names the point and the slot that refused, never the standard the work would have been measured by.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-07",
+          "E-rule-b1-7"
+        ],
+        "quote": "An agent sees its outcome, never the criterion it is judged against"
+      },
+      {
+        "text": "Proposed: no engine, process or product behind a slot appears in a chain context or a refusal. A caller learns which point and which slot refused, which is what they can act on; which implementation decided is configuration and appears only in the conformance report.",
+        "origin": "proposed",
+        "sources": [
+          "F-part-c-09"
+        ]
+      }
+    ]
+  },
+  "instructions": [
+    {
+      "step": 1,
+      "action": "Declare the chain once, as an ordered list of typed slots with one owning skill per slot, and let the chain own only two things: the order and the totality. Never restate what a slot decides here.",
+      "why": "Proposed: each slot's semantics already belong to a guarantee skill - xc-policy-gate for the decision, xc-budget for the ceiling, xc-correlation for the stamped identifiers, xc-typed-errors for the refusal shape. A chain that also decides is a second owner for every rule, and the two owners drift.",
+      "origin": "proposed",
+      "sources": [
+        "F-b4-01"
+      ]
+    },
+    {
+      "step": 2,
+      "action": "Name the enforcement points and put the same chain at each: admission, before a work item is accepted; dispatch, before a unit runs; call, before each model or tool call. Add a point by naming it, never by adding a check somewhere unnamed.",
+      "why": "cap-policy already draws the consequence for its own decision that runtime tool choice defeats a plan-time check; the chain's consequence is structural: the call point is the only place that sees the arguments a unit actually chose, so a platform with only admission and dispatch points is enforcing against a plan and not against a call.",
+      "origin": "sourced",
+      "sources": [
+        "X-end-to-end-062",
+        "X-cross-structure-030"
+      ],
+      "quote": "Dynamic tool-switching, where agents select tools at runtime, defeats static policy."
+    },
+    {
+      "step": 3,
+      "action": "Order the slots so that everything that can refuse runs before anything that can spend, and record each slot's sequence position as it runs: identity resolve, policy decide, budget reserve, telemetry open, idempotency claim, provenance open.",
+      "why": "xc-policy-gate owns the ordering rule for the decision and xc-budget owns the ceiling; what the chain adds is that both are positions in one list, so 'before spend' is checkable as a sequence rather than argued per call site.",
+      "origin": "sourced",
+      "sources": [
+        "F-b4-04",
+        "F-b4-02"
+      ],
+      "quote": "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform"
+    },
+    {
+      "step": 4,
+      "action": "Run each slot's inverse on exit, in the reverse of the entry order, and run it on the failure path too: reserve is reconciled, the claim is settled, the span and the provenance record are closed whether the unit succeeded, refused or crashed.",
+      "why": "The prior art's defining property is that the chain surrounds the target operation and executes on both sides regardless of outcome; an exit that runs only on success leaks reservations and leaves open spans exactly on the runs that most need reading.",
+      "origin": "sourced",
+      "sources": [
+        "X-xc-enforcement-chain-005"
+      ],
+      "quote": "ensuring every interceptor executes both before and after the target regardless of outcomes"
+    },
+    {
+      "step": 5,
+      "action": "Make traversal automatic: attach the chain where units are constructed and calls are issued, so that no engineer adds a call to it and no configuration step is required to get it.",
+      "why": "cap-policy already draws this consequence for automatic consultation of its decision; for the chain the same mechanism is what makes 'cannot decline' true, because a step that has to be remembered is declined by being forgotten, and the forgetting is silent.",
+      "origin": "sourced",
+      "sources": [
+        "X-cross-structure-024",
+        "X-cross-structure-025"
+      ],
+      "quote": "there's no need for engineers to remember extra config steps"
+    },
+    {
+      "step": 6,
+      "action": "Give the call point a hard ceiling on autonomous iterations and a gate that fires on any action declared irreversible, and make the irreversible gate fire regardless of an approval already granted for the run.",
+      "why": "These are the containment controls the risk taxonomy on file names, and neither can be supplied upstream: an iteration count only exists once the loop is running, and an approval granted at admission was granted for a plan, not for the specific irreversible action a later turn chose.",
+      "origin": "sourced",
+      "sources": [
+        "X-end-to-end-063",
+        "X-end-to-end-061"
+      ],
+      "quote": "Hard caps on autonomous loops, plan-validation checkpoints, and approval gates on irreversible actions are the typical defenses."
+    },
+    {
+      "step": 7,
+      "action": "Wire the identical chain on each of TARGET T1's three ways in - a human, an agent, and an internal or external event - and prove it by replaying one corpus through each door and asserting the same slot order, the same inverses and zero ungated metered calls for all three.",
+      "why": "A guarantee wired only on the path someone remembered is declined by choosing another door, and entry is where doors multiply. Replaying one corpus through each is what turns 'whichever entry point was used' into a number.",
+      "origin": "sourced",
+      "sources": [
+        "T-t1-01",
+        "T-t1-02",
+        "T-t1-03"
+      ],
+      "quote": "1. A human must be able to enter the system."
+    },
+    {
+      "step": 8,
+      "action": "Return the refusal of the first slot that refuses as one typed problem from the closed registry, naming the point and the slot in its detail, and stop the traversal there rather than collecting further refusals.",
+      "why": "xc-typed-errors owns the rule that no failure is discovered by matching a string; what the chain adds is that a caller who sees one object still learns where in the chain it stopped, which is the only part of the traversal they can act on.",
+      "origin": "sourced",
+      "sources": [
+        "F-b4-07",
+        "E-concern-errors"
+      ],
+      "quote": "Typed and machine-readable"
+    },
+    {
+      "step": 9,
+      "action": "For usability, add nothing to the caller's side: a human, an agent and an event all reach the chain by submitting the entry envelope cap-consumption fixes, supply no slot, flag or order, and read back either one result or one problem object naming the point and slot that refused.",
+      "why": "Proposed: the chain is the part of the platform a caller most wants to configure and least should, so the usability answer is that there is no chain-shaped input at all; cap-consumption states the caller doctrine once, and restating it here would give it a second owner.",
+      "origin": "proposed",
+      "sources": [
+        "T-t6-02",
+        "T-t3-01"
+      ]
+    },
+    {
+      "step": 10,
+      "action": "Proposed: open references/usage.md when you need the full chain-context and slot-record schemas, the three complete worked entries, the worked refusal in full, or the slot-to-owner table. The body of this skill is enough to judge a chain and to place a point without it.",
+      "why": "Proposed: the full schemas and three complete envelopes exceed the progressive-disclosure budget for a skill body, and a reader deciding whether a call is on the chain does not need them open.",
+      "origin": "proposed"
+    }
+  ],
+  "best_practices": [
+    {
+      "text": "cap-policy already cites this record for consulting one decision everywhere; what the chain adds is the reason to define the whole set once rather than concern by concern: a single composition point is what keeps the unit's own logic free of them, so a new concern is added in one file rather than in every agent.",
+      "origin": "sourced",
+      "sources": [
+        "X-cross-structure-026"
+      ],
+      "quote": "keeping the core reasoning focused on business goals while shared concerns stay centralized"
+    },
+    {
+      "text": "Prefer a placement that can enforce against a workload you cannot modify. The prior art on file describes a helper process alongside the application handling the cross-cutting concerns with no change to the application, which is the only shape that also works for an agent runtime or a tool server we did not write; the records are search results rather than pages that were read.",
+      "origin": "sourced",
+      "sources": [
+        "X-cross-structure-020"
+      ],
+      "quote": "A sidecar is a helper process that runs alongside your application and handles cross-cutting concerns without touching the application code."
+    },
+    {
+      "text": "Treat enforcement as inherently cross-cutting rather than as a component's own business: the records on file describe policy-relevant events spanning agents, models, services and tools, which is why a per-component check leaves the gaps between components unguarded.",
+      "origin": "sourced",
+      "sources": [
+        "X-xc-enforcement-chain-003",
+        "X-xc-enforcement-chain-006"
+      ],
+      "quote": "making policy enforcement cross-cutting rather than local to any single component"
+    },
+    {
+      "text": "cap-policy already states that interoperability protocols cannot enforce governance semantics. What this adds for the chain: adopting a protocol at the door buys transport, not enforcement, so the chain is what a new door inherits and the protocol choice never changes which slots run.",
+      "origin": "sourced",
+      "sources": [
+        "X-entry-composition-059",
+        "X-entry-composition-060"
+      ],
+      "quote": "Current protocols can transport governance-related messages as opaque payloads"
+    },
+    {
+      "text": "agentic-stack already states the structurally-green-gate finding (F-a7-03). What it adds here: report metered calls and slot executions alongside the zero counts, because a corpus in which nothing spent and a corpus that is properly chained both print zero ungated calls.",
+      "origin": "sourced",
+      "sources": [
+        "F-a7-03"
+      ],
+      "quote": "Those establish well-formedness, not correctness"
+    },
+    {
+      "text": "agentic-stack already states the silently-discarded-configuration finding (F-a7-04). What it adds here: prove a point is on the chain by watching a call be refused at it on the live path, not by reading the wiring that installed it; an installed chain and an enforced chain are indistinguishable from the file.",
+      "origin": "sourced",
+      "sources": [
+        "F-a7-04"
+      ],
+      "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+    },
+    {
+      "text": "Proposed: fail closed at slot granularity. A slot whose owner is unreachable is a refusal returned as the registered adapter-unavailable row, not a no-op and not a pass-through; a chain that thins itself under load has removed exactly the guarantees that load makes expensive.",
+      "origin": "proposed",
+      "sources": [
+        "F-b4-01",
+        "F-b4-07"
+      ]
+    }
+  ],
+  "definition_of_done": {
+    "criterion": "The manifest row for this piece, made precise: `python3 tools/conformance/enforcement_chain.py --corpus out/units.jsonl --points admission,dispatch,call --ways-in human,agent,event --min-units 100 --report out/chain.json` (proposed tool, built with the first chained point). Reading a pinned state head, for every unit and every point it crossed it asserts that a chain context exists, that all six declared slots appear with strictly increasing `seq` in the declared order, that each slot's inverse appears on exit with `inverse_seq` in the reverse of that order including on units that failed, and that no metered call has a start sequence earlier than the last entry slot of its point. It reports `units_checked`, `ways_in`, `points_covered`, `metered_units`, `slots_missing`, `out_of_order`, `missing_inverse` and `ungated_metered_calls`, and asserts `units_checked >= 100`, `metered_units > 0`, all three ways in covered, all three points covered, and `slots_missing == out_of_order == missing_inverse == ungated_metered_calls == 0`.",
+    "expected": "exit 0 and one summary line `units_checked=100 ways_in=human,agent,event points=admission,dispatch,call metered_units=<m> slots_missing=0 out_of_order=0 missing_inverse=0 ungated_metered_calls=0`, with `metered_units` greater than zero so the ordering assertion had something to order against.",
+    "breakage": "Activate a policy bundle that denies everything and replay the same corpus through all three ways in, changing nothing else: every unit must now be refused at the `policy.decide` slot of the first point it reaches, with `metered_units == 0` and a refusal recorded for every way in.",
+    "expected_failure": "exit 1 naming any way in that still produced a completed unit or a non-zero metered call under deny-all - that path is reaching work without traversing the chain - while `slots_missing`, `out_of_order` and `missing_inverse` stay 0 and `units_checked` stays at or above 100, which shows the corpus was still read and the assertion still ran rather than the run having gone empty.",
+    "status": "claimed",
+    "sources": [
+      "F-part-c-04",
+      "F-b4-01"
+    ],
+    "quote": "A criterion nothing can fail is not a criterion"
+  },
+  "composes_with": {
+    "builds_on": [
+      "agentic-stack",
+      "build-definition-of-done",
+      "build-skill-authoring",
+      "build-research-record",
+      "build-ceremony",
+      "cap-policy",
+      "xc-budget",
+      "xc-policy-gate",
+      "xc-typed-errors",
+      "cap-work-intake",
+      "xc-correlation"
+    ],
+    "used_by": [
+      "xc-enforcement-chain-implement",
+      "xc-tenancy"
+    ]
+  },
+  "open_questions": [
+    {
+      "question": "Should `idempotency.claim` run before `budget.reserve` rather than after it, so that a replayed unit cannot draw a reservation it will never use?",
+      "evidence": "Replay a corpus containing duplicate idempotency keys under both orders and read the reservation store afterwards: whichever order leaves no reservation drawn for a unit that was deduplicated is the one that satisfies the zero-spend property literally rather than by reversal. Count the reservations released by the exit inverse under the current order; if that count is non-zero in normal operation, the order is wrong.",
+      "default": "Keep the declared order (identity, policy, budget, telemetry, idempotency, provenance) because it is what the manifest row for this piece names, and rely on the exit inverse to release a reservation held by a deduplicated unit. The question closes when the replay above has been run.",
+      "sources": [
+        "F-b4-08",
+        "F-b4-02",
+        "T-t5-02"
+      ],
+      "quote": "Every externally-triggered action is safe to replay"
+    },
+    {
+      "question": "This guarantee has no governing standard: the pattern it implements is advice applied at a pointcut, and the records on file name it as prior art rather than as a specification. Should a standard be recorded for it anyway?",
+      "evidence": "1-3-1 applied (TARGET T5): (a) mint a standard entity for the interception pattern, which needs a knowledge-base rebuild and would invalidate the provenance heads of every skill already written; (b) carry no standards row here and let each slot's own capability name the standard that governs it, which is what this skill does; (c) adopt an unrelated transport standard as a proxy, which would name a specification that does not govern this. Recommendation followed: (b). The question closes if an interception or enforcement-placement specification is ever ratified and entered as an entity.",
+      "default": "No standards row here. Each slot's capability names its own standard, and this skill states only the order, the points and the totality.",
+      "sources": [
+        "X-cross-structure-029",
+        "F-b1-03",
+        "T-t5-02"
+      ],
+      "quote": "AOP adds behavior to existing code (an advice) without modifying the code"
+    },
+    {
+      "question": "Refusal by absence - a credential that simply cannot reach a forbidden destination - is a second shape of enforcement that needs no chain traversal at all. Does it replace a slot at the call point, or sit under it?",
+      "evidence": "Count the call-point refusals that a credential scope would have made impossible in the first place. If the two sets are equal the slot is buying only an error message; if the chain refuses cases the credential cannot express, both are needed and the chain is the place the refusal becomes typed.",
+      "default": "Both, with the chain on top: cap-mandate-broker owns the credential that cannot reach the destination, and the call point still runs its slots so that a refusal is a typed problem rather than an unexplained connection failure.",
+      "sources": [
+        "F-b4-07",
+        "T-t5-02"
+      ]
+    }
+  ],
+  "provenance": {
+    "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+    "kb_heads": {
+      "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+      "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6"
+    },
+    "author": "session xc-enforcement-chain 2831cb4f, 2026-09-03"
+  }
+}

@@ -12,6 +12,7 @@ Checks, all of which the crew's isolation depends on:
   angles       each section has min_questions..max_questions questions, over at least min_angles angles, including every required angle (docs/litmus/frame.json)
   citations    every cited id resolves in kb/ (F-, T-, X-, including kb/research/*.jsonl not yet merged); a sourced text carries a quote that is a verbatim substring of one cited record; a proposed text says proposed
   contamination no text names anything this repo built (skill, harness, tool, doc and state names); no product name outside standard.why and direction.text
+  distinct     no two questions anywhere share the same question text or the same evidence_expected (review 66-litmus-review: B3 and B4 pairs repeated each other)
 """
 from __future__ import annotations
 
@@ -178,6 +179,14 @@ def check_sections(sections: list[dict], frame: dict, recs: dict, names: list[st
                 m = PRODUCT_RE.search(text)
                 if m:
                     errs.append(f"{sid}: {path} names a product ({m.group(1)}); products belong only in standard.why and direction.text")
+    seen_text: dict[str, str] = {}
+    for s in sections:
+        for q in s.get("questions", []):
+            for k in ("question", "evidence_expected"):
+                key = k + ":" + re.sub(r"\s+", " ", (q.get(k) or "").strip().lower())
+                if key in seen_text:
+                    errs.append(f"{q.get('id')}: {k} repeats {seen_text[key]} word for word")
+                seen_text.setdefault(key, q.get("id", "?"))
     if require_full_coverage:
         for src, (cid, _, _) in BY_SOURCE.items():
             if src not in seen_sources:

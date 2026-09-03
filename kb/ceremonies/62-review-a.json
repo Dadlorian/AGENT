@@ -1,0 +1,231 @@
+{
+ "status_row": 62,
+ "reviewer": "62-review-a",
+ "skills": [
+  "compose-agent",
+  "compose-approval",
+  "compose-improvement-loop",
+  "compose-loop",
+  "compose-operators",
+  "compose-agent-implement",
+  "compose-approval-implement"
+ ],
+ "validate_skills": {
+  "compose-agent": "0 errors, 10 warnings (1 criterion-not-a-shell-command, 9 'already states' restate-and-extend)",
+  "compose-approval": "0 errors, 3 warnings (criterion-not-a-shell-command; restates F-b1-02 under agentic-stack's quote without naming it; restates F-part-c-04 under agentic-stack/build-skill-authoring's quote without naming it)",
+  "compose-improvement-loop": "0 errors, 15 warnings (1 criterion-not-a-shell-command, 14 'already states' restate-and-extend)",
+  "compose-loop": "0 errors, 1 warning (criterion-not-a-shell-command)",
+  "compose-operators": "0 errors, 3 warnings (criterion-not-a-shell-command; restates F-b1-07 under cap-document-validation's quote; restates F-a7-03 under build-ceremony/core-document's quote)",
+  "compose-agent-implement": "0 errors, 8 warnings (all 'already states' restate-and-extend)",
+  "compose-approval-implement": "0 errors, 0 warnings"
+ },
+ "harness_runs": [
+  {
+   "skill": "compose-agent-implement",
+   "command": "bash harness/linked/test.sh",
+   "exit": 0,
+   "tail": "passed 32, failed 0 | dry-run: 32 checks pass, 23 conformance checks, swap proof across 4 components, breakage fails both"
+  },
+  {
+   "skill": "compose-agent-implement",
+   "command": "ADAPTER_CONTAINMENT=second ADAPTER_GATEWAY=second ADAPTER_TRACE=second ADAPTER_WORKFLOW=second python3 harness/linked/conformance.py --report out/linked-swap.json",
+   "exit": 0,
+   "tail": "counters: {\"doors_checked\": 4, \"manifests_distinct\": 1, \"subjects_distinct\": 1, \"typed_refusals\": 4, \"replay_noops\": 4, \"traces_reassembled\": 4} | verdict pass: 23 of 23 checks pass",
+   "matches_expected": true
+  },
+  {
+   "skill": "compose-approval-implement",
+   "command": "bash harness/workflow/test.sh",
+   "exit": 0,
+   "tail": "passed 23, failed 0 | dry-run: 23 checks pass, swap proven across 2 executors, breakage fails both"
+  },
+  {
+   "skill": "compose-approval-implement",
+   "command": "python3 harness/workflow/conformance.py --adapter dryrun --adapter second",
+   "exit": 0,
+   "tail": "adapter=second executor_marker=queue-state-machine/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28 | adapters_run=2 distinct_markers=2",
+   "matches_expected": true
+  },
+  {
+   "skill": "compose-operators",
+   "command": "bash examples/end-to-end/test.sh",
+   "exit": 0,
+   "tail": "passed 30, failed 0",
+   "matches_expected": false,
+   "note": "definition_of_done.expected quotes 'passed 29, failed 0'; the validate leg and the four 'reached completed' lines are still present"
+  },
+  {
+   "skill": "compose-improvement-loop",
+   "command": "python3 tools/ceremony_check.py",
+   "exit": 0,
+   "tail": "trend rows 1..10 present",
+   "note": "best_practices[0]'s quoted numbers (1.00 at ceremony 1, 0.07 by 4, 0.00 at 8 and 10, proposed share 0.34-0.58) match this run"
+  },
+  {
+   "skill": "compose-agent-implement",
+   "command": "grep for both breakage sed targets",
+   "exit": 0,
+   "note": "harness/linked/linked.py:175 'prior = self.ledger.completed(env.idempotency_key)' exists; test.sh:134 check 'the same suite passes again once the door is restored' exists, so expected_failure quotes reachable output"
+  },
+  {
+   "skill": "compose-approval-implement",
+   "command": "grep for breakage sed target",
+   "exit": 0,
+   "note": "harness/workflow/adapters/dryrun.py:138 'for r in prior)' exists; conformance.py:166 check 'F ten deliveries of one decision resume the run once' and test.sh:100 'once the key is restored' exist, so expected_failure quotes reachable output"
+  }
+ ],
+ "findings": [
+  {
+   "id": "R62A-001",
+   "skill": "compose-approval",
+   "location": "best_practices[4]",
+   "severity": "high",
+   "kind": "unsupported",
+   "evidence": "Row text: 'Every unit of work must be retried three times before it is reported as failed.' sourced to F-b1-02 with quote 'The core imports interfaces, never implementations'. The quote is verbatim, but F-b1-02 reads '1. **Every external dependency sits behind a capability interface.** The core imports interfaces, never implementations.' - design rule 1 says nothing about retries, and no record in the knowledge base states a three-retry rule. The validator also warns that this row restates F-b1-02 under agentic-stack's own quote without naming it.",
+   "fix": "Delete the row. If a retry policy is wanted, it belongs to compose-loop's ceiling (F-b4-02) and would have to be marked proposed."
+  },
+  {
+   "id": "R62A-002",
+   "skill": "compose-approval",
+   "location": "best_practices[5]",
+   "severity": "medium",
+   "kind": "restatement",
+   "evidence": "Row text: 'A criterion nothing can fail is not a criterion, so every gate carries a breakage.' sourced to F-part-c-04 under the same quote build-definition-of-done and agentic-stack already carry, and the skill's own definition_of_done row cites the identical id and quote. Nothing here is gate-specific, and no owning skill is named (compose-loop's step 5 names build-definition-of-done for the same fact). The validator warns on it.",
+   "fix": "Delete it, or name build-definition-of-done and state the consequence specific to a gate (which gate assertion the breakage must move)."
+  },
+  {
+   "id": "R62A-003",
+   "skill": "compose-improvement-loop",
+   "location": "best_practices[1]",
+   "severity": "high",
+   "kind": "unsupported",
+   "evidence": "Row claims 'build-ceremony already states that a ceremony number is a repository-global counter, never derived from a caller's position in its own run', sourced to T-t5-01 with quote 'Do not stop at ceremonies; run them and continue.' The quote is verbatim and is the whole of T-t5-01's text; the record states nothing about how a ceremony is numbered, so it cannot anchor the claim the row makes.",
+   "fix": "Cite the build-ceremony row (and its kb id) that actually fixes the global counter, or restate the row as proposed with the repository observation as its evidence."
+  },
+  {
+   "id": "R62A-004",
+   "skill": "compose-agent-implement",
+   "location": "definition_of_done",
+   "severity": "medium",
+   "kind": "dod",
+   "evidence": "Criterion run once here and it passes (bash harness/linked/test.sh: passed 32, failed 0; all-second conformance: verdict pass, 23 of 23, counters identical to the quoted expected). But the 23 cases are doors, envelopes, containment, spend, replay, typed refusals - none of the three assertions this skill's contract.invariants[1] and instructions[5] name (tool-list exactness, undeclared skills, criterion absence) and no profile-registry swap. The breakage moves the ledger replay check at harness/linked/linked.py:175, a seam owned by cap-consumption's harness, and the row is anchored on F-a6-03 'zero tools registered', which the run never touches.",
+   "fix": "Add a leg that admits a unit against a declared profile and asserts tool_mismatches/undeclared_skills/criterion_leaks over the registry pair, or re-cite the row to what the linked harness proves and record the agent-specific assertions as still claimed."
+  },
+  {
+   "id": "R62A-005",
+   "skill": "compose-approval-implement",
+   "location": "definition_of_done",
+   "severity": "medium",
+   "kind": "dod",
+   "evidence": "Criterion run once here and it passes (bash harness/workflow/test.sh: passed 23, failed 0; conformance: checks=28/28 on both adapters, adapters_run=2 distinct_markers=2). The two adapters proven are the two executors (in-process-journal, queue-state-machine); the pair this skill's adapters[] declares is two decision wires (parked-item, queued decision inbox). grep finds no 'wire' anywhere in harness/workflow/conformance.py or test.sh - flow.py takes --wire with a single default of parked-item - so instructions[7]'s 'against both wires, selected by configuration' and compose-approval's own wires_run >= 2 are unmeasured while the row is labelled measured.",
+   "fix": "Add a second --wire to the conformance run (the five cases against each, merged report with wires_run) or state in the row that the executor swap, not the wire swap, is what is measured today."
+  },
+  {
+   "id": "R62A-006",
+   "skill": "compose-operators",
+   "location": "definition_of_done.expected",
+   "severity": "medium",
+   "kind": "dod",
+   "evidence": "The expected text says 'bash examples/end-to-end/test.sh reports passed 29, failed 0'. Run once here: 'passed 30, failed 0', exit 0. The other two named legs still hold (line 13 'ok agent registry and workflow validate (0)', four 'reached completed' lines), so only the count is stale.",
+   "fix": "Re-run and quote the current line, or drop the total and quote only the two legs the row actually claims."
+  },
+  {
+   "id": "R62A-007",
+   "skill": "compose-agent",
+   "location": "best_practices[0]",
+   "severity": "low",
+   "kind": "padding",
+   "evidence": "'agentic-stack already states that callers request a class, never a vendor (F-a4-01). What it adds here: the rule reaches the composition layer unchanged.' The same claim, the same id and the same quote already appear at contract.invariants[3] and at instructions[2], which states the operative rule ('Never let a profile, a task, or an admission record name a vendor').",
+   "fix": "Delete the row; instructions[2] and invariants[3] already carry it."
+  },
+  {
+   "id": "R62A-008",
+   "skill": "compose-operators",
+   "location": "best_practices[2]",
+   "severity": "low",
+   "kind": "padding",
+   "evidence": "'Keep one reference composition that exercises every operator exactly once ... and a deterministic gate can otherwise be structurally green and mean nothing' repeats best_practices[1]'s rationale from the same record F-a7-03 with a different quote from it; the only new instruction (assert the count) is already the definition of done's operators_exercised == 6.",
+   "fix": "Merge into best_practices[1] or delete."
+  },
+  {
+   "id": "R62A-009",
+   "skill": "compose-loop",
+   "location": "instructions[3]",
+   "severity": "medium",
+   "kind": "restatement",
+   "evidence": "Step 4 states cap-durable-execution's contract in its own vocabulary - 'Commit one checkpoint per iteration, keyed by the loop id and the iteration index ... on restart read the resume point and continue at the first incomplete index' - and the replay guarantee xc-idempotency-lease owns, naming neither skill. The skill's own open_questions[1] default says to 'Name cap-durable-execution and its kb ids (F-b3-04, F-b4-08) in the rows that need it', which this row does not do.",
+   "fix": "Name cap-durable-execution for the step/checkpoint/resume-point vocabulary and xc-idempotency-lease for the replay claim, keeping only the loop-specific consequence as this skill's addition."
+  },
+  {
+   "id": "R62A-010",
+   "skill": "compose-agent",
+   "location": "contract.invariants[5]",
+   "severity": "low",
+   "kind": "restatement",
+   "evidence": "'Reach the agent the way any capability is reached: TARGET T6.2's four entries ... all name the same workflow_ref and the same agent step' restates the one-envelope rule cap-work-intake and cap-consumption own, naming neither; compose-loop's instructions[6] names cap-consumption for the identical rule.",
+   "fix": "Name cap-consumption (and cap-work-intake for normalisation) and keep only the agent-specific consequence - no fresh root invocation from inside a running turn."
+  },
+  {
+   "id": "R62A-011",
+   "skill": "compose-agent",
+   "location": "contract.invariants[1]",
+   "severity": "low",
+   "kind": "unsupported",
+   "evidence": "The row attributes to F-b3-05 that 'one prompt turn with a stop reason is the unit an agent runs'; F-b3-05 is the B3 table row '| **Agent runtime** | Agent Client Protocol | goose | Claude Code - Cursor - any ACP-speaking agent |' and states no such thing. Its anchoring quote 'The middle column is the contract' (F-b3-01) supports neither that attribution nor the row's own addition (the tool surface and capability set are bound once at admission).",
+   "fix": "Quote cap-agent-runtime's own turn record for the attributed half, and mark the admission-binding half proposed with its own row."
+  },
+  {
+   "id": "R62A-012",
+   "skill": "compose-improvement-loop",
+   "location": "contract.not_exposed[1]",
+   "severity": "low",
+   "kind": "uncited",
+   "evidence": "The row carries no origin field and no sources at all - only the word 'Proposed:' inside the prose - while every other row in the skill declares origin. A reader parsing the record, and the proposed-share counter tools/ceremony_check.py prints, both miss it.",
+   "fix": "Add \"origin\": \"proposed\" and the sources the row leans on (cap-capability-registry's withholding row, F-b1-07)."
+  },
+  {
+   "id": "R62A-013",
+   "skill": "compose-improvement-loop",
+   "location": "instructions[5]",
+   "severity": "low",
+   "kind": "adapter",
+   "evidence": "Step 6's why ends 'a promotion that writes to the checked-out skill.json instead is the exact defect this composition's second adapter is chosen to close', but this skill declares no adapters[] at all; the pair lives in compose-improvement-loop-implement.",
+   "fix": "Point at compose-improvement-loop-implement's second executor by name, or drop the clause."
+  },
+  {
+   "id": "R62A-014",
+   "skill": "compose-improvement-loop",
+   "location": "best_practices[2]",
+   "severity": "low",
+   "kind": "unsupported",
+   "evidence": "Proposed row attributes to core-judge that 'a judge grading with a model carries systematic biases and should not grade its own model family's output without a stated control', citing F-b1-07, whose whole text is design rule 6 (the grader is never visible to the graded). The cited record carries no support for a bias or control claim; the row is marked proposed, so this is a citation that does not bear on it rather than a misquote.",
+   "fix": "Cite core-judge's own audit/bias row, or drop the citation and leave the observation about ceremony 11 as the row's evidence."
+  },
+  {
+   "id": "R62A-015",
+   "skill": "compose-approval-implement",
+   "location": "instructions[6]",
+   "severity": "low",
+   "kind": "restatement",
+   "evidence": "Step 7 wires correlation, identity, budget, provenance and typed errors onto park and resume and says 'Each of the five attaches to a different capability', naming none of xc-correlation, xc-identity-delegation, xc-budget, xc-provenance-chain or xc-typed-errors, each of which owns the guarantee being restated.",
+   "fix": "Name the five owning skills inline and keep only the park/resume placement as this skill's addition."
+  },
+  {
+   "id": "R62A-016",
+   "skill": "compose-agent-implement",
+   "location": "adapters[0]",
+   "severity": "medium",
+   "kind": "adapter",
+   "evidence": "Today's adapter maps to 'admit_agent and invoke_turn served by one Firecracker microVM per agent' and its own text records that 'declare_agent has no backing registry yet'; the second adapter serves 'the same declare_agent and admit_agent ... by a remote agent protocol server', and the swap_procedure swaps declare_agent between the remote registry and an '(currently absent) in-process file'. The pair therefore is not two implementations of one interface that can be run through one suite: the operation being swapped is unimplemented on the first side.",
+   "fix": "Record the in-process profile file (instructions[1], step 2) as today's declare_agent adapter with the microVM unit as the isolation/runtime side, or state the pair as blocked until step 2 lands."
+  }
+ ],
+ "metrics": {
+  "rows_checked": 190,
+  "sourced": 101,
+  "proposed": 51,
+  "quotes_verified": 139,
+  "harness_runs": 6
+ },
+ "summary": "Seven composition skills, 190 rows. All 139 quotes are verbatim substrings of a cited record; two sourced rows quote a record that does not support their claim (compose-approval best_practices[4] cites design rule 1 for a three-retry rule; compose-improvement-loop best_practices[1] cites 'Do not stop at ceremonies' for a global ceremony counter). Both implement criteria were run once and pass as their expected text quotes (linked: 32 gate checks, 23/23 conformance under all-second adapters; workflow: 23 gate checks, 28/28 on both executors), and both breakage texts name an edit that exists in the harness with check names the run can print. The two dod defects are scope, not runnability: compose-agent-implement's criterion exercises none of the three agent-composition assertions it names, and compose-approval-implement's proves the executor pair rather than the two decision wires its adapters[] declares. compose-operators' expected quotes 'passed 29' where examples/end-to-end/test.sh now reports 30. Four rows restate a cap-, xc- or build- skill's claim without naming it, two are rewords of another row in the same skill."
+}

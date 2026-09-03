@@ -129,8 +129,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | `python3 tools/check_adapter_pairs.py --skills .claude/skills` (proposed tool, built alongside the first `cap-` skill in wave 3). For every `cap-` and `seam-` skill it asserts: exactly one adapter with role today, at least one with role second, a non-empty differs_in_execution_model naming an axis and both adapters' values, and at least one axis whose two values differ. |
-| Expected | exit 0 with `pairs_checked > 0`, `single_adapter == 0`, `empty_axis == 0`, `same_model_pairs == 0` |
+| Criterion | python3 tools/check_adapter_pairs.py --skills .claude/skills |
+| Expected | Run via tools/check_adapter_pairs.py, built in the STATUS row 59 measure ceremony (originally proposed alongside the first cap- skill in wave 3). For every cap- and seam- skill it asserts: exactly one adapter with role today, at least one with role second, a non-empty differs_in_execution_model naming an axis and both adapters' values, and at least one axis whose two values differ. exit 0 with `pairs_checked > 0`, `single_adapter == 0`, `empty_axis == 0`, `same_model_pairs == 0` |
 | Deliberate breakage | Add a `cap-` skill whose second adapter is a thin wrapper of the first: copy the today adapter's row, change only the entity id, and leave differs_in_execution_model empty. Then run it a second time with that field filled in by hand but carrying the same axis values as the first adapter. |
 | Expected failure | First run exits 1 with `empty_axis == 1`, naming the skill and the adapter entity. Second run still exits 1 with `same_model_pairs == 1`, because no axis value differs - the case that counting two adapters cannot catch. Claimed: no `cap-` skill exists in wave 1 and the tool is not written, so neither run has been performed here. |
 | Status | claimed |

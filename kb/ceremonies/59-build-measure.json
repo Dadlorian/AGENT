@@ -1,0 +1,52 @@
+{
+  "status_row": 59,
+  "ceremony": "59-build-measure",
+  "agent": "sonnet",
+  "date": "2026-09-03",
+  "skills": {
+    "build-adapter-pair": {
+      "criterion": "python3 tools/check_adapter_pairs.py --skills .claude/skills",
+      "breakage_cmd": null,
+      "after_status": "claimed",
+      "measure_py_last_line": "build-adapter-pair: claimed (clean exit 1)",
+      "before_status": "claimed",
+      "note": "tools/check_adapter_pairs.py written per the criterion; run against the real 44 cap-/seam- adapter pairs in .claude/skills. Every pair genuinely lacks a differs_in_execution_model field (it exists only as a proposed shape and in prose, never instantiated on a real adapter row), so the clean run honestly fails (exit 1, empty_axis=44, same_model_pairs=44) and status stays claimed with that real measured_run recorded. No breakage was layered on a run that already fails."
+    },
+    "build-ceremony": {
+      "criterion": "python3 tools/check_ceremony.py kb/ceremonies/ceremony-01-review.json kb/ceremonies/ceremony-01-improve.json",
+      "breakage_cmd": "python3 -c \"import json,pathlib; p=pathlib.Path('kb/ceremonies/ceremony-01-improve.json'); d=json.loads(p.read_text()); d['applied']=[a for a in d['applied'] if a['finding']!='C1-007']; p.write_text(json.dumps(d, indent=2)+chr(10))\", restored with git checkout -- kb/ceremonies/ceremony-01-improve.json",
+      "after_status": "measured",
+      "measure_py_last_line": "build-ceremony: measured (clean exit 0, breakage exit 1)",
+      "before_status": "claimed"
+    },
+    "build-definition-of-done": {
+      "criterion": "python3 -c \"import json,pathlib,sys; root=pathlib.Path(sys.argv[1]); dirs=sorted(p for p in root.iterdir() if p.is_dir()); req=('criterion','expected','breakage','expected_failure','status'); dod=lambda p: (json.loads((p/'skill.json').read_text()).get('definition_of_done') or {}) if (p/'skill.json').is_file() else {}; missing=[p.name for p in dirs if not all(str(dod(p).get(k) or '').strip() for k in req)]; print('skills_total',len(dirs),'skills_checked',len(dirs),'missing',len(missing),missing); sys.exit(1 if missing or not dirs else 0)\" .claude/skills .",
+      "breakage_cmd": "created a real .claude/skills/build-no-breakage/skill.json whose definition_of_done had an empty breakage and expected_failure, restored by rm -rf .claude/skills/build-no-breakage",
+      "after_status": "measured",
+      "measure_py_last_line": "build-definition-of-done: measured (clean exit 0, breakage exit 1)",
+      "before_status": "measured"
+    },
+    "build-entry-conformance": {
+      "criterion": "bash examples/end-to-end/test.sh && python3 -c \"import sys,pathlib;d=pathlib.Path('examples/end-to-end/out');L={k:(d/(k+'.log')).read_text().splitlines() for k in ('human','event','schedule','external') if (d/(k+'.log')).is_file()};P={k:chr(10).join(v[:v.index('')]) for k,v in L.items()};A={k:[x for x in v if x.startswith('RESULT')][0].split('actor=')[1].split()[0] for k,v in L.items()};print('doors_checked',len(L),'distinct_plans',len(set(P.values())),'distinct_actors',len(set(A.values())));sys.exit(0 if (len(L)==4 and len(set(P.values()))==1 and len(set(A.values()))==4) else 1)\"",
+      "breakage_cmd": "sed -i changed examples/end-to-end/entries/event.json ceiling_micros from 1500000 to 2000000, restored with git checkout -- examples/end-to-end/entries/event.json",
+      "after_status": "measured",
+      "measure_py_last_line": "build-entry-conformance: measured (clean exit 0, breakage exit 1)",
+      "before_status": "measured"
+    },
+    "build-evidence-record": {
+      "criterion": "python3 tools/kb.py verify && python3 -c \"import json;rs=[json.loads(l) for l in open('kb/facts.jsonl')];assert rs and all(r.get('status') for r in rs);print('labels ok',len(rs))\"",
+      "breakage_cmd": "removed the status field from record F-a5-04 in kb/facts.jsonl, restored with git checkout -- kb/facts.jsonl",
+      "after_status": "measured",
+      "measure_py_last_line": "build-evidence-record: measured (clean exit 0, breakage exit 1)",
+      "before_status": "measured"
+    },
+    "build-interface-versioning": {
+      "criterion": "python3 tools/check_interface_versions.py --skills .claude/skills --policies kb/interface-versions/ Gap: kb/interface-versions/ has no policy on file, so this cannot run yet (STATUS row 59).",
+      "breakage_cmd": null,
+      "after_status": "claimed",
+      "measure_py_last_line": "not run: tool named in the criterion does not exist (kb/interface-versions/ has no policy on file); status left claimed with the gap recorded in the criterion text",
+      "before_status": "claimed",
+      "note": "kb/interface-versions/ carries no policy and tools/check_interface_versions.py was not written (out of this agent's two-tool scope); status left claimed and the criterion now ends 'Gap: kb/interface-versions/ has no policy on file, so this cannot run yet (STATUS row 59).'"
+    }
+  }
+}

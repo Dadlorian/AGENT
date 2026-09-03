@@ -195,11 +195,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | python3 tools/check_ceremony.py kb/ceremonies/ceremony-01-review.json kb/ceremonies/ceremony-01-improve.json (proposed tool, not yet written): validate both files against the review-record and improve-record shapes, then assert findings_checked > 0, unresolved == 0 (every review finding id appears exactly once across applied and declined), duplicated == 0, missing_files == 0 (every path in an applied entry's files exists), and unknown_finding_ids == 0. |
-| Expected | findings_checked=7, unresolved=0, duplicated=0, missing_files=0, unknown_finding_ids=0; exit 0 |
+| Criterion | python3 tools/check_ceremony.py kb/ceremonies/ceremony-01-review.json kb/ceremonies/ceremony-01-improve.json |
+| Expected | Run via tools/check_ceremony.py, built in the STATUS row 59 measure ceremony. It validates both files against the review-record and improve-record shapes, then assert findings_checked > 0, unresolved == 0 (every review finding id appears exactly once across applied and declined), duplicated == 0, missing_files == 0 (every path in an applied entry's files exists), and unknown_finding_ids == 0. findings_checked=7, unresolved=0, duplicated=0, missing_files=0, unknown_finding_ids=0; exit 0 |
 | Deliberate breakage | Delete the C1-007 entry from the applied list of kb/ceremonies/ceremony-01-improve.json without adding it to declined, so the finding is recorded in the review and resolved in neither list. |
 | Expected failure | unresolved=1 naming C1-007, exit 1. A second breakage, pointing an applied entry's files at a path that does not exist, must give missing_files=1 and exit 1. |
-| Status | claimed |
+| Status | measured |
 | Evidence | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
 
 ## Composes with

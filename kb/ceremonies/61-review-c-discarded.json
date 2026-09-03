@@ -1,0 +1,79 @@
+{
+  "status_row": 61,
+  "reviewer": "61-review-c",
+  "skills": [
+    "core-document-implement",
+    "core-graph-implement",
+    "core-ledger-implement",
+    "seam-state-implement",
+    "xc-audit-trail-implement",
+    "xc-budget-implement",
+    "xc-compensation-implement",
+    "xc-correlation-implement"
+  ],
+  "findings": [
+    {
+      "id": "R61C-001",
+      "skill": "core-document-implement",
+      "location": "definition_of_done.expected_failure",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "Criterion is `test.sh && conformance.py`. Re-running with the stated breakage (sed line 28 of interface.py) applied: `bash test.sh` alone now fails ('passed 12, failed 12') because interface.py is shared, so `&&` short-circuits and conformance.py never runs. expected_failure claims 'conformance.py exits 1 ... dropping to 6/28 cases' -- that 6/28 result is real (verified by running conformance.py in isolation) but never occurs when the documented criterion is actually executed. measured_run.breakage_output ('passed 12, failed 12') is itself the test.sh failure, not conformance.py output, confirming the described failure mode is unreachable via the stated criterion.",
+      "fix": "Either change the criterion to run conformance.py standalone under this breakage, or rewrite expected_failure to describe the actual test.sh short-circuit."
+    },
+    {
+      "id": "R61C-002",
+      "skill": "core-graph-implement",
+      "location": "definition_of_done.expected_failure",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "breakage widens check_edge_type (implementation-edge to_kind check dropped); re-running it produces false_accepts=1 and a property-test failure, matching breakage's own parenthetical. But expected_failure text describes an unrelated scenario ('folds to a graph value missing the retracted edge ... verdict_mismatches becomes non-zero') that never appears in the actual output (verdict_mismatches stayed 0 in both my run and the stored measured_run).",
+      "fix": "Replace expected_failure with the false_accepts/property-test failure actually produced, or restore the breakage this text was written for."
+    },
+    {
+      "id": "R61C-003",
+      "skill": "core-ledger-implement",
+      "location": "definition_of_done.expected_failure",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "Same short-circuit defect as R61C-001: criterion chains provenance test.sh && conformance.py; the DIGEST-regex breakage (line 43) breaks test.sh itself first ('passed 10, failed 17'), so conformance.py's 'could not be reached' / 'digest must match sha256:<64 hex>' behaviour that expected_failure describes only occurs when conformance.py is run standalone (verified separately), never via the stated criterion.",
+      "fix": "Same as R61C-001."
+    },
+    {
+      "id": "R61C-004",
+      "skill": "seam-state-implement",
+      "location": "definition_of_done.expected_failure",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "Same short-circuit defect: LEAF_PREFIX breakage (line 76) fails state-persistence test.sh's own swap-proof step first ('passed 14, failed 6'), so the '20/22 cases, external root != adapter root' result expected_failure describes only happens when conformance.py is run alone (verified separately), not through the documented `test.sh && conformance.py` criterion.",
+      "fix": "Same as R61C-001."
+    },
+    {
+      "id": "R61C-005",
+      "skill": "xc-budget-implement",
+      "location": "definition_of_done.expected_failure",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "Same short-circuit defect: the ceiling-check breakage (line 235) fails gateway test.sh's own case 'a request over its cap exits 2' first ('passed 16, failed 9'), so conformance.py's claimed '22/24 cases, refusals=1' never occurs via the stated criterion.",
+      "fix": "Same as R61C-001."
+    },
+    {
+      "id": "R61C-006",
+      "skill": "xc-compensation-implement",
+      "location": "definition_of_done.expected_failure",
+      "severity": "medium",
+      "kind": "dod",
+      "evidence": "Applying the stated breakage to the live adapters/second.py before running the full criterion causes test.sh's own internal step 3 (which copies and patches the same anchor text on the assumption it is still pristine) to raise an uncaught AssertionError ('anchor block not found ... second.py changed shape') plus unrelated swap-proof FAILs, not the clean per-register 'records_after_effect / unwind_failed non-zero' picture expected_failure describes. Reproduced exactly (passed 14, failed 8, same traceback) matching the stored measured_run.",
+      "fix": "Run the register=second conformance.py case standalone under the breakage, or guard test.sh's step 3 so it tolerates an already-broken file."
+    }
+  ],
+  "metrics": {
+    "rows_checked": 8,
+    "sourced": 8,
+    "proposed": 0,
+    "quotes_verified": 0,
+    "harness_runs": 24
+  },
+  "summary": "All 8 criteria pass clean as documented, and every measured_run.breakage_output reproduces exactly when re-run (byte-for-byte on the recorded excerpts) -- the recordings are honest. But 5 of 8 (core-document, core-graph, core-ledger, seam-state, xc-budget, xc-compensation) have expected_failure text that misdescribes what the stated criterion actually shows: chained `test.sh && conformance.py` criteria short-circuit on the breakage before conformance.py runs, or (xc-compensation) the breakage collides with test.sh's own internal self-test. Only xc-audit-trail and xc-correlation match cleanly. validate_skills.py --only <all 8>: 0 errors, 0 warnings.",
+  "discarded": "missed both planted defects (T-t9-07); re-run as 61-review-c by a different reviewer"
+}

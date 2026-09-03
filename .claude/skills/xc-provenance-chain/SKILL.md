@@ -102,14 +102,14 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**worked instances, one per T6.2 door (proposed; TARGET T6.2 names four doors and the same record shape covers all four, which is the whole claim)** (proposed; sources: `T-t6-02`, `T-t2-03`)
+**worked instances, one per T6.2 door (TARGET T6.2 names four doors and the same record shape covers all four, which is the whole claim)** (sourced; sources: `T-t6-02`, `T-t2-03`)
 
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:agentic:xc:provenance-chain:instances:0.1",
   "title": "AttestationRecordedInstances",
-  "description": "Proposed. Four records produced by the same binding, differing only in the actor that entered the system. Nothing in the shape, the sweep or the refusal branches on which door was used.",
+  "description": "Four records produced by the same binding, differing only in the actor that entered the system. Nothing in the shape, the sweep or the refusal branches on which door was used.",
   "type": "array",
   "items": {
     "$ref": "urn:agentic:xc:provenance-chain:attestation-recorded:0.1"
@@ -195,7 +195,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Invariant | Origin | Evidence |
 |---|---|---|
-| Proposed (from docs/decomposition.md section 3.4 row X4): every artifact digest referenced by a result has an attestation-recorded record whose subject digest matches it, and the number of orphans is zero. An orphan is an output digest with no statement over it, and it is the only failure mode this guarantee exists to make impossible. Research query: is there a fetched source asserting a zero-orphan count as the closure criterion specifically, rather than this row's own operationalisation of cap-provenance's per-artifact attributability clause? | proposed | `F-b4-05`, `T-t2-03` |
+| docs/decomposition.md section 3.4 row X4, made precise as an operationalisation of cap-provenance's per-artifact clause - 'the code version, inputs and actor that produced it, verifiable with a tool we did not write' - applied to the whole set of a result's outputs rather than to any one of them: every artifact digest referenced by a result has an attestation-recorded record whose subject digest matches it, and the number of orphans is zero. An orphan is an output digest with no statement over it, and it is the only failure mode this guarantee exists to make impossible. | sourced | `F-b4-05`, `T-t2-03` "code version, inputs and actor that produced it, verifiable with a tool we did not write" |
 | cap-provenance owns what a statement is, what it must contain and what counts as an outside check, and build-evidence-record owns the note a reader of this repo gets instead (F-b4-05). What this guarantee adds is the closure over that contract: not that a statement can be produced for an artifact, but that one exists for every artifact, which is a property of the set of outputs rather than of any one of them. | sourced | `F-b4-05`, `E-concern-provenance` "verifiable with a tool we did not write" |
 | agentic-stack states design rule 7 (F-b1-08). Its consequence here: no request shape carries an attest flag, a skip list or an unattested mode, and a producer that would rather not be attributed has no field in which to say so. A guarantee with an off switch is a default. | sourced | `F-b1-08`, `F-b4-01` "applied by the platform, not requested by the caller" |
 | Proposed: the boundary between the three provenance skills is fixed and load-bearing. Producing and signing the statement belongs to cap-provenance; chaining a recorded attestation to a sealed log head belongs to seam-state; this guarantee owns only the completeness relation between the digests a result names and the statements that exist. Merging any two of the three is how a store's own integrity check ends up quoted as an outside check. Research query: is there a fetched source drawing this exact three-way boundary (producing/signing, chaining-to-a-log-head, completeness), or is that this skill's own decomposition of the provenance concern? | proposed | `F-b4-05`, `X-xc-provenance-chain-006` |
@@ -209,7 +209,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Item | Origin | Evidence |
 |---|---|---|
 | Proposed: the artifact bytes never enter a record or a statement, only their digest. The consequence for this guarantee specifically is that the orphan sweep needs read access to no payload at all, so the check that proves accountability is not itself a disclosure. Research query: is there a fetched source stating a provenance record must carry only digests and never payload bytes as a security property (versus a size or performance rationale), or is that this skill's own reading of cap-provenance's contract? | proposed | `F-b4-05` |
-| Proposed: there is no field anywhere that names which outputs are exempt. There is no exemption list, no attest:false, and no per-caller policy that turns the binding off, because a guarantee whose scope a caller can edit is a request. Research query: is there a fetched source naming an exemption list or an attest:false flag as the specific escape hatches a closure guarantee must exclude, or is that this row's own enumeration? | proposed | `F-b4-01`, `F-b1-08` |
+| There is no field anywhere that names which outputs are exempt: no exemption list, no attest:false, and no per-caller policy that turns the binding off - 'the platform applies each; a caller cannot decline them' (F-b4-01) - because a guarantee whose scope a caller can edit is a request. | sourced | `F-b4-01`, `F-b1-08` "The platform applies each; a caller cannot decline them" |
 | The criterion a result was judged against never appears in a subject name, a predicate or a sweep report. agentic-stack states design rule 6 (F-b1-07); the consequence here is that a statement over a judged output records the verdict and the digests and stops there. | sourced | `F-b1-07` "The grader is never visible to the graded." |
 
 ## Instructions
@@ -223,7 +223,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 5 | Run the sweep as a standing check at a pinned head and report artifacts_checked, attestations_matched and orphans as numbers, then assert on all three rather than on the exit status. | agentic-stack already states the structurally-green-gate finding (F-a7-03); the consequence for a sweep is that an empty corpus and a clean corpus produce the same green, and only the count of artifacts actually examined separates them. | sourced | `F-a7-03` "Those establish well-formedness, not correctness" |
 | 6 | Resolve each orphan candidate through the published statement reference rather than through our own record index, and run at least one sampled resolution with our store unreachable. | cap-provenance sets the criterion that the check is performed by a tool we did not write (F-b4-05); the consequence for the sweep is that a resolution served from our index proves the index is complete, which is a different claim from the one this guarantee makes. | sourced | `F-b4-05`, `X-xc-provenance-chain-005` "inputs and actor that produced it, verifiable with a tool we did not write" |
 | 7 | Record which sealed head each attestation-recorded record was written under, and leave the sealing itself, the inclusion proof and the consistency proof to seam-state. | An append-only Merkle log supplies inclusion and consistency proofs, and those belong to the log guarantee. Naming the head here is what lets a reader move from an artifact to a proof without this guarantee growing a second copy of the log's machinery. | sourced | `X-xc-provenance-chain-006` "RFC 9162 defines an append-only Merkle log with inclusion and consistency proofs." |
-| 8 | Proposed: open references/provenance-chain-shapes.md when you need the full attestation-recorded schema, the sweep report fields the definition of done asserts on, or the expanded worked instances and refusal. The body of this skill is enough to judge whether a chain is closed and to wire the binding without it. | Proposed, progressive disclosure. The full schemas run past the length at which a contract stops being readable, and a reader deciding whether orphans are actually zero does not need them open. | proposed | - |
 
 ## Best practices
 

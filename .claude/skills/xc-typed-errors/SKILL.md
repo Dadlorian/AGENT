@@ -123,7 +123,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**FailureAtEveryEntry (proposed worked instances): what comes back to a human, an event, a schedule, and an external system or agent, which are T6.2's four doors; each is an actual problem object with a registered type, and the caller supplies nothing to get it** (proposed; sources: `T-t6-02`, `T-t2-03`)
+**FailureAtEveryEntry (worked instances: what comes back to a human, an event, a schedule, and an external system or agent, which are T6.2's four doors; each is an actual problem object with a registered type, and the caller supplies nothing to get it)** (sourced; sources: `T-t6-02`, `T-t2-03`)
 
 ```json
 {
@@ -234,7 +234,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | Read retryability and any wait from the declared members, and forbid a retry policy that keys on a status code alone or on a substring of a body. Where a retry loop exists, bound it by both a maximum attempt count and a retry budget. | Both maximum attempt count and retry budget should be set; workflow stops when either limit is reached. Attempts alone do not bound cost and a budget alone does not bound latency, and the failure this guarantee removes, a heuristic matching on the words in a body, is usually found inside a retry loop. | sourced | `X-xc-typed-errors-005`, `X-xc-typed-errors-003` "Both maximum attempt count and retry budget should be set; workflow stops when either limit is reached." |
 | 7 | Audit the paths that answer successfully as well as the paths that answer with an error, and count a result that reports completion while carrying no usable output as a failure that was never typed. | The worst failures in AI systems don't look like failures—they arrive with a 200 status code. An audit scoped to error paths reports zero on exactly the arrangement this guarantee is least able to survive. | sourced | `X-xc-typed-errors-004` "The worst failures in AI systems don't look like failures" |
 | 8 | Judge a candidate on four questions: does every failure-producing site return the typed object; is the string-match count zero outside the named parser path; does one refusal condition return one identical type under all three ways in; and is there no field, key or mode a caller could set to get prose back instead. | These four are what the definition of done below mechanises, and the fourth is the one that separates a guarantee from a default, since a concern a caller can switch off is a feature. | sourced | `F-b1-08`, `F-b4-01` "Cross-cutting guarantees are not optional." |
-| 9 | Proposed: open references/typed-errors-audit.md for the boundary-by-boundary enforcement table, the audit's known blind spots, and the ledger of what each cited research record does and does not establish. This skill body is enough to place and judge the guarantee without it. | Proposed, progressive disclosure. The enforcement table changes whenever a boundary is added, and material on that cadence does not belong in the part of the contract meant to stay still. | proposed | - |
 
 ## Best practices
 

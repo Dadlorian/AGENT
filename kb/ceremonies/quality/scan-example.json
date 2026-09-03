@@ -1,0 +1,41 @@
+{
+  "scanner": "haiku",
+  "area": "example",
+  "findings": [
+    {
+      "id": "QE-001",
+      "file": "run.py",
+      "line": 167,
+      "severity": "nit",
+      "category": "product-leak",
+      "finding": "Gateway adapter docstring names specific vendor (LiteLLM) instead of interface.",
+      "evidence": "Line 167-168: \"POST /v1/chat/completions against the model gateway (LiteLLM today, per PASS.md B3)\"",
+      "fix": "Remove vendor name from docstring; keep interface spec: \"POST /v1/chat/completions against the model gateway.\""
+    },
+    {
+      "id": "QE-002",
+      "file": "schemas/workflow.schema.json",
+      "line": 87,
+      "severity": "fix",
+      "category": "schema-gap",
+      "finding": "Approval step doesn't enforce return_to_step_id is required when return_with_notes decision exists.",
+      "evidence": "Schema allows return_with_notes in decisions array but doesn't require return_to_step_id. Code expects it if decision=return_with_notes.",
+      "fix": "Add conditional validation: if decisions contains return_with_notes, return_to_step_id must be present."
+    }
+  ],
+  "breakages_tried": [
+    {
+      "change": "Added extra_field not in schema properties to entry envelope",
+      "expected": "exit 2 with document-invalid error naming the extra property",
+      "observed": "exit 2, error: \"$: property 'extra_field' is not allowed\" - correctly caught by additionalProperties validator",
+      "caught": true
+    },
+    {
+      "change": "Set idempotency_key to 'short' (5 chars, schema requires minLength 8)",
+      "expected": "exit 2 with document-invalid error about length",
+      "observed": "exit 2, error: \"$.idempotency_key: length 5 outside declared bounds\" - correctly caught by minLength validator",
+      "caught": true
+    }
+  ],
+  "summary": "Code enforces all README claims: four entries treated identically, budget enforcement works at plan and runtime, idempotency replay is true no-op, ledger chain verifies, criterion hidden, problem details used. Schema validation covers tested cases. One minor vendor-name leak in docstring; one schema-gap for conditional requirement (not exercised in tests)."
+}

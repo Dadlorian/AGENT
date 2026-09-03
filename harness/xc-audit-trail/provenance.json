@@ -1,0 +1,20 @@
+{
+  "owner_skill": "xc-audit-trail-implement",
+  "co_skills": ["xc-audit-trail", "core-ledger", "xc-correlation"],
+  "blueprint_tool_entry": "the chained append-only file already written and checked by this repo (kb/ledger.jsonl via tools/kb.py)",
+  "kb_ids": ["F-b4-01", "F-b4-03", "F-b4-05", "F-b4-06", "F-b4-07", "T-t2-03",
+             "F-a7-01", "F-a7-03", "F-a7-04", "F-a5-04", "F-b1-02", "F-b1-04", "F-part-c-08"],
+  "research_ids": [],
+  "standard": "none adopted; PASS.md B4 names the guarantee (F-b4-03: \"Every action names an actor, including delegated agent actors. Delegation chains are explicit\"; F-b4-05 names third-party checkability)",
+  "measured": {
+    "dryrun": "bash harness/xc-audit-trail/test.sh: 18/18 checks passed - project/fetch_by_correlation/attribute over a 24-entry deterministic fixture spanning a synthetic 200-day window and 4 entry kinds and 3 correlation ids; the independent scheduled scan (run via scan.py as a separate process) reported independent=true scheduled=true entries_checked=24 oldest_retained_entry_age_days=200; a tampered mid-trail entry (seq 13) was caught by the trail's own chain recompute",
+    "swap": "conformance.py --adapter second passed 7/7 (one more case than dryrun's 6: its own external verifier), the same 5 files' sha256 was unchanged before and after, execution_model/adapter/external_checkable differ (3 axes), the second store's published-heads file was independently confirmed by verify_external.py (imports no adapter, 4 windows verified) both before tampering (verified=true) and the same tampered entry produced break_at_window=2 after - the break was found by both the trail's own recompute and the wholly separate external verifier",
+    "breakage": "conformance.py --adapter dryrun --break wiring-fault: scan.py run with the writer's own identity and no --scheduled flag exited 1, reporting independent=false scheduled=false scheduled_runs_observed=0 and naming identity=actor:writer-process in the failure, while chain_breaks stayed 0, entries_checked stayed 24 and adapters_run stayed 1 - the wiring broke, the record did not"
+  },
+  "claimed": [
+    "live mode until run on a host with AUDIT_TRAIL_LEDGER_PATH set (measured here against this repo's own kb/ledger.jsonl: conformance PASSED 5/5 on 126 records, oldest_retained_entry_age_days=0 since the ledger predates this harness)",
+    "the definition of done's own numbers (entries_checked >= 100, retention-floor-days 180, a real scheduled-scan tool, a real external attestation store) - this harness runs a smaller deterministic fixture and a file-based stand-in for the second store's credential boundary, per xc-audit-trail-implement's own definition_of_done.expected_failure",
+    "kb/ledger.jsonl's pre-existing 126 records carry an actor derived from its `agent` field, not one recorded at write time; coverage_start marks this honestly rather than claiming retroactive attribution",
+    "the second store's external checkability against a real outside party with none of our credentials; here it is a file `verify_external.py` reads without importing an adapter, not a network-reachable third party"
+  ]
+}

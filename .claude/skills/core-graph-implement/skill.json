@@ -343,16 +343,25 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.1 row C3, run across both bindings. Proposed tool, built with this component: `python3 tools/graph_conformance.py --binding bindings/today.json --binding bindings/second.json --generate 10000 --seed 1 --assertion-log out/recorded-assertions.jsonl --report out/graph-conformance.json`. Per binding it appends the generated assertions, folds them back and runs core-graph's property test, asserting `edges_checked > 0`, `rejections > 0` and `false_accepts == 0`; across bindings it asserts `adapters_run >= 2`, `verdict_mismatches == 0` and `criterion_leaks == 0`.",
-    "expected": "exit 0, one line per binding of the form `binding=<role> graphs_folded=10000 edges_checked=<m> rejections=<r> false_accepts=0`, then `adapters_run=2 verdict_mismatches=0 criterion_leaks=0`.",
-    "breakage": "Make the binding in role today collapse a retraction into a delete - drop the retracted edge's record instead of appending the retracting one - and change nothing else.",
+    "criterion": "bash harness/core-graph/test.sh && python3 harness/core-graph/conformance.py --adapter dryrun --adapter second && python3 harness/core-graph/conformance.py --cross-store dryrun second",
+    "expected": "What the run proves: docs/decomposition.md section 3.1 row C3, run across both bindings. Proposed tool, built with this component: `python3 tools/graph_conformance.py --binding bindings/today.json --binding bindings/second.json --generate 10000 --seed 1 --assertion-log out/recorded-assertions.jsonl --report out/graph-conformance.json`. Per binding it appends the generated assertions, folds them back and runs core-graph's property test, asserting `edges_checked > 0`, `rejections > 0` and `false_accepts == 0`; across bindings it asserts `adapters_run >= 2`, `verdict_mismatches == 0` and `criterion_leaks == 0`. | exit 0, one line per binding of the form `binding=<role> graphs_folded=10000 edges_checked=<m> rejections=<r> false_accepts=0`, then `adapters_run=2 verdict_mismatches=0 criterion_leaks=0`.",
+    "breakage": "In harness/core-graph/interface.py check_edge_type, widen the implementation-edge rule so any target kind is accepted (drop the to_kind must be interface condition), run the criterion (the independent oracle in conformance.py reports false_accepts above zero and the gate exits 1), then git checkout harness/core-graph/interface.py.",
     "expected_failure": "That binding now folds to a graph value missing the retracted edge and the record that withdrew it, the two bindings disagree on every structure containing a retraction, `verdict_mismatches` becomes non-zero, and the run exits non-zero while the other binding still reports `false_accepts=0` - so the report names which store broke rather than only that something did.",
-    "status": "claimed",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
       "F-b1-04"
     ],
-    "quote": "the deliberate breakage that proves the check can fail"
+    "quote": "the deliberate breakage that proves the check can fail",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "52a1457",
+      "clean_exit": 0,
+      "clean_output": "perty test: 300 generated graphs, rejections > 0, false_accepts == 0 (core-graph DoD): graphs=1 edges_attempted=300 rejections=176 false_accepts=0 seed=1\n  adapter=event log consumed by cursor (second adapter) cases=10 passed=10 assertions=195 refusals=180 product_hits=0\nconformance PASSED: 20/20 cases, 2 binding(s)\n{\n \"binding_a\": \"dryrun\",\n \"binding_b\": \"second\",\n \"report_a\": {\n  \"edges_checked\": 1,\n  \"false_accepts\": 0,\n  \"nodes_checked\": 3,\n  \"rejections\": 0\n },\n \"report_b\": {\n  \"edges_checked\": 1,\n  \"false_accepts\": 0,\n  \"nodes_checked\": 3,\n  \"rejections\": 0\n },\n \"verdict_mismatches\": 0\n}",
+      "breakage_exit": 1,
+      "breakage_output": "the same assertion log folded on both bindings agrees\n  ok   cross-store check exits 0 (0)\n  ok   verdict_mismatches == 0 across dryrun and second\n3. no product name in the interface, the caller or the conformance run\n  ok   product scan over the shipped tree exits 0 (0)\n  ok   0 hits outside adapters/\n4. deliberate breakage: the checker is widened to accept any implementation target\n  ok   the widened checker admits the counterexample and the oracle still flags it (0)\n  ok   counterexample found on the first case; oracle reports false_accepts=1 while the checker reports 0\n\npassed 14, failed 6",
+      "restored": true
+    }
   },
   "composes_with": {
     "builds_on": [

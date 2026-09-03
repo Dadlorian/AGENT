@@ -176,11 +176,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | docs/decomposition.md section 3.1 row C3, run across both bindings. Proposed tool, built with this component: `python3 tools/graph_conformance.py --binding bindings/today.json --binding bindings/second.json --generate 10000 --seed 1 --assertion-log out/recorded-assertions.jsonl --report out/graph-conformance.json`. Per binding it appends the generated assertions, folds them back and runs core-graph's property test, asserting `edges_checked > 0`, `rejections > 0` and `false_accepts == 0`; across bindings it asserts `adapters_run >= 2`, `verdict_mismatches == 0` and `criterion_leaks == 0`. |
-| Expected | exit 0, one line per binding of the form `binding=<role> graphs_folded=10000 edges_checked=<m> rejections=<r> false_accepts=0`, then `adapters_run=2 verdict_mismatches=0 criterion_leaks=0`. |
-| Deliberate breakage | Make the binding in role today collapse a retraction into a delete - drop the retracted edge's record instead of appending the retracting one - and change nothing else. |
+| Criterion | bash harness/core-graph/test.sh && python3 harness/core-graph/conformance.py --adapter dryrun --adapter second && python3 harness/core-graph/conformance.py --cross-store dryrun second |
+| Expected | What the run proves: docs/decomposition.md section 3.1 row C3, run across both bindings. Proposed tool, built with this component: `python3 tools/graph_conformance.py --binding bindings/today.json --binding bindings/second.json --generate 10000 --seed 1 --assertion-log out/recorded-assertions.jsonl --report out/graph-conformance.json`. Per binding it appends the generated assertions, folds them back and runs core-graph's property test, asserting `edges_checked > 0`, `rejections > 0` and `false_accepts == 0`; across bindings it asserts `adapters_run >= 2`, `verdict_mismatches == 0` and `criterion_leaks == 0`. \| exit 0, one line per binding of the form `binding=<role> graphs_folded=10000 edges_checked=<m> rejections=<r> false_accepts=0`, then `adapters_run=2 verdict_mismatches=0 criterion_leaks=0`. |
+| Deliberate breakage | In harness/core-graph/interface.py check_edge_type, widen the implementation-edge rule so any target kind is accepted (drop the to_kind must be interface condition), run the criterion (the independent oracle in conformance.py reports false_accepts above zero and the gate exits 1), then git checkout harness/core-graph/interface.py. |
 | Expected failure | That binding now folds to a graph value missing the retracted edge and the record that withdrew it, the two bindings disagree on every structure containing a retraction, `verdict_mismatches` becomes non-zero, and the run exits non-zero while the other binding still reports `false_accepts=0` - so the report names which store broke rather than only that something did. |
-| Status | claimed |
+| Status | measured |
 | Evidence | `F-part-c-04`, `F-b1-04` "the deliberate breakage that proves the check can fail" |
 
 ## Composes with

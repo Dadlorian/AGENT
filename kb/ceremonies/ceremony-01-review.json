@@ -1,0 +1,99 @@
+{
+  "ceremony": 1,
+  "section": "wave-1",
+  "reviewer": "sonnet",
+  "date": "2026-09-03",
+  "findings": [
+    {
+      "id": "C1-001",
+      "skill": "agentic-stack",
+      "location": "composes_with",
+      "severity": "nit",
+      "category": "usability",
+      "finding": "The root skill's own composes_with renders as 'Builds on: -' and 'Used by: -', which reads to a fresh composer as unused, directly contradicting its own description's claim that 'every other skill assumes this one is loaded' — every wave-1 skill lists agentic-stack under builds_on.",
+      "evidence": "\"composes_with\": {\"builds_on\": [], \"used_by\": []} in agentic-stack/skill.json, versus description: \"Every other skill assumes this one is loaded.\"",
+      "suggested_change": "Populate used_by with the wave-1 skills that already declare builds_on: [\"agentic-stack\"], or add a one-line note next to the empty table explaining that the root skill is exempt from the manifest's symmetry check by design."
+    },
+    {
+      "id": "C1-002",
+      "skill": "build-adapter-pair",
+      "location": "best_practices[4]",
+      "severity": "fix",
+      "category": "honesty",
+      "finding": "The row generalizes from a single LiteLLM routing quirk to a claim about 'de facto standards' in general; the cited fact never uses that framing and is about one hardcoded provider list, not standards drift, so origin=sourced overstates what the fact supports.",
+      "evidence": "Row text: \"Assume a de facto standard can itself be shaped around one implementation: a widely adopted route in the substrate branches only on a fixed list of names and refuses a provider actually in use...\" — F-a4-08 text is only: \"Batch runs through Gemini's native `:batchGenerateContent` via LiteLLM passthrough — not the OpenAI-shaped `/v1/batches` route, which branches only on `openai`/`azure`/`vertex_ai` and refuses Gemini.\"",
+      "suggested_change": "Narrow the row to what F-a4-08 actually shows (one route hardcoded to three provider names refusing a fourth), or mark the generalization to 'de facto standards' as proposed and keep the fact only as its supporting example."
+    },
+    {
+      "id": "C1-003",
+      "skill": "build-adapter-pair",
+      "location": "contract.invariants[5], instructions[3], instructions[4]",
+      "severity": "fix",
+      "category": "usefulness",
+      "finding": "The mandatory differs_in_execution_model field is described three separate times in prose (an invariant and two instruction steps) but never given a formal shape/schema, unlike the sibling build-evidence-record skill which specifies its analogous field-set as a full JSON Schema. A fresh author building the proposed check_adapter_pairs.py tool has no concrete structure to validate against.",
+      "evidence": "instructions[3].action: \"record the answer in a machine-readable differs_in_execution_model field on the pair, naming the axis and both values\" — no accompanying contract.shapes entry exists anywhere in build-adapter-pair/skill.json (grep for \"shapes\" returns nothing).",
+      "suggested_change": "Add a contract.shapes entry (proposed) defining differs_in_execution_model as {axis: enum of the seven axes, today_value: string, second_value: string}, the way build-evidence-record's evidence-record shape does for its own required fields."
+    },
+    {
+      "id": "C1-004",
+      "skill": "build-skill-authoring",
+      "location": "instructions[10]",
+      "severity": "fix",
+      "category": "rule",
+      "finding": "The instruction says a new layer prefix is needed only when 'none of the six existing ones (core, cap, xc, seam, compose, build) can hold the skill', but schemas/skill.schema.json's layer enum and tools/validate_skills.py's LAYERS dict both recognize a seventh layer, 'root' — the very layer agentic-stack itself uses. The instruction undercounts the taxonomy it is meant to police.",
+      "evidence": "instructions[10].action: \"Add a new layer prefix only when none of the six existing ones (core, cap, xc, seam, compose, build) can hold the skill\"; schemas/skill.schema.json layer enum is [\"root\", \"core\", \"cap\", \"xc\", \"seam\", \"compose\", \"build\"]; tools/validate_skills.py: LAYERS = {\"root\": None, \"core\": \"core-\", ...}.",
+      "suggested_change": "Say seven existing layers and name root alongside the other six, noting root is reserved for agentic-stack alone."
+    },
+    {
+      "id": "C1-005",
+      "skill": "build-evidence-record",
+      "location": "contract.shapes[0], instructions (table)",
+      "severity": "fix",
+      "category": "size",
+      "finding": "The skill inlines a full ~145-line JSON Schema directly in the contract and carries a 12-row instructions table, both exceeding build-skill-authoring's own progressive-disclosure rule ('roughly 3 to 10 rows per table' and 'move long material — a full schema... — into references/'), and unlike build-adapter-pair, build-evidence-record has no references/ directory at all.",
+      "evidence": "build-skill-authoring instructions[12].action: \"hold to roughly 3 to 10 rows per table, and move long material (a full schema, a table of standards, worked examples) into references/\"; build-evidence-record's Instructions table has 12 rows and its Shapes section embeds the complete evidence-record JSON Schema inline.",
+      "suggested_change": "Move the evidence-record JSON Schema into references/evidence-record.schema.json (cited by filename from the Shapes row) and split or trim the instructions table toward the stated 3-10 row budget."
+    },
+    {
+      "id": "C1-006",
+      "skill": "agentic-stack, build-adapter-pair, build-evidence-record, build-skill-authoring",
+      "location": "best_practices (F-a7-03 rows)",
+      "severity": "nit",
+      "category": "size",
+      "finding": "All four wave-1 skills independently restate the same underlying fact (F-a7-03, the 9-stage pipeline that ran green with every behavioural stage skipped) as their own best-practice row instead of one skill stating it and the others citing it by name, contrary to build-skill-authoring's own best practice 'compose by name, not by copy... it never restates the neighbour's rows, so a change lands in one place.'",
+      "evidence": "F-a7-03 appears as a best_practices row in agentic-stack, build-adapter-pair, and build-skill-authoring, and as instructions[12] plus a best_practices row in build-evidence-record — four independent restatements of one fact within the same wave.",
+      "suggested_change": "Let agentic-stack (already builds_on for all three) hold the canonical statement and have the build-* skills reference it by name in their own row text rather than re-deriving the wording each time."
+    },
+    {
+      "id": "C1-007",
+      "skill": "build-evidence-record",
+      "location": "description",
+      "severity": "nit",
+      "category": "description",
+      "finding": "The description's first trigger clause, 'Load whenever you are about to write down a result', is broad enough to fire on nearly any assertion made anywhere in this repo, risking over-triggering relative to the skill's actual, narrower scope (the evidence-record shape and claimed/measured labelling).",
+      "evidence": "description: \"Load whenever you are about to write down a result, label a check as passing, upgrade a claim to a measurement, cite evidence inside a skill, or reconcile a measurement that contradicts what the design says\"",
+      "suggested_change": "Tighten the first clause to something like 'about to record a definition-of-done outcome or evidence-store entry' so it doesn't read as covering every written statement."
+    }
+  ],
+  "metrics": {
+    "skills": 4,
+    "rows_total": 116,
+    "rows_sourced": 73,
+    "rows_proposed": 37,
+    "findings_block": 0,
+    "findings_fix": 4,
+    "findings_nit": 3
+  },
+  "brief_improvements": [
+    "Tell authors explicitly that layer 'root' exists and is reserved for agentic-stack, since build-skill-authoring's own instructions currently list only six layers and miss the one the root contract itself uses.",
+    "Add a rule to the author brief that a fact already stated by a skill under builds_on should be referenced by name rather than restated with new wording, since all four wave-1 skills independently re-derive F-a7-03.",
+    "Require any 'machine-readable field' named in an invariant or instruction (like differs_in_execution_model) to be backed by a contract.shapes entry in the same skill, the way build-evidence-record already does for its own record shape, so a fresh author has a schema to code against rather than only prose.",
+    "State the progressive-disclosure budget (3-10 rows/table, long material to references/) as a checked rule rather than a step 12 aside, since the skill that most needs it (build-evidence-record, with its inlined 145-line schema) currently doesn't follow it."
+  ],
+  "what_worked": [
+    "Every sourced quote in all four skills verified as a true verbatim substring of its cited kb record — zero mechanical citation errors found across 73 sourced rows.",
+    "Definitions of done are honestly labelled: build-adapter-pair's is claimed because its tool genuinely doesn't exist yet (verified: tools/check_adapter_pairs.py is absent), while agentic-stack, build-evidence-record, and build-skill-authoring cite exact error strings that were confirmed present in the real tool source.",
+    "Provenance blocks (PASS.md sha256, kb chain heads) are identical across all four skills and match the current kb/meta.json exactly — no stale citations.",
+    "Design-rule-to-invariant mapping in agentic-stack (each of the seven B1 rules restated as a pass/fail test) is a clean, checkable translation that the other three skills correctly build on rather than re-deriving."
+  ]
+}

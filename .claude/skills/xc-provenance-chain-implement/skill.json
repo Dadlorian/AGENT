@@ -176,7 +176,7 @@
         "quote": "The core imports interfaces, never implementations"
       },
       {
-        "text": "build-evidence-record owns what a record of a run must contain (F-a5-04). What this adds: every statement in this skill about how an enforcement point behaves is claimed until such a record exists for it, and a claim is never upgraded to a measurement by rewording the sentence that makes it.",
+        "text": "Every statement in this skill about how an enforcement point behaves is claimed until a record exists for it naming the script SHA-256, git commit, tree hash under test and whether the tree was dirty, and a claim is never upgraded to a measurement by rewording the sentence that makes it (F-a5-04; build-evidence-record owns what a record of a run must contain).",
         "origin": "sourced",
         "sources": [
           "F-a5-04"
@@ -250,15 +250,15 @@
   ],
   "best_practices": [
     {
-      "text": "agentic-stack already states the structurally-green-gate finding (F-a7-03). What it adds here: a pair run over a corpus containing no artifacts reports zero orphans twice and looks like proof of a swap, so assert artifacts_checked and adapters_run before reading the orphan count as good news.",
+      "text": "Assert artifacts_checked and adapters_run before reading an orphan count as good news: a pair run over a corpus containing no artifacts reports zero orphans twice and looks like proof of a swap, the way a nine-stage pipeline ran green because the generated work contained nothing those tools apply to (F-a7-03, agentic-stack's finding, whose gate-level consequence build-definition-of-done owns).",
       "origin": "sourced",
       "sources": [
         "F-a7-03"
       ],
-      "quote": "Those establish well-formedness, not correctness"
+      "quote": "because the generated work contained nothing those tools apply to"
     },
     {
-      "text": "agentic-stack already states the silently-overridden-configuration finding (F-a7-04). What it adds here: an enforcement point selected in a configuration file is not the enforcement point that ran, so read it back from the refusal, which is exactly what enforcement_point_observed is for.",
+      "text": "An enforcement point selected in a configuration file is not the enforcement point that ran, so read it back from the refusal, which is what enforcement_point_observed is for: values written to YAML validated, reviewed correctly, and had no runtime effect (F-a7-04, agentic-stack's silently-overridden-configuration finding).",
       "origin": "sourced",
       "sources": [
         "F-a7-04"
@@ -314,9 +314,9 @@
   ],
   "definition_of_done": {
     "criterion": "bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second",
-    "expected": "docs/decomposition.md section 3.4 row X4: test.sh exits 0 (27 checks: conformance against the dry-run adapter, the caller-region check, the swap proof, the product scan, two deliberate breakages restoring clean); conformance.py --adapter dryrun --adapter second then exits 0 with 26/26 cases across 2 bindings.",
+    "expected": "Measured by tools/measure.py at f037f65: exit 0; last lines:   cases=13 passed=13 emitted=2 verified=1 subject_mismatches=0 orphan_subjects=0 store_mounted=False verifier_exit=0 log_inclusion_proofs=1 product_hits=0 | conformance PASSED: 26/26 cases, 2 binding(s)",
     "breakage": "sed -i 's/{64}\\$\"/{65}$\"/' harness/provenance/interface.py -- widens the DIGEST regex by one hex character so no real sha256 digest matches, and every attest request is refused document-invalid before a statement is ever produced. Restore: git checkout harness/provenance/interface.py",
-    "expected_failure": "test.sh exits 1 (10 passed, 17 failed): attestation fails on both adapters before verification is reached, so the swap proof, the caller-region round trip, and both deliberate-breakage checks fail in turn (one surfaces as a missing out/break-1.json rather than a rejected verification, because the run that would write it never got that far). Restoring the file with git checkout returns the tree to a clean run.",
+    "expected_failure": "Measured by tools/measure.py at f037f65: exit 1; last lines:   FAIL no reason given | passed 10, failed 17",
     "status": "measured",
     "sources": [
       "F-part-c-04",
@@ -331,7 +331,9 @@
       "breakage_exit": 1,
       "breakage_output": "its 0 (0)\n  ok   0 hits outside adapters/\n4. deliberate breakage: the artifact is rebuilt and the statement is not\n  ok   the breakage run exits non-zero (1)\n  FAIL the verifier rejected it on the subject digest, not on our store (expected 0, got 1)\n  ..   Traceback (most recent call last):\n  ..     File \"<stdin>\", line 2, in <module>\n  ..   FileNotFoundError: [Errno 2] No such file or directory: 'out/break-1.json'\n4b. deliberate breakage: the signature is dropped from the envelope\n  ok   the breakage run exits non-zero on the second adapter too (1)\n  FAIL no reason given\n\npassed 10, failed 17",
       "restored": true
-    }
+    },
+    "expected_design": "docs/decomposition.md section 3.4 row X4: test.sh exits 0 (27 checks: conformance against the dry-run adapter, the caller-region check, the swap proof, the product scan, two deliberate breakages restoring clean); conformance.py --adapter dryrun --adapter second then exits 0 with 26/26 cases across 2 bindings.",
+    "expected_failure_design": "test.sh exits 1 (10 passed, 17 failed): attestation fails on both adapters before verification is reached, so the swap proof, the caller-region round trip, and both deliberate-breakage checks fail in turn (one surfaces as a missing out/break-1.json rather than a rejected verification, because the run that would write it never got that far). Restoring the file with git checkout returns the tree to a clean run."
   },
   "composes_with": {
     "builds_on": [

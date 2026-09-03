@@ -136,7 +136,7 @@
         "quote": "The core imports interfaces, never implementations"
       },
       {
-        "text": "xc-identity-delegation states the placement (F-b4-03) and the three assertions row X2 makes. What this adds on this stack: there is no field to migrate from, so the first enforcement point is written rather than replaced, and every assertion in the definition of done below is red until it exists.",
+        "text": "There is no identity field anywhere in the system to migrate from, so the first enforcement point is written rather than replaced and every assertion in the definition of done below is red until it exists (F-a6-05, E-not-running-identity; xc-identity-delegation owns the placement and the three assertions row X2 makes).",
         "origin": "sourced",
         "sources": [
           "F-a6-05",
@@ -257,7 +257,7 @@
       "quote": "Every interface ships with at least two adapters"
     },
     {
-      "text": "xc-identity-delegation states that a forwarded credential adds no hop. What this adds at the code level: assert chain length against the number of recorded dispatch hops for the same run, because a forwarded credential produces a chain that is valid, acyclic, rooted and one hop too short - the only assertion that catches it is the join.",
+      "text": "Assert chain length against the number of recorded dispatch hops for the same run: each service in the middle of the chain must validate the incoming access token and request a new one, so a credential forwarded unchanged leaves a chain that is valid, acyclic, rooted and one hop too short, and the join is the only assertion that catches it (X-cap-identity-004; xc-identity-delegation owns the rule that a forwarded credential adds no hop).",
       "origin": "sourced",
       "sources": [
         "X-cap-identity-004"
@@ -321,9 +321,9 @@
   ],
   "definition_of_done": {
     "criterion": "bash harness/identity/test.sh && python3 harness/identity/conformance.py --adapter dryrun --adapter second",
-    "expected": "docs/decomposition.md section 3.4 row X2: harness/identity/test.sh exits 0 (46 checks: 16 conformance cases per adapter, the 50-action delegation-chain corpus, the swap proof by configuration, the product-name scan, and its own internal deliberate breakage restoring clean); conformance.py --adapter dryrun --adapter second then exits 0 with 32/32 cases across 2 bindings, selected_by=configuration.",
+    "expected": "Measured by tools/measure.py at 52a1457: exit 0; last lines:   adapter=attested workload identity with a local trust bundle cases=16 passed=16 actions_checked=50 short_chains=0 cyclic=0 executing_unit_mismatch=0 authority_calls=0 marker=workload-attestor product_hits=0 | conformance PASSED: 32/32 cases, 2 binding(s), selected_by=configuration",
     "breakage": "sed -i 's/if not wanted_set <= held_set:/if False:/' harness/identity/interface.py -- classify_scope never reports \"wider\", so the widening hop that must be refused (403 policy-denied, rule_id scope-must-narrow) is instead issued. Restore: git checkout harness/identity/interface.py",
-    "expected_failure": "test.sh exits 1 (35 passed, 11 failed): its own internal breakage/restore checks fail because scope narrowing no longer distinguishes wider from narrower, so a forwarded credential and a restored hop both misreport. Restoring the file with git checkout returns the tree to a clean run.",
+    "expected_failure": "Measured by tools/measure.py at 52a1457: exit 1; last lines:   FAIL the same suite passes again once the hop is restored (expected 0, got 1) | passed 35, failed 11",
     "status": "measured",
     "sources": [
       "F-a6-05",
@@ -339,7 +339,9 @@
       "breakage_exit": 1,
       "breakage_output": "ok   the breakage run exits non-zero (nonzero)\n  ok   chains shorter than the hops that occurred (1)\n  ok   actions whose current actor did not execute (1)\n  ok   still 50 actions, so this is a defect and not a missing run (50)\n  ok   the run names the action and the chain it found\n  FAIL the same breakage leaves the second adapter green (expected 0, got 1)\n  ok   its chains are still whole (0)\n  ok   the breakage singles out one binding: a document naming its attested unit cannot be forwarded\n  FAIL the same suite passes again once the hop is restored (expected 0, got 1)\n\npassed 35, failed 11",
       "restored": true
-    }
+    },
+    "expected_design": "docs/decomposition.md section 3.4 row X2: harness/identity/test.sh exits 0 (46 checks: 16 conformance cases per adapter, the 50-action delegation-chain corpus, the swap proof by configuration, the product-name scan, and its own internal deliberate breakage restoring clean); conformance.py --adapter dryrun --adapter second then exits 0 with 32/32 cases across 2 bindings, selected_by=configuration.",
+    "expected_failure_design": "test.sh exits 1 (35 passed, 11 failed): its own internal breakage/restore checks fail because scope narrowing no longer distinguishes wider from narrower, so a forwarded credential and a restored hop both misreport. Restoring the file with git checkout returns the tree to a clean run."
   },
   "composes_with": {
     "builds_on": [

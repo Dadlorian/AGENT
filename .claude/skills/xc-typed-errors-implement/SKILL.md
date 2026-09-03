@@ -127,9 +127,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/errors/test.sh && python3 harness/errors/conformance.py --adapter dryrun --adapter second |
-| Expected | docs/decomposition.md section 3.4 row X6: test.sh exits 0 (23 checks in dry run: 9/9 conformance, the caller-line count, the retryable-from-type-not-message pair, the live binding's own typed refusal, the swap proof, the product scan, one deliberate breakage restoring clean); conformance.py --adapter dryrun --adapter second then exits 0 with 18/18 cases across 2 bindings. |
+| Expected | Measured by tools/measure.py at f037f65: exit 0; last lines:   adapter=edge component that answers on behalf of a service cases=9 passed=9 responses_checked=14 untyped=1 unregistered_types=0 wrong_media_type=1 product_hits=0 \| conformance PASSED: 18/18 cases, 2 binding(s) |
 | Deliberate breakage | sed -i '98a\    retryable = True' harness/errors/interface.py -- construct() forces every registered problem to report retryable=True regardless of its registry row, so a caller can no longer decide retry from the type alone. Restore: git checkout harness/errors/interface.py |
-| Expected failure | test.sh exits 1 (16 passed, 7 failed): the swap proof's own conformance run fails 9/9 with the two adapters no longer differing on retryable-derived behaviour, so the axis-difference and case counts fail together while the earlier dry-run and live-refusal checks still pass. Restoring the file with git checkout returns the tree to a clean run. |
+| Expected failure | Measured by tools/measure.py at f037f65: exit 1; last lines:   ok   an untyped upstream body is no longer converted; the check catches it \| passed 16, failed 7 |
 | Status | measured |
 | Evidence | `F-part-c-04`, `F-b1-04`, `F-a6-06` "plus the deliberate breakage that proves the check can fail" |
 

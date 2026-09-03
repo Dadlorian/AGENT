@@ -120,7 +120,7 @@
         "quote": "The core imports interfaces, never implementations"
       },
       {
-        "text": "xc-tenancy already states the placement and that tenancy is absent from the substrate: no fact in PASS.md names a tenant, and A6 records no identity field anywhere in the system (F-a6-05). What this adds on this stack: there is no field to migrate from, so the today adapter is written rather than replaced, and every assertion in the definition of done below is red until it exists.",
+        "text": "There is no identity field anywhere in the system and no fact in PASS.md names a tenant, so the today adapter is written rather than replaced and every assertion in the definition of done below is red until it exists (F-a6-05; xc-tenancy owns the placement and records tenancy's absence from the substrate).",
         "origin": "sourced",
         "sources": [
           "F-a6-05"
@@ -144,7 +144,7 @@
         "quote": "Database per Tenant"
       },
       {
-        "text": "agentic-stack and build-adapter-pair already state that correlation must ride on an explicit resource attribute set at dispatch, because parentage did not survive the agent boundary when tried (F-a7-02). What tenancy adds: principal is stamped beside that same explicit attribute rather than inferred from it, so a scope-assignment record and a correlation record are written from the same call and can never name two different runs for one unit.",
+        "text": "Principal is stamped beside the explicit resource attribute correlation uses at dispatch rather than inferred from it, so a scope-assignment record and a correlation record are written from the same call and can never name two different runs for one unit; correlation must ride on that explicit attribute because parentage did not survive the agent boundary (F-a7-02; agentic-stack and build-adapter-pair own that rule).",
         "origin": "sourced",
         "sources": [
           "F-a7-02"
@@ -215,7 +215,7 @@
     {
       "step": 5,
       "action": "Wire the cross-cutting attachments at both adapters: stamp principal beside the run identifier on the same explicit attribute correlation already uses at dispatch, append one scope-assignment record per unit through the state seam, and hand the policy gate the resolved principal alongside the current actor.",
-      "why": "agentic-stack and build-adapter-pair already state that correlation must ride on an explicit attribute because parentage did not survive the agent boundary; a principal that rode on inference instead of the same attribute would be unattributable for the same reason, and the policy gate cannot decide a cross-principal refusal it was never handed the principal for.",
+      "why": "Correlation must ride on an explicit resource attribute set at dispatch because parentage did not survive the agent boundary (F-a7-02; agentic-stack and build-adapter-pair own that rule); a principal that rode on inference instead of that same attribute would be unattributable for the same reason, and the policy gate cannot decide a cross-principal refusal it was never handed the principal for.",
       "origin": "sourced",
       "sources": [
         "F-a7-02"
@@ -225,7 +225,7 @@
     {
       "step": 6,
       "action": "Read the adapter and the principal from the stamp or the refusal that actually came back, rather than the value the configuration selected, and report both per unit.",
-      "why": "agentic-stack and build-evidence-record already state the silently-discarded-configuration finding, measured on this host: settings written in the documented place had no runtime effect. A scope believed enforced because it was configured is that failure with an audit trail attached.",
+      "why": "Settings written in the documented place had no runtime effect when measured on this host (F-a7-04; agentic-stack and build-evidence-record own the silently-discarded-configuration finding), and a scope believed enforced because it was configured is that failure with an audit trail attached.",
       "origin": "sourced",
       "sources": [
         "F-a7-04"
@@ -309,9 +309,9 @@
   ],
   "definition_of_done": {
     "criterion": "bash harness/xc-tenancy/test.sh && python3 harness/xc-tenancy/conformance.py --adapter dryrun --adapter second",
-    "expected": "What the run proves: docs/decomposition.md has no row for tenancy; this is xc-tenancy's manifest row, made precise and extended with the swap. Proposed tool, built with the first adapter: `python3 tools/conformance/tenancy_adapters.py --adapter today --corpus out/units.jsonl --principals tenant-northwind,tenant-acme --min-units 100 --report out/tenancy-a.json`, then the same command with `--adapter second --report out/tenancy-b.json`, the adapter chosen by configuration with no code edit between runs. Both reports validate against the ScopeAssignmentRecord shape above and assert, per adapter, `units_checked >= 100`, `principals_covered >= 2`, `no_principal_admitted == 0`, `cross_tenant_reads == 0`, `cross_tenant_recalls == 0` and `cross_tenant_spend == 0`. Across adapters it asserts `adapters_run >= 2` and that `adapter` in every finding was read from the stamp rather than from the configuration. | both runs exit 0 and one line per adapter of the form `adapter=<entity> units_checked=100 principals_covered=2 no_principal_admitted=0 cross_tenant_reads=0 cross_tenant_recalls=0 cross_tenant_spend=0`, followed by `adapters_run=2`.",
+    "expected": "Measured by tools/measure.py at 844f32b: exit 0; last lines:   adapter=database-per-tenant cases=9 passed=9 units_checked=11 principals_covered=2 no_principal_admitted=0 cross_tenant_reads=0 cross_tenant_recalls=0 cross_tenant_spend=0 | conformance PASSED: 18/18 cases, 2 binding(s), adapters_run=2",
     "breakage": "In harness/xc-tenancy/adapters/dryrun.py, drop the principal filter on reads so every record is returned regardless of principal, run the criterion (the cross-tenant read is served instead of refused, conformance fails on the first adapter while the second stays 9 of 9, and the gate exits 1), then git checkout harness/xc-tenancy/adapters/dryrun.py.",
-    "expected_failure": "the today adapter's run exits 1 with `cross_tenant_reads` naming at least one crossed record, while the second adapter's run still exits 0 with `cross_tenant_reads == 0` - because its isolation is structural, a filter was never in its path to drop - and `adapters_run` stays 2 with `units_checked` at or above 100 on both. Singling out one adapter is the point: a suite that fails both, or neither, has not tested the swap. Claimed: PASS.md records no principal field, neither adapter is written, the tool does not exist, and this run has not been performed here, so the check starts red by construction.",
+    "expected_failure": "Measured by tools/measure.py at 844f32b: exit 1; last lines:   ok   singling out one adapter: the other is still 9/9 | passed 22, failed 7",
     "status": "measured",
     "sources": [
       "F-part-c-04",
@@ -326,7 +326,9 @@
       "breakage_exit": 1,
       "breakage_output": "r (1)\n  ok   6/9 cases pass; the 3 cross-tenant cases fail\n  FAIL every leak counter inverted from zero (expected 0, got 1)\n  ok   Traceback (most recent call last):\n  File \"<stdin>\", line 4, in <module>\nAssertionError: {'adapter': 'shared-keyspace-principal-column', 'adapters_run': 1, 'cross_tenant_reads': 0, 'cross_tenant_recalls': 5, 'cross_tenant_spend': 0, 'no_principal_admitted': 0, 'principals_covered': 2, 'selected_by': 'configuration', 'units_checked': 11}\n  ok   the untouched second adapter still exits 0 (0)\n  ok   singling out one adapter: the other is still 9/9\n\npassed 22, failed 7",
       "restored": true
-    }
+    },
+    "expected_design": "What the run proves: docs/decomposition.md has no row for tenancy; this is xc-tenancy's manifest row, made precise and extended with the swap. Proposed tool, built with the first adapter: `python3 tools/conformance/tenancy_adapters.py --adapter today --corpus out/units.jsonl --principals tenant-northwind,tenant-acme --min-units 100 --report out/tenancy-a.json`, then the same command with `--adapter second --report out/tenancy-b.json`, the adapter chosen by configuration with no code edit between runs. Both reports validate against the ScopeAssignmentRecord shape above and assert, per adapter, `units_checked >= 100`, `principals_covered >= 2`, `no_principal_admitted == 0`, `cross_tenant_reads == 0`, `cross_tenant_recalls == 0` and `cross_tenant_spend == 0`. Across adapters it asserts `adapters_run >= 2` and that `adapter` in every finding was read from the stamp rather than from the configuration. | both runs exit 0 and one line per adapter of the form `adapter=<entity> units_checked=100 principals_covered=2 no_principal_admitted=0 cross_tenant_reads=0 cross_tenant_recalls=0 cross_tenant_spend=0`, followed by `adapters_run=2`.",
+    "expected_failure_design": "the today adapter's run exits 1 with `cross_tenant_reads` naming at least one crossed record, while the second adapter's run still exits 0 with `cross_tenant_reads == 0` - because its isolation is structural, a filter was never in its path to drop - and `adapters_run` stays 2 with `units_checked` at or above 100 on both. Singling out one adapter is the point: a suite that fails both, or neither, has not tested the swap. Claimed: PASS.md records no principal field, neither adapter is written, the tool does not exist, and this run has not been performed here, so the check starts red by construction."
   },
   "composes_with": {
     "builds_on": [
@@ -357,6 +359,15 @@
         "T-t5-02"
       ],
       "quote": "OCI Runtime Spec"
+    },
+    {
+      "question": "The refusal both adapters raise for a cross-principal read, recall or spend is urn:agentic:problem:cross-tenant-denied, which has no row in the closed registry in docs/decomposition.md section 2.1.6 and is therefore pending registration: should the registry gain that row, or should a cross-principal refusal be carried as the registered policy-denied (403, a deterministic pre-execution refusal carrying rule_id)?",
+      "evidence": "Proposed, and 1-3-1 applied (TARGET T5): the closed registry in docs/decomposition.md section 2.1.6 is extended only by adding a row and states that an unregistered type is a conformance failure, so the harness output recorded in the definition of done above states a type that registry does not yet carry. Options: (a) add a cross-tenant-denied row to section 2.1.6, which is the smallest edit and keeps the refusal readable as its own class; (b) carry it as policy-denied with a rule_id naming the principal boundary, which needs no registry edit but merges a tenancy refusal into the policy class; (c) leave it unregistered, which is the conformance failure the registry exists to prevent. Recommendation: (a), taken by the ceremony that owns docs/decomposition.md, since this skill's scope is the build and not the registry.",
+      "default": "Until the row exists, read cross-tenant-denied as pending registration wherever this skill states it, and treat the registered policy-denied as the fallback type an adapter emits if it must answer today.",
+      "sources": [
+        "F-b4-07",
+        "T-t5-02"
+      ]
     }
   ],
   "provenance": {

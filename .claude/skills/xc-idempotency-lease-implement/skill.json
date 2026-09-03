@@ -236,7 +236,7 @@
         "quote": "Part A is substrate, not scope. Do not propose replacing what runs."
       },
       {
-        "text": "xc-idempotency-lease fixes the placement and cap-idempotency the claim it calls (F-b3-16). What this adds on this stack: what runs today records the key and takes nothing before execution, so the work is to add an acquisition point, not a field, and the concurrent half of the criterion is the half today's provider is expected to fail.",
+        "text": "What runs today is a key on the wire with no lease, so the work is to add an acquisition point rather than a field, and the concurrent half of the criterion is the half today's provider is expected to fail (F-b3-16, F-b4-08; xc-idempotency-lease owns the placement and cap-idempotency the claim it calls).",
         "origin": "sourced",
         "sources": [
           "F-b3-16",
@@ -266,7 +266,7 @@
     {
       "step": 1,
       "action": "Build today's provider as a thin binding onto the append-only chained store the platform already writes: acquire appends a lease record conditional on the expected head, seal appends a second record referencing it, and expiry is a field a reader compares against its own clock.",
-      "why": "agentic-stack and build-evidence-record already state the chained-store property (F-a5-03); its consequence here is that a later edit to a lease record is detectable, so this starts the pair from something that runs rather than from an intention. It also makes the gap explicit: everything here serialises behind the one writer that owns the log.",
+      "why": "Each run's closing digest is the next run's opening digest, so a later edit to a lease record is detectable and the pair starts from something that runs rather than from an intention (F-a5-03, F-b3-16; agentic-stack and build-evidence-record own the chained-store property).",
       "origin": "sourced",
       "sources": [
         "F-a5-03",
@@ -358,12 +358,12 @@
       "quote": "Race conditions between the idempotency check and the mutation must be atomic"
     },
     {
-      "text": "agentic-stack already states the structurally-green-gate finding (F-a7-03), and xc-idempotency-lease draws the consequence for a lease corpus. What this adds at code level: report the counts per provider, because one corpus replayed through two providers can leave one of them with nothing to attach and still exit green.",
+      "text": "Report the lease counts per provider: one corpus replayed through two providers can leave one of them with nothing to attach and still exit green, the way a nine-stage pipeline ran green because the generated work contained nothing those tools apply to (F-a7-03, agentic-stack's finding, whose gate-level consequence build-definition-of-done owns; xc-idempotency-lease owns the consequence for a lease corpus).",
       "origin": "sourced",
       "sources": [
         "F-a7-03"
       ],
-      "quote": "Those establish well-formedness, not correctness"
+      "quote": "because the generated work contained nothing those tools apply to"
     },
     {
       "text": "Proposed: do not let the lease record become the result store, which is the code-level face of the two-clocks practice xc-idempotency-lease states (X-cap-idempotency-008). Seal writes a reference and the result stays where results live, or the provider that was chosen for a keyed compare-and-set inherits a size limit and a retention policy it was never picked for.",
@@ -412,9 +412,9 @@
   ],
   "definition_of_done": {
     "criterion": "bash harness/idempotency/test.sh && python3 harness/idempotency/conformance.py --adapter dryrun --adapter second",
-    "expected": "test.sh: exit 0, `passed <n>, failed 0`; conformance.py: exit 0, `conformance PASSED: 16/16 cases, 2 binding(s)`. Proposed tool (not run): python3 tools/conformance/lease_placement.py --provider today --provider second --entries examples/end-to-end/entries --corpus out/actions.jsonl --concurrency 100 --kill-owner-at 0.5 --report out/lease.json, asserting per provider keys_checked > 0, unleased_actions == 0, owners_missing == 0, expiries_missing == 0, duplicate_executions == 0, attached_in_flight >= 1, reclaimed >= 1, stale_token_seals_refused >= 1, ways_in_covered == 3, provider_observed read from the granted lease record, and across providers adapters_run >= 2 (docs/decomposition.md section 3.4 row X7).",
+    "expected": "Measured by tools/measure.py at fb96f80: exit 0; last lines:   adapter=conditional-write-lease cases=8 passed=8 supports_in_flight=True overlapped=19 | conformance PASSED: 16/16 cases, 2 binding(s)",
     "breakage": "sed -i '40s#.*#        json.dumps({}, sort_keys=True, separators=(\",\", \":\")).encode()).hexdigest()#' harness/idempotency/interface.py",
-    "expected_failure": "conformance.py exits 1: the canonical digest is constant regardless of payload, so a different payload under the same key is no longer distinguishable from a replay and the idempotency-conflict case is not raised (\"a different payload under the same key was not refused\"), dropping to 14/16 cases (7/8 passed on each binding); git checkout -- harness/idempotency/interface.py restores.",
+    "expected_failure": "Measured by tools/measure.py at fb96f80: exit 1; last lines:   FAIL wrong pass count | passed 5, failed 11",
     "status": "measured",
     "sources": [
       "F-part-c-04",
@@ -429,7 +429,9 @@
       "breakage_exit": 1,
       "breakage_output": "t 8/8\n  ok   nothing but the binding changed between the two runs (e5a258ebdd6ab8303224630fe732a4dad1fd03b9fe6b683cb2ea998e18028b1b)\n  FAIL the same caller code runs on the second adapter (expected 0, got 1)\n  FAIL the two adapters differ in execution model on 2 or more axes (expected 0, got 1)\n  FAIL AssertionError: both bindings must pass the same cases\n3. deliberate breakage: remove the lease acquisition, leave the key on the wire\n  ok   the broken adapter's conformance run exits 1 (1)\n  ok   every concurrent copy won: executions=20, overlapped=0\n  FAIL wrong pass count\n\npassed 5, failed 11",
       "restored": true
-    }
+    },
+    "expected_design": "test.sh: exit 0, `passed <n>, failed 0`; conformance.py: exit 0, `conformance PASSED: 16/16 cases, 2 binding(s)`. Proposed tool (not run): python3 tools/conformance/lease_placement.py --provider today --provider second --entries examples/end-to-end/entries --corpus out/actions.jsonl --concurrency 100 --kill-owner-at 0.5 --report out/lease.json, asserting per provider keys_checked > 0, unleased_actions == 0, owners_missing == 0, expiries_missing == 0, duplicate_executions == 0, attached_in_flight >= 1, reclaimed >= 1, stale_token_seals_refused >= 1, ways_in_covered == 3, provider_observed read from the granted lease record, and across providers adapters_run >= 2 (docs/decomposition.md section 3.4 row X7).",
+    "expected_failure_design": "conformance.py exits 1: the canonical digest is constant regardless of payload, so a different payload under the same key is no longer distinguishable from a replay and the idempotency-conflict case is not raised (\"a different payload under the same key was not refused\"), dropping to 14/16 cases (7/8 passed on each binding); git checkout -- harness/idempotency/interface.py restores."
   },
   "composes_with": {
     "builds_on": [

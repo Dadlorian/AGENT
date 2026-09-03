@@ -173,6 +173,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: the loader's context accounting, its trigger-matching strategy and its scan order. A package that behaves correctly only under one matching strategy has bound itself to one runtime. | proposed | - |
 | Proposed: the distribution transport and the on-disk path below the package root. A caller names an identity; whether it arrived over a filesystem or a network is the adapter's business. | proposed | - |
 | Proposed: this repository's own conventions - the manifest, the symmetric link sections, the layer prefixes. They are checked separately and are not part of what a conformant runtime must understand. | proposed | - |
+| Proposed: the criterion a packaged capability's output will be judged against is never a field of the package manifest, of a trigger declaration or of anything the loader hands the package at discovery time. agentic-stack states design rule 6 (F-b1-07); the consequence here is that a package declares what it is good at and what loads it, never how its results will be scored. | proposed | `F-b1-07` |
 
 ## Instructions
 

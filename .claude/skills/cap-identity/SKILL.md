@@ -112,6 +112,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: the credential itself never leaves the verification boundary. A document, a ledger record, a telemetry attribute or a failure body carries the subject and the obtained_via of each hop, never the token or certificate that proved them. | proposed | `X-cross-structure-006` |
 | Proposed: which issuer or attestor minted a credential is not part of the contract, so no caller can branch on it and no core code can come to depend on one issuer's claim set. | proposed | `F-b3-14` |
 | Proposed: prior actors are not offered to the authorisation decision at all. Recording them for audit is required; exposing them to a rule invites a rule that reads them, which is the failure the informational-only constraint exists to prevent. | proposed | `X-cross-structure-038` |
+| Proposed: the criterion an actor's output will be judged against never appears in a credential's claims, in the delegation chain, or in anything the verification boundary hands back to the actor it authenticated. agentic-stack states design rule 6 (F-b1-07); the consequence here is that an actor learns who it is and on whose behalf it acts, never how its work will be scored. | proposed | `F-b1-07` |
 
 ## Instructions
 

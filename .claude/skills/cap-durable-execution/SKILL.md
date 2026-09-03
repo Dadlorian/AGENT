@@ -147,6 +147,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: worker registration, task queues, event-history formats, determinism requirements on the caller's code, and any server endpoint or namespace. Each is a property of one way of achieving durability and none is needed to know which step to run next. | proposed | - |
 | Recurrence and scheduling are a separate capability with a published standard of its own, so 'run this every night' is not a durable-execution operation even when the same engine happens to offer it; sourcing it here would make that engine unswappable for a reason unrelated to durability. | sourced | `F-b3-15` "RFC 5545 recurrence rules" |
 | Proposed: the identity of the durable store. This capability needs a place to checkpoint, not the platform's own state seam; binding the contract to one store is how the thing behind it stops being swappable. | proposed | - |
+| Proposed: the criterion a unit's result will be judged against never travels in a step input, a checkpoint, or an event history the resumed unit can read back. agentic-stack states design rule 6 (F-b1-07); the consequence here is that resume replays what the unit already did, and a replayed input is still an input, so anything hidden from the unit on the first attempt stays hidden on every later one. | proposed | `F-b1-07` |
 
 ## Instructions
 

@@ -150,6 +150,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: the adapter's native error objects, exception types and library-specific wording. A caller that pattern-matches on one adapter's message text has bound itself to that adapter. | proposed | - |
 | Proposed: translating a validation outcome into a transport error body is not part of this interface. That mapping belongs to the consumer, and keeping it out is what lets the validator be replaced by one in another language runtime. | proposed | - |
 | Proposed: the schema store's on-disk layout and the internal form of a prepared-validator handle. Both are adapter detail; only the schema URI and the dialect are contractual. | proposed | - |
+| Proposed: a schema, a dialect declaration and a validation outcome never carry the criterion a judged result will be scored against. agentic-stack states design rule 6 (F-b1-07); the consequence here is that a schema says what shape is admissible and the outcome says which keywords failed, so validating a document can never be the channel that shows an agent its grading rule. | proposed | `F-b1-07` |
 
 ## Instructions
 

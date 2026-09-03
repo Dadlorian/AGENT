@@ -44,14 +44,14 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Operation | Input | Output | Origin | Evidence |
 |---|---|---|---|---|
-| accept (proposed operation set; the recorded standards are an event format and a messaging protocol, not a set of calls the core can import as they stand) | one producer-native message plus the transport metadata the adapter observed - a request over HTTP, a command line, a repository hook payload, a fired occurrence, or a message from another agent | either one canonical entry envelope, or a typed problem; intake returns no result and starts no work, so accept is the whole of what a producer can cause directly | proposed | `F-b3-08` |
-| normalise (proposed) | a producer-native message and the name of the format it claims | the canonical envelope fields - kind, actor with delegation chain, intent, correlation, budget ceiling, idempotency key and an opaque payload - with every producer-specific attribute either mapped onto one of them or dropped; a field that can be mapped for one producer and not another is a field the envelope should not have | proposed | `F-b3-08`, `T-t6-02` |
-| job_digest (proposed) | a canonical envelope | a content digest over the normalised job only - intent and payload - excluding the per-submission identity fields, so that one logical job submitted by three producers yields one digest and three distinct submissions; this is the read that makes producer equivalence checkable rather than asserted | proposed | `F-b3-08` |
-| admit (proposed) | a validated canonical envelope | an acknowledgement carrying the entry identifier and the correlation identifier, and nothing about the outcome; the envelope is handed to the ordinary entry path and the producer is free to be gone before anything runs | proposed | `T-t6-03` |
+| accept (operation set the recorded standards govern; an event format and a messaging protocol, not a set of calls the core can import as they stand) | one producer-native message plus the transport metadata the adapter observed - a request over HTTP, a command line, a repository hook payload, a fired occurrence, or a message from another agent | either one canonical entry envelope, or a typed problem; intake returns no result and starts no work, so accept is the whole of what a producer can cause directly | sourced | `F-b3-08` "A2A messaging · CloudEvents" |
+| normalise | a producer-native message and the name of the format it claims | the canonical envelope fields - kind, actor with delegation chain, intent, correlation, budget ceiling, idempotency key and an opaque payload - with every producer-specific attribute either mapped onto one of them or dropped; a field that can be mapped for one producer and not another is a field the envelope should not have | sourced | `F-b3-08`, `T-t6-02` "All four enter through the same shape." |
+| job_digest | a canonical envelope | a content digest over the normalised job only - intent and payload - excluding the per-submission identity fields, so that one logical job submitted by three producers yields one digest and three distinct submissions; this is the read that makes producer equivalence checkable rather than asserted, the same uniqueness obligation the governing event standard places on the producer's own source and id | sourced | `F-b3-08`, `X-cap-work-intake-005` "Producers MUST ensure that source + id is unique for each distinct event." |
+| admit | a validated canonical envelope | an acknowledgement carrying the entry identifier and the correlation identifier, and nothing about the outcome; the envelope is handed to the ordinary entry path and the producer is free to be gone before anything runs | sourced | `T-t6-03` "Any entry can call complex workflows, agents, and loops that run across the entire stack." |
 
 ### Shapes (JSON Schema 2020-12)
 
-**EntryEnvelope (proposed summary shape; the full schema, the per-producer mapping table and the fixture corpus are in references/intake-envelope.md)** (proposed; sources: `T-t6-02`, `F-b3-08`)
+**EntryEnvelope (summary shape; the full schema, the per-producer mapping table and the fixture corpus are in references/intake-envelope.md)** (sourced; sources: `T-t6-02`, `F-b3-08`)
 
 ```json
 {
@@ -138,7 +138,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**IntakeAcknowledgement (proposed; the whole of what a producer gets back synchronously)** (proposed; sources: `F-b3-08`)
+**IntakeAcknowledgement (the whole of what a producer gets back synchronously)** (sourced; sources: `F-b3-08`)
 
 ```json
 {

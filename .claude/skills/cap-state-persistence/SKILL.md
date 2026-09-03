@@ -120,7 +120,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**Head (proposed): the value every read is pinned to and every proof is taken against** (proposed; sources: `F-a5-03`, `F-b5-05`)
+**Head: the value every read is pinned to and every proof is taken against** (sourced; sources: `F-a5-03`, `F-b5-05`)
 
 ```json
 {
@@ -163,7 +163,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**InclusionProof (proposed): what prove returns, sized by the log rather than by its content** (proposed; sources: `X-cross-structure-052`)
+**InclusionProof: what prove returns, sized by the log rather than by its content** (sourced; sources: `X-cross-structure-052`)
 
 ```json
 {

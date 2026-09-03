@@ -40,14 +40,14 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Operation | Input | Output | Origin | Evidence |
 |---|---|---|---|---|
-| decide (proposed operation set; the recorded standard is a language plus a decision API, not a set of calls) | a DecisionRequest: the named decision point, the subject, the action, the resource, the run context, and the pinned policy_version the request must be evaluated against | a Decision carrying effect allow or deny, the rule_id that decided it, the policy_version it was evaluated under, and the digest of the input; the same request under the same version always yields the same answer | proposed | `F-b4-04`, `X-cross-structure-031` |
+| decide (operation set the recorded standard already governs; a language plus a decision API, not a set of calls) | a DecisionRequest: the named decision point, the subject, the action, the resource, the run context, and the pinned policy_version the request must be evaluated against | a Decision carrying effect allow or deny, the rule_id that decided it, the policy_version it was evaluated under, and the digest of the input; the same request under the same version always yields the same answer | sourced | `F-b4-04`, `X-cross-structure-031` "evaluates the input against the specified policies to return an access decision in JSON" |
 | activate (proposed) | a policy bundle and its digest | the digest now serving as policy_version, after which every decision names it; the previous version stays resolvable so an old decision can still be explained | proposed | `F-b4-04` |
 | explain (proposed) | a recorded decision, by its input digest and policy_version | the rule that decided and the inputs it read, recomputed by re-evaluating the pinned version rather than by trusting a stored narrative; this is the read an auditor and a planner both need | proposed | `F-b4-04` |
 | register_decision_point (proposed) | a decision point name and the JSON Schema its resource and context must satisfy | the point admitted into the registry; a decision requested at an unregistered point is refused as a conformance failure rather than evaluated against an assumed shape | proposed | `F-b3-09` |
 
 ### Shapes (JSON Schema 2020-12)
 
-**DecisionRequest (proposed shape; the full schema, the decision-point registry and the engine-selection criteria are in references/policy-decision.md)** (proposed; sources: `F-b4-04`, `X-cross-structure-031`)
+**DecisionRequest (summary shape; the full schema, the decision-point registry and the engine-selection criteria are in references/policy-decision.md)** (sourced; sources: `F-b4-04`, `X-cross-structure-031`)
 
 ```json
 {
@@ -104,7 +104,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**Decision (proposed shape; what crosses the interface, whichever engine served it)** (proposed; sources: `F-b4-04`, `F-b4-07`)
+**Decision (shape governed by the recorded standard; what crosses the interface, whichever engine served it)** (sourced; sources: `F-b4-04`, `F-b4-07`)
 
 ```json
 {

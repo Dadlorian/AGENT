@@ -39,14 +39,14 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Operation | Input | Output | Origin | Evidence |
 |---|---|---|---|---|
-| occurrences (proposed operation set; the recorded standard is a data format and a grammar, not a set of calls) | a recurrence rule string, the first instant the rule counts from, an IANA time zone, and a half-open window [from, to) | the ordered, de-duplicated set of occurrence instants that fall inside the window; a pure function, reading no clock and touching no store, so the same four inputs always give the same set | proposed | `F-b3-15`, `X-cap-scheduling-002` |
-| next_after (proposed) | the same rule, first instant and time zone, plus an instant to search from | the first occurrence strictly after that instant, or none when the rule is exhausted; this is the read a caller needs to answer when does this run next without materialising a window | proposed | `F-b3-15` |
-| declare (proposed) | a unit of work, its schedule as one recurrence string, and its manual trigger as a typed input schema | both registered as sibling entries on that one unit, so the same unit can be reached by the clock and by a person without two declarations and without two code paths | proposed | `X-entry-composition-044`, `X-entry-composition-045` |
-| fire (proposed) | one occurrence instant and the unit it belongs to | the platform's standard entry envelope of kind schedule, carrying the occurrence instant, the actor and delegation chain of whoever declared the schedule, correlation, a budget ceiling and an idempotency key derived from unit plus occurrence instant; the evaluator hands over the envelope and executes nothing itself | proposed | `T-t6-02`, `F-b3-08` |
+| occurrences (operation set the standard's own grammar defines; the recorded row is a data format and a grammar, not a set of calls) | a recurrence rule string, the first instant the rule counts from, an IANA time zone, and a half-open window [from, to) | the ordered, de-duplicated set of occurrence instants that fall inside the window; a pure function, reading no clock and touching no store, so the same four inputs always give the same set. The rule string it reads is the RRULE grammar itself, valid across every frequency the standard defines. | sourced | `F-b3-15`, `X-cap-scheduling-002` "An RRULE is the recurrence rule grammar defined in RFC 5545 that describes a repeating schedule as a single string." |
+| next_after | the same rule, first instant and time zone, plus an instant to search from | the first occurrence strictly after that instant, or none when the rule is exhausted; this is the read a caller needs to answer when does this run next without materialising a window | sourced | `F-b3-15` "RFC 5545 recurrence rules" |
+| declare | a unit of work, its schedule as one recurrence string, and its manual trigger as a typed input schema | both registered as sibling entries on that one unit, so the same unit can be reached by the clock and by a person without two declarations and without two code paths | sourced | `X-entry-composition-044`, `X-entry-composition-045` "workflow_dispatch triggers the workflow manually from the Actions tab in the repository" |
+| fire | one occurrence instant and the unit it belongs to | the platform's standard entry envelope of kind schedule, carrying the occurrence instant, the actor and delegation chain of whoever declared the schedule, correlation, a budget ceiling and an idempotency key derived from unit plus occurrence instant; the evaluator hands over the envelope and executes nothing itself | sourced | `T-t6-02`, `F-b3-08` "All four enter through the same shape." |
 
 ### Shapes (JSON Schema 2020-12)
 
-**ScheduleDeclaration (proposed summary shape; the full schema, the rule-part subset and the vector corpus are in references/recurrence-vectors.md)** (proposed; sources: `X-entry-composition-049`, `X-entry-composition-045`)
+**ScheduleDeclaration (summary shape; the full schema, the rule-part subset and the vector corpus are in references/recurrence-vectors.md)** (sourced; sources: `X-entry-composition-049`, `X-entry-composition-045`)
 
 ```json
 {
@@ -99,7 +99,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**OccurrenceSet (proposed summary shape; what occurrences returns and what a test vector asserts against)** (proposed; sources: `F-b3-15`)
+**OccurrenceSet (summary shape; what occurrences returns and what a test vector asserts against)** (sourced; sources: `F-b3-15`)
 
 ```json
 {

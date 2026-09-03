@@ -43,13 +43,13 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Operation | Input | Output | Origin | Evidence |
 |---|---|---|---|---|
 | bind (proposed operation set; the recorded row fixes a transport and a vocabulary, not a set of calls) | the correlation attribute set for a unit of dispatch: run id, correlation id, optional parent correlation id and depth | an emission context whose resource attributes carry that set, stamped onto every span, metric and log emitted beneath it; the core imports this call at dispatch and nowhere else | proposed | `F-b4-06`, `X-cross-structure-012` |
-| emit (proposed) | a completed unit of work: an operation name drawn from the attribute mapping, start and end instants, an outcome, and the attributes the mapping defines for that operation | nothing to the caller; the unit is handed to the pipeline, and a caller that could read a result back would start branching on the backend | proposed | `F-b3-10`, `X-entry-composition-050` |
-| measure (proposed) | an instrument name, a value, and the attribute subset the mapping permits on that instrument | nothing to the caller; metrics travel the same transport and carry the same correlation resource attributes as spans, so one signal can be joined to another on the run id | proposed | `X-cap-telemetry-006`, `X-cross-structure-011` |
+| emit | a completed unit of work: an operation name drawn from the attribute mapping, start and end instants, an outcome, and the attributes the mapping defines for that operation | nothing to the caller; the unit is handed to the pipeline, and a caller that could read a result back would start branching on the backend. The operation name is drawn from the vocabulary's own lifecycle attribute, which already spans create_agent, invoke_agent, invoke_workflow and execute_tool. | sourced | `F-b3-10`, `X-entry-composition-050` "including create_agent, invoke_agent, invoke_workflow, execute_tool, retrieval, plan, plus memory operations" |
+| measure | an instrument name, a value, and the attribute subset the mapping permits on that instrument | nothing to the caller; metrics are the raw numeric data collected from various sources and travel the same transport, stable for the metric signal exactly as it is for traces, carrying the same correlation resource attributes as spans so one signal can be joined to another on the run id | sourced | `X-cap-telemetry-006`, `X-cross-structure-011` "Metrics are the raw numeric data collected from various sources" |
 | describe_mapping (proposed) | nothing | the attribute-mapping version in force, recorded with the run, so a reader can tell which vocabulary a body of telemetry was emitted against without guessing from the attribute names | proposed | `X-entry-composition-051`, `X-cross-structure-010` |
 
 ### Shapes (JSON Schema 2020-12)
 
-**CorrelationResourceAttributes (proposed): the field set stamped at dispatch, the machine-readable form of the invariant below** (proposed; sources: `F-b4-06`, `X-cross-structure-012`)
+**CorrelationResourceAttributes: the field set stamped at dispatch, the machine-readable form of the invariant below** (sourced; sources: `F-b4-06`, `X-cross-structure-012`)
 
 ```json
 {

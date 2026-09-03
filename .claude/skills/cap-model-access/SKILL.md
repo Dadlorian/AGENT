@@ -34,14 +34,14 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Operation | Input | Output | Origin | Evidence |
 |---|---|---|---|---|
-| route (proposed operation set; PASS.md gives this capability a row and a standard, not a list of calls) | the requested model class, the unit of work, the budget remaining for that unit, and the policy verdict already reached for it | one endpoint selection and the reason for it. Proposed: it is a pure function evaluated before any adapter is called, so a routing rule can be tested with no model running and no spend (proposed) | proposed | `X-end-to-end-056`, `X-end-to-end-058`, `F-b4-02` |
-| submit (proposed) | a completion request naming a model class, the messages, the caller's idempotency key, and the ceiling for the call | a claim ticket. Proposed: a synchronous adapter returns one already redeemed with the result attached and a batch adapter returns one to be claimed later, so 'get me a completion' and 'get me a completion eventually and cheaply' are the same call (proposed) | proposed | `F-a4-01`, `F-b4-08` |
-| claim (proposed) | a claim ticket | the completion result, or not-yet with the earliest time to ask again, or a typed problem. Proposed: the result validates against one result schema whichever adapter answered, and carries the cost actually incurred so a spend committed at submission can be reconciled here (proposed) | proposed | `F-b4-07`, `F-b4-02` |
+| route (operation set the recorded row gives a standard to, not a list of calls) | the requested model class, the unit of work, the budget remaining for that unit, and the policy verdict already reached for it | one endpoint selection and the reason for it. Proposed: it is a pure function evaluated before any adapter is called, so a routing rule can be tested with no model running and no spend (proposed). The budget-remaining input is the same ceiling every unit of work carries. | sourced | `X-end-to-end-056`, `X-end-to-end-058`, `F-b4-02` "Every unit of work carries a ceiling" |
+| submit | a completion request naming a model class, the messages, the caller's idempotency key, and the ceiling for the call | a claim ticket. Proposed: a synchronous adapter returns one already redeemed with the result attached and a batch adapter returns one to be claimed later, so 'get me a completion' and 'get me a completion eventually and cheaply' are the same call (proposed) | sourced | `F-a4-01`, `F-b4-08` "Every externally-triggered action is safe to replay" |
+| claim | a claim ticket | the completion result, or not-yet with the earliest time to ask again, or a typed problem. Proposed: the result validates against one result schema whichever adapter answered, and carries the cost actually incurred so a spend committed at submission can be reconciled here (proposed) | sourced | `F-b4-07`, `F-b4-02` "Typed and machine-readable" |
 | cancel (proposed) | a claim ticket | an acknowledgement that says which of two things happened: the work stopped, or the request to stop was merely recorded. Proposed: submitted work may not be stoppable and its cost may still be owed, so the caller is told which, rather than being promised a stop the adapter cannot make (proposed) | proposed | `F-b4-02` |
 
 ### Shapes (JSON Schema 2020-12)
 
-**completion-request (proposed summary shape; the full schemas and the worked routing table are in references/model-access-shapes.md)** (proposed; sources: -)
+**completion-request (summary shape governed by the recorded completions standard; the full schemas and the worked routing table are in references/model-access-shapes.md)** (sourced; sources: `X-cap-model-access-002`)
 
 ```json
 {
@@ -55,7 +55,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
     "idempotency_key",
     "ceiling_micros"
   ],
-  "description": "Proposed. The whole caller vocabulary. There is no vendor, no member model, no endpoint and no field naming which adapter should answer.",
+  "description": "The whole caller vocabulary, governed by the standard this row cites, the one other providers implement. There is no vendor, no member model, no endpoint and no field naming which adapter should answer.",
   "properties": {
     "model_class": {
       "type": "string",

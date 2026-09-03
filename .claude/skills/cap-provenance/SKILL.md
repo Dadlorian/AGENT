@@ -44,14 +44,14 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Operation | Input | Output | Origin | Evidence |
 |---|---|---|---|---|
-| attest (proposed operation set; the recorded standards fix a document format, not a set of calls) | one or more subject digests, a predicate type, the predicate body, and the actor on whose behalf the statement is made | a signed envelope carrying an in-toto Statement over those subjects, returned to the caller and handed to the store | proposed | `F-b4-05`, `X-cross-structure-050` |
-| verify (proposed) | an envelope and a trust policy naming the accepted signers and expected values | accepted or rejected with the reason; the platform's own implementation of this call is a convenience, and the contract is that an outside verifier reaches the same answer from the envelope alone | proposed | `F-b4-05`, `X-cap-provenance-005` |
+| attest (operation set the recorded standards fix a document format for, not a set of calls) | one or more subject digests, a predicate type, the predicate body, and the actor on whose behalf the statement is made | a signed envelope carrying an in-toto Statement over those subjects, returned to the caller and handed to the store | sourced | `F-b4-05`, `X-cross-structure-050` "can be broken down to three layers" |
+| verify | an envelope and a trust policy naming the accepted signers and expected values | accepted or rejected with the reason; the platform's own implementation of this call is a convenience, and the contract is that an outside verifier reaches the same answer from the envelope alone | sourced | `F-b4-05`, `X-cap-provenance-005` "checking cryptographic signatures and matching expected values such as builder ID and source repository" |
 | resolve (proposed) | a subject digest | every envelope whose statement names that digest as a subject, so a reader holding only an output can find what vouches for it | proposed | `F-b4-05` |
 | publish (proposed) | an envelope and the store it belongs in | a location a third party can fetch the envelope from without holding our credentials; where that location is an append-only log, the fetch also carries an inclusion proof | proposed | `X-cap-provenance-006`, `X-cross-structure-052` |
 
 ### Shapes (JSON Schema 2020-12)
 
-**Attestation (proposed summary shape of the envelope-statement-predicate stack; the full schemas and the predicate field tables are in references/attestation-shapes.md)** (proposed; sources: `X-cross-structure-050`, `X-cap-provenance-003`)
+**Attestation (summary shape of the envelope-statement-predicate stack the recorded standards define; the full schemas and the predicate field tables are in references/attestation-shapes.md)** (sourced; sources: `X-cross-structure-050`, `X-cap-provenance-003`)
 
 ```json
 {

@@ -243,7 +243,7 @@ def norm_breakage(text: str | None) -> str:
     return re.sub(r"[^a-z0-9]+", " ", (text or "").lower()).strip()
 
 
-def check_structure(sk: dict, name: str, errs: list[str]):
+def check_structure(sk: dict, name: str, errs: list[str], warns: list[str]):
     req = ["name", "layer", "description", "purpose", "instructions", "definition_of_done", "composes_with", "provenance"]
     for k in req:
         if k not in sk:
@@ -339,7 +339,7 @@ def main() -> int:
             errs.append(f"{name}: skill.json is not valid JSON: {e}")
             continue
         skills[name] = sk
-        check_structure(sk, name, errs)
+        check_structure(sk, name, errs, warns)
         walk_sourced(sk, "", errs, kb_ids, name)
         for e in sk.get("entities", []):
             if e not in kb_ids:

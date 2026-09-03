@@ -10,7 +10,7 @@
 | 21 | Continuous improvement loop | One iteration per fire moves a metric and checkpoints | Not started | Awaiting go |
 | 37 | Live run access | Harness live mode runs against the host from a session | Blocked | Owner decision |
 | 45 | Fetch allowlist | Standards sites are fetchable from the environment | Blocked | Owner decision |
-| 61 | Phase 3: core, seams, cross-cutting | Ceremony closes with every stick met or recorded absent | In progress | 36 sourced, 18 measured, reviews running |
+| 61 | Phase 3: core, seams, cross-cutting | Ceremony closes with every stick met or recorded absent | In progress | 27 of 36 skills improved, one review re-running |
 | 62 | Phase 4: composition | Ceremony closes and the end-to-end example runs | In progress | Sourcing crew and two harnesses running |
 | 63 | Phase 5: final acceptance | Scorecard and acceptance matrix hold at one commit | Not started | None yet |
 | 64 | Skill structure review | An independent review against the Agent Skills guidance proposes the organisation | Blocked | Owner decision on option C |

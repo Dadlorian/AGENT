@@ -1,0 +1,857 @@
+{
+  "sections": [
+    {
+      "id": "work-intake",
+      "kind": "capability",
+      "source": "F-b3-08",
+      "name": "Work intake",
+      "standard": {
+        "name": "A2A messaging · CloudEvents",
+        "settledness": "contested",
+        "why": "Two published standards are live for the same job of getting a unit of work in, and neither has displaced the other. CloudEvents is a CNCF graduated project (graduated 25 January 2024) whose current revision v1.0.2 is backward compatible and unchanged inside the window, which makes it the settled envelope for the event and schedule doors. A2A reached v1.0 in April 2026 under the Linux Foundation with over 150 organisations, and v1.0.1 in May 2026 added an extension mechanism, which makes it the leading but recently-versioned choice for the external-agent door. The ecosystem map for 2026 still lists MCP, A2A, ACP and UCP as separate live protocols under institutional rather than technical convergence, both MCP and A2A having moved under the Linux Foundation's Agentic AI Foundation. So the future state names the property to hold, one normalised envelope behind every door, rather than a winner.",
+        "cites": [
+          "X-litmus-b-001",
+          "X-litmus-b-002",
+          "X-litmus-b-005"
+        ]
+      },
+      "future_state": {
+        "text": "Proposed: inside this window a build normalises all four arrivals — a person, a system event, a timer, an outside system or agent — into one internal work envelope at the intake boundary, so the core sees one shape and cannot tell which door was used. The envelope's identity, source, type, subject, time and payload fields are those of a published event envelope standard rather than invented, and the external-agent door speaks a published agent messaging standard whole: a fetchable capability description an outside caller can read without shared code, an explicit task lifecycle with named terminal states, a subscription or streaming path for work that outlives one request, and a cancellation operation. Correlation and idempotency keys are carried as declared extension attributes on the envelope, set by the boundary and not by the caller, so every downstream guarantee has something stable to hang on. Adding a producer is adding a producer, never a new door.",
+        "origin": "proposed",
+        "cites": [
+          "F-b3-08",
+          "F-b1-03",
+          "F-b1-05",
+          "X-litmus-b-002",
+          "X-litmus-b-003",
+          "X-litmus-b-004",
+          "X-litmus-b-006"
+        ]
+      },
+      "direction": {
+        "text": "Inside the window the external door consolidated onto foundation-governed protocols rather than converging into one: A2A reached v1.0 in April 2026 under the Linux Foundation with over 150 organisations and added an extension mechanism in v1.0.1, and both MCP and A2A now sit under the Agentic AI Foundation launched in December 2025, described as institutional rather than true protocol convergence. The event side did not move: CloudEvents stayed at a backward-compatible v1.0.2 with graduated status, and its distributed-tracing extension is the sanctioned way to carry context across the event door. What is being abandoned is explicit: Custom HTTP endpoints for agent communication in 2026 are creating technical debt. It would be an error now to define a bespoke intake payload per door, to let one door's wire format become the internal shape, or to treat the external-agent door as a private webhook contract that requires the caller to adopt code from this side.",
+        "origin": "sourced",
+        "cites": [
+          "X-litmus-b-001",
+          "X-litmus-b-002",
+          "X-litmus-b-005",
+          "X-litmus-b-006"
+        ],
+        "quote": "Custom HTTP endpoints for agent communication in 2026 are creating technical debt."
+      },
+      "questions": [
+        {
+          "id": "work-intake-q1",
+          "angle": "presence",
+          "question": "Proposed: Is every arrival represented by an envelope whose attributes come from a published event envelope or agent messaging standard, and is there a machine-readable description of the work this system accepts that an outside caller can fetch?",
+          "evidence_expected": "One captured envelope per entry (human, event, schedule, external), plus the fetched capability description document and the schema or specification section each envelope claims to conform to.",
+          "aligned_looks_like": "Each captured envelope validates against the published standard's own schema, and the capability description is retrieved over the wire by a caller holding nothing from this side.",
+          "misaligned_looks_like": "Envelopes are a local structure that borrows a few attribute names from the standard, or the only description of what is accepted is prose written for people.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-08",
+            "F-b1-03",
+            "X-litmus-b-002",
+            "X-litmus-b-003"
+          ]
+        },
+        {
+          "id": "work-intake-q2",
+          "angle": "depth",
+          "question": "Proposed: Are the mechanisms that separate deep use from a label in use: an explicit task lifecycle that reaches named terminal states including cancelled and rejected, a subscription or streaming path for work that outlives a request, declared extension attributes for correlation and idempotency, and deliberate handling of the envelope's content modes?",
+          "evidence_expected": "A transcript of one long-running submission showing every state transition to a terminal state; the cancellation of a second submission mid-flight; one envelope shown in both content modes with its extension attributes named.",
+          "aligned_looks_like": "Terminal states are distinguished from each other and acted on differently, cancellation actually stops work rather than being recorded, and correlation and idempotency ride in named extension attributes rather than in the payload.",
+          "misaligned_looks_like": "Every submission ends in a single generic completed or failed state, long work is polled by the caller because no subscription exists, or correlation is buried inside the free-form payload where no intermediary can read it.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-08",
+            "X-litmus-b-003",
+            "X-litmus-b-004",
+            "X-litmus-b-006"
+          ]
+        },
+        {
+          "id": "work-intake-q3",
+          "angle": "boundary",
+          "question": "Proposed: Does the core import an intake interface rather than any producer, and is there a second conformant producer proving the first is not load-bearing?",
+          "evidence_expected": "The interface definition, the list of producers behind it, and the diff of the change that added the second producer.",
+          "aligned_looks_like": "The second producer differs in kind from the first, not merely in vendor, and adding it changed no file the core owns.",
+          "misaligned_looks_like": "Only one producer exists, or the second is the same transport with different configuration, or core code branches on which producer supplied the work.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-08",
+            "F-b1-02",
+            "F-b1-04",
+            "F-b3-18"
+          ]
+        },
+        {
+          "id": "work-intake-q4",
+          "angle": "usage",
+          "question": "Proposed: Submitted through each of the four entries, does one and the same declared unit of work yield the same normalised envelope apart from the fields that name the door, and the same result?",
+          "evidence_expected": "Four envelopes and four results from one document driven through the human, event, schedule and external entries, diffed field by field.",
+          "aligned_looks_like": "The diff is confined to source, entry and time fields; the identity of the work, the payload and the result are identical, and the core path taken is the same.",
+          "misaligned_looks_like": "A door adds or omits fields the others do not, or one door reaches a different code path, or the same work has to be expressed differently to enter by a different door.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-08",
+            "F-b1-05",
+            "X-litmus-b-003"
+          ]
+        },
+        {
+          "id": "work-intake-q5",
+          "angle": "guarantees",
+          "question": "Proposed: Do identity, correlation, idempotency and budget attach to the envelope at the intake boundary without the caller supplying or requesting them, and are they attached identically at every door?",
+          "evidence_expected": "For each door, the envelope as the producer sent it and the envelope as the core received it, showing which fields the boundary added.",
+          "aligned_looks_like": "The boundary adds the actor, the correlation key, the idempotency key and the ceiling at every door; a caller that omits all of them still gets them, and a caller that supplies a hostile value cannot override the boundary's.",
+          "misaligned_looks_like": "A guarantee is present at one door and absent at another, or an envelope reaches the core with no actor or no ceiling because the producer did not set one.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-08",
+            "F-b1-08",
+            "F-b4-02",
+            "F-b4-03",
+            "F-b4-08",
+            "X-litmus-b-006"
+          ]
+        },
+        {
+          "id": "work-intake-q6",
+          "angle": "direction",
+          "question": "Proposed: Is the external-agent door a versioned, publicly specified protocol whose revision is negotiated per exchange, or an endpoint shaped for the callers currently known?",
+          "evidence_expected": "The protocol name and revision served, the refusal returned for an unsupported revision, and the record of an integration completed by a caller who wrote no code from this side.",
+          "aligned_looks_like": "The served revision is stated on the wire and an unsupported one is refused explicitly; a caller integrates from the published specification alone.",
+          "misaligned_looks_like": "The door is a hand-rolled HTTP endpoint with per-caller payloads, or the protocol revision is assumed rather than declared, so a caller on a different revision fails in an unspecified way.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-08",
+            "F-b1-05",
+            "X-litmus-b-001",
+            "X-litmus-b-005"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "What operators running hundreds of concurrent agents actually use for work intake at scale, and whether they normalise the four doors into one envelope or keep them separate.",
+          "research_query": "production multi-agent platform 2026 architecture hundreds of agents work intake normalisation CloudEvents A2A case study"
+        },
+        {
+          "claim": "Whether the agent messaging standard's extension mechanism is in practice used to carry idempotency keys and budget ceilings, or whether implementers put them in the payload.",
+          "research_query": "A2A extension mechanism 1.0.1 examples idempotency key budget metadata extension registry usage 2026"
+        }
+      ]
+    },
+    {
+      "id": "document-validation",
+      "kind": "capability",
+      "source": "F-b3-09",
+      "name": "Document validation",
+      "standard": {
+        "name": "JSON Schema 2020-12",
+        "settledness": "baseline",
+        "why": "2020-12 is still the latest published release inside the window, and the standardisation work in flight is a re-consolidation of it rather than a successor: the IETF working-group draft is described as little more than an edit of 2020-12, recombining Core, Validation and Hyper-Schema into one document, and it expires 27 February 2027. There is no competing cross-language declared-shape standard; the live alternatives are code-first validators bound to one language, and even those converge on the dialect as the interchange form, with Zod 4.3 adding fromJSONSchema() and the standing advice being that a single source of truth shared with backends, third-party clients or OpenAPI generators stays on a JSON Schema validator such as Ajv. A published, language-agnostic conformance suite exists, so the question is not which standard but how deeply it is used.",
+        "cites": [
+          "X-litmus-b-007",
+          "X-litmus-b-009",
+          "X-litmus-b-010"
+        ]
+      },
+      "future_state": {
+        "text": "Proposed: inside this window every document that crosses a boundary — each door's envelope, the declared unit of work, the plan, the result, the verdict — declares its shape in the published dialect and is checked at that boundary by an interchangeable validator the core reaches only through an interface. The schemas use the dialect's own machinery rather than a keyword subset: a declared identifier and dialect on every schema, references and dynamic references for reuse and recursion instead of copied fragments, unevaluated-property closure so composition cannot silently admit unknown fields, explicitly declared vocabularies, and the assertion form of format wherever a format must reject rather than annotate. Validation returns a structured output unit naming the instance location and the schema location that failed, which is rendered into the platform's typed failure object rather than a string; it is applied by the platform and cannot be declined, no component hand-rolls field checks behind it, and whether a candidate validator may serve is decided by running the published language-agnostic conformance suite and recording the result.",
+        "origin": "proposed",
+        "cites": [
+          "F-b3-09",
+          "F-b1-02",
+          "F-b1-03",
+          "F-b1-08",
+          "X-litmus-b-007",
+          "X-litmus-b-008",
+          "X-litmus-b-009"
+        ]
+      },
+      "direction": {
+        "text": "The dialect is stable and the movement inside the window is procedural, not technical: The current version is 2020-12, which was the latest published release, and the IETF draft carrying it forward is little more than an edit of 2020-12 that re-combines Core, Validation and Hyper-Schema into one document, expiring 27 February 2027. So targeting 2020-12 now, and treating the meta-schema identifier as the version handle so a later dialect is a declaration change, is the aligned bet. The pressure comes from code-first validators — Zod, Valibot, Joi, CUE — which are faster to write in one language but do not produce a shared artefact; the reported convergence runs the other way, with Zod 4.3 adding fromJSONSchema() to consume schemas and the advice for one source of truth shared with backends and third-party clients remaining a standards-compliant validator such as Ajv. It would be an error now to pin to a pre-2020-12 draft, to define shapes only in one language's type system, to hand-roll keyword checks inside components, or to treat format as a rejection when the default vocabulary makes it an annotation.",
+        "origin": "sourced",
+        "cites": [
+          "X-litmus-b-007",
+          "X-litmus-b-008",
+          "X-litmus-b-010"
+        ],
+        "quote": "The current version is 2020-12, which was the latest published release."
+      },
+      "questions": [
+        {
+          "id": "document-validation-q1",
+          "angle": "presence",
+          "question": "Proposed: Does every document that crosses a boundary have a schema in the published dialect, and does each schema declare the dialect it is written in?",
+          "evidence_expected": "The set of boundary document types, the schema for each, and the declared dialect identifier at the head of each schema.",
+          "aligned_looks_like": "Every boundary document type has a schema, each names 2020-12 explicitly, and there is no document type entering the system without one.",
+          "misaligned_looks_like": "Schemas exist for some document types only, or the dialect is left implicit and inferred by whichever validator happens to load it.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-09",
+            "F-b1-03",
+            "X-litmus-b-007",
+            "X-litmus-b-008"
+          ]
+        },
+        {
+          "id": "document-validation-q2",
+          "angle": "depth",
+          "question": "Proposed: Are the dialect's distinguishing mechanisms in use — identifiers and references for reuse, dynamic references for recursive or extensible shapes, unevaluated-property closure under composition, declared vocabularies, and the assertion form of format where a format must reject — or is the schema a flat list of types and required fields?",
+          "evidence_expected": "The schemas themselves, plus one instance that a naive keyword-subset check would accept and the declared schema rejects, with the validator output for it.",
+          "aligned_looks_like": "Composition keywords are closed with unevaluated-property handling, shared fragments are referenced rather than copied, and a format that must reject is under the assertion vocabulary and demonstrably rejects.",
+          "misaligned_looks_like": "Schemas use only type, properties and required, composition leaves unknown fields admitted, formats are relied on to reject while the default annotation vocabulary is in force, or fragments are duplicated across schemas and have drifted.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-09",
+            "X-litmus-b-008"
+          ]
+        },
+        {
+          "id": "document-validation-q3",
+          "angle": "boundary",
+          "question": "Proposed: Does the core import a validation interface rather than a validator, and has a second validator with a different execution model been run against the same schemas and instances?",
+          "evidence_expected": "The interface definition, the two adapters, and the recorded output of the published language-agnostic conformance suite for each.",
+          "aligned_looks_like": "Both validators pass the same conformance run and agree on the same corpus of instances; swapping which one serves is a configuration change with no core diff.",
+          "misaligned_looks_like": "One validator only, or the second is the same engine wrapped differently, or core code calls validator-specific APIs or reads validator-specific error text.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-09",
+            "F-b1-02",
+            "F-b1-04",
+            "X-litmus-b-009",
+            "X-litmus-b-010"
+          ]
+        },
+        {
+          "id": "document-validation-q4",
+          "angle": "usage",
+          "question": "Proposed: Does a caller at every entry get the same validation outcome for the same malformed document, and does the failure name the exact location in the instance and in the schema?",
+          "evidence_expected": "One deliberately malformed document submitted through the human, event, schedule and external entries, and the four failure objects returned.",
+          "aligned_looks_like": "All four failures carry the same type, the same instance location and the same schema location, and a machine can act on them without reading prose.",
+          "misaligned_looks_like": "One entry returns a validation failure and another accepts the document or fails later during execution; or the failure is a message a caller must parse to learn which field was wrong.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-09",
+            "F-b3-13",
+            "F-b1-05",
+            "X-litmus-b-008"
+          ]
+        },
+        {
+          "id": "document-validation-q5",
+          "angle": "guarantees",
+          "question": "Proposed: Is validation applied by the platform at the boundary so no caller and no component can decline it, and is the refusal it produces recorded and attributable like any other refusal?",
+          "evidence_expected": "The wiring that shows where validation is invoked, an attempt to submit work bypassing it, and the record left behind by a rejected document.",
+          "aligned_looks_like": "There is exactly one place a document can enter, validation there is unconditional, and a rejection is recorded with the actor and the correlation key before any spend.",
+          "misaligned_looks_like": "A path exists that skips validation, or a component re-checks fields itself because it does not trust the boundary, or a rejection leaves no record.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-09",
+            "F-b1-08",
+            "F-b4-04",
+            "F-b4-07"
+          ]
+        },
+        {
+          "id": "document-validation-q6",
+          "angle": "direction",
+          "question": "Proposed: Is the dialect version a declaration that can be changed, and is the shape of a document defined once in the published dialect rather than in one language's type system with the schema derived as an afterthought?",
+          "evidence_expected": "The single place the dialect identifier is stated, and the generation direction between the schemas and any language-level types.",
+          "aligned_looks_like": "Schemas are the source of truth and language types are generated from them; the dialect identifier appears in one place and a change to it is a declaration change.",
+          "misaligned_looks_like": "Types in one language are the source and schemas are exported for documentation only, or the dialect identifier is hard-coded across many files, or a pre-2020-12 draft is still targeted.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-09",
+            "F-b1-03",
+            "X-litmus-b-007",
+            "X-litmus-b-010"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "Whether the standardised output formats of the dialect are implemented consistently enough across validators that a failure object can be built from them without validator-specific handling.",
+          "research_query": "JSON Schema 2020-12 output format basic detailed verbose validator support comparison 2026 interoperability"
+        },
+        {
+          "claim": "How large agent platforms validate documents whose shape is only known at run time, where a schema must be resolved per unit of work rather than compiled once.",
+          "research_query": "dynamic schema resolution per request agent tool input validation 2026 compile cache JSON Schema performance production"
+        }
+      ]
+    },
+    {
+      "id": "telemetry",
+      "kind": "capability",
+      "source": "F-b3-10",
+      "name": "Telemetry",
+      "standard": {
+        "name": "OTLP · GenAI semantic conventions",
+        "settledness": "baseline",
+        "why": "The wire protocol has no credible competitor: OTLP is the vendor-neutral wire protocol behind a CNCF graduated project described as the default instrumentation standard for cloud-native systems in 2026, with the CNCF 2025 survey published January 2026 reporting 49% running OpenTelemetry in production and 26% evaluating, and the payoff that switching backends is a configuration change, not a code change. The layer above it is not equally settled and this matters for how the questions are asked: on 12 June 2026 the GenAI conventions were moved out of the main semantic-conventions repository into a dedicated one with its own cadence, and as of 17 July 2026 no GenAI span, event, metric or attribute is marked Stable. So the transport is baseline and the attribute vocabulary is pre-stable, and the future state asks for depth against the transport and version-pinned tolerance against the vocabulary.",
+        "cites": [
+          "X-litmus-b-011",
+          "X-litmus-b-013"
+        ]
+      },
+      "future_state": {
+        "text": "Proposed: inside this window all three signals leave the platform over the standard telemetry protocol to a collector the platform owns, so which backend receives them is a configuration change and never a code change, and no caller chooses or declines it. Agent work is emitted as the span tree the conventions prescribe — a run span parenting each model call and each tool call, with the operation name, model, token counts and cost as attributes on the spans that own them — so the shape of one exported trace is enough to tell real instrumentation from a library that was merely installed. Because the generative-AI attribute vocabulary is still pre-stable, the emitted convention version is pinned and declared in one place with the opt-in switch the specification provides, so a rename absorbed upstream is a configuration change. Correlation across asynchronous, resumed and scheduled work rides on explicit correlation attributes carried in the work envelope rather than on trace parentage, so a unit resumed hours later still joins its predecessors, and refusals, budget terminations and verdicts are spans and events too, not only log lines.",
+        "origin": "proposed",
+        "cites": [
+          "F-b3-10",
+          "F-b4-06",
+          "F-b1-08",
+          "X-litmus-b-011",
+          "X-litmus-b-012",
+          "X-litmus-b-013",
+          "X-litmus-b-014"
+        ]
+      },
+      "direction": {
+        "text": "The transport is settled and the vocabulary is moving. Inside the window the generative-AI conventions were separated from the main semantic-conventions release on 12 June 2026 at v1.42.0 into a dedicated repository with no tagged release, and as of 17 July 2026 the GenAI conventions remain Development, with no timeline to stable and OTEL_SEMCONV_STABILITY_OPT_IN as the sanctioned way to absorb transitions. Meanwhile the shape settled even where the names did not: the conventions model the whole agent execution as a span tree, with invoke_agent as the parent span containing chat spans for each model call and execute_tool spans for each tool invocation, and named operations covering create_agent, invoke_workflow, retrieval, plan and memory. What is being abandoned is proprietary instrumentation and vendor SDK lock-in, since OTel has largely solved that problem in 2026. It would be an error now to instrument through a vendor's own SDK, to treat the pre-stable attribute names as frozen, or to rely on trace parentage across asynchronous agent hops, where trace context often doesn't automatically transfer and the result is two disconnected traces instead of one continuous workflow.",
+        "origin": "sourced",
+        "cites": [
+          "X-litmus-b-011",
+          "X-litmus-b-012",
+          "X-litmus-b-013",
+          "X-litmus-b-014"
+        ],
+        "quote": "the GenAI conventions remain Development"
+      },
+      "questions": [
+        {
+          "id": "telemetry-q1",
+          "angle": "presence",
+          "question": "Proposed: Do traces, metrics and logs all leave the platform over the standard telemetry protocol, or only some of them, and is the receiving backend named anywhere the core can see?",
+          "evidence_expected": "The exporter configuration, one exported payload per signal captured at the wire, and a search of core code for the backend's name.",
+          "aligned_looks_like": "All three signals are exported over the standard protocol to a collector, and the backend appears only in configuration.",
+          "misaligned_looks_like": "Only traces are exported while cost and refusal data live in ad hoc logs, or a backend's client library is imported by code that does the work.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-10",
+            "F-b1-02",
+            "X-litmus-b-013"
+          ]
+        },
+        {
+          "id": "telemetry-q2",
+          "angle": "depth",
+          "question": "Proposed: Does one exported trace of one unit of agent work show the span tree the conventions prescribe — a run span parenting model-call spans and tool-call spans, each with its operation name — with token counts and cost attributes on the spans that own them?",
+          "evidence_expected": "One exported trace for a unit of work that made at least two model calls and one tool call, with all spans and attributes.",
+          "aligned_looks_like": "The tree matches the prescribed parent-child shape, operation names come from the published set, and token and cost attributes sit on the model spans rather than being summed at the top.",
+          "misaligned_looks_like": "The whole unit is one flat span, or spans are named locally rather than by the convention's operation names, or cost is a single number attached at the end with no per-call attribution.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-10",
+            "X-litmus-b-012"
+          ]
+        },
+        {
+          "id": "telemetry-q3",
+          "angle": "boundary",
+          "question": "Proposed: Is the telemetry backend replaceable by configuration alone, demonstrated rather than asserted, with the core importing an emission interface and never a backend client?",
+          "evidence_expected": "The record of one run exported to two different receivers, the diff of the change that switched them, and the emission interface definition.",
+          "aligned_looks_like": "The switch is a configuration diff with no change to code that does work, and both receivers show the same spans and attributes.",
+          "misaligned_looks_like": "Switching required code changes, or the second receiver is the same product in another deployment, or attributes are shaped to suit one backend's query language.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-10",
+            "F-b1-02",
+            "F-b1-04",
+            "F-b3-18",
+            "X-litmus-b-013"
+          ]
+        },
+        {
+          "id": "telemetry-q4",
+          "angle": "guarantees",
+          "question": "Proposed: Is telemetry applied by the platform to every unit of work at every entry without the caller asking, and does correlation ride on explicit attributes carried in the work envelope rather than on trace parentage?",
+          "evidence_expected": "Traces for one unit of work that crossed a process boundary and was resumed after a delay, plus an attempt to run a unit with telemetry not requested.",
+          "aligned_looks_like": "The resumed unit and its predecessor are joinable by an explicit correlation attribute present on every span, and a caller who asks for nothing is still fully instrumented.",
+          "misaligned_looks_like": "Work resumed across an asynchronous boundary appears as a disconnected second trace, or instrumentation depends on the caller passing a context, or a caller can opt out.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-10",
+            "F-b4-06",
+            "F-b1-08",
+            "X-litmus-b-014"
+          ]
+        },
+        {
+          "id": "telemetry-q5",
+          "angle": "usage",
+          "question": "Proposed: For a single unit of work entering by each of the four entries, can an operator answer from telemetry alone what it cost, which model and tool calls it made, whether it was refused or terminated on budget, and how it relates to the work that triggered it?",
+          "evidence_expected": "Four traces, one per entry, and the queries used to answer each of those questions from them.",
+          "aligned_looks_like": "The same query answers all four, and refusals and budget terminations appear as spans or events with a reason attribute, not only in prose logs.",
+          "misaligned_looks_like": "The question is answerable for the human entry but not for the scheduled or external one, or answering it requires joining exported telemetry with a private log file.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-10",
+            "F-b4-02",
+            "F-b4-04",
+            "F-b4-06",
+            "X-litmus-b-012"
+          ]
+        },
+        {
+          "id": "telemetry-q6",
+          "angle": "direction",
+          "question": "Proposed: Is the version of the generative-AI attribute conventions being emitted declared in one place, with a stated way to absorb a rename, given that this vocabulary is pre-stable inside the window?",
+          "evidence_expected": "The single declaration of the emitted convention version, and the record of one convention change absorbed, or a written statement of how one would be.",
+          "aligned_looks_like": "The version is pinned and declared once; a rename upstream is a configuration change and old and new names can be emitted during a transition.",
+          "misaligned_looks_like": "Convention attribute names are hard-coded across many components with no version recorded, or the vocabulary is treated as stable and pinned to nothing, so an upstream rename silently breaks dashboards.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-10",
+            "F-b1-03",
+            "X-litmus-b-011",
+            "X-litmus-b-012"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "Whether the CloudEvents distributed-tracing extension and explicit correlation attributes are used together in practice, or whether implementers choose one and lose the other.",
+          "research_query": "CloudEvents distributed tracing extension plus explicit correlation attributes agent workflow 2026 implementation guidance conflict"
+        },
+        {
+          "claim": "What cost attribution looks like at scale for hundreds of concurrent agents, and whether per-call token attributes survive sampling.",
+          "research_query": "OpenTelemetry GenAI cost token attribution sampling head tail 2026 large agent fleet production practice"
+        }
+      ]
+    },
+    {
+      "id": "policy",
+      "kind": "capability",
+      "source": "F-b3-11",
+      "name": "Policy",
+      "standard": {
+        "name": "Rego / OPA",
+        "settledness": "contested",
+        "why": "Two or more decision languages are live and the thing that settled inside the window is the interface between them, not a winner. OPA is a CNCF graduated project (graduated 29 January 2021) whose engine evaluates structured queries in Rego and returns structured decisions any system can act on, but its commercial sponsor wound down after an August 2025 acqui-hire of its creators, and Cedar is a live, analysable alternative benchmarked 42.8x-80.8x faster than Rego on the same authorization scenarios. In March 2026, inside the window, the AuthZEN Authorization API 1.0 was published as a Standards Track specification standardising the request and response between policy enforcement points and decision points while deliberately avoiding the decision method, so that behind it organizations can continue using RBAC, ABAC, ReBAC, XACML, graph-based approaches, Rego, Cedar, or even fully proprietary engines. The property to hold is therefore a language-neutral decision call, not a language.",
+        "cites": [
+          "X-litmus-b-015",
+          "X-litmus-b-017"
+        ]
+      },
+      "future_state": {
+        "text": "Proposed: inside this window policy is a decision service reached through a capability interface whose request and response follow the published, language-neutral authorization decision API, so the language a rule is written in is an adapter choice and a second engine in a different language proves the first is not load-bearing. The input document is assembled by the platform, not by the caller — the actor and its delegation chain, the action, the resource, the tenant, the entry it arrived by, and the budget remaining — so a caller cannot shape the question to get the answer it wants. Every decision is evaluated before any spend or side effect and is deterministic: the same input yields the same decision, and a decision that cannot be reached is a refusal rather than an allow. Every decision emits a structured decision record carrying the input, the result, a decision identifier and the version of the policy bundle that produced it, so a refusal is auditable and replayable months later; policies are distributed as versioned, signed, immutable bundles rather than files edited in place; and a refusal is returned to the caller as the platform's typed failure object naming the rule that refused, never as prose.",
+        "origin": "proposed",
+        "cites": [
+          "F-b3-11",
+          "F-b4-04",
+          "F-b1-02",
+          "F-b1-03",
+          "X-litmus-b-015",
+          "X-litmus-b-016",
+          "X-litmus-b-017",
+          "X-litmus-b-018"
+        ]
+      },
+      "direction": {
+        "text": "The direction inside the window is that the decision interface standardised while the decision languages did not. AuthZEN 1.0 was published as a Standards Track specification in March 2026 as the protocol for authorization request and response between policy enforcement points and decision points, and it deliberately avoids the decision method, unlike XACML which standardised both: Behind an AuthZEN interface, organizations can continue using RBAC, ABAC, ReBAC, XACML, graph-based approaches, Rego, Cedar, or even fully proprietary engines. Rego's engine remains CNCF graduated but its commercial sponsor wound down after an August 2025 acqui-hire, while Cedar is reported 42.8x-80.8x faster on equivalent scenarios and is restricted and analysable by design; the pattern most cited for agent runtimes is a decision point fronting the tool gateway, answering in well under a millisecond, which removes performance as an argument for deciding after the fact. It would be an error now to embed policy as conditionals in the code that acts, to bind the core to one engine's query API or one language's syntax, to evaluate after spend, or to let a caller assemble the input document it will be judged on.",
+        "origin": "sourced",
+        "cites": [
+          "X-litmus-b-015",
+          "X-litmus-b-017",
+          "X-litmus-b-018"
+        ],
+        "quote": "this simple JSON-based API is the long-awaited standard protocol for authorization request/response communication between policy enforcement points and decision points"
+      },
+      "questions": [
+        {
+          "id": "policy-q1",
+          "angle": "presence",
+          "question": "Proposed: Are policy rules expressed as data evaluated by a decision engine, separate from the code that acts, and is there a single decision call every enforcement point makes?",
+          "evidence_expected": "The policy sources, the decision call signature, and a search of acting code for conditionals that grant or deny.",
+          "aligned_looks_like": "Rules live outside the acting code in a declarative form, and every enforcement point reaches the same decision call.",
+          "misaligned_looks_like": "Permission logic is spread through conditionals in the code that performs the action, or several components each decide for themselves.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-11",
+            "F-b4-04",
+            "X-litmus-b-015"
+          ]
+        },
+        {
+          "id": "policy-q2",
+          "angle": "depth",
+          "question": "Proposed: Are the mechanisms that separate deep use from a rules file in use: versioned distributable policy bundles rather than files edited in place, a structured decision record per query carrying the input, result, decision identifier and bundle version, and a decision input document assembled by the platform?",
+          "evidence_expected": "One decision record for a real refusal, the bundle version it names, the manifest of that bundle, and the code path that builds the input document.",
+          "aligned_looks_like": "The refusal can be replayed later from its record against the exact bundle version that produced it, and the input document is built from platform-held facts about the actor and the unit of work.",
+          "misaligned_looks_like": "Policies are loose files loaded from disk with no version, decisions leave no record beyond an allow or deny boolean, or the caller passes in the attributes it will be judged on.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-11",
+            "F-b4-04",
+            "F-b4-05",
+            "X-litmus-b-016"
+          ]
+        },
+        {
+          "id": "policy-q3",
+          "angle": "boundary",
+          "question": "Proposed: Does the core import a decision interface whose request and response follow the published language-neutral decision API, with a second engine in a different policy language proved against the same decision corpus?",
+          "evidence_expected": "The interface definition, the two engine adapters, and the recorded run of a shared corpus of decisions against both.",
+          "aligned_looks_like": "Both engines answer the same corpus identically through the same request shape; the second engine uses a genuinely different language, and swapping is a configuration change.",
+          "misaligned_looks_like": "The interface mirrors one engine's own query API, the second engine is the same one deployed differently, or no second engine has ever been run.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-11",
+            "F-b1-02",
+            "F-b1-03",
+            "F-b1-04",
+            "X-litmus-b-017"
+          ]
+        },
+        {
+          "id": "policy-q4",
+          "angle": "guarantees",
+          "question": "Proposed: Does the decision happen before any spend or side effect, and does its input carry the actor and delegation chain, the tenant and the remaining budget without the caller supplying them?",
+          "evidence_expected": "A trace of one refused unit of work showing the ordering of the decision relative to the first side effect and the first token spent, plus the input document that was evaluated.",
+          "aligned_looks_like": "The decision span precedes any model call, tool call or write; the input names the acting agent and the human it acts for, and no cost was incurred before the refusal.",
+          "misaligned_looks_like": "Policy is checked after execution or only at the outer edge, the input identifies a service account rather than the delegating actor, or a refused unit still spent budget.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-11",
+            "F-b4-04",
+            "F-b4-03",
+            "F-b4-02",
+            "F-b1-08",
+            "X-litmus-b-018"
+          ]
+        },
+        {
+          "id": "policy-q5",
+          "angle": "usage",
+          "question": "Proposed: Is the same decision reached for the same action regardless of which of the four entries requested it, and does a caller receive the refusal in a form it can branch on without reading prose?",
+          "evidence_expected": "One action that policy refuses, attempted through the human, event, schedule and external entries, and the four responses.",
+          "aligned_looks_like": "All four are refused identically, and each response carries a typed failure whose type identifies the refusal and whose members name the rule.",
+          "misaligned_looks_like": "One entry bypasses the decision point, or the scheduled entry runs under a blanket allow, or the refusal is a message a caller must parse.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-11",
+            "F-b3-13",
+            "F-b4-04",
+            "F-b4-07",
+            "F-b1-05"
+          ]
+        },
+        {
+          "id": "policy-q6",
+          "angle": "direction",
+          "question": "Proposed: Is the decision call shaped by the published, language-neutral decision API rather than by whichever engine is installed, so a change of decision language is an adapter change?",
+          "evidence_expected": "The decision request and response schema, mapped field by field against the published API, and the list of engine-specific fields that leak through.",
+          "aligned_looks_like": "The request and response are the published shape; nothing engine-specific appears in the interface, and policy source syntax is confined to the adapter.",
+          "misaligned_looks_like": "The interface carries an engine's package paths, query strings or result envelope, so the core would have to change to speak to a different engine.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-11",
+            "F-b1-02",
+            "F-b1-03",
+            "X-litmus-b-017"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "Whether the published decision API's request shape can express a budget ceiling and a delegation chain without extensions, or whether those require profile-specific fields.",
+          "research_query": "AuthZEN 1.0 request schema subject resource action context extensions delegation budget attributes profile 2026"
+        },
+        {
+          "claim": "How decision latency behaves when the input document must be assembled from remote state per call at agent scale.",
+          "research_query": "policy decision point latency input document assembly remote data agent tool call rate 2026 benchmark production"
+        }
+      ]
+    },
+    {
+      "id": "provenance",
+      "kind": "capability",
+      "source": "F-b3-12",
+      "name": "Provenance",
+      "standard": {
+        "name": "in-toto · SLSA · DSSE",
+        "settledness": "baseline",
+        "why": "The three named specifications are one layered format rather than three competitors: in-toto attestations have two layers, the DSSE envelope and the statement, DSSE signing over the payload type and payload together using PAE to prevent confusion attacks, and SLSA provenance is expressed as an in-toto attestation. SLSA v1.1 is the current version and is a minor, backward-compatible release that also adds verification procedures for VSAs. There is no competing attestation format; instead, verification is commodity, with Rekor v2 GA since October 2025 and Cosign v3 (v3.1.1, June 2026) verifying npm provenance, GitHub Artifact Attestations and Homebrew provenance with one tool, and the transparency log accessible to anyone. The generative-AI work inside the window extends this stack rather than replacing it, with AIBOM and action evidence packages emitting in-toto or SLSA provenance statements.",
+        "cites": [
+          "X-litmus-b-019",
+          "X-litmus-b-020",
+          "X-litmus-b-021"
+        ]
+      },
+      "future_state": {
+        "text": "Proposed: inside this window every artifact the platform produces — a plan, a result, a verdict, a file, a decision — carries an attestation in the published statement format, wrapped in the published signing envelope, whose subject is named by cryptographic digest and whose predicate names the code version that produced it, every input by digest, and the actor including the delegated agent actor and the human it acts for. Attestations are appended to a tamper-evident, append-only store that yields an inclusion proof, so a later edit is detectable rather than merely discouraged, and signing is keyless and short-lived rather than resting on a long-lived key an operator holds. The decisive property is external verifiability: a third party holding only the artifact, the attestation and public key material verifies it with a general-purpose verifier and no code from this platform, and that verification is exercised in the pipeline together with a deliberate mutation that makes it fail, so the check is known to be able to fail. The signed record covers what an agent did, who or what authorised it and what came out, captured at the moment of the action rather than reconstructed afterwards from logs.",
+        "origin": "proposed",
+        "cites": [
+          "F-b3-12",
+          "F-b4-05",
+          "F-b1-05",
+          "X-litmus-b-019",
+          "X-litmus-b-020",
+          "X-litmus-b-021"
+        ]
+      },
+      "direction": {
+        "text": "The format is settled and the movement is outward, from build artifacts to agent actions and model artifacts. SLSA v1.1 is a minor, backward-compatible release whose attestation schemas are now explicitly informative, with the specification texts canonical, and it adds procedures for verifying VSAs. Verification became commodity inside and just before the window: Rekor v2 reached GA in October 2025 on a tile-based backend, Cosign v3.1.1 shipped in June 2026 defaulting to the standardised bundle format, and attestations can be verified by any tool that speaks the in-toto and DSSE formats, with PyPI, npm and Maven Central all publishing in this stack. The extension is toward agent evidence: an action evidence package (AEP) is a signed, append-only record of what an AI agent did, who or what authorized the action, and what the outcome was, and AIBOM work emits in-toto or SLSA provenance statements listing exact inputs and parameters rather than inventing a new format. It would be an error now to design a bespoke provenance record, to sign with a long-lived operator-held key instead of short-lived keyless identity, to rely on an append-only file with no inclusion proof, or to ship provenance that only this platform's own code can verify.",
+        "origin": "sourced",
+        "cites": [
+          "X-litmus-b-019",
+          "X-litmus-b-020",
+          "X-litmus-b-021"
+        ],
+        "quote": "An action evidence package (AEP) is a signed, append-only record of what an AI agent did, who or what authorized the action, and what the outcome was"
+      },
+      "questions": [
+        {
+          "id": "provenance-q1",
+          "angle": "presence",
+          "question": "Proposed: Does every artifact the platform produces carry an attestation in the published statement format, wrapped in the published signing envelope, or does provenance exist only for some artifact kinds?",
+          "evidence_expected": "The list of artifact kinds the platform emits, and one attestation for each, shown with its envelope and statement layers.",
+          "aligned_looks_like": "Every emitted artifact kind has an attestation whose statement names the subject by digest and whose envelope is the published signing format.",
+          "misaligned_looks_like": "Attestations exist for released build outputs only, while plans, verdicts and agent results are recorded as ordinary log lines with no signed statement.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-12",
+            "F-b4-05",
+            "X-litmus-b-019"
+          ]
+        },
+        {
+          "id": "provenance-q2",
+          "angle": "depth",
+          "question": "Proposed: Does the predicate actually name what would let someone reproduce or dispute the artifact — the code version, every input by digest, the acting agent and the human it acts for, the policy decision and the model used — or only a timestamp and a label?",
+          "evidence_expected": "One attestation for a real agent-produced artifact, field by field, alongside the inputs it names.",
+          "aligned_looks_like": "Every input is identified by digest and resolvable; the actor is the delegated agent with its delegating human named; the code version is exact rather than a branch name.",
+          "misaligned_looks_like": "The predicate carries a name, a time and a free-text description; inputs are referenced by path or by mutable tag, so the same attestation would describe a different artifact tomorrow.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-12",
+            "F-b4-05",
+            "F-b4-03",
+            "X-litmus-b-019",
+            "X-litmus-b-021"
+          ]
+        },
+        {
+          "id": "provenance-q3",
+          "angle": "boundary",
+          "question": "Proposed: Can a third party verify an attestation with a general-purpose verifier and public key material alone, with no code from this platform, and has that been demonstrated?",
+          "evidence_expected": "The recorded output of a verification run using a tool this platform did not write, on an artifact it produced, and the recorded output of the same run against a deliberately mutated artifact.",
+          "aligned_looks_like": "The independent verifier accepts the genuine artifact and rejects the mutated one, and the failing run is recorded alongside the passing one.",
+          "misaligned_looks_like": "Verification requires a checker from this platform, or only the passing run was ever recorded so the check is not known to be able to fail.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-12",
+            "F-b4-05",
+            "F-b1-05",
+            "F-b1-04",
+            "X-litmus-b-020"
+          ]
+        },
+        {
+          "id": "provenance-q4",
+          "angle": "guarantees",
+          "question": "Proposed: Is the attestation produced by the platform for every unit of work without the caller asking, and is the store append-only with an integrity mechanism that makes a later edit detectable rather than merely discouraged?",
+          "evidence_expected": "The store's integrity mechanism, an attempt to alter a past record, and the detection that results; plus one unit of work run by a caller who requested nothing.",
+          "aligned_looks_like": "A tampered past record is detected by an inclusion or chain proof rather than by convention, and every unit of work is attested whether or not it asked.",
+          "misaligned_looks_like": "The store is an append-only file with no proof of inclusion, or attestation is a step a caller or a component can skip.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-12",
+            "F-b4-05",
+            "F-b1-08",
+            "X-litmus-b-020"
+          ]
+        },
+        {
+          "id": "provenance-q5",
+          "angle": "usage",
+          "question": "Proposed: Starting from one artifact, can an answerer walk the chain back through every unit of work, decision and input that produced it, regardless of which entry started it?",
+          "evidence_expected": "One artifact produced by a scheduled run that was itself triggered by an event, and the traversal from the artifact to the originating event, with each attestation in between.",
+          "aligned_looks_like": "The chain is unbroken and machine-traversable across entries and across process boundaries, linked by digests and correlation identifiers rather than by timestamp proximity.",
+          "misaligned_looks_like": "The chain stops at the last unit of work, or crossing an entry boundary requires a human to reason about which record probably corresponds to which.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-12",
+            "F-b4-05",
+            "F-b4-06",
+            "F-b1-05"
+          ]
+        },
+        {
+          "id": "provenance-q6",
+          "angle": "direction",
+          "question": "Proposed: Is signing keyless and short-lived with the identity of the signer bound at signing time, and is the record of what an agent did signed at the moment of the action rather than assembled afterwards from logs?",
+          "evidence_expected": "The signing configuration and key lifetime, and the point in the execution path where the record is signed relative to the action it describes.",
+          "aligned_looks_like": "Signing identity is short-lived and bound to the workload, and the record is produced and signed as the action completes, before anything downstream could edit it.",
+          "misaligned_looks_like": "A long-lived key is held by an operator or a shared secret store, or provenance is reconstructed from logs after the fact, so what is signed is a report rather than evidence.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-12",
+            "F-b4-05",
+            "X-litmus-b-020",
+            "X-litmus-b-021"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "Whether a predicate type for agent actions has been registered or is converging, or whether every implementer is still defining a private predicate.",
+          "research_query": "in-toto predicate type registry agent action evidence predicate 2026 standard registration proposal"
+        },
+        {
+          "claim": "The cost and retention practice of attesting every unit of agent work rather than every release, at hundreds of agents.",
+          "research_query": "attestation volume retention cost transparency log per action agent scale 2026 production practice"
+        }
+      ]
+    },
+    {
+      "id": "errors",
+      "kind": "capability",
+      "source": "F-b3-13",
+      "name": "Errors",
+      "standard": {
+        "name": "RFC 9457 problem details",
+        "settledness": "baseline",
+        "why": "RFC 9457 is an IETF Standards Track document published July 2023 that obsoletes RFC 7807 and defines a single machine-readable error body served as application/problem+json with five standard members, type, title, status, detail and instance, plus extension members that clients must ignore when unrecognised so problem types can evolve. There is no competing error-body format; in 2026 it is reported as the most widely adopted error format across major APIs including Stripe, GitHub and Cloudflare, with frameworks emitting it natively. What is left is depth: a registry for common problem-type URIs, guidance on returning multiple problems in one response, and handling for non-dereferenceable type URIs, with a formal registry hosted at IANA. So the question is not whether to adopt it but how much of it is used.",
+        "cites": [
+          "X-litmus-b-022",
+          "X-litmus-b-023"
+        ]
+      },
+      "future_state": {
+        "text": "Proposed: inside this window every boundary in the platform — each of the four entries, each capability adapter, each refusal, each budget termination, each validation rejection — returns one problem object with the standard members and a type identifier drawn from a closed registry the platform publishes, where identifiers are never reused and each is documented with the extension members it carries. The type identifier, never the status code and never the prose, is what a caller branches on; the human-readable members carry no information a caller needs. Extension members carry what the caller must act on: the correlation identifier, whether the failure is retryable and when, the budget or quota remaining, the instance and schema location of a validation failure, the rule that refused, and the identity of the capability that failed. Multiple problems arising from one request are returned together rather than only the first, and the same problem shape is produced on transports that are not request-and-response, so an event or scheduled arrival yields the same machine-readable failure to its dead-letter path that a synchronous caller receives inline. Nothing hands a stack trace or a log line back to whoever called.",
+        "origin": "proposed",
+        "cites": [
+          "F-b3-13",
+          "F-b4-07",
+          "F-b1-03",
+          "F-b1-05",
+          "X-litmus-b-022",
+          "X-litmus-b-023",
+          "X-litmus-b-025"
+        ]
+      },
+      "direction": {
+        "text": "The format is settled and the movement inside the window is registry-shaped rather than format-shaped. RFC 9457 obsoletes RFC 7807 as a backward-compatible update that does not define a new format, and its Appendix D additions are a registry for common problem-type URIs, clearer guidance on returning multiple problems in one response, and handling for non-dereferenceable type URIs, with a formal registry hosted at IANA. Adoption in 2026 is reported as the most widely adopted error format across major APIs including Stripe, GitHub and Cloudflare, with frameworks such as ASP.NET Core in .NET 10 and Quarkus emitting it natively, and the RFC 9457 Problem Details standard is recommended for structuring error payloads as part of a 2026 shift toward shared standards. What is being abandoned is the success-shaped error body and status-only signalling: 200-with-error-body is an anti-pattern, retryability is expected to be stated in the body as a retryAfter extension member and a Retry-After header so automated retry libraries can act, and the type field is a URI that uniquely identifies the error, enabling programmatic error handling. It would be an error now to define a bespoke error envelope, to make a caller parse prose or match on a message string, to signal only through a status code, or to mint type identifiers ad hoc with no registry behind them.",
+        "origin": "sourced",
+        "cites": [
+          "X-litmus-b-022",
+          "X-litmus-b-023",
+          "X-litmus-b-024",
+          "X-litmus-b-025"
+        ],
+        "quote": "200-with-error-body is an anti-pattern."
+      },
+      "questions": [
+        {
+          "id": "errors-q1",
+          "angle": "presence",
+          "question": "Proposed: Does every boundary return the standard problem object with its five standard members and its media type, or do some boundaries still return a bespoke error shape?",
+          "evidence_expected": "One failure captured from each boundary kind: an entry, a capability adapter, a validation rejection, a policy refusal, a budget termination.",
+          "aligned_looks_like": "Every captured failure is a problem object with the standard members and the correct media type, and no boundary has its own error shape.",
+          "misaligned_looks_like": "The outer entries return problem objects while internal adapters raise exceptions or return strings that a wrapper turns into prose at the edge.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-13",
+            "F-b4-07",
+            "X-litmus-b-022",
+            "X-litmus-b-023"
+          ]
+        },
+        {
+          "id": "errors-q2",
+          "angle": "depth",
+          "question": "Proposed: Are the type identifiers drawn from a published closed registry with documented extension members per type, and do the extension members carry what a caller must act on — retryability, correlation, the location that failed, the rule that refused — rather than the human-readable members carrying it?",
+          "evidence_expected": "The registry of type identifiers, and for three different failure kinds the full problem object including extension members.",
+          "aligned_looks_like": "Each type is registered, stable and documented with its extensions; a caller can decide retry, escalate or correct from the machine-readable members alone with the prose removed.",
+          "misaligned_looks_like": "Type identifiers are minted per throw site or are all one generic value, or the actionable information exists only inside the human-readable detail member.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-13",
+            "F-b4-07",
+            "X-litmus-b-022",
+            "X-litmus-b-023",
+            "X-litmus-b-025"
+          ]
+        },
+        {
+          "id": "errors-q3",
+          "angle": "usage",
+          "question": "Proposed: Does a caller branch on the type identifier alone, and can the same failure be handled identically whether it arrived through the human, event, schedule or external entry?",
+          "evidence_expected": "The caller-side handling code, and the four failure objects produced by driving one failing unit of work through each entry.",
+          "aligned_looks_like": "The handling code matches on type identifiers only; the four objects carry the same type and the same extension members, differing only in instance and correlation.",
+          "misaligned_looks_like": "Handling code matches on a status code, an error message substring, or the name of the component that failed; or one entry loses the failure into a log and returns nothing actionable.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-13",
+            "F-b4-07",
+            "F-b1-05",
+            "X-litmus-b-024",
+            "X-litmus-b-025"
+          ]
+        },
+        {
+          "id": "errors-q4",
+          "angle": "guarantees",
+          "question": "Proposed: Does every failure object carry the correlation identifier and the actor without the caller asking, and does a budget termination or a policy refusal arrive as a typed problem rather than as a silent stop?",
+          "evidence_expected": "The problem object returned for a unit terminated on its ceiling and for a unit refused by policy, plus the telemetry span for each.",
+          "aligned_looks_like": "Both carry a distinct type, the correlation identifier, and the remaining or exceeded amount as extension members, and both are joinable to their telemetry without a text search.",
+          "misaligned_looks_like": "A budget termination surfaces as a generic internal failure or as no response at all, or a refusal reaches the caller with no correlation identifier so it cannot be tied to its trace.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-13",
+            "F-b4-07",
+            "F-b4-02",
+            "F-b4-04",
+            "F-b4-06",
+            "F-b1-08"
+          ]
+        },
+        {
+          "id": "errors-q5",
+          "angle": "boundary",
+          "question": "Proposed: Is the production of the failure object owned by one place the core imports, so a new capability adapter cannot invent its own failure shape?",
+          "evidence_expected": "The single construction point for problem objects, and a search across adapters for locally constructed error responses.",
+          "aligned_looks_like": "Adapters raise typed conditions that the shared construction point renders; there is no second place a failure body is built.",
+          "misaligned_looks_like": "Each adapter builds its own body, so shapes drift, or an adapter passes an underlying library's error structure straight through to the caller.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-13",
+            "F-b1-02",
+            "F-b4-07"
+          ]
+        },
+        {
+          "id": "errors-q6",
+          "angle": "direction",
+          "question": "Proposed: Is retryability stated in the failure rather than inferred by the caller, and is the same problem shape produced on transports that are not request-and-response?",
+          "evidence_expected": "A transient failure's problem object with its retry members, and the failure record left for an event-driven or scheduled arrival that had no synchronous caller.",
+          "aligned_looks_like": "Retryability and the wait are stated explicitly in the body; the asynchronous path records the identical problem object for its dead-letter or failure channel.",
+          "misaligned_looks_like": "Callers infer retryability from a status code or from message text, or asynchronous arrivals fail with only a log line while synchronous ones get a typed body.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-13",
+            "F-b4-07",
+            "F-b4-08",
+            "X-litmus-b-024",
+            "X-litmus-b-025"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "Whether a convention has emerged for carrying problem details over non-HTTP agent transports, so an agent-to-agent or event failure uses the same object rather than a transport-native error code.",
+          "research_query": "RFC 9457 problem details over JSON-RPC gRPC messaging non-HTTP transport convention 2026 agent protocol error mapping"
+        },
+        {
+          "claim": "Whether platforms publish their own problem-type registries publicly as machine-readable documents, and what that document looks like.",
+          "research_query": "publish machine readable problem type registry document RFC 9457 type URI catalogue example API 2026"
+        }
+      ]
+    }
+  ]
+}

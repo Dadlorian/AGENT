@@ -37,7 +37,9 @@ def tree_digest() -> dict:
     """sha256 of every file git knows or sees as untracked (ignored files excluded), so a breakage that a
     restore command failed to undo is detected whether or not the file was ever committed."""
     import hashlib
-    out = run("git ls-files --cached --others --exclude-standard")[1].splitlines()
+    # subprocess directly: run() truncates output for the record, which hid most of the file list (2026-09-03)
+    out = subprocess.run(["git", "ls-files", "--cached", "--others", "--exclude-standard"], cwd=ROOT,
+                         capture_output=True, text=True).stdout.splitlines()
     digest = {}
     for f in out:
         fp = ROOT / f

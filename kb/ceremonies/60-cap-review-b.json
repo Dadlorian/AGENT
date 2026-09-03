@@ -1,0 +1,128 @@
+{
+  "status_row": 60,
+  "reviewer": "60-cap-review-b",
+  "skills": [
+    "cap-idempotency",
+    "cap-idempotency-implement",
+    "cap-identity",
+    "cap-identity-implement",
+    "cap-isolation",
+    "cap-isolation-implement",
+    "cap-mandate-broker",
+    "cap-mandate-broker-implement",
+    "cap-memory",
+    "cap-memory-implement",
+    "cap-model-access",
+    "cap-model-access-implement",
+    "cap-policy"
+  ],
+  "findings": [
+    {
+      "id": "R60B-001",
+      "skill": "cap-policy",
+      "location": "best_practices[5]",
+      "severity": "high",
+      "kind": "unsupported",
+      "evidence": "Row text: 'Every unit of work must be retried three times before it is reported as failed.' origin=sourced, sources=['F-b1-02'], quote='The core imports interfaces, never implementations'. python3 tools/kb.py show F-b1-02 returns text '1. **Every external dependency sits behind a capability interface.** The core imports interfaces, never implementations.' -- design rule 1, about the interface/implementation boundary. The quote is a verbatim substring of F-b1-02 (passes a naive check) but F-b1-02 says nothing about retries, retry counts, or failure reporting; no other source is cited. The claim is invented and dressed in an unrelated real quote, the same fabrication pattern ceremony 59 found in build-evidence-record (R59A-001). It is also the sole cap-policy row citing F-b1-02, and agentic-stack states design rule 1 under the identical quote (validator: 'cap-policy: restates F-b1-02 under the same quote as agentic-stack, build-adapter-pair, without naming it'), so even read charitably as a mangled restatement it names neither the rule it actually quotes nor the source skill.",
+      "fix": "Delete the row; nothing in cap-policy's cited ids or builds_on skills supports a three-retry rule, and cap-policy's own contract (deterministic allow/deny before spend) has no retry semantics to state."
+    },
+    {
+      "id": "R60B-002",
+      "skill": "cap-policy",
+      "location": "best_practices[6]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "Row: 'A criterion nothing can fail is not a criterion, so every gate carries a breakage.' origin=sourced, sources=['F-part-c-04'], quote='A criterion nothing can fail is not a criterion'. cap-policy's builds_on list includes both agentic-stack and build-definition-of-done, and both already state this exact fact under the identical quote (F-part-c-04: 'A criterion nothing can fail is not a criterion.'). python3 tools/validate_skills.py --only cap-policy: 'restates F-part-c-04 under the same quote as agentic-stack, build-skill-authoring, without naming it'. The row names neither owning skill.",
+      "fix": "Prefix the row with 'agentic-stack and build-definition-of-done already state this (F-part-c-04)' and keep only cap-policy's own consequence (every gate carries a breakage) as the added content."
+    },
+    {
+      "id": "R60B-003",
+      "skill": "cap-policy",
+      "location": "contract.shapes[1]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "The Decision shape's name field is 'Decision (shape governed by the recorded standard; what crosses the interface, whichever engine served it)', sources=['F-b4-04','F-b4-07'], quote='Typed and machine-readable. Never parsed from prose' (F-b4-07). Neither cap-errors nor agentic-stack, both of which state this exact fact under the identical quote and both of which are in cap-policy's builds_on list, is named anywhere in this row (the shape has no prose field besides 'name', and 'name' does not mention either skill). instructions[6] and contract.invariants[8] cite the same fact and do name cap-errors, so the omission is local to this row rather than a whole-skill issue.",
+      "fix": "Add a clause to the shape's name/description naming cap-errors as the owner of the typed-failure fact, e.g. 'failure shape owned by cap-errors (F-b4-07)'."
+    },
+    {
+      "id": "R60B-004",
+      "skill": "cap-identity",
+      "location": "instructions[0]",
+      "severity": "low",
+      "kind": "uncited",
+      "evidence": "action: 'Adopt the two recorded standards whole and design no actor model of our own...' why: '...agentic-stack states design rule 2 (F-b1-03); what this adds is that Identity is the one capability whose interface has to satisfy two standards at once...' origin=sourced, sources=['F-b3-14','F-b1-03'], quote='OAuth 2.0 Token Exchange · workload identity'. The restatement (design rule 2) is properly cited and names agentic-stack, but the extension clause after 'what this adds' -- the claim that Identity is uniquely the one capability needing two standards at once -- carries no citation of its own and the row is not marked proposed, matching this repo's own MECH-2 pattern (build-ceremony best_practices[3]/quality ceremony 01). python3 tools/validate_skills.py --only cap-identity confirms: 'sourced row restates and extends (\"what this adds\") without saying proposed'.",
+      "fix": "Mark the 'what this adds' clause proposed, or cite a fact establishing that no other capability's interface names two governing standards."
+    },
+    {
+      "id": "R60B-005",
+      "skill": "cap-isolation",
+      "location": "instructions[5], instructions[6], instructions[7], contract.not_exposed[1], best_practices[0], best_practices[1]",
+      "severity": "low",
+      "kind": "uncited",
+      "evidence": "Six rows follow the same shape: a properly cited and named restatement of an agentic-stack (or build-adapter-pair / cap-errors / build-definition-of-done) fact, followed by an uncited, unmarked extension clause. E.g. instructions[6]: 'cap-errors already owns the failure shape (F-b4-07). What this adds is the specific temptation at this boundary: a silent downgrade turns a refusal into a unit that ran with weaker containment than was asked for...' -- the silent-downgrade claim has no citation and is not marked proposed. python3 tools/validate_skills.py --only cap-isolation lists all six as 'restates and extends ... without saying proposed'.",
+      "fix": "Mark each 'What this adds' / 'what it adds' clause proposed, or find a supporting citation for the containment-specific consequence each states."
+    },
+    {
+      "id": "R60B-006",
+      "skill": "cap-isolation-implement",
+      "location": "instructions[0], instructions[1], instructions[2], instructions[3], instructions[4], instructions[6], instructions[7], best_practices[3]",
+      "severity": "low",
+      "kind": "uncited",
+      "evidence": "Eight rows follow the restate-and-extend shape: a cited, named restatement (of agentic-stack, cap-isolation, or build-adapter-pair facts) followed by an uncited 'What this adds' clause. E.g. instructions[3]: 'build-adapter-pair already states that a swap needing a core change means the boundary is drawn wrong (F-meta-04). What this adds: widening the declaration until both technologies satisfy every field is the quiet form of that failure...' -- the 'quiet form of that failure' claim is the author's own extension with no citation. python3 tools/validate_skills.py --only cap-isolation-implement flags all eight as 'restates and extends ... without saying proposed'.",
+      "fix": "Mark each extension clause proposed, or attach its own supporting citation instead of riding on the restated fact's quote."
+    },
+    {
+      "id": "R60B-007",
+      "skill": "cap-mandate-broker",
+      "location": "contract.invariants[3], contract.invariants[4], best_practices[0]",
+      "severity": "low",
+      "kind": "uncited",
+      "evidence": "invariants[4]: 'Identity and secrets are two different problems, which is why this is an interface of its own and not a corner of cap-identity: cap-identity already states that a workload with a verifiable identity document still needs credentials for the things it must reach (X-end-to-end-030). The consequence here is that no adapter may satisfy this interface by handing back an identity document.' The restatement is cited and names cap-identity; the 'consequence here' clause (no adapter may satisfy this interface with an identity document) has no citation and is not marked proposed. Same shape in invariants[3] and best_practices[0]. python3 tools/validate_skills.py --only cap-mandate-broker: three 'restates and extends ... without saying proposed' warnings.",
+      "fix": "Mark the consequence clauses proposed in each of the three rows, or cite a fact for the added claim."
+    },
+    {
+      "id": "R60B-008",
+      "skill": "cap-mandate-broker-implement",
+      "location": "instructions[4], instructions[5], contract.invariants[0], best_practices[1]",
+      "severity": "low",
+      "kind": "uncited",
+      "evidence": "contract.invariants[0]: 'agentic-stack and build-adapter-pair already state design rule 1 (F-b1-02). The consequence here is a file boundary: every key store, token client, signature library and network client lives inside a binding directory, so a core module that can name a key path has made the broker load-bearing.' The restatement is cited and named; the file-boundary consequence has no citation and is not marked proposed. Same shape in instructions[4], instructions[5] and best_practices[1]. python3 tools/validate_skills.py --only cap-mandate-broker-implement: four such warnings.",
+      "fix": "Mark each consequence clause proposed, or attach a citation for the build-specific claim it makes."
+    },
+    {
+      "id": "R60B-009",
+      "skill": "cap-memory-implement",
+      "location": "best_practices[0]",
+      "severity": "low",
+      "kind": "uncited",
+      "evidence": "'Verify the swap by what answered, not by what was configured. build-evidence-record already states the finding that values written to YAML validated, reviewed correctly, and had no runtime effect; the memory-specific consequence is that the conformance report records declares.reached from each adapter's own start-up line, so a run against two bindings that both reached the same store is caught rather than counted as a pair.' The restatement (F-a7-04) is cited and names build-evidence-record; the 'declares.reached' mechanism it then describes has no citation and is not marked proposed. python3 tools/validate_skills.py --only cap-memory-implement: 'sourced row restates and extends (\"already states\") without saying proposed'.",
+      "fix": "Mark the declares.reached mechanism proposed, since it is this skill's own build-time design choice, not a fact restated from build-evidence-record."
+    },
+    {
+      "id": "R60B-010",
+      "skill": "cap-model-access",
+      "location": "instructions[6], instructions[7], contract.invariants[0], best_practices[0], best_practices[3]",
+      "severity": "low",
+      "kind": "uncited",
+      "evidence": "contract.invariants[0]: 'agentic-stack already states that a caller requests a class and never a vendor (F-a4-01). Its consequence for this interface: the class prefix is the entire routing vocabulary a caller has, so a request field that names a vendor, a member model or an endpoint is not an extension of the contract but a hole in it.' Cited and named restatement, followed by an uncited 'consequence' clause not marked proposed. Same shape in instructions[6], instructions[7], best_practices[0] and best_practices[3]. python3 tools/validate_skills.py --only cap-model-access: five such warnings.",
+      "fix": "Mark each 'consequence'/'what this adds' clause proposed, or find a citation for the model-access-specific extension."
+    },
+    {
+      "id": "R60B-011",
+      "skill": "cap-model-access-implement",
+      "location": "instructions[2], instructions[5], instructions[6], contract.invariants[3], contract.invariants[5], contract.invariants[6], best_practices[2]",
+      "severity": "low",
+      "kind": "uncited",
+      "evidence": "contract.invariants[6]: 'build-evidence-record owns the append-only chained record (F-a5-03). What this adds: a cost reconciled hours after it was committed is a second record about the same call, so it is appended and chained rather than written over the first, and the difference between the two figures stays readable.' Cited, named restatement followed by an uncited extension clause describing this skill's own reconciliation design. Same shape recurs in instructions[2], instructions[5], instructions[6], contract.invariants[3], contract.invariants[5] and best_practices[2]. python3 tools/validate_skills.py --only cap-model-access-implement: seven 'restates and extends ... without saying proposed' warnings, the most of any skill in this batch.",
+      "fix": "Mark each extension clause proposed across the seven rows, or attach its own citation instead of borrowing the restated fact's quote."
+    }
+  ],
+  "metrics": {
+    "rows_checked": 434,
+    "sourced": 313,
+    "proposed": 112,
+    "quotes_verified": 328,
+    "harness_runs": 6
+  },
+  "summary": "Reviewed all 13 skills' skill.json data and rendered SKILL.md against the standard: python3 tools/kb.py show for every distinct cited id; a mechanical script resolving every sourced/claimed/measured row's cited sources and confirming its quote is a verbatim substring of at least one (0 misquotes of that kind found across 328 quoted rows, including adapters[] and definition_of_done rows which schema-require a quote); python3 tools/validate_skills.py --only per skill (0 errors on all 13; warnings only -- one 'not a pure shell command' DoD note per skill with a claimed-status criterion, and restate-and-extend warnings on 9 of the 13); and live re-execution of every definition_of_done whose criterion names a runnable tool: bash harness/{idempotency,identity,containment,memory,policy,gateway}/test.sh all reproduced their recorded clean pass exactly (16, 46, 25, 23, 38, 25 checks respectively, 0 failed), matching each skill's measured_run block; every claimed-status DoD (cap-idempotency, cap-identity, cap-isolation, cap-mandate-broker, cap-mandate-broker-implement, cap-memory, cap-model-access, cap-policy) names a tool confirmed absent from the tree, consistent with its status, and cap-mandate-broker-implement discloses the missing-harness gap by name (STATUS row 60). One high-severity fabricated claim found: cap-policy best_practices[5] asserts a three-retry rule under a verbatim but topically unrelated quote from F-b1-02 (design rule 1, about interfaces vs implementations), the same fabrication shape ceremony 59 caught in build-evidence-record. A semantic-support heuristic (keyword overlap between each sourced row's claim text and its cited records) was run over all 434 rows to hunt for further instances of that pattern; it returned only this one true positive, the rest being the repo's normal low-overlap 'consequence of X' writing style. Two further low-severity restatements found in cap-policy (best_practices[6], contract.shapes[1]) repeating agentic-stack/build-definition-of-done/cap-errors facts without naming them. Eight low-severity 'restate and extend' findings recorded across cap-identity, cap-isolation, cap-isolation-implement, cap-mandate-broker, cap-mandate-broker-implement, cap-memory-implement, cap-model-access and cap-model-access-implement, grouping the validator's per-skill restate-and-extend warnings (about 30 individual rows) by skill: each names its owning skill correctly for the restated fact but the trailing 'what this adds'/'consequence here' clause is an uncited extension not marked proposed. No description whose trigger clauses fail to fire on its skill's actual scope; no adapter row naming a product outside the Adapters section (validator: 0 hits across all 13); every second adapter differs in execution model from its first on multiple axes (confirmed live for 6 pairs via harness cross-adapter checks: 2-6 axes differing each), and cap-identity, the one skill with no adapters[] array, carries the required open question naming where its adapter pair lives instead. No definition_of_done found that cannot fail, and no measured_run found that contradicts its own breakage text."
+}

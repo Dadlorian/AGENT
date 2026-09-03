@@ -1,0 +1,124 @@
+{
+  "reviewer": "sonnet",
+  "group": "core-seam-build",
+  "findings": [
+    {
+      "id": "RC-001",
+      "skill": "core-document, core-graph, core-ledger, core-planner, seam-dispatch, seam-state",
+      "blueprint_ref": "state_types[1] | state_types[3] | state_types[4] | state_types[5] | state_types[7] | state_types[18] | state_types[19] | state_types[41]",
+      "severity": "fix",
+      "disagreement": "owner_capability on every one of these rows is a prose phrase ('core document', 'core planner', 'core planner, over the state seam's query surface', 'core graph', 'the dispatch seam', 'core ledger over the state seam', 'the state seam') rather than the exact skill name that owns it, so the ownership map cannot be queried by skill id.",
+      "sourced_side": "blueprint",
+      "change_to": "blueprint",
+      "change": "Replace each owner_capability value with the exact skill name (core-document, core-planner, core-graph, seam-dispatch, seam-state) per the mapping in owner_name_fixes below; where a row genuinely names two owners (state_types[4], state_types[6], state_types[18]), either add a second owner field or record the compound as an open question, since the schema has no place for two names in one string.",
+      "sources": ["F-b2-02", "F-b2-03", "F-b2-04", "F-b2-06", "F-b5-02", "F-b5-05", "F-b1-06"]
+    },
+    {
+      "id": "RC-002",
+      "skill": "core-graph, core-ledger",
+      "blueprint_ref": "impact_map[17]",
+      "severity": "block",
+      "disagreement": "impact_map[17] ('the state store moves off a file to an object, relational or event store') sets unaffected_core: true while listing core-graph and core-ledger — both core skills — in affected_skills, directly contradicting the same row's own unaffected_core flag and contradicting core-graph INV ('Persistence is somewhere else... this contract carries no head, no at_head parameter, no retention class and no write model') and core-ledger INV ('Where entries are kept is somewhere else... this contract carries no file path, no row id, no offset') which both state that a storage swap leaves the core untouched because seam-state alone absorbs it.",
+      "sourced_side": "skill",
+      "change_to": "blueprint",
+      "change": "Remove core-graph and core-ledger from impact_map[17].affected_skills (they read/write only through seam-state's operations and are unaffected by what is beneath it), keeping seam-state, seam-state-implement, cap-state-persistence and xc-audit-trail, which is what unaffected_core: true actually asserts.",
+      "sources": ["F-b5-04", "F-b5-05", "F-b3-17", "X-cross-structure-048"]
+    },
+    {
+      "id": "RC-003",
+      "skill": "core-document-implement, core-graph-implement, core-ledger-implement",
+      "blueprint_ref": "impact_map[17]",
+      "severity": "fix",
+      "disagreement": "impact_map[17]'s change ('the state store moves off a file to an object, relational or event store') is exactly the swap core-document-implement (today: E-adapter-jsonl-hash-chain, second: E-swap-candidate-relational), core-graph-implement (second: E-swap-candidate-event-log) and core-ledger-implement (second: E-swap-candidate-relational) each record in their own adapters section, yet none of the three -implement skills appears in affected_skills.",
+      "sourced_side": "skill",
+      "change_to": "blueprint",
+      "change": "Add core-document-implement, core-graph-implement and core-ledger-implement to impact_map[17].affected_skills alongside seam-state-implement, since these are the skills that actually name the second-adapter candidates this change exercises.",
+      "sources": ["F-b3-17", "F-b1-04"]
+    },
+    {
+      "id": "RC-004",
+      "skill": "core-planner, core-planner-implement",
+      "blueprint_ref": "state_types[3] | state_types[4]",
+      "severity": "fix",
+      "disagreement": "core-planner owns state_types[3] ('plan and cost') and state_types[4] ('cost inputs pinned at a head'), each with a named pinning risk ('Pins the moment pricing requires calling the thing being priced'; 'Pins to a gateway's own pricing API if read live'), but core-planner and core-planner-implement appear in zero impact_map rows — the only one of the seven core/seam skills with no impact_map coverage at all.",
+      "sourced_side": "blueprint",
+      "change_to": "blueprint",
+      "change": "Add an impact_map row for a change to the cost-table/cost-quantile source (state_types[4]'s pinning risk), naming core-planner and core-planner-implement as affected_skills, the conformance run that re-derives a plan from the document and pinned inputs as affected_tests, and unaffected_core reflecting whether the planner's pure-function contract actually holds under that swap.",
+      "sources": ["F-b2-03", "F-b5-05", "F-b1-06"]
+    },
+    {
+      "id": "RC-005",
+      "skill": "core-judge, core-judge-implement",
+      "blueprint_ref": "impact_map[7]",
+      "severity": "fix",
+      "disagreement": "impact_map[7] lists core-judge as affected when the host-side model admission broker is replaced, quoting REF-8-04's 'the held-out-judge pattern uses the same mechanism, so swapping costs both.' REF-8-04 describes a held-out judge *model* reached through the broker's model-egress path. core-judge's actual contract implements a different mechanism — a held-out *criterion set* audited on an unpredictable cadence (sample_criterion, audit) — and neither core-judge nor core-judge-implement's contract names the mandate broker, model egress, or a held-out judge model anywhere. The row conflates two different 'held-out' designs that share a name.",
+      "sourced_side": "neither",
+      "change_to": "blueprint",
+      "change": "Either cite a source showing core-judge-implement's model-graded-rubric-judge adapter transitively depends on the host-side broker (and add core-judge-implement, not just core-judge, to affected_skills, since it holds that adapter), or drop core-judge from impact_map[7] and record REF-8-04's held-out-judge pattern as a distinct, uncovered state type.",
+      "sources": ["REF-8-04", "F-a3-07", "X-end-to-end-013"]
+    },
+    {
+      "id": "RC-006",
+      "skill": "core-judge",
+      "blueprint_ref": "state_types (none — omission)",
+      "severity": "fix",
+      "disagreement": "core-judge's own contract names a persisted artifact — the grading record, carrying check ids, checks_applied and the verdict (INV: 'a grading in which no check applied is reported inconclusive... a counted field, checks_applied, in the grading record') — that has no corresponding row anywhere in state_types, not even as a status:gap row. state_types[26] ('evaluation case set, verdict and baseline') is owned by evaluation and is explicitly 'distinct from the runtime judge,' so it does not cover this. core-judge is consequently the only one of the seven core/seam skills that owns no state_types row at all, and the blueprint gives no reason.",
+      "sourced_side": "skill",
+      "change_to": "blueprint",
+      "change": "Add a state_types row for the grading/verdict record (owner_capability core-judge, or core-ledger if core-ledger's judged entry is meant to be its only recorded form per core-ledger's not_exposed clause 'a judged entry carries criterion_ref and the verdict and nothing else') so the blueprint states explicitly which component persists a verdict, rather than leaving core-judge's checks_applied field with no home in the state inventory.",
+      "sources": ["F-a7-03", "X-end-to-end-013", "F-b2-06"]
+    },
+    {
+      "id": "RC-007",
+      "skill": "core-planner, seam-state",
+      "blueprint_ref": "entry_matrix (none — omission) | state_types[4] | state_types[19] | state_types[20]",
+      "severity": "nit",
+      "disagreement": "state_types[4] ('cost inputs pinned at a head'), state_types[19] ('state head and run seal') and state_types[20] ('redaction tombstone') are non-gap, forever-lifetime state types that cross the org boundary, yet none of the 91 entry_matrix rows names any of them, unlike every other non-gap forever-lifetime state (document, plan and cost, dispatch record, ledger record, artifact and its digest, work graph), which each get a full four-door set of rows.",
+      "sourced_side": "blueprint",
+      "change_to": "blueprint",
+      "change": "Either add entry_matrix rows for the doors that actually touch these three states, or add a short note on each row explaining that they are seam-internal (resolve_head/seal/redaction are never caller-supplied on any of the four doors) so the omission reads as a decision rather than an oversight.",
+      "sources": ["F-b1-06", "F-a5-03", "F-b5-05"]
+    },
+    {
+      "id": "RC-008",
+      "skill": "core-planner, core-graph, core-ledger, seam-state",
+      "blueprint_ref": "state_types[4] | state_types[6] | state_types[18]",
+      "severity": "nit",
+      "disagreement": "Three rows name two capabilities inside one owner_capability string ('core planner, over the state seam's query surface'; 'core graph and core planner (late binding)'; 'core ledger over the state seam'). The $defs/entry schema treats owner_capability as free text, so there is no way to tell whether the second-named capability is a co-owner, a delegate, or just a reader.",
+      "sourced_side": "blueprint",
+      "change_to": "blueprint",
+      "change": "State schemas' entry shape could add an optional owner_capability_secondary field, or the blueprint could adopt a fixed 'X, via Y' convention and document it once, so a queryable map does not have to guess which half of the string is the owner.",
+      "sources": ["F-b5-05", "F-b2-06", "F-b2-04"]
+    },
+    {
+      "id": "RC-009",
+      "skill": "build-adapter-pair, build-definition-of-done, build-entry-conformance",
+      "blueprint_ref": "state_types | entry_matrix | tool_entries | impact_map (none — confirmed absence)",
+      "severity": "nit",
+      "disagreement": "None of these three skills is named as owner_capability, home_ideal, or in any impact_map affected_skills list anywhere in the blueprint. This is correct, not a gap: all three are process disciplines (how a pair, a criterion, or a door is checked) rather than capability owners of any state, and the seven core/seam skills already cite them by name in their own invariants and definitions of done (e.g. core-graph and core-planner cite build-adapter-pair for their swap discipline; core-document, core-judge and core-planner cite build-definition-of-done for the checks_applied/inconclusive rule).",
+      "sourced_side": "neither",
+      "change_to": "skill",
+      "change": "No change needed. Recorded here so the reviewer's 'every blueprint row that names it' instruction is answered for these three skills rather than silently skipped.",
+      "sources": ["F-b1-04", "F-a7-03", "T-t6-02"]
+    }
+  ],
+  "owner_name_fixes": [
+    {"blueprint_ref": "state_types[1]", "current": "core document", "skill_name": "core-document"},
+    {"blueprint_ref": "state_types[3]", "current": "core planner", "skill_name": "core-planner"},
+    {"blueprint_ref": "state_types[4]", "current": "core planner, over the state seam's query surface", "skill_name": "core-planner (secondary: seam-state)"},
+    {"blueprint_ref": "state_types[5]", "current": "core graph", "skill_name": "core-graph"},
+    {"blueprint_ref": "state_types[6]", "current": "core graph and core planner (late binding)", "skill_name": "core-graph (secondary: core-planner) — already status:gap"},
+    {"blueprint_ref": "state_types[7]", "current": "the dispatch seam", "skill_name": "seam-dispatch"},
+    {"blueprint_ref": "state_types[18]", "current": "core ledger over the state seam", "skill_name": "core-ledger (secondary: seam-state)"},
+    {"blueprint_ref": "state_types[19]", "current": "the state seam", "skill_name": "seam-state"},
+    {"blueprint_ref": "state_types[41]", "current": "the dispatch seam", "skill_name": "seam-dispatch — already status:gap"}
+  ],
+  "unowned_state_types": [],
+  "skills_owning_nothing": [
+    {"skill": "core-judge", "note": "Owns no state_types row under any owner_capability spelling ('judge', 'core judge'). Consistent with its own invariant that the Judge is a pure function with no store handle, but the grading record its own checks_applied field implies (see RC-006) has no home anywhere in state_types either — the absence looks structural rather than confirmed intentional."},
+    {"skill": "build-adapter-pair", "note": "Process discipline, not a capability owner; expected to own no state type."},
+    {"skill": "build-definition-of-done", "note": "Process discipline, not a capability owner; expected to own no state type."},
+    {"skill": "build-entry-conformance", "note": "Process discipline, not a capability owner; expected to own no state type."}
+  ],
+  "summary": "Every state_types owner_capability field in the blueprint is prose rather than a skill id, which is fixable mechanically for the nine rows this group owns, but three of those rows also name two capabilities in one string with nowhere in the schema to record a second owner. The sharper problems are in impact_map: it contradicts its own unaffected_core flag by listing core-graph and core-ledger — whose own invariants say storage swaps never touch them — as affected by a storage-store change while omitting the -implement skills that actually hold the swappable adapters, core-planner has zero impact_map coverage despite owning two priced, risk-bearing state types, and core-judge is credited with a broker dependency that traces to a different 'held-out' mechanism than the one its own contract implements."
+}

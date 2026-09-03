@@ -33,3 +33,9 @@
 | 29 | Solution architecture | Every state type has an owner, a home, and a caller path | In progress | Gaps closed, review running |
 | 30 | Source-of-truth gaps | Every blueprint gap is researched or decided by the owner | Done | 11 sourced, 12 decided |
 | 31 | Quality assessment | Every confirmed finding is fixed or declined with a reason | In progress | 4 scans done, verifier running |
+| 32 | Quality fixes | Every confirmed finding is fixed or declined with a reason | Not started | Awaiting verifier |
+| 33 | Architecture revisions | Every myopia finding is applied or declined with a reason | Not started | Awaiting review |
+| 34 | Architecture skill | The lens is a build skill every section applies | Not started | Queued |
+| 35 | Skill reconciliation | Every written skill agrees with the blueprint | Not started | Queued |
+| 36 | Impact map in knowledge base | A component swap query lists adapters, tests, and skills | Not started | Queued |
+| 37 | Live run access | Harness live mode runs against the host from a session | Blocked | Owner decision |

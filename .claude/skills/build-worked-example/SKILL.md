@@ -55,7 +55,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | f=${EXAMPLE:-docs/reference/composable-plan.md}; grep -q 'What the caller writes' "$f" && grep -q 'What resolves' "$f" && grep -q 'What comes back' "$f" && grep -q '^\| \| Human \| Time (schedule) \| External (system or agent) \| Internal (event) \|' "$f" && [ "$(grep -c '^\| R-[1-6] \|' "$f")" -eq 6 ] && echo PASS \|\| echo FAIL |
+| Criterion | f=${EXAMPLE:-docs/reference/composable-plan.md}; grep -q 'What the caller writes' "$f" && grep -q 'What resolves' "$f" && grep -q 'What comes back' "$f" && grep -q '^\| \| Human \| Time (schedule) \| External (system or agent) \| Internal (event) \|' "$f" && [ "$(grep -c '^\| R-[1-6] \|' "$f")" -eq 6 ] && echo PASS \|\| { echo FAIL; exit 1; } |
 | Expected | PASS: the six-question headings, the exact four-door header row, and six rubric rows are all present in the example named by EXAMPLE (default: the reference page). |
 | Deliberate breakage | Copy docs/reference/composable-plan.md to the scratchpad, delete the `\| Internal (event) \|` cell from the four-door header row, and run the criterion with EXAMPLE pointing at the copy. |
 | Expected failure | FAIL: the four-door header grep no longer matches, so the example is missing a door and the check says so. |

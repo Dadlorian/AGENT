@@ -79,7 +79,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | `python3 tools/render_skill.py .claude/skills/build-skill-authoring && python3 tools/validate_skills.py` |
+| Criterion | python3 tools/render_skill.py .claude/skills/build-skill-authoring && python3 tools/validate_skills.py |
 | Expected | rendered build-skill-authoring/SKILL.md, then 'N skills checked, 0 errors' with no error line naming build-skill-authoring; the only warnings are manifest skills not written yet |
 | Deliberate breakage | In a copy of .claude/skills/build-skill-authoring/skill.json, apply three mutations one at a time and re-run the validator: (a) delete the sources array from contract.invariants[2] while leaving origin=sourced; (b) change one character of that invariant's quote; (c) delete one name from composes_with.used_by so the link no longer matches the manifest. |
 | Expected failure | (a) '.contract.invariants[2] is origin=sourced but has no sources' together with '.contract.invariants[2].quote is not a verbatim substring of any cited record'; (b) ".contract.invariants[2].quote is not a verbatim substring of any cited record: 'Distinguish **claimed** from **measured** throughOut'"; (c) 'composes_with differs from docs/skill-manifest.json'. Every mutated run also reports 'SKILL.md is not the render of skill.json' and exits 1. Measured in session claude/auto-skill-creation-i8javu on 2026-09-03: the three mutations exited 1 with 4, 3 and 3 errors and those exact strings; the restored file re-rendered and exited 0 with no error naming this skill. |

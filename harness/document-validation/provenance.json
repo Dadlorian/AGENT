@@ -1,0 +1,31 @@
+{
+  "owner_skill": "cap-document-validation-implement",
+  "co_skills": ["cap-document-validation", "core-document"],
+  "blueprint_tool_entry": "the in-place keyword-subset checks PASS.md B3 names today (F-b3-09; examples/end-to-end/run.py carries one)",
+  "capability": "document validation",
+  "standard": "JSON Schema 2020-12 (on file unverified)",
+  "kb_ids": [
+    "F-b3-01", "F-b3-09",
+    "F-b1-02", "F-b1-04", "F-b1-05", "F-b1-07", "F-b1-08",
+    "F-b4-01", "F-b4-07",
+    "F-a7-04",
+    "T-t1-01", "T-t1-02", "T-t1-03", "T-t6-02",
+    "T-t2-02"
+  ],
+  "research_ids": [
+    "X-cap-document-validation-001", "X-cap-document-validation-002", "X-cap-document-validation-003",
+    "X-cap-document-validation-004", "X-cap-document-validation-005", "X-cap-document-validation-006"
+  ],
+  "measured": {
+    "dryrun": "bash harness/document-validation/test.sh on 2026-09-03: passed 24, failed 0. conformance PASSED 14/14 against the dry-run adapter (valid instance true; a malformed entry envelope reports the failing pointer /entry_id and 8 violations in one pass; if/then + contains + array items compose into one refusal at /amount and /tags; anyOf passes on one matching branch and refuses on none; a schema declaring draft-07 is refused as dialect-unsupported 422 with declared_dialect reported; a schema declaring no $schema is refused the same way with declared_dialect null, never defaulted; check_schema judges the schema document itself; a malformed validation request is refused as request-invalid 400 before any schema is read; prepare() reuses its cache across a second validate() of the same schema; dialect_in_effect reads back the 2020-12 URI; keywords_checked is positive; the outcome carries exactly valid, dialect, schema_uri, keywords_checked, errors). The minimal call is 10 lines of caller code below the >>> CALLER CODE marker, counted directly in test.sh; ADAPTER=dryrun call.py against examples/end-to-end/schemas/entry.schema.json reads valid=False with first_pointer=/actor by default and valid=True under INSTANCE_KIND=valid; SCHEMA_URI pointed at schemas/bad-dialect.schema.json exits 2 typed dialect-unsupported 422; DRYRUN_FAIL=1 exits 2 typed schema-unavailable 503.",
+    "swap": "conformance PASSED 14/14 before (dryrun, 'schema read per call') and 14/14 after (second, 'schema compiled ahead of use') with the same 14 cases; sha256 of interface.py+call.py+conformance.py identical across both runs (9aa0fc24a99a8e3c65a02221dc5302b734b9fd0e94b8e83525324952e13cf39f), so the swap was configuration; 2 axes differ (execution_model 'schema read per call' vs 'schema compiled ahead of use'; schema_reads 13 vs 0); the same caller code ran unchanged on both; every one of 5 shared fixtures (sample-valid, entry-malformed, sample-invalid, anyof-valid, anyof-invalid) produced an identical {valid, dialect, errors} outcome on dryrun and second, fixture_mismatches=0.",
+    "breakage": "an import of a validator library assembled at run time ('json'+'schema') injected into a copy of call.py under out/breakage/: the library-name scan exits 1, product_hits goes 0 -> 1, and the run names out/breakage/call.py. The green scan in step 3 can therefore fail.",
+    "live": "bash harness/document-validation/test.sh --live with DOCVALID_SCHEMA_STORE_DIR set to the repository root on 2026-09-03: passed 27, failed 0 (the 24 dry-run checks plus 3 live checks: conformance PASSED against the live schema-store adapter with the same cases, and ADAPTER=live call.py exits 0). With DOCVALID_SCHEMA_STORE_DIR unset, step 5 prints 'SKIP live mode' and measures nothing, as designed."
+  },
+  "claimed": [
+    "live mode as a general networked component: PASS.md B3 (F-b3-09) records this capability's tool today only as 'in place' -- there is no separate document-validation service with an endpoint or key on this host, so adapters/live.py's 'live' component is a real, operator-named schema store directory rather than a network call. That directory reachability has been measured here (see measured.live); a genuinely remote/networked schema store has not",
+    "adapters/second.py's out-of-process path (DOCVALID_SECOND_SUBPROCESS=1) is a faithful stub of a compiled validator reached out of process, per the author brief: measured to produce the same outcomes as the in-process compiled path on this harness's fixtures, but it recompiles the schema in the child on every call rather than keeping a resident compiled process, so its start-and-teardown cost is not what a production out-of-process validator would report",
+    "the standard's version is unverified: every record on file for it (X-cap-document-validation-001..006) is a search result, not a fetched page; docs/acceptance/matrix.json records this absence by owner on 2026-09-03 (STATUS row 45: page fetch is blocked in this environment)",
+    "the JSON Schema 2020-12 keyword subset both adapters support is exactly what examples/end-to-end/run.py's in-place checker already supports ($ref, anyOf, if/then/else, type, const, enum, pattern, min/maxLength, minimum, maximum, minItems, contains, items, required, properties, additionalProperties); no conformance case exercises a keyword outside that subset, and the official JSON Schema Test Suite (X-cap-document-validation-004) has not been run against either adapter here"
+  ]
+}

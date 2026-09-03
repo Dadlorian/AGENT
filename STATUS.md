@@ -20,3 +20,13 @@
 | 35 | Skill reconciliation | Every written skill agrees with the blueprint | In progress | 3 reviewers running |
 | 36 | Impact map in knowledge base | A component swap query lists adapters, tests, and skills | In progress | Query works, names pending |
 | 37 | Live run access | Harness live mode runs against the host from a session | Blocked | Owner decision |
+| 38 | Measured by script | A measured result is written by a script with its ledger entry | Not started | Queued |
+| 39 | Restatement as error | New skills fail on a restated fact | Not started | Queued |
+| 40 | Load path table | Each door has a generated load path within budget | Not started | Queued |
+| 41 | Planted-defect reviews | Every review catches both planted defects | Not started | Queued |
+| 42 | Sourcing pass | Proposed rows are under 30 percent | Not started | Queued |
+| 43 | Agent scope registry | No two agents edit the same file in one round | Not started | Queued |
+| 44 | Freshness gate | A checkpoint fails on a stale status row | Not started | Queued |
+| 45 | Fetch allowlist | Standards sites are fetchable from the environment | Blocked | Owner decision |
+| 46 | Swap proof | Each harness section executes one adapter swap | Not started | Queued |
+| 47 | Owner feedback file | Owner corrections are read by every agent | Not started | Queued |

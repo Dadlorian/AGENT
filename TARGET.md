@@ -54,3 +54,15 @@ Stated by the platform owner on 2026-09-03 as the baseline target. PASS.md Part 
 
 1. The twelve host-fact gaps in docs/architecture/gap-triage.json are absent on the host today and are design work, not facts to research.
 2. Standard-version gaps and does-a-standard-exist gaps are closed by research with real search results, or recorded as none found.
+
+## T9. Scorecard
+
+1. The improvement loop works the metric furthest from its target and stops when every target holds or the owner says stop.
+2. Sourced share: proposed rows are under 30 percent of all rows.
+3. Restatement: the validator reports zero restatement warnings.
+4. Measured done: at least half of all definitions of done have a measured run.
+5. Load path: a builder reads at most 11 skills for one common task per door.
+6. Swaps proven: every harness section executes one adapter swap with the conformance run before and after.
+7. Review honesty: every review catches both planted defects, or it is discarded.
+8. Freshness: zero status rows stale against the ledger at every checkpoint.
+9. Verification: every standard has a fetched record when the environment allows fetch.

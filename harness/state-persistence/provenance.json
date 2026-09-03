@@ -1,0 +1,26 @@
+{
+  "owner_skill": "cap-state-persistence-implement",
+  "co_skills": ["cap-state-persistence", "seam-state", "core-ledger"],
+  "blueprint_tool_entry": "JSONL + hash chain (PASS.md B3, F-b3-17); kb/ledger.jsonl and tools/kb.py are the live instance",
+  "capability": "state persistence",
+  "standard": "no standard to adopt (F-b3-17, F-b5-04, F-b5-05); the record proof shape follows RFC 9162 with RFC 8785 canonicalization where the skill says so",
+  "kb_ids": [
+    "F-b3-17", "F-b5-04", "F-b5-05", "F-a5-03", "F-b1-04", "F-b1-06", "F-b4-07",
+    "T-t6-02", "T-t6-04", "T-t7-02", "T-t7-05", "T-t9-06", "T-t10-04", "T-t10-05", "T-t10-07"
+  ],
+  "research_ids": [
+    "X-xc-provenance-chain-006", "X-cross-structure-049", "X-cross-structure-052"
+  ],
+  "measured": {
+    "dryrun": "bash harness/state-persistence/test.sh on 2026-09-03: passed 20, failed 0. conformance PASSED 11/11 against the in-memory dry-run adapter; the minimal call is 21 lines of caller code (under 40) and names no adapter storage file; a request naming a field outside the append vocabulary exits refused as document-invalid 422 with nothing applied; DRYRUN_FAIL=1 returns adapter-unavailable and call.py exits 2; the inclusion-proof round trip (mth/audit_path/root_from_inclusion_proof) and the consistency-proof round trip (PROOF/verify_consistency) were separately checked against each other for tree sizes 1..39 in scratch before being wired into interface.py.",
+    "swap": "conformance PASSED 11/11 before (dryrun, single mutable in-process structure) and 11/11 after (second, content-addressed objects with a compare-and-swap head) with the same 11 cases; sha256 of interface.py+call.py+conformance.py+verify_external.py identical across both runs, so the swap was configuration; 4 execution-model axes differ (execution_model text, adapter entity, observed marker dryrun-state-store vs objectstore-cas-head, declared_gaps 0 vs 1); the same caller code (call.py) ran unchanged on both, and the live adapter's read path (resolve_head, read_at, prove, prove_consistency) was separately exercised read-only against a scratch copy of this repository's real kb/ledger.jsonl (59 records): the inclusion proof for a mid-log record verified, and a consistency proof from size 10 to full verified, with no write ever sent to the real file.",
+    "breakage": "one stored record's body was edited in place on disk in a copy of the second adapter's object store (out/breakage/objectstore), its record_id left unchanged. verify_external.py, an independent verifier invoked as a subprocess that does not import interface.py, recomputes each record's content id from its body and flags the first mismatch: chain_break_at went from -1 (untampered) to 2 (the tampered record's index), while the merkle root over the (unchanged) record ids still matched the head - showing the tree proves position, and the separate content-id check is what catches a body edited under a stable claimed identity."
+  },
+  "claimed": [
+    "live mode until run on the host: adapters/live.py's write path (subprocess tools/kb.py ledger) has never been invoked from this harness, since tools/kb.py's ledger subcommand always targets the real kb/ledger.jsonl with no override, and appending test records into the project's actual ledger was judged out of scope for an unreviewed dry run; only its read path (resolve_head, read_at, prove, prove_consistency) was measured, against a scratch copy",
+    "the second adapter's real-bucket transport: OBJSTORE_DIR was exercised only against a local scratch directory; an s3fs/gcsfuse-mounted bucket has never been pointed at",
+    "true out-of-order object arrival on the second adapter is documented, not exercised: this harness's conformance run is single-process and sequential, so eventual-consistency listing races were never triggered, only guarded against by design (the tree is read from tree.json, never from a directory listing)",
+    "the standard's version is unverified: RFC 9162 and RFC 8785 are named only by the search-only record X-xc-provenance-chain-006, never fetched from this environment",
+    "the fencing-token race narrowing in adapters/live.py (re-read immediately before the subprocess call) is claimed to narrow, not close, the race; tools/kb.py's ledger command has no compare-and-swap of its own"
+  ]
+}

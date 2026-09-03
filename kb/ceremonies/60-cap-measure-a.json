@@ -1,0 +1,86 @@
+{
+  "status_row": 60,
+  "ceremony": "60-cap-measure-a",
+  "agent": "sonnet",
+  "date": "2026-09-03",
+  "skills": {
+    "cap-isolation-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "criterion": "bash harness/containment/test.sh && python3 harness/containment/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "edit harness/containment/binding.json's default_declaration to egress=allowlist, egress_allowlist=[\"0.0.0.0/0\"] (README breakage A); restored with git checkout -- harness/containment/binding.json",
+      "measure_py_last_line": "cap-isolation-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "cap-agent-runtime-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "criterion": "bash harness/containment/test.sh && python3 harness/containment/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "edit harness/containment/binding.json's tuning.cancel_poll_interval_s to 30, above the 0.5s grace window (README breakage B); restored with git checkout -- harness/containment/binding.json",
+      "measure_py_last_line": "cap-agent-runtime-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "cap-capability-packaging-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "criterion": "bash harness/capability-packaging/test.sh && python3 harness/capability-packaging/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "widen REQUIRED_RESIDENT in harness/capability-packaging/interface.py from (name, description) to (name, description, owner) (README breakage); restored with git checkout -- harness/capability-packaging/interface.py",
+      "measure_py_last_line": "cap-capability-packaging-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "cap-document-validation-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "criterion": "bash harness/document-validation/test.sh && python3 harness/document-validation/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "import jsonschema directly at the top of harness/document-validation/call.py (README breakage); restored with git checkout -- harness/document-validation/call.py",
+      "measure_py_last_line": "cap-document-validation-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "cap-durable-execution-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "criterion": "bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "in harness/workflow/flow.py, make Attempt.key() always return None instead of the step idempotency key (the harness's own --break-idempotency behaviour, made the default); restored with git checkout -- harness/workflow/flow.py",
+      "measure_py_last_line": "cap-durable-execution-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "cap-errors-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "criterion": "bash harness/errors/test.sh && python3 harness/errors/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "in harness/errors/adapters/second.py, remove the media-type/registered-type guard in classify() before it reshapes the wire body (README breakage); restored with git checkout -- harness/errors/adapters/second.py",
+      "measure_py_last_line": "cap-errors-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "cap-idempotency-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "criterion": "bash harness/idempotency/test.sh && python3 harness/idempotency/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "in harness/idempotency/adapters/second.py, remove the `with self._lock:` guard around the conditional write in claim() (README breakage); restored with git checkout -- harness/idempotency/adapters/second.py",
+      "measure_py_last_line": "cap-idempotency-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "cap-identity-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "criterion": "bash harness/identity/test.sh && python3 harness/identity/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "in harness/identity/adapters/dryrun.py, make _break_this_hop() always forward the incoming credential unchanged on an agent actor's first hop, instead of only under IDENTITY_BREAK=forward-token (README breakage); restored with git checkout -- harness/identity/adapters/dryrun.py",
+      "measure_py_last_line": "cap-identity-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "cap-capability-registry-implement": {
+      "before_status": "claimed",
+      "after_status": "claimed",
+      "criterion": "no change to the shell run named; appended 'Gap: no harness covers this capability yet (STATUS row 60).' to definition_of_done.criterion. No harness in harness/plan.json names cap-capability-registry-implement as owner or co-skill.",
+      "breakage_cmd": null,
+      "measure_py_last_line": "not run: no harness exists for this capability"
+    },
+    "cap-evaluation-implement": {
+      "before_status": "claimed",
+      "after_status": "claimed",
+      "criterion": "no change to the shell run named; appended 'Gap: no harness covers this capability yet (STATUS row 60).' to definition_of_done.criterion. No harness in harness/plan.json names cap-evaluation-implement as owner or co-skill.",
+      "breakage_cmd": null,
+      "measure_py_last_line": "not run: no harness exists for this capability"
+    },
+    "cap-human-interaction-implement": {
+      "before_status": "claimed",
+      "after_status": "claimed",
+      "criterion": "no change to the shell run named; appended 'Gap: no harness covers this capability yet (STATUS row 60).' to definition_of_done.criterion. No harness in harness/plan.json names cap-human-interaction-implement as owner or co-skill.",
+      "breakage_cmd": null,
+      "measure_py_last_line": "not run: no harness exists for this capability"
+    }
+  },
+  "note": "For all 8 measured skills, definition_of_done.criterion was rewritten to a pure shell command running the harness's test.sh gate plus its conformance.py --adapter dryrun --adapter second swap run; the prior prose criterion (which named a proposed tools/conformance_*.py that was never written) was moved into definition_of_done.expected as a description of what the harness run proves, closing with 'Earlier criterion named tools/<x>.py, replaced by the harness on 2026-09-03.' The breakage and expected_failure fields were rewritten to the harness's own README-described breakage (containment: egress-allowlist widening for isolation, cancel-poll-interval widening for agent-runtime; capability-packaging: REQUIRED_RESIDENT widened; document-validation: a validator import leaked outside adapters/; workflow: the step idempotency key dropped; errors: the edge adapter's media-type/registry guard removed; idempotency: the lease's lock guard removed; identity: the forward-token hop breakage made unconditional). Each breakage was applied to the real harness file (not test.sh's own internal out/ copy), verified by hand to fail the criterion, then run through tools/measure.py with a matching --restore-cmd of git checkout -- <path>. render_skill.py and validate_skills.py --only <skill> were run after each edit; all 11 skills in scope validate at 0 errors (pre-existing restatement warnings unrelated to definition_of_done were left as found). No commit or push was made; harness files were left clean (git status shows no diff under harness/) after every breakage/restore cycle."
+}

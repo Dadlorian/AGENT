@@ -133,11 +133,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | Two checks, both run from the repository root. (1) Conformance, proposed tool built with this adapter: `python3 tools/conformance_document_validation.py --suite third_party/JSON-Schema-Test-Suite/tests/draft2020-12 --binding config/validation/today.json --binding config/validation/second.json --report out/document-validation-conformance.json`, asserting per adapter required_failed == 0 and cases_run > 1000, and adapters_run >= 2. (2) Containment and effective dialect: `grep -rIlE '(^\|[^a-z])(jsonschema\|ajv\|jsonschema_rs)' src/core/ src/seam/` returns no files, and the report's dialect_mismatch counter, which compares each binding's declared_dialect with the dialect the adapter reports at start-up, is 0. |
-| Expected | (1) exit 0 with one line per adapter reading `adapter=<role> cases_run=<N greater than 1000> required_failed=0` and a final `adapters_run=2`. (2) grep exits 1 printing nothing, and the report line reads `dialect_mismatch=0`. |
-| Deliberate breakage | In one change, import the validator library directly inside a core module and set that adapter's binding to the older draft-07 dialect while leaving declared_dialect at 2020-12. |
-| Expected failure | Check (2) fails twice over: grep exits 0 and names the core file, and `dialect_mismatch=1` for that adapter. Check (1) also drops to `required_failed` greater than 0 for that adapter on the `$dynamicRef` and `$recursiveRef` cases while the other adapter stays at 0. The two checks fail for different reasons, which is why both are kept: a leaked import alone would leave check (1) fully green. |
-| Status | claimed |
+| Criterion | bash harness/document-validation/test.sh && python3 harness/document-validation/conformance.py --adapter dryrun --adapter second |
+| Expected | The gate (24 checks) and the conformance run together prove: a declared shape is checked against a published JSON Schema 2020-12 dialect under a walk-per-document adapter and a compile-once adapter, a schema declaring no dialect or a different one is refused before any instance is checked, the outcome carries no validator-library name, and the two adapters return identical outcomes on the same fixtures while differing in execution model (adapters_run=2, product_hits=0 on every report). Earlier criterion named tools/conformance_document_validation.py, replaced by the harness on 2026-09-03. |
+| Deliberate breakage | Import a validator library (jsonschema) directly at the top of harness/document-validation/call.py and change nothing else (the harness README's breakage); restore with git checkout -- harness/document-validation/call.py. |
+| Expected failure | Every adapter report's own product-name scan of the harness directory now finds one hit (product_hits=1); all 28 individual cases still pass, but the run reports conformance FAILED and exits non-zero, naming call.py — a library name leaked outside adapters/, which the scan run inside every conformance report is built to catch. |
+| Status | measured |
 | Evidence | `F-part-c-04`, `F-b1-02` "A criterion nothing can fail is not a criterion" |
 
 ## Composes with

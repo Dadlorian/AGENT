@@ -12,7 +12,7 @@
       "E-capability-identity",
       "E-adapter-identity-absent"
     ],
-    "quote": "OAuth 2.0 Token Exchange \u00b7 workload identity"
+    "quote": "OAuth 2.0 Token Exchange · workload identity"
   },
   "entities": [
     "E-capability-identity",
@@ -265,7 +265,7 @@
       "sources": [
         "X-cap-identity-006"
       ],
-      "quote": "which integrates directly with mutual TLS (mTLS) \u2014 the standard mechanism for service-to-service authentication"
+      "quote": "which integrates directly with mutual TLS (mTLS) — the standard mechanism for service-to-service authentication"
     },
     {
       "text": "Verify at runtime which adapter actually answered and what lifetime it actually issued, rather than trusting the configuration that selected it, the same discipline build-evidence-record and agentic-stack apply to a case where configuration written in the documented place had no runtime effect (F-a7-04); a credential lifetime is only observable by holding a credential past it and watching the call fail.",
@@ -297,7 +297,7 @@
         "F-a6-05",
         "E-adapter-identity-absent"
       ],
-      "quote": "SPIFFE/SPIRE \u00b7 any OIDC provider"
+      "quote": "SPIFFE/SPIRE · any OIDC provider"
     },
     {
       "entity": "E-swap-candidate-spiffe-spire",
@@ -315,16 +315,24 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.2 row P13, extended with the swap: `python3 tools/conformance/identity_chain.py --adapter exchange-issuing-provider --corpus <ledger> --min-actions 50 --report out/identity-a.json`, then the same command with `--adapter attested-workload-identity --report out/identity-b.json`, the adapter chosen by configuration with no code edit between runs. Both reports must validate against the IdentityConformanceReport shape above and assert, per adapter, `missing_subject == 0`, `cyclic == 0` and `executing_unit_mismatch == 0`; the exchange adapter must additionally assert `short_chains == 0`, and the attestation adapter must declare delegate in `unsupported` rather than assert it.",
-    "expected": "both runs exit 0; the merged report shows `adapters_run == 2`, `selected_by == \"configuration\"`, `actions_checked >= 50` for each adapter, and `unsupported == [\"delegate\"]` for the attestation adapter only",
-    "breakage": "Dispatch without performing the token exchange for the agent actor: have the exchange adapter forward the incoming token unchanged on one hop, leaving the attestation adapter untouched.",
-    "expected_failure": "The exchange run exits 1 with `short_chains == 1` and `executing_unit_mismatch == 1`, naming that action, while the attestation run still exits 0 for the assertions it makes. Singling out one adapter is the point: a suite that fails both, or neither, has not tested the swap. Claimed: there is no identity field anywhere in the system today, neither adapter is written and the tool does not exist, so neither run has been performed here and the check starts red by construction.",
-    "status": "claimed",
+    "criterion": "bash harness/identity/test.sh && python3 harness/identity/conformance.py --adapter dryrun --adapter second",
+    "expected": "The gate (46 checks) and the conformance run over a 50-action corpus together prove an actor and the chain that produced its right to act, under an exchange-issuing provider and an attested workload identity with a local trust bundle: no hop widens scope or outlives the credential it came from, a widening, cyclic, unrooted or expired chain is refused as a typed problem before anything is issued, the credential names the unit that will execute it, and the swap moves authority calls from 3 to 0 while ten contract facts stay identical (adapters_run=2). Earlier criterion named tools/conformance/identity_chain.py, replaced by the harness on 2026-09-03.",
+    "breakage": "In harness/identity/adapters/dryrun.py, make _break_this_hop() always forward the incoming credential unchanged on an agent actor's first hop, instead of only under IDENTITY_BREAK=forward-token (the harness README's breakage, made the default rather than env-gated so the criterion needs no extra variable) and change nothing else; restore with git checkout -- harness/identity/adapters/dryrun.py.",
+    "expected_failure": "The exchange adapter's delegation hop forwards the incoming token instead of exchanging it: the 50-action corpus assertion reports short_chains=1 and executing_unit_mismatch=1, and the conformance run drops to 27/32 cases and exits non-zero naming that adapter; the attested-workload adapter, which cannot forward a credential at all, is untouched and still passes.",
+    "status": "measured",
     "sources": [
       "F-a6-05",
       "F-b1-04"
     ],
-    "quote": "No identity field anywhere in the system"
+    "quote": "No identity field anywhere in the system",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "b923246",
+      "clean_exit": 0,
+      "clean_output": "issued\n  ok   one hop record per hop, appended, with the enforcement point read off the answer: 9 records, enforcement_point workload-attestor\n  ok   the delegation-chain corpus (P13): every action names an actor and a whole chain: actions_checked=50 missing_subject=0 short_chains=0 cyclic=0 executing_unit_mismatch=0\n  adapter=attested workload identity with a local trust bundle cases=16 passed=16 actions_checked=50 short_chains=0 cyclic=0 executing_unit_mismatch=0 authority_calls=0 marker=workload-attestor product_hits=0\nconformance PASSED: 32/32 cases, 2 binding(s), selected_by=configuration",
+      "breakage_exit": 1,
+      "breakage_output": "exchanging it\n  ok   the breakage run exits non-zero (nonzero)\n  ok   chains shorter than the hops that occurred (1)\n  ok   actions whose current actor did not execute (1)\n  ok   still 50 actions, so this is a defect and not a missing run (50)\n  ok   the run names the action and the chain it found\n  ok   the same breakage leaves the second adapter green (0)\n  ok   its chains are still whole (0)\n  ok   the breakage singles out one binding: a document naming its attested unit cannot be forwarded\n  FAIL the same suite passes again once the hop is restored (expected 0, got 1)\n\npassed 36, failed 10"
+    }
   },
   "composes_with": {
     "builds_on": [

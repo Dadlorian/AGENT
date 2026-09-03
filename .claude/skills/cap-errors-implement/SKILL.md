@@ -135,11 +135,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | docs/decomposition.md section 3.2 row P12, extended with the swap: `python3 tools/conformance/errors_fuzz.py --adapter in-process --iterations 250 --report out/errors-a.json` then the same command with `--adapter edge-filter --report out/errors-b.json`, the adapter chosen by configuration with no code edit between runs. Both reports must validate against the ErrorsConformanceReport shape above and assert, per adapter, media type application/problem+json on every failure response, every type value present in the registry in docs/decomposition.md section 2.1.6, `responses_checked > 200`, and `untyped == 0`. |
-| Expected | both runs exit 0; the merged report shows `adapters_run == 2` and, for each adapter, `untyped == 0`, `unregistered_types == 0`, `wrong_media_type == 0`, `responses_checked > 200` |
-| Deliberate breakage | Make the edge-filter adapter pass one upstream failure through unchanged, so that path answers with a plain-text HTTP 500. Leave the in-process adapter untouched. |
-| Expected failure | The edge-filter run exits 1 with `untyped == 1` and `wrong_media_type == 1`, naming that adapter and that path, while the in-process run still exits 0 with `untyped == 0`. Singling out one adapter is the point: a suite that fails both, or neither, has not tested the swap. Claimed: typed errors are absent, neither adapter exists and the fuzz tool is not written, so neither run has been performed here. |
-| Status | claimed |
+| Criterion | bash harness/errors/test.sh && python3 harness/errors/conformance.py --adapter dryrun --adapter second |
+| Expected | The gate (23 checks) and the conformance run together prove one typed RFC 9457 problem for every registered failure mode under an in-process raise-site adapter and an edge-filter adapter that sees only a wire response: the retry decision reads from retryable alone, never from detail text, an unregistered type is refused before a body is built, the edge adapter never forwards an untyped body unchanged, and no product name appears outside adapters/ (adapters_run=2, product_hits=0). Earlier criterion named tools/conformance/errors_fuzz.py, replaced by the harness on 2026-09-03. |
+| Deliberate breakage | In harness/errors/adapters/second.py, remove the media-type/registered-type guard in classify() so it assigns body = wire.get("body") and reshapes unchanged before checking its shape, and change nothing else (the harness README's breakage); restore with git checkout -- harness/errors/adapters/second.py. |
+| Expected failure | The edge adapter, with no guard before assuming the wire body is a well-formed dict, crashes with a traceback (AttributeError) on the first body that is not one, and the conformance run exits non-zero naming adapters/second.py; the in-process adapter is unaffected and still passes — a crash or an explicit FAIL is exactly what the harness's own check for this breakage requires. |
+| Status | measured |
 | Evidence | `F-part-c-04`, `F-b1-04`, `F-a6-06` "A criterion nothing can fail is not a criterion" |
 
 ## Composes with

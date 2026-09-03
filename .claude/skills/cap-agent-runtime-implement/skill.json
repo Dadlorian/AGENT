@@ -171,7 +171,7 @@
         "sources": [
           "F-a3-07"
         ],
-        "quote": "vsock \u2192 host broker, which holds the real key and picks the endpoint"
+        "quote": "vsock → host broker, which holds the real key and picks the endpoint"
       },
       {
         "text": "Apply build-evidence-record: every statement here about how a runtime behaves stays claimed until the conformance run and its evidence record exist, naming the code version and the tree hash under test; no adapter here has been run in this repository; proposed pointer, see that skill.",
@@ -340,20 +340,28 @@
         "F-b1-04",
         "F-a1-03"
       ],
-      "quote": "\u00b7 any ACP-speaking agent"
+      "quote": "· any ACP-speaking agent"
     }
   ],
   "definition_of_done": {
-    "criterion": "Proposed tool, built with the first implementation of this interface: `python3 tools/conformance_agent_runtime.py --adapter today --adapter second --op-seconds 45 --cancel-at 5 --grace 10 --report out/agent-runtime-conformance.json`. Per adapter it starts a 45 second tool call, sends cancel at t=5s, and asserts a terminal frame within grace_s, frames_after_terminal == 0, declared_gap_honoured == true, and runtime_marker read from the running process equal to the adapter selected in the binding; for the interactive adapter it also asserts stop_reason == \"cancelled\". Across adapters it asserts adapters_run >= 2.",
-    "expected": "exit 0 and one line per adapter of the form `adapter=<entity> runtime_marker=<match> cancel_to_terminal_s=<under 10> stop_reason=<cancelled for today, cancel_timeout for second> frames_after_terminal=0 declared_gap_honoured=true`, followed by `adapters_run=2`.",
-    "breakage": "Raise the interactive adapter's internal cancel poll interval above the grace window - 30 seconds against a grace of 10 - and change nothing else, then re-run both adapters.",
-    "expected_failure": "For the interactive adapter the terminal frame arrives after the grace window, the dispatcher hard-stops the unit, stop_reason becomes cancel_timeout instead of cancelled, its declared_gap_honoured becomes false because that adapter declared it can cancel, and the run exits non-zero naming that adapter. The single-shot adapter still passes with stop_reason=cancel_timeout and declared_gap_honoured=true, so the report distinguishes a runtime that never claimed to cancel from one that claimed to and did not.",
-    "status": "claimed",
+    "criterion": "bash harness/containment/test.sh && python3 harness/containment/conformance.py --adapter dryrun --adapter second",
+    "expected": "The gate and the conformance run together prove one agent turn started, cancelled mid-turn and read back through the capability interface under two containment technologies: a terminal frame with no frames after it, stop_reason cancelled for the adapter that offers cancellation, cancel_timeout (by boundary) for the one that does not, and declared_gap_honoured true for both (adapters_run=2). Earlier criterion named tools/conformance_agent_runtime.py, replaced by the harness on 2026-09-03.",
+    "breakage": "Raise harness/containment/binding.json's tuning.cancel_poll_interval_s to 30, above the 0.5s grace window, and change nothing else (the harness README's breakage B); restore with git checkout -- harness/containment/binding.json.",
+    "expected_failure": "The adapter that offers cancellation (simulated-machine-unit) misses the grace window: its terminal frame arrives late, stop_reason becomes cancel_timeout instead of cancelled, declared_gap_honoured turns false because that adapter claimed it could cancel, and the conformance run exits non-zero naming it; the adapter that never claimed cancellation still passes.",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
       "F-a3-09"
     ],
-    "quote": "ends the turn in ~8s against a 45s operation, zero trailing frames"
+    "quote": "ends the turn in ~8s against a 45s operation, zero trailing frames",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "16d354c",
+      "clean_exit": 0,
+      "clean_output": "503)\n\npassed 25, failed 0\nadapter=simulated-machine-unit containment_marker=match exit=0 digest=sha256:adfdc984db3b83b7 jail_mode=0700 owner_in_host_passwd=false egress_made=3 egress_blocked=3 stop_reason=cancelled declared_gap_honoured=true checks=19/19\nadapter=capability-granted-unit containment_marker=match exit=0 digest=sha256:adfdc984db3b83b7 jail_mode=0700 owner_in_host_passwd=false egress_made=3 egress_blocked=3 stop_reason=cancel_timeout declared_gap_honoured=true checks=18/18\nadapters_run=2\nconformance: pass  report=/home/user/AGENT/harness/containment/out/containment-conformance.json",
+      "breakage_exit": 1,
+      "breakage_output": "interval rises above the grace window\n  ok   conformance fails (1)\nadapter that claimed cancellation: cancel_timeout declared_gap_honoured = False\nadapter that never claimed it:  cancel_timeout declared_gap_honoured = True\n  ok   a runtime that claimed cancellation and missed it is told apart from one that never claimed it (0)\n6. failure paths answer with typed problems\nrefusals: all typed and refused before anything ran\n  ok   every refusal is an RFC 9457 problem (0)\n  ok   live mode with no env refuses rather than degrading (2)\n  ok   typed as isolation-unavailable (503)\n\npassed 20, failed 5"
+    }
   },
   "composes_with": {
     "builds_on": [

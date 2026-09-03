@@ -132,11 +132,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | docs/decomposition.md section 3.2 row P15, extended with the swap: `python3 tools/conformance/idempotency_race.py --adapter log-fold-at-entry --entry examples/end-to-end/entries/human.json --concurrency 100 --report out/idem-a.json` then the same command with `--adapter conditional-write-lease --report out/idem-b.json`, the adapter chosen by configuration with no code edit between runs. Both reports must validate against the IdempotencyConformanceReport shape above and assert, per adapter, `executions == 1`, `duplicates == 99`, `conflicts == 0`; the lease adapter must additionally assert `overlapped >= 1`, and the fold adapter must declare in_flight unsupported rather than assert it. |
-| Expected | both runs exit 0; the merged report shows `adapters_run == 2`, `selected_by == "configuration"`, and for each adapter `executions == 1` and `duplicates == 99`, with `overlapped >= 1` recorded for the lease adapter only. |
-| Deliberate breakage | Remove the lease acquisition from the conditional-write adapter while leaving the key on the wire and the fold adapter untouched, which reproduces the state PASS.md B3 records today for a single adapter. |
-| Expected failure | The lease run exits 1 with `executions > 1` and `overlapped == 0`, naming that adapter, while the fold run still exits 0 for the sequential asserts it makes. Singling out one adapter is the point: a suite that fails both, or neither, has not tested the swap. Claimed: no lease exists today, neither adapter is written and the race tool does not exist, so neither run has been performed here. |
-| Status | claimed |
+| Criterion | bash harness/idempotency/test.sh && python3 harness/idempotency/conformance.py --adapter dryrun --adapter second |
+| Expected | The gate and the conformance run together prove one claim over a key and a payload digest under a log-fold-at-entry adapter and a conditional-write lease adapter: a replayed key returns the stored result with no second effect, a reused key under a different payload is refused as a typed idempotency-conflict, and the lease adapter alone serialises a 20-way concurrent race to exactly one execution while the fold adapter honestly declares in-flight unsupported (adapters_run=2). Earlier criterion named tools/conformance/idempotency_race.py, replaced by the harness on 2026-09-03. |
+| Deliberate breakage | In harness/idempotency/adapters/second.py, remove the `with self._lock:` guard around the conditional write in claim() (replacing it with an unlocked read that widens the race window) and change nothing else (the harness README's breakage); restore with git checkout -- harness/idempotency/adapters/second.py. |
+| Expected failure | The lease adapter's 20-way concurrent race case fails: every concurrent copy wins (executions=20, overlapped=0) instead of serialising to one winner, and the conformance run drops to 15/16 cases and exits non-zero naming that adapter; the fold adapter's cases are untouched, which is the point — without a lease every concurrent copy wins, reproducing PASS.md's own row for today (F-b3-16). |
+| Status | measured |
 | Evidence | `F-b3-16`, `F-b1-04` "key on the wire, no lease" |
 
 ## Composes with

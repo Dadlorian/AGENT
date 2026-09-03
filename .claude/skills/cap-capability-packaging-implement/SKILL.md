@@ -190,11 +190,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | Two checks, both run from the repository root. (1) Cross-source equivalence, proposed tool built with this adapter: `python3 tools/conformance_capability_packaging.py --binding config/packaging/today.json --binding config/packaging/registry.json --identities .claude/skills --report out/packaging-conformance.json`, asserting sources_run >= 2, packages_checked > 0, frontmatter_missing == 0, required_field_missing == 0, name_mismatch == 0, resolution_divergence == 0 and digest_mismatch == 0. (2) Containment: `grep -rIlE '(\.claude/skills\|SKILL\.md\|oci://)' src/core/ src/seam/` returns no files, so the package layout and the transport appear only inside the adapter directories. |
-| Expected | (1) exit 0 with one line per source reading `source=<role> packages_checked=<N greater than 0> frontmatter_missing=0 name_mismatch=0 digest_mismatch=0` followed by `sources_run=2 resolution_divergence=0`. (2) grep exits 1 printing nothing. |
-| Deliberate breakage | In one change, publish the registry artifact for one package from a tree in which a single reference file was edited after rendering, and hard-code the filesystem package root inside a core module. |
-| Expected failure | Check (1) exits non-zero with `digest_mismatch=1` and `resolution_divergence=1` naming that identity and which source differs, while every other package still reports 0. Check (2) exits 0 and names the core file. The two fail for different reasons, which is why both are kept: the leaked root alone would leave check (1) fully green, and the stale artifact alone would leave check (2) green. |
-| Status | claimed |
+| Criterion | bash harness/capability-packaging/test.sh && python3 harness/capability-packaging/conformance.py --adapter dryrun --adapter second |
+| Expected | The gate (27 checks) and the conformance run together prove: one portable package directory resolves through the same interface from a filesystem source and a content-addressed registry source, discovery reads only the resident tier, the two required resident fields (name, description) are enforced by the interface itself rather than per adapter, a package missing one is refused as a typed document-invalid problem, and the swap is proven by an equal case count with the source and digest axes differing (adapters_run=2). Earlier criterion named tools/conformance_capability_packaging.py, replaced by the harness on 2026-09-03. |
+| Deliberate breakage | Widen REQUIRED_RESIDENT in harness/capability-packaging/interface.py from ("name", "description") to ("name", "description", "owner") and change nothing else (the harness README's breakage); restore with git checkout -- harness/capability-packaging/interface.py. |
+| Expected failure | Every fixture package, including the well-formed one, is now missing the invented required field: discovery, resolution and every dependent tier fail, and the conformance run drops from 12/12 to 2/12 cases passed and reports conformance FAILED, exiting non-zero — the green run can fail, and the interface enforces exactly the two fields the spec requires, never more. |
+| Status | measured |
 | Evidence | `F-part-c-04`, `F-b1-02` "A criterion nothing can fail is not a criterion" |
 
 ## Composes with

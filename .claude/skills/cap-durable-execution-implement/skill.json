@@ -349,16 +349,24 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "Proposed tool, built with the first implementation of this interface: `python3 tools/conformance_durable_execution.py --adapter today --adapter second --steps 20 --side-effecting-step 11 --kill-at 11 --report out/durable-execution-conformance.json`. Per adapter it runs a 20-step workflow with a side-effecting step, sends `kill -9` to the executor at step 11, restarts it, and asserts effects_for_killed_step == 1 counted from the external effect table, duplicate_effects == 0, steps_replayed > 0, declared_gap_honoured == true, budget_remaining_after_resume_micros recomputed from the committed step records rather than reset, and executor_marker read from the running executor equal to the adapter selected in the binding. Across adapters it asserts adapters_run >= 2.",
-    "expected": "exit 0 and one line per adapter of the form `adapter=<entity> executor_marker=<match> steps_committed=20 steps_replayed=<greater than 0> effects_for_step_11=1 duplicate_effects=0 declared_gap_honoured=true`, followed by `adapters_run=2`.",
-    "breakage": "Drop the idempotency key from the step record - write the checkpoint with the step id alone - change nothing else, then re-run both adapters.",
-    "expected_failure": "Neither executor can tell the retried step 11 from a new one: the effect count for step 11 becomes 2, duplicate_effects becomes non-zero, and the run exits non-zero naming both adapters and the step. steps_replayed stays greater than 0, which distinguishes duplication from a kill that never landed, and the report shows the failure under both executors, which is what says the defect is in the step record rather than in one engine.",
-    "status": "claimed",
+    "criterion": "bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second",
+    "expected": "The gate (23 checks) and the conformance run together prove a 20-step durable flow with a real kill -9 at the irreversible step, resumed at the first incomplete step, under an in-process journaled executor and a queue-plus-state-machine executor sharing the same journal: committed steps are not replayed, the effect table (read from outside each executor's own tally) shows exactly one row for the killed step, the budget is recomputed from committed records rather than reset, and the two executors differ in execution model while both pass the same 28 checks (adapters_run=2). Earlier criterion named tools/conformance_durable_execution.py, replaced by the harness on 2026-09-03.",
+    "breakage": "In harness/workflow/flow.py, make Attempt.key() always return None instead of the step's idempotency key (the harness's own --break-idempotency behaviour, made the default so the criterion needs no extra flag) and change nothing else; restore with git checkout -- harness/workflow/flow.py.",
+    "expected_failure": "Neither executor can recognise a checkpointed step as already done: both commit 14 steps instead of 8 and replay nothing (steps_replayed=0); the in-process journal additionally repeats the side effect (duplicate_effects=1) while the queue-based executor's own transaction still stops it at one. The conformance run exits non-zero naming both adapters — both failing is what says the defect is in the step record, not in one engine.",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
       "F-b4-08"
     ],
-    "quote": "A criterion nothing can fail is not a criterion"
+    "quote": "A criterion nothing can fail is not a criterion",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "16d354c",
+      "clean_exit": 0,
+      "clean_output": "landed, so this is duplication and not a missing crash (True)\n  ok   the same suite passes again once the key is restored (0)\n\npassed 23, failed 0\ndry-run: 23 checks pass, swap proven across 2 executors, breakage fails both\nadapter=dryrun executor_marker=in-process-journal/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28\nadapter=second executor_marker=queue-state-machine/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28\nadapters_run=2 distinct_markers=2",
+      "breakage_exit": 1,
+      "breakage_output": " executors in one report (expected 0, got 1)\n  ok   adapters_run (2)\n  ok   distinct executor markers (2)\n  FAIL the executors disagree on the effect count\n4. deliberate breakage: the step record carries no idempotency key\n  ok   the breakage run exits non-zero (nonzero)\n  ok   the keyed-effect executor repeats the side effect (1)\n  ok   both executors report failures, so the defect is in the step record (True)\n  ok   the kill still landed, so this is duplication and not a missing crash (True)\n  FAIL the same suite passes again once the key is restored (expected 0, got 1)\n\npassed 13, failed 10"
+    }
   },
   "composes_with": {
     "builds_on": [

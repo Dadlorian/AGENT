@@ -174,11 +174,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | Proposed tool, built with the first implementation of this interface: `python3 tools/conformance_isolation.py --adapter today --adapter second --fixture fixtures/unit-egress-probe --report out/isolation-conformance.json`. It runs one fixture unit under both adapters from one declaration (profile `small`, `egress: "none"`) and asserts per adapter: `exit_status` equal across adapters, `output_digest` equal across adapters, `containment.jail_mode == "0700"`, `containment.owner_in_host_passwd == false`, `containment.observed_from == "host"`, `containment.egress_attempts_blocked == containment.egress_attempts_made`, `containment.egress_attempts_made > 0`, `declared_gap_honoured == true`, and `containment_marker` read from the running unit equal to the adapter selected in the binding; across adapters it asserts `adapters_run >= 2`. |
-| Expected | exit 0 and one line per adapter of the form `adapter=<entity> containment_marker=<match> exit=0 digest=<equal across adapters> jail_mode=0700 owner_in_host_passwd=false egress_made=<above 0> egress_blocked=<equal to made> declared_gap_honoured=true`, followed by `adapters_run=2`. |
-| Deliberate breakage | Add `0.0.0.0/0` to the default `egress_allowlist` in configuration and change nothing else, then re-run both adapters. |
-| Expected failure | The probe's connect attempts now succeed, `egress_blocked` drops below `egress_made` under both adapters, the equality assertion fails for each, and the run exits non-zero naming both. The jail, digest and marker assertions still pass, so the report shows a run that is green on everything except the one property the breakage removed. |
-| Status | claimed |
+| Criterion | bash harness/containment/test.sh && python3 harness/containment/conformance.py --adapter dryrun --adapter second |
+| Expected | The gate (25 checks) and the conformance run together prove: one contained unit runs one agent turn under each of two containment technologies from one declaration; jail mode is 0700 with no host passwd entry, the containment report is read from the host never the unit, egress attempts blocked equals egress attempts made, the output digest and exit status are equal across adapters, and the two adapters differ in execution model on at least one axis (adapters_run=2). Earlier criterion named tools/conformance_isolation.py, replaced by the harness on 2026-09-03. |
+| Deliberate breakage | Add 0.0.0.0/0 to harness/containment/binding.json's default_declaration egress_allowlist (egress: allowlist) and change nothing else (the harness README's breakage A); restore with git checkout -- harness/containment/binding.json. |
+| Expected failure | Both adapters' egress-attempt assertions fail (egress_blocked drops below egress_made) and the conformance run exits non-zero naming both adapters; the jail mode, digest and containment-marker assertions still pass, so the report is green on everything except the one property the breakage removed. |
+| Status | measured |
 | Evidence | `F-part-c-04`, `F-a3-06` "owned by a per-VM uid with no passwd entry" |
 
 ## Composes with

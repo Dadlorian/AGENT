@@ -170,11 +170,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | Proposed tool, built with the first implementation of this interface: `python3 tools/conformance_agent_runtime.py --adapter today --adapter second --op-seconds 45 --cancel-at 5 --grace 10 --report out/agent-runtime-conformance.json`. Per adapter it starts a 45 second tool call, sends cancel at t=5s, and asserts a terminal frame within grace_s, frames_after_terminal == 0, declared_gap_honoured == true, and runtime_marker read from the running process equal to the adapter selected in the binding; for the interactive adapter it also asserts stop_reason == "cancelled". Across adapters it asserts adapters_run >= 2. |
-| Expected | exit 0 and one line per adapter of the form `adapter=<entity> runtime_marker=<match> cancel_to_terminal_s=<under 10> stop_reason=<cancelled for today, cancel_timeout for second> frames_after_terminal=0 declared_gap_honoured=true`, followed by `adapters_run=2`. |
-| Deliberate breakage | Raise the interactive adapter's internal cancel poll interval above the grace window - 30 seconds against a grace of 10 - and change nothing else, then re-run both adapters. |
-| Expected failure | For the interactive adapter the terminal frame arrives after the grace window, the dispatcher hard-stops the unit, stop_reason becomes cancel_timeout instead of cancelled, its declared_gap_honoured becomes false because that adapter declared it can cancel, and the run exits non-zero naming that adapter. The single-shot adapter still passes with stop_reason=cancel_timeout and declared_gap_honoured=true, so the report distinguishes a runtime that never claimed to cancel from one that claimed to and did not. |
-| Status | claimed |
+| Criterion | bash harness/containment/test.sh && python3 harness/containment/conformance.py --adapter dryrun --adapter second |
+| Expected | The gate and the conformance run together prove one agent turn started, cancelled mid-turn and read back through the capability interface under two containment technologies: a terminal frame with no frames after it, stop_reason cancelled for the adapter that offers cancellation, cancel_timeout (by boundary) for the one that does not, and declared_gap_honoured true for both (adapters_run=2). Earlier criterion named tools/conformance_agent_runtime.py, replaced by the harness on 2026-09-03. |
+| Deliberate breakage | Raise harness/containment/binding.json's tuning.cancel_poll_interval_s to 30, above the 0.5s grace window, and change nothing else (the harness README's breakage B); restore with git checkout -- harness/containment/binding.json. |
+| Expected failure | The adapter that offers cancellation (simulated-machine-unit) misses the grace window: its terminal frame arrives late, stop_reason becomes cancel_timeout instead of cancelled, declared_gap_honoured turns false because that adapter claimed it could cancel, and the conformance run exits non-zero naming it; the adapter that never claimed cancellation still passes. |
+| Status | measured |
 | Evidence | `F-part-c-04`, `F-a3-09` "ends the turn in ~8s against a 45s operation, zero trailing frames" |
 
 ## Composes with

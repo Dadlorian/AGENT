@@ -290,21 +290,29 @@
         "F-b3-13",
         "F-b1-04"
       ],
-      "quote": "\u2014 adopt the RFC directly"
+      "quote": "— adopt the RFC directly"
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.2 row P12, extended with the swap: `python3 tools/conformance/errors_fuzz.py --adapter in-process --iterations 250 --report out/errors-a.json` then the same command with `--adapter edge-filter --report out/errors-b.json`, the adapter chosen by configuration with no code edit between runs. Both reports must validate against the ErrorsConformanceReport shape above and assert, per adapter, media type application/problem+json on every failure response, every type value present in the registry in docs/decomposition.md section 2.1.6, `responses_checked > 200`, and `untyped == 0`.",
-    "expected": "both runs exit 0; the merged report shows `adapters_run == 2` and, for each adapter, `untyped == 0`, `unregistered_types == 0`, `wrong_media_type == 0`, `responses_checked > 200`",
-    "breakage": "Make the edge-filter adapter pass one upstream failure through unchanged, so that path answers with a plain-text HTTP 500. Leave the in-process adapter untouched.",
-    "expected_failure": "The edge-filter run exits 1 with `untyped == 1` and `wrong_media_type == 1`, naming that adapter and that path, while the in-process run still exits 0 with `untyped == 0`. Singling out one adapter is the point: a suite that fails both, or neither, has not tested the swap. Claimed: typed errors are absent, neither adapter exists and the fuzz tool is not written, so neither run has been performed here.",
-    "status": "claimed",
+    "criterion": "bash harness/errors/test.sh && python3 harness/errors/conformance.py --adapter dryrun --adapter second",
+    "expected": "The gate (23 checks) and the conformance run together prove one typed RFC 9457 problem for every registered failure mode under an in-process raise-site adapter and an edge-filter adapter that sees only a wire response: the retry decision reads from retryable alone, never from detail text, an unregistered type is refused before a body is built, the edge adapter never forwards an untyped body unchanged, and no product name appears outside adapters/ (adapters_run=2, product_hits=0). Earlier criterion named tools/conformance/errors_fuzz.py, replaced by the harness on 2026-09-03.",
+    "breakage": "In harness/errors/adapters/second.py, remove the media-type/registered-type guard in classify() so it assigns body = wire.get(\"body\") and reshapes unchanged before checking its shape, and change nothing else (the harness README's breakage); restore with git checkout -- harness/errors/adapters/second.py.",
+    "expected_failure": "The edge adapter, with no guard before assuming the wire body is a well-formed dict, crashes with a traceback (AttributeError) on the first body that is not one, and the conformance run exits non-zero naming adapters/second.py; the in-process adapter is unaffected and still passes — a crash or an explicit FAIL is exactly what the harness's own check for this breakage requires.",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
       "F-b1-04",
       "F-a6-06"
     ],
-    "quote": "A criterion nothing can fail is not a criterion"
+    "quote": "A criterion nothing can fail is not a criterion",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "16d354c",
+      "clean_exit": 0,
+      "clean_output": "d, counted, and never crashes the caller: classified to urn:agentic:problem:adapter-unavailable, untyped=1\n  ok   the edge adapter's own failure path: wrong media type is counted: text/plain body counted as untyped and wrong_media_type, never forwarded unchanged\n  ok   byte-identical problem bodies from both adapters: 7 members, canonical JSON identical byte for byte across both adapters\n  adapter=edge component that answers on behalf of a service cases=9 passed=9 responses_checked=14 untyped=1 unregistered_types=0 wrong_media_type=1 product_hits=0\nconformance PASSED: 18/18 cases, 2 binding(s)",
+      "breakage_exit": 1,
+      "breakage_output": ". no product name anywhere in this harness\n  ok   product scan over the shipped tree exits 0 (0)\n  ok   0 hits (PASS.md B3 records no component for this element)\n4. deliberate breakage: the edge adapter forwards an untyped upstream body unchanged\n  ok   the breakage run exits non-zero (1)\n  ok   the run names the file the breakage broke\n  ok   an untyped upstream body is no longer converted; the check catches it\n\npassed 17, failed 6\nTraceback (most recent call last):\n  File \"<stdin>\", line 18, in <module>\nAssertionError: the breakage pattern was not found; test.sh is out of sync with second.py"
+    }
   },
   "composes_with": {
     "builds_on": [
@@ -323,7 +331,7 @@
       "sources": [
         "F-b3-13"
       ],
-      "quote": "\u2014 adopt the RFC directly"
+      "quote": "— adopt the RFC directly"
     },
     {
       "question": "Can the edge-filter adapter reach `untyped == 0` at all, given that it cannot type what an upstream never described?",

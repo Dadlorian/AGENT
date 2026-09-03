@@ -30,3 +30,4 @@
 | 25 | Observability harness | One trace carries correlation on explicit attributes | Done | 36 checks pass and the swap holds | 2026-09-03 0ef877a |
 | 24 | Gateway harness | One completion by class runs under a scoped cap | Done | 24 checks pass and the swap holds | 2026-09-03 1c90af9 |
 | 43 | Agent scope registry | No two agents edit the same file in one round | Done | scopes.py, refusal measured | 2026-09-03 1c90af9 |
+| 23 | Containment harness | One turn runs in a microVM through the interface and cancels | Done | 23 checks dry run, live claimed | 2026-09-03 57819f9 |

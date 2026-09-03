@@ -56,3 +56,8 @@
 | 60 | Phase 2: capabilities | Each element has a guide, a measured run and a sourced skill | Done | 16 of 16 elements accepted, 37 findings applied | 2026-09-03 e8caef0 |
 | 61 | Phase 3: core, seams, cross-cutting | Ceremony closes with every stick met or recorded absent | Done | 36 skills at zero warnings, 18 measured | 2026-09-03 cdec0de |
 | 62 | Phase 4: composition | Ceremony closes and the end-to-end example runs | Done | 10 skills at zero warnings, 5 measured | 2026-09-03 f38d245 |
+| 13 | Sourced rows | Proposed rows are under 30 percent | Done | 29.7 percent | 2026-09-03 6578d7b |
+| 15 | Restatement warnings | Validator reports zero warnings | Done | 0 warnings, 0 errors | 2026-09-03 6578d7b |
+| 16 | Measured definitions of done | Most skills have a measured run | Done | 55 of 102 | 2026-09-03 6578d7b |
+| 17 | Human review | Owner feedback is recorded as a ceremony | Done | Five corrections in OWNER.md, ledgered | 2026-09-03 6578d7b |
+| 63 | Phase 5: final acceptance | Scorecard and acceptance matrix hold at one commit | Done | 15 of 15 sticks hold | 2026-09-03 6578d7b |

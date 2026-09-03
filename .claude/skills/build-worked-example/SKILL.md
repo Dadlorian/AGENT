@@ -11,7 +11,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Statement | Origin | Evidence |
 |---|---|---|
-| Make every worked example of the platform answer the same questions and pass the same check, so the four entries of TARGET T6.2 are demonstrated rather than assumed and an example can be graded, not just read. | sourced | `T-t6-02` "Four entries cover nearly every situation" |
+| Make every worked example of the platform answer the same questions and pass the same check, so the four entries of TARGET T6.2 are demonstrated rather than assumed and an example can be graded, not just read. The examples exist to show composability from the consumer's side: what a caller does not have to write because defaults, named files and late binding carry it. | sourced | `T-t6-02` "Four entries cover nearly every situation" |
 
 ## Contract
 
@@ -19,8 +19,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Invariant | Origin | Evidence |
 |---|---|---|
-| Every example answers six questions in order: what the caller writes, what resolves and from which layer, what the card shows before spend, where a human decides and what they are shown, what comes back, and what could be swapped without the caller noticing. The card question is only answerable because planning completes before execution. | sourced | `F-b1-06` "Cost is knowable before commitment." |
-| Every example shows one document through all four entries, byte-identical, with a four-door table whose rows are: what fires it, starts or steers, whose identity, whose money, what the gate does, where the card goes. Only resolution differs between the columns. | sourced | `T-t6-02` "a human, an event, a schedule (time), and an external system or agent" |
+| Every example answers six questions in order: what the caller writes, what resolves and from which layer, what the card shows before spend, where a human decides and what they are shown, what comes back (the return shape cap-consumption fixes, not one restated here), and what could be swapped without the caller noticing. The card question is only answerable because planning completes before execution. | sourced | `F-b1-06` "Cost is knowable before commitment." |
+| Every example shows one document through all four entries as cap-consumption names them, byte-identical, with a four-door table whose rows are: what fires it, starts or steers, whose identity, whose money, what the gate does, where the card goes. Only resolution differs between the columns; the entries themselves are not redefined here. | sourced | `T-t6-02` "a human, an event, a schedule (time), and an external system or agent" |
 | Every example is graded on six criteria, pass or fail: compact, composed not restated, priced before spend, decidable (every gate has a view), swappable (no product in the caller's document), provable (the return carries verdict, usage and trace). A product in the caller's document fails swappable. | sourced | `F-part-c-09` "Products belong in the adapter column only." |
 | An example never shows the grading criterion to the thing graded: the instrument is named by reference on the card and never appears in a step's input. | sourced | `F-b1-07` "The grader is never visible to the graded." |
 | Every number and every run in an example is labelled claimed or measured. Illustrative numbers are labelled illustrative and never measured. | sourced | `F-part-c-08` "**claimed** from **measured**" |

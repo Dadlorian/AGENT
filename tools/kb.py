@@ -14,6 +14,8 @@ Usage:
   python3 tools/kb.py merge-research   merge kb/research/*.jsonl into kb/research.jsonl (chained, sorted by id)
   python3 tools/kb.py ledger '<json>'  append one run record to kb/ledger.jsonl (chained; adds git commit, tree hash, dirty flag, time)
   python3 tools/kb.py ledger-verify    check the ledger chain
+  python3 tools/kb.py import-blueprint  docs/architecture/blueprint.json -> kb/architecture.jsonl (A- entities and edges, chained)
+  python3 tools/kb.py impact <name>    what moves if <name> (a standard, component, capability, or skill) changes
 
 Files:
   kb/facts.jsonl      one record per fact (table row, list item, or paragraph) in PASS.md
@@ -517,8 +519,87 @@ def ledger_verify() -> int:
     return 0
 
 
+ARCH = KB / "architecture.jsonl"
+
+
+def import_blueprint() -> int:
+    """Turn the blueprint into chained records: A-state-*, A-standard-*, A-tool-* entities and typed edges."""
+    bp = json.loads((ROOT / "docs" / "architecture" / "blueprint.json").read_text())
+    recs: list[dict] = []
+
+    def ent(kind: str, name: str, **attrs) -> str:
+        rid = f"A-{kind}-{slug(name)}"
+        if not any(r["id"] == rid for r in recs):
+            recs.append({"id": rid, "type": "arch-entity", "kind": kind, "name": name, **attrs})
+        return rid
+
+    def edge(rel: str, a: str, b: str, **attrs):
+        recs.append({"id": f"A-edge-{slug(rel)}-{slug(a[2:])}-{slug(b[2:])}", "type": "arch-edge", "rel": rel, "from": a, "to": b, **attrs})
+
+    for st in bp.get("state_types", []):
+        sid = ent("state", st["state"], lifetime=st.get("lifetime"), home_today=st.get("home_today"), sources=st.get("sources", []), status=st.get("status", "sourced"))
+        for key, rel in (("owner_capability", "owned-by"), ("home_ideal", "lives-in")):
+            if st.get(key):
+                edge(rel, sid, ent("owner", st[key]), sources=st.get("sources", []))
+    for s_ in bp.get("standards_at_play", []):
+        sid = ent("standard", s_["standard"], version=s_.get("version"), sources=s_.get("sources", []))
+        for c in s_.get("capabilities", []):
+            edge("governs", sid, ent("owner", c), sources=s_.get("sources", []))
+    for t in bp.get("tool_entries", []):
+        tid = ent("tool", t["component"], sources=t.get("sources", []))
+        if t.get("capability"):
+            edge("adapts", tid, ent("owner", t["capability"]), boundary=t.get("adapter_boundary"), second_adapter=t.get("second_adapter"), sources=t.get("sources", []))
+    for im in bp.get("impact_map", []):
+        cid = ent("change", im["if_changes"], unaffected_core=im.get("unaffected_core"), sources=im.get("sources", []))
+        for a in im.get("affected_adapters", []):
+            edge("affects-adapter", cid, ent("adapter", a))
+        for t in im.get("affected_tests", []):
+            edge("affects-test", cid, ent("test", t))
+        for sk in im.get("affected_skills", []):
+            edge("affects-skill", cid, ent("skill", sk))
+    for e in bp.get("entry_matrix", []):
+        eid = ent("entry", e["entry"])
+        edge("touches", eid, ent("state", e["state"]), caller=e.get("minimal_caller_action"), platform=e.get("platform_applies"), sources=e.get("sources", []))
+    write_jsonl(ARCH, chain(recs))
+    kinds = {}
+    for r in recs:
+        kinds[r.get("kind") or r["rel"]] = kinds.get(r.get("kind") or r["rel"], 0) + 1
+    print(f"wrote kb/architecture.jsonl: {len(recs)} records; {json.dumps(kinds)}")
+    return 0
+
+
+def impact(name: str) -> int:
+    """Walk the architecture graph from anything whose name or id contains <name>."""
+    recs = read_jsonl(ARCH) if ARCH.is_file() else []
+    if not recs:
+        print("run import-blueprint first"); return 1
+    byid = {r["id"]: r for r in recs}
+    key = slug(name)
+    starts = [r["id"] for r in recs if r["type"] == "arch-entity" and key in r["id"]]
+    if not starts:
+        print(f"nothing named like {name!r}"); return 1
+    # one hop from the start nodes in any direction, then impact edges from any change node reached
+    seen = set(starts)
+    for r in recs:
+        if r["type"] == "arch-edge":
+            if r["from"] in starts: seen.add(r["to"])
+            if r["to"] in starts: seen.add(r["from"])
+    for r in recs:
+        if r["type"] == "arch-edge" and r["rel"].startswith("affects-") and r["from"] in seen:
+            seen.add(r["to"])
+    by_kind: dict[str, list[str]] = {}
+    for i in sorted(seen):
+        k = byid[i].get("kind", "?"); by_kind.setdefault(k, []).append(byid[i].get("name", i))
+    print(f"if {name!r} changes ({len(starts)} start node(s)):")
+    for k, v in sorted(by_kind.items()):
+        print(f"  {k} ({len(v)}): " + "; ".join(v[:12]) + (" ..." if len(v) > 12 else ""))
+    return 0
+
+
 if __name__ == "__main__":
-    cmds = {"build": build, "verify": verify, "tree": tree, "stats": stats, "merge-research": merge_research, "ledger-verify": ledger_verify}
+    cmds = {"build": build, "verify": verify, "tree": tree, "stats": stats, "merge-research": merge_research, "ledger-verify": ledger_verify, "import-blueprint": import_blueprint}
+    if len(sys.argv) >= 3 and sys.argv[1] == "impact":
+        sys.exit(impact(" ".join(sys.argv[2:])))
     if len(sys.argv) >= 3 and sys.argv[1] == "ledger":
         sys.exit(ledger_append(json.loads(sys.argv[2])))
     if len(sys.argv) >= 3 and sys.argv[1] == "show":

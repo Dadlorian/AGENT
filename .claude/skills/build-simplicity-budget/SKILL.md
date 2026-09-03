@@ -21,14 +21,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Contract
 
-### Operations
-
-| Operation | Input | Output | Origin | Evidence |
-|---|---|---|---|---|
-| declare_budget | an element name, the machine-readable files that are its source of truth, and three ceilings | a simplicity-budget-declaration record (proposed operation) | proposed | - |
-| count_element | a simplicity-budget-declaration and the tree under test | the three counts read from the declared source of truth, never from prose (proposed operation) | proposed | - |
-| check_budget | the counts and the declared ceilings | a simplicity-budget-check-result carrying verdict within or exceeded and the list of exceeded counts (proposed operation) | proposed | - |
-
 ### Shapes (JSON Schema 2020-12)
 
 **simplicity-budget-declaration (proposed shape; the worked declaration for the entry envelope is in references/counting-method.md)** (proposed; sources: `T-t3-01`)
@@ -153,20 +145,17 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Invariant | Origin | Evidence |
 |---|---|---|
-| Proposed: simplicity is a count, not an impression. An element is in budget only when first_run_concepts, resident_metadata and minimum_implementation are each read from a machine-readable source of truth and compared with a declared ceiling. Research query: measurement-based design literature on counting concepts versus impression-based simplicity claims. | proposed | `T-t3-01`, `T-t3-02` "It has to be simple to use." |
 | The layering that keeps the counts low is three tiers, flag then options then closure, which is the practical implementation of progressive disclosure. | sourced | `X-entry-composition-038` "This three-tier model (flag, then options, then closure) is the practical implementation of Progressive Disclosure." |
 | An advanced capability is reached through a default that can be overridden, not through a parameter the caller is required to supply upfront. | sourced | `X-entry-composition-039` "sensible defaults with the option to override, rather than requiring explicit configuration of every parameter" |
 | The measurable instance of a bounded resident tier is the three-tier skill model, where only the name and description load at startup (~30-50 tokens per skill) and everything else loads on demand. | sourced | `X-entry-composition-036` "only the name and description load at startup (~30-50 tokens per skill)" |
 | A minimum implementation surface is countable: a conforming agent registers three named handlers and one connect call, so a claim about how hard something is to implement resolves to a number. | sourced | `X-entry-composition-010` "you can register handlers such as initialize(...), newSession(...), and prompt(...), then call connect(stream)" |
 | The Budget concern in PASS.md B4 gives the shape this discipline reuses at authoring time: every unit of work carries a ceiling, and exceeding it terminates the unit, not the platform. | sourced | `F-b4-02`, `E-concern-budget` "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform" |
 | A count over its ceiling rejects the change, it does not warn, on the model of a resource quota that enforces its budget by rejecting the creation of resources that would exceed the established limits. The element gets the new concept only by giving up another required one, by moving it into the options tier with a default, or by raising the ceiling in a recorded decision. | sourced | `X-build-simplicity-budget-004` "rejecting the creation of resources that would exceed the established limits" |
-| Proposed: this is the eighth rule beside the seven design rules agentic-stack already states as pass/fail tests (F-b1-01 through F-b1-08), and it is a rule only because it is counted; agentic-stack owns those seven and this skill does not restate them. Research query: whether an eighth, counted design rule belongs beside agentic-stack's seven pass/fail rules or as a separate discipline layered on top of them. | proposed | `F-b1-01` "These are the rules that produce flexibility. Everything downstream is a consequence." |
 
 ### Deliberately not exposed
 
 | Item | Origin | Evidence |
 |---|---|---|
-| Proposed: no impression score. The discipline exposes counts and ceilings only, so no row may read simple, clean, lightweight or intuitive without a number beside it. Research query: usability research on banning subjective adjectives (simple, clean, lightweight) from a spec in favor of a counted ceiling. | proposed | `T-t3-02` "It cannot be daunting or overly complex, or no one will use it." |
 | The budget never caps capability. It caps what is required; advanced options stay available but not required upfront, and the escape hatch that hands full control back is part of the element, not an exception to it. | sourced | `X-entry-composition-039` "Well-designed APIs present a simple surface area for common use cases, with advanced options available but not required upfront." |
 
 ## Instructions
@@ -181,7 +170,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | Wire the check as the element's definition of done in the form build-definition-of-done requires: the counting command, its expected output, and a deliberate breakage that adds one required concept to a throwaway copy and makes the same command exit non-zero. | build-definition-of-done already owns this rule (F-part-c-04); the only thing this discipline adds is which command counts and what the breakage is. | sourced | `F-part-c-04` "A criterion nothing can fail is not a criterion." |
 | 7 | Source any ceiling that is not a ratchet to a research record with a verbatim snippet, following build-research-record; a number with no record is written as proposed and says so. Research query: whether a counted ceiling with no supporting research record should default to proposed or block the declaration. | Proposed: a ceiling is the part of this discipline most likely to be invented, and an invented number is indistinguishable from a measured one once it is in a table. | proposed | - |
 | 8 | When a count exceeds its ceiling, apply 1-3-1 over exactly three options, move the concept into the options tier with a default, drop another required concept, or raise the ceiling with the reason recorded, then follow the recommendation and record it; carry an unresolved overrun into the section ceremony that build-ceremony defines rather than leaving it open. | The operating protocol names 1-3-1 for exactly this, and an overrun that nobody decides on becomes a permanent exception. | sourced | `T-t5-02` "define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation" |
-| 9 | Open references/counting-method.md only when you need the worked declaration for the entry envelope and the three counting expressions in full; the rows above are proposed as sufficient to run the discipline without it. | Proposed: the worked example is needed once per new element, so it should cost nothing to a reader who is only checking a count. | proposed | - |
 
 ## Best practices
 
@@ -191,7 +179,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Reject at admission rather than after the fact, the way a resource quota works by rejecting the creation of resources that would exceed the established limits, so the count is checked when the field is added and not when someone complains. | sourced | `X-build-simplicity-budget-004` "rejecting the creation of resources that would exceed the established limits" |
 | Push rarely used capability down a tier instead of deleting it; progressive disclosure defers advanced features rather than removing them, by deferring some advanced or rarely-used features to a secondary screen. | sourced | `X-entry-composition-037` "deferring some advanced or rarely-used features to a secondary screen" |
 | A ceiling is a cap per period or per unit, not a total: token budgeting works by setting explicit caps on how many tokens a user, session, or feature can consume within a given period, and a simplicity ceiling is scoped to one element the same way. | sourced | `X-build-simplicity-budget-001` "setting explicit caps on how many tokens a user, session, or feature can consume within a given period" |
-| Proposed: this skill does not restate the per-skill authoring budget. build-skill-authoring owns rows-per-table and when long material moves to references/; apply that one to skill files and this one to the elements those skills describe. | proposed | - |
 
 ## Definition of done
 

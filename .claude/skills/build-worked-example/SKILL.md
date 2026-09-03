@@ -24,13 +24,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Every example is graded on six criteria, pass or fail: compact, composed not restated, priced before spend, decidable (every gate has a view), swappable (no product in the caller's document), provable (the return carries verdict, usage and trace). A product in the caller's document fails swappable, by the adapter-column rule cap-consumption states. | sourced | `F-part-c-09` "Products belong in the adapter column only." |
 | An example never shows the grading criterion to the thing graded: the instrument is named by reference on the card and never appears in a step's input. | sourced | `F-b1-07` "The grader is never visible to the graded." |
 | Every number and every run in an example is labelled claimed or measured. Illustrative numbers are labelled illustrative and never measured. | sourced | `F-part-c-08` "**claimed** from **measured**" |
-| Proposed: an example is reference-only or runnable, stated in its first paragraph. A runnable example ships a measured gate on the pattern of examples/end-to-end/test.sh; a reference-only example ships the grep check in this skill's definition of done and nothing more. Research query: documentation practice distinguishing a runnable example (with an executable gate) from a reference-only example (checked by a lighter static grep or lint), and what each is expected to carry. | proposed | - |
-
-### Deliberately not exposed
-
-| Item | Origin | Evidence |
-|---|---|---|
-| Proposed: v1 does not fix a directory layout, a file format beyond markdown, or a runner. docs/reference/composable-plan.md is the worked instance of this skill and the only template. Research query: not externally researchable: this is a v1 scope decision this repo has not yet made about directory layout, file format and runner for examples. | proposed | - |
 
 ## Instructions
 

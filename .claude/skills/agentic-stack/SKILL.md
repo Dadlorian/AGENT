@@ -85,11 +85,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | `python3 tools/kb.py verify && python3 tools/validate_skills.py` |
+| Criterion | python3 tools/kb.py verify && python3 tools/validate_skills.py |
 | Expected | kb verified; N skills checked, 0 errors |
-| Deliberate breakage | Change one character of any fact's text in kb/facts.jsonl, or cite a nonexistent id such as F-none-99 in any skill.json |
+| Deliberate breakage | Change one character of one fact's text in kb/facts.jsonl (the record no longer hashes to its stored digest), run the criterion (tools/kb.py verify reports the chain broken and exits non-zero), then git checkout kb/facts.jsonl. |
 | Expected failure | kb verify: 'FAIL: chain broken at facts F-meta-01' and 'text does not match PASS.md lines 3-3'; validate_skills: 'cites unknown id F-none-99' and 'quote is not a verbatim substring'. Measured in session claude/auto-skill-creation-i8javu on 2026-09-03; both breakages exited 1 and the restored state exited 0. |
-| Status | measured |
+| Status | claimed |
 | Evidence | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
 
 ## Composes with

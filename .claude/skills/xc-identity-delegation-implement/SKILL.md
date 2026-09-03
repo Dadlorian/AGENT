@@ -1,0 +1,194 @@
+---
+name: xc-identity-delegation-implement
+description: How to make the identity binding real on this stack from a starting point of nothing: a first enforcement point inside each driving adapter that stamps the actor and the chain onto the envelope at entry, a second that moves the same decision out of process behind an external issuer, how to migrate when no field exists to migrate from, where the chain attaches to correlation, provenance, policy, state and typed failures, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that decides who asked, when an entry adapter is about to admit work with no caller established, when a hop forwards a credential instead of exchanging it, when choosing what the second enforcement point should be, or when a conformance run reports a chain that loops back on a name it already contains.
+---
+
+# xc-identity-delegation-implement
+
+Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Source IDs resolve with `python3 tools/kb.py show <id>`.
+
+## Purpose
+
+| Statement | Origin | Evidence |
+|---|---|---|
+| Turn the placement in xc-identity-delegation into something that runs here: two enforcement points behind one guarantee, the same corpus replayed through both, and a migration that starts red because there is no actor field on this host to migrate from. | sourced | `F-b4-03`, `F-a6-05`, `E-not-running-identity` "No identity field anywhere in the system" |
+
+## Entities
+
+| Entity |
+|---|
+| `E-concern-identity` |
+| `E-capability-identity` |
+| `E-adapter-identity-absent` |
+| `E-swap-candidate-any-oidc-provider` |
+| `E-not-running-identity` |
+
+## Contract
+
+### Shapes (JSON Schema 2020-12)
+
+**differs_in_execution_model for this pair (proposed instance of the shape build-adapter-pair defines)** (proposed; sources: `F-b1-04`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:xc:identity:pair-axes:0.1",
+  "title": "IdentityBindingPairAxes",
+  "description": "Proposed. The three axes on which the two enforcement points differ, stated as properties rather than as product names. The axis is where the binding decision is made, not which credential technology is used: cap-identity-implement owns the issuance pair. measured stays false until the swap has been executed and recorded.",
+  "type": "array",
+  "minItems": 3,
+  "examples": [
+    [
+      {
+        "axis": "locus_of_the_binding_decision",
+        "today_value": "in the driving adapter's own process, one binding library per adapter",
+        "second_value": "one out-of-process step every envelope crosses, no binding code in any adapter",
+        "measured": false
+      },
+      {
+        "axis": "who_mints_and_signs_a_hop",
+        "today_value": "the platform mints and records each hop itself",
+        "second_value": "an external issuer mints each hop and the platform only verifies what came back",
+        "measured": false
+      },
+      {
+        "axis": "processes_required_for_progress",
+        "today_value": "entry binds with no network call and no second process",
+        "second_value": "entry cannot bind at all while the issuer is unreachable",
+        "measured": false
+      }
+    ]
+  ]
+}
+```
+
+**chain-of-custody record (proposed; what one hop writes through the state seam so the corpus can be checked later)** (proposed; sources: `F-b4-03`, `F-a5-03`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:xc:identity:hop-record:0.1",
+  "title": "DelegationHopRecord",
+  "description": "Proposed. One record per hop, appended rather than mutated, so that the chain a corpus check reads is the chain that was actually assembled and a later edit to it is detectable.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "run_id",
+    "action_id",
+    "hop_index",
+    "actor",
+    "obtained_via",
+    "enforcement_point",
+    "written_at"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "action_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "hop_index": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "0 is the current actor. The root is the highest index for that action."
+    },
+    "actor": {
+      "type": "string",
+      "pattern": "^(user|service|agent|schedule):[a-z0-9][a-z0-9._@-]*$"
+    },
+    "obtained_via": {
+      "enum": [
+        "direct",
+        "token_exchange",
+        "workload_attestation"
+      ]
+    },
+    "enforcement_point": {
+      "type": "string",
+      "description": "Read from the refusal or the stamp that came back, never from the configuration that selected the adapter."
+    },
+    "written_at": {
+      "type": "string"
+    }
+  }
+}
+```
+
+### Invariants
+
+| Invariant | Origin | Evidence |
+|---|---|---|
+| Proposed: the two enforcement points differ on three of build-adapter-pair's axes - locus_of_the_binding_decision, who_mints_and_signs_a_hop and processes_required_for_progress - recorded in the shape above. A second credential technology bound in the same place would agree with the first on all three, so swapping to it would test an issuer and not the placement. | proposed | `F-b1-04` "Swappability is a tested property, not an intention." |
+| build-adapter-pair and agentic-stack state design rule 1 (F-b1-02). Its consequence here: which enforcement point bound an actor is configuration, and no core code, no workflow and no policy rule branches on it; the enforcement point appears in the conformance report, never in a field a caller can read and route on. | sourced | `F-b1-02` "The core imports interfaces, never implementations" |
+| xc-identity-delegation states the placement (F-b4-03) and the three assertions row X2 makes. What this adds on this stack: there is no field to migrate from, so the first enforcement point is written rather than replaced, and every assertion in the definition of done below is red until it exists. | sourced | `F-a6-05`, `E-not-running-identity` "No identity field anywhere" |
+| cap-identity-implement owns the credential pair for this capability, an exchange-issuing provider against attested workload identity. What this skill pairs is where the binding decision is taken, so the two skills' adapter tables answer different questions about the same row of PASS.md B3 and neither replaces the other. | sourced | `F-b3-14`, `E-capability-identity` "OAuth 2.0 Token Exchange" |
+| Proposed: the migration never leaves an entry path that admits work with an unchecked actor. The field is introduced as stamped-and-recorded before it is required, the corpus check runs in shadow while it is optional, and only then is an envelope without an actor refused at admission. | proposed | `F-a6-05`, `F-b4-01` |
+| build-evidence-record owns what a record contains (F-a5-04). What this adds: every statement here about how an enforcement point behaves is claimed until the conformance report and its evidence record exist, and a reworded sentence never upgrades a label. | sourced | `F-a5-04` "tree hash under test, and whether the tree was dirty" |
+
+## Instructions
+
+| Step | Action | Why | Origin | Evidence |
+|---|---|---|---|---|
+| 1 | Write the first enforcement point as one binding step called by every driving adapter at entry: establish the caller from what that protocol carries, assemble the chain current actor first, run the acyclicity and rooting walk before the envelope is admitted, and stamp the result onto the envelope. | xc-identity-delegation fixes the binding point as entry; this is the smallest thing that can hold it, and one shared step is what stops four adapters from growing four spellings of the same field. Nothing runs today, so the first enforcement point is written rather than adapted. | sourced | `F-a6-05`, `F-b4-03` "Every action names an actor" |
+| 2 | Proposed: build the second enforcement point as one out-of-process step every envelope crosses, whichever adapter produced it - the envelope is submitted, the step verifies the presented credential against an external issuer, mints or refuses the hop, and returns the envelope stamped. No driving adapter holds binding code at all. | Proposed: this breaks the assumption that the party receiving the work is the party that can establish who sent it. It also fails differently - it cannot bind while the issuer is unreachable - which is what makes the pair a test of the placement rather than of an issuer. | proposed | `F-b1-04`, `X-cross-structure-023` |
+| 3 | Record differs_in_execution_model with the three axes in the shape above, leave measured false until the swap has actually been run, and write each enforcement point's gaps down as gaps rather than as caveats. | build-adapter-pair states that the second adapter exists to prove the first is not load-bearing (F-b1-04). A pair whose axes are asserted and never observed is a claim about swappability, and this repository keeps claimed and measured apart per row. | sourced | `F-b1-04` "the second exists to prove the first is not load-bearing" |
+| 4 | Migrate in three steps from nothing: add actor to the envelope as optional and stamp it wherever an adapter can, recording how often it could not; run the corpus check in shadow over that period and reconcile what it would have refused; then make actor required, refuse an envelope without one, and keep the shadow report as the regression baseline. | There is no identity field anywhere in the system today, so making it required on day one would refuse every entry the platform currently accepts. The shadow period is where the adapters that cannot establish a caller are found, and finding them is cheaper before the refusal is live. | sourced | `F-a6-05`, `F-part-c-11` "Do not propose replacing what runs" |
+| 5 | Wire the cross-cutting attachments at both enforcement points: stamp the actor beside the run identifier on the same explicit attribute at dispatch, append one hop record per hop through the state seam, put the actor in the attestation that makes an artifact attributable, and hand the policy gate the current actor alone. | agentic-stack states that correlation must ride on an explicit attribute because parentage did not survive the agent boundary (F-a7-02); an actor that rides on parentage is unattributable for the same reason. An artifact is attributable to the code version, inputs and actor that produced it, so the chain has to be written where provenance can read it. | sourced | `F-a7-02`, `F-b4-05` "the code version, inputs and actor that produced it" |
+| 6 | Append hop records rather than rewriting a chain in place, into the chained store, so a chain read back by the corpus check is the chain that was assembled. | build-evidence-record states the chaining rule (F-a5-03): the closing digest of each run is the opening digest of the next, which is what makes a later edit detectable; a mutable chain would let an unattributable action be made attributable after the fact, and the corpus check would agree. | sourced | `F-a5-03` "a manual edit between runs is detectable" |
+| 7 | Read the enforcement point from the stamp or the refusal that actually came back and carry that observed value in the report, rather than the value the configuration selected. | agentic-stack and build-evidence-record state the silently-discarded-configuration finding (F-a7-04), measured on this host: settings written in the documented place had no runtime effect. A binding believed to be in force because it was configured is that failure with an audit trail attached. | sourced | `F-a7-04` "had no runtime effect" |
+| 8 | Run the definition of done below over both enforcement points, then run its breakage, and record both outputs as evidence records naming the script hash, the commit, the tree hash under test and whether the tree was dirty. | build-evidence-record fixes what a record contains (F-a5-04): a result from a dirty tree is not reproducible and may not be labelled measured. Running the breakage is what proves the criterion can fail rather than that it happened to pass. | sourced | `F-a5-04`, `F-part-c-04` "Each record names the script SHA-256, git commit" |
+| 9 | Keep every statement here labelled claimed until that evidence record exists, including the axes, the gaps and the migration steps, and never upgrade a label by rewording a sentence. | Proposed: neither enforcement point has been built, so nothing in this skill has been observed. Distinguishing claimed from measured throughout is this repository's rule, and the cheapest place to break it is a confident sentence about an adapter nobody has run. | proposed | `F-a7-01` |
+
+## Best practices
+
+| Practice | Origin | Evidence |
+|---|---|---|
+| Expect the two enforcement points to disagree during the shadow step and treat the difference as the finding. build-adapter-pair states why a second adapter exists (F-b1-04); the gap it exposes here is concrete: the entries the in-process binding can stamp and the out-of-process step refuses are the ones whose credential nobody was actually checking. | sourced | `F-b1-04` "Every interface ships with at least two adapters" |
+| xc-identity-delegation states that a forwarded credential adds no hop. What this adds at the code level: assert chain length against the number of recorded dispatch hops for the same run, because a forwarded credential produces a chain that is valid, acyclic, rooted and one hop too short - the only assertion that catches it is the join. | sourced | `X-cap-identity-004` "each service in the middle of the chain must validate the incoming access token" |
+| agentic-stack and build-definition-of-done state the structurally-green-gate finding (F-a7-03). What it costs here: a corpus replayed through two enforcement points can leave one of them with no delegated action to check and still exit green, so report delegated actions checked per enforcement point and fail when either is zero. | sourced | `F-a7-03` "with every behavioural stage skipped" |
+| Do not let the binding step become a place to also decide what the actor may do. The records on file describe cross-cutting middleware as composed once and applied to every agent, and a binding step that quietly grew authorisation would put policy in a component whose only conformance check counts chains. | sourced | `X-cross-structure-026` "you can compose cross-cutting behaviors" |
+| Keep the corpus check on the same records the enforcement path writes rather than on a copy assembled for the test. The inventory of what runs today already records a concern whose checks exist outside the path that enforces them, and a delegation checker fed its own fixtures would reproduce that exactly. | sourced | `F-a6-04` "not wired into the enforcement path" |
+
+## Adapters
+
+| Adapter | Role | Maps to | Cannot | Swap procedure | Status | Evidence |
+|---|---|---|---|---|---|---|
+| `E-adapter-identity-absent` | today | Nothing runs: the recorded adapter column for Identity is absent and PASS.md A6 records no identity field anywhere in the system, so the first enforcement point to exist is the one described here - an in-process binding step called by each driving adapter at entry, assembling the chain, running the acyclicity and rooting walk, and stamping the envelope before admission. It is what the second is paired against rather than an incumbent to replace. | Cannot be cited as evidence of anything running. Once written it still cannot bind an entry whose adapter has no way to establish a caller without an attested root, and it puts the binding code inside every driving adapter, so a bug in one adapter is a bug in the guarantee for that door only - which is the failure mode the second enforcement point removes. | Select the enforcement point by configuration with no code edit between runs, replay the identical corpus through both, and require the merged report to show enforcement_points_run == 2 with enforcement_point read from the stamp rather than from the binding. | claimed | `F-b3-14`, `F-a6-05`, `E-adapter-identity-absent` "workload identity \| *absent*" |
+| `E-swap-candidate-any-oidc-provider` | second | The same binding served out of process: every envelope, whichever adapter produced it, crosses one step that verifies the presented credential against an external OIDC provider serving the token-exchange grant, mints or refuses the hop, and returns the envelope stamped. No driving adapter holds binding code. cap-identity-implement pairs the credential technologies for this same B3 row; this row pairs where the decision is taken. | Proposed: cannot bind while the provider is unreachable, so an entry path that must accept work during an outage has no enforcement point at all rather than a degraded one; cannot establish a caller for an entry that presents no credential without an attested root behind it; and it puts a network call on every entry, which the in-process binding does not. | Proposed: the axes that differ are locus_of_the_binding_decision (inside each driving adapter versus one step every envelope crosses), who_mints_and_signs_a_hop (the platform versus an external issuer) and processes_required_for_progress (no network call versus an unreachable issuer stopping entry). Select by configuration, run the identical corpus assertion against each, and compare both reports against the same declared gaps. | claimed | `F-b3-14`, `F-b1-04`, `E-swap-candidate-any-oidc-provider` "any OIDC provider" |
+
+## Definition of done
+
+| Field | Value |
+|---|---|
+| Criterion | docs/decomposition.md section 3.4 row X2, extended with the swap. Proposed tool, built with the first enforcement point: `python3 tools/conformance_identity_delegation.py --enforcement-point today --corpus out/actions.jsonl --min-actions 100 --report out/identity-a.json`, then the same command with `--enforcement-point second --report out/identity-b.json`, the enforcement point chosen by configuration with no code edit between runs. Both reports must validate against IdentityDelegationReport (xc-identity-delegation references/identity-delegation-checks.md) and assert, per enforcement point, `null_actor == 0`, `cyclic == 0`, `unrooted == 0`, `bound_at_entry == actions_checked` and `delegated_actions_checked > 0`. Across enforcement points it asserts `enforcement_points_run >= 2` and that `enforcement_point` in every finding was read from the stamp rather than from the configuration. |
+| Expected | both runs exit 0 and one line per enforcement point of the form `enforcement_point=<entity> actions_checked=100 delegated_actions_checked=<k> null_actor=0 cyclic=0 unrooted=0 bound_at_entry=100`, followed by `enforcement_points_run=2`. |
+| Deliberate breakage | Permit a `direct` hop to name an actor already present earlier in the chain, in the in-process binding only: re-exchange one delegated action back to the intake service that already appears at hop 1, and leave the out-of-process step untouched. |
+| Expected failure | The acyclicity check fails for one enforcement point and not the other: the first run exits 1 with `cyclic == 1` naming that action and the repeated actor, the second run still exits 0, and `enforcement_points_run` stays 2 with `actions_checked` at or above 100 on both. Singling out one enforcement point is the point - a suite that fails both, or neither, has not tested the swap. Claimed: PASS.md A6 records no identity field anywhere in the system, neither enforcement point is written and the tool does not exist, so neither run has been performed here and the check starts red by construction. |
+| Status | claimed |
+| Evidence | `F-a6-05`, `F-b1-04`, `F-part-c-04` "No identity field anywhere in the system" |
+
+## Composes with
+
+Builds on: `xc-identity-delegation`, `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`
+
+Used by: -
+
+## Open questions
+
+| Question | Deciding evidence | Default until then | Evidence |
+|---|---|---|---|
+| This guarantee has no adapter or swap-candidate entity of its own: every identity adapter entity in the knowledge base belongs to the capability row, and cap-identity-implement already pairs them on credential technology. Should the enforcement-point pair get its own entities? | 1-3-1 applied on 2026-09-03, the same way xc-budget-implement records its own entity gap. Options: (a) add E-adapter-in-process-entry-binding and E-swap-candidate-out-of-process-admission, which needs a knowledge-base rebuild and would invalidate the provenance heads of every skill already written; (b) record the pair against the existing absent-adapter and provider entities of the same B3 row and say in the row which question each table answers, which is what this skill does; (c) leave the pair to a later wave, which would leave this guarantee with one enforcement point and no tested swap. Recommendation followed: (b). The question closes when a ceremony rebuilds the knowledge base and the two entities exist. | Keep the pair on the existing entities of the Identity row, with the difference from cap-identity-implement's pair stated in both adapter rows so a reader is not sent to the wrong table. | `F-b3-14`, `T-t5-02` "When a problem comes up, use 1-3-1" |
+| During the shadow step, what should happen to an entry whose adapter cannot establish a caller at all - refuse it, or admit it with the adapter's own attested identity as both subject and root? | Count, over the shadow period, how many entries per adapter have no establishable caller. If the count is small and concentrated in one adapter, refusing is cheap and the adapter is fixed. If it is spread across every event-driven door, admitting on the adapter's attested identity is the only option that does not close the way in xc-identity-delegation requires to stay open for an internal or external event. | Admit on the adapter's own attested identity and mark the record so the shadow report can count it, rather than refusing during a period whose purpose is to find out what would be refused. | `F-a6-05`, `T-t1-03` "An internal or external event must be able to enter the system." |
+
+## Provenance
+
+| Field | Value |
+|---|---|
+| PASS.md sha256 | cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96 |
+| kb facts head | 9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e |
+| kb entities head | 747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604 |
+| kb edges head | a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6 |
+| Author | session xc-identity-delegation 2831cb4f, 2026-09-03 |

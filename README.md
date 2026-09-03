@@ -72,7 +72,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | `kb/edges.jsonl` | `R-` (rel) | 109 typed links between entities, each citing the fact that states the link |
 | `kb/decisions.jsonl` | `D-` | 110 decisions lifted from `docs/decomposition.md` by line |
 | `kb/architecture.jsonl` | `A-` | 803 blueprint entries imported from `docs/architecture/blueprint.json` |
-| `kb/ledger.jsonl` | `L-` | 197 append-only, hash-chained run records; every measured run, ceremony and phase close |
+| `kb/ledger.jsonl` | `L-` | 208 append-only, hash-chained run records; every measured run, ceremony and phase close |
 | `kb/ceremonies/` | | 98 records: sourcing, measure, review and improve, named by the STATUS row they served |
 
 | To… | Run |
@@ -102,6 +102,17 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | Scale | -1 misaligned (an error to correct), 0 absent, 1 exists, 2 aligned, 3 leading |
 | Check | `python3 tools/litmus_check.py check` → `23 sections, 140 questions, 0 errors` |
 | Next | STATUS row 67: one isolated assessor per section answers every question with evidence and a score; misaligned scores are errors, absent and exists are the measured gap |
+
+## The two questionnaires, answered apart
+
+| | Litmus (outward: the 2026 future state) | Conformance (inward: the PASS.md brief) |
+|---|---|---|
+| Instrument | `docs/litmus/questionnaire.md`, 23 sections, 144 questions, written by an isolated crew (row 66) | `full-stack-questionair/QUESTIONNAIRE.md`, 42 properties, 144 questions, supplied by the owner |
+| Answered by | four assessors in a checkout with the conformance instrument removed (row 67) | four answerers in a checkout with the litmus questionnaire removed (row 68) |
+| Every answer carries | a verbatim quote from a repo file, or a command whose last line the checker re-runs | a repo path and, at E1 or E2, a quoted passage the checker finds verbatim |
+| Result | `docs/litmus/scorecard.md`: 1 leading, 53 aligned, 83 exists, 4 absent, 3 misaligned | `full-stack-questionair/answers.jsonl` graded by the owner's checker: 37 proven, 5 shown, 0 absent |
+| Honesty check | a verifier re-answered 15 seeded questions without the crew's answers: 13 exact, 15 within one step, 0 contradictions | same: 13 of 15 exact, 2 contradictions (A2-F, S2-F), both under the one-in-five rule |
+| Joined | `docs/combined/reading.md` (row 69): 42 PASS.md rows, 23 answered by both, 6 tensions, every one "proven against the brief, behind the future state" | |
 
 ## Human review
 
@@ -140,6 +151,10 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | `tools/final_acceptance.py` | Derive every T9 and T10 stick at one commit; `--write` stores `docs/acceptance/final.json` |
 | `tools/blueprint_check.py` | Hold `docs/architecture/blueprint.json` to the source-of-truth rule |
 | `tools/litmus_check.py` | Check, merge and render the litmus questionnaire: coverage of every B3 row and B4 concern, angles, citations, contamination |
+| `tools/litmus_answers.py` | Check the litmus answers (re-read every quote, re-run every command, refuse cross-references) and write the scorecard |
+| `tools/conformance_answers.py` | Check the conformance answers against the repo and run the owner's grader |
+| `tools/spot_check.py` | Seeded sample for a verifier who never saw the crew's answers; agreement and contradictions |
+| `tools/combined_reading.py` | Join the two answer sets per PASS.md row; reads nothing else |
 | `tools/skill_graph.py` | Generate `docs/skill-graph.md` from every `skill.json` as focal groups, each counted against the mermaid edge and text limits; exit 1 when one would not render |
 | `tools/manifest_facets.py` | Expand `docs/skill-manifest.json` into ideal/implement facets and emit the loop's sections |
 | `tools/gaps.py` | Aggregate research gaps into `docs/research/gaps.json`, and with `--apply`, add gap skills to the manifest |
@@ -150,7 +165,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 |---|---|---|
 | Every skill valid | `python3 tools/validate_skills.py` | `103 skills checked, 0 errors, 0 warnings` |
 | Knowledge base intact | `python3 tools/kb.py verify` | chain and source-line checks pass |
-| Ledger intact | `python3 tools/kb.py ledger-verify` | `197 records, chain intact` |
+| Ledger intact | `python3 tools/kb.py ledger-verify` | `208 records, chain intact` |
 | Every stick holds | `python3 tools/final_acceptance.py` | `15 of 15 hold` (runs all 28 harness gates) |
 | Acceptance matrix current | `python3 tools/acceptance_check.py --check` | `16 of 16 elements accepted, 80 of 80 sticks hold` |
 | Status fresh | `python3 tools/status_check.py --freshness` | `0 stale` |

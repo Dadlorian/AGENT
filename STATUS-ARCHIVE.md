@@ -64,3 +64,5 @@
 | 65 | Human review guide | Every folder has a check command and a human judgment | Done | HUMAN-REVIEW.md, eleven sections | 2026-09-03 22ebeb3 |
 | 66 | Phase 6: litmus questionnaire | Future state and questions stated in isolation per B3 and B4 row | Done | 23 sections, 144 questions, 21 findings applied | 2026-09-03 6c9899f |
 | 68 | Conformance questionnaire | Every question answered in isolation, checker at zero failures | Done | 144 answers, spot-check 13 of 15 agree | 2026-09-03 c55b1b9 |
+| 67 | Litmus assessment | Every question answered with evidence and scored | Done | 144 answers, spot-check 13 of 15 exact | 2026-09-03 b2f00e9 |
+| 69 | Combined reading | Both answer sets joined per PASS.md row, neither reads the other | Done | 42 rows joined, 6 tensions | 2026-09-03 b2f00e9 |

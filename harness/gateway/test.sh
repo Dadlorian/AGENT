@@ -16,9 +16,12 @@ python3 conformance.py --adapter dryrun --report out/before.json > out/dryrun.lo
 check "12 cases exit 0" "$?" "0"
 grep -q "conformance PASSED: 12/12" out/dryrun.log && ok "12/12 cases passed" || bad "not 12/12"
 
-echo "1b. the minimal call a caller writes"
-LINES=$(awk '/CALLER CODE BEGINS/{f=1;next} /CALLER CODE ENDS/{f=0} f' call.py | wc -l)
+echo "1b. the minimal call a caller writes (harness/caller_lines.py, the one method)"
+LINES=$(python3 ../caller_lines.py gateway --count)
 [ "$LINES" -lt 40 ] && ok "caller code is $LINES lines, under 40" || bad "caller code is $LINES lines"
+python3 ../caller_lines.py gateway --interface-only \
+  && ok "the caller names no file in the adapter's own storage" \
+  || bad "call.py reads the adapter's storage by path"
 ADAPTER=dryrun python3 call.py > out/call.log 2>&1
 check "one completion by class exits 0" "$?" "0"
 grep -q "redeemed" out/call.log && ok "the caller read a redeemed ticket" || bad "no redeemed ticket"

@@ -246,7 +246,7 @@
     ],
     "invariants": [
       {
-        "text": "Proposed (from docs/decomposition.md section 3.4 row X4): every artifact digest referenced by a result has an attestation-recorded record whose subject digest matches it, and the number of orphans is zero. An orphan is an output digest with no statement over it, and it is the only failure mode this guarantee exists to make impossible.",
+        "text": "Proposed (from docs/decomposition.md section 3.4 row X4): every artifact digest referenced by a result has an attestation-recorded record whose subject digest matches it, and the number of orphans is zero. An orphan is an output digest with no statement over it, and it is the only failure mode this guarantee exists to make impossible. Research query: is there a fetched source asserting a zero-orphan count as the closure criterion specifically, rather than this row's own operationalisation of cap-provenance's per-artifact attributability clause?",
         "origin": "proposed",
         "sources": [
           "F-b4-05",
@@ -272,7 +272,7 @@
         "quote": "applied by the platform, not requested by the caller"
       },
       {
-        "text": "Proposed: the boundary between the three provenance skills is fixed and load-bearing. Producing and signing the statement belongs to cap-provenance; chaining a recorded attestation to a sealed log head belongs to seam-state; this guarantee owns only the completeness relation between the digests a result names and the statements that exist. Merging any two of the three is how a store's own integrity check ends up quoted as an outside check.",
+        "text": "Proposed: the boundary between the three provenance skills is fixed and load-bearing. Producing and signing the statement belongs to cap-provenance; chaining a recorded attestation to a sealed log head belongs to seam-state; this guarantee owns only the completeness relation between the digests a result names and the statements that exist. Merging any two of the three is how a store's own integrity check ends up quoted as an outside check. Research query: is there a fetched source drawing this exact three-way boundary (producing/signing, chaining-to-a-log-head, completeness), or is that this skill's own decomposition of the provenance concern?",
         "origin": "proposed",
         "sources": [
           "F-b4-05",
@@ -280,13 +280,13 @@
         ]
       },
       {
-        "text": "Proposed: the subject digest is the only join key. A statement is matched to an artifact by digest, never by file name, path, run label or timestamp, because those are the fields that keep pointing at something after the bytes change. The framework this platform adopts already binds a statement to Subjects rather than to names.",
-        "origin": "proposed",
+        "text": "The subject digest is the only join key. A statement is matched to an artifact by digest, never by file name, path, run label or timestamp, because those are the fields that keep pointing at something after the bytes change. The framework this platform adopts already binds a statement to Subjects rather than to names.",
+        "origin": "sourced",
         "sources": [
-          "X-xc-provenance-chain-001",
-          "X-xc-provenance-chain-003"
+          "X-xc-provenance-chain-003",
+          "X-xc-provenance-chain-001"
         ],
-        "quote": "applying to one or more software supply chain Subjects"
+        "quote": "associates it with the built artifact via the subject field"
       },
       {
         "text": "An artifact that has been attested is not thereby verified. What the recorded standards buy is that a check exists at all, performed automatically by tools against verifiable metadata; a chain nobody sweeps is a chain whose orphans have simply not been counted yet, and the count is the guarantee.",
@@ -316,14 +316,14 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: the artifact bytes never enter a record or a statement, only their digest. The consequence for this guarantee specifically is that the orphan sweep needs read access to no payload at all, so the check that proves accountability is not itself a disclosure.",
+        "text": "Proposed: the artifact bytes never enter a record or a statement, only their digest. The consequence for this guarantee specifically is that the orphan sweep needs read access to no payload at all, so the check that proves accountability is not itself a disclosure. Research query: is there a fetched source stating a provenance record must carry only digests and never payload bytes as a security property (versus a size or performance rationale), or is that this skill's own reading of cap-provenance's contract?",
         "origin": "proposed",
         "sources": [
           "F-b4-05"
         ]
       },
       {
-        "text": "Proposed: there is no field anywhere that names which outputs are exempt. There is no exemption list, no attest:false, and no per-caller policy that turns the binding off, because a guarantee whose scope a caller can edit is a request.",
+        "text": "Proposed: there is no field anywhere that names which outputs are exempt. There is no exemption list, no attest:false, and no per-caller policy that turns the binding off, because a guarantee whose scope a caller can edit is a request. Research query: is there a fetched source naming an exemption list or an attest:false flag as the specific escape hatches a closure guarantee must exclude, or is that this row's own enumeration?",
         "origin": "proposed",
         "sources": [
           "F-b4-01",
@@ -331,11 +331,12 @@
         ]
       },
       {
-        "text": "Proposed: the criterion a result was judged against never appears in a subject name, a predicate or a sweep report. agentic-stack states design rule 6 (F-b1-07); the consequence here is that a statement over a judged output records the verdict and the digests and stops there.",
-        "origin": "proposed",
+        "text": "The criterion a result was judged against never appears in a subject name, a predicate or a sweep report. agentic-stack states design rule 6 (F-b1-07); the consequence here is that a statement over a judged output records the verdict and the digests and stops there.",
+        "origin": "sourced",
         "sources": [
           "F-b1-07"
-        ]
+        ],
+        "quote": "The grader is never visible to the graded."
       }
     ]
   },
@@ -343,7 +344,7 @@
     {
       "step": 1,
       "action": "At the moment a result is assembled, enumerate every artifact digest it references and treat that set as an obligation list: each member needs a statement before the result is released.",
-      "why": "Proposed. The orphan is created at release, not at production, so the only place the set is knowable and still changeable is where the result is put together. Enumerating later means enumerating from whatever survived.",
+      "why": "Proposed. The orphan is created at release, not at production, so the only place the set is knowable and still changeable is where the result is put together. Enumerating later means enumerating from whatever survived. Research query: is there a fetched source recommending an obligation-list model captured at result-assembly time specifically, or is that this row's own reasoning about when the artifact set is still knowable?",
       "origin": "proposed",
       "sources": [
         "F-b4-05"
@@ -352,7 +353,7 @@
     {
       "step": 2,
       "action": "Bind each digest by calling the attestation capability cap-provenance defines and appending one attestation-recorded record per subject digest in the same write as the result, never on a best-effort queue behind it.",
-      "why": "Proposed. A separate queue turns a guarantee into a race: the result is visible and the statement is not yet written, which is exactly the window in which an orphan is indistinguishable from a pending append.",
+      "why": "Proposed. A separate queue turns a guarantee into a race: the result is visible and the statement is not yet written, which is exactly the window in which an orphan is indistinguishable from a pending append. Research query: is there a fetched source arguing against a best-effort attestation queue specifically (versus the same-write requirement cap-provenance already states generally), or is that this row's own extension of it?",
       "origin": "proposed",
       "sources": [
         "F-b4-05",
@@ -375,7 +376,7 @@
     {
       "step": 4,
       "action": "Refuse the release with the registered adapter-unavailable problem object above when no statement can be produced, and leave the result unpublished rather than publishing it with a note that attestation is pending.",
-      "why": "Proposed. A published output with a pending statement is an orphan under a friendlier name, and every downstream consumer that copies it inherits the orphan without inheriting the note.",
+      "why": "Proposed. A published output with a pending statement is an orphan under a friendlier name, and every downstream consumer that copies it inherits the orphan without inheriting the note. Research query: is there a fetched source recommending refuse-rather-than-publish-pending for an unattested release specifically, or is that this row's own extension of the closure requirement?",
       "origin": "proposed",
       "sources": [
         "F-b4-07",

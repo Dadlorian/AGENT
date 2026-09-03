@@ -252,7 +252,7 @@
         "quote": "Refusal is deterministic and happens before execution, not after spend"
       },
       {
-        "text": "Proposed (docs/decomposition.md section 3.2 row P10 and section 3.4 row X3): a denied dispatch has a spend ledger delta of exactly zero. Not small, not refunded, not reconciled afterwards: zero, because the refusal happened before anything could be drawn.",
+        "text": "Proposed (docs/decomposition.md section 3.2 row P10 and section 3.4 row X3): a denied dispatch has a spend ledger delta of exactly zero. Not small, not refunded, not reconciled afterwards: zero, because the refusal happened before anything could be drawn. Research query: is there a fetched source stating a denied dispatch's spend delta must be exactly zero rather than refunded or reconciled, or is that this row's own reading of rows P10 and X3?",
         "origin": "proposed",
         "sources": [
           "F-b4-04"
@@ -277,14 +277,14 @@
         "quote": "Conformance checks exist; not wired into the enforcement path"
       },
       {
-        "text": "Proposed: the gate is synchronous with respect to the dispatch it admits. A decision consulted concurrently with the first call can return quickly enough to look correct and still be unordered, so concurrency and not latency is what makes an inversion possible; that is exactly the breakage docs/decomposition.md row X3 uses.",
+        "text": "Proposed: the gate is synchronous with respect to the dispatch it admits. A decision consulted concurrently with the first call can return quickly enough to look correct and still be unordered, so concurrency and not latency is what makes an inversion possible; that is exactly the breakage docs/decomposition.md row X3 uses. Research query: is there a fetched source distinguishing concurrency from latency as the cause of an ordering inversion in an admission gate specifically, or is that this row's own analysis?",
         "origin": "proposed",
         "sources": [
           "F-b4-04"
         ]
       },
       {
-        "text": "Proposed: 'metered' is defined by what is consumed, not by which capability was called. Any call that debits a budget, occupies isolation, or leaves the platform is metered, and the gate precedes the earliest of them; enumerating the surface narrowly is how an ungated path survives a green check.",
+        "text": "Proposed: 'metered' is defined by what is consumed, not by which capability was called. Any call that debits a budget, occupies isolation, or leaves the platform is metered, and the gate precedes the earliest of them; enumerating the surface narrowly is how an ungated path survives a green check. Research query: is there a fetched source defining 'metered' by consumption (budget, isolation, egress) rather than by which capability was called, or is that this skill's own definition?",
         "origin": "proposed",
         "sources": [
           "F-b1-06",
@@ -300,7 +300,7 @@
         "quote": "Typed and machine-readable. Never parsed from prose"
       },
       {
-        "text": "Proposed: determinism is a property of the whole gate and not only of the engine behind it. The gate forwards the request it was given and nothing else, reads no clock and no ambient state of its own, and pins the policy version into the admission token, so the same dispatch replays to the same decision. The records on file are search results rather than pages that were read, and they report evaluation models failing on exactly this axis, which is the shape of the risk rather than a measurement.",
+        "text": "Proposed: determinism is a property of the whole gate and not only of the engine behind it. The gate forwards the request it was given and nothing else, reads no clock and no ambient state of its own, and pins the policy version into the admission token, so the same dispatch replays to the same decision. The records on file are search results rather than pages that were read, and they report evaluation models failing on exactly this axis, which is the shape of the risk rather than a measurement. Research query: has the cited policy-engine safety benchmark actually been fetched and read in full, rather than the search snippet's summary of runtime-exception and non-determinism risk being taken as sufficient?",
         "origin": "proposed",
         "sources": [
           "X-xc-policy-gate-006"
@@ -310,7 +310,7 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: there is no admitted-with-warning, advisory, dry-run or deferred outcome. A dispatch either holds an admission token bound to its own dispatch id or nothing metered runs for it, so the schema offers nothing to negotiate and a warn-only rollout has no field to live in.",
+        "text": "Proposed: there is no admitted-with-warning, advisory, dry-run or deferred outcome. A dispatch either holds an admission token bound to its own dispatch id or nothing metered runs for it, so the schema offers nothing to negotiate and a warn-only rollout has no field to live in. Research query: is there a fetched source naming these specific outcomes (advisory, dry-run, deferred) as the ones a policy gate schema must exclude, or is the list this skill's own enumeration?",
         "origin": "proposed",
         "sources": [
           "F-b4-01"
@@ -326,7 +326,7 @@
         "quote": "An agent sees its outcome, never the criterion it is judged against"
       },
       {
-        "text": "Proposed: the gate exposes no latency budget, timeout override or partial admission that would let a caller trade the ordering for speed, and no reason code that reveals which engine decided. Start-now-decide-later is the inversion this skill exists to prevent, spelled as a feature.",
+        "text": "Proposed: the gate exposes no latency budget, timeout override or partial admission that would let a caller trade the ordering for speed, and no reason code that reveals which engine decided. Start-now-decide-later is the inversion this skill exists to prevent, spelled as a feature. Research query: is there a fetched source arguing against a caller-visible latency budget or timeout override on a policy gate specifically, or is that this row's own extension of the ordering-over-latency principle?",
         "origin": "proposed",
         "sources": [
           "F-b4-04",
@@ -350,7 +350,7 @@
     {
       "step": 2,
       "action": "Proposed: consult synchronously and block. Take the decision, write its record, and only then admit the dispatch; never start the first call and the consultation together, and never admit on a timeout.",
-      "why": "Proposed: the ordering is what is being guaranteed, and a parallel consultation is unordered even when it is fast. Admitting on a timeout converts an unreachable gate into an open one, which is the worst of the two failure modes because it is silent.",
+      "why": "Proposed: the ordering is what is being guaranteed, and a parallel consultation is unordered even when it is fast. Admitting on a timeout converts an unreachable gate into an open one, which is the worst of the two failure modes because it is silent. Research query: is there a fetched source on admit-on-timeout as a named anti-pattern for a synchronous policy gate, or is that this row's own reasoning about silent failure modes?",
       "origin": "proposed",
       "sources": [
         "F-b4-04"
@@ -359,7 +359,7 @@
     {
       "step": 3,
       "action": "Proposed: write the policy-decided record before the admission token is handed back, carrying decided_at, the record's sequence position in the run's log, the rule that decided and the pinned policy version.",
-      "why": "Proposed: the assertion in the definition of done runs over records, so a decision that was taken and not recorded is indistinguishable from one never taken. The sequence position is what settles ordering when two events share a timestamp, which they will under a coarse clock.",
+      "why": "Proposed: the assertion in the definition of done runs over records, so a decision that was taken and not recorded is indistinguishable from one never taken. The sequence position is what settles ordering when two events share a timestamp, which they will under a coarse clock. Research query: is there a fetched source recommending a sequence-position field over a wall-clock timestamp for ordering assertions under a coarse clock, or is that this row's own mechanism choice?",
       "origin": "proposed",
       "sources": [
         "F-a6-04",
@@ -369,7 +369,7 @@
     {
       "step": 4,
       "action": "Proposed: enumerate the metered surface as a list - every call that debits a budget, occupies isolation, or leaves the platform - and put the token check at each entry to it, not only in front of the one that costs the most.",
-      "why": "Proposed: a gate in front of one surface leaves the others open while every dashboard reads green, and the surface that gets forgotten is usually the cheap one that reaches outside. Naming the list makes the omission reviewable instead of implicit.",
+      "why": "Proposed: a gate in front of one surface leaves the others open while every dashboard reads green, and the surface that gets forgotten is usually the cheap one that reaches outside. Naming the list makes the omission reviewable instead of implicit. Research query: is there a fetched source on enumerating a metered surface explicitly (versus gating only the costliest call), or is that this row's own reasoning about which surface gets forgotten?",
       "origin": "proposed",
       "sources": [
         "F-b1-06"
@@ -442,7 +442,7 @@
       "quote": "returning a decision on whether a particular access is permitted"
     },
     {
-      "text": "Proposed: prefer an evaluation model that is default-deny, order-independent and free of side effects for anything on this path. The gate runs in front of every dispatch, so a rule set whose answer depends on evaluation order cannot be replayed and a rule that can act cannot be safely re-run; the records on file describe one shipped language chosen for those properties, which is an example rather than a requirement.",
+      "text": "Proposed: prefer an evaluation model that is default-deny, order-independent and free of side effects for anything on this path. The gate runs in front of every dispatch, so a rule set whose answer depends on evaluation order cannot be replayed and a rule that can act cannot be safely re-run; the records on file describe one shipped language chosen for those properties, which is an example rather than a requirement. Research query: has the cited policy language's default-deny/order-independent design actually been fetched and read against a replay test, rather than the search snippet's feature list being taken as sufficient?",
       "origin": "proposed",
       "sources": [
         "X-xc-policy-gate-002"
@@ -458,7 +458,7 @@
       "quote": "intercepts every agent-tool call at the gateway boundary and authorizes against a policy set"
     },
     {
-      "text": "Proposed: fail closed. An unreachable decision service, an unregistered decision point and a policy version that no longer resolves are all refusals, returned as the registered adapter-unavailable or policy-denied row; none of them is an admission. A gate that opens when it breaks has been optimised for uptime at the cost of the only thing it does.",
+      "text": "Proposed: fail closed. An unreachable decision service, an unregistered decision point and a policy version that no longer resolves are all refusals, returned as the registered adapter-unavailable or policy-denied row; none of them is an admission. A gate that opens when it breaks has been optimised for uptime at the cost of the only thing it does. Research query: is there a fetched source classifying an unregistered decision point and a stale policy version as refusals specifically (versus the unreachable-service case X-xc-policy-gate-004 already covers), or is that this row's own enumeration?",
       "origin": "proposed",
       "sources": [
         "F-b4-01",
@@ -466,7 +466,7 @@
       ]
     },
     {
-      "text": "Proposed: keep the gate out of the retry path. A dispatch that was denied is not retried by the platform on the caller's behalf, because a deterministic decision returns the same answer and a retry that succeeds means something non-deterministic entered the gate; treat a denial that later admits as a defect to investigate, not as recovery.",
+      "text": "Proposed: keep the gate out of the retry path. A dispatch that was denied is not retried by the platform on the caller's behalf, because a deterministic decision returns the same answer and a retry that succeeds means something non-deterministic entered the gate; treat a denial that later admits as a defect to investigate, not as recovery. Research query: is there a fetched source recommending against platform-side retry of a denied dispatch specifically, or is that this row's own extension of the determinism argument X-xc-policy-gate-006 makes for the engine?",
       "origin": "proposed",
       "sources": [
         "F-b4-04",

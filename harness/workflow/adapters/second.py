@@ -37,9 +37,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from interface import (BeginRun, Checkpoint, DurableExecutor, GateOutcome,  # noqa: E402
-                       GateRecord, Problem, RunState, StepRecord, gate_parts)
+                       GateRecord, Problem, Receipt, RunState, StepRecord, gate_parts)
 from adapters.journal import EffectTable, Journal  # noqa: E402
-from adapters.dryrun import _record  # noqa: E402
+from adapters.dryrun import _receipt, _record  # noqa: E402
 
 
 class QueueStateMachineExecutor(DurableExecutor):
@@ -132,6 +132,11 @@ class QueueStateMachineExecutor(DurableExecutor):
     def read_run(self, run_key: str) -> RunState:
         return self.resume_point(run_key)
 
+    def read_receipt(self, run_key: str) -> Receipt:
+        # Same shape, a different store underneath: the counts come off this
+        # executor's own journal, not off a path a caller guessed.
+        return _receipt(self.journal, self.effects, self.read_run(run_key))
+
     # -- the resume seam -----------------------------------------------------
     def park_gate(self, gate: GateRecord) -> None:
         run_key, gate_step_id = gate_parts(gate.gate_id)
@@ -164,3 +169,11 @@ class QueueStateMachineExecutor(DurableExecutor):
     def mark_terminal(self, run_key: str, outcome: str, problem: dict | None = None) -> None:
         self.journal.append(kind="run-terminal", run_key=run_key, outcome=outcome,
                             problem=problem, executor_marker=self.executor_marker)
+
+
+# The one name every adapter module exports: the entry point of this module.
+# Binding is by module, never by a per-capability class-name table (the
+# divergence harness/linked/components.py used to paper over). The descriptive
+# class name above stays - `binding()` reports it, so a report still says which
+# executor answered.
+Adapter = QueueStateMachineExecutor

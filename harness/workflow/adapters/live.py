@@ -27,6 +27,9 @@ The mapping onto the interface, which adds nothing to it:
   checkpoint_step  the step-completion record in that history
   resume_point     read that history and return the first incomplete step
   read_run         terminal state plus the completed step records
+  read_receipt     the same describe, plus the gate history and the effects the
+                   run's steps recorded, read from the frontend rather than from
+                   any file on this host
   park_gate        a durable timer plus an awaited decision on the run
   record_decision  a decision sent into the run from outside, deduplicated by
                    the gate-scoped key before it is applied
@@ -46,7 +49,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from interface import (BeginRun, Checkpoint, DurableExecutor, GateOutcome,  # noqa: E402
-                       GateRecord, Problem, RunState, StepRecord)
+                       GateRecord, Problem, Receipt, RunState, StepRecord)
 
 SDK_MODULE = "temporalio"          # the SDK for the component named above
 
@@ -121,6 +124,10 @@ class WorkflowEngineExecutor(DurableExecutor):
         self._connect()
         raise self._unavailable(f"describe {run_key}")
 
+    def read_receipt(self, run_key: str) -> Receipt:
+        self._connect()
+        raise self._unavailable(f"read the receipt for {run_key}")
+
     def park_gate(self, gate: GateRecord) -> None:
         self._connect()
         raise self._unavailable(f"park gate {gate.gate_id} with deadline {gate.deadline_at}")
@@ -131,3 +138,11 @@ class WorkflowEngineExecutor(DurableExecutor):
 
     def mark_terminal(self, run_key: str, outcome: str, problem: dict | None = None) -> None:
         raise self._unavailable(f"close {run_key} as {outcome}")
+
+
+# The one name every adapter module exports: the entry point of this module.
+# Binding is by module, never by a per-capability class-name table (the
+# divergence harness/linked/components.py used to paper over). The descriptive
+# class name above stays - `binding()` reports it, so a report still says which
+# executor answered.
+Adapter = WorkflowEngineExecutor

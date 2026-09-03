@@ -79,6 +79,11 @@ grep -q "cancelled$" out/call-dryrun.log && ok "a runtime that offers cancellati
   || bad "dryrun did not report cancelled"
 grep -q "cancel_timeout (by boundary)" out/call-second.log \
   && ok "a runtime that cannot cancel is stopped by the boundary" || bad "second was not stopped by the boundary"
+LINES=$(python3 ../caller_lines.py containment --count)   # the one method, harness/caller_lines.py
+[ "$LINES" -lt 40 ] && ok "caller code is $LINES lines, under 40" || bad "caller code is $LINES lines"
+python3 ../caller_lines.py containment --interface-only \
+  && ok "the caller names no file in the adapter's own storage" \
+  || bad "call.py reads the adapter's storage by path"
 
 echo "4. deliberate breakage A: the default declaration allows all egress"
 python3 - <<'PY'

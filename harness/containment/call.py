@@ -2,11 +2,12 @@
 """The minimal call: start one contained unit, run one agent turn, cancel it
 mid-turn, read the stop reason and the containment report.
 
-Two halves. Everything above THE CALLER'S MINIMAL CALL is the platform: it
+Two halves. Everything above the CALLER CODE marker is the platform: it
 stamps the correlation id, the budget ceiling, the idempotency key and the actor
 that the caller never asks for, and it enforces both ceilings from outside the
-unit. Everything below it is what a caller writes - under 40 lines, and it names
-no containment technology and no runtime.
+unit. Everything below the marker is what a caller writes - under 40 lines
+(counted by harness/caller_lines.py), naming no containment technology and no
+runtime.
 
   ADAPTER=dryrun|second|live python3 call.py
 """
@@ -115,29 +116,6 @@ class Dispatch:
                           output_digest=unit_result.output_digest, terminated_by=by), unit_result
 
 
-# --- THE CALLER'S MINIMAL CALL -----------------------------------------------
-PROMPT = "Read the repository and summarise the failing test. Then wait."
-
-
-def minimal_call(cfg):
-    ad, name = adapter(cfg)                                     # ADAPTER=dryrun|second|live
-    turn_cfg = cfg["turn"]
-    decl = IsolationDeclaration.from_dict(cfg["default_declaration"])
-    env = envelope(cfg, "human", "cancel one contained agent turn", {"prompt": PROMPT})
-    unit = ad.admit(decl, context(env))                         # refused here, or nothing runs
-    session = ad.open_session(unit, SessionCapabilities(streaming=True, permission_callbacks=True,
-                                                        cancellation=True))
-    request = TurnRequest(PROMPT, turn_cfg["op_seconds"], turn_cfg["grace_s"])
-    turn = Dispatch(ad, unit, session, request).start()
-    time.sleep(turn_cfg["cancel_at_s"])
-    turn.cancel()                                               # mid-turn, mid-tool-call
-    result, unit_result = turn.finish()                         # stop reason
-    report = ad.inspect_containment(unit)                       # asserted by the host, not the unit
-    return {"adapter_selected": name, "binding": ad.binding(), "envelope": env, "unit": unit,
-            "session": session, "result": result, "unit_result": unit_result, "report": report}
-# --- end of the caller's minimal call ----------------------------------------
-
-
 def table(rows):
     width = max(len(r[0]) for r in rows)
     for key, value in rows:
@@ -174,6 +152,31 @@ def main(argv=None):
         ("observed from", c.observed_from),
     ])
     return 0
+
+
+# --------------------------------------------------------------------------
+# >>> CALLER CODE : everything below this line is what a caller writes.
+# Counted by harness/caller_lines.py, the one method all five harnesses use.
+# --------------------------------------------------------------------------
+PROMPT = "Read the repository and summarise the failing test. Then wait."
+
+
+def minimal_call(cfg):
+    ad, name = adapter(cfg)                                     # ADAPTER=dryrun|second|live
+    turn_cfg = cfg["turn"]
+    decl = IsolationDeclaration.from_dict(cfg["default_declaration"])
+    env = envelope(cfg, "human", "cancel one contained agent turn", {"prompt": PROMPT})
+    unit = ad.admit(decl, context(env))                         # refused here, or nothing runs
+    session = ad.open_session(unit, SessionCapabilities(streaming=True, permission_callbacks=True,
+                                                        cancellation=True))
+    request = TurnRequest(PROMPT, turn_cfg["op_seconds"], turn_cfg["grace_s"])
+    turn = Dispatch(ad, unit, session, request).start()
+    time.sleep(turn_cfg["cancel_at_s"])
+    turn.cancel()                                               # mid-turn, mid-tool-call
+    result, unit_result = turn.finish()                         # stop reason
+    report = ad.inspect_containment(unit)                       # asserted by the host, not the unit
+    return {"adapter_selected": name, "binding": ad.binding(), "envelope": env, "unit": unit,
+            "session": session, "result": result, "unit_result": unit_result, "report": report}
 
 
 if __name__ == "__main__":

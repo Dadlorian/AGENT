@@ -143,3 +143,11 @@ class BatchClaimAdapter(ModelAccessAdapter):
         base = os.environ.get("BATCH_CLOCK")                      # fixed clock keeps a dry run deterministic
         now = datetime.fromisoformat(base) if base else datetime.now(timezone.utc)
         return (now + timedelta(seconds=30)).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+# The one name every adapter module exports: the entry point of this module.
+# Binding is by module, never by a per-capability class-name table (the
+# divergence harness/linked/components.py used to paper over). The descriptive
+# class name above stays - `binding()` reports it, so a report still says which
+# adapter answered.
+Adapter = BatchClaimAdapter

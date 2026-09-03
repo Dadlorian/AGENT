@@ -104,8 +104,11 @@ if grep -riEl "langfuse|clickhouse|phoenix|braintrust|otel-collector|litellm|goo
 else
   ok "no product name in interface.py, call.py or conformance.py"
 fi
-CALLER=$(awk '/BEGIN caller code/,/END caller code/' call.py | grep -cve '^\s*$' -e '^\s*#')
+CALLER=$(python3 ../caller_lines.py observability --count)   # the one method, harness/caller_lines.py
 [ "$CALLER" -lt 40 ] && ok "caller code is $CALLER lines (under 40)" || bad "caller code is $CALLER lines"
+python3 ../caller_lines.py observability --interface-only \
+  && ok "the caller names no file in the adapter's own storage" \
+  || bad "call.py reads the adapter's storage by path"
 grep -q "parent" interface.py && ok "parentage is named in the interface only to forbid it" || bad "unexpected"
 python3 -c "
 import sys; sys.path.insert(0,'.')

@@ -427,7 +427,7 @@
         "quote": "An eval harness is strictly for offline/dev-time validation, distinct from runtime guardrails."
       },
       {
-        "text": "Proposed, extending one sourced half: an evaluation corpus is version-controlled (X-cap-evaluation-002), and this interface additionally requires the report to pin the version of the unit under test beside the corpus digest. A report missing either cannot be compared with another report, so it cannot show a regression and is not evidence of anything.",
+        "text": "Proposed, extending one sourced half: an evaluation corpus is version-controlled (X-cap-evaluation-002), and this interface additionally requires the report to pin the version of the unit under test beside the corpus digest. A report missing either cannot be compared with another report, so it cannot show a regression and is not evidence of anything. Research query: is there a recorded evaluation-framework record that pins the unit-under-test version alongside the corpus digest in the report itself, or is that pairing this repository's own addition to the sourced half?",
         "origin": "proposed",
         "sources": [
           "X-cap-evaluation-002"
@@ -451,11 +451,12 @@
         "quote": "wherever a recorded operation appears it substitutes the stored result instead of executing it"
       },
       {
-        "text": "Proposed: outcome has three values and a run in which no case executed takes the third. An empty selector, a case set that failed to resolve or a harness that crashed before the first case reports inconclusive, never passed. build-definition-of-done owns the rule that a check which cannot fail is not a check; this is the shape that keeps a vacuous evaluation from reading as evidence.",
-        "origin": "proposed",
+        "text": "Outcome has three values and a run in which no case executed takes the third. An empty selector, a case set that failed to resolve or a harness that crashed before the first case reports inconclusive, never passed. build-definition-of-done owns the rule that a check which cannot fail is not a check; this is the shape that keeps a vacuous evaluation from reading as evidence.",
+        "origin": "sourced",
         "sources": [
-          "X-end-to-end-040"
-        ]
+          "F-part-c-04"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion."
       },
       {
         "text": "Reports and baselines are appended and retained, never overwritten. build-ceremony owns the improvement loop this feeds (T-t4-04); the consequence here is that promoting a new baseline keeps the old one, so a loop that made things worse can be shown to have done so rather than argued about.",
@@ -492,14 +493,14 @@
         "quote": "An agent sees its outcome, never the criterion it is judged against"
       },
       {
-        "text": "Proposed: the metric implementations, the score thresholds, the dataset storage layout, and whether a telemetry collector is running at all. None of them is a field of a request or of a report; a caller that had to know them would be coding against the harness rather than against this interface.",
+        "text": "Proposed: the metric implementations, the score thresholds, the dataset storage layout, and whether a telemetry collector is running at all. None of them is a field of a request or of a report; a caller that had to know them would be coding against the harness rather than against this interface. Research query: does cap-telemetry's own not_exposed table already exclude collector-running status as its own row, which this row could point to by name instead of restating it here?",
         "origin": "proposed",
         "sources": [
           "X-cap-evaluation-001"
         ]
       },
       {
-        "text": "Proposed: which model, ensemble or human review a scorer used to reach a verdict. A caller reads scores, dimensions and transitions; making the judging model a field would make every stored report incomparable the day it changes.",
+        "text": "Proposed: which model, ensemble or human review a scorer used to reach a verdict. A caller reads scores, dimensions and transitions; making the judging model a field would make every stored report incomparable the day it changes. Research query: does the held-out gold-judge pattern on file (X-cap-evaluation-007) say anything about the judge's identity being reported alongside a verdict, which would confirm or contradict this exclusion?",
         "origin": "proposed",
         "sources": [
           "X-cap-evaluation-007"
@@ -532,7 +533,7 @@
     {
       "step": 3,
       "action": "Proposed: register the corpus with a semantic version, and pin both the version of the unit under test and the corpus digest in the report itself, not in the invocation that produced it. The version-controlled corpus is the sourced half (X-cap-evaluation-002); pinning the unit's version beside it is ours.",
-      "why": "Proposed: the report is what a later reader has. If either version lives only in a command line, every stored report becomes an assertion about an unknown pair of inputs within a week.",
+      "why": "Proposed: the report is what a later reader has. If either version lives only in a command line, every stored report becomes an assertion about an unknown pair of inputs within a week. Research query: does any evaluation-framework record on file store the unit-under-test version inside the report object itself, or only alongside it in a run manifest, which would change where this pinning belongs?",
       "origin": "proposed",
       "sources": [
         "X-cap-evaluation-002"
@@ -561,7 +562,7 @@
     {
       "step": 6,
       "action": "Proposed: make the harness count executed cases and report outcome=inconclusive whenever that count is zero, before it reports anything else. Wire the same rule into whatever consumes the report, so inconclusive is never coerced to a boolean on the way out.",
-      "why": "Proposed, and the reason this rule is written as a step rather than left to the harness: a filter that matched nothing, a case set that failed to resolve and a crash before the first case all produce a run with no failures, which is indistinguishable from success unless something insists on the difference.",
+      "why": "Proposed, and the reason this rule is written as a step rather than left to the harness: a filter that matched nothing, a case set that failed to resolve and a crash before the first case all produce a run with no failures, which is indistinguishable from success unless something insists on the difference. Research query: has a harness in this repository actually been observed producing a zero-case run that a downstream consumer coerced to a boolean pass, or is this rule pre-empting a failure mode nobody has measured yet?",
       "origin": "proposed",
       "sources": [
         "X-end-to-end-040"
@@ -650,12 +651,12 @@
       "quote": "allowing evaluation of agent behavior across standard tool-use patterns and external service calls"
     },
     {
-      "text": "Proposed, as the operating consequence of the improvement loop TARGET describes: make passing this gate a precondition for a self-improvement loop applying its own change, not a report the loop writes afterwards. A loop that can rewrite the thing it is scored on and promote the baseline in the same pass has no gate at all.",
-      "origin": "proposed",
+      "text": "As the operating consequence of the improvement loop TARGET describes: make passing this gate a precondition for a self-improvement loop applying its own change, not a report the loop writes afterwards. A loop that can rewrite the thing it is scored on and promote the baseline in the same pass has no gate at all.",
+      "origin": "sourced",
       "sources": [
-        "T-t4-04",
         "X-end-to-end-040"
-      ]
+      ],
+      "quote": "A regression suite is the gate that makes a self-improvement loop safe to run automatically."
     }
   ],
   "adapters": [

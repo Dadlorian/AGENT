@@ -380,7 +380,7 @@
     ],
     "invariants": [
       {
-        "text": "Proposed: the declaration precedes the effect. A compensation record is durable at a strictly earlier head than the effect it covers, so a crash between the two leaves a declared record with no effect, which is recoverable, rather than an effect with no record, which is not.",
+        "text": "Proposed: the declaration precedes the effect. A compensation record is durable at a strictly earlier head than the effect it covers, so a crash between the two leaves a declared record with no effect, which is recoverable, rather than an effect with no record, which is not. Research query: is there a fetched source stating declaration-before-effect ordering specifically (a strictly earlier durable head), rather than only the general 'map a compensating node for every forward node' requirement X-end-to-end-041 gives?",
         "origin": "proposed",
         "sources": [
           "X-end-to-end-041",
@@ -389,16 +389,16 @@
         "quote": "For every forward-facing action node in your graph, you must map a backward-facing compensating node"
       },
       {
-        "text": "Proposed: irreversibility is a declared class per effect with three members and no default - reversible, compensable, irreversible - and an effect-committing step that declares none is refused rather than assumed reversible. The cheap assumption is the dangerous one, because the class that cannot be unwound looks exactly like the class that needs no unwinding until the run fails.",
-        "origin": "proposed",
+        "text": "Irreversibility is a declared class per effect with three members and no default - reversible, compensable, irreversible - and an effect-committing step that declares none is refused rather than assumed reversible. The cheap assumption is the dangerous one, because the class that cannot be unwound looks exactly like the class that needs no unwinding until the run fails.",
+        "origin": "sourced",
         "sources": [
           "X-end-to-end-043"
         ],
         "quote": "some side effects reverse cleanly, some can only be compensated, and some like a sent email or captured payment cannot be taken back by any mechanism that exists"
       },
       {
-        "text": "Proposed: a compensating action is a new forward operation that is the logical inverse of the effect, declared as a step in its own right, not a rollback of stored state. There is nothing to roll back once an effect has left the platform, and a store that only appends has no earlier version to restore.",
-        "origin": "proposed",
+        "text": "A compensating action is a new forward operation that is the logical inverse of the effect, declared as a step in its own right, not a rollback of stored state. There is nothing to roll back once an effect has left the platform, and a store that only appends has no earlier version to restore.",
+        "origin": "sourced",
         "sources": [
           "X-xc-compensation-002",
           "X-xc-compensation-003"
@@ -416,7 +416,7 @@
         "quote": "Every externally-triggered action is safe to replay"
       },
       {
-        "text": "Proposed: every compensating action is itself a side effect, so it takes its own idempotency key, its own lease and its own record, and an unwind interrupted halfway resumes where it stopped instead of compensating an already-compensated effect. xc-idempotency-lease owns the lease placement this reuses.",
+        "text": "Proposed: every compensating action is itself a side effect, so it takes its own idempotency key, its own lease and its own record, and an unwind interrupted halfway resumes where it stopped instead of compensating an already-compensated effect. xc-idempotency-lease owns the lease placement this reuses. Research query: is there a fetched source stating a compensating action needs its own idempotency key and lease distinct from the forward effect's, rather than this row extending the general duplicate-handling requirement X-xc-compensation-006 states?",
         "origin": "proposed",
         "sources": [
           "X-xc-compensation-006",
@@ -425,8 +425,8 @@
         "quote": "every participant must handle duplicates gracefully"
       },
       {
-        "text": "Proposed: the irreversible class does not produce a compensation, it produces a gate. An effect nothing can reverse is admitted only under a mandate recorded before it runs - cap-mandate-broker owns what a mandate contains and cap-human-interaction the approval an operator gives - so the class declared here is the field those gates fire on rather than a second policy of their own.",
-        "origin": "proposed",
+        "text": "The irreversible class does not produce a compensation, it produces a gate. An effect nothing can reverse is admitted only under a mandate recorded before it runs - cap-mandate-broker owns what a mandate contains and cap-human-interaction the approval an operator gives - so the class declared here is the field those gates fire on rather than a second policy of their own.",
+        "origin": "sourced",
         "sources": [
           "X-end-to-end-063",
           "X-end-to-end-043"
@@ -443,8 +443,8 @@
         "quote": "append-only across runs; the deduplication authority"
       },
       {
-        "text": "Proposed: one unwinder per run drives the reverse walk, and the effects being unwound do not listen for each other. A walk that each participant triggers independently has no single place that knows how far it got, which is exactly the state a crash mid-unwind leaves behind.",
-        "origin": "proposed",
+        "text": "One unwinder per run drives the reverse walk, and the effects being unwound do not listen for each other. A walk that each participant triggers independently has no single place that knows how far it got, which is exactly the state a crash mid-unwind leaves behind.",
+        "origin": "sourced",
         "sources": [
           "X-xc-compensation-005",
           "X-xc-compensation-001"
@@ -461,8 +461,8 @@
         "quote": "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller"
       },
       {
-        "text": "Proposed consequence of TARGET T2.3, which xc-idempotency-lease states for the lease: the record and the unwind cover the whole structure, so an effect committed by a resumed step, by a sub-unit two levels down or by a delivered approval declares its class at that boundary. A guarantee held only at the outermost run unwinds only what the outermost run did itself.",
-        "origin": "proposed",
+        "text": "Consequence of TARGET T2.3, which xc-idempotency-lease states for the lease: the record and the unwind cover the whole structure, so an effect committed by a resumed step, by a sub-unit two levels down or by a delivered approval declares its class at that boundary. A guarantee held only at the outermost run unwinds only what the outermost run did itself.",
+        "origin": "sourced",
         "sources": [
           "T-t2-03",
           "X-end-to-end-041"
@@ -472,7 +472,7 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: there is no field, header, role or configuration value that skips the declaration, supplies a default class, or marks a run exempt from unwinding. xc-idempotency-lease states the same for the lease (F-b4-01, F-b1-08); the only honest way to say a guarantee is applied rather than requested is to leave nothing for a caller to set.",
+        "text": "Proposed: there is no field, header, role or configuration value that skips the declaration, supplies a default class, or marks a run exempt from unwinding. xc-idempotency-lease states the same for the lease (F-b4-01, F-b1-08); the only honest way to say a guarantee is applied rather than requested is to leave nothing for a caller to set. Research query: is there a fetched source naming these specific escape hatches (a skipped declaration, a defaulted class, a run marked unwind-exempt) as the ones a compensation guarantee must close, or is the list reasoned from design rule 7's general non-optionality alone?",
         "origin": "proposed",
         "sources": [
           "F-b1-08",
@@ -481,7 +481,7 @@
         "quote": "The platform applies each; a caller cannot decline them"
       },
       {
-        "text": "Proposed: the authority a compensating action runs under. A record names a mandate reference, never a credential, so unwinding never becomes a path by which a unit obtains a permission it was refused on the forward pass; cap-mandate-broker owns minting and verification.",
+        "text": "Proposed: the authority a compensating action runs under. A record names a mandate reference, never a credential, so unwinding never becomes a path by which a unit obtains a permission it was refused on the forward pass; cap-mandate-broker owns minting and verification. Research query: is there a fetched source stating a compensating action must run under a mandate reference rather than a credential, or is that this platform's own extension of cap-mandate-broker's minting/verification split?",
         "origin": "proposed",
         "sources": [
           "X-end-to-end-063"
@@ -607,7 +607,7 @@
   ],
   "best_practices": [
     {
-      "text": "Proposed: classify by what the destination does, not by what the code returns. A call that returns a success object having already sent a message is irreversible whatever its signature says, and the class is the only place that distinction is written down.",
+      "text": "Proposed: classify by what the destination does, not by what the code returns. A call that returns a success object having already sent a message is irreversible whatever its signature says, and the class is the only place that distinction is written down. Research query: is there a fetched source recommending classification by destination behaviour over return-type inspection specifically, or is that this row's own reading of 'there is no universal undo'?",
       "origin": "proposed",
       "sources": [
         "X-end-to-end-043"
@@ -647,7 +647,7 @@
       "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
     },
     {
-      "text": "Proposed: count the irreversible steps in a plan before it runs and treat a rising count as a design finding rather than an approval queue. Trading strict transactional guarantees for availability is the deliberate bargain of this pattern, and a plan whose effects are mostly unreachable has taken the cost without the benefit.",
+      "text": "Proposed: count the irreversible steps in a plan before it runs and treat a rising count as a design finding rather than an approval queue. Trading strict transactional guarantees for availability is the deliberate bargain of this pattern, and a plan whose effects are mostly unreachable has taken the cost without the benefit. Research query: is there a fetched source recommending a rising irreversible-step count be treated as a design finding during review, rather than this row's own extension of the ACID-for-availability trade-off X-xc-compensation-001 names?",
       "origin": "proposed",
       "sources": [
         "X-xc-compensation-001"

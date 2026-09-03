@@ -47,3 +47,11 @@ class DryRunAdapter(ModelAccessAdapter):
         owed = ticket.result.cost_micros if ticket.result else 0
         return CancelAck(ticket.ticket_id, "recorded", owed,
                          "the work had already finished when submit returned; the stop was recorded only")
+
+
+# The one name every adapter module exports: the entry point of this module.
+# Binding is by module, never by a per-capability class-name table (the
+# divergence harness/linked/components.py used to paper over). The descriptive
+# class name above stays - `binding()` reports it, so a report still says which
+# adapter answered.
+Adapter = DryRunAdapter

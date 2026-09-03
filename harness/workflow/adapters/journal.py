@@ -26,7 +26,26 @@ class Journal:
     def __init__(self, path: str):
         self.path = path
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
-        self.records = self._load()
+        self._stamp: tuple[int, int] | None = None
+        self.records: list[dict] = []
+        self.refresh()
+
+    def _file_stamp(self) -> tuple[int, int] | None:
+        try:
+            st = os.stat(self.path)
+        except FileNotFoundError:
+            return None
+        return (st.st_size, st.st_mtime_ns)
+
+    def refresh(self) -> None:
+        """Re-read when the file has moved on. The journal is the store, not
+        this object's memory: a run that crashed in another process is read back
+        through the same handle, so a caller never has to rebind an executor to
+        see what the executor durably knows."""
+        stamp = self._file_stamp()
+        if stamp != self._stamp:
+            self.records = self._load()
+            self._stamp = stamp
 
     def _load(self) -> list[dict]:
         if not os.path.exists(self.path):
@@ -43,6 +62,7 @@ class Journal:
         return self.records[-1]["hash"] if self.records else ZERO
 
     def append(self, **fields) -> dict:
+        self.refresh()
         rec = {"seq": len(self.records), "prev": self.head(), **fields}
         rec["hash"] = "sha256:" + hashlib.sha256(
             (rec["prev"] + canonical(rec)).encode()).hexdigest()
@@ -51,9 +71,11 @@ class Journal:
             fh.flush()
             os.fsync(fh.fileno())
         self.records.append(rec)
+        self._stamp = self._file_stamp()
         return rec
 
     def verify(self) -> str | None:
+        self.refresh()
         prev = ZERO
         for i, rec in enumerate(self.records):
             body = {k: v for k, v in rec.items() if k != "hash"}
@@ -64,6 +86,7 @@ class Journal:
         return None
 
     def of(self, run_key: str, kind: str | None = None) -> list[dict]:
+        self.refresh()
         return [r for r in self.records
                 if r.get("run_key") == run_key and (kind is None or r.get("kind") == kind)]
 

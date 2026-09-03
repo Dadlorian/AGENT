@@ -22,8 +22,26 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from interface import (BeginRun, Checkpoint, DurableExecutor, GateOutcome,  # noqa: E402
-                       GateRecord, Problem, RunState, StepRecord, gate_parts)
+                       GateRecord, Problem, Receipt, RunState, StepRecord, gate_parts)
 from adapters.journal import EffectTable, Journal  # noqa: E402
+
+
+def _receipt(journal: Journal, effects: EffectTable, state: RunState) -> Receipt:
+    """The caller's read, assembled from wherever this executor keeps its state.
+
+    Both in-process executors keep it in the same journal, so they share this
+    function; an executor with a server behind it would answer the same shape
+    from the server, which is the point of the operation being on the interface
+    rather than in a caller that knows about files.
+    """
+    return Receipt(
+        run_key=state.run_key, executor_marker=state.executor_marker,
+        resume_point=state.resume_point, steps_committed=state.steps_committed,
+        terminal=state.terminal, spent_micros=state.spent_micros,
+        gates_parked=len(journal.of(state.run_key, "gate-parked")),
+        gates_decided=len(journal.of(state.run_key, "gate-decided")),
+        effects=[r for r in effects.rows() if r.get("run_key") == state.run_key],
+        problem=state.problem)
 
 
 def _record(r: dict) -> StepRecord:
@@ -94,6 +112,9 @@ class JournalExecutor(DurableExecutor):
     def read_run(self, run_key: str) -> RunState:
         return self.resume_point(run_key)
 
+    def read_receipt(self, run_key: str) -> Receipt:
+        return _receipt(self.journal, self.effects, self.read_run(run_key))
+
     # -- the resume seam a decision arrives on -------------------------------
     def park_gate(self, gate: GateRecord) -> None:
         run_key, gate_step_id = gate_parts(gate.gate_id)
@@ -127,3 +148,11 @@ class JournalExecutor(DurableExecutor):
     def mark_terminal(self, run_key: str, outcome: str, problem: dict | None = None) -> None:
         self.journal.append(kind="run-terminal", run_key=run_key, outcome=outcome,
                             problem=problem, executor_marker=self.executor_marker)
+
+
+# The one name every adapter module exports: the entry point of this module.
+# Binding is by module, never by a per-capability class-name table (the
+# divergence harness/linked/components.py used to paper over). The descriptive
+# class name above stays - `binding()` reports it, so a report still says which
+# executor answered.
+Adapter = JournalExecutor

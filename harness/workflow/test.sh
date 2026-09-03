@@ -41,8 +41,20 @@ ADAPTER=dryrun python3 call.py > out/call-dryrun.log 2>&1
 check "call.py exits 0" "$?" "0"
 grep -q "rc -9" out/call-dryrun.log && ok "attempt 1 really died (SIGKILL, not a return)" \
   || bad "attempt 1 did not die"
-grep -q "1 row(s) in effects.jsonl" out/call-dryrun.log \
+grep -q "1 effect row on the receipt" out/call-dryrun.log \
   && ok "the side effect happened exactly once across the crash" || bad "effect repeated or lost"
+grep -q "resume_point 10 read through the interface" out/call-dryrun.log \
+  && ok "the caller read the resume point through the interface, after a real crash" \
+  || bad "the caller did not read a resume point"
+
+echo "1b. what the caller wrote, measured the one way (harness/caller_lines.py)"
+LINES=$(python3 ../caller_lines.py workflow --count)
+[ "$LINES" -lt 40 ] && ok "caller code is $LINES lines, under 40" || bad "caller code is $LINES lines"
+python3 ../caller_lines.py workflow --interface-only \
+  && ok "the caller names no file in the executor's own storage" \
+  || bad "call.py reads the executor's storage by path"
+check "the receipt's effect count is the count from outside the executor" \
+  "$(grep -c . out/call-dryrun/effects.jsonl)" "1"
 
 echo "2. conformance against the dry-run adapter"
 python3 conformance.py --adapter dryrun --out out/c1 --report out/before.json > out/c1.log 2>&1

@@ -248,8 +248,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Item | Origin | Evidence |
 |---|---|---|
 | The criterion a resolved capability's output will be judged against. agentic-stack states design rule 6 (F-b1-07); on this interface it forbids exactly one thing: the record may carry an acceptance_criteria_ref, an opaque identifier the publisher and the improvement loop resolve, and the criterion body never travels in a resolution outcome, a describe response or anything else handed to the capability that is about to be run. | sourced | `F-b1-07` "An agent sees its outcome, never the criterion it is judged against" |
-| Proposed: the storage layout, the transport and the index or tag format. A caller names a record and a constraint; whether the record arrived from a file on this host or over a network is the adapter's business and never a field of the query. | proposed | - |
-| Proposed: the publisher's evaluation scores, the canary traffic share and the identity of who approved a promotion. They belong to the rollout record, not to what a resolving caller receives. | proposed | - |
+| The storage layout, the transport and the index or tag format. A caller names a record and a constraint; whether the record arrived from a file on this host or over a network is the adapter's business and never a field of the query. | sourced | `X-cap-capability-registry-002` "MCP registries are metaregistries that host metadata about packages, but not the package code or binaries." |
+| Proposed: the publisher's evaluation scores, the canary traffic share and the identity of who approved a promotion. They belong to the rollout record, not to what a resolving caller receives. Research query: does any of the researched registry standards (MCP Registry, OASF, AGNTCY ADS) define a rollout or canary record separate from the resolvable capability record, which would confirm this split is a documented pattern rather than invented here? | proposed | - |
 
 ## Instructions
 
@@ -274,7 +274,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Keep the record pointing at the artifact rather than containing it: a registry holds metadata about packages, not the package bytes, so a record stays small enough to sign, to list and to compare. | sourced | `X-cap-capability-registry-002` "MCP registries are metaregistries that host metadata about packages, but not the package code or binaries." |
 | Require every record to state the record-schema version it is valid against, so a schema change is a readable fact about each record instead of an assumption about the whole store. | sourced | `X-cap-capability-registry-003` "records must specify the OASF schema version they need to be valid against" |
 | Treat a preview interface as a moving target and pin what you depend on: the registry interface this design follows is published as a frozen preview version rather than a settled release, so depend on the operations, not on fields a preview may still add. | sourced | `X-cap-capability-registry-001` "The Registry API has entered an API freeze (v0.1)" |
-| Proposed: write each record's good_at entries specific enough to sequence on, the way the reference consumption example's agent profiles are, so a caller can pick and order agents from records alone rather than by asking whoever wrote them. | proposed | `T-t6-05` |
+| Write each record's good_at entries specific enough to sequence on, the way the reference consumption example's agent profiles are, so a caller can pick and order agents from records alone rather than by asking whoever wrote them. | sourced | `T-t6-05` "Each agent is defined up front by what it is good at, so callers know how to call it and how to sequence it." |
 
 ## Adapters
 

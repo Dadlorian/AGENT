@@ -3,8 +3,8 @@
 
     ADAPTER=dryrun python3 harness/gateway/call.py
 
-Everything between the CALLER CODE markers is what a caller writes. Everything
-above them is the platform: it stamps the correlation id, the budget ceiling,
+Everything below the CALLER CODE marker is what a caller writes. Everything
+above it is the platform: it stamps the correlation id, the budget ceiling,
 the idempotency key and the actor onto the envelope without being asked
 (F-b4-01), and it binds one of three adapters from one environment variable.
 """
@@ -52,26 +52,33 @@ def table(rows, header):
         print("  ".join(str(c).ljust(w) for c, w in zip(row, widths)))
 
 
-def main() -> int:
-    # >>> CALLER CODE BEGINS
-    adapter = ADAPTERS[os.environ.get("ADAPTER", "dryrun")]()
-    ask = envelope(os.environ.get("MODEL_CLASS", "i-fast"),
-                   os.environ.get("PROMPT", "In one line: what does a routing class hide from its caller?"))
-    try:
-        ticket = adapter.submit(CompletionRequest.from_dict(ask["payload"]))
-        while ticket.state == "pending":        # a fast path is redeemed already; a slow one is claimed
-            ticket = adapter.claim(ticket)
-    except Problem as problem:
-        print("PROBLEM (application/problem+json):")
-        print(json.dumps(problem.body, indent=2))
-        return 2
+def show(ask: dict, ticket) -> int:
+    """Presentation, so the caller region below is calls and results only."""
     got = ticket.result
     table([(ask["kind"], ticket.model_class, ticket.state, got.cost_micros,
             ask["budget"]["ceiling_micros"] - got.cost_micros, got.cost_status)],
           ("entry", "model_class", "ticket", "cost_micros", "budget_left", "cost_status"))
     print("\n" + got.text)
     return 0
-    # <<< CALLER CODE ENDS
+
+
+# --------------------------------------------------------------------------
+# >>> CALLER CODE : everything below this line is what a caller writes.
+# Counted by harness/caller_lines.py, the one method all five harnesses use.
+# --------------------------------------------------------------------------
+def main() -> int:
+    adapter = ADAPTERS[os.environ.get("ADAPTER", "dryrun")]()    # configuration, not code
+    ask = envelope(os.environ.get("MODEL_CLASS", "i-fast"),
+                   os.environ.get("PROMPT", "In one line: what does a routing class hide from its caller?"))
+    try:
+        ticket = adapter.submit(CompletionRequest.from_dict(ask["payload"]))
+        while ticket.state == "pending":        # a fast path is redeemed already; a slow one is claimed
+            ticket = adapter.claim(ticket)
+    except Problem as problem:                  # one refusal shape, branched on type
+        print("PROBLEM (application/problem+json):")
+        print(json.dumps(problem.body, indent=2))
+        return 2
+    return show(ask, ticket)
 
 
 if __name__ == "__main__":

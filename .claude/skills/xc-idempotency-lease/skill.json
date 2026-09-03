@@ -335,8 +335,8 @@
         "quote": "The platform applies each; a caller cannot decline them"
       },
       {
-        "text": "Proposed: the key is derived by the platform per entry adapter under a stated rule, and the rule is recorded on the lease. The caller-supplied key is used where the protocol carries one; where it does not, the key is a fingerprint over payload elements selected in advance, and the draft the convention comes from already anticipates that pairing.",
-        "origin": "proposed",
+        "text": "The key is derived by the platform per entry adapter under a stated rule, and the rule is recorded on the lease. The caller-supplied key is used where the protocol carries one; where it does not, the key is a fingerprint over payload elements selected in advance, and the draft the convention comes from already anticipates that pairing.",
+        "origin": "sourced",
         "sources": [
           "X-entry-composition-047",
           "X-xc-idempotency-lease-004"
@@ -344,8 +344,8 @@
         "quote": "An idempotency fingerprint MAY be used in conjunction with an idempotency key to determine the uniqueness of a request."
       },
       {
-        "text": "Proposed: acquisition is one atomic act, taken before the first side effect. A check followed by a separate write is two acts with a window between them, and every concurrent copy that lands in that window is granted.",
-        "origin": "proposed",
+        "text": "Acquisition is one atomic act, taken before the first side effect. A check followed by a separate write is two acts with a window between them, and every concurrent copy that lands in that window is granted.",
+        "origin": "sourced",
         "sources": [
           "X-xc-idempotency-lease-002",
           "X-xc-idempotency-lease-004"
@@ -353,8 +353,8 @@
         "quote": "Race conditions between the idempotency check and the mutation must be atomic"
       },
       {
-        "text": "Proposed: a duplicate that arrives while the first execution is still running attaches to that claim and receives its result. It is neither refused nor queued behind a fresh execution, which is what makes a retry storm cost one execution rather than one refusal per copy.",
-        "origin": "proposed",
+        "text": "A duplicate that arrives while the first execution is still running attaches to that claim and receives its result. It is neither refused nor queued behind a fresh execution, which is what makes a retry storm cost one execution rather than one refusal per copy.",
+        "origin": "sourced",
         "sources": [
           "X-entry-composition-027",
           "X-cross-structure-042"
@@ -362,7 +362,7 @@
         "quote": "duplicate requests will return the same result as the original request"
       },
       {
-        "text": "Proposed: every lease carries an owner and an expiry, and a lease past its expiry is reclaimable by anyone. An unbounded lease converts one crashed owner into a key nobody can ever use again, which is the failure this guarantee's own breakage is built to produce.",
+        "text": "Proposed: every lease carries an owner and an expiry, and a lease past its expiry is reclaimable by anyone. An unbounded lease converts one crashed owner into a key nobody can ever use again, which is the failure this guarantee's own breakage is built to produce. Research query: is there a fetched source stating an unbounded lease specifically (versus an unbounded retry or an undelivered acknowledgment) is the failure mode, or is that this row's own extension of the general crash-and-redeliver pattern the cited records describe?",
         "origin": "proposed",
         "sources": [
           "X-xc-idempotency-lease-005",
@@ -371,7 +371,7 @@
         "quote": "A handler can update the database successfully but fail before acknowledgment, causing the broker to deliver the same message again."
       },
       {
-        "text": "Proposed: reclaim fences the previous owner. The returning owner's token is stale, so its seal is refused rather than overwriting a result the new owner produced; an expiry without fencing trades a stuck key for two writers.",
+        "text": "Proposed: reclaim fences the previous owner. The returning owner's token is stale, so its seal is refused rather than overwriting a result the new owner produced; an expiry without fencing trades a stuck key for two writers. Research query: is there a fetched source on fencing tokens for a reclaimed lease specifically, rather than this row's own extension of cap-idempotency's replay contract to the reclaim path?",
         "origin": "proposed",
         "sources": [
           "F-b4-08",
@@ -379,7 +379,7 @@
         ]
       },
       {
-        "text": "Proposed: the lease needs only a keyed conditional write, so it is placed on the persistence interface cap-state-persistence defines rather than on the Ledger. Binding the guarantee to one projection of the log would make the store that serves it unswappable, and any store offering an expected-version append can serve it.",
+        "text": "Proposed: the lease needs only a keyed conditional write, so it is placed on the persistence interface cap-state-persistence defines rather than on the Ledger. Binding the guarantee to one projection of the log would make the store that serves it unswappable, and any store offering an expected-version append can serve it. Research query: is there a fetched source arguing a lease needs only a keyed conditional write (and nothing the Ledger's own log format provides), or is that this skill's own placement argument?",
         "origin": "proposed",
         "sources": [
           "X-cross-structure-049",
@@ -397,8 +397,8 @@
         "quote": "Typed and machine-readable. Never parsed from prose"
       },
       {
-        "text": "Proposed consequence of TARGET T2.3: the claim is applied across the whole structure, not only at the door. An action that is externally triggered at a resumed step, a delivered approval or a re-fired recurrence acquires its own lease at that boundary, or replay safety stops at the first hop.",
-        "origin": "proposed",
+        "text": "Consequence of TARGET T2.3: the claim is applied across the whole structure, not only at the door. An action that is externally triggered at a resumed step, a delivered approval or a re-fired recurrence acquires its own lease at that boundary, or replay safety stops at the first hop.",
+        "origin": "sourced",
         "sources": [
           "T-t2-03",
           "X-end-to-end-042"
@@ -408,7 +408,7 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: there is no header, field, role or configuration flag that skips the acquisition, sets the expiry to nothing, or turns an attach into a second execution. The guarantee is applied rather than requested, and the only honest way to say that in a schema is to leave nothing for a caller to set.",
+        "text": "Proposed: there is no header, field, role or configuration flag that skips the acquisition, sets the expiry to nothing, or turns an attach into a second execution. The guarantee is applied rather than requested, and the only honest way to say that in a schema is to leave nothing for a caller to set. Research query: is there a fetched source naming these specific escape hatches (a skipped acquisition, a nulled expiry, an attach turned into a second execution) as the ones a lease guarantee must close, or is the list reasoned from design rule 7's general non-optionality alone?",
         "origin": "proposed",
         "sources": [
           "F-b1-08",
@@ -417,7 +417,7 @@
         "quote": "Cross-cutting guarantees are not optional"
       },
       {
-        "text": "Proposed: the fencing token is platform-internal and never travels to a caller, and holding a key is not authorisation to read what the first execution produced. Who may read that result stays a matter for identity and policy, so an attached duplicate is authorised like any other reader.",
+        "text": "Proposed: the fencing token is platform-internal and never travels to a caller, and holding a key is not authorisation to read what the first execution produced. Who may read that result stays a matter for identity and policy, so an attached duplicate is authorised like any other reader. Research query: is there a fetched source stating a fencing token must stay platform-internal and never travel to a caller, or is that this skill's own extension of cap-idempotency's replay contract?",
         "origin": "proposed",
         "sources": [
           "F-b4-08"
@@ -575,7 +575,7 @@
       "quote": "Conformance checks exist; not wired into the enforcement path"
     },
     {
-      "text": "Proposed: treat the attach path as the interesting one and exercise it deliberately. A sequential replay passes on anything that records a key at all, so a suite that never overlaps two copies has measured the log and not the lease.",
+      "text": "Proposed: treat the attach path as the interesting one and exercise it deliberately. A sequential replay passes on anything that records a key at all, so a suite that never overlaps two copies has measured the log and not the lease. Research query: is there a fetched source specifically recommending deliberate overlap-testing of the attach path (two concurrent copies), rather than this row's own extension of the atomic-acquisition requirement X-xc-idempotency-lease-002 states?",
       "origin": "proposed",
       "sources": [
         "X-xc-idempotency-lease-002"

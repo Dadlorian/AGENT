@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """The minimal call: one run, one trace, reassembled by grouping and not by parentage.
 
-Two regions. The caller region at the bottom is everything a caller writes: an
-intent and a payload. Everything above it is the platform - it stamps the
+Two regions. The caller region below the CALLER CODE marker is everything a
+caller writes: an intent and a payload. Everything above it is the platform - it stamps the
 correlation record, the budget ceiling, the idempotency key and the actor without
 being asked, binds the telemetry context at the one dispatch seam, and crosses a
 simulated agent boundary that mints its own root trace at every level, which is
@@ -141,25 +141,9 @@ def table(answer: dict) -> str:
     return "\n".join(lines)
 
 
-# --- BEGIN caller code -------------------------------------------------------
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--adapter", default=os.environ.get("ADAPTER", "dryrun"))
-    parser.add_argument("--break-stamp", action="store_true",
-                        help="deliberate breakage: stop re-stamping at child dispatch")
-    args = parser.parse_args()
-
-    answer = enter(                                  # the whole call
-        kind="human",
-        intent={"run": "triage-and-fix", "why": "a failing nightly check needs diagnosis"},
-        payload={"repo": "agentic-stack", "check": "nightly"},
-        adapter=args.adapter, break_stamp=args.break_stamp,
-    )
-    if "type" in answer:                             # one problem, never both
-        print("application/problem+json")
-        print(json.dumps({k: v for k, v in answer.items() if k != "signals"}, indent=2))
-        return 2
-
+def report(answer: dict) -> int:
+    """Presentation and the proof it prints, so the caller region below is the
+    call, the answer and the one branch on a problem - nothing else."""
     print(f"adapter={answer['adapter']}  run.id={answer['run_id']}  "
           f"correlation.id={answer['root_dispatch_id']}  mapping={answer['mapping_version']}")
     print(table(answer))
@@ -176,7 +160,29 @@ def main() -> int:
                f"so grouping returns {answer['run_id_groups']} group(s) covering "
                f"{answer['levels_covered']} of {DEPTH} levels")
     return 0 if one_tree else 1
-# --- END caller code ---------------------------------------------------------
+
+
+# --------------------------------------------------------------------------
+# >>> CALLER CODE : everything below this line is what a caller writes.
+# Counted by harness/caller_lines.py, the one method all five harnesses use.
+# --------------------------------------------------------------------------
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--adapter", default=os.environ.get("ADAPTER", "dryrun"))
+    parser.add_argument("--break-stamp", action="store_true",
+                        help="deliberate breakage: stop re-stamping at child dispatch")
+    args = parser.parse_args()
+    answer = enter(                                  # the whole call
+        kind="human",
+        intent={"run": "triage-and-fix", "why": "a failing nightly check needs diagnosis"},
+        payload={"repo": "agentic-stack", "check": "nightly"},
+        adapter=args.adapter, break_stamp=args.break_stamp,
+    )
+    if "type" in answer:                             # one problem, never both
+        print("application/problem+json")
+        print(json.dumps({k: v for k, v in answer.items() if k != "signals"}, indent=2))
+        return 2
+    return report(answer)
 
 
 if __name__ == "__main__":

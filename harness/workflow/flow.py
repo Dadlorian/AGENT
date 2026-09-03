@@ -27,7 +27,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 from interface import (BeginRun, Checkpoint, Envelope, GateOutcome, GateRecord,  # noqa: E402
-                       LoopOutcome, Problem, digest, gate_id_for, step_idempotency_key)
+                       LoopOutcome, Problem, digest, gate_id_for, load_executor,
+                       step_idempotency_key)
 
 # --------------------------------------------------------------------------
 # The declared flow: one step, a bounded loop with a judge exit and a ceiling,
@@ -67,17 +68,9 @@ def judge(text: str, criterion_ref: str) -> tuple[str, str]:
 
 def executor_for(name: str, out_dir: str):
     """Selecting an executor is configuration. Nothing else in this file, and
-    nothing in call.py, branches on which one answered."""
-    if name == "dryrun":
-        from adapters.dryrun import JournalExecutor
-        return JournalExecutor(out_dir)
-    if name == "second":
-        from adapters.second import QueueStateMachineExecutor
-        return QueueStateMachineExecutor(out_dir)
-    if name == "live":
-        from adapters.live import WorkflowEngineExecutor
-        return WorkflowEngineExecutor(out_dir)
-    raise Problem("document-invalid", f"unknown adapter {name!r}")
+    nothing in call.py, branches on which one answered. The binding itself is
+    one rule on the interface (`load_executor`), not a table of class names."""
+    return load_executor(name, out_dir)
 
 
 class Driver:

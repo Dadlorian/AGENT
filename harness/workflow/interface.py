@@ -120,6 +120,37 @@ class StepRecord:
 
 
 @dataclass
+class Receipt:
+    """What a caller may read back about a run without knowing where the
+    executor kept it: where a restart would continue, what the run spent, how
+    many gates it parked and how many decisions it applied, and the effect rows
+    its steps committed.
+
+    It exists because a caller that wants any of this has exactly two options: an
+    operation on the interface, or opening the executor's own storage by path -
+    and the second one is a contract shaped around a store that happens to be a
+    file (F-a6-02). An executor that keeps its history on a server answers this
+    from the server; one that keeps a row beside the effect answers it from the
+    row; neither is asked where it put it.
+
+    It is not evidence. The conformance run still counts effect rows from
+    outside the executor, because a receipt an executor writes about itself
+    cannot show that executor double-counting: `effects` here is what a caller
+    reads, never what proves the run honest.
+    """
+    run_key: str
+    executor_marker: str
+    resume_point: int
+    steps_committed: int
+    terminal: bool
+    spent_micros: int
+    gates_parked: int
+    gates_decided: int
+    effects: list[dict] = field(default_factory=list)
+    problem: dict | None = None
+
+
+@dataclass
 class RunState:
     """What a restart reads: where to continue, and what it already spent."""
     run_key: str
@@ -197,7 +228,8 @@ class LoopOutcome:
 # The adapter
 # --------------------------------------------------------------------------
 class DurableExecutor(ABC):
-    """Four operations, plus the two the parked gate rides on.
+    """Four operations, one read a caller makes of a run, plus the two the
+    parked gate rides on.
 
     Every implementation declares how it behaves rather than being asked to
     behave alike: the four class attributes below are its declared gaps, and the
@@ -239,6 +271,12 @@ class DurableExecutor(ABC):
         """Terminal state plus the committed step records."""
 
     @abstractmethod
+    def read_receipt(self, run_key: str) -> Receipt:
+        """The run as a caller reads it: the resume point, the spend, the gate
+        counts and the effect rows its steps committed. No caller opens this
+        executor's storage to assemble it."""
+
+    @abstractmethod
     def park_gate(self, gate: GateRecord) -> None:
         """Park a step that cannot proceed until a decision arrives."""
 
@@ -246,6 +284,23 @@ class DurableExecutor(ABC):
     def record_decision(self, outcome: GateOutcome) -> bool:
         """True when this delivery is the one that resumes the run; False when it
         is a redelivery of a decision already applied, or the gate is closed."""
+
+
+ADAPTERS = ("dryrun", "second", "live")
+
+
+def load_executor(name: str, out_dir: str) -> DurableExecutor:
+    """Binding is configuration: one name from the environment, one import, one
+    class. Every adapter module in this harness exports its entry point as
+    `Adapter`, so there is no per-adapter class-name table here or anywhere else
+    - which is what lets harness/linked/components.py bind all four capabilities
+    by one rule. `binding()` still reports the class that answered, so a report
+    says which executor ran without a caller naming it."""
+    import importlib
+    if name not in ADAPTERS:
+        raise Problem("document-invalid",
+                      f"unknown adapter {name!r}: choose {', '.join(ADAPTERS)}")
+    return importlib.import_module(f"adapters.{name}").Adapter(out_dir)
 
 
 def digest(obj: Any) -> str:

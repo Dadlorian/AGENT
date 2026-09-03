@@ -1,0 +1,80 @@
+{
+  "reviewer": "sonnet",
+  "test_results": {
+    "containment": "passed 23, failed 0",
+    "gateway": "passed 24, failed 0",
+    "observability": "passed 36, failed 0",
+    "workflow": "passed 19, failed 0 (dry-run: 19 checks pass, swap proven across 2 executors, breakage fails both)",
+    "linked": "passed 31, failed 0 (dry-run: 31 checks pass, 23 conformance checks, swap proof across 4 components, breakage fails both)"
+  },
+  "findings": [
+    {
+      "id": "H1-001",
+      "harness": "workflow",
+      "location": "harness/workflow/call.py:67-71",
+      "severity": "block",
+      "category": "interface-leak",
+      "finding": "The workflow harness's minimal call reads the dryrun/second adapters' private journal.jsonl and effects.jsonl files directly by hardcoded path instead of through a DurableExecutor operation, unlike every other harness whose call.py touches only the interface.",
+      "evidence": "call.py:68-69 does `effects = [json.loads(l) for l in open(os.path.join(out_dir, \"effects.jsonl\"))]` and the same for journal.jsonl; those paths are set in adapters/dryrun.py:48-49 and adapters/second.py:53-55 as each adapter's own storage, and no DurableExecutor operation (begin_run, checkpoint_step, resume_point, read_run, park_gate, record_decision) returns gate-parked/gate-decided counts or an effect list, so the call cannot get this data through the interface at all; a live executor (Temporal) would leave no such files, and this reporting path would simply break rather than degrade through a typed refusal.",
+      "suggested_change": "Add an interface-level read (a Receipt-like shape, as the linked harness already does for its own report) that exposes gate-parked/applied counts and effect rows, and have call.py's reporting call that instead of opening adapter-internal files."
+    },
+    {
+      "id": "H1-002",
+      "harness": "skill:xc-correlation-implement",
+      "location": "skill.json best_practices[4]",
+      "severity": "block",
+      "category": "quote-misfit",
+      "finding": "best_practices[4] states 'Every unit of work must be retried three times before it is reported as failed,' cited to F-b1-02 with the quote 'The core imports interfaces, never implementations' — the quote is a real verbatim substring of F-b1-02 but has no relation to retries, and no source anywhere in this skill supports a three-retry claim.",
+      "evidence": "F-b1-02's actual text (kb/facts.jsonl): '1. Every external dependency sits behind a capability interface. The core imports interfaces, never implementations.' There is no retry count, no retry policy and no mention of failure reporting cadence anywhere in F-b1-02, and no other row in xc-correlation-implement's contract, instructions or best_practices mentions retries at all.",
+      "suggested_change": "Delete best_practices[4] or replace it with a claim F-b1-02 actually supports (e.g. restate the interfaces-vs-implementations boundary rule, naming agentic-stack, since F-b1-02 is already cited and restated elsewhere in this same skill per H1-006)."
+    },
+    {
+      "id": "H1-003",
+      "harness": "containment|gateway|observability|workflow|linked",
+      "location": "harness/containment/call.py:118-138; harness/gateway/call.py:56-74; harness/observability/call.py:144-179; harness/linked/call.py:67-77; harness/{containment,workflow}/test.sh",
+      "severity": "fix",
+      "category": "inconsistency",
+      "finding": "What counts as 'caller code' is scoped differently across the four harnesses that mark it, and two harnesses never assert the count via the gate at all, so T3's 'count lines of caller code' is not measured the same way twice.",
+      "evidence": "gateway's and observability's marked regions include the print/table/proof-reporting code (gateway call.py:69-72, observability call.py:163-178); containment's minimal_call() and linked's marked region both exclude their own print/report step (containment's table()/print live in main(), after minimal_call() returns; linked's report() call is outside 'CALLER CODE ENDS' at call.py:77/79). Separately, only gateway, observability and linked test.sh assert a line-count bound (`grep -n 'caller code' harness/*/test.sh` finds it only in those three); containment's and workflow's README claims (17 lines; no claim at all for workflow, which has no marker) are unverified by their own gates.",
+      "suggested_change": "Standardize what a 'caller code' marker wraps (interface calls plus reading the result, excluding presentation) across all five call.py files, and add the same `awk`-based line-count assertion to containment/test.sh and workflow/test.sh that gateway, observability and linked already carry."
+    },
+    {
+      "id": "H1-004",
+      "harness": "workflow",
+      "location": "harness/workflow/call.py:42-92 vs harness/workflow/flow.py (414 lines)",
+      "severity": "fix",
+      "category": "usability",
+      "finding": "call.py never itself invokes a DurableExecutor operation; every interface call (begin_run, checkpoint_step, park_gate, record_decision, resume_point, read_run) happens inside flow.py, reached only via subprocess, so a newcomer cannot find 'one call through the interface' inside workflow's own minimal-call file the way they can in the other four harnesses.",
+      "evidence": "grep for begin_run/checkpoint_step/park_gate/record_decision across harness/workflow/*.py shows every hit in flow.py (lines 101, 161, 241, 253, 265, 338), none in call.py; call.py's `attempt()` only builds a subprocess.run() command line against flow.py, unlike containment/gateway/observability/linked whose call.py bodies call the adapter or platform interface directly.",
+      "suggested_change": "State plainly in README.md's Files table that the interface calls live in flow.py, not call.py, and/or have call.py demonstrate one direct interface call itself (e.g. build_envelope + a single begin_run) before shelling out to flow.py for the full crash/resume scenario, so T3's ten-minute read has one file to look at."
+    },
+    {
+      "id": "H1-005",
+      "harness": "linked",
+      "location": "harness/linked/components.py:35-46",
+      "severity": "nit",
+      "category": "inconsistency",
+      "finding": "The four component harnesses use no shared adapter-class-naming convention (containment and observability both call every adapter class `Adapter`; gateway uses DryRunAdapter/BatchClaimAdapter/LiveGatewayAdapter; workflow uses JournalExecutor/QueueStateMachineExecutor/WorkflowEngineExecutor), forcing linked/components.py's COMPONENTS dict to hardcode a per-capability class-name map rather than a single lookup rule.",
+      "evidence": "components.py:35-46's COMPONENTS table lists a distinct {\"dryrun\": ..., \"second\": ..., \"live\": ...} class-name map per capability, four different shapes for four things that are otherwise selected identically by one environment variable each.",
+      "suggested_change": "Either adopt one class-naming convention across the four component harnesses' adapters (e.g. all export a module-level `Adapter`), or record this divergence explicitly in each harness's README as a 'what would pin this' row, since it is presently invisible outside components.py."
+    },
+    {
+      "id": "H1-006",
+      "harness": "skill:xc-correlation-implement",
+      "location": "skill.json contract.invariants[2] (F-b1-02), best_practices[5] (F-part-c-04)",
+      "severity": "fix",
+      "category": "restatement",
+      "finding": "tools/validate_skills.py flags xc-correlation-implement as restating F-b1-02 under the same quote as agentic-stack and build-adapter-pair, and restating F-part-c-04 under the same quote as agentic-stack and xc-correlation, in both cases without naming the skill that already carries the fact — working against T9.3's zero-restatement-warnings target.",
+      "evidence": "`python3 tools/validate_skills.py` output: \"warning: xc-correlation-implement: restates F-b1-02 under the same quote as agentic-stack, build-adapter-pair, without naming it (compose by name, not by copy)\" and \"warning: xc-correlation-implement: restates F-part-c-04 under the same quote as agentic-stack, xc-correlation, without naming it (compose by name, not by copy)\"; run reports 102 skills checked, 0 errors, 244 warnings repo-wide.",
+      "suggested_change": "Rewrite invariants[2] and the F-part-c-04 row to name the skill that already states the fact ('agentic-stack already states X; what this adds is...') per the restate-and-extend pattern the validator expects, instead of repeating the identical quote under a fresh sourced row."
+    }
+  ],
+  "caller_lines": {
+    "containment": 17,
+    "gateway": 17,
+    "observability": 32,
+    "workflow": 39,
+    "linked": 9
+  },
+  "summary": "All five gates pass exactly as README.md claims (23/24/36/19/31 checks, 0 failures), every provenance.json's measured claims reproduce on re-run (gateway's cross-run sha256, workflow's 28/28, containment's four execution-model axes), and no product name leaked outside adapters/ or the env tables in any of the five harnesses. The two block findings are: workflow's call.py bypasses the DurableExecutor interface to read adapter-internal journal/effect files directly and never itself calls an interface operation, which is a real T7.2 violation in the harness meant to demonstrate T7 most concretely; and xc-correlation-implement's best_practices[4] is a fabricated retry-count claim riding on an unrelated but verbatim quote from F-b1-02. Three fix-level findings cover an inconsistent, partly-unverified 'caller lines' metric across harnesses (undermining T3 comparability) and two validator-flagged restatement warnings in xc-correlation-implement; one nit notes the adapter-class-naming divergence the linked harness has to paper over."
+}

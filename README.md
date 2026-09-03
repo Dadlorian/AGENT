@@ -90,7 +90,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 
 | Check | Command | Expected |
 |---|---|---|
-| Every skill valid | `python3 tools/validate_skills.py` | `101 skills checked, 0 errors, NEWWARN warnings` |
+| Every skill valid | `python3 tools/validate_skills.py` | `101 skills checked, 0 errors, 241 warnings` |
 | Ceremonies fed the loop | `python3 tools/ceremony_check.py` | `numbering ok (contiguous from 1, one section each)` |
 | Knowledge base intact | `python3 tools/kb.py verify` | chain and source-line checks pass |
 | Reference example runs | `bash examples/end-to-end/test.sh` | `passed 30, failed 0` |
@@ -107,5 +107,6 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | 5 | Consolidation cut 127 planned skills to 99 in one same-day pass, not something caught incrementally across waves. |
 | 6 | 2 skills (`cap-agent-runtime`, `cap-errors`) still exceed the checked 6–10 instruction budget; 35 "compose by name" warnings are unresolved. |
 | 7 | 7 reviewer findings were declined outright with no independent check on the decision. |
+| 8 | 204 `origin: sourced` rows (14% of 1507) match the restate-and-extend warning added by quality ceremony 01: they are written as "X already states F-nnn. What it adds here: …" and the clause after the marker is anchored only by the restatement's quote. It is a review queue, not a gate; 5 were audited and fixed, the rest are unreviewed. |
 
 Full detail: `kb/ceremonies/run-summary.json`.

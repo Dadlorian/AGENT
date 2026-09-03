@@ -41,6 +41,20 @@ Warnings:
     in the row that states it (ceremony 9, C9-001): the schema checks only the E-(adapter|swap-
     candidate)- name pattern and the unknown-id error covers the top-level entities list, so a minted
     id is otherwise indistinguishable from a knowledge-base-backed one without grepping the kb
+  - restate-and-extend: an origin=sourced row written in this repo's "X already states F-nnn. What it
+    adds here: ..." shape, whose text nowhere says "proposed" (quality ceremony 01, MECH-2). The clause
+    after the marker is the author's own extension, and the cited record anchors only the restatement
+    before it, so the extension rides in on someone else's quote. Found by the outside verification of
+    22 flagged rows: it caught 4 of the 4 real over-extensions (a stop reason read as a verdict,
+    propagated by citation from cap-agent-runtime into compose-agent and seam-dispatch) and fired on
+    2 of 22 correctly sourced rows. It is a WARNING, never an error: 14% of sourced rows match, which
+    is a reviewable backlog rather than a gate. Detection is a regex plus a keyword and judges no
+    meaning; the remedy is mechanical - split the post-marker clause into its own origin=proposed row,
+    or give it a quote of its own from a record that carries it.
+    Its companion limb (one quote per cited id, so no citation is left unanchored) is NOT implemented
+    here: it fires on 43% of sourced rows and belongs in schemas/skill.schema.json as an authoring
+    requirement, not in this checker as a gate. Recorded as an open question in
+    kb/ceremonies/quality/fixes-01.json.
 """
 from __future__ import annotations
 
@@ -180,6 +194,29 @@ def walk_sourced(obj, path, errs, kb_ids, name):
             walk_sourced(v, f"{path}[{i}]", errs, kb_ids, name)
 
 
+RESTATE_MARKER = re.compile(r"already states?\b|what it adds\b|what [\w-]+ adds\b", re.I)
+
+
+def restate_and_extend(sk: dict, name: str, warns: list) -> int:
+    """Warn on a sourced row in the "X already states F-nnn. What it adds here: ..." shape that never says proposed.
+
+    The cited record anchors the restatement before the marker; the clause after it is the author's
+    own extension and needs either its own quote or origin=proposed. Returns the number warned.
+    """
+    n = 0
+    for r in rows_of(sk):
+        if r.get("origin") != "sourced":
+            continue
+        text = " ".join(str(r.get(k, "")) for k in ("text", "action", "why", "name", "question", "default"))
+        m = RESTATE_MARKER.search(text)
+        if m and "proposed" not in text.lower():
+            n += 1
+            warns.append(f"{name}: sourced row restates and extends ({m.group(0)!r}) without saying proposed; "
+                         f"the clause after the marker needs its own quote or its own origin=proposed row: "
+                         f"{text[:70]!r}")
+    return n
+
+
 def rows_of(sk: dict):
     """Every statement row in a skill: instructions, contract tables, best practices, open questions."""
     out = list(sk.get("instructions", []) or [])
@@ -274,6 +311,7 @@ def main() -> int:
     REGISTERED_PROBLEMS = registered_problem_types()
     errs: list[str] = []
     warns: list[str] = []
+    restate_warned = 0
     skills: dict[str, dict] = {}
     manifest_names: set[str] = set()
     manifest: dict[str, dict] = {}
@@ -377,6 +415,9 @@ def main() -> int:
         for suffix in unmarked_problem_types(d, REGISTERED_PROBLEMS):
             warns.append(f"{name}: states urn:agentic:problem:{suffix}, which has no row in the closed registry in "
                          f"docs/decomposition.md section 2.1.6 and is not marked '{PENDING}' where it is stated")
+        # restate-and-extend: a sourced row in the "X already states F-nnn. What it adds here: ..."
+        # shape whose extension rides in on the restatement's quote (quality ceremony 01, MECH-2).
+        restate_warned += restate_and_extend(sk, name, warns)
         # a standards row's `version` is a value a reader scans, not the paragraph explaining it:
         # anything longer than VERSION_MAX belongs in version_note, which renders as a footnote
         # under the Standards table (ceremony 8, C8-001).
@@ -481,6 +522,8 @@ def main() -> int:
         print(f"error:   {e}")
     scope = f"{', '.join(args.only)}: " if args.only else f"{len(skills)} skills checked, "
     print(f"{scope}{len(errs)} errors, {len(warns)} warnings")
+    if not args.only:
+        print(f"of which restate-and-extend (MECH-2): {restate_warned}")
     return 1 if errs else 0
 
 

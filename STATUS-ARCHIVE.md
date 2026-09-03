@@ -17,3 +17,4 @@
 | 22 | Status table discipline | STATUS.md passes its checker on every edit | Done | 21 rows, 0 errors | 2026-09-03 77e2b9e |
 | 30 | Source-of-truth gaps | Every blueprint gap is researched or decided by the owner | Done | 11 sourced, 12 decided | 2026-09-03 77e2b9e |
 | 31 | Quality assessment | Every confirmed finding is fixed or declined with a reason | Done | 10 confirmed, 2 refuted | 2026-09-03 77e2b9e |
+| 33 | Architecture revisions | Every myopia finding is applied or declined with a reason | Done | 21 applied, 1 declined | 2026-09-03 8ab1066 |

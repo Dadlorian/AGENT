@@ -1,0 +1,177 @@
+{
+  "ceremony": "quality-01",
+  "agent": "opus-fixer",
+  "date": "2026-09-03",
+  "read": ["kb/ceremonies/quality/verify-01.json", "kb/ceremonies/quality/scan-tools.json", "kb/ceremonies/quality/scan-example.json", "kb/ceremonies/quality/scan-skills.json", "kb/ceremonies/quality/scan-hygiene.json", "state/author-brief.md", ".claude/skills/build-status-table/SKILL.md"],
+  "note": "Applied in the verifier's fix_order. docs/architecture/blueprint.json was not touched: another agent is editing it, and tools/blueprint_check.py was run read-only.",
+  "applied": [
+    {
+      "id": "QT-001b",
+      "severity": "block",
+      "change": "tools/gaps.py read every docs/research/*.json as a lens dict and died on gap-resolution.json, which is a top-level list of 49 resolution records. It now skips any file without a top-level \"lens\" key, says which file it skipped, and counts the lenses it actually read instead of guessing from the glob length.",
+      "files": ["tools/gaps.py"],
+      "reproduction": "python3 tools/gaps.py -> before: Traceback ... line 32 AttributeError: 'list' object has no attribute 'get' -> after: skipping gap-resolution.json: not a lens file (no top-level \"lens\" key) / 49 distinct gaps from 3 lenses; multi-lens: 0 (docs/research/gaps.json byte-identical, git diff empty)"
+    },
+    {
+      "id": "QT-001",
+      "severity": "nit",
+      "change": "slug() in tools/gaps.py returned None.lower() for a gaps_vs_pass entry naming neither proposed_capability nor gap, crashing before the caller's `if not key` guard could skip it. It now returns \"\" for a falsy value, so the existing guard works.",
+      "files": ["tools/gaps.py"],
+      "reproduction": "python3 -c \"import sys;sys.path.insert(0,'tools');import gaps;print(repr(gaps.slug(None)))\" -> before: AttributeError: 'NoneType' object has no attribute 'lower' -> after: ''"
+    },
+    {
+      "id": "QT-002",
+      "severity": "nit",
+      "change": "tools/kb.py merge_research() found duplicate ids with ids.count() inside a set comprehension, O(n^2). Replaced with collections.Counter.",
+      "files": ["tools/kb.py"],
+      "reproduction": "duplicate scan over the real research ids repeated 10x (5520 ids) -> before: 0.218 s -> after: 0.0002 s; python3 tools/kb.py merge-research then verify -> 'merged 552 research records' and 'kb verified: chains intact', kb/research.jsonl unchanged (git diff empty)"
+    },
+    {
+      "id": "QT-003",
+      "severity": "nit",
+      "change": "tools/render_skill.py treated any token that was not exactly '--all' as a skill directory, so an unknown flag became a path and the tool died with a FileNotFoundError traceback. Flags are now parsed before anything is treated as a path: an unrecognized flag, '--all' mixed with paths, no arguments at all, or a directory without a skill.json each print a usage message and exit 2.",
+      "files": ["tools/render_skill.py"],
+      "reproduction": "python3 tools/render_skill.py --all --bogus -> before: FileNotFoundError: [Errno 2] No such file or directory: '--all/skill.json' (traceback, no usage) -> after: 'error: unrecognized argument --bogus' plus usage, rc=2. python3 tools/render_skill.py --all still renders all 101 skills with no diff."
+    },
+    {
+      "id": "QT-005",
+      "severity": "nit",
+      "change": "tools/manifest_facets.py sections() sorted facets with order[f['facet']], raising KeyError on a hand-edited manifest carrying any facet outside ideal/discipline/implement. Now order.get(f['facet'], 999), so an unknown facet sorts last.",
+      "files": ["tools/manifest_facets.py"],
+      "reproduction": "sort a facet list containing {'facet': 'use'} with the tool's key -> before: KeyError 'use' -> after: sorted ok -> ['ideal', 'use']; python3 tools/manifest_facets.py check -> 'manifest check: OK 100 skills' both before and after"
+    },
+    {
+      "id": "QT-006",
+      "severity": "nit",
+      "change": "tools/manifest_facets.py matched a kb entity to a skill with e['name'].lower() in s['name'], a bare substring test. Replaced with name_in_segments(), which requires the entity name to occupy whole hyphen segments of the skill name.",
+      "files": ["tools/manifest_facets.py"],
+      "reproduction": "entity 'core' against skill name 'cap-recore-memory' -> before: True (false match) -> after: False; whole-segment matches are unaffected, and the full match set over all 100 manifest skills and 184 entities is byte-identical before and after (31 matches, diff empty)"
+    },
+    {
+      "id": "QT-007",
+      "severity": "nit",
+      "change": "tools/skill_graph.py dropped a builds_on edge whose target had no skill.json on disk, with no message, so the published mermaid graph could silently disagree with the skills. It now prints a warning per dangling edge and reports the count in its summary line. Still exit 0: mid-authoring, a manifest skill not yet written is legal.",
+      "files": ["tools/skill_graph.py"],
+      "reproduction": "synthetic skills dir with one skill whose builds_on names an absent 'ghost' -> before: 'wrote docs/skill-graph.md with 1 skills', edge silently absent -> after: 'warning: aaa builds_on ghost, which was not loaded; edge omitted from the graph' then 'wrote ... with 1 skills, 1 dangling builds_on edges'. Real run: 101 skills, 0 dangling, docs/skill-graph.md unchanged."
+    },
+    {
+      "id": "QT-008",
+      "severity": "nit",
+      "change": "tools/blueprint_check.py incremented its `sourced` statistic unless the LAST appended error happened to be the unknown-source error for the LAST cited id, so an entry whose unknown source was followed by any other error still counted as sourced. Unknown sources are now collected in their own list and an entry counts as sourced only when every id it cites resolves.",
+      "files": ["tools/blueprint_check.py"],
+      "reproduction": "one crafted entry citing ['F-NOPE','F-part-c-08'] with a non-verbatim quote -> before: '1 entries, 1 sourced, 0 gaps, 0 listed gaps, 2 errors' -> after: '1 entries, 0 sourced, 0 gaps, 0 listed gaps, 2 errors'"
+    },
+    {
+      "id": "QE-002",
+      "severity": "fix",
+      "change": "examples/end-to-end/schemas/workflow.schema.json stated 'return_to_step_id is required when return_with_notes is declared' in a description string and enforced nothing, the F-a7-04 failure mode this repo names. The rule is now an if/then on the approval $def keyed on decisions containing return_with_notes; the example's minimal 2020-12 validator gained if/then/else and contains so the constraint actually applies; and test.sh gained check 1c, which asserts the shipped step validates, that removing return_to_step_id is rejected by name, and that the field is not required when return_with_notes is absent.",
+      "files": ["examples/end-to-end/schemas/workflow.schema.json", "examples/end-to-end/run.py", "examples/end-to-end/test.sh"],
+      "reproduction": "bash examples/end-to-end/test.sh -> before (constraint present only in the description): the new check 1c reports 'FAIL return_with_notes without return_to_step_id is rejected', passed 29 failed 1 -> after: 'ok return_with_notes without return_to_step_id is rejected', passed 30, failed 0. The test count rose from 29 to 30 because this fix adds the negative test the verifier's fix_order asked for."
+    },
+    {
+      "id": "MECH-2",
+      "severity": "fix",
+      "change": "Implemented limb 2 of the verifier's mechanical check as a validator WARNING, never an error: restate_and_extend() in tools/validate_skills.py flags any origin=sourced row matching /already states?|what it adds|what <word> adds/i whose text nowhere says 'proposed', because the clause after that marker is the author's own extension riding in on the restatement's quote. Documented in the module docstring with its measured hit rate, its false-positive rate, the mechanical remedy, and why limb 1 was not landed. The summary line now reports the count separately.",
+      "files": ["tools/validate_skills.py"],
+      "reproduction": "python3 tools/validate_skills.py -> before: '101 skills checked, 0 errors, 37 warnings' -> after: '101 skills checked, 0 errors, 241 warnings' followed by 'of which restate-and-extend (MECH-2): 204'. 204 matches the verifier's predicted 204/1413 repo-wide exactly. Errors stay at 0, so nothing is gated."
+    },
+    {
+      "id": "QUOTE-MISFITS",
+      "severity": "fix",
+      "change": "Fixed the 5 real quote misfits the verifier separated from the scanner's 22 (classes b and c). cap-agent-runtime and seam-dispatch each had one sourced row whose post-marker clause read a stop reason as a verdict, a claim F-a7-03 does not carry and no kb record carries at all: the sourced row was narrowed to the transposition the quote does support, and the stop-reason clause moved to its own origin=proposed row saying no record carries the stop-reason vocabulary. compose-agent's F-a4-01 row cited the record's other half ('Prefix carries the contract.') as its quote: the quote is now the verbatim 'Callers request a class, never a vendor', the row states only the rule's reach into the composition layer, and the model_class required-field claim, which is about this repo's own profile schema, became its own proposed row. compose-agent's second row propagated cap-agent-runtime's over-extension by citation and is now a single origin=proposed row that says it inherits the reading as proposed. xc-audit-trail's claimed-versus-measured row cited F-a5-04, the evidence-store inventory row, which bears on no clause of it (class c): that citation was dropped, leaving F-part-c-08, which carries the verbatim quote.",
+      "files": [".claude/skills/cap-agent-runtime/skill.json", ".claude/skills/cap-agent-runtime/SKILL.md", ".claude/skills/seam-dispatch/skill.json", ".claude/skills/seam-dispatch/SKILL.md", ".claude/skills/compose-agent/skill.json", ".claude/skills/compose-agent/SKILL.md", ".claude/skills/xc-audit-trail/skill.json", ".claude/skills/xc-audit-trail/SKILL.md"],
+      "reproduction": "python3 tools/render_skill.py on each, then python3 tools/validate_skills.py --only <skill> -> cap-agent-runtime: 0 errors, 1 warnings (the pre-existing 11-instruction budget warning, known defect 6); seam-dispatch: 0 errors, 0 warnings; compose-agent: 0 errors, 0 warnings; xc-audit-trail: 0 errors, 0 warnings"
+    },
+    {
+      "id": "QH-005",
+      "severity": "fix",
+      "change": "kb/ceremonies/run-summary.json, the repo's own claimed-versus-measured record, carried stale counts. Recomputed from disk and the manifest: by_layer.build 10 -> 11, skills_total 100 -> 101 (by_layer already summed to 101), facets.discipline 10 -> 11, rows 1501/1446 -> 1507/1458, research_records 541 -> 552, kb.target_facts 21 -> 29, ledger_records 22 -> 28, validator 37 -> 241 warnings with the new type broken out. Known defects and still_open were updated to the recomputed numbers, and a new known defect records that nothing recomputes these counts.",
+      "files": ["kb/ceremonies/run-summary.json"],
+      "reproduction": "jq/collections.Counter over docs/skill-manifest.json and wc -l over kb/*.jsonl -> before: build 10, skills_total 100, ledger 22, research 541 -> after: build 11, skills_total 101, ledger 28, research 552, each equal to the measured value"
+    },
+    {
+      "id": "QH-001",
+      "severity": "fix",
+      "change": "README.md line 36 said the build layer holds 10 skills. The manifest and .claude/skills/build-* both give 11.",
+      "files": ["README.md"],
+      "reproduction": "python3 -c 'Counter(s[\"layer\"] for s in manifest)' and ls -d .claude/skills/build-* | wc -l -> both 11 -> README now reads '| build | 11 |'"
+    },
+    {
+      "id": "QH-002",
+      "severity": "fix",
+      "change": "README.md line 58 said 22 append-only ledger records. Corrected to 28: 27 verified before this ceremony plus the one this ceremony appends.",
+      "files": ["README.md"],
+      "reproduction": "python3 tools/kb.py ledger-verify -> before this ceremony's append: 'ledger verified: 27 records, chain intact' -> after: 'ledger verified: 28 records, chain intact', matching the README"
+    },
+    {
+      "id": "QH-003",
+      "severity": "nit",
+      "change": "README.md line 8 said '100 linked Claude Code skills' against 101 skill directories. The gap is by design, so the line now says the manifest lists 100 and the agentic-stack root it excludes makes 101 on disk, rather than changing a count that was not wrong.",
+      "files": ["README.md"],
+      "reproduction": "jq '.skills | length' docs/skill-manifest.json -> 100; ls .claude/skills | wc -l -> 101; comm -23 -> agentic-stack only on disk. README now states both numbers and why they differ."
+    },
+    {
+      "id": "QH-004",
+      "severity": "none",
+      "change": "No change needed: the build-status-table provenance head defect was already fixed before this ceremony. Re-verified rather than taken on trust.",
+      "files": [],
+      "reproduction": "python3 tools/validate_skills.py --only build-status-table -> 'build-status-table: 0 errors, 0 warnings'; python3 tools/kb.py verify -> 'chains intact, source hash matches, every fact matches its lines, rebuild is identical'"
+    },
+    {
+      "id": "QH-006",
+      "severity": "fix",
+      "new": true,
+      "change": "Found while recomputing README counts from disk rather than only correcting the two the scanner named. Three further README numbers were stale and one was about to be: research records 541 -> 552 (twice, in the kb table and in known defect 2), proposed-row share 1446 of 2947 -> 1458 of 2965, the validator's expected line '100 skills checked, 0 errors, 37 warnings' -> '101 skills checked, 0 errors, 241 warnings', and the example's expected 'passed 29, failed 0' -> 'passed 30, failed 0' after QE-002 added its negative test. A new known defect 8 records the 204-row restate-and-extend review queue.",
+      "files": ["README.md"],
+      "reproduction": "wc -l kb/research.jsonl -> 552 (README said 541); a walk of every skill.json origin field -> 1507 sourced / 1458 proposed of 2965 (README said 1446 of 2947); python3 tools/validate_skills.py -> '101 skills checked, 0 errors, 241 warnings' (README said 100 / 37); bash examples/end-to-end/test.sh -> 'passed 30, failed 0' (README said 29)"
+    }
+  ],
+  "declined": [
+    {
+      "id": "QT-004",
+      "why": "Refuted by the verifier and not applied. Substring containment at tools/validate_skills.py:412 is deliberate and documented twice: the module docstring says the rule fires when an -implement breakage 'repeats its ideal facet's word for word, or is wholly contained in it', and the comment at lines 401-405 says 'Only an outright copy is reported, since a genuinely escalated breakage ... is a legitimate second failure mode.' The scanner's own example, 'cache fails' inside 'cache fails permanently', is precisely the containment case the rule exists to catch. Reproduced over all 44 ideal/-implement pairs: 0 flagged, so no false positive exists today. It is also a warning, never an error. Tightening it to word-boundary or exact match would remove the only case it detects."
+    },
+    {
+      "id": "QE-001",
+      "why": "Refuted by the verifier and not applied. The docstring is on class OpenAICompatibleAdapter (examples/end-to-end/run.py:164-168), i.e. inside an adapter, which is exactly where this repo's rule puts product names: tools/validate_skills.py:315-325 flags PRODUCTS only outside a section whose heading starts 'Adapters', and F-part-c-09 says 'Products belong in the adapter column only.' The docstring itself de-pins the product: 'the product behind $GATEWAY_URL is replaceable without touching anything above. model = the profile's model_class, so the caller names a class, not a vendor.' Naming today's product in the adapter is the convention, not a leak."
+    }
+  ],
+  "open_questions": [
+    {
+      "id": "MECH-1",
+      "question": "Should limb 1 of the mechanical check, one quote per cited id so no citation is left unanchored, become a schemas/skill.schema.json authoring requirement?",
+      "left_open_because": "The verifier recommended adopting it as a schema change and explicitly not as a gate, and a schema change plus the migration of every affected row is outside what this ceremony was asked to apply.",
+      "verifier_numbers": {
+        "as_a_check_repo_wide": "608 of 1413 sourced rows (43%) would fire",
+        "on_the_22_flagged_rows": "7/22 misfits caught, 8/22 correctly sourced rows flagged",
+        "class_b": "0 of 4",
+        "class_c": "1 of 1 - the only mechanical catch for a citation that bears on no clause of its row",
+        "today_the_validator_accepts": "a row whose quote is a substring of ANY cited record (any(q in KB_TEXT[x] for x in srcs), tools/validate_skills.py:161)"
+      },
+      "default_until_then": "The validator keeps the any() rule and the class (c) misfit stays catchable only by review. MECH-2, which is implemented, catches all 4 class (b) rows but none of class (c).",
+      "rejected_alternative": "A lexical-novelty score was measured and discarded: the 22 misfits score 0.53-1.00 while the repo-wide median over 1413 sourced rows is 0.80 with quartiles 0.67/0.88, and the class (b) rows sit at 0.75-1.00, inside the bulk of correct rows."
+    }
+  ],
+  "new_warning": {
+    "name": "restate_and_extend (MECH-2)",
+    "count": 204,
+    "of_sourced_rows": 1507,
+    "share": "14%",
+    "level": "warning, never an error",
+    "tool": "tools/validate_skills.py",
+    "note": "The remedy the verifier prescribes - split the post-marker clause into its own origin=proposed row, or give it its own quote - does not remove the marker from the sourced row, so a reviewed and corrected row still matches. The count is a review queue, not a number to drive to zero; the 5 rows audited by this ceremony are among the 204."
+  },
+  "checks": {
+    "python3 tools/validate_skills.py": "101 skills checked, 0 errors, 241 warnings (of which restate-and-extend (MECH-2): 204)",
+    "python3 tools/kb.py verify": "kb verified: chains intact, source hash matches, every fact matches its lines, rebuild is identical",
+    "python3 tools/kb.py ledger-verify": "ledger verified: 27 records, chain intact (28 after this ceremony's append)",
+    "bash examples/end-to-end/test.sh": "passed 30, failed 0 (was 29; QE-002 added the negative test its fix_order asked for)",
+    "python3 tools/status_check.py": "STATUS.md: 22 rows, 0 errors; STATUS-ARCHIVE.md: 15 rows, 0 errors",
+    "python3 tools/blueprint_check.py": "read-only, not modified by this ceremony: 279 entries, 268 sourced, 28 gaps, 37 listed gaps, 0 errors (the file is being edited concurrently by another agent, so these counts differ from the verifier's 204/171/40/23)",
+    "python3 tools/gaps.py": "skipping gap-resolution.json: not a lens file (no top-level \"lens\" key); 49 distinct gaps from 3 lenses; multi-lens: 0 - no crash",
+    "python3 tools/ceremony_check.py": "numbering ok, trend printed",
+    "python3 tools/manifest_facets.py check": "manifest check: OK 100 skills",
+    "python3 tools/render_skill.py --check --all": "rc=0, no stale SKILL.md"
+  },
+  "counts": {"applied": 16, "declined": 2, "open_questions": 1}
+}

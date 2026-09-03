@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "rules": [
+    "Every call goes through the capability interface; the component sits behind an adapter (T-t7-02).",
+    "Each harness has a dry-run adapter that runs here and a live adapter driven by env vars; the ledger records which mode produced a result.",
+    "Each harness executes one adapter swap with the conformance run before and after (T-t9-06).",
+    "Product names appear only inside adapter modules and the env-var table."
+  ],
+  "harnesses": [
+    {
+      "name": "containment",
+      "dir": "harness/containment",
+      "owner_skill": "cap-isolation-implement",
+      "co_skills": [
+        "cap-agent-runtime-implement"
+      ],
+      "blueprint_tool_entry": "firecracker-cell@.service (Firecracker microVM per agent)",
+      "capability": "isolation",
+      "standard": "OCI Runtime Spec (unverified)",
+      "adapter_today": "Exposes: declared resources, declared egress, and a containment report asserted from outside. Hides: the guest kernel, the boot arguments, the jail layout and the per-VM uid.",
+      "second_adapter": "gVisor, Kata Containers, Cloud Hypervisor, or a hosted sandbox service",
+      "minimal_call": "start one contained unit, run one agent turn over ACP, cancel it, read the stop reason and the containment report",
+      "impact_test": "the containment conformance run",
+      "status": "not started"
+    },
+    {
+      "name": "gateway",
+      "dir": "harness/gateway",
+      "owner_skill": "cap-model-access-implement",
+      "co_skills": [
+        "xc-budget-implement"
+      ],
+      "blueprint_tool_entry": "gateway-litellm-1 (LiteLLM)",
+      "capability": "model access",
+      "standard": "OpenAI-compatible completions (unverified)",
+      "adapter_today": "Exposes: a routing class, a payload, a ceiling, and a claim ticket. Hides: which vendor, which member model, which endpoint, and which key paid for it.",
+      "second_adapter": "OpenRouter, direct provider SDKs, or a serving engine's native API",
+      "minimal_call": "one completion by model class under a scoped key and a cap; a vendor name in the request is refused",
+      "impact_test": "the gateway conformance run",
+      "status": "not started"
+    },
+    {
+      "name": "observability",
+      "dir": "harness/observability",
+      "owner_skill": "cap-telemetry-implement",
+      "co_skills": [
+        "xc-correlation-implement"
+      ],
+      "blueprint_tool_entry": null,
+      "capability": null,
+      "standard": null,
+      "adapter_today": null,
+      "second_adapter": null,
+      "minimal_call": "one trace whose spans carry the run and root dispatch ids as attributes; reassembled by grouping, not parentage",
+      "impact_test": "the observability conformance run",
+      "status": "not started"
+    },
+    {
+      "name": "workflow",
+      "dir": "harness/workflow",
+      "owner_skill": "cap-durable-execution-implement",
+      "co_skills": [
+        "compose-loop-implement",
+        "compose-approval-implement"
+      ],
+      "blueprint_tool_entry": null,
+      "capability": null,
+      "standard": null,
+      "adapter_today": null,
+      "second_adapter": null,
+      "minimal_call": "one durable flow: a step, a parked approval signal, a bounded loop, a crash, a resume at the first incomplete step",
+      "impact_test": "the workflow conformance run",
+      "status": "not started"
+    },
+    {
+      "name": "linked",
+      "dir": "harness/linked",
+      "owner_skill": "cap-consumption",
+      "co_skills": [
+        "build-entry-conformance",
+        "compose-agent-implement"
+      ],
+      "blueprint_tool_entry": null,
+      "capability": null,
+      "standard": null,
+      "adapter_today": null,
+      "second_adapter": null,
+      "minimal_call": "one document through all four doors, contained turn, gateway call, traced, orchestrated; identical envelope and manifest per door",
+      "impact_test": "the linked conformance run",
+      "status": "not started"
+    }
+  ]
+}

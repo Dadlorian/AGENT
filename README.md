@@ -83,7 +83,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | `tools/validate_skills.py` | Check every skill against the schema, the knowledge base, and the root contract; errors block, warnings don't |
 | `tools/manifest_facets.py` | Expand `docs/skill-manifest.json` into ideal/implement facets and emit the loop's sections |
 | `tools/ceremony_check.py` | Show whether each ceremony validated and fed the self-improvement loop; print the trend |
-| `tools/skill_graph.py` | Generate `docs/skill-graph.md` from every `skill.json` |
+| `tools/skill_graph.py` | Generate `docs/skill-graph.md` from every `skill.json` as focal groups, each counted against the mermaid edge and text limits; exit 1 when one would not render |
 | `tools/gaps.py` | Aggregate research gaps into `docs/research/gaps.json`, and with `--apply`, add gap skills to the manifest |
 
 ## Definition of done

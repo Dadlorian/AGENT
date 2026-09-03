@@ -235,16 +235,27 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "Run the loop conformance suite once per executor in one invocation, with a crash injected on the durable one: `python3 tools/loop_conformance.py --runs 100 --executor session && python3 tools/loop_conformance.py --runs 100 --executor durable --kill-at-iteration 2`. Assert adapters_run == 2, runs_checked == 100 on each, unbounded == 0, resumed_at_iteration == 3 and iterations_replayed == 0 on the durable executor, and outcome_diff == 0 between the two executors' loop-outcome records once executor id and timestamps are removed.",
-    "expected": "session: runs_checked=100, unbounded=0; durable: runs_checked=100, unbounded=0, resumed_at_iteration=3, iterations_replayed=0; adapters_run=2, outcome_diff=0; exit 0",
-    "breakage": "In the executor binding, move the checkpoint commit from the end of each iteration to the end of the loop - set checkpoint_scope to loop and bind the commit to the loop node rather than to the iteration index - leaving the loop declaration and every assertion untouched.",
-    "expected_failure": "durable: resumed_at_iteration=1, iterations_replayed=2, exit 1 at the resume assertion, while runs_checked=100, unbounded=0, adapters_run=2 and every termination-reason assertion stay green on both executors, so exactly one counter moves and it names the binding rather than the loop contract. Status claimed: neither tools/loop_conformance.py nor either binding exists in this repository yet, and the durable executor is not listening.",
-    "status": "claimed",
+    "criterion": "bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second",
+    "expected": "Measured by tools/measure.py at ebb7068: exit 0; last lines: adapter=second executor_marker=queue-state-machine/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28 | adapters_run=2 distinct_markers=2",
+    "breakage": "sed -i 's/if body_cost > self.remaining or body_cost > node\\[\"per_iteration_ceiling_micros\"\\]:/if False:/' harness/workflow/flow.py -- in Driver.do_loop, this disables the per-iteration affordability check that fires the budget_ceiling termination, so a loop that cannot afford its next iteration no longer caps: the check is only ever true for the D1 case's constrained budget (200000-micros-normal loops never trip it), so the main crash/resume run and the iteration-ceiling case (C1-C3) are untouched. Restored with git checkout -- harness/workflow/flow.py.",
+    "expected_failure": "Measured by tools/measure.py at ebb7068: exit 1; last lines:   FAIL the same suite passes again once the key is restored (expected 0, got 1) | passed 17, failed 6",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
       "F-a7-03"
     ],
-    "quote": "A criterion nothing can fail is not a criterion."
+    "quote": "A criterion nothing can fail is not a criterion.",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "ebb7068",
+      "clean_exit": 0,
+      "clean_output": "  ok   call.py exits 0 (0)\n  ok   dry-run conformance exits 0 (0)\n  ok   the breakage run exits non-zero (nonzero)\n...\nadapter=dryrun executor_marker=in-process-journal/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28\nadapter=second executor_marker=queue-state-machine/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28\nadapters_run=2 distinct_markers=2",
+      "breakage_exit": 1,
+      "breakage_output": "  ok   call.py exits 0 (0)\n  FAIL dry-run conformance exits 0 (expected 0, got 1)\n  FAIL every check passed (expected [], got [{\"check\": \"D1 a loop that cannot afford its next iteration terminates the unit\", \"detail\": \"rc 2 None\"}])\n  FAIL before: dry-run adapter (expected 0, got 1)\n  FAIL after: queue-plus-state-machine adapter (expected 0, got 1)\n  FAIL both executors in one report (expected 0, got 1)\n  ok   the breakage run exits non-zero (nonzero)\n  FAIL the same suite passes again once the key is restored (expected 0, got 1)\n...\n  FAIL the same suite passes again once the key is restored (expected 0, got 1)\n\npassed 17, failed 6",
+      "restored": true
+    },
+    "expected_design": "test.sh: passed 23, failed 0. Direct swap run: 28/28 checks on each of dryrun and second, including B1-B2 (the loop exits on the judge verdict in 2 iterations), C1-C3 (a loop that never passes stops at its iteration ceiling, escalates with the registered deadline-exceeded type, and records the proposed iteration-ceiling-reached substitution) and D1 (a loop that cannot afford its next iteration terminates on the budget ceiling) - the loop's ceiling and all three termination reasons (verdict_pass/stop, iteration_ceiling/cap, budget_ceiling/cap); adapters_run=2, distinct_markers=2; exit 0 on both commands.",
+    "expected_failure_design": "D1 fails on both executors with rc 2 and terminated_by None instead of budget_ceiling (the per-step budget guard in Driver.charge still raises budget-exhausted, but before self.loop_outcome is ever set, so the loop-outcome record is empty rather than naming the cap): the direct swap run drops to 27/28 on each adapter, isolated to D1, while B1-B2 and C1-C3 - the judge-verdict stop and the iteration-ceiling cap - stay green on both; test.sh fails too since it re-invokes conformance across its swap and repair sections, each carrying the same isolated D1 failure. This names the third termination reason and not the loop's exit or ceiling logic."
   },
   "composes_with": {
     "builds_on": [

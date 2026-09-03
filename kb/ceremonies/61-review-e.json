@@ -1,0 +1,51 @@
+{
+  "status_row": 61,
+  "reviewer": "61-review-e",
+  "skills": ["seam-dispatch-implement", "core-planner-implement", "core-judge-implement"],
+  "findings": [
+    {
+      "id": "R61E-001",
+      "skill": "seam-dispatch-implement",
+      "location": "definition_of_done.measured_run.breakage_output",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "breakage describes editing harness/dispatch/adapters/base.py so the durability write is skipped ('partial_outputs_without_head becomes 1'), but measured_run.breakage_output is the generic '4c. the planner: one binding resolves the head itself while the log moves under it ... FAIL every per-binding assertion stays green' text, unrelated to a durability/base.py edit.",
+      "fix": "Re-run the actual base.py breakage and record its own output, not the planner's built-in 4c section."
+    },
+    {
+      "id": "R61E-002",
+      "skill": "core-planner-implement",
+      "location": "definition_of_done.measured_run.breakage_output",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "breakage describes folding the wall clock into the plan digest in harness/dispatch/core.py 'plan', but measured_run.breakage_output shows test.sh's built-in 4c case text 'one binding resolves the head itself while the log moves under it' - a different edit than 'fold the wall clock in', though both are planner-shaped this is not the described breakage's own output.",
+      "fix": "Apply the wall-clock edit literally, capture its own output, and replace the copy-pasted 4c text."
+    },
+    {
+      "id": "R61E-003",
+      "skill": "core-judge-implement",
+      "location": "definition_of_done.measured_run.breakage_output",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "breakage describes making every verdict pass in harness/dispatch/core.py 'judge' (criterion_hits should read 50, judge-specific failure), but measured_run.breakage_output is again the '4c. the planner: one binding resolves the head itself' text with 'passed 32, failed 7' - identical boilerplate to the other two skills' records, naming a planner fault, not a judge fault.",
+      "fix": "Apply the always-pass judge edit, capture its own criterion_hits=50 output, and stop reusing the same pasted block across all three skills."
+    },
+    {
+      "id": "R61E-004",
+      "skill": "seam-dispatch-implement",
+      "location": "definition_of_done.criterion",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "Ran 'bash harness/dispatch/test.sh && python3 harness/dispatch/conformance.py --adapter dryrun --adapter second' 4 times on a clean tree at commit head: 2 passed (39/0, exit 0), 2 failed (exit 1) with FileNotFoundError in harness/dispatch/adapters/second.py execute_unit (json.load on out/brk-dur.json or out/brk-crit.json before conformance.py finishes writing it) - a race condition hitting different breakage sections (4a, then 4b) on different runs. Every one of the three skills' definition_of_done records the criterion as status:measured, clean_exit:0, restored:true with no mention of this flakiness.",
+      "fix": "Fix the race in adapters/second.py's execute_unit (wait for/verify the report file before reading it) before recording any of the three as measured; note the nondeterminism if left unfixed."
+    }
+  ],
+  "metrics": {
+    "rows_checked": 3,
+    "sourced": null,
+    "proposed": null,
+    "quotes_verified": 0,
+    "harness_runs": 4
+  },
+  "summary": "validate_skills.py --only: seam-dispatch-implement 0 errors/0 warnings; core-planner-implement 0 errors/2 warnings (uncited restate-and-extend clauses); core-judge-implement 0 errors/2 warnings (same pattern). The shared harness/dispatch criterion is flaky (2/4 clean runs failed via a race in adapters/second.py), and all three skills' measured_run.breakage_output is the same copy-pasted planner-4c text rather than the output of the breakage each skill's own 'breakage' field describes."
+}

@@ -30,7 +30,13 @@ def run(cmd: str) -> tuple[int, str]:
     clear_bytecode()
     env = dict(os.environ, PYTHONDONTWRITEBYTECODE="1")
     r = subprocess.run(cmd, shell=True, cwd=ROOT, capture_output=True, text=True, env=env)
-    return r.returncode, (r.stdout + r.stderr).strip()[-600:]
+    out = (r.stdout + r.stderr).strip()
+    # Keep the lines that name a failure, not only the tail: a gate that prints its own later sections after the
+    # failing one hid the breakage's evidence behind boilerplate (review 61-review-e, 2026-09-03).
+    lines = out.splitlines()
+    marked = [l for l in lines if any(k in l for k in ("FAIL", "Error", "error:", "Traceback", "AssertionError", "exit"))][:12]
+    keep = marked + ["..."] + lines[-3:] if marked else lines[-6:]
+    return r.returncode, "\n".join(keep)[-1500:]
 
 
 def tree_digest() -> dict:

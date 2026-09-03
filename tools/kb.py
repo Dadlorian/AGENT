@@ -35,6 +35,7 @@ Status of a fact is derived from the text, never assigned by hand:
 from __future__ import annotations
 
 import hashlib
+from collections import Counter
 import json
 import re
 import sys
@@ -472,7 +473,7 @@ def merge_research() -> int:
         recs += read_jsonl(p)
     recs.sort(key=lambda r: r["id"])
     ids = [r["id"] for r in recs]
-    dups = {i for i in ids if ids.count(i) > 1}
+    dups = {i for i, c in Counter(ids).items() if c > 1}
     if dups:
         print(f"FAIL: duplicate research ids {sorted(dups)[:5]}")
         return 1

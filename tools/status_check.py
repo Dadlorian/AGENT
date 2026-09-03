@@ -5,7 +5,8 @@ Usage: python3 tools/status_check.py [STATUS.md]
 Rules (errors):
   - the file is one heading and one table, nothing else
   - columns are exactly: #, Work item, Definition of done, Status, Result
-  - rows are numbered 1..n contiguously
+  - row numbers strictly increase (gaps allowed: archived rows keep their numbers)
+  - STATUS-ARCHIVE.md uses the same columns plus Closed, and every row is Done
   - Status is one of: Done, In progress, Open, Blocked, Not started
   - every cell is one statement: no semicolons, no parentheses, no " and then ", no "depends", "after", "requires", "blocked by"
   - a cell has at most 12 words; the Work item cell at most 5
@@ -18,6 +19,7 @@ import sys
 from pathlib import Path
 
 COLUMNS = ["#", "Work item", "Definition of done", "Status", "Result"]
+ARCH_COLUMNS = COLUMNS + ["Closed"]
 STATUSES = {"Done", "In progress", "Open", "Blocked", "Not started"}
 BANNED = ["depends", "after ", "requires", "blocked by", " and then ", ";", "(", ")"]
 LIMITS = {"Work item": 5, "Definition of done": 12, "Status": 2, "Result": 8}
@@ -37,17 +39,24 @@ def main(path: str) -> int:
         errs.append("table needs a header, a separator, and at least one row")
         print("\n".join(errs)); return 1
     header = [c.strip() for c in table[0].strip("|").split("|")]
-    if header != COLUMNS:
-        errs.append(f"columns must be {COLUMNS}, found {header}")
-    expect = 1
+    cols = ARCH_COLUMNS if header == ARCH_COLUMNS else COLUMNS
+    if header != cols:
+        errs.append(f"columns must be {COLUMNS} or {ARCH_COLUMNS}, found {header}")
+    last = 0
     for raw in table[2:]:
         cells = [c.strip() for c in raw.strip("|").split("|")]
-        if len(cells) != len(COLUMNS):
-            errs.append(f"row {raw[:30]!r}: {len(cells)} cells, expected {len(COLUMNS)}"); continue
-        row = dict(zip(COLUMNS, cells))
-        if row["#"] != str(expect):
-            errs.append(f"row numbering: expected {expect}, found {row['#']!r}")
-        expect += 1
+        if len(cells) != len(cols):
+            errs.append(f"row {raw[:30]!r}: {len(cells)} cells, expected {len(cols)}"); continue
+        row = dict(zip(cols, cells))
+        try:
+            n = int(row["#"])
+        except ValueError:
+            errs.append(f"row number {row['#']!r} is not an integer"); n = last + 1
+        if n <= last:
+            errs.append(f"row numbering must increase: {n} after {last}")
+        last = n
+        if cols is ARCH_COLUMNS and row["Status"] != "Done":
+            errs.append(f"row {n}: archive rows must be Done")
         if row["Status"] not in STATUSES:
             errs.append(f"row {row['#']}: status {row['Status']!r} not in {sorted(STATUSES)}")
         for col, limit in LIMITS.items():
@@ -64,9 +73,10 @@ def main(path: str) -> int:
             errs.append(f"row {row['#']}: Done but result is pending")
     for e in errs:
         print("error:", e)
-    print(f"{expect - 1} rows, {len(errs)} errors")
+    print(f"{path}: {last and len(table) - 2} rows, {len(errs)} errors")
     return 1 if errs else 0
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1] if len(sys.argv) > 1 else "STATUS.md"))
+    targets = sys.argv[1:] or [p for p in ("STATUS.md", "STATUS-ARCHIVE.md") if Path(p).is_file()]
+    sys.exit(max(main(t) for t in targets))

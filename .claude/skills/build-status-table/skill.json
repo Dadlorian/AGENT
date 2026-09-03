@@ -2,7 +2,7 @@
   "name": "build-status-table",
   "layer": "build",
   "wave": 1,
-  "description": "How STATUS.md is kept: one heading and one table with five fixed columns, one plain statement per cell, a closed status vocabulary, no dependency language, and a checker that rejects anything else. Load it before editing STATUS.md, when adding a work item or changing its status, when a status cell starts to explain instead of state, when someone asks where are we or what is left, and when a report is about to grow prose, sub-bullets, or run-on sentences. Also load it when a row is marked Done without a result, or when a new column seems necessary.",
+  "description": "How STATUS.md is kept: one heading and one table with five fixed columns, one plain statement per cell, a closed status vocabulary, no dependency language, and a checker that rejects anything else. Load it before editing STATUS.md or STATUS-ARCHIVE.md, when a row turns Done and should be archived, when adding a work item or changing its status, when a status cell starts to explain instead of state, when someone asks where are we or what is left, and when a report is about to grow prose, sub-bullets, or run-on sentences. Also load it when a row is marked Done without a result, or when a new column seems necessary.",
   "purpose": {
     "text": "Give the owner one table that states where the work is, in the simplest form, so a decision can be made without reading prose.",
     "origin": "sourced",
@@ -47,6 +47,14 @@
       },
       {
         "text": "STATUS.md is the owner's view: every commit that changes the state of a work item updates its row in the same commit (proposed: owner rule).",
+        "origin": "proposed"
+      },
+      {
+        "text": "STATUS.md holds only rows that can still change; Done rows move to STATUS-ARCHIVE.md with their number and a Closed cell, by python3 tools/status_archive.py, never by hand (proposed: our convention).",
+        "origin": "proposed"
+      },
+      {
+        "text": "Row numbers are permanent; the live table may have gaps and never renumbers (proposed: our convention).",
         "origin": "proposed"
       }
     ]
@@ -100,6 +108,12 @@
       "step": 7,
       "action": "Before committing any change that moves a work item, edit its row and run the checker; commit the row with the change.",
       "why": "Proposed: the owner reads the table, not the log; a stale row is a false statement.",
+      "origin": "proposed"
+    },
+    {
+      "step": 8,
+      "action": "When a row turns Done, run python3 tools/status_archive.py in the same commit so the live view stays compact; both files must pass python3 tools/status_check.py.",
+      "why": "Proposed: the owner reads the live table at a glance; the archive keeps the history without rewriting it.",
       "origin": "proposed"
     }
   ],

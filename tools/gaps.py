@@ -4,7 +4,10 @@
 Usage:
   python3 tools/gaps.py                 aggregate docs/research/*.json gaps_vs_pass -> docs/research/gaps.json
   python3 tools/gaps.py --apply         also add one manifest entry per accepted gap (layer from proposal, wave = 1 + max wave of builds_on)
-Gaps are grouped by proposed_capability (case-insensitive slug). A gap is accepted when at least one lens proposes it with a
+Only top-level objects carrying a "lens" key are read as lens files; anything else under docs/research/
+(a top-level list, a resolution log) is skipped with a printed line.
+Gaps are grouped by proposed_capability (case-insensitive slug); an entry naming neither a
+proposed_capability nor a gap slugs to "" and is skipped rather than raising. A gap is accepted when at least one lens proposes it with a
 target_requirement and sources; duplicates across lenses merge and keep every source. Names: <layer>-<slug>.
 """
 from __future__ import annotations
@@ -19,16 +22,26 @@ RES = ROOT / "docs" / "research"
 MANIFEST = ROOT / "docs" / "skill-manifest.json"
 
 
-def slug(s: str) -> str:
+def slug(s: str | None) -> str:
+    """Slugify; a missing value yields "" so the caller's `if not key` guard can skip the entry."""
+    if not s:
+        return ""
     return re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")[:40].rstrip("-")
 
 
 def main() -> int:
     groups: dict[str, dict] = {}
+    lenses = 0
     for p in sorted(RES.glob("*.json")):
         if p.name == "gaps.json":
             continue
         d = json.loads(p.read_text())
+        if not isinstance(d, dict) or "lens" not in d:
+            # Not a lens file (docs/research/gap-resolution.json is a top-level list of
+            # resolution records). Say so rather than crashing on d.get / d["lens"].
+            print(f"skipping {p.name}: not a lens file (no top-level \"lens\" key)")
+            continue
+        lenses += 1
         for g in d.get("gaps_vs_pass", []):
             key = slug(g.get("proposed_capability") or g.get("gap"))
             if not key:
@@ -44,7 +57,7 @@ def main() -> int:
                 e["lenses"].append(d["lens"])
     out = sorted(groups.values(), key=lambda e: (-len(e["lenses"]), e["key"]))
     (RES / "gaps.json").write_text(json.dumps({"gaps": out, "count": len(out)}, indent=2, ensure_ascii=False) + "\n")
-    print(f"{len(out)} distinct gaps from {len(list(RES.glob('*.json'))) - 1} lenses; multi-lens: {sum(1 for e in out if len(e['lenses']) > 1)}")
+    print(f"{len(out)} distinct gaps from {lenses} lenses; multi-lens: {sum(1 for e in out if len(e['lenses']) > 1)}")
     for e in out[:60]:
         print(f"  [{'/'.join(e['lenses'])}] {e['key']}  layer={','.join(e['layers']) or '?'}  T={','.join(e['target_requirements'])}")
     if "--apply" not in sys.argv:

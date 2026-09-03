@@ -16,7 +16,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "out")
 
 # --- Minimal JSON Schema 2020-12 validator ----------------------------------
-# Supports exactly the keywords these schemas use; unknown keywords are ignored.
+# Supports exactly the keywords these schemas use ($ref, anyOf, if/then/else, type, const, enum,
+# pattern, min/maxLength, minimum, maximum, minItems, contains, items, required, properties,
+# additionalProperties); unknown keywords are ignored.
 TYPES = {"object": dict, "array": list, "string": str, "integer": int,
          "number": (int, float), "boolean": bool}
 
@@ -34,6 +36,13 @@ def validate(inst, schema, root=None, path="$"):
                 return []
         return [f"{path}: matches none of the allowed step shapes"]
     errs = []
+    if "if" in schema:
+        # 2020-12 conditional application. The "if" subschema's own errors are discarded;
+        # only "then"/"else" contribute, so a declared conditional requirement is enforced
+        # rather than merely described in a "description" string.
+        branch = "then" if not validate(inst, schema["if"], root, path) else "else"
+        if branch in schema:
+            errs += validate(inst, schema[branch], root, path)
     t = schema.get("type")
     if t:
         want = TYPES[t]
@@ -56,6 +65,8 @@ def validate(inst, schema, root=None, path="$"):
     if isinstance(inst, list):
         if len(inst) < schema.get("minItems", 0):
             errs.append(f"{path}: fewer than minItems {schema['minItems']}")
+        if "contains" in schema and not any(not validate(i, schema["contains"], root, path) for i in inst):
+            errs.append(f"{path}: no item matches the required 'contains' shape")
         if "items" in schema:
             for i, item in enumerate(inst):
                 errs += validate(item, schema["items"], root, f"{path}[{i}]")

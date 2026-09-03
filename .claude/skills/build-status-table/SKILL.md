@@ -1,6 +1,6 @@
 ---
 name: build-status-table
-description: How STATUS.md is kept: one heading and one table with five fixed columns, one plain statement per cell, a closed status vocabulary, no dependency language, and a checker that rejects anything else. Load it before editing STATUS.md, when adding a work item or changing its status, when a status cell starts to explain instead of state, when someone asks where are we or what is left, and when a report is about to grow prose, sub-bullets, or run-on sentences. Also load it when a row is marked Done without a result, or when a new column seems necessary.
+description: How STATUS.md is kept: one heading and one table with five fixed columns, one plain statement per cell, a closed status vocabulary, no dependency language, and a checker that rejects anything else. Load it before editing STATUS.md or STATUS-ARCHIVE.md, when a row turns Done and should be archived, when adding a work item or changing its status, when a status cell starts to explain instead of state, when someone asks where are we or what is left, and when a report is about to grow prose, sub-bullets, or run-on sentences. Also load it when a row is marked Done without a result, or when a new column seems necessary.
 ---
 
 # build-status-table
@@ -26,6 +26,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | As agentic-stack states, a Done row carries a measured result, never a pending one. | sourced | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
 | Dependencies live in docs/skill-manifest.json and the ledger, never in the table. (proposed: our convention) | proposed | - |
 | STATUS.md is the owner's view: every commit that changes the state of a work item updates its row in the same commit (proposed: owner rule). | proposed | - |
+| STATUS.md holds only rows that can still change; Done rows move to STATUS-ARCHIVE.md with their number and a Closed cell, by python3 tools/status_archive.py, never by hand (proposed: our convention). | proposed | - |
+| Row numbers are permanent; the live table may have gaps and never renumbers (proposed: our convention). | proposed | - |
 
 ## Instructions
 
@@ -38,6 +40,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 5 | When a cell needs a second idea, split the row or move the detail to the run summary. Never widen the table. | Proposed: the table is the decision view, not the record. | proposed | - |
 | 6 | Keep row numbers contiguous; retire a row by marking it Done or by deleting it and renumbering. | Proposed: stable numbering lets a conversation refer to a row. | proposed | - |
 | 7 | Before committing any change that moves a work item, edit its row and run the checker; commit the row with the change. | Proposed: the owner reads the table, not the log; a stale row is a false statement. | proposed | - |
+| 8 | When a row turns Done, run python3 tools/status_archive.py in the same commit so the live view stays compact; both files must pass python3 tools/status_check.py. | Proposed: the owner reads the live table at a glance; the archive keeps the history without rewriting it. | proposed | - |
 
 ## Best practices
 

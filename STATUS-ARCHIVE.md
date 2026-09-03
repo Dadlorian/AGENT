@@ -1,0 +1,19 @@
+# Status archive
+
+| # | Work item | Definition of done | Status | Result | Closed |
+|---|---|---|---|---|---|
+| 1 | Knowledge base | Every fact traces to a source line and the chain verifies | Done | Verified | 2026-09-03 77e2b9e |
+| 2 | Skill format and validator | An uncited or misquoted row is rejected | Done | 3 breakages caught | 2026-09-03 77e2b9e |
+| 3 | Research | Every capability has research records | Done | 541 records | 2026-09-03 77e2b9e |
+| 4 | Manifest | Links are symmetric and waves are ordered | Done | 99 skills, check OK | 2026-09-03 77e2b9e |
+| 5 | Loop engine | A section runs unattended and checkpoints | Done | Ran 5 sections | 2026-09-03 77e2b9e |
+| 6 | Skills | All planned skills validate with zero errors | Done | 100 of 100 | 2026-09-03 77e2b9e |
+| 7 | Ceremonies | Findings per skill fall across sections | Done | 1.00 to 0.00 | 2026-09-03 77e2b9e |
+| 8 | Consolidation | A common task needs few skills | Done | 16 to 6 | 2026-09-03 77e2b9e |
+| 9 | Owner reference | Skills cite the reference as an example | Done | 9 skills | 2026-09-03 77e2b9e |
+| 10 | End-to-end example | All four entries pass the test suite | Done | 29 of 29 | 2026-09-03 77e2b9e |
+| 11 | README and run summary | A newcomer can use the repo in five minutes | Done | Present | 2026-09-03 77e2b9e |
+| 12 | Definition of done | Every check is green and pushed | Done | Measured 14:33 UTC | 2026-09-03 77e2b9e |
+| 22 | Status table discipline | STATUS.md passes its checker on every edit | Done | 21 rows, 0 errors | 2026-09-03 77e2b9e |
+| 30 | Source-of-truth gaps | Every blueprint gap is researched or decided by the owner | Done | 11 sourced, 12 decided | 2026-09-03 77e2b9e |
+| 31 | Quality assessment | Every confirmed finding is fixed or declined with a reason | Done | 10 confirmed, 2 refuted | 2026-09-03 77e2b9e |

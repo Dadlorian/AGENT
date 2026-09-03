@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | 1 | `PASS.md` states current state (Part A) and a target architecture (Part B): a five-piece core, capability interfaces, cross-cutting guarantees, and two seams. |
-| 2 | `TARGET.md` extends that into a composability baseline; this repo is `PASS.md` Part B built out as 100 linked Claude Code skills, self-improved through 11 ceremonies. |
+| 2 | `TARGET.md` extends that into a composability baseline; this repo is `PASS.md` Part B built out as 100 linked Claude Code skills under `docs/skill-manifest.json`, plus the `agentic-stack` root the manifest excludes by design (101 skill directories on disk), self-improved through 11 ceremonies. |
 | 3 | Every claim a skill makes is either cited to a knowledge-base record with a verbatim quote, or marked `proposed`; nothing is asserted from memory. |
 
 ## How to use it
@@ -33,7 +33,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | xc | 22 | 7 cross-cutting guarantees a caller cannot decline (budget, identity, policy, provenance, telemetry/correlation, errors, idempotency), each an ideal + implement pair. |
 | seam | 4 | Dispatch and State — the 2 boundaries with no standard to adopt, so original design was warranted. |
 | compose | 10 | Assembling workflows, loops, approvals and agents from the layers below; introduces no new interface. |
-| build | 10 | Authoring disciplines every skill in this repo follows: definition of done with a breakage, adapter pairing, evidence recording, ceremony, skill authoring itself. |
+| build | 11 | Authoring disciplines every skill in this repo follows: definition of done with a breakage, adapter pairing, evidence recording, ceremony, skill authoring itself. |
 
 ## The end-to-end example
 
@@ -41,7 +41,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 |---|---|
 | Where | `examples/end-to-end/` — dependency-free Python, no network by default |
 | What | 4 entries (`human`, `event`, `schedule`, `external`) into 1 envelope shape, 1 workflow using every operator once, 1 hash-chained ledger |
-| Run it | `bash examples/end-to-end/test.sh` → `passed 29, failed 0` |
+| Run it | `bash examples/end-to-end/test.sh` → `passed 30, failed 0` |
 | Reference doc | `docs/reference/composable-plan.md` — one team's worked example of a composable plan (four doors, nesting, fan-out, late binding); an illustration, not a definition — cited as `REF-` ids |
 | Grading discipline | `.claude/skills/build-worked-example/` — the 6 questions every example answers and the 6 criteria it's graded on |
 
@@ -52,10 +52,10 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | `kb/facts.jsonl` | `F-` | One record per row/item in `PASS.md`, hash-chained to its exact source lines |
 | `kb/target-facts.jsonl` | `T-` | One record per numbered requirement in `TARGET.md` |
 | `kb/reference-facts.jsonl` | `REF-` | `docs/reference/composable-plan.md`, status `reference` — an example followed, never a fact |
-| `kb/research.jsonl` | `X-` | 541 search records; every one is `search-only` — no page fetch has been verified in this environment |
+| `kb/research.jsonl` | `X-` | 552 search records; every one is `search-only` — no page fetch has been verified in this environment |
 | `kb/entities.jsonl` | `E-` | 184 named things the facts are about (capabilities, adapters, standards, …) |
 | `kb/edges.jsonl` | `R-` (rel) | 109 typed links between entities, each citing the fact that states the link |
-| `kb/ledger.jsonl` | `L-` | 22 append-only, hash-chained run records |
+| `kb/ledger.jsonl` | `L-` | 28 append-only, hash-chained run records |
 
 | To… | Run |
 |---|---|
@@ -90,18 +90,18 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 
 | Check | Command | Expected |
 |---|---|---|
-| Every skill valid | `python3 tools/validate_skills.py` | `100 skills checked, 0 errors, 37 warnings` |
+| Every skill valid | `python3 tools/validate_skills.py` | `101 skills checked, 0 errors, NEWWARN warnings` |
 | Ceremonies fed the loop | `python3 tools/ceremony_check.py` | `numbering ok (contiguous from 1, one section each)` |
 | Knowledge base intact | `python3 tools/kb.py verify` | chain and source-line checks pass |
-| Reference example runs | `bash examples/end-to-end/test.sh` | `passed 29, failed 0` |
+| Reference example runs | `bash examples/end-to-end/test.sh` | `passed 30, failed 0` |
 | Full picture | `kb/ceremonies/run-summary.json` | totals, trend, and known defects in one file |
 
 ## Known defects
 
 | | |
 |---|---|
-| 1 | Proposed share is near half: 1446 of 2947 rows (49%) across every `skill.json` are `origin: proposed`, not `sourced`. |
-| 2 | No standard's version has been verified against its published spec — all 541 research records are `search-only`; live page fetch was blocked. |
+| 1 | Proposed share is near half: 1458 of 2965 rows (49%) across every `skill.json` are `origin: proposed`, not `sourced`. |
+| 2 | No standard's version has been verified against its published spec — all 552 research records are `search-only`; live page fetch was blocked. |
 | 3 | The reviewer on every ceremony record is the same model family (`sonnet`) grading its own or a sibling instance's output — no independent or human reviewer. |
 | 4 | Ceremony numbering drifted 9 times in a row (ceremonies 2–10); each had to renumber itself off the directory listing rather than trust the number it was handed. |
 | 5 | Consolidation cut 127 planned skills to 99 in one same-day pass, not something caught incrementally across waves. |

@@ -87,10 +87,38 @@ def render(sk: dict) -> str:
     return "\n".join(L).rstrip() + "\n"
 
 
+USAGE = """usage: python3 tools/render_skill.py [--check] (--all | <skill-dir> [<skill-dir> ...])
+
+  --all      render (or, with --check, compare) every skill under .claude/skills
+  --check    do not write; exit 1 if any SKILL.md differs from its render
+"""
+
+
 def main(argv: list[str]) -> int:
     check = "--check" in argv
-    argv = [a for a in argv if a != "--check"]
-    dirs = sorted(p for p in SKILLS.iterdir() if (p / "skill.json").is_file()) if argv == ["--all"] else [Path(a) for a in argv]
+    rest = [a for a in argv if a != "--check"]
+    # Parse the flags before treating anything as a path, so an unknown flag prints usage
+    # instead of dying on a FileNotFoundError for "--bogus/skill.json".
+    unknown = [a for a in rest if a.startswith("-") and a != "--all"]
+    if unknown:
+        print(f"error: unrecognized argument {unknown[0]}", file=sys.stderr)
+        print(USAGE, file=sys.stderr, end="")
+        return 2
+    if "--all" in rest:
+        if len(rest) > 1:
+            print("error: --all takes no other paths", file=sys.stderr)
+            print(USAGE, file=sys.stderr, end="")
+            return 2
+        dirs = sorted(p for p in SKILLS.iterdir() if (p / "skill.json").is_file())
+    else:
+        if not rest:
+            print(USAGE, file=sys.stderr, end="")
+            return 2
+        dirs = [Path(a) for a in rest]
+    for d in dirs:
+        if not (d / "skill.json").is_file():
+            print(f"error: {d}/skill.json not found", file=sys.stderr)
+            return 2
     rc = 0
     for d in dirs:
         sk = json.loads((d / "skill.json").read_text())

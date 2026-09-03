@@ -96,6 +96,19 @@ def expand() -> int:
     return 0 if check(m) else 1
 
 
+def name_in_segments(entity_name: str, skill_name: str) -> bool:
+    """True when the entity name occupies whole hyphen segments of the skill name.
+
+    Substring containment matched an entity called "core" inside "cap-re-core-memory" and
+    "state" inside any skill whose name merely contains those letters; a segment match cannot.
+    """
+    ent = [t for t in re.split(r"[^a-z0-9]+", entity_name.lower()) if t]
+    seg = [t for t in re.split(r"[^a-z0-9]+", skill_name.lower()) if t]
+    if not ent or len(ent) > len(seg):
+        return False
+    return any(seg[i:i + len(ent)] == ent for i in range(len(seg) - len(ent) + 1))
+
+
 def sections() -> int:
     m = load()
     ents = {}
@@ -109,7 +122,7 @@ def sections() -> int:
             if eid in ents:
                 ids.append(eid); ids += ents[eid]["sources"]
         for e in ents.values():
-            if e["entity_type"] in ("core-component", "seam", "concern") and e["name"].lower() in s["name"]:
+            if e["entity_type"] in ("core-component", "seam", "concern") and name_in_segments(e["name"], s["name"]):
                 ids.append(e["id"]); ids += e["sources"]
         return sorted(set(ids)) or ["F-b1-02"]
     items = {}
@@ -125,7 +138,8 @@ def sections() -> int:
     order = {"ideal": 0, "discipline": 0, "implement": 1}
     secs = {}
     for it in items.values():
-        it["facets"].sort(key=lambda f: order[f["facet"]])
+        # .get, not [], so a hand-edited manifest with an unknown facet sorts last instead of raising.
+        it["facets"].sort(key=lambda f: order.get(f["facet"], 999))
         secs.setdefault(it["wave"], []).append(it)
     MAX_ITEMS = 5
     sections_out = []

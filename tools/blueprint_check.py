@@ -8,7 +8,8 @@ Errors:
   - an entry (any object inside a top-level list) with neither sources nor "status":"gap" nor the word proposed
   - a status:gap entry not represented in the top-level "gaps" list (matched by "where" prefix or claim text)
   - provenance kb heads that do not match kb/meta.json
-Prints counts: entries, sourced, gap, and the unsourced ones.
+Prints counts: entries, sourced, gap, and the unsourced ones. An entry counts as sourced only when
+every id it cites resolves in kb/, whatever other errors it also raised.
 """
 from __future__ import annotations
 
@@ -48,14 +49,16 @@ def main(path: str) -> int:
             n += 1
             where = f"{section}[{i}]"
             srcs = e.get("sources") or []
-            for s in srcs:
-                if s not in kb:
-                    errs.append(f"{where}: unknown source {s}")
+            unknown = [s for s in srcs if s not in kb]
+            for s in unknown:
+                errs.append(f"{where}: unknown source {s}")
             q = e.get("quote")
             if q and not any(q in kb.get(s, "") for s in srcs):
                 errs.append(f"{where}: quote is not a substring of any cited record: {q[:50]!r}")
             blob = json.dumps(e, ensure_ascii=False).lower()
-            if srcs and not errs[-1:] == [f"{where}: unknown source {srcs[-1]}"]:
+            # Count an entry as sourced only when every id it cites resolves. Testing the last
+            # appended error missed an unknown source that was not the last one reported.
+            if srcs and not unknown:
                 sourced += 1
             if e.get("status") == "gap":
                 gaps += 1

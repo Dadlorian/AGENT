@@ -39,6 +39,34 @@ sys.exit(1 if bad else 0)
 PY
 check "agent registry and workflow validate" "$?" "0"
 
+echo "1c. the approval step's conditional requirement is enforced, not just described"
+python3 - <<'PYA' > out/approval.log 2>&1
+import copy, json, sys
+sys.path.insert(0, ".")
+from run import validate
+sch = json.load(open("schemas/workflow.schema.json"))
+app = sch["$defs"]["approval"]
+wf = json.load(open("workflows/triage-and-fix.json"))
+def steps(o):
+    if isinstance(o, dict):
+        if o.get("op") == "approval":
+            yield o
+        for v in o.values():
+            yield from steps(v)
+    elif isinstance(o, list):
+        for v in o:
+            yield from steps(v)
+good = next(steps(wf))
+assert not validate(good, app, sch), "shipped approval step should validate"
+bad = copy.deepcopy(good); del bad["return_to_step_id"]
+errs = validate(bad, app, sch)
+assert any("return_to_step_id" in e for e in errs), f"return_with_notes without return_to_step_id was accepted: {errs}"
+ok = copy.deepcopy(bad); ok["decisions"] = [d for d in ok["decisions"] if d != "return_with_notes"]
+assert not validate(ok, app, sch), "return_to_step_id must not be required without return_with_notes"
+print("enforced:", errs)
+PYA
+check "return_with_notes without return_to_step_id is rejected" "$?" "0"
+
 echo "2. ledger"
 LINES=$(wc -l < "$L")
 python3 run.py --verify-ledger > out/verify.log 2>&1

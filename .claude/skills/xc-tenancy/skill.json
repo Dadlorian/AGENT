@@ -101,24 +101,27 @@
         ]
       },
       {
-        "name": "ScopeByWayIn (proposed worked instances, one per TARGET T1 way in; the complete envelopes are in references/usage.md)",
+        "name": "ScopeByWayIn (proposed worked instances, one per TARGET T6.2 entry; the complete envelopes are in references/usage.md)",
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:xc:tenancy:entry:0.1",
           "title": "ScopeByWayIn",
           "type": "object",
-          "description": "Proposed. The caller supplies nothing beyond the entry envelope cap-consumption already fixes; the principal rides on the actor the driving adapter stamped, and it is present at admission for all three ways in.",
+          "description": "Proposed. The caller supplies nothing beyond the entry envelope cap-consumption already fixes; the principal rides on the actor the driving adapter stamped, and it is present at admission for all four of TARGET T6.2's entries.",
           "examples": [
             { "entry": { "kind": "human", "actor": { "subject": "user:corey", "principal": "tenant-northwind" } }, "chain": { "point": "admission", "slot": "identity.resolve", "principal": "tenant-northwind" } },
             { "entry": { "kind": "external", "actor": { "subject": "agent:partner-sre-bot", "principal": "tenant-acme" } }, "chain": { "point": "admission", "slot": "identity.resolve", "principal": "tenant-acme" } },
-            { "entry": { "kind": "event", "actor": { "subject": "service:alerting", "principal": "tenant-acme" } }, "chain": { "point": "admission", "slot": "identity.resolve", "principal": "tenant-acme" } }
+            { "entry": { "kind": "event", "actor": { "subject": "service:alerting", "principal": "tenant-acme" }, "note": "T6.2's Internal door: steers a run that already exists and never starts one (REF-3-4-10)" }, "chain": { "point": "admission", "slot": "identity.resolve", "principal": "tenant-acme" } },
+            { "entry": { "kind": "schedule", "actor": { "subject": "schedule:nightly-tenancy-sweep", "principal": "tenant-northwind" }, "note": "T6.2's Time door: starts a new root run under its own principal and never steers (REF-3-4-10)" }, "chain": { "point": "admission", "slot": "identity.resolve", "principal": "tenant-northwind" } }
           ]
         },
         "origin": "proposed",
         "sources": [
           "T-t1-01",
           "T-t1-02",
-          "T-t1-03"
+          "T-t1-03",
+          "T-t6-02",
+          "REF-3-4-10"
         ]
       },
       {
@@ -196,10 +199,10 @@
         "quote": "identity field anywhere in the system"
       },
       {
-        "text": "xc-enforcement-chain already wires the identical chain on all three of TARGET T1's ways in - a human, an agent, an internal or external event. What tenancy adds: the principal rides on the same actor whichever driving adapter stamped, so enhancing one aspect (adding a fourth scope dimension, moving the store, tightening a sandbox quota) leaves how a caller reaches it untouched.",
+        "text": "xc-enforcement-chain already wires the identical chain on all four of TARGET T6.2's entries - a human, an event, a schedule, an external system or agent. What tenancy adds: the principal rides on the same actor whichever driving adapter stamped, so enhancing one aspect (adding a fifth scope dimension, moving the store, tightening a sandbox quota) leaves how a caller reaches it untouched.",
         "origin": "sourced",
-        "sources": ["T-t1-01", "T-t1-02", "T-t1-03"],
-        "quote": "A human must be able to enter the system."
+        "sources": ["T-t6-02"],
+        "quote": "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent."
       }
     ],
     "not_exposed": [
@@ -273,15 +276,15 @@
     },
     {
       "step": 7,
-      "action": "Wire the identical scope check on all three of TARGET T1's ways in - a human, an agent, and an internal or external event - by replaying one corpus with at least two principals represented through each door and asserting the same zero cross-principal counts for all three.",
-      "why": "xc-enforcement-chain already wires the identical chain on all three ways in; a guarantee wired only on the door someone remembered is declined by choosing another door, and replaying through all three while requiring more than one principal in the corpus is what keeps a single-tenant test from reporting a false zero.",
+      "action": "Wire the identical scope check on all four of TARGET T6.2's entries - a human, an event, a schedule, and an external system or agent - by replaying one corpus with at least two principals represented through each door and asserting the same zero cross-principal counts for all four, including a schedule-originated unit that starts a new root run under its own principal rather than steering one already open, and an event-originated unit that steers an existing run rather than starting one.",
+      "why": "xc-enforcement-chain already wires the identical chain on all four of TARGET T6.2's entries; a guarantee wired only on the door someone remembered is declined by choosing another door, and replaying through all four while requiring more than one principal in the corpus is what keeps a single-tenant test from reporting a false zero. REF-3-4-10 states starts-or-steers per door directly: schedule starts only, internal event steers only - a corpus that never exercises the schedule door cannot prove the guarantee holds on a run it did not start through the shared choke points.",
       "origin": "sourced",
-      "sources": ["T-t1-01", "T-t1-02", "T-t1-03"],
-      "quote": "A human must be able to enter the system."
+      "sources": ["T-t6-02", "REF-3-4-10"],
+      "quote": "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent."
     },
     {
       "step": 8,
-      "action": "For usability, add nothing to the caller's side: a human, an agent and an event all reach this guarantee by submitting the entry envelope cap-consumption fixes, supply no principal field and no scope flag, and read back either the normal result - narrowed to their own principal by construction - or one urn:agentic:problem:policy-denied naming the enforcement-chain point and the rule_id that refused.",
+      "action": "For usability, add nothing to the caller's side: a human, an event, a schedule and an external system or agent all reach this guarantee by submitting the entry envelope cap-consumption fixes, supply no principal field and no scope flag, and read back either the normal result - narrowed to their own principal by construction - or one urn:agentic:problem:policy-denied naming the enforcement-chain point and the rule_id that refused.",
       "why": "cap-consumption states the caller doctrine once; restating it here would give it a second owner. The principal already rides on the actor xc-identity-delegation stamps, so there is nothing tenancy-shaped for a caller to configure.",
       "origin": "sourced",
       "sources": ["T-t6-02", "T-t3-01"],
@@ -304,7 +307,7 @@
   ],
   "best_practices": [
     {
-      "text": "agentic-stack already states the structurally-green-gate finding (F-a7-03). What it costs here: a corpus with only one principal represented can report every cross-principal count at zero and prove nothing, so require at least two principals covered in every report, the same discipline xc-enforcement-chain's attest_chain applies to its three ways in.",
+      "text": "agentic-stack already states the structurally-green-gate finding (F-a7-03). What it costs here: a corpus with only one principal represented can report every cross-principal count at zero and prove nothing, so require at least two principals covered in every report, the same discipline xc-enforcement-chain's attest_chain applies to all four of TARGET T6.2's entries.",
       "origin": "sourced",
       "sources": ["F-a7-03"],
       "quote": "Those establish well-formedness, not correctness"
@@ -335,8 +338,8 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "Proposed tool, built with the first enforcement point: `python3 tools/conformance/tenancy.py --corpus out/units.jsonl --principals tenant-northwind,tenant-acme --min-units 100 --report out/tenancy.json`. Reading a pinned state head, for every unit it asserts a principal was present before admission, and for every read, recall and budget draw the unit performed it asserts the target's own principal equalled the requesting actor's. It reports `units_checked`, `principals_covered`, `no_principal_admitted`, `cross_principal_reads`, `cross_principal_recalls`, and `cross_principal_spend`, and asserts `units_checked >= 100`, `principals_covered >= 2`, and `no_principal_admitted == cross_principal_reads == cross_principal_recalls == cross_principal_spend == 0`.",
-    "expected": "exit 0 and one summary line `units_checked=100 principals_covered=2 no_principal_admitted=0 cross_principal_reads=0 cross_principal_recalls=0 cross_principal_spend=0`.",
+    "criterion": "Proposed tool, built with the first enforcement point: `python3 tools/conformance/tenancy.py --corpus out/units.jsonl --principals tenant-northwind,tenant-acme --ways-in human,event,schedule,external --min-units 100 --report out/tenancy.json`. Reading a pinned state head, for every unit it asserts a principal was present before admission, and for every read, recall and budget draw the unit performed it asserts the target's own principal equalled the requesting actor's. It reports `units_checked`, `principals_covered`, `ways_in_covered`, `no_principal_admitted`, `cross_principal_reads`, `cross_principal_recalls`, and `cross_principal_spend`, and asserts `units_checked >= 100`, `principals_covered >= 2`, all four of TARGET T6.2's entries covered (human, event, schedule, external) with at least one schedule-originated unit in the corpus that started a new root run rather than steering one already open, and `no_principal_admitted == cross_principal_reads == cross_principal_recalls == cross_principal_spend == 0`.",
+    "expected": "exit 0 and one summary line `units_checked=100 principals_covered=2 ways_in_covered=human,event,schedule,external no_principal_admitted=0 cross_principal_reads=0 cross_principal_recalls=0 cross_principal_spend=0`.",
     "breakage": "Submit one state read whose query names a record_id known to belong to a different principal than the requesting actor, everything else in the corpus unchanged.",
     "expected_failure": "exit 1 with `cross_principal_reads == 1` naming that record and both principals, while `no_principal_admitted`, `cross_principal_recalls` and `cross_principal_spend` stay 0 and `units_checked` stays at or above 100 - showing the corpus was still read and the other three counters still meant something. Claimed: no fact in PASS.md names a tenant or a principal, the tool does not exist, and this run has not been performed here.",
     "status": "claimed",

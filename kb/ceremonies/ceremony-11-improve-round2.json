@@ -1,0 +1,78 @@
+{
+  "ceremony": 11,
+  "section": "round2",
+  "improver": "sonnet-improver",
+  "date": "2026-09-03",
+  "numbering_note": "Paired with kb/ceremonies/ceremony-11-review-round2.json (ceremony 11, shared across the parallel fan-out groups this section: compose, xc, and round2 - the group improving compose-agent, compose-agent-implement, compose-improvement-loop, compose-improvement-loop-implement, xc-tenancy and xc-tenancy-implement). `ls kb/ceremonies/ceremony-*-review*.json` at the time of writing shows ceremony-01 through ceremony-10 closed plus ceremony-11-review-compose.json, ceremony-11-improve-compose.json, ceremony-11-review-xc.json, ceremony-11-improve-xc.json and ceremony-11-review-round2.json already on disk; this improve record takes the same 11, matching its review by content rather than by filename suffix.",
+  "applied": [
+    {
+      "finding": "C11R-001",
+      "change": "Made compose-improvement-loop's CandidateOutcome.reason enum consistent with compose-loop's terminated_by vocabulary and with this skill's own instructions, rather than inventing a path for the extra value: dropped verdict_fail from the enum, leaving {iteration_ceiling, budget_ceiling, null} - exactly the two ceiling reasons steps 5 and 7 already describe as the only way a candidate closes declined (step 5: a failed outcome inside the ceiling re-enters author_revision, never a decline; step 7: only iteration_ceiling or budget_ceiling close as declined). definition_of_done.criterion's assertion and definition_of_done.expected were rewritten to match: 'declined=7 (6 iteration_ceiling, 1 budget_ceiling)' replaces the unreachable '5 verdict_fail, 1 iteration_ceiling, 1 budget_ceiling' breakdown, and the criterion now states explicitly why a decline is reachable only through the ceiling. No fresh extension path was added, since compose-loop's own enum has no fail value and this skill's steps never described one - dropping the value was the change that made the contract and the definition_of_done agree, per the finding's first suggested option.",
+      "files": [
+        ".claude/skills/compose-improvement-loop/skill.json",
+        ".claude/skills/compose-improvement-loop/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C11R-002",
+      "change": "Changed origin from sourced to proposed on the three rows whose only citation was a REF- id, per schemas/skill.schema.json's own field description ('a REF- citation alone does not make a row sourced... mark such rows origin=proposed and cite REF- as the example followed'): compose-agent's contract.invariants[8] (stop/cap opposites, REF-5-3-08) and compose-improvement-loop's instructions step 7 (close as compose-loop's cap, REF-5-3-08) and step 9 (start a new root loop_id only on a person/schedule/event trigger, REF-3-4-15). Each row's action/why text was prefixed with 'Proposed:' so it says so per the validator's origin=proposed text check; the REF- citation and its verbatim quote were left untouched in all three, since the schema's own rule is to keep the REF- id as the example followed, not to remove it. python3 tools/validate_skills.py --only <name> now reports 0 errors for both skills, clearing the 'reference-only citation' error the rule change introduced.",
+      "files": [
+        ".claude/skills/compose-agent/skill.json",
+        ".claude/skills/compose-agent/SKILL.md",
+        ".claude/skills/compose-improvement-loop/skill.json",
+        ".claude/skills/compose-improvement-loop/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C11R-003",
+      "change": "Widened xc-tenancy from TARGET T1's three ways in to T6.2's four entries throughout, matching the pattern the sibling xc ceremony had just fixed in four other skills (C11X-001) but had not reached this one. contract.shapes ScopeByWayIn: renamed to 'one per TARGET T6.2 entry', added a fourth example under actor schedule:nightly-tenancy-sweep with a note that the Time door starts a new root run under its own principal and never steers (citing REF-3-4-10's starts-or-steers table row directly), and added a note to the event example that the Internal door steers and never starts; sources widened to add T-t6-02 and REF-3-4-10 alongside the existing T-t1-* ids. instructions step 7: reworded from 'all three of TARGET T1's ways in' to 'all four of TARGET T6.2's entries', now asserting the corpus includes a schedule-originated unit that starts a new root run and an event-originated unit that steers rather than starts, re-cited to T-t6-02 and REF-3-4-10 with a verbatim T-t6-02 quote. definition_of_done: added a --ways-in human,event,schedule,external flag and a ways_in_covered report field, and the criterion now asserts all four of TARGET T6.2's entries are covered with at least one schedule-originated unit that started a new root run. For full internal consistency the same T1-to-T6.2 widening was also carried through contract.invariants (the xc-enforcement-chain invariant), instructions step 8 (the caller-side usability sentence), and best_practices (the structurally-green-gate row), which all named the narrower three-door list in the same skill and would otherwise have left the fix half-applied within one file.",
+      "files": [
+        ".claude/skills/xc-tenancy/skill.json",
+        ".claude/skills/xc-tenancy/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C11R-004",
+      "change": "Reduced compose-agent's instruction count from 12 to 10 (inside the checked 6-10 budget) by merging two topically adjacent pairs, the same move ceremony 11's compose group used for an invariant-count overrun (C11C-002): step 2 (admit through cap-isolation/cap-tool-access/cap-capability-packaging at admission) merged with step 10 (re-check the same three bindings per the definition of done) into one step that admits and then re-checks the identical bindings, citing all four original sources (F-b3-02, F-b3-06, F-b3-07, F-b1-07); step 6 (delegate: append one hop, cut budget from the remaining slice) merged with step 9 (terminate and reconcile cost on every stop reason, report a used-up budget slice as a cap) into one step covering delegation and termination/reconciliation together, citing F-b4-03, F-b4-02 and REF-5-3-08. No citation or assertion was dropped; the remaining eight steps were renumbered 1-10 in place. python3 tools/validate_skills.py --only compose-agent now reports 0 errors, 0 warnings (previously 1 warning).",
+      "files": [
+        ".claude/skills/compose-agent/skill.json",
+        ".claude/skills/compose-agent/SKILL.md"
+      ]
+    }
+  ],
+  "declined": [],
+  "brief_changes": [
+    "Added defect item 19: a REF- id alone never grounds origin=sourced (the validator now errors 'reference-only citation'), even though the rule was already stated in the schema's field description and in the brief's own Reference example section - it still recurred in three rows across two skills in one small batch (C11R-002); grep every row whose sources is REF- only before calling a skill done.",
+    "Added defect item 20: a composition's claim that it reuses a cited skill's operation 'unchanged' or its vocabulary 'verbatim' is a claim to diff against the actual enum, not a fact the citation proves by itself - compose-improvement-loop claimed compose-loop's terminated_by vocabulary verbatim while declaring a value neither enum contained (C11R-001, block), making its definition_of_done's expected output unreachable from the contract.",
+    "Sharpened item 8 with the recurrence found here: a fix landing on the skills a finding names does not clear the pattern from every skill that shares it - xc-tenancy repeated the identical T1-vs-T6.2 gap the sibling xc ceremony had just fixed in four other skills, because it was not in that batch (C11R-003). Sweep siblings at the same layer for a known pattern, not only the skills the finding names.",
+    "Updated the defect and what-worked headers to name ceremony 11's three fan-out groups (compose, xc, round2) and folded round2's 96/178-row quote-verification result into the existing quote bullet. Held the brief at 116 lines against the 120-line cap."
+  ],
+  "metrics_after": {
+    "skills_checked": 6,
+    "validator_errors": 0,
+    "validator_warnings": 0,
+    "warnings_naming_round2_skills": 0,
+    "findings_applied": 4,
+    "findings_declined": 0,
+    "skills_edited": 3,
+    "skills_unchanged": 3,
+    "non_skill_files_edited": 0,
+    "manifest_facets_check": "OK 99 skills",
+    "full_repo_validate": "100 skills checked, 0 errors, 37 warnings (all pre-existing, none naming the six skills in this batch)"
+  },
+  "lessons_for_next_section": [
+    "A skill can claim to reuse a cited skill's vocabulary 'verbatim' and be wrong: compose-improvement-loop's CandidateOutcome.reason enum declared a fourth value compose-loop's terminated_by enum does not carry, and its own instructions never produced it - the definition_of_done's expected output was unreachable from the contract it claimed to build on. A 'reused unchanged'/'verbatim' claim is a promise to diff, not a fact the citation proves by itself.",
+    "The schemas/skill.schema.json field description for sources already states the REF-only rule in the exact words the validator now enforces as an error, and the brief already restated it; it still recurred in three rows across two skills in one small batch. A rule stated twice does not stay applied without a check - the validator error is what actually closed it.",
+    "The same T1-vs-T6.2 four-entries gap the sibling xc ceremony had just fixed in four skills (C11X-001) recurred in xc-tenancy, a fifth skill carrying the identical shape that was not in that batch. A finding's fix reaching the skills it names does not clear the pattern from every skill that shares it.",
+    "Widening a shape to a fourth, schedule-actor worked example is cheapest when a sibling ceremony already built one: xc-tenancy's fourth ScopeByWayIn example reused xc-compensation's own fourth worked example's wording (subject schedule:*, a note naming the T6.2 door and whether it starts or steers, REF-3-4-10 cited directly) almost verbatim rather than being re-derived from scratch."
+  ],
+  "provenance": {
+    "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+    "kb_heads": {
+      "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+      "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6"
+    },
+    "author": "session https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96"
+  }
+}

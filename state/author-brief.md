@@ -44,7 +44,7 @@ Keep each skill.json focused, and treat these as checked budgets, not aspiration
 
 ## Defects found in ceremonies 1-11 - do not repeat them
 
-Findings from waves 1 through 5 and the wave-7/8 compose and xc ceremonies. Each cost a fix; none should recur. Items 2, 4 and 14 recurred across ceremonies, so each carries the sharper check that would have caught it.
+Findings from waves 1 through 5 and ceremony 11's three fan-out groups (compose, xc, round2). Each cost a fix; none should recur. Items 2, 4, 8 and 14 recurred across ceremonies, so each carries the sharper check that would have caught it.
 
 1. There are SEVEN layers, not six: root, core, cap, xc, seam, compose, build. `root` is reserved for
    agentic-stack alone (schema enum and validator both know it); count them there before you write the count.
@@ -64,13 +64,7 @@ Findings from waves 1 through 5 and the wave-7/8 compose and xc ceremonies. Each
 7. Ceremony numbers are a counter global to the repository, never per-section, never reused: N is one more than
    the highest kb/ceremonies/ceremony-NN-review.json on disk; take the next unused one and say so. Same N ties
    review, improve, lessons, ledger, known-issues (`ceremony_check.py`); list first, every time - eleven sections running with a stale hint from the caller.
-8. State an enumeration ONCE per skill and have every other row point at that list rather than re-list it.
-   TARGET.md T1 lists three ways in (human, agent, event) and T6.2 four entries (human, event, schedule,
-   external system or agent); they are different lists, so name which one you are citing. Where a skill's own
-   shape already implies the wider door (a scan that runs on a schedule, a worked example under a schedule
-   actor), its definition_of_done and worked-entries section must assert T6.2's four, not T1's narrower three,
-   and say what a schedule entry changes (starts root work) against an event (steers only) - four xc skills
-   asserted only three until ceremony 11 found it (C11X-001).
+8. State an enumeration ONCE per skill and have every other row point at that list rather than re-list it. TARGET.md T1 lists three ways in (human, agent, event) and T6.2 four entries (human, event, schedule, external system or agent); they are different lists, so name which one you are citing. Where a skill's own shape already implies the wider door (a scan on a schedule, a worked example under a schedule actor), its definition_of_done and worked-entries section must assert T6.2's four, not T1's narrower three, and say what a schedule entry changes (starts root work) against an event (steers only). Four xc skills asserted only three (C11X-001); a fifth sibling not in that batch, xc-tenancy, carried the identical gap and was found only when a separate group reviewed it (C11R-003) - a fix landed on the skills a finding names does not clear the pattern from every skill that shares it; sweep siblings at the same layer, not only the batch under review.
 9. A cap- ideal skill (no -implement suffix) carries its own adapters[] pair and a definition_of_done asserting
    `adapters_run >= 2`; defer to -implement only when PASS.md's adapter-today column is literally *absent*, in an open_question citing that row, as cap-identity does.
 10. Adapting a sibling's template: reread the prose, not only the code fences, for a noun belonging to the donor skill (a "runtime" in a durable-execution skill). Nothing checks it.
@@ -99,10 +93,12 @@ Findings from waves 1 through 5 and the wave-7/8 compose and xc ceremonies. Each
    operator's approval/loop shape re-derived inside compose-operators versus the owning gate/loop skill's own
    shape). Reuse the owning skill's names and enum values verbatim and name it in prose regardless of builds_on -
    compose-operators's termination and approval shapes did not, until ceremony 11 (C11C-001, C11C-002).
+19. A REF- id alone never grounds origin=sourced, even though the Reference example section below already says so: the validator now errors on it ("reference-only citation"), and it recurred in three rows across two skills in one small batch anyway (C11R-002) - grep every row whose `sources` is REF- only and mark it proposed before you call a skill done.
+20. A composition that names a cited skill's operation as "reused unchanged" or its vocabulary as reused "verbatim" is a claim to verify, not a fact to trust: compose-improvement-loop claimed compose-loop's terminated_by enum verbatim, then declared a fourth value (verdict_fail) neither that enum nor this skill's own instructions ever produced, leaving its definition_of_done's expected output unreachable from the contract (C11R-001, block). Diff the enum, not just the citation.
 
-## What worked in waves 1 to 5 and the wave-7 compose ceremony - keep doing it
+## What worked in waves 1 to 5 and ceremony 11's compose/xc/round2 groups - keep doing it
 
-- Every sourced quote verified as a verbatim substring of its cited record: 73/73 in wave 1, 430/430 in wave 4a, 122/122 in wave 4c, ~60 ids in wave 5 and 60 ids in the wave-7 compose ceremony, no invented problem types since 4b. Copy quotes out of `kb.py show`, never retype them.
+- Every sourced quote verified as a verbatim substring of its cited record: 73/73 in wave 1, 430/430 in wave 4a, 122/122 in wave 4c, ~60 ids in wave 5, 60 ids in the wave-7 compose ceremony and 96 rows in round2 (178 rows total, 6 skills), no invented problem types since 4b. Copy quotes out of `kb.py show`, never retype them.
 - Definitions of done were honestly labelled: claimed where the tool does not exist yet, measured only where the exact error strings were produced in a run and the session and date are named; the wave-7 compose ceremony re-ran compose-operators' claimed measurement and reproduced it exactly.
 - Each design rule is a pass/fail test stated once in the root contract and built on, not re-derived - check that across siblings at the same layer too, not only up to a builds_on parent (item 18).
 

@@ -381,8 +381,8 @@
         "quote": "Depth must be bounded, and checked at resolve time, not run time."
       },
       {
-        "text": "compose-loop already states that stop and cap are opposite terminations that must not be collapsed (REF-5-3-08). What compose-agent adds: a unit that ran out of its budget slice mid-turn is a cap, never a quiet success, however useful its partial output - the same distinction a loop's iteration ceiling makes, applied to one agent's turn.",
-        "origin": "sourced",
+        "text": "Proposed: compose-loop already states that stop and cap are opposite terminations that must not be collapsed (REF-5-3-08). What compose-agent adds: a unit that ran out of its budget slice mid-turn is a cap, never a quiet success, however useful its partial output - the same distinction a loop's iteration ceiling makes, applied to one agent's turn.",
+        "origin": "proposed",
         "sources": [
           "REF-5-3-08"
         ],
@@ -436,13 +436,14 @@
     },
     {
       "step": 2,
-      "action": "Proposed: admit the unit through cap-isolation, bind its tool surface through cap-tool-access to exactly the declared tools[], and resolve its capability set through cap-capability-packaging to exactly the declared package list. Do this once, at admission, before the first turn opens.",
-      "why": "Proposed: cap-isolation, cap-tool-access and cap-capability-packaging each already own the operation that does this; what a composition adds is doing all three together, once, so nothing not named in the profile is reachable from inside the unit.",
+      "action": "Proposed: admit the unit through cap-isolation, bind its tool surface through cap-tool-access to exactly the declared tools[], and resolve its capability set through cap-capability-packaging to exactly the declared package list, once, at admission, before the first turn opens. Check design rule 6 again at this same boundary, per this skill's definition of done: assert the criterion string is absent from everything the unit can read, the unit's bound tool list equals the declared tools[] exactly, and no undeclared skill loaded.",
+      "why": "Proposed: cap-isolation, cap-tool-access and cap-capability-packaging each already own the operation that does this; what a composition adds is doing all three together, once, so nothing not named in the profile is reachable from inside the unit - and decomposition.md section 3.5 row M4 names the same three assertions as what makes that binding checkable rather than assumed.",
       "origin": "proposed",
       "sources": [
         "F-b3-02",
         "F-b3-06",
-        "F-b3-07"
+        "F-b3-07",
+        "F-b1-07"
       ]
     },
     {
@@ -478,12 +479,13 @@
     },
     {
       "step": 6,
-      "action": "When one agent delegates to another, call delegate: append exactly one hop to the delegation chain already carried by the run, and cut the sub-agent's budget from the remaining slice rather than opening a fresh root ceiling.",
-      "why": "Proposed, drawing on xc-identity-delegation and xc-budget: every action names an actor and every unit of work carries a ceiling; a delegation that skipped either would be an actor with no chain or a spend with no ceiling above it.",
+      "action": "When one agent delegates to another, call delegate: append exactly one hop to the delegation chain already carried by the run, and cut the sub-agent's budget from the remaining slice rather than opening a fresh root ceiling. Terminate the unit and reconcile its cost up the tree on every stop reason, not only on end_turn - including a delegated sub-agent's return - and report a unit that used its full budget slice as a cap, never as a quiet success, whatever it produced.",
+      "why": "Proposed, drawing on xc-identity-delegation and xc-budget: every action names an actor and every unit of work carries a ceiling, so a delegation that skipped either would be an actor with no chain or a spend with no ceiling above it; following the reference example, stop and cap are opposite terminations, and collapsing them at the same reconciliation point is a mistake the reference records as already made once.",
       "origin": "proposed",
       "sources": [
         "F-b4-03",
-        "F-b4-02"
+        "F-b4-02",
+        "REF-5-3-08"
       ]
     },
     {
@@ -509,24 +511,6 @@
     },
     {
       "step": 9,
-      "action": "Terminate the unit and reconcile its cost up the tree on every stop reason, not only on end_turn. Report a unit that used its full budget slice as a cap, never as a quiet success, whatever it produced.",
-      "why": "Proposed, following the reference example: stop and cap are opposite terminations, and collapsing them is a mistake the reference records as already made once.",
-      "origin": "proposed",
-      "sources": [
-        "REF-5-3-08"
-      ]
-    },
-    {
-      "step": 10,
-      "action": "Proposed: check design rule 6 again at this level, per this skill's definition of done: assert the criterion string is absent from everything the unit can read, the unit's bound tool list equals the declared tools[] exactly, and no undeclared skill loaded.",
-      "why": "decomposition.md section 3.5 row M4 names exactly these three assertions as what makes an agent unit's isolation and its grading checkable rather than assumed.",
-      "origin": "proposed",
-      "sources": [
-        "F-b1-07"
-      ]
-    },
-    {
-      "step": 11,
       "action": "Set max_concurrency from what the isolation adapter can actually admit at once, not from a round number. Treat well over a hundred agents running concurrently as an ordinary point on that scale: each unit's own isolation boundary, its own budget slice and its own chain hop are what keep that many runs coherent, not a coordinator that watches all of them.",
       "why": "TARGET T6.6 states the target scale directly; the mechanism this skill can offer for reaching it without a central bottleneck is the containment, budget and identity guarantees already declared per unit.",
       "origin": "sourced",
@@ -536,7 +520,7 @@
       "quote": "working together, managing state, breaking problems down, and self-improving where they can"
     },
     {
-      "step": 12,
+      "step": 10,
       "action": "Proposed: open references/usage.md for the full agent-profile schema, the delegation-call shape, a worked declaration for each of TARGET T1's three ways in, and the worked rejection in full. The body of this skill is enough to declare a conformant agent without it.",
       "why": "Proposed: the full schema and three worked declarations would push this skill past its instruction and shape budget without adding anything the body does not already state.",
       "origin": "proposed",

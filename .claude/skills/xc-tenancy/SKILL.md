@@ -90,7 +90,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**ScopeByWayIn (proposed worked instances, one per TARGET T1 way in; the complete envelopes are in references/usage.md)** (proposed; sources: `T-t1-01`, `T-t1-02`, `T-t1-03`)
+**ScopeByWayIn (proposed worked instances, one per TARGET T6.2 entry; the complete envelopes are in references/usage.md)** (proposed; sources: `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t6-02`, `REF-3-4-10`)
 
 ```json
 {
@@ -98,7 +98,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
   "$id": "urn:agentic:xc:tenancy:entry:0.1",
   "title": "ScopeByWayIn",
   "type": "object",
-  "description": "Proposed. The caller supplies nothing beyond the entry envelope cap-consumption already fixes; the principal rides on the actor the driving adapter stamped, and it is present at admission for all three ways in.",
+  "description": "Proposed. The caller supplies nothing beyond the entry envelope cap-consumption already fixes; the principal rides on the actor the driving adapter stamped, and it is present at admission for all four of TARGET T6.2's entries.",
   "examples": [
     {
       "entry": {
@@ -134,12 +134,28 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
         "actor": {
           "subject": "service:alerting",
           "principal": "tenant-acme"
-        }
+        },
+        "note": "T6.2's Internal door: steers a run that already exists and never starts one (REF-3-4-10)"
       },
       "chain": {
         "point": "admission",
         "slot": "identity.resolve",
         "principal": "tenant-acme"
+      }
+    },
+    {
+      "entry": {
+        "kind": "schedule",
+        "actor": {
+          "subject": "schedule:nightly-tenancy-sweep",
+          "principal": "tenant-northwind"
+        },
+        "note": "T6.2's Time door: starts a new root run under its own principal and never steers (REF-3-4-10)"
+      },
+      "chain": {
+        "point": "admission",
+        "slot": "identity.resolve",
+        "principal": "tenant-northwind"
       }
     }
   ]
@@ -184,7 +200,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | xc-budget and, at the isolation admission slot, cap-isolation and xc-enforcement-chain already state that a unit of work carries a ceiling and exceeding it terminates that unit, not the platform (F-b4-02). What tenancy adds: budget.reserve draws against a ceiling scoped to the requesting principal as well as the run's, so one principal exhausting its quota terminates only that principal's units - the platform's remaining capacity and every other principal's remaining ceiling stay untouched, the same noisy-neighbour boundary the research on file places at the shared choke points. | sourced | `F-b4-02`, `X-end-to-end-033` "Exceeding it terminates the unit, not the platform" |
 | cap-memory already states that every write and recall carries a scope dimension, principal among them, so cross-principal contamination is kept out of results by construction rather than by a filter someone remembered to add (X-cap-memory-002). What tenancy adds: principal is not one dimension a caller may omit in favour of another, it is the mandatory one - a recall naming no principal, or a different principal than the actor's, is refused before ranking runs. | sourced | `X-cap-memory-002` "Every search must include at least one of these dimensions in filters" |
 | cap-identity and xc-identity-delegation already state that PASS.md A6 records no identity field anywhere in the system (F-a6-05); tenancy has even less: no fact in PASS.md names a tenant or a principal at all, so tenancy as such is absent from the substrate. The nearest measured analogues are the per-VM uid jail (F-a3-06) and the per-group scoped model-access virtual keys with hard budget caps (F-a4-07), and xc-tenancy-implement treats both as the starting point rather than as evidence that tenancy already runs. | sourced | `F-a6-05`, `F-a3-06`, `F-a4-07` "identity field anywhere in the system" |
-| xc-enforcement-chain already wires the identical chain on all three of TARGET T1's ways in - a human, an agent, an internal or external event. What tenancy adds: the principal rides on the same actor whichever driving adapter stamped, so enhancing one aspect (adding a fourth scope dimension, moving the store, tightening a sandbox quota) leaves how a caller reaches it untouched. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03` "A human must be able to enter the system." |
+| xc-enforcement-chain already wires the identical chain on all four of TARGET T6.2's entries - a human, an event, a schedule, an external system or agent. What tenancy adds: the principal rides on the same actor whichever driving adapter stamped, so enhancing one aspect (adding a fifth scope dimension, moving the store, tightening a sandbox quota) leaves how a caller reaches it untouched. | sourced | `T-t6-02` "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent." |
 
 ### Deliberately not exposed
 
@@ -204,8 +220,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 4 | Scope every recall: require principal as cap-memory's mandatory scope dimension, and return an empty result - never an error that discloses the item exists - when a recall names no principal or a different one than the actor's. | cap-memory already keeps cross-principal contamination out of results by construction once a scope dimension is required in every search; tenancy makes principal the one dimension that cannot be substituted for another. | sourced | `X-cap-memory-002` "Every search must include at least one of these dimensions in filters" |
 | 5 | Scope every budget reservation: at budget.reserve, draw against a ceiling keyed to the requesting principal in addition to the run's own ceiling, so exceeding one principal's quota terminates only that principal's units. | xc-budget, cap-isolation and xc-enforcement-chain already state a ceiling terminates the unit, not the platform; the research on file places noisy-neighbour risk exactly at the choke points every principal shares, which is where a per-principal ceiling has to attach. | sourced | `F-b4-02`, `X-end-to-end-033` "Exceeding it terminates the unit, not the platform" |
 | 6 | Scope isolation admission: when a sandbox pool is shared infrastructure, tag each slot with the principal that holds it, so a principal that exhausts its own sandbox slots refuses only its own new admissions, never another principal's. | cap-isolation states a unit runs contained with declared resources; tenancy's consequence for that contract is that resource exhaustion is a property of one principal's declared share, not of the pool as a whole. | sourced | `F-b3-02` "OCI Runtime Spec" |
-| 7 | Wire the identical scope check on all three of TARGET T1's ways in - a human, an agent, and an internal or external event - by replaying one corpus with at least two principals represented through each door and asserting the same zero cross-principal counts for all three. | xc-enforcement-chain already wires the identical chain on all three ways in; a guarantee wired only on the door someone remembered is declined by choosing another door, and replaying through all three while requiring more than one principal in the corpus is what keeps a single-tenant test from reporting a false zero. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03` "A human must be able to enter the system." |
-| 8 | For usability, add nothing to the caller's side: a human, an agent and an event all reach this guarantee by submitting the entry envelope cap-consumption fixes, supply no principal field and no scope flag, and read back either the normal result - narrowed to their own principal by construction - or one urn:agentic:problem:policy-denied naming the enforcement-chain point and the rule_id that refused. | cap-consumption states the caller doctrine once; restating it here would give it a second owner. The principal already rides on the actor xc-identity-delegation stamps, so there is nothing tenancy-shaped for a caller to configure. | sourced | `T-t6-02`, `T-t3-01` "All four enter through the same shape." |
+| 7 | Wire the identical scope check on all four of TARGET T6.2's entries - a human, an event, a schedule, and an external system or agent - by replaying one corpus with at least two principals represented through each door and asserting the same zero cross-principal counts for all four, including a schedule-originated unit that starts a new root run under its own principal rather than steering one already open, and an event-originated unit that steers an existing run rather than starting one. | xc-enforcement-chain already wires the identical chain on all four of TARGET T6.2's entries; a guarantee wired only on the door someone remembered is declined by choosing another door, and replaying through all four while requiring more than one principal in the corpus is what keeps a single-tenant test from reporting a false zero. REF-3-4-10 states starts-or-steers per door directly: schedule starts only, internal event steers only - a corpus that never exercises the schedule door cannot prove the guarantee holds on a run it did not start through the shared choke points. | sourced | `T-t6-02`, `REF-3-4-10` "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent." |
+| 8 | For usability, add nothing to the caller's side: a human, an event, a schedule and an external system or agent all reach this guarantee by submitting the entry envelope cap-consumption fixes, supply no principal field and no scope flag, and read back either the normal result - narrowed to their own principal by construction - or one urn:agentic:problem:policy-denied naming the enforcement-chain point and the rule_id that refused. | cap-consumption states the caller doctrine once; restating it here would give it a second owner. The principal already rides on the actor xc-identity-delegation stamps, so there is nothing tenancy-shaped for a caller to configure. | sourced | `T-t6-02`, `T-t3-01` "All four enter through the same shape." |
 | 9 | Attest the guarantee by replaying a corpus at a pinned state head and counting cross-principal reads, recalls and spend directly, the way xc-enforcement-chain's attest_chain counts slots - never by reading the absence of an error. | agentic-stack states the structurally-green-gate finding: well-formedness checks are not correctness checks, and a gate whose behavioural stages all skipped proves nothing. | sourced | `F-a7-03` "Those establish well-formedness, not correctness" |
 | 10 | Proposed: open references/usage.md when you need the full ScopedRecord schema, the three complete worked entries, or the worked refusal in full. The body of this skill is enough to judge whether a boundary is tenant-scoped without it. | Proposed: the complete envelopes exceed the progressive-disclosure budget for a skill body, and a reader deciding whether a choke point is scoped does not need them open. | proposed | - |
 
@@ -213,7 +229,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Practice | Origin | Evidence |
 |---|---|---|
-| agentic-stack already states the structurally-green-gate finding (F-a7-03). What it costs here: a corpus with only one principal represented can report every cross-principal count at zero and prove nothing, so require at least two principals covered in every report, the same discipline xc-enforcement-chain's attest_chain applies to its three ways in. | sourced | `F-a7-03` "Those establish well-formedness, not correctness" |
+| agentic-stack already states the structurally-green-gate finding (F-a7-03). What it costs here: a corpus with only one principal represented can report every cross-principal count at zero and prove nothing, so require at least two principals covered in every report, the same discipline xc-enforcement-chain's attest_chain applies to all four of TARGET T6.2's entries. | sourced | `F-a7-03` "Those establish well-formedness, not correctness" |
 | agentic-stack states the silently-discarded-configuration finding (F-a7-04). What it adds here: prove a store or a sandbox pool is scoped by principal by watching a live cross-principal request actually refused, not by reading the migration that added the column. | sourced | `F-a7-04` "Values written to YAML validated, reviewed correctly, and had no runtime effect" |
 | The research on file (X-xc-tenancy-004) states isolation must be enforced at token level, middleware level, policy level, database level and encryption level, with tenant context mandatory in every request path. Treat the enforcement-chain's named slots as that layering rather than inventing a parallel tenancy-specific stack. | sourced | `X-xc-tenancy-004` "Tenant context should be mandatory in every request path" |
 | The research on file (X-xc-tenancy-006) separates decision from enforcement: a policy engine answers whether a principal has permission, and an enforcement layer applies that decision uniformly across every API, service and data layer. Tenancy is one more input into that same decision, not a second gate beside it. | sourced | `X-xc-tenancy-006` "decision-making is separated from enforcement" |
@@ -223,8 +239,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | Proposed tool, built with the first enforcement point: `python3 tools/conformance/tenancy.py --corpus out/units.jsonl --principals tenant-northwind,tenant-acme --min-units 100 --report out/tenancy.json`. Reading a pinned state head, for every unit it asserts a principal was present before admission, and for every read, recall and budget draw the unit performed it asserts the target's own principal equalled the requesting actor's. It reports `units_checked`, `principals_covered`, `no_principal_admitted`, `cross_principal_reads`, `cross_principal_recalls`, and `cross_principal_spend`, and asserts `units_checked >= 100`, `principals_covered >= 2`, and `no_principal_admitted == cross_principal_reads == cross_principal_recalls == cross_principal_spend == 0`. |
-| Expected | exit 0 and one summary line `units_checked=100 principals_covered=2 no_principal_admitted=0 cross_principal_reads=0 cross_principal_recalls=0 cross_principal_spend=0`. |
+| Criterion | Proposed tool, built with the first enforcement point: `python3 tools/conformance/tenancy.py --corpus out/units.jsonl --principals tenant-northwind,tenant-acme --ways-in human,event,schedule,external --min-units 100 --report out/tenancy.json`. Reading a pinned state head, for every unit it asserts a principal was present before admission, and for every read, recall and budget draw the unit performed it asserts the target's own principal equalled the requesting actor's. It reports `units_checked`, `principals_covered`, `ways_in_covered`, `no_principal_admitted`, `cross_principal_reads`, `cross_principal_recalls`, and `cross_principal_spend`, and asserts `units_checked >= 100`, `principals_covered >= 2`, all four of TARGET T6.2's entries covered (human, event, schedule, external) with at least one schedule-originated unit in the corpus that started a new root run rather than steering one already open, and `no_principal_admitted == cross_principal_reads == cross_principal_recalls == cross_principal_spend == 0`. |
+| Expected | exit 0 and one summary line `units_checked=100 principals_covered=2 ways_in_covered=human,event,schedule,external no_principal_admitted=0 cross_principal_reads=0 cross_principal_recalls=0 cross_principal_spend=0`. |
 | Deliberate breakage | Submit one state read whose query names a record_id known to belong to a different principal than the requesting actor, everything else in the corpus unchanged. |
 | Expected failure | exit 1 with `cross_principal_reads == 1` naming that record and both principals, while `no_principal_admitted`, `cross_principal_recalls` and `cross_principal_spend` stay 0 and `units_checked` stays at or above 100 - showing the corpus was still read and the other three counters still meant something. Claimed: no fact in PASS.md names a tenant or a principal, the tool does not exist, and this run has not been performed here. |
 | Status | claimed |

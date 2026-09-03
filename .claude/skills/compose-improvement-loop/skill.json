@@ -217,7 +217,6 @@
                 "null"
               ],
               "enum": [
-                "verdict_fail",
                 "iteration_ceiling",
                 "budget_ceiling",
                 null
@@ -546,9 +545,9 @@
     },
     {
       "step": 7,
-      "action": "On iteration_ceiling or budget_ceiling, close as compose-loop's cap: record the candidate declined with the ceiling name as reason, escalate to a human, and never silently drop it or retry past the declared bound.",
+      "action": "Proposed: on iteration_ceiling or budget_ceiling, close as compose-loop's cap: record the candidate declined with the ceiling name as reason, escalate to a human, and never silently drop it or retry past the declared bound.",
       "why": "compose-loop already states that stop and cap are opposites and must not be collapsed; a declined candidate with no recorded reason reads, downstream, exactly like one nobody ever tried.",
-      "origin": "sourced",
+      "origin": "proposed",
       "sources": [
         "REF-5-3-08"
       ],
@@ -566,9 +565,9 @@
     },
     {
       "step": 9,
-      "action": "Start a new root loop_id only when the trigger is a person closing a ceremony, a schedule, or an outside event such as a merge or a monitored regression. A candidate's own retry re-enters the loop_id it was seeded in and never opens a second one.",
+      "action": "Proposed: start a new root loop_id only when the trigger is a person closing a ceremony, a schedule, or an outside event such as a merge or a monitored regression. A candidate's own retry re-enters the loop_id it was seeded in and never opens a second one.",
       "why": "compose-loop already states, following the reference example, that internal steers but never starts; a self-improvement loop is exactly the case TARGET names this constraint for, because a loop that could mint its own root work would have no actor to attribute a promotion to and no ceiling to spend against.",
-      "origin": "sourced",
+      "origin": "proposed",
       "sources": [
         "REF-3-4-15"
       ],
@@ -625,8 +624,8 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "One conformance run over a fixture ceremony, from the repository root, with a proposed tool: `python3 tools/improvement_loop_conformance.py --ceremony tests/fixtures/loop/ceremony-09 --case-set tests/fixtures/eval/cs-skill-revision --baseline tests/fixtures/eval/bl-2026-09-03.json --registry config/registry/today.json --candidates 20`. The fixture seeds 20 candidates from a mix of finding ids and cap-evaluation transitions. Assert `promoted + declined == 20`, `edited_in_place == 0` (no candidate's target file is written by any path other than cap-capability-registry.publish), every promoted CandidateOutcome carries a registry_record with rollback_to set to the prior baseline's version, and every declined CandidateOutcome names one of verdict_fail, iteration_ceiling or budget_ceiling as reason.",
-    "expected": "`promoted=13 declined=7 (5 verdict_fail, 1 iteration_ceiling, 1 budget_ceiling) edited_in_place=0` and `rollback_to` set on all 13 promoted records; exit 0.",
+    "criterion": "One conformance run over a fixture ceremony, from the repository root, with a proposed tool: `python3 tools/improvement_loop_conformance.py --ceremony tests/fixtures/loop/ceremony-09 --case-set tests/fixtures/eval/cs-skill-revision --baseline tests/fixtures/eval/bl-2026-09-03.json --registry config/registry/today.json --candidates 20`. The fixture seeds 20 candidates from a mix of finding ids and cap-evaluation transitions. Assert `promoted + declined == 20`, `edited_in_place == 0` (no candidate's target file is written by any path other than cap-capability-registry.publish), every promoted CandidateOutcome carries a registry_record with rollback_to set to the prior baseline's version, and every declined CandidateOutcome names one of iteration_ceiling or budget_ceiling as reason - compose-loop's own terminated_by vocabulary has no fail value, because a failed verdict inside the ceiling re-enters author_revision rather than closing the candidate (step 5), so a decline is reachable only through the ceiling (step 7).",
+    "expected": "`promoted=13 declined=7 (6 iteration_ceiling, 1 budget_ceiling) edited_in_place=0` and `rollback_to` set on all 13 promoted records; exit 0.",
     "breakage": "Point promote_revision's write at the same path author_revision already wrote content_ref to, instead of at cap-capability-registry.publish, so a passing candidate overwrites its target's file in place.",
     "expected_failure": "`edited_in_place>=1` on the first promoted candidate, exit non-zero, while `promoted`, `declined` and every gate_revision verdict stay unchanged from the expected run - naming the promotion step rather than the gate as what broke. Status claimed: tools/improvement_loop_conformance.py, the fixture ceremony and the candidate registry do not exist in this repository yet. This repository's own review/improve half of the loop is running today with no gate and no registry behind it - see compose-improvement-loop-implement for the measured run of `python3 tools/ceremony_check.py` against kb/ceremonies/ceremony-01 through ceremony-10 and the specific gap this leaves.",
     "status": "claimed",

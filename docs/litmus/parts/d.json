@@ -56,28 +56,29 @@
         {
           "id": "concern-policy-q2",
           "angle": "depth",
-          "question": "Is the decision produced by evaluating declarative policy held as versioned, separately testable data through a decision API, or by conditionals compiled into the execution path? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The policy source, its tests, the version identifier it carries, and the call that submits an input and receives a decision; plus a demonstration that changing the policy changes the outcome with no code change.",
-          "aligned_looks_like": "Policy is data with its own tests and version, evaluated through a decision API; a rule change alters behaviour with no redeploy of the execution path; the input schema is explicit.",
-          "misaligned_looks_like": "Refusal is written as conditionals in the code; or a policy file exists but the decision actually taken is computed elsewhere, so the policy is nominal presence only.",
+          "question": "When a unit of work spawns further work while it is running, a tool call, a sub-agent, a retry or a compensating action, is each of those decided in its own right against the actor, the delegation chain and the ceiling that apply at that moment, or does the admission decision taken for the parent cover everything it later does? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "A run in which the parent is admitted and a child action is one the policy forbids, showing where the child's decision was taken and what the child received, plus the decision inputs for parent and child side by side.",
+          "aligned_looks_like": "Each spawned action carries its own decision taken before that action's own side effect, with an input naming the acting agent, the party it acts for and the budget remaining at that moment; a forbidden child is refused with a typed failure while the parent continues under its own terms.",
+          "misaligned_looks_like": "One admission decision at the door authorises everything the run subsequently does; a child action inherits the parent's allow; or the child is decided against the originating person alone with the agent hop absent from the input.",
           "origin": "proposed",
           "cites": [
             "F-b4-04",
-            "F-b3-11",
-            "X-litmus-d-001",
-            "X-litmus-d-002"
+            "F-b4-03",
+            "F-b4-02",
+            "X-litmus-d-003"
           ]
         },
         {
           "id": "concern-policy-q3",
           "angle": "depth",
-          "question": "Does every evaluation leave a decision record carrying the input, the outcome, the policy version and the timestamp, and can a past decision be replayed against the policy in force today? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "Decision records for one allow and one deny, and the output of replaying a recorded decision under the current policy version.",
-          "aligned_looks_like": "Allows are recorded as fully as denials; each record names the policy version that produced it; replay reproduces the recorded outcome or shows exactly which rule change explains the difference.",
-          "misaligned_looks_like": "Only refusals are recorded; no policy version in the record; or records exist but cannot be replayed because the input the engine saw was not kept.",
+          "question": "Does an allow have a stated scope and lifetime, so that work which was paused, queued, or resumed after a restart is decided again before its next side effect, or is a decision taken once treated as valid for as long as the run lasts? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The stated scope and validity of one decision, plus a run that is admitted, delayed past that validity, and then resumed, showing whether a second evaluation happened and what input it saw.",
+          "aligned_looks_like": "A decision names the single action it admits and the moment it was taken; work resumed after a delay, a restart or a queue is decided again before its next side effect, and a rule changed in the interval takes effect on the resumed work.",
+          "misaligned_looks_like": "An allow issued at admission is carried for the life of the run; work resumed long afterwards executes under a decision made against context that no longer holds; nothing states how long a decision is good for.",
           "origin": "proposed",
           "cites": [
             "F-b4-04",
+            "F-b4-01",
             "X-litmus-d-004"
           ]
         },
@@ -100,26 +101,26 @@
         {
           "id": "concern-policy-q5",
           "angle": "boundary",
-          "question": "Is the decision engine reached through a capability interface with a second engine proven against the same decision suite, and is enforcement wired at one chokepoint rather than repeated in each adapter? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The interface the core imports, the list of call sites that enforce, and the results of running the same decision cases against two engines.",
-          "aligned_looks_like": "One enforcement site; the core names the interface and never an engine; a second engine answers the same suite with the same outcomes, or every difference is written down as a known divergence.",
-          "misaligned_looks_like": "An engine's query language or evaluation quirks leak into callers; each adapter performs its own check, so a new adapter silently arrives with none; the second engine has never been run against the suite.",
+          "question": "Is the enforcement point reached by construction rather than by convention, so that a capability adapter added tomorrow, containing no policy code of its own, still cannot execute an undecided action? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "Where the decision is invoked relative to the interface the core imports, and the result of adding or stubbing an adapter that makes no policy call of its own and then attempting a forbidden action through it.",
+          "aligned_looks_like": "The decision is taken at the interface the core imports, so every implementation behind it inherits enforcement; the new adapter's forbidden action is refused although the adapter itself checks nothing; an adapter author cannot omit enforcement.",
+          "misaligned_looks_like": "Each adapter is expected to call the decision itself, so a new one arrives unenforced and nothing detects it; enforcement lives in a review checklist rather than in the path; a direct call to an implementation reaches the action with no decision.",
           "origin": "proposed",
           "cites": [
             "F-b4-04",
+            "F-b4-01",
             "F-b1-02",
-            "F-b1-04",
-            "F-b3-11",
-            "X-litmus-d-002"
+            "F-b1-08",
+            "X-litmus-d-003"
           ]
         },
         {
           "id": "concern-policy-q6",
           "angle": "direction",
-          "question": "Is refusal deterministic and independent of model output, and what happens to a unit of work when the decision engine is unreachable? (This question is proposed, derived from the row it cites.)",
+          "question": "Is refusal deterministic, the same input yielding the same decision because it is computed over the declared action and its arguments rather than as a probabilistic judgement of the model's output, and what happens to a unit of work when the decision engine is unreachable? (This question is proposed, derived from the row it cites.)",
           "evidence_expected": "The same input evaluated repeatedly with the outcomes recorded; a test showing the decision does not vary with model output; and a run with the engine made unavailable.",
-          "aligned_looks_like": "Identical inputs yield identical decisions, evaluation terminates within a stated bound, and an unreachable engine fails closed with a typed refusal that names the reason.",
-          "misaligned_looks_like": "The decision depends on model output, a guardrail prompt or a post-hoc classifier; evaluation can loop or vary; an unreachable engine fails open and work proceeds unchecked.",
+          "aligned_looks_like": "Identical inputs yield identical decisions, evaluation terminates within a stated bound, and an unreachable engine fails closed with a typed refusal that names the reason; deterministic scanning of the action's arguments feeds the decision input rather than standing in for the decision.",
+          "misaligned_looks_like": "The decision is a probabilistic judgement of the model's output, a guardrail prompt or a post-hoc classifier rather than a rule evaluated over the action and its arguments; evaluation can loop or vary; an unreachable engine fails open and work proceeds unchecked.",
           "origin": "proposed",
           "cites": [
             "F-b4-04",
@@ -197,30 +198,31 @@
         {
           "id": "concern-provenance-q2",
           "angle": "depth",
-          "question": "Does one record bind the artifact digest, the code version, the digests of every input and the acting identity inside a single signed statement with a typed predicate, or is it a log line that merely mentions them? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "One complete record with its fields, its predicate type and version, its signature, and the recomputed digest of the artifact it names.",
-          "aligned_looks_like": "A statement naming subjects by digest with a versioned predicate type; recomputed digests match the artifact bytes; the signature verifies; inputs are named by digest rather than by path or label.",
-          "misaligned_looks_like": "A chained log entry with no subject digest, no predicate type or no signature; inputs referenced by mutable name; the code version recorded as a branch rather than a commit or content digest.",
+          "question": "Is an artifact whose attestation is missing, unverifiable, or inconsistent with its bytes refused at the point where it is consumed or promoted, by the platform rather than by the diligence of whoever consumes it? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "A run in which a downstream unit is offered an artifact with no attestation, and a second in which the attestation is present but fails verification, showing in each case what the consuming step received and whether the work proceeded.",
+          "aligned_looks_like": "Verification happens before consumption on the shared path; an artifact that fails it is refused with a typed failure naming what did not verify; the same refusal occurs whether the consumer is a person, a scheduled run or another party's agent.",
+          "misaligned_looks_like": "Attestations are produced but nothing checks them before use; verification is left to each consumer to remember; a failed verification is recorded as a warning and the work continues.",
           "origin": "proposed",
           "cites": [
             "F-b4-05",
-            "F-b3-12",
-            "X-litmus-d-005",
-            "X-litmus-d-006"
+            "F-b4-01",
+            "F-b4-07",
+            "X-litmus-d-008"
           ]
         },
         {
           "id": "concern-provenance-q3",
           "angle": "depth",
-          "question": "Can a record be verified end to end by a verifier this build did not write, given only the published format and the public verification material, and does that verifier reject a tampered record? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The command and output of an independent verifier run against a good record and against the same record with one byte altered, plus the verification material it was given.",
-          "aligned_looks_like": "The independent verifier accepts the good record and rejects the tampered one; the verification path uses only published formats and needs no code from this platform.",
-          "misaligned_looks_like": "Verification is only possible with this platform's own reader; the format nominally resembles the standard but no third-party verifier accepts it; tampering is detectable only by a chain this platform also maintains.",
+          "question": "Can it be shown that no artifact escapes the guarantee, that every artifact produced over a period has a record, and that a component cannot produce one through a path which emits nothing? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "A reconciliation of artifacts produced against records emitted over one period, plus the result of an attempt to produce an artifact through a component that carries no attestation code of its own.",
+          "aligned_looks_like": "The two counts reconcile with no unattested artifact; emission is wired where every producing path passes, so a component that attests nothing itself still yields a record; the attempt to write outside that path is refused or is structurally impossible.",
+          "misaligned_looks_like": "Coverage is asserted rather than counted; some producing paths, typically an adapter writing its own output or a step added later, leave no record; the reconciliation cannot be performed because nothing enumerates what was produced.",
           "origin": "proposed",
           "cites": [
             "F-b4-05",
-            "F-b1-05",
-            "X-litmus-d-007"
+            "F-b4-01",
+            "F-b1-08",
+            "X-litmus-d-005"
           ]
         },
         {
@@ -256,10 +258,10 @@
         {
           "id": "concern-provenance-q6",
           "angle": "direction",
-          "question": "Is the signing identity short-lived and anchored in a transparency log rather than a long-lived key, and is verification actually enforced before an artifact is consumed or promoted? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The identity material used to sign and where it comes from, plus a run in which an artifact whose attestation fails verification is offered for consumption.",
-          "aligned_looks_like": "Signing uses short-lived credentials with a log entry, or a documented equivalent with stated rotation; consumption of an unverifiable artifact is refused with a typed failure at the point of use.",
-          "misaligned_looks_like": "A long-lived signing key lives with the build; attestations are produced but never checked before use; or the predicate version is unpinned so a schema change silently invalidates verification.",
+          "question": "Is the signing identity bound at the moment of signing and anchored in a transparency log, with its material not recoverable from the build afterwards, rather than a key the build holds? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The identity material used to sign and where it comes from, the transparency-log entry for one signature, and the predicate version the record pins.",
+          "aligned_looks_like": "The credential is issued for that signing, expires, and cannot be recovered from the build afterwards; the signature has a transparency-log entry; the predicate version is pinned so a schema change is visible rather than silent.",
+          "misaligned_looks_like": "A long-lived signing key lives with the build, whatever the rotation paperwork says; the signer is a shared secret rather than an attested identity; or the predicate version is unpinned so a schema change silently invalidates verification.",
           "origin": "proposed",
           "cites": [
             "F-b4-05",
@@ -337,10 +339,10 @@
         {
           "id": "concern-telemetry-q2",
           "angle": "depth",
-          "question": "When trace context does not propagate, across a queue, a scheduled hand-off, a process restart or a call to another party's agent, can two related units still be joined? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "Telemetry for a unit that was enqueued and resumed later, showing the attributes or links that join the parts, plus the same run repeated with the parent context deliberately dropped.",
-          "aligned_looks_like": "Explicit correlation attributes are present on every signal and survive the boundary; links carry causal relations that are not parent-child; joining still works with the parent context dropped.",
-          "misaligned_looks_like": "Correlation depends on parentage and breaks at the queue, the scheduler or the restart; the relation exists only in a log message; the join requires guessing by timestamp.",
+          "question": "Take a unit whose trace context did not survive, because it waited in a queue, resumed after a process restart, or was handed to another party's agent that never saw it: can its parts still be joined into one story after the fact? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "Telemetry for one such unit either side of the queue, the restart or the hand-off, showing what joined the parts, plus the same run repeated with the parent context deliberately removed.",
+          "aligned_looks_like": "The parts join on identifiers the platform stamped into the work itself, with links expressing causal relations that are not parent and child; the join still succeeds with the parent context dropped and across a party that never received it.",
+          "misaligned_looks_like": "The join breaks wherever context is not propagated; the relation survives only in a log message; the parts are matched by timestamp or reconstructed by hand.",
           "origin": "proposed",
           "cites": [
             "F-b4-06",
@@ -350,48 +352,49 @@
         {
           "id": "concern-telemetry-q3",
           "angle": "depth",
-          "question": "Are the attributes the published convention names with a recorded schema version, and is the whole unit modelled as a lifecycle of named operations rather than a single span around a model call? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "One exported trace for a multi-step unit with its span names, attribute keys and the schema version it declares.",
-          "aligned_looks_like": "Convention names are used for operations, tools and model calls; the schema version is recorded so a rename in a moving convention is detectable; the trace shows the unit's structure, including tool calls and decisions, not just one wrapper span.",
-          "misaligned_looks_like": "Home-grown attribute keys, or convention names copied with no version pinned; a single opaque span per unit; token and cost figures present in logs but not as metrics.",
+          "question": "Are the attributes the other guarantees need, the actor and delegation chain, the tenant, the entry, the policy outcome, the ceiling and what was consumed of it, stamped onto a unit's signals by the platform, and do they appear on metrics and logs as well as on spans? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The attribute set on the spans, the metrics and the logs of one unit that no caller instrumented, and the single place those attributes are attached.",
+          "aligned_looks_like": "One place stamps them, so all three signal kinds carry the same guarantee attributes with no caller supplying any of them; a refusal, a delegation hop and a budget termination are attribute values rather than prose.",
+          "misaligned_looks_like": "Guarantee attributes ride on spans only, so cost cannot be attributed to an actor or a tenant from metrics; they appear only where a caller remembered to add them; the policy outcome survives only inside a log message.",
           "origin": "proposed",
           "cites": [
             "F-b4-06",
-            "F-b3-10",
-            "X-litmus-d-010",
-            "X-litmus-d-011",
+            "F-b4-01",
+            "F-b4-02",
+            "F-b4-03",
+            "F-b4-04",
             "X-litmus-d-013"
           ]
         },
         {
           "id": "concern-telemetry-q4",
           "angle": "usage",
-          "question": "For one unit started from any entry, can an operator answer from telemetry alone what it cost, what was decided about it, why it stopped, and which actor ran it, with one query that works the same for all four entries? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The query and its result for a unit from each entry, including one unit that was refused and one that hit its ceiling.",
-          "aligned_looks_like": "A single query returns cost, outcome, refusal reason and actor for every entry; the refusal and the budget termination appear as first-class attributes rather than as text.",
-          "misaligned_looks_like": "Answering requires joining separate systems by hand; cost or refusal is missing; the answer differs by entry because attributes were stamped in different places.",
+          "question": "Across the four entries, what must a caller do to be observable at all, and what can it do to the telemetry the platform emits: can it add its own signals and have them join the unit, and can it suppress emission, change the sampling decision, or enrich beyond what the guarantee permits, for instance by attaching raw content? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The caller-side surface at each of the four entries, one run in which a caller adds a span and attributes of its own, and one in which a caller attempts to disable emission, lower sampling, or attach unredacted input content.",
+          "aligned_looks_like": "A caller supplies nothing at any entry to be fully observed; caller-added signals join the unit through the correlation attributes the platform stamped; attempts to emit less or more than the guarantee allows are refused or normalised in the pipeline.",
+          "misaligned_looks_like": "At some entries a caller must pass a context or wrap the call to be observed; caller signals float free of the unit; a caller can turn emission off, alter the sampling decision, or place raw content into attributes that are exported.",
           "origin": "proposed",
           "cites": [
             "F-b4-06",
-            "F-b4-02",
-            "F-b4-04",
+            "F-b4-01",
+            "F-b1-08",
             "F-b3-08",
-            "X-litmus-d-013"
+            "X-litmus-d-014"
           ]
         },
         {
           "id": "concern-telemetry-q5",
           "angle": "boundary",
-          "question": "Can the telemetry backend be changed by pointing the exporter somewhere else, with no change to instrumentation or to the attributes emitted? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The same run exported to two different collectors or backends, and a diff of what arrived at each.",
-          "aligned_looks_like": "The payloads are equivalent; the core imports the standard interface and no backend-specific library; the switch is configuration only.",
-          "misaligned_looks_like": "A vendor library is called from the core; attributes are shaped for one backend's query language; switching requires code changes or loses signals.",
+          "question": "Is instrumentation attached at the capability interfaces the core imports, so that an implementation added tomorrow which contains no telemetry code of its own emits the same signals as the one it stands beside? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "Where emission is wired relative to the interface, and the telemetry of the same operation performed by two implementations behind one interface, at least one of which instruments nothing itself.",
+          "aligned_looks_like": "Both produce the same span shape and the same attribute keys; which implementation answered is an attribute value, not a different tree; the uninstrumented implementation is nonetheless fully observed.",
+          "misaligned_looks_like": "Each implementation instruments itself, so a new one arrives silent or with span names of its own; the shape differs by implementation, so a swap breaks whatever reads the signals.",
           "origin": "proposed",
           "cites": [
             "F-b4-06",
             "F-b1-02",
             "F-b1-04",
-            "F-b3-10"
+            "F-b1-08"
           ]
         },
         {
@@ -464,9 +467,9 @@
           "id": "concern-errors-q1",
           "angle": "guarantees",
           "question": "Does every boundary return the typed failure object without the caller asking, including refusals taken before execution, ceilings exceeded during execution, validation rejections and faults raised inside an adapter? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "One captured failure of each of those four kinds, taken from at least two different entries, with the body exactly as a caller received it.",
-          "aligned_looks_like": "All of them share one shape and one type vocabulary; the failure is produced on the shared path; nothing reaches a caller as an exception, a stack trace or a bare status.",
-          "misaligned_looks_like": "The outer edge is typed while internal boundaries throw; some paths return prose or an empty body; a refusal and a crash are indistinguishable to a machine.",
+          "evidence_expected": "The single place the failure object is constructed and the path by which every boundary reaches it, plus a failure raised through a component or entry that contains no error-handling code of its own, shown exactly as it reached the caller.",
+          "aligned_looks_like": "Every boundary converges on one construction site, so a component that handles no errors itself still returns the typed object; nothing reaches a caller as an exception, a stack trace or a bare status.",
+          "misaligned_looks_like": "Each boundary builds a body of its own, so a component added without error-handling code returns prose, an empty body or an exception; the outer edge is typed while internal boundaries throw.",
           "origin": "proposed",
           "cites": [
             "F-b4-07",
@@ -477,29 +480,30 @@
         {
           "id": "concern-errors-q2",
           "angle": "depth",
-          "question": "Is the set of failure type identifiers closed, versioned and documented, with extension members that carry machine-actionable detail rather than putting the specifics only in human-readable text? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The registry of type identifiers with the members each type promises, and two failure bodies showing those extension members populated.",
-          "aligned_looks_like": "A closed registry that changes only by a reviewed addition; each type documents its extension members; the detail a machine needs is in fields, and the human-readable member adds nothing load-bearing.",
-          "misaligned_looks_like": "Type identifiers invented at the call site or reused for unrelated failures; the standard members present but every specific detail buried in the prose member; no version on the vocabulary.",
+          "question": "Do the platform's own stops arrive as typed failures rather than as silences: a refusal taken before execution, a ceiling exceeded mid-run, a cancellation, a validation rejection and a unit killed by its isolation, each with its own type and the members that say which rule, which ceiling and how much was consumed? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "One captured failure for each of those five stops, with the body exactly as the caller and the record received it.",
+          "aligned_looks_like": "Each stop has a distinct type identifier; the ceiling case names the ceiling and the amount consumed, the refusal names the rule and the policy version; none of them arrives as an empty result, a truncated success or a generic internal fault.",
+          "misaligned_looks_like": "A budget termination looks like a crash, or like a short but successful result; a refusal is a generic denial with the rule only in prose; a cancellation cannot be told from a timeout by a machine.",
           "origin": "proposed",
           "cites": [
             "F-b4-07",
-            "F-b3-13",
-            "X-litmus-d-016",
-            "X-litmus-d-018"
+            "F-b4-02",
+            "F-b4-04",
+            "F-b3-13"
           ]
         },
         {
           "id": "concern-errors-q3",
           "angle": "depth",
-          "question": "Can a caller decide retry, escalate to a human, or stop from the type identifier and members alone, without reading prose, matching a string or inferring from a status code? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The decision table a caller uses, and a recorded run driven by it that retried one failure, escalated another and stopped on a third.",
-          "aligned_looks_like": "Retryability, and any wait before retry, are carried explicitly; the same decision is reached identically on every transport; an agent consuming the failure does not have to interpret language to recover.",
-          "misaligned_looks_like": "Retry decided by status code family, by string matching, or by letting the model read the message and improvise a recovery; transient and permanent failures share one type.",
+          "question": "When a failure happens where nobody is waiting, a scheduled fire, a redelivered event, a sub-unit spawned inside a run, is the typed object still constructed, recorded and retrievable afterwards? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "A failure induced on the schedule entry and one inside a spawned sub-unit, plus the stored objects retrieved afterwards from the record by correlation identifier.",
+          "aligned_looks_like": "The object is built and stored whether or not anything reads it; it is findable later by correlation and carries the same type vocabulary as a failure returned to a person; a failed sub-unit is visible in the parent's outcome.",
+          "misaligned_looks_like": "Failures with no waiting caller become a log line or vanish; the sub-unit's failure is swallowed and the parent reports success; nothing can be retrieved afterwards because only the response path constructs the object.",
           "origin": "proposed",
           "cites": [
             "F-b4-07",
-            "X-litmus-d-018",
+            "F-b4-01",
+            "F-b3-08",
             "X-litmus-d-019"
           ]
         },
@@ -536,16 +540,16 @@
         {
           "id": "concern-errors-q6",
           "angle": "direction",
-          "question": "Does the typed failure survive transports that are not HTTP, such as messaging, an agent-to-agent binding, or a command-line invocation, with a documented mapping in each direction? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The same failure delivered over two different transports, plus the mapping table between the failure type and each transport's own error carrier.",
-          "aligned_looks_like": "One type identifier carried on every binding, with the transport's native error field holding a machine-readable identifier that maps back to it; the mapping is documented and round-trips.",
-          "misaligned_looks_like": "Failures are typed only over HTTP and degrade to prose or an exit code elsewhere; the transport's error field carries a message rather than an identifier; the mapping is lossy in one direction.",
+          "question": "Is the typed failure the platform's own currency for recovery, so that a retry, a compensation, an escalation to a person or an abandonment is selected from the type and its members, and nothing inside the platform recovers by reading prose or by handing the message to a model to interpret? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The mapping from failure type to the reaction the platform takes, and a recorded run in which one failure was retried, one compensated and one escalated, showing what selected each.",
+          "aligned_looks_like": "Every automatic reaction is selected from the type and its extension members; the human-readable member is read by nothing that decides; a type with no mapping stops the work and is reported rather than guessed at.",
+          "misaligned_looks_like": "Recovery is chosen by matching message strings, by exception class, or by asking a model what the failure meant; an unrecognised failure is retried by default; the reaction differs between two components seeing the same failure.",
           "origin": "proposed",
           "cites": [
             "F-b4-07",
+            "F-b4-08",
             "F-b3-13",
-            "F-b3-08",
-            "X-litmus-d-019"
+            "X-litmus-d-018"
           ]
         }
       ],
@@ -577,7 +581,7 @@
         ]
       },
       "future_state": {
-        "text": "The future state proposed for this concern: every externally-triggered unit of work carries a deduplication identity, supplied by the caller when it has one and otherwise derived by the platform from the entry itself, from the event envelope's source and id, from the schedule's occurrence, or from a request identifier at a human or external entry, so replay safety never depends on caller cooperation; that identity is enforced by an atomic claim with a time-bounded lease and a monotonic token rather than by a recently-seen cache, so a second delivery arriving concurrently either waits for the first or is refused with a typed failure, and a stalled holder that returns mid-effect is fenced out by the resource refusing its lower token; the claim record binds the identity to the unit, the actor, the tenant and the outcome, and a replay returns the stored outcome unchanged, including a stored failure, marked as a replay and carrying the original correlation; a run that crashed after a partial side effect resumes without repeating it; and keys are scoped so that two tenants cannot collide.",
+        "text": "The future state proposed for this concern: every externally-triggered unit of work carries a deduplication identity, supplied by the caller when it has one and otherwise derived by the platform from the entry itself, from the event envelope's source and id, from the schedule's occurrence, or from a request identifier at a human or external entry, so replay safety never depends on caller cooperation; that identity is enforced by an atomic claim with a time-bounded lease and a monotonic token rather than by a recently-seen cache, so a second delivery arriving concurrently either waits for the first or is refused with a typed failure, and a stalled holder that returns mid-effect is excluded: by the resource refusing its lower token where the platform owns that resource, and, where the effect lands on a resource the platform does not own and cannot fence, by the effect being made through a keyed operation whose stored outcome the stale holder must read before it may write; the claim record binds the identity to the unit, the actor, the tenant and the outcome, and a replay returns the stored outcome unchanged, including a stored failure, marked as a replay and carrying the original correlation; a run that crashed after a partial side effect resumes without repeating it; and keys are scoped so that two tenants cannot collide.",
         "origin": "proposed",
         "cites": [
           "F-b4-08",
@@ -604,15 +608,15 @@
         {
           "id": "concern-idempotency-q1",
           "angle": "guarantees",
-          "question": "Is every externally-triggered unit of work deduplicated even when the caller supplies no key, and is the derivation rule defined for each entry? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The key derivation rule for each of the four entries, and a replayed trigger through each entry with no key supplied, showing how many effects resulted.",
-          "aligned_looks_like": "The platform derives an identity at every entry, including redelivered events, re-fired schedule occurrences and repeated external calls; a replay produces no second effect anywhere; a caller cannot opt out.",
-          "misaligned_looks_like": "Deduplication happens only when the caller passes a key; one or more entries, typically the schedule or an internal event, are exempt; the derivation is undefined so the same trigger keys differently on each attempt.",
+          "question": "Can the guarantee be declined? Is there any flag, any omitted field, any trusted path or any direct call to an implementation by which a unit of work executes with no claim taken? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "Where the claim is taken relative to every path into execution, and the results of three attempts to avoid it: disabling deduplication from the caller side, disabling it in configuration, and calling an implementation directly.",
+          "aligned_looks_like": "The claim is taken on the shared path all four entries converge on; each attempt to skip it is refused with a typed failure or is structurally unreachable; there is no supported way for a caller to run unclaimed.",
+          "misaligned_looks_like": "A caller-supplied flag, an unset field or an internal fast path runs the work unclaimed; the claim is taken by convention in each caller rather than on the shared path; opting out is offered to callers judged trustworthy.",
           "origin": "proposed",
           "cites": [
             "F-b4-08",
             "F-b4-01",
-            "F-b3-16",
+            "F-b1-08",
             "X-litmus-d-023"
           ]
         },
@@ -621,8 +625,8 @@
           "angle": "depth",
           "question": "What happens when two identical triggers arrive at the same instant, and what happens when a holder stalls past its lease and then returns to write mid-effect? (This question is proposed, derived from the row it cites.)",
           "evidence_expected": "A concurrency run with two simultaneous duplicates and the count of effects produced, plus a run where a holder is paused beyond lease expiry, a second holder proceeds, and the first then attempts its write.",
-          "aligned_looks_like": "Exactly one claim wins and the other waits for the outcome or is refused with a typed failure; the resumed stale holder is refused because its token is lower than the one the resource has accepted; both results are reproducible under repetition.",
-          "misaligned_looks_like": "A seen-recently cache with a time window, or a read-then-write check that both callers pass; the stale holder's write lands and overwrites or duplicates the effect; the guarantee holds only in single-process tests.",
+          "aligned_looks_like": "Exactly one claim wins and the other waits for the outcome or is refused with a typed failure; where the effect lands on a resource the platform owns, the resource refuses the stale holder because its token is lower than the one already accepted; where it lands on a resource the platform cannot fence, the effect is made through a keyed operation whose stored outcome the stale holder reads before writing, so it does not repeat it; both results are reproducible under repetition.",
+          "misaligned_looks_like": "A seen-recently cache with a time window, or a read-then-write check that both callers pass; the stale holder's write lands and overwrites or duplicates the effect on either kind of resource; effects on resources the platform does not own have no answer at all; the guarantee holds only in single-process tests.",
           "origin": "proposed",
           "cites": [
             "F-b4-08",
@@ -647,10 +651,10 @@
         {
           "id": "concern-idempotency-q4",
           "angle": "usage",
-          "question": "Across the four entries, what is the deduplication identity composed of, how is it scoped, and what happens when the same logical work arrives twice through two different entries? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The composition and scope of the key for each entry, a case where two tenants issue the same caller-supplied key, and a case where identical work arrives once by event and once by human request.",
-          "aligned_looks_like": "The key is scoped by tenant and actor so identical strings from two tenants never collide; the per-entry composition is documented; work arriving twice by different doors either collapses to one unit or the decision not to collapse it is stated and deliberate.",
-          "misaligned_looks_like": "A global key namespace where one caller can suppress another's work; the same envelope processed twice because two entries key it differently; scope defined by whichever store happened to be used.",
+          "question": "Across the four entries, what is the deduplication identity composed of when a caller supplies one and when it supplies none, how is it scoped, and what happens when the same logical work arrives twice through two different entries? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The composition and scope of the identity at each of the four entries including the derivation used when no key is supplied, a replayed trigger through each entry with no key supplied and the count of effects, a case where two tenants issue the same caller-supplied key, and a case where identical work arrives once by event and once by human request.",
+          "aligned_looks_like": "Where a caller supplies nothing the platform derives an identity from the envelope, the schedule occurrence or the request, so replay safety never depends on caller cooperation; the key is scoped by tenant and actor so identical strings from two tenants never collide; the per-entry composition is documented; work arriving twice by different doors either collapses to one unit or the decision not to collapse it is stated and deliberate.",
+          "misaligned_looks_like": "Deduplication happens only when the caller passes a key, or one entry, typically the schedule or an internal event, is exempt; a global key namespace where one caller can suppress another's work; the same envelope processed twice because two entries key it differently; scope defined by whichever store happened to be used.",
           "origin": "proposed",
           "cites": [
             "F-b4-08",
@@ -660,18 +664,17 @@
         },
         {
           "id": "concern-idempotency-q5",
-          "angle": "boundary",
-          "question": "Is the claim store reached through a capability interface, and does a second store pass the same concurrency, lease-expiry and fencing suite as the first? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The interface the core imports, the suite itself, and its results against two stores with different concurrency primitives.",
-          "aligned_looks_like": "Both stores pass the same suite including the concurrent-duplicate and stale-holder cases; the core names the interface only; no caller depends on a store-specific primitive or on its clock.",
-          "misaligned_looks_like": "The guarantee is expressed in one store's primitives so a second cannot implement it; the second store is only exercised single-threaded; the lease depends on wall-clock agreement between callers.",
+          "angle": "depth",
+          "question": "Are the units the platform generates for itself keyed as well: a retry it schedules, a compensating action, a sub-unit an agent spawns, a step resumed after a crash? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The identity derivation for an internally generated retry, for a spawned sub-unit and for a resumed step, plus a restart injected between a step's side effect and the recording of its completion, with the effects counted afterwards.",
+          "aligned_looks_like": "Internal units carry derived identities as stable as an external caller's key, composed from the parent unit and the step; a restart re-derives the same identity, so the resumed step finds its stored outcome instead of repeating the effect; the derivation is written down for each kind.",
+          "misaligned_looks_like": "Only work arriving from outside is keyed, so internally generated retries and spawned sub-units duplicate their effects after a restart; the internal identity contains a timestamp or a random value and therefore never matches on resume.",
           "origin": "proposed",
           "cites": [
             "F-b4-08",
-            "F-b1-02",
-            "F-b1-04",
+            "F-b4-01",
             "F-b3-16",
-            "X-litmus-d-022"
+            "X-litmus-d-024"
           ]
         },
         {

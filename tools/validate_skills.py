@@ -244,7 +244,7 @@ def main() -> int:
 
     if args.only:
         errs = [e for e in errs if any(e.startswith(o + ":") or e.startswith(o + " ") for o in args.only)]
-        warns = [w for w in warns if any(w.startswith(o + ":") or w.startswith(o + " ") for w in args.only)]
+        warns = [w for w in warns if any(w.startswith(o + ":") or w.startswith(o + " ") for o in args.only)]
     for w in warns:
         print(f"warning: {w}")
     for e in errs:

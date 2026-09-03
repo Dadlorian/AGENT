@@ -13,5 +13,5 @@
 | 21 | Continuous improvement loop | One iteration per fire moves a metric and checkpoints | Not started | Awaiting go |
 | 37 | Live run access | Harness live mode runs against the host from a session | Blocked | Owner decision |
 | 41 | Planted-defect reviews | Every review catches both planted defects | In progress | 2 plants set, review running |
-| 42 | Sourcing pass | Proposed rows are under 30 percent | In progress | Iteration 1: 106 to 60 in 10 skills |
+| 42 | Sourcing pass | Proposed rows are under 30 percent | In progress | Iteration 2 on 37 skills |
 | 45 | Fetch allowlist | Standards sites are fetchable from the environment | Blocked | Owner decision |

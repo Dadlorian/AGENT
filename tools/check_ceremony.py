@@ -31,8 +31,8 @@ def main(argv: list[str]) -> int:
     finding_ids = [f["id"] for f in review.get("findings", [])]
     applied = improve.get("applied", [])
     declined = improve.get("declined", [])
-    applied_ids = [a["finding"] for a in applied]
-    declined_ids = [d["finding"] for d in declined]
+    applied_ids = [a.get("finding", a.get("id")) for a in applied]   # older records key the finding under "id"
+    declined_ids = [d.get("finding", d.get("id")) for d in declined]
     all_resolved = applied_ids + declined_ids
 
     seen: dict[str, int] = {}
@@ -47,7 +47,7 @@ def main(argv: list[str]) -> int:
     for a in applied:
         for f in a.get("files", []):
             if not Path(f).is_file():
-                missing.append((a.get("finding"), f))
+                missing.append((a.get("finding", a.get("id")), f))
 
     findings_checked = len(finding_ids)
     unresolved = len(unresolved_ids)

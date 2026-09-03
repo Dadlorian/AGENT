@@ -1,5 +1,7 @@
 # Harness
 
+`harness/plan.json` lists all 28 harnesses; each directory's `README.md` carries its own step table. This file describes the first five in depth and the caller-line measurement they share.
+
 ## The five harnesses
 
 | Harness | Capability behind the interface | Minimal call | Second adapter it swaps to |

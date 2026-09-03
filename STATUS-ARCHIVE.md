@@ -61,3 +61,4 @@
 | 16 | Measured definitions of done | Most skills have a measured run | Done | 55 of 102 | 2026-09-03 6578d7b |
 | 17 | Human review | Owner feedback is recorded as a ceremony | Done | Five corrections in OWNER.md, ledgered | 2026-09-03 6578d7b |
 | 63 | Phase 5: final acceptance | Scorecard and acceptance matrix hold at one commit | Done | 15 of 15 sticks hold | 2026-09-03 6578d7b |
+| 65 | Human review guide | Every folder has a check command and a human judgment | Done | HUMAN-REVIEW.md, eleven sections | 2026-09-03 22ebeb3 |

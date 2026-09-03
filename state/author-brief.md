@@ -127,3 +127,6 @@ Every task, agent label, scope claim and ceremony record starts with the STATUS.
 
 ## Lesson 59 (build layer acceptance, 2026-09-03)
 A definition_of_done.criterion is one shell command chain, nothing else; prose goes in expected. The breakage text names exactly the command measure.py runs. Only measure.py sets status measured.
+
+## Agent briefs (2026-09-03)
+Launch messages point an agent at one file under state/briefs/ (source, measure, review, improve) instead of the six records it used to read; the brief digests OWNER.md, the ceremony template and the method notes. Regenerate the briefs when a rule changes.

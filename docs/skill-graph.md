@@ -21,6 +21,29 @@ graph TD
     build-research-record --> build-simplicity-budget
     build-skill-authoring --> build-simplicity-budget
     agentic-stack --> build-skill-authoring
+    agentic-stack --> cap-agent-runtime
+    build-adapter-pair --> cap-agent-runtime
+    build-definition-of-done --> cap-agent-runtime
+    build-skill-authoring --> cap-agent-runtime
+    cap-errors --> cap-agent-runtime
+    build-adapter-pair --> cap-agent-runtime-implement
+    build-definition-of-done --> cap-agent-runtime-implement
+    build-evidence-record --> cap-agent-runtime-implement
+    cap-agent-runtime --> cap-agent-runtime-implement
+    cap-agent-runtime --> cap-agent-runtime-use
+    cap-agent-runtime-implement --> cap-agent-runtime-use
+    agentic-stack --> cap-capability-packaging
+    build-adapter-pair --> cap-capability-packaging
+    build-definition-of-done --> cap-capability-packaging
+    build-skill-authoring --> cap-capability-packaging
+    cap-document-validation --> cap-capability-packaging
+    cap-errors --> cap-capability-packaging
+    build-adapter-pair --> cap-capability-packaging-implement
+    build-definition-of-done --> cap-capability-packaging-implement
+    build-evidence-record --> cap-capability-packaging-implement
+    cap-capability-packaging --> cap-capability-packaging-implement
+    cap-capability-packaging --> cap-capability-packaging-use
+    cap-capability-packaging-implement --> cap-capability-packaging-use
     agentic-stack --> cap-document-validation
     build-adapter-pair --> cap-document-validation
     build-definition-of-done --> cap-document-validation
@@ -31,6 +54,17 @@ graph TD
     cap-document-validation --> cap-document-validation-implement
     cap-document-validation --> cap-document-validation-use
     cap-document-validation-implement --> cap-document-validation-use
+    agentic-stack --> cap-durable-execution
+    build-adapter-pair --> cap-durable-execution
+    build-definition-of-done --> cap-durable-execution
+    build-skill-authoring --> cap-durable-execution
+    cap-errors --> cap-durable-execution
+    build-adapter-pair --> cap-durable-execution-implement
+    build-definition-of-done --> cap-durable-execution-implement
+    build-evidence-record --> cap-durable-execution-implement
+    cap-durable-execution --> cap-durable-execution-implement
+    cap-durable-execution --> cap-durable-execution-use
+    cap-durable-execution-implement --> cap-durable-execution-use
     agentic-stack --> cap-errors
     build-adapter-pair --> cap-errors
     build-definition-of-done --> cap-errors
@@ -41,6 +75,28 @@ graph TD
     cap-errors --> cap-errors-implement
     cap-errors --> cap-errors-use
     cap-errors-implement --> cap-errors-use
+    agentic-stack --> cap-idempotency
+    build-adapter-pair --> cap-idempotency
+    build-definition-of-done --> cap-idempotency
+    build-skill-authoring --> cap-idempotency
+    cap-errors --> cap-idempotency
+    build-adapter-pair --> cap-idempotency-implement
+    build-definition-of-done --> cap-idempotency-implement
+    build-evidence-record --> cap-idempotency-implement
+    cap-idempotency --> cap-idempotency-implement
+    cap-idempotency --> cap-idempotency-use
+    cap-idempotency-implement --> cap-idempotency-use
+    agentic-stack --> cap-identity
+    build-adapter-pair --> cap-identity
+    build-definition-of-done --> cap-identity
+    build-skill-authoring --> cap-identity
+    cap-errors --> cap-identity
+    build-adapter-pair --> cap-identity-implement
+    build-definition-of-done --> cap-identity-implement
+    build-evidence-record --> cap-identity-implement
+    cap-identity --> cap-identity-implement
+    cap-identity --> cap-identity-use
+    cap-identity-implement --> cap-identity-use
 ```
 
 ## Root
@@ -53,23 +109,38 @@ graph TD
 
 | Skill | Builds on | Used by | Purpose |
 |---|---|---|---|
-| `cap-document-validation` | `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring` | `cap-document-validation-implement`, `cap-document-validation-use` | The document-validation capability: one contract for checking a declared shape against a published schema dialect, JSON Schema 2020-12, with the operations the core imports, the outcome shape, and the criteria that decide whether a candidate validator is good enough |
+| `cap-agent-runtime` | `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors` | `cap-agent-runtime-implement`, `cap-agent-runtime-use` | The ideal state of the Agent runtime capability: one prompt turn with a stop reason as the unit of agent execution, governed by the Agent Client Protocol, with the operations the core imports, the turn shapes, what the boundary refuses to expose, and the criteria that decide whether a candidate runtime may serve the interface |
+| `cap-agent-runtime-implement` | `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`, `cap-agent-runtime` | `cap-agent-runtime-use` | How to build the Agent runtime capability on this stack: an interactive adapter over the runtime that already runs, a second adapter that has no session at all, how to migrate execution paths that today share no contract, where the budget, policy, identity, telemetry, provenance and idempotency guarantees attach to a turn, and a definition of done with the breakage that makes it fail |
+| `cap-agent-runtime-use` | `cap-agent-runtime`, `cap-agent-runtime-implement` | - | How to run one agent turn and read what came back: the three fields you supply, the one field you branch on, two worked turns, what a failure looks like, and why swapping the thing that runs the agent changes nothing you wrote |
+| `cap-capability-packaging` | `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-document-validation`, `cap-errors` | `cap-capability-packaging-implement`, `cap-capability-packaging-use` | The capability-packaging contract: one portable directory shape any conformant runtime can discover, two required resident fields, three load tiers, and the criteria that decide whether a candidate loader or registry may serve |
+| `cap-capability-packaging-implement` | `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`, `cap-capability-packaging` | `cap-capability-packaging-use` | How to build capability packaging on this stack: the filesystem adapter that runs today, a registry adapter that changes where the bytes come from and what identity means, the migration off directories that are rendered and checked in place, where a package resolution is wired so the platform's guarantees ride on it, and the conformance run that decides whether either source may serve |
+| `cap-capability-packaging-use` | `cap-capability-packaging`, `cap-capability-packaging-implement` | - | How to publish and use a packaged capability without knowing how packages are stored: one directory and two fields to publish, one identity to consume, one outcome to read |
+| `cap-document-validation` | `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring` | `cap-capability-packaging`, `cap-document-validation-implement`, `cap-document-validation-use` | The document-validation capability: one contract for checking a declared shape against a published schema dialect, JSON Schema 2020-12, with the operations the core imports, the outcome shape, and the criteria that decide whether a candidate validator is good enough |
 | `cap-document-validation-implement` | `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`, `cap-document-validation` | `cap-document-validation-use` | How to build the document-validation capability on this stack: the adapter that runs today, a second adapter whose execution model differs, the migration off the keyword-subset checks that run now, where validation is wired so no caller can decline it, and the conformance run that decides whether either adapter may serve |
 | `cap-document-validation-use` | `cap-document-validation`, `cap-document-validation-implement` | - | How to use document validation as a caller: send the document and the name of the shape it claims to be, get back admitted or a located list of everything wrong |
-| `cap-errors` | `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring` | `cap-errors-implement`, `cap-errors-use` | The ideal state of the Errors capability: one typed, machine-readable failure object for every boundary in the platform, governed by RFC 9457 problem details and a closed registry of problem types |
+| `cap-durable-execution` | `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors` | `cap-durable-execution-implement`, `cap-durable-execution-use` | The ideal state of the Durable execution capability: a multi-step unit of work survives a crash and resumes at the first incomplete step, expressed as step, idempotency key, checkpoint and resume point and nothing more |
+| `cap-durable-execution-implement` | `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`, `cap-durable-execution` | `cap-durable-execution-use` | How to build the Durable execution capability on this stack: a thin adapter over the external workflow orchestrator that is installed but not listening, a second adapter that has no server at all, how to bring workflows that checkpoint nothing today in front of one interface, where budget, policy, identity, telemetry, provenance and idempotency attach to a step and to a restart, and a definition of done with the crash that makes it fail |
+| `cap-durable-execution-use` | `cap-durable-execution`, `cap-durable-execution-implement` | - | How to run a multi-step piece of work that survives a crash: the two things you supply, the one thing you read, two worked runs, what a failure looks like, and why you never write the resume logic yourself |
+| `cap-errors` | `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring` | `cap-agent-runtime`, `cap-capability-packaging`, `cap-durable-execution`, `cap-errors-implement`, `cap-errors-use`, `cap-idempotency`, `cap-identity` | The ideal state of the Errors capability: one typed, machine-readable failure object for every boundary in the platform, governed by RFC 9457 problem details and a closed registry of problem types |
 | `cap-errors-implement` | `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`, `cap-errors` | `cap-errors-use` | How to build the Errors capability on this stack: the first adapter, a second one with a different execution model, what to do when there is nothing to migrate from, how the budget, policy, identity, idempotency and correlation guarantees land in a failure body, and a definition of done with the breakage that makes it fail |
 | `cap-errors-use` | `cap-errors`, `cap-errors-implement` | - | How to consume failures from this platform: the three members you actually branch on, what a human, an agent and an event each get back, two worked failures, and why adding a new failure type or swapping the component that produces it does not change code you already wrote |
+| `cap-idempotency` | `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors` | `cap-idempotency-implement`, `cap-idempotency-use` | The ideal state of the Idempotency capability: one claim over a key and a payload digest that turns a repeated externally-triggered request into one execution and one answer, governed by the idempotency-key convention and by lease semantics this platform specifies itself |
+| `cap-idempotency-implement` | `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`, `cap-idempotency` | `cap-idempotency-use` | How to build the Idempotency capability on this stack: what the key on the wire already gives you and what it does not, a first enforcing adapter that folds the append-only log at entry, a second with a different execution model that takes a conditional-write lease before execution, the migration between them, where the claim is wired so no entry can skip it, and a definition of done with the breakage that makes it fail |
+| `cap-idempotency-use` | `cap-idempotency`, `cap-idempotency-implement` | - | How to use the Idempotency capability as a caller: put one field on what you send, send it again as often as you like, and get one execution and one answer back |
+| `cap-identity` | `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors` | `cap-identity-implement`, `cap-identity-use` | The ideal state of the Identity capability: every action names an actor, delegated agent actors included, and the chain that produced the right to act is explicit rather than reconstructed afterwards |
+| `cap-identity-implement` | `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`, `cap-identity` | `cap-identity-use` | How to build the Identity capability on this stack from a starting point of nothing: a first adapter that issues exchanged tokens at each hop, a second whose execution model is the opposite of it, attesting units from platform facts and verifying against distributed trust material with no authority call per action, the order to migrate in, where issuance and verification are wired so no entry can skip them, and a definition of done with the breakage that makes it fail |
+| `cap-identity-use` | `cap-identity`, `cap-identity-implement` | - | How to use the Identity capability as a caller: name yourself once on what you send, and every hop after that is added for you |
 
 ## Build disciplines
 
 | Skill | Builds on | Used by | Purpose |
 |---|---|---|---|
-| `build-adapter-pair` | `agentic-stack` | `build-interface-versioning`, `cap-document-validation`, `cap-document-validation-implement`, `cap-errors`, `cap-errors-implement` | The discipline of shipping two adapters behind one capability interface, where the second is chosen because it breaks a different assumption than the first |
+| `build-adapter-pair` | `agentic-stack` | `build-interface-versioning`, `cap-agent-runtime`, `cap-agent-runtime-implement`, `cap-capability-packaging`, `cap-capability-packaging-implement`, `cap-document-validation`, `cap-document-validation-implement`, `cap-durable-execution`, `cap-durable-execution-implement`, `cap-errors`, `cap-errors-implement`, `cap-idempotency`, `cap-idempotency-implement`, `cap-identity`, `cap-identity-implement` | The discipline of shipping two adapters behind one capability interface, where the second is chosen because it breaks a different assumption than the first |
 | `build-ceremony` | `agentic-stack` | `build-interface-versioning`, `build-simplicity-budget` | The discipline of closing a section with a ceremony: a review record of findings against what the section produced, then an improve record that marks every finding applied or declined with the files it touched, then continuing |
-| `build-definition-of-done` | `agentic-stack` | `build-interface-versioning`, `build-simplicity-budget`, `cap-document-validation`, `cap-document-validation-implement`, `cap-errors`, `cap-errors-implement` | The discipline that gives every piece a machine-checkable criterion, a deliberate breakage that makes that criterion fail, and the recorded output of both runs |
-| `build-evidence-record` | `agentic-stack` | `cap-document-validation-implement`, `cap-errors-implement` | The discipline of recording claimed versus measured evidence, so a reader can tell what was observed from what was believed |
+| `build-definition-of-done` | `agentic-stack` | `build-interface-versioning`, `build-simplicity-budget`, `cap-agent-runtime`, `cap-agent-runtime-implement`, `cap-capability-packaging`, `cap-capability-packaging-implement`, `cap-document-validation`, `cap-document-validation-implement`, `cap-durable-execution`, `cap-durable-execution-implement`, `cap-errors`, `cap-errors-implement`, `cap-idempotency`, `cap-idempotency-implement`, `cap-identity`, `cap-identity-implement` | The discipline that gives every piece a machine-checkable criterion, a deliberate breakage that makes that criterion fail, and the recorded output of both runs |
+| `build-evidence-record` | `agentic-stack` | `cap-agent-runtime-implement`, `cap-capability-packaging-implement`, `cap-document-validation-implement`, `cap-durable-execution-implement`, `cap-errors-implement`, `cap-idempotency-implement`, `cap-identity-implement` | The discipline of recording claimed versus measured evidence, so a reader can tell what was observed from what was believed |
 | `build-interface-versioning` | `agentic-stack`, `build-adapter-pair`, `build-ceremony`, `build-definition-of-done`, `build-research-record`, `build-skill-authoring` | - | The discipline of versioning a capability interface: every call declares the interface version it speaks, an unsupported version is refused on that call rather than agreed once at connect time, a core field set is frozen as never-changing, and every deprecation carries a stated window |
 | `build-research-record` | `agentic-stack` | `build-interface-versioning`, `build-simplicity-budget` | The discipline of keeping one record per search, source and quote, so a claim a skill makes can be traced back to text that was actually read |
 | `build-simplicity-budget` | `agentic-stack`, `build-ceremony`, `build-definition-of-done`, `build-research-record`, `build-skill-authoring` | - | Hold every element to a counted simplicity budget: one call or one declaration for the common case, options additive with defaults, and an escape hatch that hands full control back |
-| `build-skill-authoring` | `agentic-stack` | `build-interface-versioning`, `build-simplicity-budget`, `cap-document-validation`, `cap-errors` | How to author a skill in this repository as data rather than prose: a skill.json conforming to schemas/skill.schema.json, rendered to SKILL.md, with every statement either cited to knowledge-base ids and anchored by a verbatim quote, or marked proposed |
+| `build-skill-authoring` | `agentic-stack` | `build-interface-versioning`, `build-simplicity-budget`, `cap-agent-runtime`, `cap-capability-packaging`, `cap-document-validation`, `cap-durable-execution`, `cap-errors`, `cap-idempotency`, `cap-identity` | How to author a skill in this repository as data rather than prose: a skill.json conforming to schemas/skill.schema.json, rendered to SKILL.md, with every statement either cited to knowledge-base ids and anchored by a verbatim quote, or marked proposed |
 

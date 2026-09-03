@@ -22,6 +22,8 @@ Warnings:
     3-8 best practices)
   - a row restating a kb id under the same verbatim quote as the root contract or a builds_on
     skill, without naming that skill: compose by name, not by copy (author-brief defect item 2)
+  - a cap ideal skill with neither an adapters[] pair nor an open question saying where its pair
+    lives (author-brief defect item 9)
 """
 from __future__ import annotations
 
@@ -235,6 +237,11 @@ def main() -> int:
                     errs.append(f"{name}: product name(s) {hits} outside Adapters, in section '{section or 'frontmatter'}'")
         if len(sk.get("instructions", [])) < 3:
             warns.append(f"{name}: fewer than 3 instructions")
+        # swappability is a tested property: a cap ideal skill (no -implement/-use facet suffix)
+        # either carries its adapter pair or names, as an open question, where the pair lives and why.
+        if sk.get("layer") == "cap" and not name.endswith(("-implement", "-use")) and not sk.get("adapters"):
+            if not any("adapter" in (q.get("question") or "").lower() for q in sk.get("open_questions", [])):
+                warns.append(f"{name}: cap ideal skill with no adapters[] and no open question naming where the adapter pair lives")
         for field, rows, lo, hi in (
             ("instructions", sk.get("instructions", []), 6, 10),
             ("invariants", sk.get("contract", {}).get("invariants", []), 3, 10),
@@ -261,7 +268,12 @@ def main() -> int:
         owners = set(sk.get("composes_with", {}).get("builds_on", [])) | {ROOT_SKILL}
         owners.discard(name)
         for r in rows_of(sk):
-            text = " ".join(str(r.get(k, "")) for k in ("text", "action", "why", "note"))
+            # every prose field a row can carry: an adapter row's words live in maps_to, cannot and
+            # swap_procedure, an open question's in question, evidence and default, so a row that does
+            # name its owner there is not reported.
+            text = " ".join(str(r.get(k, "")) for k in (
+                "text", "action", "why", "note", "maps_to", "cannot", "swap_procedure",
+                "question", "evidence", "default", "input", "output"))
             q = (r.get("quote") or "").strip()
             if not q:
                 continue

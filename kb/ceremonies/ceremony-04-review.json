@@ -1,0 +1,51 @@
+{
+  "ceremony": 4,
+  "section": "wave-3a",
+  "reviewer": "sonnet",
+  "date": "2026-09-03",
+  "numbering_note": "Requested as ceremony 3, but ceremony 3 is closed for section wave-2 (kb/ceremonies/ceremony-03-review.json and -improve.json, ledger L-00006). Per the repo-global numbering rule build-ceremony states and both prior ceremonies applied (ceremony-02-improve.json C2-001; ceremony-03-improve.json numbering_note), this review and its improve record take the next unused number, 4, for section wave-3a.",
+  "findings": [
+    {
+      "id": "C3-001",
+      "skill": "cap-idempotency",
+      "location": "contract (no Adapters section), definition_of_done.criterion",
+      "severity": "fix",
+      "category": "rule",
+      "finding": "cap-idempotency's ideal skill omits a structured Adapters section and its own definition_of_done exercises only one implementation, with no --adapter flag and no adapters_run assertion, unlike three of its four wave-3a siblings. cap-agent-runtime, cap-capability-packaging and cap-durable-execution each carry a full Adapters table (today + second, each with maps_to/cannot/swap_procedure/status) directly in the ideal skill and assert `adapters_run >= 2` in their own definition_of_done. cap-identity is the fourth exception, but it names the deferral explicitly as an open question ('Where does the adapter pair for this capability live, given that PASS.md records today's adapter as absent?') with reasoning tied to PASS.md recording Identity's adapter-today as literally absent. cap-idempotency's adapter-today is not absent -- F-b3-16 records it as 'key on the wire, no lease', a real (if inert) adapter -- yet cap-idempotency carries no matching open question explaining why its pair is deferred wholesale to cap-idempotency-implement, and its own contract.invariants[1] only narrates the pair in prose. A reader who loads cap-idempotency alone, per its own description ('Load it when ... judging whether an implementation actually deduplicates or merely records a key'), cannot see from that skill that swappability (design rule 3, F-b1-04) is a tested property here at all.",
+      "evidence": "cap-idempotency definition_of_done.criterion: \"python3 tools/conformance/idempotency_race.py --entry examples/end-to-end/entries/human.json --concurrency 100 --report out/idem.json\" -- no --adapter parameter and no adapters_run assertion, versus cap-agent-runtime definition_of_done.criterion: \"python3 tools/conformance_agent_runtime.py --adapter today --adapter second ... Across adapters it asserts adapters_run >= 2.\" `python3 -c \"import json; print('adapters' in json.load(open('.claude/skills/cap-idempotency/skill.json')))\"` prints False, while the same check on cap-agent-runtime, cap-capability-packaging and cap-durable-execution prints True.",
+      "suggested_change": "Add an Adapters section to cap-idempotency naming E-adapter-key-on-the-wire (today, role: records the key but claims nothing) and E-swap-candidate-any-keyed-lease-store (second), matching the maps_to/cannot/swap_procedure/status shape the three sibling ideal skills use, and extend the ideal skill's own definition_of_done to parameterise --adapter and assert adapters_run >= 2 the way cap-idempotency-implement's does -- or, if the pair is deliberately left to the implement facet, add an open question there naming that choice and why, the way cap-identity does."
+    },
+    {
+      "id": "C3-002",
+      "skill": "cap-durable-execution-use",
+      "location": "definition_of_done.expected_failure",
+      "severity": "nit",
+      "category": "honesty",
+      "finding": "The expected_failure sentence 'the breakage produced exactly that line with the runtime's name in the list' calls the orchestrator 'the runtime', while the rest of the same field consistently calls it 'the B3 orchestrator name' (in both the expected_failure's error-line template and the breakage description). 'Runtime' is the vocabulary cap-agent-runtime-use's near-identical definition_of_done uses for its own breakage ('the runtime's name in the list' there is accurate, since that skill's product is an agent runtime); reused here it reads as an unedited copy across the two -use skills' near-identical definition_of_done templates. The claim itself is correct and was reproduced exactly (verified: replacing a result digest in worked run 2 with 'Temporal', re-rendering and re-validating gives exactly `cap-durable-execution-use: product name(s) ['Temporal'] outside Adapters, in section 'Contract'` and `1 errors, 0 warnings`, exit 1; restoring returns 0 errors, 0 warnings, exit 0) -- this is a wording nit, not a defect in the check or the status label.",
+      "evidence": "\"expected_failure\": \"exit 1 with `cap-durable-execution-use: product name(s) ['<the B3 orchestrator name>'] outside Adapters, in section 'Contract'` and a closing `cap-durable-execution-use: 1 errors, 0 warnings`. Measured in session cap-durable-execution 2831cb4f on 2026-09-03: the breakage produced exactly that line with the runtime's name in the list, and exit 1; restoring the file returned 0 errors, 0 warnings and exit 0.\"",
+      "suggested_change": "Replace \"the runtime's name\" with \"the orchestrator's name\" in cap-durable-execution-use's definition_of_done.expected_failure so the sentence uses the same noun ('orchestrator') the rest of the field and cap-durable-execution's own vocabulary (Temporal as the durable-execution orchestrator, not an agent runtime) already use."
+    }
+  ],
+  "metrics": {
+    "skills": 15,
+    "rows_total": 397,
+    "rows_sourced": 189,
+    "rows_proposed": 208,
+    "findings_block": 0,
+    "findings_fix": 1,
+    "findings_nit": 1,
+    "validator_errors": 0,
+    "validator_warnings_in_scope": 0
+  },
+  "brief_improvements": [
+    "State a rule for the cap layer: when PASS.md's adapter-today column for a capability is not '*absent*' (a real, even if inert, adapter is recorded -- e.g. cap-idempotency's 'key on the wire, no lease'), the ideal skill carries the full Adapters section and its own definition_of_done asserts adapters_run >= 2, matching the three of four wave-3a ideal skills that already do this. When adapter-today genuinely is '*absent*' (nothing recorded, as for Identity), the ideal skill may defer the pair to the -implement facet, but only if it names that choice as an explicit open question with the PASS.md row cited as the reason, the way cap-identity does.",
+    "When a definition_of_done is drafted by adapting a sibling -use skill's near-identical template (the product-purity breakage pattern used across every -use skill in this wave), reread the prose sentences -- not just the code-fenced strings -- for a leftover noun from the donor skill (e.g. 'runtime' surviving into a durable-execution skill whose product is an orchestrator, not a runtime)."
+  ],
+  "what_worked": [
+    "Every 'measured' definition_of_done in this section was re-run and reproduced exactly. cap-agent-runtime-use and cap-durable-execution-use's product-purity breakages both gave the precise error line, error/warning counts and exit codes claimed (verified independently for both, including a first mis-attempt on cap-durable-execution-use caused by json.dumps escaping the ellipsis character, corrected by editing the parsed object instead of doing a string replace). cap-idempotency-use's replay assertion (`records=56 missing_actor=0` is the identity-use analogue; the idempotency one is `no records appended (56)`) and cap-identity-use's identity_chain.py-equivalent one-liner (`records=56 missing_actor=0 external_wrong_depth=0`) both reproduced the exact recorded output by re-running `examples/end-to-end/test.sh`.",
+    "composes_with links for all 15 skills match docs/skill-manifest.json exactly (builds_on and used_by, both directions, checked programmatically) -- zero asymmetry in this section.",
+    "python3 tools/validate_skills.py reports 0 errors across all 30 skills in the repository (139 warnings, all pre-existing manifest-lists-unwritten-skill notices for future waves; none scoped to a wave-3a skill), and every SKILL.md in the repository, not only this section's, is byte-identical to a fresh render of its skill.json.",
+    "Ceremony 3's lesson to name which of TARGET.md's two entry enumerations a row cites (T1's three ways in versus T6.2's four entries) was carried forward correctly: cap-capability-packaging-use's invariant states the distinction explicitly ('a different enumeration from T6.2's four entries'), and every other -use skill in this wave cites T-t1-01/02/03 precisely rather than blending it with T6.2.",
+    "Honest claimed/measured discipline held under real pressure: cap-identity's own contract states 'the starting point is nothing rather than something' (F-a6-05, No identity field anywhere in the system) and every behavioural claim in cap-identity and cap-identity-implement is correctly held at claimed with 'this check starts red by construction' rather than being dressed up as passing; cap-idempotency-implement similarly holds every executor-behaviour claim at claimed pending a race tool that does not exist yet. Two genuine ambiguities in cap-identity (which end of delegation_chain is current, and which spelling of obtained_via is normative) were each resolved with a recorded 1-3-1 decision naming the three options and the deciding evidence, rather than being silently picked or left open."
+  ]
+}

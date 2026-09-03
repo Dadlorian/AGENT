@@ -11,9 +11,12 @@ export const meta = {
 // args: { sections: [{name, items:[{name, layer, kb_ids:[...], facets:[skillName...]}]}], brief: path, date: 'YYYY-MM-DD', startAt: sectionIndex }
 const SUMMARY = { type: 'object', properties: { ok: { type: 'boolean' }, summary: { type: 'string' }, numbers: { type: 'object' } }, required: ['ok', 'summary'] }
 const ROOT = '/home/user/AGENT'
-// Ceremony numbers are a repository-global counter, never per-run and never reused: ceremony 1 (section wave-1)
-// closed before this loop started, so section index s maps to ceremony s + 1 + CEREMONY_BASE. Pass
-// args.ceremonyBase for a repo with a different number of prior ceremonies; 0 for a fresh repo.
+// Ceremony numbers are a repository-global counter, never per-run and never reused. A static base goes
+// stale the moment a section is renumbered around a collision (it did, three sections running: the base
+// says 1, the disk says 2), and the agents then have to correct the number the loop handed them. So the
+// base only seeds the FIRST section; after that the loop takes the number the improver reports it
+// actually wrote (numbers.ceremony) and counts on from there. Pass args.ceremonyBase = the highest
+// ceremony-NN-review.json already on disk; 0 for a fresh repo.
 const CEREMONY_BASE = args.ceremonyBase != null ? args.ceremonyBase : 1
 const common = `Work in ${ROOT}. Do not commit or push (a checkpoint agent does that). Skills are data: skill.json per schemas/skill.schema.json, rendered by tools/render_skill.py, checked by tools/validate_skills.py. Every statement is origin=sourced with kb ids and a verbatim quote, or origin=proposed with the word proposed in its text. Never invent a URL, version, fact, or quote. If blocked, apply TARGET.md T5 (1-3-1): define the problem, list the three best goal-aligned solutions, follow the recommendation, and record it; never stop and wait. Date for records: ${args.date}.`
 
@@ -51,14 +54,15 @@ You are the IMPROVER and CHECKPOINT in ceremony ${n} for section "${section.name
 Apply every block and fix finding, and the nits you agree with, by editing skill.json files (never SKILL.md; never composes_with). Append one row per ceremony to state/lessons.jsonl: {"ceremony":${n},"section":"${section.name}","lessons":[...],"brief_improvements":[...]} (never trimmed); keep the brief a short pointer under 120 lines and only fold in what changes an author's next action. If the findings show a defect in the root contract, the schema rules, or the ceremony discipline itself, fix that too, since the point of the ceremony is that the producing skills improve. Then: python3 tools/render_skill.py --all && python3 tools/validate_skills.py (zero errors; "not written yet" warnings are fine).
 Ceremony numbers are repository-global and never reused: if a ceremony-NN record already exists for a different section, use the next unused number instead and say so in your reply. Write kb/ceremonies/ceremony-${String(n).padStart(2, '0')}-improve.json in the same shape as ceremony-01-improve.json, including lessons_for_next_section. Append a ledger record: python3 tools/kb.py ledger '{"kind":"ceremony","ceremony":${n},"section":"${section.name}","agent":"opus-improver","result":"<applied/declined/validator>","status":"measured"}'
 Then CHECKPOINT: if python3 tools/validate_skills.py still reports errors, write kb/ceremonies/section-${String(n).padStart(2, '0')}-known-issues.json {"section":"${section.name}","broken":[skill names],"errors":[...]} so later agents will not build on them (delete the file if you cleared everything). Run python3 tools/kb.py verify && python3 tools/kb.py ledger-verify && python3 tools/skill_graph.py && write state/loop.json {"last_completed_section":"${section.name}","ceremony":${n}}; git add -A && git commit -m "Section ${section.name}: skills, research, ceremony ${n}" with trailer lines "Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>" and "Claude-Session: https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96"; git push (retry 4 times with 2s,4s,8s,16s backoff on network errors). Abort the commit if kb verify or ledger-verify failed. Commit with remaining validator errors only when the known-issues file lists them.
-Return JSON: ok (pushed), summary (under 80 words: applied, declined, validator line, commit sha, top lesson), numbers {applied, declined, validator_errors}.`
+Return JSON: ok (pushed), summary (under 80 words: applied, declined, validator line, commit sha, top lesson), numbers {applied, declined, validator_errors, ceremony} where ceremony is the number you actually wrote, so the loop counts on from it rather than from its own position.`
 }
 
 const results = []
 const start = args.startAt || 0
+let nextCeremony = start + 1 + CEREMONY_BASE
 for (let s = start; s < args.sections.length; s++) {
   const section = args.sections[s]
-  const n = s + 1 + CEREMONY_BASE
+  const n = nextCeremony
   log(`Section ${n}/${args.sections.length}: ${section.name} (${section.items.length} items)`)
   let research = await agent(researchPrompt(section, false), { label: `research:${section.name}`, phase: 'Research', schema: SUMMARY, model: 'haiku', effort: 'medium' })
   const minRec = research && research.numbers && research.numbers.records_min_per_item
@@ -75,6 +79,9 @@ for (let s = start; s < args.sections.length; s++) {
   if (failed.length || missing) log(`Section ${n}: ${failed.length} items with validator errors${missing ? `, ${missing} author agents died` : ''}: ${failed.join(', ')}`)
   const review = await agent(reviewPrompt(section, n, skills, failed), { label: `review:${section.name}`, phase: 'Ceremony', schema: SUMMARY, model: 'sonnet' })
   const improve = await agent(improvePrompt(section, n), { label: `improve+checkpoint:${section.name}`, phase: 'Ceremony', schema: SUMMARY, model: 'opus' })
+  const used = improve && improve.numbers && Number(improve.numbers.ceremony)
+  if (used && used !== n) log(`Section ${section.name}: improver renumbered ceremony ${n} to ${used}; counting on from there`)
+  nextCeremony = (used || n) + 1
   const rec = { section: section.name, skills: skills.length, failed, research: research && research.summary, review: review && review.summary, improve: improve && improve.summary, pushed: !!(improve && improve.ok) }
   results.push(rec)
   log(`Section ${n} done: ${skills.length} skills, pushed=${rec.pushed}`)

@@ -40,10 +40,10 @@ Content expectations per layer:
 
 Keep each skill.json focused, and treat these as checked budgets, not aspirations: 6 to 10 instructions, 3 to 10 invariants, 3 to 8 best practices, and roughly 3 to 10 rows in any table. Long material - a full JSON Schema, a table of standards, worked examples - goes in references/<file>.md in the skill dir, with a proposed instruction saying when to open it and stating that the skill body is enough without it. A schema longer than about 25 rendered lines is long material: put a summary shape in contract.shapes and the full one in references/. These are checked: tools/validate_skills.py warns when instructions, invariants or best_practices fall outside the budget, so clear every warning naming your skills before you close them.
 
-## Defects found in ceremonies 1-3 - do not repeat them
+## Defects found in ceremonies 1-4 - do not repeat them
 
-Review findings from waves 1, 1a and 2. Each cost a fix; none should recur. Item 2 has now recurred in all
-three ceremonies and item 4 in two, so both carry the sharper check that would have caught them.
+Review findings from waves 1, 1a, 2 and 3a. Each cost a fix; none should recur. Item 2 has recurred in three
+ceremonies and item 4 in two, so both carry the sharper check that would have caught them.
 
 1. There are SEVEN layers, not six: root, core, cap, xc, seam, compose, build. `root` is reserved for
    agentic-stack alone (the schema's enum and tools/validate_skills.py both know it, and the validator
@@ -55,12 +55,12 @@ three ceremonies and item 4 in two, so both carry the sharper check that would h
    places. The rule: compose by name, not by copy. It applies per fact, not only when a fact recurs across
    several skills: before you write a row, grep the builds_on skill's skill.json for the kb id you are about
    to cite, and if it is there, open with "agentic-stack already states this (F-...)" and add only your
-   consequence. In wave 1a two of three skills did this and the third re-derived F-a7-03 anyway; in wave 2
-   two of eight did it again, each having stated the same finding correctly elsewhere in the same file - so
-   the check is per citation, not per skill. tools/validate_skills.py now warns whenever a row cites an id
-   under the same verbatim quote as the root contract or one of your builds_on skills without naming that
-   skill. A warning is not always a defect (a sibling may cite the same record for its own point), but you
-   must read each one and either name the owner or convince yourself the row is genuinely your own.
+   consequence. Wave 1a and wave 2 each had skills state the same finding correctly in one row and
+   uncredited in another, so the check is per citation, not per skill. tools/validate_skills.py now warns
+   whenever a row cites an id under the same verbatim quote as the root contract or a builds_on skill
+   without naming it (adapter, open-question and operation rows included). A warning is not always a defect
+   - a sibling may cite the same record for its own point - but read each one and either name the owner or
+   convince yourself the row is your own.
 3. Any machine-readable field you name in an invariant or an instruction must have a formal shape in the
    same skill's contract.shapes (JSON Schema 2020-12, origin proposed unless PASS.md gives the shape). Prose
    describing a field three times is not a specification: the next author has to code against it.
@@ -87,7 +87,15 @@ three ceremonies and item 4 in two, so both carry the sharper check that would h
    lists three ways in (human, agent, event) and T6.2 lists four entries (human, event, schedule, external
    system or agent); they are different enumerations, so name which one you are citing.
 
-## What worked in waves 1 and 1a - keep doing it
+9. A cap- ideal skill (no -implement or -use suffix) carries its own adapters[] pair and a definition_of_done
+   that runs over both and asserts `adapters_run >= 2`. Defer the pair to -implement only when PASS.md's
+   adapter-today column is literally *absent*, and then say so in an open_question citing that row, as
+   cap-identity does; the validator now warns when a cap ideal skill has neither.
+10. When you adapt a sibling's near-identical template (the -use skills share a definition_of_done shape),
+   reread the prose, not only the code-fenced strings, for a noun belonging to the donor skill - a "runtime"
+   surviving into a durable-execution skill whose product is an orchestrator. The check still passes.
+
+## What worked in waves 1 to 3a - keep doing it
 
 - Every sourced quote verified as a verbatim substring of its cited record: 73 for 73. Copy the quote out of
   `kb.py show`, never retype it.
@@ -95,8 +103,10 @@ three ceremonies and item 4 in two, so both carry the sharper check that would h
   the exact error strings were produced in a run and the session and date are named.
 - Restating each design rule as a pass/fail test, once, in the root contract, and building on it rather than
   re-deriving it, is the pattern the other skills should follow for every shared fact.
-- Two wave-1a definitions of done were re-run by the reviewer and reproduced the recorded output and exit codes
-  exactly, breakage included. Write the criterion so someone else can run it from the skill alone.
+- Definitions of done were re-run by the reviewer in waves 1a and 3a and reproduced the recorded output and
+  exit codes exactly, breakage included. Write the criterion so someone else can run it from the skill alone.
+- Wave 3a held claimed-versus-measured under pressure: where the capability does not run at all today, the
+  check is recorded as starting red rather than dressed up as passing.
 
 ## Reply
 

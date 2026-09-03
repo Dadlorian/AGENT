@@ -1,0 +1,80 @@
+{
+  "ceremony": 4,
+  "section": "wave-3a",
+  "improver": "opus-improver",
+  "date": "2026-09-03",
+  "numbering_note": "Launched as 'ceremony 3 for section wave-3a' and told to read ceremony-03-review.json and write ceremony-03-improve.json. Ceremony 3 is closed for section wave-2 (review, improve, ledger L-00006, lessons row {\"ceremony\":3,\"section\":\"wave-2\"}). The reviewer hit the same collision and wrote this section's review as kb/ceremonies/ceremony-04-review.json under the repo-global counter rule (build-ceremony instructions step 3). This improve record, its lessons row, its ledger record and state/loop.json are therefore all numbered 4, paired with that review. Third collision in a row, so this ceremony also fixed the cause rather than the record: state/loop-workflow.js no longer derives N from a fixed base for every section, it takes the number the improver reports (numbers.ceremony) and counts on from there. Finding ids inside ceremony-04-review.json are spelled C3-nnn because the reviewer generated them before renumbering; they are referenced here as written.",
+  "applied": [
+    {
+      "finding": "C3-001",
+      "change": "cap-idempotency, the ideal facet, now carries its adapter pair instead of narrating it in prose. Added adapters[] with E-adapter-key-on-the-wire (today: carries the key on the envelope and into the log, serves resolve after the fact and no part of claim; cannot answer a duplicate in flight, sourced F-b3-16 quote 'key on the wire, no lease') and E-swap-candidate-any-keyed-lease-store (second: claim as a compare-and-set taken before execution, sourced F-b3-16 quote 'any keyed lease store'), each with maps_to/cannot/swap_procedure/status in the shape the three sibling wave-3a ideal skills use. The swap_procedure rows keep the split with the implement facet explicit: cap-idempotency-implement owns the enforcing pair, the per-adapter conformance subsets and the full procedure, and the second-adapter row names agentic-stack for design rule 3 (F-b1-04) rather than re-deriving it. definition_of_done now runs over the pair: the criterion takes `--adapter today --adapter second`, selected by configuration with no code edit between runs, asserts the P15 race properties per adapter and `adapters_run >= 2` across them; the breakage removes the lease from one of the two adapters and the expected_failure names that adapter failing while the other still passes and adapters_run still reports 2, since a run that fails both or neither has not tested the swap. Status stays claimed: no lease exists today and the race tool is not written.",
+      "files": [
+        ".claude/skills/cap-idempotency/skill.json",
+        ".claude/skills/cap-idempotency/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C3-001 (follow-on)",
+      "change": "Moving the pair up to the ideal facet made cap-idempotency-implement's second-adapter row a restatement of it under the same quote ('any keyed lease store', F-b3-16 and F-b1-04), which the compose-by-name check reports. Its swap_procedure now opens 'cap-idempotency already records the two roles and the axis they differ on (F-b3-16, F-b1-04); what this facet adds is the procedure.' Both wave-3a warnings this introduced are cleared; no wave-3a skill carries a validator warning.",
+      "files": [
+        ".claude/skills/cap-idempotency-implement/skill.json",
+        ".claude/skills/cap-idempotency-implement/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C3-002",
+      "change": "No edit needed, verified rather than assumed: cap-idempotency's sibling cap-durable-execution-use/skill.json definition_of_done.expected_failure already reads 'the breakage produced exactly that line with the orchestrator's name in the list', in the working tree and in the committed version af8b14a that the review was run against. The donor-template noun the finding names is not on disk, so the fix is the habit rather than the string: it is recorded as author-brief defect item 10 so the next author rereads prose adapted from a sibling's template.",
+      "files": []
+    }
+  ],
+  "declined": [],
+  "systemic_changes": [
+    {
+      "what": "tools/validate_skills.py warns when a cap ideal skill (no -implement or -use suffix) has neither an adapters[] pair nor an open question naming where its pair lives. C3-001 was a rule that existed only in the author brief's per-layer expectations and in what three of four siblings happened to do; it is now checked. cap-errors, cap-identity and cap-idempotency all pass it - the first two through their existing 'Where does the adapter pair for this capability live' open questions, the third through the pair added above.",
+      "files": [
+        "tools/validate_skills.py"
+      ]
+    },
+    {
+      "what": "tools/validate_skills.py's compose-by-name check could not be satisfied by an adapter row: it looked for the owning skill's name only in text/action/why/note, and an adapter row's prose lives in maps_to, cannot and swap_procedure, so such a row warned however it was written. It now reads those fields, plus an open question's question/evidence/default and an operation's input/output. Warning count fell from 139 to 138 with the same skills on disk, and the two warnings the C3-001 fix would otherwise have introduced are now answerable by naming the owner, which is what the rule asks for.",
+      "files": [
+        "tools/validate_skills.py"
+      ]
+    },
+    {
+      "what": "state/loop-workflow.js no longer hands every section a ceremony number derived from a fixed base. The base seeds the first section only; after each section the loop takes the number the improver reports as numbers.ceremony and counts on from there, logging when it differs from what it asked for. The improver prompt now asks for that number. Three sections running were handed a stale number and had to renumber themselves under 1-3-1; a runner that cannot learn from the correction reproduces the collision every section.",
+      "files": [
+        "state/loop-workflow.js"
+      ]
+    },
+    {
+      "what": "build-ceremony instructions step 3 now says to report the number you actually used back to whoever asked for a different one, so its counter self-corrects, with the three consecutive stale numbers as the reason in the why.",
+      "files": [
+        ".claude/skills/build-ceremony/skill.json",
+        ".claude/skills/build-ceremony/SKILL.md"
+      ]
+    }
+  ],
+  "brief_changes": [
+    "Added defect item 9: a cap ideal skill carries its own adapters[] pair and a definition_of_done asserting adapters_run >= 2; the pair may be deferred to the -implement facet only when PASS.md's adapter-today column is literally *absent*, and then only in an open_question citing that row, as cap-identity does. Names the new validator warning.",
+    "Added defect item 10: when adapting a sibling's near-identical template, reread the prose and not only the code-fenced strings for a noun belonging to the donor skill; the check still passes with the sentence about the wrong thing.",
+    "Compressed defect item 2 (compose by name) to make room without losing the rule, and noted that the check now reads adapter, open-question and operation rows too.",
+    "Retitled the defect and what-worked sections to cover ceremonies 1-4 and waves 1 to 3a, and recorded wave 3a's honest claimed-versus-measured behaviour where a capability does not run at all today. Brief is 119 lines, under the 120-line cap."
+  ],
+  "metrics_after": {
+    "skills": 30,
+    "validator_errors": 0,
+    "validator_warnings": 138,
+    "validator_warnings_in_scope": 0,
+    "findings_applied": 3,
+    "findings_declined": 0
+  },
+  "lessons_for_next_section": [
+    "A cap ideal skill states its adapter pair itself: the reader who loads only the ideal facet must be able to name both adapters and the axis their execution models differ on, or swappability is not visibly a tested property of that capability.",
+    "When a rule holds in three of four sibling skills, it is a convention that has not been checked. Move it into tools/validate_skills.py in the same ceremony that finds it, so the fourth case is caught at write time rather than at review time.",
+    "Moving a fact up from an -implement facet to its ideal facet turns the implement row into a restatement: fix both ends in one edit, naming the new owner in the row you left behind.",
+    "A checker that cannot be satisfied by a well-written row is a defect in the checker. The compose-by-name warning looked for the owner's name in fields adapter rows do not have; extending the fields it reads was the fix, not silencing the warning.",
+    "The same ceremony-numbering collision three sections running is not three authoring mistakes; it is a runner that derives the number from its own position and never learns the correction. Fix the producer: report the corrected number back and count on from it.",
+    "A finding can be right about the habit and wrong about the file. Check the working tree and the reviewed commit before editing, and record 'already correct, verified' rather than a phantom fix."
+  ]
+}

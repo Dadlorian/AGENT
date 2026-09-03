@@ -36,46 +36,54 @@
     ],
     "operations": [
       {
-        "name": "admit (proposed operation set; PASS.md names the standard for this capability, not the calls)",
+        "name": "admit (call name is ours; egress-off-by-default is the sourced substrate behaviour)",
         "input": "one isolation declaration: a named resource profile, an egress policy that is none unless an allowlist is given, and a credential mode of broker-only",
         "output": "an admission handle, or the typed problem isolation-unavailable when no adapter can honour the declaration. Admission is where a declaration a given adapter cannot meet is refused, rather than being silently downgraded (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-a3-04"
-        ]
+        ],
+        "quote": "Egress is a flag, default off"
       },
       {
-        "name": "run (proposed)",
+        "name": "run (call name is ours; the capability-not-technology framing is the sourced row)",
         "input": "an admission handle and a handle to the input document; never a filesystem path, an image reference the caller resolved, or a machine description",
         "output": "one unit result: exit status, output digests, resource usage and egress counters. Nothing in it identifies the containment technology (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-b3-18"
-        ]
+        ],
+        "quote": "a unit of work runs isolated, per the OCI Runtime Spec"
       },
       {
-        "name": "terminate (proposed)",
+        "name": "terminate (call name is ours; the ceiling-terminates-the-unit rule is the sourced one)",
         "input": "an admission handle and a grace window",
         "output": "the unit destroyed, with the same result shape whether the stop was requested or forced. This is the operation every ceiling above the unit depends on (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-b4-02"
-        ]
+        ],
+        "quote": "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform"
       },
       {
-        "name": "inspect_containment (proposed)",
+        "name": "inspect_containment (call name is ours; asserting from outside the unit is the sourced, verified-live property)",
         "input": "an admission handle",
         "output": "a containment report asserted from outside the unit: the jail directory's mode, whether the owning identity exists in the host account database, and egress attempts made against attempts blocked. The unit never reports on its own containment (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-a3-06"
-        ]
+        ],
+        "quote": "owned by a per-VM uid with no passwd entry — verified live"
       }
     ],
     "shapes": [
       {
-        "name": "isolation-declaration (proposed summary shape; the full schema, the profile rules and the containment-report fields are in references/isolation-shapes.md)",
-        "origin": "proposed",
+        "name": "isolation-declaration (the egress-off-by-default member reflects the sourced substrate behaviour; the full schema is in references/isolation-shapes.md)",
+        "origin": "sourced",
+        "sources": [
+          "F-a3-04"
+        ],
+        "quote": "Egress is a flag, default off",
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:cap:isolation:declaration:0.1",
@@ -136,8 +144,12 @@
         }
       },
       {
-        "name": "containment-report (proposed summary shape; asserted from outside the unit)",
-        "origin": "proposed",
+        "name": "containment-report (the jail_mode and owner_in_host_passwd fields are the sourced, verified-live substrate property; asserted from outside the unit)",
+        "origin": "sourced",
+        "sources": [
+          "F-a3-06"
+        ],
+        "quote": "owned by a per-VM uid with no passwd entry — verified live",
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:cap:isolation:containment-report:0.1",
@@ -210,14 +222,6 @@
           "E-capability-isolation"
         ],
         "quote": "a unit of work runs isolated, per the OCI Runtime Spec"
-      },
-      {
-        "text": "Proposed: a unit is expressed as declared resources and declared egress, never as a machine configuration. A field that only a hardware-virtualised adapter could honour - boot arguments, a block-device layout, a guest kernel - is an adapter detail that has leaked into the contract, and its presence is what design rule 3 (F-b1-04, stated by build-adapter-pair) exists to expose. Research query: does the OCI Runtime Spec's own config-schema.json enumerate a field set that separates a portable resource declaration from a hypervisor-only machine description?",
-        "origin": "proposed",
-        "sources": [
-          "F-b1-04",
-          "F-b3-18"
-        ]
       },
       {
         "text": "Proposed: what runs inside the unit is opaque to how the unit is contained. The interface takes a document handle and a declaration, never an agent, a runtime or a tool surface, because a containment boundary coupled to one kind of payload is a sandbox that can only ever run that payload. Research query: is there a recorded PASS.md or TARGET.md fact stating isolation's contract in these exact opaque-payload terms, beyond the isolation-row template already cited?",

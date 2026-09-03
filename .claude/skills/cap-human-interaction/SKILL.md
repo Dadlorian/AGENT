@@ -43,14 +43,14 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Operation | Input | Output | Origin | Evidence |
 |---|---|---|---|---|
-| ask (proposed operation set; the recorded standards are an event protocol, a task state machine and a request kind, not a set of calls the core can import as they stand) | a proposed action with its diff and its irreversibility class, a prompt written for a person, a JSON Schema for the response the run will accept, the correlation id of the run, and a deadline | a parked interaction record held by the platform, plus an ask event on the run's typed stream; the run is now suspended and holds no open connection to anyone (proposed) | proposed | `X-entry-composition-016`, `X-end-to-end-063` |
-| watch (proposed) | a correlation id and an optional position in the stream | an ordered sequence of typed events for that run - what it is doing, what it is about to do, and what it is waiting for - readable by a person who has not been asked for anything yet (proposed) | proposed | `X-entry-composition-021`, `X-end-to-end-016` |
-| decide (proposed) | the same correlation id, one of approve, edit, reject or respond, an optional edited artifact or notes valid against the ask's response schema, the deciding actor, and an idempotency key | a resume acknowledgement; on edit, the artifact the run continues with is the reviewer's, not the one that was proposed (proposed) | proposed | `X-entry-composition-023`, `X-end-to-end-018` |
-| expire (proposed) | a parked interaction whose deadline has passed | a typed problem on the run and a terminal state for the ask; nothing resumes afterwards on that ask, and a decision arriving late is refused rather than applied (proposed) | proposed | `X-cap-human-interaction-008`, `F-b3-13` |
+| ask (call name is ours; elicitation mid-session with a message and a JSON schema is the sourced mechanism) | a proposed action with its diff and its irreversibility class, a prompt written for a person, a JSON Schema for the response the run will accept, the correlation id of the run, and a deadline | a parked interaction record held by the platform, plus an ask event on the run's typed stream; the run is now suspended and holds no open connection to anyone (proposed) | sourced | `X-entry-composition-016`, `X-end-to-end-063` "servers can now ask users for input mid-session by sending an elicitation/create request with a message and a JSON schema" |
+| watch (call name is ours; the continuous typed event stream is the sourced mechanism) | a correlation id and an optional position in the stream | an ordered sequence of typed events for that run - what it is doing, what it is about to do, and what it is waiting for - readable by a person who has not been asked for anything yet (proposed) | sourced | `X-entry-composition-021`, `X-end-to-end-016` "AG-UI transmits a continuous sequence of JSON-formatted events through standard web protocols like HTTP, SSE, or WebSockets. Each event carries a type field that identifies the action taking place" |
+| decide (call name is ours; the four decisions and the resume are the sourced ones) | the same correlation id, one of approve, edit, reject or respond, an optional edited artifact or notes valid against the ask's response schema, the deciding actor, and an idempotency key | a resume acknowledgement; on edit, the artifact the run continues with is the reviewer's, not the one that was proposed (proposed) | sourced | `X-entry-composition-023`, `X-end-to-end-018` "the action can be approved as-is (approve), modified before running (edit), rejected with feedback (reject), or responded to directly (respond)" |
+| expire (call name is ours; the timeout-rather-than-wait-forever rule is the sourced one) | a parked interaction whose deadline has passed | a typed problem on the run and a terminal state for the ask; nothing resumes afterwards on that ask, and a decision arriving late is refused rather than applied (proposed) | sourced | `X-cap-human-interaction-008`, `F-b3-13` "you should design explicit timeouts for human steps rather than letting approvals sit indefinitely" |
 
 ### Shapes (JSON Schema 2020-12)
 
-**HumanAsk (proposed summary shape; the full schema, the decision schema and the event-type table are in references/human-interaction-shapes.md)** (proposed; sources: `X-entry-composition-016`, `X-entry-composition-023`, `X-cap-human-interaction-008`)
+**HumanAsk (proposed summary shape; the full schema, the decision schema and the event-type table are in references/human-interaction-shapes.md)** (sourced; sources: `X-entry-composition-016`, `X-entry-composition-023`, `X-cap-human-interaction-008`)
 
 ```json
 {
@@ -136,7 +136,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**HumanDecision (proposed summary shape; the full schema is in references/human-interaction-shapes.md)** (proposed; sources: `X-entry-composition-023`, `F-b4-08`)
+**HumanDecision (proposed summary shape; the full schema is in references/human-interaction-shapes.md)** (sourced; sources: `X-entry-composition-023`, `F-b4-08`)
 
 ```json
 {

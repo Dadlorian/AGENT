@@ -36,49 +36,54 @@
     ],
     "operations": [
       {
-        "name": "open_session (proposed operation set; PASS.md names the standard for this capability, not the calls)",
+        "name": "open_session (call name is ours; sessions are one of the four things the standard itself standardizes)",
         "input": "an agent binding plus the client capabilities on offer: streaming updates, tool-permission callbacks, mid-turn cancellation",
         "output": "a session handle and the capability set actually negotiated, every member defaulting to false, so nothing interactive is a precondition of the interface (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-cap-agent-runtime-002"
-        ]
+        ],
+        "quote": "ACP standardizes AI agent interaction (prompts, sessions, file permissions, streaming) between editors and coding agents."
       },
       {
-        "name": "prompt (proposed)",
+        "name": "prompt (call name is ours; prompts are one of the four things the standard itself standardizes)",
         "input": "a session handle and one prompt, carrying the task and never the criterion the result is judged against",
         "output": "one turn result carrying a stop reason; the turn is over when, and only when, a terminal frame carrying that reason has arrived (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-cap-agent-runtime-002"
-        ]
+        ],
+        "quote": "ACP standardizes AI agent interaction (prompts, sessions, file permissions, streaming) between editors and coding agents."
       },
       {
-        "name": "cancel (proposed)",
+        "name": "cancel",
         "input": "a session handle and the per-request grace window",
         "output": "acceptance of the request, not a kill: the caller keeps taking frames until the terminal frame, whose stop reason is cancelled if it arrives inside the window and cancel_timeout if it does not (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-a3-09"
-        ]
+        ],
+        "quote": "mid-tool-call ends the turn in ~8s against a 45s operation, zero trailing frames"
       },
       {
-        "name": "receive_updates (proposed, optional and negotiated)",
+        "name": "receive_updates (call name is ours; streaming is one of the four things the standard itself standardizes; optional and negotiated)",
         "input": "a session handle whose negotiated set has streaming updates true",
         "output": "an ordered stream of in-turn frames; when the capability was not negotiated the caller sees only the terminal frame and nothing else about the interface changes (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-cap-agent-runtime-002"
-        ]
+        ],
+        "quote": "ACP standardizes AI agent interaction (prompts, sessions, file permissions, streaming) between editors and coding agents."
       },
       {
-        "name": "answer_permission_request (proposed, optional and negotiated)",
+        "name": "answer_permission_request (call name is ours; file permissions are one of the four things the standard itself standardizes; optional and negotiated)",
         "input": "a permission request raised mid-turn and the caller's decision",
         "output": "the decision handed back to the agent; a runtime that negotiated no callbacks never raises one, so the caller has no branch to write for it (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-cap-agent-runtime-002"
-        ]
+        ],
+        "quote": "ACP standardizes AI agent interaction (prompts, sessions, file permissions, streaming) between editors and coding agents."
       }
     ],
     "shapes": [
@@ -380,15 +385,6 @@
     },
     {
       "step": 2,
-      "action": "Make the prompt turn with a stop reason the unit of the interface, and put every interactive capability behind session negotiation with a false default.",
-      "why": "Proposed. A permission callback that the interface requires is a callback a non-interactive runtime cannot make, so requiring it would shape the contract around whatever runs today; negotiating it turns the same fact into an optional member a caller reads once. Research query: does the ACP session/new payload itself document a false-default convention for optional capabilities, or is that convention invented here?",
-      "origin": "proposed",
-      "sources": [
-        "X-cap-agent-runtime-002"
-      ]
-    },
-    {
-      "step": 3,
       "action": "Publish the stop-reason vocabulary as a closed enum in the turn-result shape, adopt the protocol's own reasons for the ordinary endings, and add a value only when the platform can end a turn for a reason the protocol has no cause to carry.",
       "why": "Proposed. A stop reason is the one field every consumer branches on, so an open set makes the branch unwriteable; and the additions must be visibly ours, because the five adopted values were taken from a design note rather than from the specification text. Research query: does the published ACP specification (once fetched, per step 4) enumerate its own stopReason values, and do they match the five this skill assumes?",
       "origin": "proposed",
@@ -397,7 +393,7 @@
       ]
     },
     {
-      "step": 4,
+      "step": 3,
       "action": "Record the protocol version as unverified until the published specification has been read in an environment that can fetch it, as build-skill-authoring requires; the records naming a stable major version and an SDK version are search-only.",
       "why": "A version number nobody read is a fabrication with a decimal point in it, and every record on file for this standard is a search result rather than the specification.",
       "origin": "sourced",
@@ -408,7 +404,7 @@
       "quote": "at v1 stable with SDKs in TypeScript, Python, Rust, Java, and Kotlin"
     },
     {
-      "step": 5,
+      "step": 4,
       "action": "Bound cancellation with a per-request grace window, keep accepting frames until the terminal frame arrives, and set the default from the observed cancel behaviour of the runtime rather than from a round number chosen in advance.",
       "why": "Proposed. The reference point on the substrate is a turn ending in about 8 seconds against a 45 second operation with zero trailing frames, so 10 seconds is that behaviour plus headroom; a global constant would be wrong for the next adapter, whose floor differs. Research query: is there a recorded cancel-latency measurement for the second adapter (a one-shot runtime) that would confirm 10 seconds plus headroom generalises rather than being fit to the one substrate on file?",
       "origin": "proposed",
@@ -417,7 +413,7 @@
       ]
     },
     {
-      "step": 6,
+      "step": 5,
       "action": "Choose the second adapter on execution model, not on brand: a single-shot runtime with no session to cancel, no stream and no callbacks, and record the axes on which the pair differs the way build-adapter-pair requires.",
       "why": "A second interactive agent of the same shape would leave every interactive assumption untested, whereas a runtime with none of them fails immediately on any requirement that was really adapter detail.",
       "origin": "sourced",
@@ -428,7 +424,7 @@
       "quote": "chosen to prove the interface is not shaped around its current implementation"
     },
     {
-      "step": 7,
+      "step": 6,
       "action": "Carry correlation into and out of every turn as an explicit member of the turn shapes, and never rely on trace parentage surviving the agent boundary.",
       "why": "agentic-stack already states the trace-context finding (F-a7-02). What this adds: this capability is that boundary, so the correlation member belongs in the turn-request and turn-result shapes here rather than being left to whatever the runtime propagates.",
       "origin": "sourced",
@@ -439,7 +435,7 @@
       "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
     },
     {
-      "step": 8,
+      "step": 7,
       "action": "Return failures as the typed problem object cap-errors defines, and put the stop reason on that object rather than inventing a runtime-specific error shape or handing back the agent's own message text.",
       "why": "cap-errors already owns the failure shape (F-b4-07); what this adds is that a turn can fail in ways the protocol has no vocabulary for, and those must land on a registered type rather than in a stop reason invented on the spot.",
       "origin": "sourced",
@@ -449,7 +445,7 @@
       "quote": "Typed and machine-readable. Never parsed from prose"
     },
     {
-      "step": 9,
+      "step": 8,
       "action": "Judge a candidate runtime by the cancellation criterion in this skill's definition of done, run against both adapters from the same suite, before deciding it may serve the interface.",
       "why": "agentic-stack and build-definition-of-done already state that a criterion nothing can fail is not a criterion (F-part-c-04). What this adds: every other property of a runtime degrades gracefully, but one that cannot reach a terminal frame on request cannot be bounded by any ceiling above it, so cancellation is the property worth gating on here.",
       "origin": "sourced",
@@ -460,7 +456,7 @@
       "quote": "A criterion nothing can fail is not a criterion"
     },
     {
-      "step": 10,
+      "step": 9,
       "action": "Send the prompt, a correlation id you chose, and nothing else unless you have a reason. Take the default grace window; take the default capability set.",
       "why": "It has to be simple to use, and every field you fill in is a decision you now own. The defaults are the ones the platform can change under you without breaking your call.",
       "origin": "sourced",
@@ -470,7 +466,7 @@
       "quote": "It has to be simple to use."
     },
     {
-      "step": 11,
+      "step": 10,
       "action": "Proposed: open references/agent-runtime-shapes.md when implementing or reviewing the full turn shapes, the negotiated capability set or the stop-reason table. The body of this skill is enough to judge a candidate runtime and to call the capability without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
       "why": "Proposed: the full shapes exceed the progressive-disclosure budget for a skill body, and a reader deciding whether to use the capability does not need them.",
       "origin": "proposed"
@@ -492,17 +488,6 @@
         "F-a7-03"
       ],
       "quote": "Those establish well-formedness, not correctness"
-    },
-    {
-      "text": "Proposed - no record in this knowledge base carries the stop-reason vocabulary, so this is our reading, not a sourced fact: end_turn means the loop stopped, not that the work is right, so a stop reason must never be reported as an approval and never be substituted for the Judge's verdict. Research query: does the ACP specification's own stopReason enum carry a value whose name or description could be misread as a verdict, which would make this caution protocol-specific rather than general?",
-      "origin": "proposed"
-    },
-    {
-      "text": "Proposed: measure the cancel floor of each adapter and store it on the negotiated capability set, then require cancel_grace_s to sit at or above it. One global grace constant is a value that is generous for one runtime and impossible for the next. Research query: has the second adapter's cancel floor actually been measured and stored yet, or does the negotiated capability set still carry only the one reference point on file (F-a3-09)?",
-      "origin": "proposed",
-      "sources": [
-        "F-a3-09"
-      ]
     },
     {
       "text": "Expect a class of agents rather than one: the standard is described as doing for agents what the language server protocol did for language servers, which is the reason to keep the interface at the level of a turn instead of a runtime's own feature set.",

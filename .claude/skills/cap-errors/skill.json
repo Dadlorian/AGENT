@@ -39,48 +39,54 @@
     ],
     "operations": [
       {
-        "name": "raise (proposed operation set; PASS.md names the standard, not the calls)",
+        "name": "raise (operation name is ours; the object it constructs is the standard's)",
         "input": "a registered type suffix, a detail string written for the caller, and the extension members that type declares",
         "output": "a Problem value carrying type, title, status, detail and those extensions; construction fails when the suffix has no row in the closed registry",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
-          "F-b3-13"
-        ]
+          "F-b3-13",
+          "X-cap-errors-002",
+          "X-cap-errors-003"
+        ],
+        "quote": "type (URI identifying the error category), title (short human-readable summary), status (HTTP status code), detail (specific explanation)"
       },
       {
-        "name": "render (proposed)",
+        "name": "render (operation name is ours; the wire object is the standard's)",
         "input": "a Problem value and the transport it leaves through",
         "output": "the problem-details JSON object plus the media type application/problem+json; the same object serialises for a stdio, message or HTTP seam, so the shape does not oblige a transport",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-cap-errors-002"
-        ]
+        ],
+        "quote": "uses the application/problem+json content type"
       },
       {
-        "name": "classify (proposed)",
+        "name": "classify (proposed; adapter-unavailable and its counter are this platform's own mechanism, not the standard's)",
         "input": "any failure raised beneath a capability adapter, including one the adapter did not type",
-        "output": "a registered Problem, or adapter-unavailable carrying the untyped payload in detail and incrementing the adapter's untyped counter",
+        "output": "a registered Problem, or adapter-unavailable carrying the untyped payload in detail and incrementing the adapter's untyped counter. Research query: has any adapter in this repo been run through a suite that counts its untyped-failure rate, which would turn this from a designed mechanism into a measured one?",
         "origin": "proposed"
       },
       {
-        "name": "retry_advice (proposed)",
+        "name": "retry_advice (proposed; the members are the standard's, the read-never-infer rule is ours)",
         "input": "a Problem value",
         "output": "the explicit retryable boolean and the optional retry_after_s, read from the members and never inferred from the status code",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
-          "X-cap-errors-004"
-        ]
+          "X-cap-errors-004",
+          "X-cross-structure-040"
+        ],
+        "quote": "Include Retry-After on 429 and 503 responses"
       },
       {
-        "name": "chain (proposed)",
+        "name": "chain (proposed operation; the causes array is ours, not part of the base schema)",
         "input": "an outer Problem and the inner Problem that caused it",
-        "output": "the outer Problem with the inner appended to causes, innermost last, so a delegated failure keeps its origin instead of being flattened into a sentence",
+        "output": "the outer Problem with the inner appended to causes, innermost last, so a delegated failure keeps its origin instead of being flattened into a sentence. Research query: does any recorded RFC 9457 extension example chain problems via a causes-style array, or is nesting causes this platform's own addition to the base schema?",
         "origin": "proposed"
       }
     ],
     "shapes": [
       {
-        "name": "Problem (proposed shape, from docs/decomposition.md section 2.1.6; the full schema and the closed type registry are in references/problem-registry.md)",
+        "name": "Problem (from docs/decomposition.md section 2.1.6; the required members are the standard's, retryable/correlation_id/causes are this platform's extensions; the full schema and the closed type registry are in references/problem-registry.md)",
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:problem:0.1",
@@ -133,11 +139,12 @@
             }
           }
         },
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-cap-errors-002",
           "X-cross-structure-040"
-        ]
+        ],
+        "quote": "type (URI identifying the error category), title (short human-readable summary), status (HTTP status code), detail (specific explanation), and instance (URI identifying the specific request)"
       },
       {
         "name": "Worked example 2 (proposed): an agent's next step would cross the ceiling [caller's view, folded from cap-errors-use]",

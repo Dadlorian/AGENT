@@ -37,53 +37,58 @@
     ],
     "operations": [
       {
-        "name": "register_case_set",
+        "name": "register_case_set (call name is ours; a version-controlled corpus is the sourced half)",
         "input": "cases - synthetic scenarios and recorded runs - each with its inputs, a rubric handle, and a stub policy saying which external effects are served from the record; plus a semantic version",
         "output": "a case_set_id and a content digest; registering identical cases twice returns the same digest (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-cap-evaluation-002",
           "X-end-to-end-039"
-        ]
+        ],
+        "quote": "a generated, labeled, version-controlled evaluation corpus"
       },
       {
-        "name": "evaluate",
+        "name": "evaluate (call name is ours; regression detection against a stored baseline is the sourced practice)",
         "input": "a versioned reference to the unit under test, a case_set_id, a baseline_id, and a mode of live or replay",
         "output": "an evaluation_report_id and an outcome of passed, failed or inconclusive - the one field a caller branches on (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-cap-evaluation-001",
           "X-end-to-end-040"
-        ]
+        ],
+        "quote": "Regression testing catches performance degradation when prompts, models, or integrations change before production deployment."
       },
       {
-        "name": "replay_case",
+        "name": "replay_case (call name is ours; substituting the stored result for execution is the sourced mechanism)",
         "input": "one recorded run reference and the stub policy its case declares",
         "output": "the trajectory the unit produces this time, with every recorded external effect served from the record instead of executed (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-cap-evaluation-005"
-        ]
+        ],
+        "quote": "wherever a recorded operation appears it substitutes the stored result instead of executing it"
       },
       {
-        "name": "score_trajectory",
+        "name": "score_trajectory (call name is ours; the four dimensions it scores are the sourced ones)",
         "input": "one trajectory and the case's rubric handle, never the rubric body",
         "output": "per-dimension scores over the ordered trace and one per-case verdict (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-cap-evaluation-003",
           "X-end-to-end-010"
-        ]
+        ],
+        "quote": "trajectory (the path of steps), tool use (correct tool selection and arguments), task completion (whether the user's goal was met)"
       },
       {
-        "name": "promote_baseline",
+        "name": "promote_baseline (call name is ours; retaining the prior baseline rather than overwriting it is the sourced improvement-loop discipline)",
         "input": "an evaluation_report_id and the reason it may become the reference point",
         "output": "a baseline_id later reports are compared against; the previous baseline is retained, not overwritten (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-end-to-end-040",
           "T-t4-04"
-        ]
+        ],
+        "quote": "A regression suite is the gate that makes a self-improvement loop safe to run automatically."
       }
     ],
     "shapes": [
@@ -175,11 +180,12 @@
             }
           }
         },
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-cap-evaluation-002",
           "X-cap-evaluation-005"
-        ]
+        ],
+        "quote": "a generated, labeled, version-controlled evaluation corpus"
       },
       {
         "name": "EvaluationReport (proposed summary shape): outcome is a three-valued word, never a bare boolean",
@@ -286,11 +292,12 @@
             }
           }
         },
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-end-to-end-040",
           "X-cap-evaluation-003"
-        ]
+        ],
+        "quote": "Regression testing catches performance degradation when prompts, models, or integrations change before production deployment."
       },
       {
         "name": "Worked calls (proposed): the same evaluate request from a human, from an agent and from an event",
@@ -480,7 +487,7 @@
         "sources": [
           "X-end-to-end-006"
         ],
-        "quote": "Evaluation is represented\u2014but not performed\u2014by OpenTelemetry"
+        "quote": "Evaluation is represented—but not performed—by OpenTelemetry"
       }
     ],
     "not_exposed": [
@@ -532,15 +539,6 @@
     },
     {
       "step": 3,
-      "action": "Proposed: register the corpus with a semantic version, and pin both the version of the unit under test and the corpus digest in the report itself, not in the invocation that produced it. The version-controlled corpus is the sourced half (X-cap-evaluation-002); pinning the unit's version beside it is ours.",
-      "why": "Proposed: the report is what a later reader has. If either version lives only in a command line, every stored report becomes an assertion about an unknown pair of inputs within a week. Research query: does any evaluation-framework record on file store the unit-under-test version inside the report object itself, or only alongside it in a run manifest, which would change where this pinning belongs?",
-      "origin": "proposed",
-      "sources": [
-        "X-cap-evaluation-002"
-      ]
-    },
-    {
-      "step": 4,
       "action": "Score each trajectory across the dimensions the trace supports - the path of steps, whether the right tool was called with the right arguments, whether the task completed, and whether quality held across turns - and record the per-dimension scores next to the verdict.",
       "why": "A single number tells you a case regressed and not where. The dimensions are what turn a failing case into a fix rather than into an argument.",
       "origin": "sourced",
@@ -550,7 +548,7 @@
       "quote": "trajectory (the path of steps), tool use (correct tool selection and arguments), task completion (whether the user's goal was met), and multi-turn quality"
     },
     {
-      "step": 5,
+      "step": 4,
       "action": "Compare the report to the stored baseline case by case and report the transitions - which case_id moved from pass to fail - rather than an aggregate score delta.",
       "why": "An aggregate can stay flat while one case flips, and a flat aggregate is exactly the shape a regression hides in. A named case that moved is also the smallest reproduction anyone needs.",
       "origin": "sourced",
@@ -560,16 +558,7 @@
       "quote": "Regression testing catches performance degradation when prompts, models, or integrations change before production deployment."
     },
     {
-      "step": 6,
-      "action": "Proposed: make the harness count executed cases and report outcome=inconclusive whenever that count is zero, before it reports anything else. Wire the same rule into whatever consumes the report, so inconclusive is never coerced to a boolean on the way out.",
-      "why": "Proposed, and the reason this rule is written as a step rather than left to the harness: a filter that matched nothing, a case set that failed to resolve and a crash before the first case all produce a run with no failures, which is indistinguishable from success unless something insists on the difference. Research query: has a harness in this repository actually been observed producing a zero-case run that a downstream consumer coerced to a boolean pass, or is this rule pre-empting a failure mode nobody has measured yet?",
-      "origin": "proposed",
-      "sources": [
-        "X-end-to-end-040"
-      ]
-    },
-    {
-      "step": 7,
+      "step": 5,
       "action": "Emit each per-case verdict on the standard evaluation-result carrier from the Standards table, and keep the platform's own scoring separate from the emission.",
       "why": "cap-telemetry owns the carrier and the collector for the Telemetry row of PASS.md B3, and core-judge already records that the conventions carry an evaluator verdict without producing one (X-end-to-end-006); the consequence here is that a reader of evaluation results learns no second format, while the scoring itself stays inside this capability where it can be swapped.",
       "origin": "sourced",
@@ -580,7 +569,7 @@
       "quote": "gen_ai.evaluation.result providing a standard carrier for evaluator scores and explanations"
     },
     {
-      "step": 8,
+      "step": 6,
       "action": "Pass rubric_ref into a case and resolve it only inside the scorer, after the trajectory is complete. Never let the resolved body into the unit's input, its context, its tool results or a replayed effect.",
       "why": "Design rule 6 is agentic-stack's, and core-judge already states it for the runtime verdict (F-b1-07); the consequence here is that an evaluation harness is the one component structurally placed to break it, because the harness holds both the rubric and the case input and it is one line to hand over both.",
       "origin": "sourced",
@@ -590,7 +579,7 @@
       "quote": "The grader is never visible to the graded"
     },
     {
-      "step": 9,
+      "step": 7,
       "action": "Run the same registered case set through both adapters in the Adapters table and require identical per-case verdicts before either is allowed to gate anything.",
       "why": "build-adapter-pair owns design rule 3; the consequence here is specific - a verdict that only reproduces on the adapter with a collector attached is a property of that collector, not of the unit under test, and would silently become the thing the whole gate rests on.",
       "origin": "sourced",
@@ -600,7 +589,7 @@
       "quote": "the second exists to prove the first is not load-bearing"
     },
     {
-      "step": 10,
+      "step": 8,
       "action": "Proposed: open references/usage.md when you need the full CaseSet and EvaluationReport schemas, the three ways in with a worked call and answer for each, and the worked rejection. The body of this skill is enough to write a caller without it.",
       "why": "Proposed: progressive disclosure. The schemas and the worked calls are long, and a reader who only needs to know what to send and what comes back should not have to page through them first.",
       "origin": "proposed",

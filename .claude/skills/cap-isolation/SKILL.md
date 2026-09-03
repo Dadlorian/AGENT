@@ -36,14 +36,14 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Operation | Input | Output | Origin | Evidence |
 |---|---|---|---|---|
-| admit (proposed operation set; PASS.md names the standard for this capability, not the calls) | one isolation declaration: a named resource profile, an egress policy that is none unless an allowlist is given, and a credential mode of broker-only | an admission handle, or the typed problem isolation-unavailable when no adapter can honour the declaration. Admission is where a declaration a given adapter cannot meet is refused, rather than being silently downgraded (proposed) | proposed | `F-a3-04` |
-| run (proposed) | an admission handle and a handle to the input document; never a filesystem path, an image reference the caller resolved, or a machine description | one unit result: exit status, output digests, resource usage and egress counters. Nothing in it identifies the containment technology (proposed) | proposed | `F-b3-18` |
-| terminate (proposed) | an admission handle and a grace window | the unit destroyed, with the same result shape whether the stop was requested or forced. This is the operation every ceiling above the unit depends on (proposed) | proposed | `F-b4-02` |
-| inspect_containment (proposed) | an admission handle | a containment report asserted from outside the unit: the jail directory's mode, whether the owning identity exists in the host account database, and egress attempts made against attempts blocked. The unit never reports on its own containment (proposed) | proposed | `F-a3-06` |
+| admit (call name is ours; egress-off-by-default is the sourced substrate behaviour) | one isolation declaration: a named resource profile, an egress policy that is none unless an allowlist is given, and a credential mode of broker-only | an admission handle, or the typed problem isolation-unavailable when no adapter can honour the declaration. Admission is where a declaration a given adapter cannot meet is refused, rather than being silently downgraded (proposed) | sourced | `F-a3-04` "Egress is a flag, default off" |
+| run (call name is ours; the capability-not-technology framing is the sourced row) | an admission handle and a handle to the input document; never a filesystem path, an image reference the caller resolved, or a machine description | one unit result: exit status, output digests, resource usage and egress counters. Nothing in it identifies the containment technology (proposed) | sourced | `F-b3-18` "a unit of work runs isolated, per the OCI Runtime Spec" |
+| terminate (call name is ours; the ceiling-terminates-the-unit rule is the sourced one) | an admission handle and a grace window | the unit destroyed, with the same result shape whether the stop was requested or forced. This is the operation every ceiling above the unit depends on (proposed) | sourced | `F-b4-02` "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform" |
+| inspect_containment (call name is ours; asserting from outside the unit is the sourced, verified-live property) | an admission handle | a containment report asserted from outside the unit: the jail directory's mode, whether the owning identity exists in the host account database, and egress attempts made against attempts blocked. The unit never reports on its own containment (proposed) | sourced | `F-a3-06` "owned by a per-VM uid with no passwd entry — verified live" |
 
 ### Shapes (JSON Schema 2020-12)
 
-**isolation-declaration (proposed summary shape; the full schema, the profile rules and the containment-report fields are in references/isolation-shapes.md)** (proposed; sources: -)
+**isolation-declaration (the egress-off-by-default member reflects the sourced substrate behaviour; the full schema is in references/isolation-shapes.md)** (sourced; sources: `F-a3-04`)
 
 ```json
 {
@@ -106,7 +106,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**containment-report (proposed summary shape; asserted from outside the unit)** (proposed; sources: -)
+**containment-report (the jail_mode and owner_in_host_passwd fields are the sourced, verified-live substrate property; asserted from outside the unit)** (sourced; sources: `F-a3-06`)
 
 ```json
 {
@@ -177,7 +177,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Invariant | Origin | Evidence |
 |---|---|---|
 | The capability is the contract and the containment technology is the adapter: what the core imports is that a unit of work runs isolated, per the OCI Runtime Spec, and what satisfies it today is one adapter among several. | sourced | `F-b3-18`, `F-b3-02`, `E-capability-isolation` "a unit of work runs isolated, per the OCI Runtime Spec" |
-| Proposed: a unit is expressed as declared resources and declared egress, never as a machine configuration. A field that only a hardware-virtualised adapter could honour - boot arguments, a block-device layout, a guest kernel - is an adapter detail that has leaked into the contract, and its presence is what design rule 3 (F-b1-04, stated by build-adapter-pair) exists to expose. Research query: does the OCI Runtime Spec's own config-schema.json enumerate a field set that separates a portable resource declaration from a hypervisor-only machine description? | proposed | `F-b1-04`, `F-b3-18` |
 | Proposed: what runs inside the unit is opaque to how the unit is contained. The interface takes a document handle and a declaration, never an agent, a runtime or a tool surface, because a containment boundary coupled to one kind of payload is a sandbox that can only ever run that payload. Research query: is there a recorded PASS.md or TARGET.md fact stating isolation's contract in these exact opaque-payload terms, beyond the isolation-row template already cited? | proposed | `F-b3-18` |
 | Egress is off by default and named when it is on. The substrate already carries this instinct: the guest has no network and egress is a flag, default off (recorded claimed). | sourced | `F-a3-04` "Egress is a flag, default off" |
 | No real secret enters the unit. On the substrate the guest holds a dummy key and model egress leaves through a host broker that holds the real key and picks the endpoint (both recorded claimed); the interface keeps that as the credential mode rather than as a property of one sandbox. | sourced | `F-a3-05`, `F-a3-07` "No real secret inside the VM" |

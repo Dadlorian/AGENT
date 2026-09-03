@@ -20,40 +20,45 @@
   "contract": {
     "operations": [
       {
-        "name": "begin_run (proposed operation set; PASS.md gives this capability a row and no calls)",
+        "name": "begin_run (call name is ours; the class of engine this row assumes journals steps for exactly this reason)",
         "input": "the caller's run key, the identity of the step sequence to execute, and the digest of its input",
         "output": "a run handle plus a resume point: the first step index for a new run, and the first incomplete step for a key that has run before, so starting and resuming are the same call (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
-          "F-b4-08"
-        ]
+          "F-b4-08",
+          "X-cap-durable-execution-001"
+        ],
+        "quote": "Durable execution is a class of workflow engine that journals every step so an agent can resume from exactly where it stopped, regardless of what crashed."
       },
       {
-        "name": "checkpoint_step (proposed)",
+        "name": "checkpoint_step (call name is ours; the replay-safety obligation on the commit is the platform's own)",
         "input": "a run handle, the step's own idempotency key, the digest of what the step produced, and the record of the effect it committed",
         "output": "a committed checkpoint, or nothing: the checkpoint and the step's effect become durable together, so a step is complete only when both are (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-b4-08"
-        ]
+        ],
+        "quote": "Every externally-triggered action is safe to replay"
       },
       {
-        "name": "resume_point (proposed)",
+        "name": "resume_point (call name is ours; resuming from exactly where it stopped is what the class of engine on file does)",
         "input": "a run handle",
         "output": "the first incomplete step and the number of steps already committed, which is what a restart reads to know where to continue and what a check reads to know a crash really happened (proposed)",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-cap-durable-execution-001"
-        ]
+        ],
+        "quote": "resume from exactly where it stopped, regardless of what crashed"
       },
       {
-        "name": "read_run (proposed)",
+        "name": "read_run (call name is ours)",
         "input": "a run handle or a run key",
-        "output": "the run's terminal state and its committed step records; a failure arrives as the typed problem object rather than as an engine-specific status string (proposed)",
-        "origin": "proposed",
+        "output": "the run's terminal state and its committed step records; a failure arrives as cap-errors' typed problem object rather than as an engine-specific status string (proposed)",
+        "origin": "sourced",
         "sources": [
           "F-b4-07"
-        ]
+        ],
+        "quote": "Typed and machine-readable. Never parsed from prose"
       }
     ],
     "shapes": [
@@ -257,10 +262,6 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: worker registration, task queues, event-history formats, determinism requirements on the caller's code, and any server endpoint or namespace. Each is a property of one way of achieving durability and none is needed to know which step to run next. Research query: does the second, step-log-style adapter's own interface confirm none of these fields is unavoidable, closing the loop this row currently only argues from the first adapter's shape?",
-        "origin": "proposed"
-      },
-      {
         "text": "Recurrence and scheduling are a separate capability with a published standard of its own, so 'run this every night' is not a durable-execution operation even when the same engine happens to offer it; sourcing it here would make that engine unswappable for a reason unrelated to durability.",
         "origin": "sourced",
         "sources": [
@@ -306,21 +307,6 @@
     },
     {
       "step": 3,
-      "action": "Define step completion as one commit of the checkpoint and the step's effect together, and define resume as 'the first step with no such commit'. Where an effect cannot join that commit, require the effect's own idempotency key to be the deduplicator and record that gap explicitly. Research query: see the one-commit research query on the sibling invariant row above.",
-      "why": "Proposed. This is the one rule that decides whether a resumed run repeats work: the two-writes ordering problem has no correct order, so the contract has to demand a single commit or an explicitly keyed effect instead.",
-      "origin": "proposed"
-    },
-    {
-      "step": 4,
-      "action": "Reject any proposed field that only means something under replay - deterministic execution, worker or task-queue identity, history size, a server address - and put it in the adapter instead. Research query: see the interface-scope research query on the sibling invariant row above.",
-      "why": "Proposed. A field the in-process step log cannot implement would force every future adapter to imitate one engine's execution model, which is exactly the shaping that a second adapter exists to catch.",
-      "origin": "proposed",
-      "sources": [
-        "F-b1-04"
-      ]
-    },
-    {
-      "step": 5,
       "action": "Design so that a run can make progress with no separate process running, and count the processes required for progress as a property of each adapter rather than of the interface.",
       "why": "The orchestrator on this substrate is present with nothing listening while the work designed around it waits (claimed, per PASS.md A6), so an interface that presumes a reachable server has already failed on the host it was written for.",
       "origin": "sourced",
@@ -330,7 +316,7 @@
       "quote": "server not listening on `7233`/`8233`"
     },
     {
-      "step": 6,
+      "step": 4,
       "action": "Pick the second adapter on execution-model axes, as build-adapter-pair defines them: locus_of_durability_and_verification, processes_required_for_progress and replay_determinism_required must all differ from today's adapter.",
       "why": "agentic-stack states design rule 3 (F-b1-04). What this adds: another engine that also journals history onto a separate server would agree with today's adapter on all three axes, so the swap would test configuration rather than the contract.",
       "origin": "sourced",
@@ -341,7 +327,7 @@
       "quote": "chosen to prove the interface is not shaped around its current implementation"
     },
     {
-      "step": 7,
+      "step": 5,
       "action": "Judge a candidate engine by the crash criterion in this skill's definition of done, run from one suite over both adapters, before it is allowed to serve the interface.",
       "why": "agentic-stack and build-definition-of-done already state that a criterion nothing can fail is not a criterion (F-part-c-04). What this adds: the property worth gating on here is exactly-once effect under a real kill, because every other property of an executor is visible without crashing it.",
       "origin": "sourced",
@@ -352,7 +338,7 @@
       "quote": "A criterion nothing can fail is not a criterion"
     },
     {
-      "step": 8,
+      "step": 6,
       "action": "Return every failure as the typed problem object cap-errors defines, including 'this run cannot be resumed', and never let an unreadable checkpoint fall back to starting again.",
       "why": "cap-errors owns the failure shape (F-b4-07); what this adds is that the most expensive failure of this capability is silent, so it has to be given a name and a type before it can be observed at all.",
       "origin": "sourced",
@@ -362,7 +348,7 @@
       "quote": "Never parsed from prose"
     },
     {
-      "step": 9,
+      "step": 7,
       "action": "Send a run key you can reproduce and the steps in order. Take every default. Do not send a resume flag, an attempt number or a starting index - there is no field for them and you would not want to own the decision.",
       "why": "It has to be simple to use, and every field you fill in is a decision you now own; the resume point is derived from what is already committed, which is a fact the platform has and you do not.",
       "origin": "sourced",
@@ -372,7 +358,7 @@
       "quote": "It has to be simple to use."
     },
     {
-      "step": 10,
+      "step": 8,
       "action": "Proposed: open references/durable-execution-shapes.md when implementing or reviewing the full step-record and run-state schemas or the exactly-once argument behind them. The body of this skill is enough to judge an engine and to write the contract without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
       "why": "Proposed: the full schemas exceed the progressive-disclosure budget for a skill body, and a reader deciding whether an engine may serve this interface does not need them.",
       "origin": "proposed"
@@ -396,13 +382,6 @@
       "quote": "resume from a crash with the same tool-call history, and bill nothing while they wait"
     },
     {
-      "text": "Proposed: derive the step key from the run key and the step id, never from a timestamp, a random value or an attempt counter. A key that changes on restart is indistinguishable from no key at all, and it fails only under the crash it was meant to survive.",
-      "origin": "proposed",
-      "sources": [
-        "F-b4-08"
-      ]
-    },
-    {
       "text": "Keep undo out of this interface (proposed). Reversing prior operations with compensating transactions is a real pattern in the records on file, but it is a placement rule over a sequence of steps rather than a checkpointing primitive, and merging the two would make compensation an engine feature that only one adapter can supply.",
       "origin": "sourced",
       "sources": [
@@ -423,7 +402,7 @@
         "F-b3-04",
         "F-a6-02"
       ],
-      "quote": "| Temporal | Restate \u00b7 DBOS \u00b7 Inngest"
+      "quote": "| Temporal | Restate · DBOS · Inngest"
     },
     {
       "entity": "E-swap-candidate-dbos",

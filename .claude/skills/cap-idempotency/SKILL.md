@@ -39,14 +39,14 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Operation | Input | Output | Origin | Evidence |
 |---|---|---|---|---|
-| claim (proposed operation set; the recorded standard is a field convention, not a set of calls) | an idempotency key, the digest of the payload the key belongs to, and the scope the key must be unique within | fresh, meaning this caller now owns the one execution; duplicate carrying a reference to the first result; or conflict, meaning the key is held under a different payload digest | proposed | `F-b4-08`, `X-cap-idempotency-002` |
-| complete (proposed) | a key currently held by a fresh claim, and a reference to the result that execution produced | the claim sealed against that reference, after which every later claim of the key answers duplicate with the same reference for as long as the retention window lasts | proposed | `F-b4-08` |
-| resolve (proposed) | an idempotency key and its scope | the prior result reference and whether that execution has finished, or null when the key has never been claimed; this is the read a planner needs before it plans work that has already been done | proposed | `F-b2-06` |
-| expire (proposed) | a claim whose declared retention window has elapsed | the claim removed, after which the same key is claimable again and replay safety for it has ended; the window is therefore part of the contract, not an implementation detail | proposed | `X-cap-idempotency-007`, `X-cap-idempotency-008` |
+| claim (call name is ours; the uniqueness-and-conflict rule it enforces is the draft's own MUST) | an idempotency key, the digest of the payload the key belongs to, and the scope the key must be unique within | fresh, meaning this caller now owns the one execution; duplicate carrying a reference to the first result; or conflict, meaning the key is held under a different payload digest | sourced | `F-b4-08`, `X-cap-idempotency-002` "The idempotency key MUST be unique and MUST NOT be reused with another request with a different request payload." |
+| complete (call name is ours; the replay-safety obligation it seals is the platform's own) | a key currently held by a fresh claim, and a reference to the result that execution produced | the claim sealed against that reference, after which every later claim of the key answers duplicate with the same reference for as long as the retention window lasts | sourced | `F-b4-08` "Every externally-triggered action is safe to replay" |
+| resolve (call name is ours; the Ledger's own deduplication-authority role is the sourced fact) | an idempotency key and its scope | the prior result reference and whether that execution has finished, or null when the key has never been claimed; this is the read a planner needs before it plans work that has already been done | sourced | `F-b2-06` "append-only across runs; the deduplication authority" |
+| expire (call name is ours; that retention windows are provider-declared and vary is the sourced fact) | a claim whose declared retention window has elapsed | the claim removed, after which the same key is claimable again and replay safety for it has ended; the window is therefore part of the contract, not an implementation detail | sourced | `X-cap-idempotency-007`, `X-cap-idempotency-008` "Despite consistent header names, idempotency implementations vary by provider in retention windows and parameter handling." |
 
 ### Shapes (JSON Schema 2020-12)
 
-**IdempotencyClaim (proposed shape; the full schema, the outcome state machine and the retention table are in references/idempotency-claim.md)** (proposed; sources: `X-cap-idempotency-002`, `X-cap-idempotency-005`)
+**IdempotencyClaim (proposed shape; the full schema, the outcome state machine and the retention table are in references/idempotency-claim.md)** (sourced; sources: `X-cap-idempotency-002`, `X-cap-idempotency-005`)
 
 ```json
 {
@@ -97,7 +97,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**ClaimOutcome (proposed shape; the three answers claim may give)** (proposed; sources: `F-b4-08`)
+**ClaimOutcome (proposed shape; the three answers claim may give)** (sourced; sources: `F-b4-08`)
 
 ```json
 {

@@ -1,0 +1,706 @@
+{
+  "sections": [
+    {
+      "id": "concern-policy",
+      "kind": "concern",
+      "source": "F-b4-04",
+      "name": "Policy",
+      "standard": {
+        "name": "Policy-as-code decision point with a decision API, evaluated before execution",
+        "settledness": "contested",
+        "why": "Two declarative policy languages with decision APIs are live inside the window and both are being placed at the agent action boundary: OPA/Rego is embedded in identity gateways to evaluate every tool call at request time, and AWS shipped Cedar as the policy engine inside Amazon Bedrock AgentCore Policy in March 2026, chosen because its authorizer is deterministic and guaranteed to terminate. Neither has displaced the other, so the property to hold is the deterministic pre-execution decision and its recorded evidence, not the language.",
+        "cites": [
+          "X-litmus-d-001",
+          "X-litmus-d-002",
+          "X-litmus-d-003"
+        ]
+      },
+      "future_state": {
+        "text": "The future state proposed for this concern: every unit of work, whichever entry started it, is admitted or refused by one deterministic policy decision taken before any spend or side effect, at a single mediation point that no entry and no adapter can go around and that no caller argument can disable; the decision is computed by evaluating declarative policy as data through a decision API, from an input the platform assembles (actor and delegation chain, the action and its arguments, tenant, entry, and the ceiling the unit carries), never from the agent's own reasoning; a refusal is a typed, machine-readable failure naming the rule and the policy version rather than prose; and every evaluation, allow as well as deny, leaves a record carrying the input, the outcome, the policy version and the time, so a past decision can be replayed against the current policy and the guarantee is evidence rather than an assumption.",
+        "origin": "proposed",
+        "cites": [
+          "F-b4-01",
+          "F-b4-04",
+          "F-b1-08",
+          "X-litmus-d-001",
+          "X-litmus-d-003",
+          "X-litmus-d-004"
+        ]
+      },
+      "direction": {
+        "text": "Inside the window the enforcement point has moved outside the agent and in front of the action: the pattern that is settling is a framework-agnostic mediation point between the model's tool-call decision and the execution layer that returns a closed set of outcomes before any side effect occurs, with decision logs as the audit evidence. What is being selected for is determinism: AWS states of its agent policy engine that Cedar's authorizer is deterministic: it is guaranteed to terminate and always produce the same authorization decision for a given request, hierarchy, and set of policies. What is being abandoned is enforcement by prompt instruction or post-hoc detection, and refusal logic written as conditionals inside the application. It would be an error inside this window to build a check that runs after spend, a policy the agent can argue with, per-entry enforcement paths that can diverge, or an engine failure that fails open.",
+        "origin": "sourced",
+        "cites": [
+          "X-litmus-d-001",
+          "X-litmus-d-002",
+          "X-litmus-d-003",
+          "X-litmus-d-004"
+        ],
+        "quote": "Before any side effect occurs, the system extracts string-bearing content from tool arguments, performs content-first risk scanning, applies composable policy checks, and returns one of three decisions: allow, block, or pending."
+      },
+      "questions": [
+        {
+          "id": "concern-policy-q1",
+          "angle": "guarantees",
+          "question": "Can any unit of work reach execution through any entry without a policy decision having been taken first, and can a caller argument, a configuration flag or an internal call path skip it? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The single code path every entry converges on, plus a run from each of the four entries (human, event, schedule, external) with policy set to refuse, showing what came back and that nothing was spent; plus the result of an attempt to disable the check from the caller side.",
+          "aligned_looks_like": "All four entries are refused identically before any spend or side effect; the refusal comes from one shared mediation point; no caller-supplied field, flag or internal path bypasses it, and the attempt to disable it is itself refused.",
+          "misaligned_looks_like": "At least one entry, usually a schedule or an internally generated event, reaches execution with no decision; or a flag, a trusted-caller path or a direct adapter call skips the check; or the decision is taken after work has already been done.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-04",
+            "F-b4-01",
+            "X-litmus-d-003"
+          ]
+        },
+        {
+          "id": "concern-policy-q2",
+          "angle": "depth",
+          "question": "Is the decision produced by evaluating declarative policy held as versioned, separately testable data through a decision API, or by conditionals compiled into the execution path? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The policy source, its tests, the version identifier it carries, and the call that submits an input and receives a decision; plus a demonstration that changing the policy changes the outcome with no code change.",
+          "aligned_looks_like": "Policy is data with its own tests and version, evaluated through a decision API; a rule change alters behaviour with no redeploy of the execution path; the input schema is explicit.",
+          "misaligned_looks_like": "Refusal is written as conditionals in the code; or a policy file exists but the decision actually taken is computed elsewhere, so the policy is nominal presence only.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-04",
+            "F-b3-11",
+            "X-litmus-d-001",
+            "X-litmus-d-002"
+          ]
+        },
+        {
+          "id": "concern-policy-q3",
+          "angle": "depth",
+          "question": "Does every evaluation leave a decision record carrying the input, the outcome, the policy version and the timestamp, and can a past decision be replayed against the policy in force today? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "Decision records for one allow and one deny, and the output of replaying a recorded decision under the current policy version.",
+          "aligned_looks_like": "Allows are recorded as fully as denials; each record names the policy version that produced it; replay reproduces the recorded outcome or shows exactly which rule change explains the difference.",
+          "misaligned_looks_like": "Only refusals are recorded; no policy version in the record; or records exist but cannot be replayed because the input the engine saw was not kept.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-04",
+            "X-litmus-d-004"
+          ]
+        },
+        {
+          "id": "concern-policy-q4",
+          "angle": "usage",
+          "question": "Across the human, event, schedule and external entries, does the decision see the same input shape, and how does a refusal compose with the other guarantees the platform applies? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The decision input captured at each of the four entries, side by side, and one refusal shown end to end: the typed failure returned, the telemetry emitted for it, and the record attributing it to an actor.",
+          "aligned_looks_like": "One input schema for all entries, with the entry itself as an attribute rather than a different shape; a refusal is typed, correlated, attributable and costs nothing beyond the decision.",
+          "misaligned_looks_like": "Entries differ in what the policy can see, so the same rule decides differently depending on the door; or a refusal escapes as prose, is untraceable, or is only discovered after spend.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-04",
+            "F-b4-07",
+            "F-b3-08",
+            "X-litmus-d-003",
+            "X-litmus-d-004"
+          ]
+        },
+        {
+          "id": "concern-policy-q5",
+          "angle": "boundary",
+          "question": "Is the decision engine reached through a capability interface with a second engine proven against the same decision suite, and is enforcement wired at one chokepoint rather than repeated in each adapter? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The interface the core imports, the list of call sites that enforce, and the results of running the same decision cases against two engines.",
+          "aligned_looks_like": "One enforcement site; the core names the interface and never an engine; a second engine answers the same suite with the same outcomes, or every difference is written down as a known divergence.",
+          "misaligned_looks_like": "An engine's query language or evaluation quirks leak into callers; each adapter performs its own check, so a new adapter silently arrives with none; the second engine has never been run against the suite.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-04",
+            "F-b1-02",
+            "F-b1-04",
+            "F-b3-11",
+            "X-litmus-d-002"
+          ]
+        },
+        {
+          "id": "concern-policy-q6",
+          "angle": "direction",
+          "question": "Is refusal deterministic and independent of model output, and what happens to a unit of work when the decision engine is unreachable? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The same input evaluated repeatedly with the outcomes recorded; a test showing the decision does not vary with model output; and a run with the engine made unavailable.",
+          "aligned_looks_like": "Identical inputs yield identical decisions, evaluation terminates within a stated bound, and an unreachable engine fails closed with a typed refusal that names the reason.",
+          "misaligned_looks_like": "The decision depends on model output, a guardrail prompt or a post-hoc classifier; evaluation can loop or vary; an unreachable engine fails open and work proceeds unchecked.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-04",
+            "F-b1-07",
+            "X-litmus-d-002",
+            "X-litmus-d-003"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "That a deterministic pre-execution decision should fail closed when the decision engine is unreachable, rather than degrade to a cached or default allow, is stated here without a source inside the window.",
+          "research_query": "agent tool gateway policy decision point unavailable fail closed versus cached decision 2026"
+        },
+        {
+          "claim": "That there is a portable request and response shape for a policy decision that survives a change of engine (so a second engine can be proven against the same suite) is asserted without a source.",
+          "research_query": "portable policy decision request response schema across policy engines interoperability 2026"
+        }
+      ]
+    },
+    {
+      "id": "concern-provenance",
+      "kind": "concern",
+      "source": "F-b4-05",
+      "name": "Provenance",
+      "standard": {
+        "name": "Signed attestation statement over subject digests with a typed, versioned predicate, carried in a signing envelope (in-toto attestation framework, SLSA provenance, DSSE)",
+        "settledness": "baseline",
+        "why": "Inside the window this stack has no credible competitor for artifact provenance: the in-toto statement plus DSSE envelope is the outer structure, SLSA provenance is the predicate carried inside it, and the tooling ecosystem (Sigstore, Tekton Chains, GitHub-native attestations, Notation) all emits and verifies that same format, with signed artifacts and verifiable provenance treated as a baseline compliance requirement by 2026. The open question is therefore depth, not choice of format.",
+        "cites": [
+          "X-litmus-d-005",
+          "X-litmus-d-006",
+          "X-litmus-d-007",
+          "X-litmus-d-009"
+        ]
+      },
+      "future_state": {
+        "text": "The future state proposed for this concern: every artifact any unit of work produces, through any entry, is the subject of a signed statement the platform emits without being asked, naming the artifact by digest, the code version that produced it, the digests of every input consumed, and the actor including the delegated agent identity and the entry that requested the work; the predicate is a published, typed and versioned schema rather than an ad-hoc field bag, and it rides inside a signing envelope so the record's integrity does not depend on where it is stored; the signing identity is short-lived and anchored in a transparency log rather than a long-lived key held in the build; refused and failed units are attested as well as successful ones; the whole record set is append-only and tamper-evident; and verification succeeds with an independent verifier that consumes only the published format, so no part of the guarantee rests on a tool this platform wrote.",
+        "origin": "proposed",
+        "cites": [
+          "F-b4-05",
+          "F-b4-01",
+          "F-b1-05",
+          "F-b3-12",
+          "X-litmus-d-005",
+          "X-litmus-d-006",
+          "X-litmus-d-009"
+        ]
+      },
+      "direction": {
+        "text": "Inside the window the format layer is stable and the movement is elsewhere: the in-toto attestation framework provides the outer signed-statement structure while the SLSA provenance predicate version advances inside it, so a build should pin the predicate version and treat the envelope as fixed. Identity and enforcement are what is settling: Sigstore keyless signing removes long-lived keys by taking a short-lived Fulcio certificate over OIDC and recording the signature in the Rekor transparency log, and one 2026 survey of attestation tooling concludes that in 2026+, the practical winners are the tools that combine strong identity (ideally keyless), interoperable artifact distribution (often OCI), and deploy-time policy enforcement. What is being abandoned is the unsigned log line as a provenance record, and long-lived signing keys. It would be an error inside this window to invent a record format only this platform can verify, to store provenance without signing it, or to produce attestations that nothing ever verifies before consumption.",
+        "origin": "sourced",
+        "cites": [
+          "X-litmus-d-007",
+          "X-litmus-d-008",
+          "X-litmus-d-009"
+        ],
+        "quote": "In 2026+, the practical winners are the tools that combine strong identity (ideally keyless), interoperable artifact distribution (often OCI), and deploy-time policy enforcement."
+      },
+      "questions": [
+        {
+          "id": "concern-provenance-q1",
+          "angle": "guarantees",
+          "question": "Is a provenance record produced for every unit of work without the caller asking, including units that failed and units that were refused before execution? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "Records for one successful unit, one failed unit and one policy-refused unit, each started from a different entry, together with the code path that emits them.",
+          "aligned_looks_like": "All three produce records with the same identity, correlation and entry fields; emission is on the shared path, not in the caller; nothing a caller passes turns it off.",
+          "misaligned_looks_like": "Only successful runs are attested; or a caller must opt in; or an adapter that writes artifacts of its own leaves no record.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-05",
+            "F-b4-01",
+            "X-litmus-d-005"
+          ]
+        },
+        {
+          "id": "concern-provenance-q2",
+          "angle": "depth",
+          "question": "Does one record bind the artifact digest, the code version, the digests of every input and the acting identity inside a single signed statement with a typed predicate, or is it a log line that merely mentions them? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "One complete record with its fields, its predicate type and version, its signature, and the recomputed digest of the artifact it names.",
+          "aligned_looks_like": "A statement naming subjects by digest with a versioned predicate type; recomputed digests match the artifact bytes; the signature verifies; inputs are named by digest rather than by path or label.",
+          "misaligned_looks_like": "A chained log entry with no subject digest, no predicate type or no signature; inputs referenced by mutable name; the code version recorded as a branch rather than a commit or content digest.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-05",
+            "F-b3-12",
+            "X-litmus-d-005",
+            "X-litmus-d-006"
+          ]
+        },
+        {
+          "id": "concern-provenance-q3",
+          "angle": "depth",
+          "question": "Can a record be verified end to end by a verifier this build did not write, given only the published format and the public verification material, and does that verifier reject a tampered record? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The command and output of an independent verifier run against a good record and against the same record with one byte altered, plus the verification material it was given.",
+          "aligned_looks_like": "The independent verifier accepts the good record and rejects the tampered one; the verification path uses only published formats and needs no code from this platform.",
+          "misaligned_looks_like": "Verification is only possible with this platform's own reader; the format nominally resembles the standard but no third-party verifier accepts it; tampering is detectable only by a chain this platform also maintains.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-05",
+            "F-b1-05",
+            "X-litmus-d-007"
+          ]
+        },
+        {
+          "id": "concern-provenance-q4",
+          "angle": "usage",
+          "question": "For a unit started from each of the four entries, can you traverse from a produced artifact back to its inputs, the code version, the requesting entry and the delegated actor, and forward to everything that consumed it? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "A traversal in both directions for one artifact produced by a scheduled run and one produced by an external caller's request, showing where the chain is joined.",
+          "aligned_looks_like": "The same traversal works for every entry; the delegation chain is present so an agent action names both the agent and the party it acted for; consumers are discoverable because inputs are recorded by digest.",
+          "misaligned_looks_like": "The human entry is rich while scheduled or event-triggered work is anonymous or attributed to the platform itself; the chain breaks at an adapter boundary; forward traversal is impossible because inputs were never recorded.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-05",
+            "F-b4-03",
+            "X-litmus-d-006"
+          ]
+        },
+        {
+          "id": "concern-provenance-q5",
+          "angle": "boundary",
+          "question": "Can the attestation store be replaced without changing the record format, the producing code, or the way verification works? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The interface the core imports, a second store holding the same records, and the same verification run against records read from both.",
+          "aligned_looks_like": "Record shape and verification are identical from both stores; the store is addressed through the interface; storage concerns appear nowhere inside the record.",
+          "misaligned_looks_like": "The record's shape is dictated by the store; storage offsets, file positions or backend identifiers are load-bearing fields; the second store has never held a record.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-05",
+            "F-b1-02",
+            "F-b1-03",
+            "F-b3-12",
+            "X-litmus-d-009"
+          ]
+        },
+        {
+          "id": "concern-provenance-q6",
+          "angle": "direction",
+          "question": "Is the signing identity short-lived and anchored in a transparency log rather than a long-lived key, and is verification actually enforced before an artifact is consumed or promoted? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The identity material used to sign and where it comes from, plus a run in which an artifact whose attestation fails verification is offered for consumption.",
+          "aligned_looks_like": "Signing uses short-lived credentials with a log entry, or a documented equivalent with stated rotation; consumption of an unverifiable artifact is refused with a typed failure at the point of use.",
+          "misaligned_looks_like": "A long-lived signing key lives with the build; attestations are produced but never checked before use; or the predicate version is unpinned so a schema change silently invalidates verification.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-05",
+            "X-litmus-d-007",
+            "X-litmus-d-008",
+            "X-litmus-d-009"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "That there is an agreed predicate type for artifacts produced by an agent run, as distinct from a build, could not be sourced inside the window.",
+          "research_query": "in-toto predicate type for AI agent run output attestation registry 2026"
+        },
+        {
+          "claim": "That attesting refused and failed units, and not only produced artifacts, is established practice rather than this section's extrapolation from build provenance.",
+          "research_query": "attestation for failed or refused runs negative provenance records practice 2026"
+        }
+      ]
+    },
+    {
+      "id": "concern-telemetry",
+      "kind": "concern",
+      "source": "F-b4-06",
+      "name": "Telemetry",
+      "standard": {
+        "name": "OTLP with OpenTelemetry semantic conventions, correlation carried on explicit attributes and links rather than trace parentage",
+        "settledness": "baseline",
+        "why": "OpenTelemetry is the vendor-neutral baseline for traces, metrics and logs and has no credible competitor as a wire protocol or attribute vocabulary; the qualification inside the window is maturity, not rivalry. As of mid-July 2026 every gen_ai.* attribute, span, metric and event in the registry still carries the Development stability badge, and the v1.42.0 release of 12 June 2026 moved them into a dedicated GenAI conventions repository for a faster cadence. So the transport and core conventions are the baseline to use deeply, while the generative-AI attribute names must be pinned to a schema version and treated as movable.",
+        "cites": [
+          "X-litmus-d-010",
+          "X-litmus-d-011",
+          "X-litmus-d-013"
+        ]
+      },
+      "future_state": {
+        "text": "The future state proposed for this concern: every unit of work emits traces, metrics and logs over the standard telemetry protocol because the platform instruments the shared path, not because a caller wrapped a call; the whole unit is modelled as a named lifecycle of operations rather than one span per model call, with token, cost, latency and outcome recorded as metrics; correlation rides on explicit attributes the platform stamps into the work envelope itself, a run identifier, a unit identifier, the entry, the actor and delegation chain, the tenant, the policy decision and the budget ceiling, so that a unit which was queued, scheduled, resumed after a crash or handed to another agent still joins up when no trace context survived, with links used where the relation is causal but not parent-child; attribute names come from the published conventions and every export records the schema version so a rename is detectable; and redaction of prompt and result content plus the sampling decision are applied in the pipeline, with failures and refusals always retained, so no caller can emit less or more than the guarantee requires.",
+        "origin": "proposed",
+        "cites": [
+          "F-b4-06",
+          "F-b4-01",
+          "F-b3-10",
+          "X-litmus-d-012",
+          "X-litmus-d-013",
+          "X-litmus-d-014"
+        ]
+      },
+      "direction": {
+        "text": "Inside the window the core conventions are stable and the generative-AI vocabulary is deliberately not: one 2026 review records that as of the v1.42.0 release on 12 June 2026, all gen_ai.* attributes and spans were moved out of the main OpenTelemetry semantic-conventions repository into a dedicated GenAI conventions repository, an organisational change rather than a graduation to stable, while the conventions now model whole agent execution as a span tree with named lifecycle operations. What is settling is vendor-neutral instrumentation with backend choice made at the collector, explicit span links for asynchronous and fan-in work, and collector-side redaction with hybrid head and tail sampling that retains all errors. What is being abandoned is vendor-specific tracing libraries as the primary instrumentation and reliance on parent-child context across queues and process restarts. It would be an error inside this window to make correlation depend on trace parentage, to depend on unstable attribute names without recording a schema version, or to require the caller to pass a trace context to be observable.",
+        "origin": "sourced",
+        "cites": [
+          "X-litmus-d-010",
+          "X-litmus-d-011",
+          "X-litmus-d-012",
+          "X-litmus-d-013",
+          "X-litmus-d-014"
+        ],
+        "quote": "As of the v1.42.0 release on 12 June 2026, all gen_ai.* attributes and spans were moved out of the main OpenTelemetry semantic-conventions repository into a dedicated GenAI conventions repository."
+      },
+      "questions": [
+        {
+          "id": "concern-telemetry-q1",
+          "angle": "guarantees",
+          "question": "Does every unit of work emit telemetry without the caller asking, including work started by a schedule and work started by an external agent, and is the shape the same for all four entries? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "Exported telemetry for one comparable unit driven through each of the four entries, with no instrumentation code in any of the callers, plus the shared path where emission is wired.",
+          "aligned_looks_like": "All four produce complete, identically-shaped telemetry including the entry as an attribute; emission happens once on the shared path; a caller cannot turn it off or change its shape.",
+          "misaligned_looks_like": "Telemetry appears only when a caller wraps the call or passes a context; some entries emit less; instrumentation is duplicated per adapter so shapes drift.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-06",
+            "F-b4-01",
+            "F-b1-08"
+          ]
+        },
+        {
+          "id": "concern-telemetry-q2",
+          "angle": "depth",
+          "question": "When trace context does not propagate, across a queue, a scheduled hand-off, a process restart or a call to another party's agent, can two related units still be joined? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "Telemetry for a unit that was enqueued and resumed later, showing the attributes or links that join the parts, plus the same run repeated with the parent context deliberately dropped.",
+          "aligned_looks_like": "Explicit correlation attributes are present on every signal and survive the boundary; links carry causal relations that are not parent-child; joining still works with the parent context dropped.",
+          "misaligned_looks_like": "Correlation depends on parentage and breaks at the queue, the scheduler or the restart; the relation exists only in a log message; the join requires guessing by timestamp.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-06",
+            "X-litmus-d-012"
+          ]
+        },
+        {
+          "id": "concern-telemetry-q3",
+          "angle": "depth",
+          "question": "Are the attributes the published convention names with a recorded schema version, and is the whole unit modelled as a lifecycle of named operations rather than a single span around a model call? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "One exported trace for a multi-step unit with its span names, attribute keys and the schema version it declares.",
+          "aligned_looks_like": "Convention names are used for operations, tools and model calls; the schema version is recorded so a rename in a moving convention is detectable; the trace shows the unit's structure, including tool calls and decisions, not just one wrapper span.",
+          "misaligned_looks_like": "Home-grown attribute keys, or convention names copied with no version pinned; a single opaque span per unit; token and cost figures present in logs but not as metrics.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-06",
+            "F-b3-10",
+            "X-litmus-d-010",
+            "X-litmus-d-011",
+            "X-litmus-d-013"
+          ]
+        },
+        {
+          "id": "concern-telemetry-q4",
+          "angle": "usage",
+          "question": "For one unit started from any entry, can an operator answer from telemetry alone what it cost, what was decided about it, why it stopped, and which actor ran it, with one query that works the same for all four entries? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The query and its result for a unit from each entry, including one unit that was refused and one that hit its ceiling.",
+          "aligned_looks_like": "A single query returns cost, outcome, refusal reason and actor for every entry; the refusal and the budget termination appear as first-class attributes rather than as text.",
+          "misaligned_looks_like": "Answering requires joining separate systems by hand; cost or refusal is missing; the answer differs by entry because attributes were stamped in different places.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-06",
+            "F-b4-02",
+            "F-b4-04",
+            "F-b3-08",
+            "X-litmus-d-013"
+          ]
+        },
+        {
+          "id": "concern-telemetry-q5",
+          "angle": "boundary",
+          "question": "Can the telemetry backend be changed by pointing the exporter somewhere else, with no change to instrumentation or to the attributes emitted? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The same run exported to two different collectors or backends, and a diff of what arrived at each.",
+          "aligned_looks_like": "The payloads are equivalent; the core imports the standard interface and no backend-specific library; the switch is configuration only.",
+          "misaligned_looks_like": "A vendor library is called from the core; attributes are shaped for one backend's query language; switching requires code changes or loses signals.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-06",
+            "F-b1-02",
+            "F-b1-04",
+            "F-b3-10"
+          ]
+        },
+        {
+          "id": "concern-telemetry-q6",
+          "angle": "direction",
+          "question": "Are content redaction and the sampling decision applied by the pipeline rather than by each call site, and are failures and refusals exempt from sampling loss? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The pipeline configuration for redaction and sampling, and one trace containing sensitive input shown as emitted and as it arrives at the backend, plus the retention rule for errors.",
+          "aligned_looks_like": "Redaction happens before export and is not the caller's responsibility; sampling is decided centrally with all errors, refusals and budget terminations retained; the policy is stated and testable.",
+          "misaligned_looks_like": "Raw prompt and result content is exported by default; each call site decides what to record or sample; error traces are dropped by a uniform sampling rate.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-06",
+            "F-b4-01",
+            "X-litmus-d-014"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "Which specific generative-AI attribute names are safe to depend on inside the window, given every one of them still carries a development stability badge, is not resolved by the sources found.",
+          "research_query": "which gen_ai semantic convention attributes are considered safe to depend on production 2026 stability roadmap"
+        },
+        {
+          "claim": "That correlation identifiers should be carried in the work envelope itself rather than only in trace context is this section's design position, supported by the span-link evidence but not directly sourced as a convention.",
+          "research_query": "carrying correlation identifiers in message envelope versus trace context OpenTelemetry guidance 2026"
+        }
+      ]
+    },
+    {
+      "id": "concern-errors",
+      "kind": "concern",
+      "source": "F-b4-07",
+      "name": "Errors",
+      "standard": {
+        "name": "RFC 9457 problem details: a typed, machine-readable failure body with a registry of problem type URIs",
+        "settledness": "baseline",
+        "why": "RFC 9457, published July 2023, obsoletes RFC 7807 and defines one machine-readable error body with five standard members and a registry of common problem type URIs; no competing general-purpose failure format emerged inside the window, and the IANA and SmartBear registries are the places type URIs are collected. Agent-to-agent messaging reinforces rather than replaces it: A2A v1.0, stable in 2026 under the Linux Foundation, requires every error response on every binding to carry a machine-readable error type identifier. The gap is adoption depth, since most APIs still return untyped prose.",
+        "cites": [
+          "X-litmus-d-015",
+          "X-litmus-d-016",
+          "X-litmus-d-017",
+          "X-litmus-d-019"
+        ]
+      },
+      "future_state": {
+        "text": "The future state proposed for this concern: every failure at every boundary, whether a policy refusal, a budget termination, a validation rejection, an adapter fault or a cancelled run, comes back as one typed object whose type identifier is drawn from a closed, versioned registry the platform publishes, carrying the standard members plus extension members that hold what a machine needs to act, which rule refused, which ceiling was exceeded and by how much, whether retrying is meaningful and after how long, and the correlation identifier that ties the failure to its telemetry and its record; the same type identifier appears whatever the transport, since a caller may reach the platform over messaging or an agent binding rather than over HTTP; the type identifier need not be dereferenceable but must be documented; a caller decides what to do from the type and members alone and never by parsing prose, matching strings or reading a status code; and the failure is produced by the platform on the shared path, correlated, attributable and recorded like any other outcome, so no adapter's native exception ever reaches a caller unmapped.",
+        "origin": "proposed",
+        "cites": [
+          "F-b4-07",
+          "F-b4-01",
+          "F-b3-13",
+          "X-litmus-d-016",
+          "X-litmus-d-018",
+          "X-litmus-d-019"
+        ]
+      },
+      "direction": {
+        "text": "Inside the window the format is settled and the work is in the type vocabulary: as one 2026 summary puts it, compared with RFC 7807, RFC 9457 documents three additions: a registry for common problem-type URIs, clearer guidance on returning multiple problems in one response, and handling for non-dereferenceable type URIs. Alongside it, failure at agent tool boundaries is being enumerated rather than improvised, with published taxonomies of runtime faults built on JSON-RPC error semantics, and agent messaging specifications requiring a machine-readable error identifier on every binding. What is being abandoned is the free-text error string and the status code as the only retry signal; the observation that the IETF has had a machine-readable error standard since 2023 and most APIs still return untyped bodies marks that abandonment as incomplete, not disputed. It would be an error inside this window to define a bespoke error object, to derive retryability from a status code or a message, or to expect the type URI to be fetched at runtime to be understood.",
+        "origin": "sourced",
+        "cites": [
+          "X-litmus-d-015",
+          "X-litmus-d-017",
+          "X-litmus-d-018",
+          "X-litmus-d-019"
+        ],
+        "quote": "Compared with RFC 7807, RFC 9457 documents three additions: a registry for common problem-type URIs, clearer guidance on returning multiple problems in one response, and handling for non-dereferenceable type URIs."
+      },
+      "questions": [
+        {
+          "id": "concern-errors-q1",
+          "angle": "guarantees",
+          "question": "Does every boundary return the typed failure object without the caller asking, including refusals taken before execution, ceilings exceeded during execution, validation rejections and faults raised inside an adapter? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "One captured failure of each of those four kinds, taken from at least two different entries, with the body exactly as a caller received it.",
+          "aligned_looks_like": "All of them share one shape and one type vocabulary; the failure is produced on the shared path; nothing reaches a caller as an exception, a stack trace or a bare status.",
+          "misaligned_looks_like": "The outer edge is typed while internal boundaries throw; some paths return prose or an empty body; a refusal and a crash are indistinguishable to a machine.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-07",
+            "F-b4-01",
+            "F-b3-13"
+          ]
+        },
+        {
+          "id": "concern-errors-q2",
+          "angle": "depth",
+          "question": "Is the set of failure type identifiers closed, versioned and documented, with extension members that carry machine-actionable detail rather than putting the specifics only in human-readable text? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The registry of type identifiers with the members each type promises, and two failure bodies showing those extension members populated.",
+          "aligned_looks_like": "A closed registry that changes only by a reviewed addition; each type documents its extension members; the detail a machine needs is in fields, and the human-readable member adds nothing load-bearing.",
+          "misaligned_looks_like": "Type identifiers invented at the call site or reused for unrelated failures; the standard members present but every specific detail buried in the prose member; no version on the vocabulary.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-07",
+            "F-b3-13",
+            "X-litmus-d-016",
+            "X-litmus-d-018"
+          ]
+        },
+        {
+          "id": "concern-errors-q3",
+          "angle": "depth",
+          "question": "Can a caller decide retry, escalate to a human, or stop from the type identifier and members alone, without reading prose, matching a string or inferring from a status code? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The decision table a caller uses, and a recorded run driven by it that retried one failure, escalated another and stopped on a third.",
+          "aligned_looks_like": "Retryability, and any wait before retry, are carried explicitly; the same decision is reached identically on every transport; an agent consuming the failure does not have to interpret language to recover.",
+          "misaligned_looks_like": "Retry decided by status code family, by string matching, or by letting the model read the message and improvise a recovery; transient and permanent failures share one type.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-07",
+            "X-litmus-d-018",
+            "X-litmus-d-019"
+          ]
+        },
+        {
+          "id": "concern-errors-q4",
+          "angle": "usage",
+          "question": "Across the human, event, schedule and external entries, does one underlying fault produce one type identifier, and does the failure carry the correlation identifier and the actor so it can be found in telemetry and in the record afterwards? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The same fault triggered from all four entries, the four bodies side by side, and the telemetry and record entries found from the correlation identifier in one of them.",
+          "aligned_looks_like": "One type across all four with transport-appropriate encoding only; correlation identifier and actor present on every one; a schedule-triggered failure is as reportable as a human one.",
+          "misaligned_looks_like": "Per-entry error vocabularies; a failure on the schedule or event entry is dropped silently because no one is waiting for it; no correlation identifier, so the failure cannot be tied to its trace.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-07",
+            "F-b4-06",
+            "F-b3-08",
+            "X-litmus-d-019"
+          ]
+        },
+        {
+          "id": "concern-errors-q5",
+          "angle": "boundary",
+          "question": "When an implementation behind a capability interface fails, is its native error mapped to the platform's type at that boundary, and do two implementations behind the same interface produce the same type for the same failure? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The same induced failure, such as a timeout and an authorization refusal, from two implementations behind one interface, with both mapped bodies.",
+          "aligned_looks_like": "Both produce the same type identifier and members; the native code or message survives only as non-load-bearing extension detail; the mapping is written down and tested.",
+          "misaligned_looks_like": "An implementation's own error object or exception escapes to the caller; the type differs by implementation, so callers branch on which one answered; the mapping exists for one implementation only.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-07",
+            "F-b1-02",
+            "F-b1-03",
+            "F-b3-13"
+          ]
+        },
+        {
+          "id": "concern-errors-q6",
+          "angle": "direction",
+          "question": "Does the typed failure survive transports that are not HTTP, such as messaging, an agent-to-agent binding, or a command-line invocation, with a documented mapping in each direction? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The same failure delivered over two different transports, plus the mapping table between the failure type and each transport's own error carrier.",
+          "aligned_looks_like": "One type identifier carried on every binding, with the transport's native error field holding a machine-readable identifier that maps back to it; the mapping is documented and round-trips.",
+          "misaligned_looks_like": "Failures are typed only over HTTP and degrade to prose or an exit code elsewhere; the transport's error field carries a message rather than an identifier; the mapping is lossy in one direction.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-07",
+            "F-b3-13",
+            "F-b3-08",
+            "X-litmus-d-019"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "How a problem type identifier should be mapped onto the error codes of agent messaging and RPC bindings, so one vocabulary survives both, was not resolved by any source found inside the window.",
+          "research_query": "mapping RFC 9457 problem type URI to JSON-RPC and gRPC error codes agent protocol guidance 2026"
+        },
+        {
+          "claim": "That retry semantics belong in extension members of the failure body, rather than in transport headers, is this section's position and was not sourced.",
+          "research_query": "retryable flag retry-after in problem details extension members versus HTTP headers API guidance 2026"
+        }
+      ]
+    },
+    {
+      "id": "concern-idempotency",
+      "kind": "concern",
+      "source": "F-b4-08",
+      "name": "Idempotency",
+      "standard": {
+        "name": "Idempotency key convention on the wire, backed by a claim with a lease and a monotonic fencing token, plus event-envelope identity for deduplication",
+        "settledness": "emerging",
+        "why": "The wire convention is still an IETF HTTPAPI working-group Internet-Draft: revision 07 of 15 October 2025 is Standards Track but had not become an RFC and expired inside the window. The mechanism beneath it is converging independently: libraries shipped in 2026 such as the Spiral Framework idempotency package and idemkit implement the same small port of atomic claim, lease, fencing token and stored completion, and event envelopes already carry a source and id pair that uniquely identifies a delivery. The future state therefore names the property to hold, at most one effect and the same result on replay, with the exit being a change of carrier if the draft's field name or semantics move.",
+        "cites": [
+          "X-litmus-d-020",
+          "X-litmus-d-021",
+          "X-litmus-d-023",
+          "X-litmus-d-024"
+        ]
+      },
+      "future_state": {
+        "text": "The future state proposed for this concern: every externally-triggered unit of work carries a deduplication identity, supplied by the caller when it has one and otherwise derived by the platform from the entry itself, from the event envelope's source and id, from the schedule's occurrence, or from a request identifier at a human or external entry, so replay safety never depends on caller cooperation; that identity is enforced by an atomic claim with a time-bounded lease and a monotonic token rather than by a recently-seen cache, so a second delivery arriving concurrently either waits for the first or is refused with a typed failure, and a stalled holder that returns mid-effect is fenced out by the resource refusing its lower token; the claim record binds the identity to the unit, the actor, the tenant and the outcome, and a replay returns the stored outcome unchanged, including a stored failure, marked as a replay and carrying the original correlation; a run that crashed after a partial side effect resumes without repeating it; and keys are scoped so that two tenants cannot collide.",
+        "origin": "proposed",
+        "cites": [
+          "F-b4-08",
+          "F-b4-01",
+          "F-b3-16",
+          "X-litmus-d-022",
+          "X-litmus-d-023",
+          "X-litmus-d-024"
+        ]
+      },
+      "direction": {
+        "text": "Inside the window the wire convention has not finished: the Idempotency-Key header field remains an IETF HTTPAPI working-group document, of which a 2026 summary notes that the draft is currently still in the Internet-Draft stage and has not yet been published as an RFC, while its semantics are stable enough to build against. The mechanism is what is settling: 2026 libraries such as idemkit and the Spiral Framework idempotency package converge on the same port, an atomic claim, a storage-clock lease, a fencing token and a stored completion with an acknowledge or retry decision, and the distributed-systems consensus is that if a duplicate or out-of-order operation would corrupt data, fencing tokens or an equivalent are required. At-least-once delivery remains the default for events, so deduplication by envelope source and id is assumed rather than optional. What is being abandoned is the key on the wire with no lease behind it and the short-lived seen-recently cache, which cannot cover a crash window or a producer replay. It would be an error inside this window to treat idempotency as client retry logic, to hold replay safety in a memory cache, or to bind the design to a draft field name instead of to the property.",
+        "origin": "sourced",
+        "cites": [
+          "X-litmus-d-020",
+          "X-litmus-d-021",
+          "X-litmus-d-022",
+          "X-litmus-d-023",
+          "X-litmus-d-024"
+        ],
+        "quote": "The draft is currently still in the Internet-Draft stage and has not yet been published as an RFC."
+      },
+      "questions": [
+        {
+          "id": "concern-idempotency-q1",
+          "angle": "guarantees",
+          "question": "Is every externally-triggered unit of work deduplicated even when the caller supplies no key, and is the derivation rule defined for each entry? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The key derivation rule for each of the four entries, and a replayed trigger through each entry with no key supplied, showing how many effects resulted.",
+          "aligned_looks_like": "The platform derives an identity at every entry, including redelivered events, re-fired schedule occurrences and repeated external calls; a replay produces no second effect anywhere; a caller cannot opt out.",
+          "misaligned_looks_like": "Deduplication happens only when the caller passes a key; one or more entries, typically the schedule or an internal event, are exempt; the derivation is undefined so the same trigger keys differently on each attempt.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-08",
+            "F-b4-01",
+            "F-b3-16",
+            "X-litmus-d-023"
+          ]
+        },
+        {
+          "id": "concern-idempotency-q2",
+          "angle": "depth",
+          "question": "What happens when two identical triggers arrive at the same instant, and what happens when a holder stalls past its lease and then returns to write mid-effect? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "A concurrency run with two simultaneous duplicates and the count of effects produced, plus a run where a holder is paused beyond lease expiry, a second holder proceeds, and the first then attempts its write.",
+          "aligned_looks_like": "Exactly one claim wins and the other waits for the outcome or is refused with a typed failure; the resumed stale holder is refused because its token is lower than the one the resource has accepted; both results are reproducible under repetition.",
+          "misaligned_looks_like": "A seen-recently cache with a time window, or a read-then-write check that both callers pass; the stale holder's write lands and overwrites or duplicates the effect; the guarantee holds only in single-process tests.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-08",
+            "X-litmus-d-022",
+            "X-litmus-d-024"
+          ]
+        },
+        {
+          "id": "concern-idempotency-q3",
+          "angle": "depth",
+          "question": "On a replay, is the original outcome returned unchanged, and is a recorded failure replayed as that same typed failure rather than re-executed? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "Two identical triggers and both responses, with the second identifiable as a replay; the same pair for a trigger whose first attempt failed; and the claim record showing what was stored.",
+          "aligned_looks_like": "The second returns the stored result with the original correlation identifier and a marker that it is a replay; a stored failure comes back as the same type; the record binds identity, unit, actor and outcome.",
+          "misaligned_looks_like": "The second re-executes; or it returns a conflict even though a completed result exists; or failures are not recorded, so every retry of a failed unit re-runs its side effects.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-08",
+            "F-b4-07",
+            "X-litmus-d-024"
+          ]
+        },
+        {
+          "id": "concern-idempotency-q4",
+          "angle": "usage",
+          "question": "Across the four entries, what is the deduplication identity composed of, how is it scoped, and what happens when the same logical work arrives twice through two different entries? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The composition and scope of the key for each entry, a case where two tenants issue the same caller-supplied key, and a case where identical work arrives once by event and once by human request.",
+          "aligned_looks_like": "The key is scoped by tenant and actor so identical strings from two tenants never collide; the per-entry composition is documented; work arriving twice by different doors either collapses to one unit or the decision not to collapse it is stated and deliberate.",
+          "misaligned_looks_like": "A global key namespace where one caller can suppress another's work; the same envelope processed twice because two entries key it differently; scope defined by whichever store happened to be used.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-08",
+            "F-b3-08",
+            "X-litmus-d-023"
+          ]
+        },
+        {
+          "id": "concern-idempotency-q5",
+          "angle": "boundary",
+          "question": "Is the claim store reached through a capability interface, and does a second store pass the same concurrency, lease-expiry and fencing suite as the first? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The interface the core imports, the suite itself, and its results against two stores with different concurrency primitives.",
+          "aligned_looks_like": "Both stores pass the same suite including the concurrent-duplicate and stale-holder cases; the core names the interface only; no caller depends on a store-specific primitive or on its clock.",
+          "misaligned_looks_like": "The guarantee is expressed in one store's primitives so a second cannot implement it; the second store is only exercised single-threaded; the lease depends on wall-clock agreement between callers.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-08",
+            "F-b1-02",
+            "F-b1-04",
+            "F-b3-16",
+            "X-litmus-d-022"
+          ]
+        },
+        {
+          "id": "concern-idempotency-q6",
+          "angle": "direction",
+          "question": "Does the design hold the replay-safety property independently of the wire convention that carries the key, and does it cover a multi-step unit that crashes after a partial side effect? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "Where the identity is read from at each entry and what happens if that carrier is renamed, plus a crash injected between a side effect and the recording of its completion, followed by a retry.",
+          "aligned_looks_like": "The carrier is one input among several and a rename changes one mapping, not the guarantee; after the crash the effect is applied once, completion is reconciled on resume, and the retry returns the stored outcome.",
+          "misaligned_looks_like": "The design is written to a draft field name as though fixed; the crash leaves a claim that blocks the unit forever or expires into a duplicate effect; replay safety exists at the outer boundary but not for the steps that caused the side effects.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-08",
+            "F-b3-16",
+            "X-litmus-d-020",
+            "X-litmus-d-021",
+            "X-litmus-d-022"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "How long a claim record must be retained for replay to remain safe, and what a caller should receive once a key has aged out, is not settled by any source found inside the window.",
+          "research_query": "idempotency key retention window expiry policy what to return after key expires API 2026"
+        },
+        {
+          "claim": "That a schedule occurrence should be treated as a deduplication identity in the same way an event envelope's source and id are was not directly sourced.",
+          "research_query": "scheduled job occurrence identifier idempotency duplicate firing recurrence rule 2026"
+        }
+      ]
+    }
+  ]
+}

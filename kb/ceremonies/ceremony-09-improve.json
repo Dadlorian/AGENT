@@ -1,0 +1,85 @@
+{
+  "ceremony": 9,
+  "section": "wave-4c",
+  "improver": "opus-improver",
+  "date": "2026-09-03",
+  "numbering_note": "Requested as ceremony 8 for section wave-4c, but ceremony 8 is closed for wave-4b (kb/ceremonies/ceremony-08-review.json and -improve.json, state/loop.json ceremony=8). Following the repo-global rule (state/author-brief.md defect item 7, build-ceremony), this improve record takes 9, pairing with kb/ceremonies/ceremony-09-review.json which the reviewer had already renumbered the same way. `ls kb/ceremonies/` was run before writing anything. Eighth collision in a row; the loop script cannot be changed mid-run, so the rule stays in the brief where every agent reads it fresh.",
+  "applied": [
+    {
+      "finding": "C9-001",
+      "change": "xc-typed-errors-implement now records the minted second-adapter entity as an open question applying 1-3-1 (T-t5-02), the way its three wave-4c siblings did: three options weighed (add the entity and accept a knowledge-base rebuild that invalidates every skill's provenance heads; collapse both rows onto E-adapter-errors-absent, the only entity the Errors row has, which would make the two implementations indistinguishable in the table the swap run reads; keep the minted id, mark it proposed in the row and record the gap), recommendation (c) followed, with cap-errors-implement named as the sibling that already records the identical gap for the same B3 row and xc-typed-errors named as the owner of the F-b3-13 reading. The adapters[] rows and the entity id are unchanged: the reviewer's alternative of listing the id under entities[] would have produced a validator error, since that list is checked against the knowledge base.",
+      "files": [
+        ".claude/skills/xc-typed-errors-implement/skill.json",
+        ".claude/skills/xc-typed-errors-implement/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C9-001 (root cause, checking discipline)",
+      "change": "tools/validate_skills.py now resolves every adapters[].entity against kb/entities.jsonl and warns when an id resolves nowhere and the row does not say it is a proposed entity id (MINTED_ENTITY_RE over maps_to, cannot and swap_procedure). Sixteen adapter rows across eight skills currently carry minted ids; a hard error would have forced a knowledge-base rebuild repo-wide, so the check is a warning that is cleared by honesty rather than by invention. The module docstring's warning list records it as ceremony 9, C9-001.",
+      "files": [
+        "tools/validate_skills.py"
+      ]
+    },
+    {
+      "finding": "C9-001 (sweep beyond the reviewed wave)",
+      "change": "The new check found the same defect outside wave-4c: core-judge-implement's two adapter rows both named ids that resolve nowhere and neither said so. Both maps_to rows now state that the id is proposed, and one 1-3-1 open question records the gap for the pair. The other fourteen minted ids across cap-errors-implement, cap-human-interaction(-implement), cap-mandate-broker(-implement) and cap-memory(-implement) already marked themselves and needed no edit.",
+      "files": [
+        ".claude/skills/core-judge-implement/skill.json",
+        ".claude/skills/core-judge-implement/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C9-002",
+      "change": "xc-provenance-chain's artifact-scope open question no longer cites T-t3-02 (TARGET's usability rule) with a quote that bears nothing on artifact scope. It now cites F-b4-05 alone, quoting the contract sentence that actually defines an artifact ('Every artifact is attributable to the code version, inputs and actor that produced it'), and names cap-provenance as the owner of that sentence so the compose-by-name check stays satisfied.",
+      "files": [
+        ".claude/skills/xc-provenance-chain/skill.json",
+        ".claude/skills/xc-provenance-chain/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C9-001, C9-002 (author brief)",
+      "change": "state/author-brief.md gained defect item 16 (run kb.py tree before minting an adapters[].entity id; reuse a real entity of the same B3 row where one exists; record the gap as a 1-3-1 open question; mark a minted id proposed in maps_to and never list it under entities). Headers moved to ceremonies 1-9 and waves 1 to 4c, and eight items were tightened to keep the brief at 119 lines, under the 120-line pointer budget.",
+      "files": [
+        "state/author-brief.md"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "finding": "C9-001, the reviewer's second alternative",
+      "reason": "'List the minted id in the skill's top-level entities array so validate_skills.py's existing unknown-id check catches it' was declined because that check is an error, not a warning: adding E-swap-candidate-runtime-boundary-interceptor to entities[] would have made validate_skills.py exit 1 on a skill that is otherwise correct. The gap is now caught by the new adapters[].entity warning instead, which reports it without failing the build, and cap-errors-implement's existing open question already states the reason not to list it ('do not list the id under entities so the validator's entity check is not silently satisfied by an invented record')."
+    },
+    {
+      "finding": "C9-003",
+      "reason": "Positive finding; the reviewer recorded it as what_worked and asked for no change. Nothing applied."
+    },
+    {
+      "finding": "review brief_improvement 3",
+      "reason": "The reviewer itself recommended no brief change for the citation-relevance nit, on the grounds that one occurrence is not a pattern. Agreed: the honesty rule already covers it and a sixteenth-and-a-half brief item would cost more attention than it saves."
+    }
+  ],
+  "brief_changes": [
+    "Added defect item 16 on minted adapters[].entity ids, naming the three wave-4c siblings that handled the gap correctly so the next author has a worked example rather than a rule.",
+    "Updated the defect header to ceremonies 1-9 and the what-worked header to waves 1 to 4c, and folded wave-4c's 122-for-122 verbatim-quote result into the existing quote bullet rather than adding a new one.",
+    "Tightened items 2, 4, 9, 10, 11, 12, 13, 14 and 15 without changing what any of them asks for, to hold the brief at 119 lines against the 120-line budget. Nothing was folded in that does not change an author's next action."
+  ],
+  "metrics_after": {
+    "findings_total": 3,
+    "findings_applied": 2,
+    "findings_declined": 1,
+    "skills_edited": 3,
+    "tools_edited": 1,
+    "validator_errors": 0,
+    "validator_warnings_repo": 74,
+    "validator_warnings_naming_wave_4c": 0,
+    "author_brief_lines": 119,
+    "new_checks": 1
+  },
+  "lessons_for_next_section": [
+    "A finding whose fix is one row is usually a finding whose cause is one missing check: C9-001 named a single fabricated entity id in one skill, and the check written to catch it found the same defect in a skill from an earlier wave that no reviewer had flagged. Write the check before writing the fix, then let it tell you the true blast radius.",
+    "When a reviewer proposes a remedy, test it against the validator before applying it. C9-001's second alternative (list the minted id under entities[]) would have turned a clean skill red, because that list is checked with an error and not a warning; the honest version of the same intent is a new warning that fabrication cannot satisfy.",
+    "A citation is evidence for a claim, not decoration on a field. T-t3-02 was a true verbatim substring and still wrong, because the sentence it quotes is about usability and the row is about artifact scope. The substring check cannot see this; a reader following the link can, so read your own citation back as if you were that reader.",
+    "Repo-global counters do not survive being passed as arguments: eight ceremonies in a row have been handed a number already closed. The durable fix is the one that lives where the agent reads fresh state (the brief and the directory listing), not where the caller writes it.",
+    "Adding a warning is cheap only if it is clearable by telling the truth. Sixteen adapter rows carried minted ids; fourteen already said so, so the new check cost two honest sentences and one open question, and left zero warnings behind."
+  ]
+}

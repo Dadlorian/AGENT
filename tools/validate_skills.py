@@ -34,6 +34,10 @@ Warnings:
   - a problem type urn:agentic:problem:<suffix> whose suffix has no row in the closed registry in
     docs/decomposition.md section 2.1.6 and is not marked "pending registration" near where the skill
     states it, with a registered type named as the fallback (author-brief defect item 14)
+  - an adapters[].entity id that resolves nowhere in kb/entities.jsonl and is not said to be proposed
+    in the row that states it (ceremony 9, C9-001): the schema checks only the E-(adapter|swap-
+    candidate)- name pattern and the unknown-id error covers the top-level entities list, so a minted
+    id is otherwise indistinguishable from a knowledge-base-backed one without grepping the kb
 """
 from __future__ import annotations
 
@@ -57,6 +61,9 @@ PRODUCTS = [
     "Claude Code", "Restate", "DBOS", "Inngest", "gVisor", "Kata", "Cloud Hypervisor", "OpenRouter",
     "Phoenix", "Braintrust", "Cedar", "Sigstore", "SPIFFE", "SPIRE", "RunPod", "polkit", "systemd", "docker",
 ]
+# an adapter entity id a skill mints because the knowledge base has none: the row has to say so,
+# in the row, in these words (ceremony 9, C9-001).
+MINTED_ENTITY_RE = re.compile(r"proposed[^.]{0,80}entity id", re.I)
 PRODUCT_RE = re.compile(r"\b(" + "|".join(re.escape(p) for p in PRODUCTS) + r")\b")
 ID_RE = re.compile(r"^[FERTX]-[a-z0-9-]+$")
 NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -320,6 +327,18 @@ def main() -> int:
             ne = (sk.get("contract") or {}).get("not_exposed") or []
             if not any(GRADER_RULE in (r.get("sources") or []) for r in ne if isinstance(r, dict)):
                 warns.append(f"{name}: cap ideal skill with no not_exposed row citing {GRADER_RULE} (the grader rule)")
+        # an adapter entity id that resolves nowhere is a minted id: legitimate when the capability
+        # has no such entity, but only if the row says so, since nothing else tells a reader it is
+        # proposed and `kb.py tree` will never show it (ceremony 9, C9-001).
+        for a in sk.get("adapters", []):
+            eid = a.get("entity")
+            if eid in ENTITIES or not eid:
+                continue
+            prose = " ".join(str(a.get(k, "")) for k in ("maps_to", "cannot", "swap_procedure"))
+            if not MINTED_ENTITY_RE.search(prose):
+                warns.append(f"{name}: adapter row entity {eid} resolves nowhere in kb/entities.jsonl; "
+                             f"say in the row that it is a proposed entity id, and record the gap as an "
+                             f"open question")
         # an adapter row's sources may cite adapter entities of its own capability (a row split across
         # two entities, a sibling swap candidate), never another capability's: the ids exist either way,
         # so only the fact each entity is sourced from tells them apart (author-brief defect item 12).

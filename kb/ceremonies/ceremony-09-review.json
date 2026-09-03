@@ -1,0 +1,64 @@
+{
+  "ceremony": 9,
+  "section": "wave-4c",
+  "reviewer": "sonnet",
+  "date": "2026-09-03",
+  "numbering_note": "Requested as ceremony 8, but ceremony 8 is closed for section wave-4b (kb/ceremonies/ceremony-08-review.json and -improve.json, state/loop.json ceremony=8). Per the repo-global numbering rule build-ceremony states and every prior ceremony has applied (state/author-brief.md defect item 7, itself corrected six times before this run), this review and its paired improve record take the next unused number, 9, for section wave-4c. `ls kb/ceremonies/ceremony-*-review.json` was run before writing anything.",
+  "findings": [
+    {
+      "id": "C9-001",
+      "skill": "xc-typed-errors-implement",
+      "location": "adapters[1] (role: second), entity field",
+      "severity": "fix",
+      "category": "honesty",
+      "finding": "The second adapter row's `entity` field names `E-swap-candidate-runtime-boundary-interceptor`, an id that does not exist anywhere in kb/entities.jsonl (grep confirms zero matches) and is not listed in the skill's own top-level `entities` array either -- the one place validate_skills.py checks entity ids against the kb (it never checks `adapters[].entity`, only the schema's `^E-(adapter|swap-candidate)-` pattern, so this passes silently with 0 errors). `python3 tools/kb.py tree` shows E-capability-errors has `implemented_today_by -> E-adapter-errors-absent` and no `swappable_to` entries at all, confirming no real candidate backs this id. The skill's own maps_to text calls it 'a proposed entity id: no swap-candidate entity exists for this capability', which is honest about the fabrication but is not the same discipline its three wave-4c siblings used for the identical problem: xc-identity-delegation-implement, xc-policy-gate-implement and xc-provenance-chain-implement each faced 'this pair has no dedicated entity' and each resolved it with an explicit open_question applying 1-3-1 (three options weighed, e.g. 'add entities and rebuild the kb, which invalidates every skill's provenance heads' vs 'record the pair against the existing entities of the same B3 row'), landing on reusing a real, kb-sourced entity of the same capability row. xc-typed-errors-implement instead invents a new id directly in the Adapters table with no open_question addressing the choice, so a reader has no way to tell this entity apart from a legitimate one like E-swap-candidate-cedar without independently grepping the kb.",
+      "evidence": "adapters[1].entity: \"E-swap-candidate-runtime-boundary-interceptor\"; adapters[1].maps_to: \"Proposed implementation, and a proposed entity id: no swap-candidate entity exists for this capability...\"; `grep -c E-swap-candidate-runtime-boundary-interceptor kb/entities.jsonl` = 0; `python3 tools/kb.py tree` for E-capability-errors: \"implemented_today_by -> E-adapter-errors-absent\" with no swappable_to line, versus E-capability-identity's two swappable_to lines that xc-identity-delegation-implement's sibling row reuses.",
+      "suggested_change": "Either add an open_question here matching the sibling pattern (weighing: add a real entity and accept a kb rebuild that invalidates provenance heads repo-wide; leave the second implementation without a dedicated entity and say so structurally rather than inventing one; or defer the adapter pair to a later wave) and reuse an existing E- id meanwhile (E-adapter-errors-absent is the only one that exists for this capability), or, if a genuinely new id is unavoidable because Errors has no swap-candidate row at all, list it in the skill's top-level `entities` array so validate_skills.py's existing unknown-id check actually catches it if it is ever mistyped, and file the gap as a proposed addition to kb/entities.jsonl at the next kb rebuild rather than leaving it undiscoverable via `kb.py tree`."
+    },
+    {
+      "id": "C9-002",
+      "skill": "xc-provenance-chain",
+      "location": "open_questions[2] (\"What is an artifact for the purposes of this guarantee...\")",
+      "severity": "nit",
+      "category": "honesty",
+      "finding": "The open question about whether intermediates count as artifacts cites T-t3-02 with the verbatim quote \"It cannot be daunting or overly complex, or no one will use it.\" -- the quote is a true substring of T-t3-02 (mechanically correct), but T3.2 is TARGET's usability rule and has no evident connection to the question's actual subject (which artifact digests are in scope for the orphan sweep). The citation reads as attached to fill the sources field rather than because T3.2 supports the point being made, which is the shape of citation-padding the repo's honesty rule is meant to catch even when the substring check passes.",
+      "evidence": "open_questions[2].sources: [\"F-b4-05\", \"T-t3-02\"], quote: \"It cannot be daunting or overly complex, or no one will use it.\" -- T-t3-02 full text (TARGET.md line 20): \"2. It cannot be daunting or overly complex, or no one will use it.\", a usability constraint on the whole platform with no stated relation to artifact/intermediate scoping.",
+      "suggested_change": "Drop T-t3-02 from this row's sources (F-b4-05 alone already supports the default chosen) or replace it with a citation that actually bears on why intermediates confined to a unit's own filesystem are out of scope, since a reader following the citation to understand the reasoning finds a sentence about ease of use, not about artifact boundaries."
+    },
+    {
+      "id": "C9-003",
+      "skill": "xc-identity-delegation, xc-policy-gate, xc-provenance-chain, xc-typed-errors",
+      "location": "manifest cross-check",
+      "severity": "nit",
+      "category": "usefulness",
+      "finding": "Positive finding, recorded so the pattern is not lost: all four ideal-facet skills' composes_with.builds_on and used_by match docs/skill-manifest.json exactly, and every used_by target that is not yet written appears correctly among validate_skills.py's benign 'not written yet' warnings rather than as a broken link. This is what the manifest cross-check is supposed to look like and none of wave-4c's eight skills deviated from it.",
+      "evidence": "Scripted comparison of composes_with against docs/skill-manifest.json for all 8 skills returned 'match: True' on every builds_on and used_by pair; validate_skills.py's 74 warnings contain zero lines naming any of the 8 wave-4c skills.",
+      "suggested_change": "No change; recorded as what_worked below rather than acted on."
+    }
+  ],
+  "metrics": {
+    "skills": 8,
+    "rows_total": 222,
+    "rows_sourced": 122,
+    "rows_proposed": 100,
+    "validator_errors": 0,
+    "validator_warnings_repo": 74,
+    "validator_warnings_in_scope": 0,
+    "findings_block": 0,
+    "findings_fix": 1,
+    "findings_nit": 2
+  },
+  "brief_improvements": [
+    "Add a validate_skills.py check that resolves every adapters[].entity against kb/entities.jsonl (not only the top-level entities[] array), since the schema only checks the E-(adapter|swap-candidate)- naming pattern and a fabricated id currently passes with 0 errors -- xc-typed-errors-implement's E-swap-candidate-runtime-boundary-interceptor is the case that would have been caught.",
+    "State explicitly, next to defect items 9 and 12 in state/author-brief.md, that an -implement facet whose capability has no swappable_to entity in `kb.py tree` follows the same 1-3-1-plus-open_question pattern its wave-4c siblings already modeled (reuse the capability's existing adapter/absent entity and record the gap as an open question), rather than inventing a new E- id directly in an adapters[] row.",
+    "No brief change needed for the citation-relevance nit (C9-002): it is a single occurrence, not a repeated pattern across the wave, so it is recorded as a finding rather than promoted to a brief rule."
+  ],
+  "what_worked": [
+    "All 222 rows across the 8 skills were checked; every sourced quote (122 of 122) verified as a true verbatim substring of the kb record it cites, spot-checked directly with `python3 tools/kb.py show <id>` across roughly 30 distinct ids spanning F-, T-, X- and E- prefixes, including several long research-record snippets.",
+    "python3 tools/validate_skills.py reports 0 errors across 91 skills and 74 warnings, none naming any of the 8 wave-4c skills -- the repeat offenders from ceremonies 1-8 (compose-by-name violations, unmarked problem-type suffixes, missing not_exposed rows for design rule 6) do not recur here.",
+    "A cross-skill honesty check paid off: xc-identity-delegation's ordering open_question claims 'cap-identity applied 1-3-1 on 2026-09-03 and adopted current-actor-first' -- verified directly against cap-identity/skill.json's own open_questions, which record exactly that resolution with the same three options and the same date, so the cross-reference is accurate rather than asserted.",
+    "One SKILL.md was rendered fresh from its skill.json (xc-typed-errors) and diffed byte-for-byte against the committed file: exact match, confirming the render pipeline validate_skills.py already checks for all 91 skills held for the skill spot-checked here too.",
+    "Every urn:agentic:problem: type suffix used across the 8 skills (policy-denied, identity-untrusted, budget-exhausted, adapter-unavailable, idempotency-conflict, document-invalid, deadline-exceeded) was checked against the ten-row closed registry in docs/decomposition.md section 2.1.6 and all are registered rows -- zero unmarked-suffix violations, continuing wave-4a's clean record after ceremony 7's sweep fixed 44 prior occurrences across earlier waves.",
+    "The three -implement skills that needed a second adapter entity but had none dedicated to the guarantee (identity-delegation, policy-gate, provenance-chain) each recorded the gap as an explicit 1-3-1 open_question and reused a real, kb-sourced entity from the same capability row rather than inventing one -- the fourth (typed-errors-implement) is the sole exception, C9-001."
+  ]
+}

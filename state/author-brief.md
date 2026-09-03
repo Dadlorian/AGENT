@@ -40,24 +40,23 @@ Content expectations per layer:
 
 Keep each skill.json focused, and treat these as checked budgets, not aspirations: 6 to 10 instructions, 3 to 10 invariants, 3 to 8 best practices, and roughly 3 to 10 rows in any table. Long material - a full JSON Schema, a table of standards, worked examples - goes in references/<file>.md in the skill dir, with a proposed instruction saying when to open it and stating that the skill body is enough without it. A schema longer than about 25 rendered lines is long material: put a summary shape in contract.shapes and the full one in references/; if the material was dropped or never needed, delete the references/ directory rather than shipping an empty one. These are checked: tools/validate_skills.py warns when instructions, invariants or best_practices fall outside the budget, so clear every warning naming your skills before you close them.
 
-## Defects found in ceremonies 1-8 - do not repeat them
+## Defects found in ceremonies 1-9 - do not repeat them
 
-Review findings from waves 1, 1a, 2, 3a, 3b, 3c, 4a and 4b. Each cost a fix; none should recur. Items 2, 4
-and 14 recurred across ceremonies or skills, so each carries the sharper check that would have caught it.
+Findings from waves 1 through 4c. Each cost a fix; none should recur. Items 2, 4 and 14 recurred across
+ceremonies, so each carries the sharper check that would have caught it.
 
 1. There are SEVEN layers, not six: root, core, cap, xc, seam, compose, build. `root` is reserved for
    agentic-stack alone (schema enum and validator both know it); count them there before you write the count.
 2. Do not restate a fact a skill under your builds_on already states: grep that skill's skill.json for the id
-   first, and if it is there open with "agentic-stack already states this (F-...)" and add only your
-   consequence. Compose by name, not by copy - the check is per citation, not per skill. The validator warns
-   when a row cites an id under the same quote as the root or a builds_on skill without naming it.
+   first, and if it is there open with "agentic-stack already states this (F-...)" and add only your consequence.
+   Compose by name, not by copy - per citation, not per skill; warns when a row cites an id under the same quote
+   as the root or a builds_on skill without naming it.
 3. Any machine-readable field you name in an invariant or an instruction gets a formal shape in the same skill's
-   contract.shapes (JSON Schema 2020-12, proposed unless PASS.md gives the shape). Prose describing a field
-   three times is not a specification: the next author has to code against it.
-4. origin=sourced covers the scope of the claim, not only its wording: do not widen one concrete fact into a
-   claim about a class ("a de facto standard can be...") and leave it sourced. Run `python3 tools/kb.py show
-   <id>`, read the whole sentence the quote sits in, subject included, and if your row's subject is wider the
-   row is proposed and the fact is its example. The validator checks the quote, not the inference.
+   contract.shapes (JSON Schema 2020-12, proposed unless PASS.md gives the shape). Prose thrice is not a spec.
+4. origin=sourced covers the scope of the claim, not only its wording: do not widen one concrete fact into a claim
+   about a class ("a de facto standard can be...") and leave it sourced. Run `python3 tools/kb.py show <id>`, read
+   the whole sentence including its subject; if your row's subject is wider the row is proposed and the fact is
+   its example. The validator checks the quote, not the inference.
 5. Write the description's trigger clauses so they fire on this skill's actual scope: "whenever you write down
    a result" fires on every sentence in the repo; name the artifact or the moment instead.
 6. agentic-stack's composes_with is empty by design and the root is exempt from the used_by symmetry check; do
@@ -65,48 +64,49 @@ and 14 recurred across ceremonies or skills, so each carries the sharper check t
 7. Ceremony numbers are a counter global to the repository, never per-section and never reused: N is one more
    than the highest kb/ceremonies/ceremony-NN-review.json on disk. A number a caller hands you that is already
    taken belongs to a closed ceremony; take the next unused one and say so in a numbering_note. The same N ties
-   the review, improve, lessons, ledger and known-issues records together (`python3 tools/ceremony_check.py`).
-   Stale seven sections running now: list the directory before you write anything.
+   review, improve, lessons, ledger and known-issues together (`python3 tools/ceremony_check.py`). Stale eight
+   sections running now: list the directory before you write anything.
 8. State an enumeration ONCE per skill and have every other row point at that list rather than re-list it.
    TARGET.md T1 lists three ways in (human, agent, event) and T6.2 four entries (human, event, schedule,
    external system or agent); they are different lists, so name which one you are citing.
 9. A cap- ideal skill (no -implement or -use suffix) carries its own adapters[] pair and a definition_of_done
-   that runs over both and asserts `adapters_run >= 2`. Defer the pair to -implement only when PASS.md's
-   adapter-today column is literally *absent*, then say so in an open_question citing that row, as cap-identity
-   does; the validator warns when a cap ideal skill has neither.
-10. When you adapt a sibling's near-identical template, reread the prose and not only the code-fenced strings
-   for a noun belonging to the donor skill - a "runtime" in a durable-execution skill. The check still passes.
+   over both asserting `adapters_run >= 2`. Defer the pair to -implement only when PASS.md's adapter-today
+   column is literally *absent*, then say so in an open_question citing that row, as cap-identity does.
+10. Adapting a sibling's template: reread the prose, not only the code fences, for a noun belonging to the donor skill (a "runtime" in a durable-execution skill). Nothing checks it.
 11. A cap- ideal skill STATES design rule 6, it does not merely satisfy it: carry a not_exposed row citing
    F-b1-07 saying what the grader rule forbids on this interface (the criterion never travels in a completion
-   request, a document handle, a DecisionRequest's context). The validator warns when the row is missing.
-12. An E- id in an adapter row's sources belongs to the same capability row as the adapter: E-adapter-jsonl-
-   hash-chain (State persistence, F-b3-17) in a Provenance row sends a reader to the wrong B3 row. Siblings of
-   your own capability are fine; the validator warns when the entity's kb sources do not overlap the row's.
+   request, a document handle, a DecisionRequest's context). Warns when the row is missing.
+12. An E- id in an adapter row's sources belongs to the same capability row as the adapter: E-adapter-jsonl-hash-
+   chain (State persistence, F-b3-17) in a Provenance row sends a reader to the wrong B3 row. Siblings of your
+   own capability are fine; warns when the entity's kb sources do not overlap the row's.
 13. When your manifest note says the ideal facet "also carries the usability section" there is no -use sibling
-   to carry it, so meet the same bar a -use skill does: a worked instance for EACH of TARGET T1's three ways
-   in (declared_by / actor `user:`, `agent:`, `service:` or `schedule:`) and a worked rejection as an actual
-   `urn:agentic:problem:` object, not a prose rule pointing at cap-errors. The validator warns per piece.
+   to carry it, so meet a -use skill's bar: a worked instance for EACH of TARGET T1's three ways in (declared_by
+   / actor `user:`, `agent:`, `service:` or `schedule:`) and a worked rejection as an actual
+   `urn:agentic:problem:` object, not a prose rule pointing at cap-errors. Warns per missing piece.
 14. A problem `type` is not yours to invent. Before you write `urn:agentic:problem:<suffix>` anywhere - a worked
-   failure example, an expected_failure, a refusal table - check the suffix against the ten-row closed registry
-   in docs/decomposition.md section 2.1.6, and reuse the row that fits (a scope refusal IS `policy-denied`). If
-   none fits, do what core-graph did: an open_question stating the row you would add, the suffix marked
-   "proposed and pending registration" in the same sentence that states it, and the registered type an
-   implementation returns until the row lands. The validator warns per unmarked suffix.
+   failure, an expected_failure, a refusal table - check it against the ten-row closed registry in
+   docs/decomposition.md section 2.1.6 and reuse the row that fits (a scope refusal IS `policy-denied`). If none
+   fits, do what core-graph did: an open_question stating the row you would add, the suffix marked "proposed and
+   pending registration" where it is stated, and the registered type returned meanwhile. Warns per suffix.
 15. A contract.standards row's `version` is a value a reader scans, not the sentence explaining it: put the
-   version a record actually names, or "unverified", in `version`, and which record named it, whether the
-   specification was fetched and which skill owns the row in `version_note`, which renders as a footnote
-   under the Standards table. The validator warns above 60 characters.
+   version a record names, or "unverified", in `version`, and which record named it, whether the spec was
+   fetched and which skill owns the row in `version_note`, rendered as a footnote. Warns above 60 characters.
+16. An adapters[].entity id is not yours to mint quietly. Run `python3 tools/kb.py tree` for your capability
+   first: no `swappable_to` (or no adapter) is the case wave-4c's xc-identity-delegation-, xc-policy-gate- and
+   xc-provenance-chain-implement handled - reuse a real entity of the same B3 row where one exists, and either
+   way record the gap as a 1-3-1 open_question. A minted id must say in maps_to that it is a proposed entity id,
+   and never go under `entities`, where it would satisfy the unknown-id check. Warns per unmarked minted id.
 
-## What worked in waves 1 to 4b - keep doing it
+## What worked in waves 1 to 4c - keep doing it
 
-- Every sourced quote verified as a verbatim substring of its cited record, 73 for 73 in wave 1 and 430 for
-  430 in wave 4a; wave 4b invented no problem type at all. Copy the quote out of `kb.py show`, never retype it.
+- Every sourced quote verified as a verbatim substring of its cited record: 73/73 in wave 1, 430/430 in wave 4a,
+  122/122 in wave 4c, no invented problem types in 4b or 4c. Copy quotes out of `kb.py show`, never retype them.
 - Definitions of done were honestly labelled: claimed where the tool does not exist yet, measured only where
   the exact error strings were produced in a run and the session and date are named.
-- Each design rule is a pass/fail test stated once in the root contract and built on, not re-derived; that
-  is the pattern to follow for every shared fact.
-- Reviewers re-ran the definitions of done in waves 1a to 3c and reproduced the recorded output, exit codes and
-  breakage exactly. Write the criterion so someone else can run it from the skill alone, red where nothing runs.
+- Each design rule is a pass/fail test stated once in the root contract and built on, not re-derived: the
+  pattern for every shared fact.
+- Reviewers re-ran the definitions of done in waves 1a to 3c and reproduced the recorded output and breakage
+  exactly. Write the criterion so someone else can run it from the skill alone, red where nothing runs.
 
 ## Reply
 

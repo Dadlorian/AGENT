@@ -283,15 +283,15 @@
         "quote": "Provenance is a claim that some entity (builder) produced one or more software artifacts (Statement's subject) by executing some recipe, using some other artifacts as input (materials)."
       },
       {
-        "text": "Proposed: the second predicate is run-shaped and covers an agent action rather than a build, carrying actor, tool, argument digest, result digest and the decision references that permitted it, per the AgentActionPredicate shape above. Prior art exists for per-action signed receipts, taken whenever the agent makes an external call like querying an API, editing a file, or invoking a tool, but no standard predicate type for it appears in any record on file, so this half is ours and is marked proposed rather than cited.",
-        "origin": "proposed",
+        "text": "The second predicate is run-shaped and covers an agent action rather than a build, carrying actor, tool, argument digest, result digest and the decision references that permitted it, per the AgentActionPredicate shape above. Prior art exists for per-action signed receipts, taken whenever the agent makes an external call like querying an API, editing a file, or invoking a tool; no standard predicate type for it appears in any record on file, so the predicate type URI itself is this platform's own, not adopted from elsewhere.",
+        "origin": "sourced",
         "sources": [
           "X-cross-structure-054"
         ],
         "quote": "Whenever the agent makes an external call like querying an API, editing a file, or invoking a tool"
       },
       {
-        "text": "Proposed: both predicates travel as in-toto Statements inside the same envelope format and through the same attest call, so one verifier and one trust policy cover an artifact and an agent action. Two envelope formats would mean the outside check works for builds and not for the thing this platform actually does.",
+        "text": "Proposed: both predicates travel as in-toto Statements inside the same envelope format and through the same attest call, so one verifier and one trust policy cover an artifact and an agent action. Two envelope formats would mean the outside check works for builds and not for the thing this platform actually does. Research query: does the in-toto Attestation Framework (X-cap-provenance-001) explicitly endorse carrying a run-shaped predicate in the same Statement type as a build-shaped one, or is unifying them under one envelope this platform's own extension of the framework?",
         "origin": "proposed",
         "sources": [
           "X-cross-structure-050",
@@ -330,25 +330,27 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: the artifact itself never travels in a predicate, only its digest. A statement has to be publishable to a party that may not read the output it vouches for, and a predicate carrying the payload would make publication a disclosure decision every time.",
+        "text": "Proposed: the artifact itself never travels in a predicate, only its digest. A statement has to be publishable to a party that may not read the output it vouches for, and a predicate carrying the payload would make publication a disclosure decision every time. Research query: does F-b4-05's 'verifiable with a tool we did not write' requirement itself imply the artifact stays out of the predicate, or is that a separate design step this row is taking beyond what the fact states?",
         "origin": "proposed",
         "sources": [
           "F-b4-05"
         ]
       },
       {
-        "text": "Proposed: signing material is not part of this interface. A caller asks for a statement and receives an envelope; which key, which identity and which lifetime signed it is the adapter's business, which is what makes moving from a held key to an ephemeral one a configuration change rather than an interface change.",
-        "origin": "proposed",
+        "text": "Signing material is not part of this interface. A caller asks for a statement and receives an envelope; which key, which identity and which lifetime signed it is the adapter's business, which is what makes moving from a held key to an ephemeral one a configuration change rather than an interface change.",
+        "origin": "sourced",
         "sources": [
           "X-cap-provenance-004"
-        ]
+        ],
+        "quote": "ephemeral key signing tied to OIDC identities"
       },
       {
-        "text": "Proposed: the criterion a result is judged against never appears in a predicate, in a subject name or in a trust policy. agentic-stack states design rule 6 (F-b1-07); the consequence here is that an attestation over a judged output records the verdict and the digests, never the rule.",
-        "origin": "proposed",
+        "text": "The criterion a result is judged against never appears in a predicate, in a subject name or in a trust policy. agentic-stack states design rule 6 (F-b1-07); the consequence here is that an attestation over a judged output records the verdict and the digests, never the rule.",
+        "origin": "sourced",
         "sources": [
           "F-b1-07"
-        ]
+        ],
+        "quote": "An agent sees its outcome, never the criterion it is judged against."
       }
     ]
   },
@@ -357,16 +359,16 @@
       "step": 1,
       "action": "Adopt the three-layer document as given and add nothing to the outer two: an envelope carrying the signature, an in-toto Statement carrying the statement type and the subject digests, and a predicate for everything of ours.",
       "why": "Proposed adoption of the recorded standards. Everything a foreign verifier reads lives in the outer two layers, so any field of ours placed there is a field that makes the document unreadable to the tool the concern requires.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
-        "F-b3-12",
         "X-cross-structure-050"
-      ]
+      ],
+      "quote": "the transport layer, the in-toto Statement: the attestation header, and the predicate: the attestation payload"
     },
     {
       "step": 2,
       "action": "Bind the subject as a digest set computed over canonical bytes, and name the subject by a stable identifier rather than by a path or a URL.",
-      "why": "Proposed. The subject digest is the only thing that ties a statement to a thing, and it is the assertion the P11 breakage attacks: a rebuilt artifact must stop matching. A path is not stable across stores and would let a statement follow the wrong bytes.",
+      "why": "Proposed. The subject digest is the only thing that ties a statement to a thing, and it is the assertion the P11 breakage attacks: a rebuilt artifact must stop matching. A path is not stable across stores and would let a statement follow the wrong bytes. Research query: does the in-toto Statement spec (informing this row via F-b3-12) name 'canonical bytes' or a specific digest algorithm as the subject-binding method, which this row could cite directly instead of asserting it?",
       "origin": "proposed",
       "sources": [
         "F-b4-05"
@@ -386,7 +388,7 @@
     {
       "step": 4,
       "action": "For an agent action, emit the AgentActionPredicate above under a predicate type URI this platform owns, and say in the same place that it is proposed and has no standard behind it.",
-      "why": "Proposed. A predicate type is an extension point the framework provides, so inventing one is legitimate; presenting it as a standard is not. Marking it keeps a reader from concluding that an outside verifier will understand the payload as well as it understands the envelope.",
+      "why": "Proposed. A predicate type is an extension point the framework provides, so inventing one is legitimate; presenting it as a standard is not. Marking it keeps a reader from concluding that an outside verifier will understand the payload as well as it understands the envelope. Research query: has any other platform registered a predicate type URI for agent-action receipts (beyond the AAL prior art in X-cross-structure-054) that this platform's own URI should track or interoperate with?",
       "origin": "proposed",
       "sources": [
         "X-cross-structure-054",
@@ -430,10 +432,11 @@
       "step": 8,
       "action": "Send what you were already sending. Do not add a provenance field, a signing option or a request to attest; there is nothing to opt into.",
       "why": "Proposed usage of the placement this skill fixes. The platform applies this concern rather than offering it, so a caller-side switch would be a hole rather than a feature.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "F-b1-08"
-      ]
+      ],
+      "quote": "applied by the platform, not requested by the caller"
     },
     {
       "step": 9,

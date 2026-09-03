@@ -27,7 +27,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**MemoryBinding (proposed): the record that selects a store, one per adapter, the only file that differs between them** (proposed; sources: `X-cap-memory-002`, `F-a7-04`)
+**MemoryBinding (): the record that selects a store, one per adapter, the only file that differs between them** (sourced; sources: `T-t10-05`)
 
 ```json
 {
@@ -115,13 +115,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed pointer, see cap-memory's invariant that cross-principal isolation holds by construction, never by a filter someone remembered to add: the build consequence is that the scope predicate must be part of the query the store executes, never a filter applied to results afterwards, because post-filtering satisfies the same assertion on a small fixture and fails in production, where a limit is applied before the filter and the ranked store's timings then leak how much it declined to show. | proposed | `X-cap-memory-002` "keeps cross-user contamination out of results by construction" |
 | build-evidence-record owns the labelling rule (F-part-c-08). The consequence here is that 'both stores agree' is claimed until the conformance run has been executed and its output recorded; nothing in this skill has been run in this tree, so every status it carries is claimed. | sourced | `F-part-c-08` "Distinguish **claimed** from **measured** throughout" |
 
-### Deliberately not exposed
-
-| Item | Origin | Evidence |
-|---|---|---|
-| Proposed: the store endpoint, its credential and its index parameters. They live in the binding record and the adapter's configuration, never in an operation's arguments and never in a recalled item. Research query: does a binding-record convention already used by another -implement facet in this repository (e.g. cap-mandate-broker-implement's broker-binding) fix that a store endpoint and credential live only in the binding record, which would source this by analogy rather than leave it proposed here? | proposed | - |
-| Proposed: which adapter answered. A caller that can tell the ranked store from the key store by the shape of a result has been given a difference to depend on; the only place the role appears is the conformance report. Research query: does cap-mandate-broker-implement's or cap-model-access-implement's own not_exposed row on which adapter answered (both build-adapter-pair siblings) carry a kb citation this row could share, which would source the general adapter-identity-hiding rule rather than leave it proposed here? | proposed | - |
-
 ## Instructions
 
 | Step | Action | Why | Origin | Evidence |
@@ -134,7 +127,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | Have each adapter report at start-up what it actually reached - the endpoint or the file it opened, and the trust anchor it verified against - and compare that against the binding record's declares.reached, failing start-up on a mismatch. | PASS.md records that configuration written in the documented place was silently discarded on this stack, so a binding file that says one store proves nothing about which store answered. The comparison is what turns a configured swap into an observed one. | sourced | `F-a7-04` "Configuration written in the documented place was silently discarded" |
 | 7 | Write one conformance run parameterised over the binding records: write the same fixture items through every configured store, recall them at the same scopes from a later process, and assert the per-store counters and zero divergence on which item ids are recallable. | cap-memory's criterion is defined over the pair, not over one store, and build-adapter-pair states the rule it comes from. Parameterising the run is what stops the second adapter from getting a smaller test than the first, which is the usual way a pair turns out to be one store and a stub. | sourced | `F-b1-04` "Every interface ships with at least two adapters" |
 | 8 | Record each conformance run as an evidence record naming the command, the fixture set, the code version and tree hash under test, and whether the tree was dirty, and leave the pair labelled claimed until a run exists. | build-evidence-record owns the record's fields and the labelling; what this skill adds is which run gets recorded - the cross-store one, not a unit test of either store, because a passing unit test of the ranked store says nothing about whether the interface is swappable. | sourced | `F-a5-04` "and whether the tree was dirty" |
-| 9 | Proposed: open references/implementation-notes.md when writing a binding record, running the shadow migration, or deciding what a store must refuse. The body of this skill is enough to build and review either adapter without it. | Proposed: the per-store mapping tables and the shadow-diff procedure are longer than the steps they support, and inlining them would hide the nine steps a builder came for. | proposed | - |
 
 ## Best practices
 
@@ -142,8 +134,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 |---|---|---|
 | Verify the swap by what answered, not by what was configured: build-evidence-record carries the finding that values written to YAML validated, reviewed correctly, and had no runtime effect (F-a7-04), so a binding read from a file is evidence of an intention and not of a store. | sourced | `F-a7-04` "Values written to YAML validated, reviewed correctly, and had no runtime effect" |
 | Proposed: the memory conformance report records declares.reached from each adapter's own start-up line, so a run against two bindings that both reached the same store is caught rather than counted as a pair. Research query: unresearched; no prior-art search has been run for how conformance harnesses establish that two bindings reached distinct backing stores rather than the same one under two names. | proposed | `F-a7-04` |
-| Proposed: give the two adapters one write path in the calling code, so the provenance cap-memory requires and the staleness policy cannot be omitted for one store and supplied for the other. A field that is optional in one adapter is a field the conformance run will find divergent for reasons that have nothing to do with the stores. Research query: does a conformance-run record for another adapter pair in this repository already show a divergent-field failure traced to an optional field present in one adapter and not the other, which would source the specific failure mode rather than leave it a proposed practice? | proposed | `X-cap-memory-007` "alongside metadata like timestamps and the source message" |
-| Proposed: an unreachable store produces the typed refusal cap-memory defines, never an empty result. Empty means the caller may proceed knowing nothing was learned; unreachable means it may not, and collapsing the two is how a run silently forgets everything for an afternoon. Research query: does cap-errors' registry or a fetched (not search-only) memory-systems source distinguish an unreachable-store refusal from an empty-result response, which would source this distinction rather than leave it a proposed practice? | proposed | `F-b3-13` "RFC 9457 problem details" |
 | Proposed: run the expiry fixture with the sweeper disabled. A store that only passes expiry checks while a background job is running has not enforced expiry on read, and the binding record's expiry_enforcement claim is then false in the only case that matters. Research query: does a definition-of-done record for another expiry-bearing capability in this repository already run its breakage with the background sweep disabled, which would source this test discipline rather than leave it a proposed practice? | proposed | `X-cap-memory-005` "A time-to-live (TTL) is the cheapest forgetting mechanism" |
 
 ## Adapters

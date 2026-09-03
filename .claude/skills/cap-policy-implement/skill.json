@@ -24,7 +24,7 @@
   "contract": {
     "shapes": [
       {
-        "name": "PolicyConformanceReport (proposed shape; the counters the definition of done below asserts on, per adapter)",
+        "name": "PolicyConformanceReport (the counters the definition of done below asserts on, per adapter)",
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:policy:report:0.1",
@@ -74,11 +74,11 @@
             }
           }
         },
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
-          "F-b1-04",
-          "F-b4-04"
-        ]
+          "T-t9-06"
+        ],
+        "quote": "Swaps proven: every harness section executes one adapter swap with the conformance run before and after."
       }
     ],
     "invariants": [
@@ -89,13 +89,6 @@
           "F-a6-04"
         ],
         "quote": "Conformance checks exist; not wired into the enforcement path"
-      },
-      {
-        "text": "Proposed pointer, see build-adapter-pair's design rule 3 (F-b1-04) that swappability is a tested property: the build consequence is that both engines implement the identical decide call and Decision shapes cap-policy fixes, the serving engine is chosen by configuration with no code edit between runs, and the selection must appear in the conformance report, because an unobservable swap is indistinguishable from running one engine twice.",
-        "origin": "proposed",
-        "sources": [
-          "F-b1-04"
-        ]
       },
       {
         "text": "cap-policy fixes deterministic refusal before execution, not after spend (F-b4-04). The build consequence: the policy-decided record must be written before the call is issued rather than after the outcome is known - a record written afterwards can report a refusal but cannot cause one, which is the difference between the enforcement path and a report about it.",
@@ -135,14 +128,6 @@
           "F-a7-03"
         ],
         "quote": "A deterministic gate can be structurally green and mean nothing"
-      },
-      {
-        "text": "Apply build-evidence-record: the conformance run and its breakage are written to the evidence store naming the code version and the tree hash under test, and stay claimed until they have actually been run here; proposed pointer, see that skill.",
-        "origin": "proposed",
-        "sources": [
-          "F-a5-04"
-        ],
-        "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
       }
     ]
   },
@@ -199,15 +184,6 @@
     },
     {
       "step": 6,
-      "action": "Migrate in that order and keep both engines live behind the one call: rules off the path, then the wrapped engine behind decide, then the registry and the record, then consultation moved ahead of the first metered call, then the second engine selected by configuration. Delete neither engine once both exist. Research query: does a migration record for another two-engine capability in this repository (cap-model-access-implement, cap-tool-access-implement) already show 'rules off the path, wrapped engine, registry, second engine' as a proven revertible order, which would source this order rather than leave it a proposal?",
-      "why": "Proposed migration. Each step is revertible on its own, and keeping both is what keeps the pair testable later; an interface with one surviving implementation drifts back into the shape of whatever runs.",
-      "origin": "proposed",
-      "sources": [
-        "F-b1-04"
-      ]
-    },
-    {
-      "step": 7,
       "action": "Wire the cross-cutting edges once, at the same place: stamp correlation onto the request, append the decision through the state seam, and hand a denial to the typed-failure path as the registered policy-denied problem. Give no call site a flag that skips any of the three.",
       "why": "Proposed wiring. cap-errors owns the failure shape (F-b4-07) and cap-policy owns the decision; what is left to this facet is that all three edges are attached at one point, because three separately attached edges are three separate places a new call site can forget one.",
       "origin": "sourced",
@@ -216,22 +192,6 @@
         "T-t2-03"
       ],
       "quote": "every cross-cutting concern are managed across the entire structure"
-    },
-    {
-      "step": 8,
-      "action": "Apply build-adapter-pair: run one conformance run parameterised over the engines, selected by configuration with no code edit between runs, and record `selected_by` and the engine that actually answered in the one report shape; proposed pointer, see that skill's references/conformance-run-shape.md.",
-      "why": "The parameterised suite and the configuration-only swap are build-adapter-pair's step; the report shape it did not state was added there as references/conformance-run-shape.md rather than written out again in five capability skills (consolidation part B, kb/ceremonies/implement-clusters.json).",
-      "origin": "proposed",
-      "sources": [
-        "F-b1-04"
-      ],
-      "quote": "Every interface ships with at least two adapters"
-    },
-    {
-      "step": 9,
-      "action": "Proposed: open references/policy-adapters.md when you need the per-engine mapping table, the conformance subsets each engine declares, or the step-by-step swap runbook. This skill body is enough to build either adapter without it.",
-      "why": "Proposed, progressive disclosure. The mapping table and the runbook are long material that a reader building the first adapter does not yet need.",
-      "origin": "proposed"
     }
   ],
   "best_practices": [
@@ -258,13 +218,6 @@
         "F-a7-04"
       ],
       "quote": "overlays and replaces `router_settings` on every gateway load"
-    },
-    {
-      "text": "Proposed: measure evaluation latency at the decision points on the hot path before the second engine is wired, and record it as evidence. A decision on every metered call is a cost per call, and the pair is much harder to compare once one engine has been tuned and the other has not. Research query: does an evidence-store record already show evaluation latency measured before a second adapter was wired for any other capability in this repository, which would source the measure-before-wiring timing rather than leave it a proposed practice?",
-      "origin": "proposed",
-      "sources": [
-        "F-a5-04"
-      ]
     }
   ],
   "adapters": [

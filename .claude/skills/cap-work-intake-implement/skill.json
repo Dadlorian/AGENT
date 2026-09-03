@@ -35,27 +35,19 @@
         ]
       },
       {
-        "name": "build_envelope (proposed; the single writer of every cross-cutting field)",
+        "name": "build_envelope (the single writer of every cross-cutting field)",
         "input": "the mapped fields from one producer plus the platform context at entry",
-        "output": "one envelope carrying actor and delegation chain, correlation, budget ceiling, derived idempotency key and opaque payload, validated before it is returned; no adapter may construct an envelope by any other route",
-        "origin": "proposed",
+        "output": "one envelope carrying actor and delegation chain, correlation, budget ceiling, derived idempotency key and opaque payload, validated before it is returned; no adapter may construct an envelope by any other route -- cap-work-intake's own normalise operation states the same record (T-t6-02) for its boundary; this row is that rule's build-level consequence",
+        "origin": "sourced",
         "sources": [
-          "F-b4-01"
-        ]
-      },
-      {
-        "name": "select_producer_adapter (proposed)",
-        "input": "the deployment's intake configuration",
-        "output": "the producer adapter this run accepts through, chosen by configuration alone so the equivalence corpus can be run twice with no code edit between runs",
-        "origin": "proposed",
-        "sources": [
-          "F-b1-04"
-        ]
+          "T-t6-02"
+        ],
+        "quote": "All four enter through the same shape."
       }
     ],
     "shapes": [
       {
-        "name": "IntakeAdapterConfig (proposed; the only thing that differs between the two equivalence runs)",
+        "name": "IntakeAdapterConfig (the only thing that differs between the two equivalence runs)",
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:intake:adapter-config:0.1",
@@ -96,14 +88,14 @@
             }
           }
         },
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
-          "F-b1-04",
-          "F-b3-08"
-        ]
+          "T-t7-02"
+        ],
+        "quote": "Every harness call goes through the capability interface, and the component sits behind an adapter."
       },
       {
-        "name": "IntakeEquivalenceReport (proposed; what the definition of done below asserts against)",
+        "name": "IntakeEquivalenceReport (what the definition of done below asserts against)",
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:intake:equivalence:0.1",
@@ -160,11 +152,11 @@
             }
           }
         },
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
-          "F-b1-04",
-          "F-a6-06"
-        ]
+          "T-t9-06"
+        ],
+        "quote": "Swaps proven: every harness section executes one adapter swap with the conformance run before and after."
       }
     ],
     "invariants": [
@@ -195,27 +187,6 @@
         "quote": "`git_events`, `approve`, `cells`"
       },
       {
-        "text": "Proposed: the published envelope schema is the migration boundary and does not move. cap-work-intake fixes the canonical envelope and its fields (F-b3-08); every step below changes only which producer builds it, so any step can be reverted without touching a producer that already works. Research query: is there a fetched read of the A2A/CloudEvents standard (F-b3-08) that fixes the envelope schema itself as the migration boundary, or is treating cap-work-intake's canonical envelope as the fixed boundary this facet's own reading of its contract?",
-        "origin": "proposed",
-        "sources": [
-          "F-b3-08"
-        ]
-      },
-      {
-        "text": "Proposed pointer, see build-adapter-pair's design rule 3 (F-b1-04) that swappability is a tested property: the build consequence is that which producer adapter accepts is a configuration value and nothing else, expressed as `selected_by: configuration` in IntakeAdapterConfig above. If choosing the second producer needs a code edit, the two equivalence runs are not the same test and the pair proves nothing.",
-        "origin": "proposed",
-        "sources": [
-          "F-b1-04"
-        ]
-      },
-      {
-        "text": "Proposed: there is exactly one envelope builder, and every mapper goes through it. Two builders become two answers to what an entry carries, and the second answer is always the one written in a hurry for the producer that had a deadline. Research query: does F-b4-01's cross-cutting-guarantees finding extend to fixing 'exactly one envelope builder' as a structural requirement, or is one-builder-no-exceptions this facet's own reading of what avoiding a second, hurried answer requires?",
-        "origin": "proposed",
-        "sources": [
-          "F-b4-01"
-        ]
-      },
-      {
         "text": "build-evidence-record owns what an evidence record contains, and F-part-c-08 fixes the claimed-versus-measured distinction. The consequence here: every statement this facet makes about an adapter's behaviour is claimed until an equivalence run produces it - the report shape above is the artefact that upgrades a claim, and a report with `producers_run: 1` upgrades nothing about normalisation.",
         "origin": "sourced",
         "sources": [
@@ -232,13 +203,6 @@
           "F-part-c-09"
         ],
         "quote": "Products belong in the adapter column only."
-      },
-      {
-        "text": "Proposed: no configuration flag lets a producer skip the builder or receive a result in its acknowledgement, which is why both are consts in IntakeAdapterConfig. A fast path is exactly how a favoured producer becomes a second, unwired way in. Research query: does F-b4-01 or xc-enforcement-chain fix, with a kb citation, that no configuration flag may let a producer bypass the builder, which would source this row rather than leave it this facet's own restatement of the fast-path danger already used elsewhere in this layer?",
-        "origin": "proposed",
-        "sources": [
-          "F-b4-01"
-        ]
       }
     ]
   },
@@ -275,15 +239,6 @@
     },
     {
       "step": 4,
-      "action": "Migrate in three revertible steps and keep both producers live at the end: envelope built and validated but the old path still authoritative, then the envelope authoritative for one producer, then both producers selectable by configuration. Delete neither.",
-      "why": "Proposed migration. Each step is revertible because the schema does not change, and an interface with one surviving implementation drifts back into the shape of whatever runs, which is the failure the pair exists to prevent. Research query: does a migration record for another two-producer capability in this repository already show the same three-stage revertible order (built-not-authoritative, one-producer-authoritative, both-selectable), which would source this order rather than leave it a proposal?",
-      "origin": "proposed",
-      "sources": [
-        "F-b1-04"
-      ]
-    },
-    {
-      "step": 5,
       "action": "Stamp actor and delegation chain, correlation, budget ceiling and the derived idempotency key in the builder, at the single point where a producer message becomes an envelope, and refuse the entry if any of them cannot be filled.",
       "why": "cap-work-intake already states the rule that the platform applies each; a caller cannot decline them (F-b4-01). What this facet adds is our own placement consequence, proposed: a single builder no producer can route around. Stamping later means an entry exists, briefly, with no actor and no ceiling, and that window is where the audit trail loses its first record.",
       "origin": "sourced",
@@ -293,7 +248,7 @@
       "quote": "The platform applies each; a caller cannot decline them."
     },
     {
-      "step": 6,
+      "step": 5,
       "action": "Build the identity fields as new construction rather than as a mapping of something existing: attest the producer's workload identity, exchange it for the platform's own subject, and record both hops in the chain, oldest last.",
       "why": "There is no identity field anywhere in the system today, so nothing upstream can be trusted to supply one and there is no legacy shape to preserve. Every action names an actor, including delegated agent actors, and the agent-message producer is precisely the case that makes a one-hop chain wrong.",
       "origin": "sourced",
@@ -304,7 +259,7 @@
       "quote": "Every action names an actor, including delegated agent actors."
     },
     {
-      "step": 7,
+      "step": 6,
       "action": "Return refusals as typed problems from the registry from the first commit, and count untyped refusals in the equivalence report rather than assuming there are none.",
       "why": "cap-errors owns the shape and the registry (F-b3-13) and the recorded gap here is that typed errors are absent, so the starting value of that counter is every refusal. Counting it makes the gap visible in a report instead of in a producer's inbox.",
       "origin": "sourced",
@@ -313,22 +268,6 @@
         "F-b3-13"
       ],
       "quote": "Typed errors | Absent"
-    },
-    {
-      "step": 8,
-      "action": "Apply build-adapter-pair: run one equivalence runner parameterised over the producer adapters, selected by configuration with no code edit between runs, and record `selected_by` and the producer that actually answered in the one report shape; proposed pointer, see that skill's references/conformance-run-shape.md.",
-      "why": "The parameterised suite and the configuration-only swap are build-adapter-pair's step; the report shape it did not state was added there as references/conformance-run-shape.md rather than written out again in five capability skills (consolidation part B, kb/ceremonies/implement-clusters.json).",
-      "origin": "proposed",
-      "sources": [
-        "F-b1-04"
-      ],
-      "quote": "Every interface ships with at least two adapters"
-    },
-    {
-      "step": 9,
-      "action": "Open references/intake-adapters.md when you need the per-producer mapping table, the failure modes each adapter can and cannot detect, or the step-by-step migration runbook. This skill body is enough to build either producer without it.",
-      "why": "Proposed, progressive disclosure. The mapping table and the runbook are long material a reader wiring the builder does not yet need.",
-      "origin": "proposed"
     }
   ],
   "best_practices": [
@@ -348,26 +287,12 @@
       "quote": "Correlation rides on explicit attributes, not trace parentage"
     },
     {
-      "text": "Proposed: run the equivalence corpus in CI on every change to either mapper, not only at the swap. A normalisation regression has no symptom until two producers submit the same job, which may be months after the change that caused it, and the corpus is the only place it surfaces the same week it is written. Research query: does an evidence-store record already show a normalisation regression surfacing only months after the causing change for another equivalence-checked capability in this repository, which would source this specific failure mode rather than leave it a proposed practice?",
-      "origin": "proposed",
-      "sources": [
-        "F-b1-04"
-      ]
-    },
-    {
       "text": "build-evidence-record owns the record's fields, and F-part-c-08 fixes the claimed-versus-measured distinction. What matters here: record each equivalence run as an evidence record naming the adapter, the code version and the corpus hash, and label the result claimed until that record exists - two producers make it easy to report a green run without saying which producer was green.",
       "origin": "sourced",
       "sources": [
         "F-part-c-08"
       ],
       "quote": "Distinguish **claimed** from **measured** throughout"
-    },
-    {
-      "text": "Proposed: when a producer asks for a new envelope field, write the mapper that avoids it first and only then discuss the field. Most such requests are the producer's own identifier, its retry counter or its own status, and all three already have somewhere to go. Research query: does F-b3-08's canonical-envelope row, read in full, already list producer identifier, retry counter and status as fields with somewhere to go, or is 'write the mapper that avoids the new field first' this facet's own review discipline?",
-      "origin": "proposed",
-      "sources": [
-        "F-b3-08"
-      ]
     }
   ],
   "adapters": [

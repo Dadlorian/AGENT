@@ -21,29 +21,10 @@
     "E-swap-candidate-any-rfc-5545-parser"
   ],
   "contract": {
-    "operations": [
-      {
-        "name": "tick (proposed; the only clock reader in the capability)",
-        "input": "the set of live declarations and the current instant, taken once per tick",
-        "output": "for each declaration, the occurrences that the pure evaluator reports inside a short forward window, enqueued once each; the ticker holds no cursor of its own beyond the last window it closed",
-        "origin": "proposed",
-        "sources": [
-          "F-b3-15"
-        ]
-      },
-      {
-        "name": "select_adapter (proposed)",
-        "input": "the deployment's scheduling configuration",
-        "output": "the adapter that serves occurrences, next_after and fire for this run, chosen by configuration alone so the conformance corpus can be run twice with no code edit between runs",
-        "origin": "proposed",
-        "sources": [
-          "F-b1-04"
-        ]
-      }
-    ],
+    "operations": [],
     "shapes": [
       {
-        "name": "SchedulingAdapterConfig (proposed; the only thing that differs between the two conformance runs)",
+        "name": "SchedulingAdapterConfig (the only thing that differs between the two conformance runs)",
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:schedule:adapter-config:0.1",
@@ -81,14 +62,14 @@
             }
           }
         },
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
-          "F-b1-04",
-          "F-b3-15"
-        ]
+          "T-t7-02"
+        ],
+        "quote": "Every harness call goes through the capability interface, and the component sits behind an adapter."
       },
       {
-        "name": "RecurrenceConformanceReport (proposed; what the definition of done below asserts against)",
+        "name": "RecurrenceConformanceReport (what the definition of done below asserts against)",
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:schedule:conformance:0.1",
@@ -147,10 +128,11 @@
             }
           }
         },
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
-          "F-b1-04"
-        ]
+          "T-t9-06"
+        ],
+        "quote": "Swaps proven: every harness section executes one adapter swap with the conformance run before and after."
       }
     ],
     "invariants": [
@@ -161,27 +143,6 @@
           "F-a6-02"
         ],
         "quote": "Data directory present; server not listening on"
-      },
-      {
-        "text": "Proposed: the declaration is the migration boundary and does not move. cap-scheduling fixes the single recurrence string, its anchor and its time zone (F-b3-15); every step below changes only which component reads that string, so any step can be reverted without touching a declared unit. Research query: does RFC 5545 itself (fetched) fix that the recurrence string, anchor and time zone are the whole declaration surface, or is treating the declaration as the fixed migration boundary this facet's own reading of cap-scheduling's contract?",
-        "origin": "proposed",
-        "sources": [
-          "F-b3-15"
-        ]
-      },
-      {
-        "text": "Proposed pointer, see build-adapter-pair's design rule 3 (F-b1-04) that swappability is a tested property: the build consequence is that which adapter serves is a configuration value and nothing else, expressed as `selected_by: configuration` in SchedulingAdapterConfig above. If choosing the second adapter needs a code edit, the two runs of the conformance corpus are not the same test and the pair proves nothing.",
-        "origin": "proposed",
-        "sources": [
-          "F-b1-04"
-        ]
-      },
-      {
-        "text": "Proposed: firing is not executing. The ticker's output is an enqueued entry envelope, never a started unit of work, which is what lets the standalone adapter exist at all and what keeps a scheduling outage from becoming an execution outage. Research query: is there a kb record distinguishing 'firing' (enqueuing an entry envelope) from 'executing' (starting a unit of work) for any other entry-producing capability in this repository, which would source this facet's own firing-is-not-executing invariant?",
-        "origin": "proposed",
-        "sources": [
-          "F-b3-15"
-        ]
       },
       {
         "text": "Cross-cutting wiring is not optional for a firing: concerns are managed across the entire structure, whichever entry point was used, so the fired envelope carries the declaring actor and delegation chain, the correlation identifier, the budget ceiling and the derived idempotency key before it reaches the entry path, not after.",
@@ -208,13 +169,6 @@
           "F-part-c-09"
         ],
         "quote": "Products belong in the adapter column only."
-      },
-      {
-        "text": "Proposed: no flag lets a caller ask for a firing that skips the entry path. There is no fast-path fire, because a fast path is exactly how a schedule becomes a privileged entry. Research query: does xc-enforcement-chain or cap-scheduling's own contract already fix, with a kb citation, that no configuration flag may bypass an entry path, which would source this row rather than leave it this facet's own restatement of the fast-path danger?",
-        "origin": "proposed",
-        "sources": [
-          "T-t2-03"
-        ]
       }
     ]
   },
@@ -250,15 +204,6 @@
     },
     {
       "step": 4,
-      "action": "Migrate in three revertible steps and keep both adapters live at the end: declarations recorded but not fired, then the standalone evaluator firing them, then the engine adapter selectable by configuration. Do not delete either adapter once both exist.",
-      "why": "Proposed migration. Each step is independently revertible because the declaration does not change, and an interface with one surviving implementation drifts back into the shape of whatever runs, which is the failure the pair exists to prevent. Research query: does a migration record for another two-adapter capability in this repository already show the same three-stage revertible order (recorded-not-fired, standalone-firing, engine-selectable), which would source this order rather than leave it a proposal?",
-      "origin": "proposed",
-      "sources": [
-        "F-b1-04"
-      ]
-    },
-    {
-      "step": 5,
       "action": "Wire the cross-cutting concerns at one place, the point where an occurrence becomes an envelope, and stamp actor, delegation chain, correlation, budget ceiling and the idempotency key derived from unit plus occurrence instant. Give no adapter its own envelope builder.",
       "why": "Two envelope builders become two answers to what a firing carries. Concerns are managed across the entire structure, whichever entry point was used, so a schedule with its own builder is a hole in that guarantee that only shows up in an audit.",
       "origin": "sourced",
@@ -268,7 +213,7 @@
       "quote": "whichever entry point was used"
     },
     {
-      "step": 6,
+      "step": 5,
       "action": "Derive the idempotency key from the unit reference and the occurrence instant, never from the wall clock at firing time, and let a catch-up firing reuse it.",
       "why": "Proposed. A key minted at firing time is new on every retry and every catch-up, so a double fire looks like two intents; a key derived from the occurrence makes a late fire and a normal fire of the same occurrence one request, which is what makes catch_up safe to declare at all. Research query: does xc-idempotency-lease's own key-derivation rule name unit-reference-plus-occurrence-instant as the required input, which would source this row by pointing to that skill instead of restating the derivation here?",
       "origin": "proposed",
@@ -277,29 +222,13 @@
       ]
     },
     {
-      "step": 7,
-      "action": "Apply build-adapter-pair: run one conformance runner parameterised over the adapters, selected by configuration with no code edit between runs, and record `selected_by` and the adapter that actually answered in the one report shape; proposed pointer, see that skill's references/conformance-run-shape.md.",
-      "why": "The parameterised suite and the configuration-only swap are build-adapter-pair's step; the report shape it did not state was added there as references/conformance-run-shape.md rather than written out again in five capability skills (consolidation part B, kb/ceremonies/implement-clusters.json).",
-      "origin": "proposed",
-      "sources": [
-        "F-b1-04"
-      ],
-      "quote": "Every interface ships with at least two adapters"
-    },
-    {
-      "step": 8,
+      "step": 6,
       "action": "Refuse at declare time any rule part the selected adapter cannot evaluate, and record the refused parts in `unsupported_parts` rather than accepting the declaration and firing approximately.",
       "why": "Proposed, and the reason the report carries that field. An adapter that silently approximates a rule part it does not implement produces a schedule that looks declared and fires at the wrong time, which is worse than a rejected declaration because nothing reports it. Research query: does F-a7-03's structurally-green finding, already cited elsewhere in this facet for a subset-declaration pattern, extend to a declare-time refusal of an unsupported rule part specifically, or is refuse-at-declare-time this facet's own choice?",
       "origin": "proposed",
       "sources": [
         "F-b3-15"
       ]
-    },
-    {
-      "step": 9,
-      "action": "Open references/scheduling-adapters.md when you need the per-adapter mapping table, the failure modes each adapter can and cannot detect, or the step-by-step migration runbook. This skill body is enough to build either adapter without it.",
-      "why": "Proposed, progressive disclosure. The mapping table and the runbook are long material a reader building the evaluator does not yet need.",
-      "origin": "proposed"
     }
   ],
   "best_practices": [
@@ -308,13 +237,6 @@
       "origin": "proposed",
       "sources": [
         "F-b3-15"
-      ]
-    },
-    {
-      "text": "Proposed: run the corpus in CI on every change to either adapter, not only at the swap. A recurrence bug has no symptom until the calendar reaches the case, so the vector run is the only place a daylight-saving regression can be caught in the same week it is written. Research query: does an evidence-store record already show a daylight-saving regression caught by a recurrence vector run in this repository, which would source this specific failure mode rather than leave it a proposed practice?",
-      "origin": "proposed",
-      "sources": [
-        "F-b1-04"
       ]
     },
     {

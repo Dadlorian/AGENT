@@ -24,7 +24,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**DurableExecutionAdapterBinding (proposed shape; what selects an executor, and the only place an executor is named)** (proposed; sources: -)
+**DurableExecutionAdapterBinding (what selects an executor, and the only place an executor is named)** (sourced; sources: `T-t7-02`)
 
 ```json
 {
@@ -67,7 +67,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**DurableExecutionConformanceReport (proposed shape; the counters the definition of done asserts on)** (proposed; sources: -)
+**DurableExecutionConformanceReport (the counters the definition of done asserts on)** (sourced; sources: `T-t9-06`)
 
 ```json
 {
@@ -147,14 +147,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Invariant | Origin | Evidence |
 |---|---|---|
-| Proposed: this pair's differing axes (locus_of_durability_and_verification, processes_required_for_progress, replay_determinism_required) are recorded in the adapters section below and in the second adapter's swap_procedure; this row does not restate them. See build-adapter-pair for why a candidate agreeing with today's adapter on all three is rejected. | proposed | `F-b1-04` |
-| Apply build-adapter-pair: selecting the executor is configuration, and no core code and no caller branches on which one answered - the swap test agentic-stack states as design rule 1; proposed pointer, see that skill. | proposed | `F-meta-04` "If Part B cannot swap an implementation without touching the core, the boundary is drawn wrong" |
 | agentic-stack states that what runs is substrate and is not to be replaced (F-part-c-11). The consequence here is narrow and unusual: the installed orchestrator becomes today's adapter even though it is not currently listening, so no instruction in this skill asks anyone to uninstall it, and none assumes it will answer either. | sourced | `F-part-c-11`, `F-a6-02` "Do not propose replacing what runs." |
 | agentic-stack states that the cross-cutting guarantees are applied by the platform and cannot be declined (F-b4-01). What this adds, as this skill's own consequence and proposed: they attach around each step and around the restart, so an executor that offers its own retry policy, its own budget or its own audit trail has offered a second, declinable copy that must not be wired. | sourced | `F-b4-01` "The platform applies each; a caller cannot decline them" |
 | A ceiling belongs to the unit of work, so a resumed run continues under what is left of it rather than under a fresh one: budget remaining is recomputed from the committed step records at resume, and a restart that resets the ceiling has turned a crash into free money. | sourced | `F-b4-02` "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform" |
 | build-evidence-record owns the append-only chained record (F-a5-03). What this adds, as this skill's own consequence and proposed: the step log is the same idea applied per run, so checkpoints are appended and chained rather than updated in place, and a resumed run verifies the chain before it trusts a resume point. | sourced | `F-a5-03` "a manual edit between runs is detectable" |
 | Proposed: the step key stays a string the caller supplies. The keyed lease that makes a key exclusive is enforcement applied a wave above this interface, so building a lease into the executor here would tie replay safety to one executor and make it unswappable. Research query: is there a recorded decision or open question fixing the boundary between a durable-execution step key and a cap-idempotency claim key, so this row can cite that boundary instead of asserting it here? | proposed | `F-b3-16` |
-| Apply build-evidence-record: every statement here about how an executor behaves stays claimed until the conformance run and its evidence record exist, naming the code version and the tree hash under test; no adapter here has been run in this repository; proposed pointer, see that skill. | proposed | `F-a5-04`, `F-part-c-08` "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty" |
 
 ## Instructions
 
@@ -167,7 +164,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 5 | Recompute budget remaining, re-evaluate policy and re-assert the actor at every resume, from the committed step records rather than from anything the executor carried across the restart. | Refusal is deterministic and happens before execution rather than after spend, and a restart is an execution: a resumed run that skips the gate has found the opt-out that design rule 7 forbids, and one that trusts an in-memory budget has lost the number the crash destroyed. | sourced | `F-b4-04`, `F-b4-02` "Refusal is deterministic and happens before execution, not after spend" |
 | 6 | Carry the correlation identifier explicitly on every step record and re-attach it after the restart; never expect the executor's own run identity, or trace parentage, to reconnect a resumed run to the work that started it. | agentic-stack already states the trace-context finding (F-a7-02). What this adds, as this skill's own consequence and proposed: a crash and restart is a second boundary where context is minted afresh, so a resumed run silently becomes a new root unless the identifier is a field on the record the restart reads. | sourced | `F-a7-02`, `F-b4-06` "Correlation must ride on an explicit resource attribute set at dispatch" |
 | 7 | Assert which executor actually answered by reading a marker the running executor emits at begin_run, rather than trusting the binding record that selected it. | agentic-stack already states the silent-configuration finding (F-a7-04). What this adds, as this skill's own consequence and proposed: here the same failure mode produces two green conformance runs of the same executor, which reads as a proven swap and is not one. | sourced | `F-a7-04` "Values written to YAML validated, reviewed correctly, and had no runtime effect" |
-| 8 | Apply build-definition-of-done: run the definition of done below and then its deliberate breakage, and record both outputs as an evidence record the way build-evidence-record fixes, before calling this facet done; proposed pointer, see those skills. | build-definition-of-done owns criterion plus deliberate breakage plus both recorded outputs, and build-evidence-record owns what the record names, so this row points at them instead of restating the sentence six sibling -implement skills had copied (consolidation part B, kb/ceremonies/implement-clusters.json). | proposed | `F-part-c-04` "A criterion nothing can fail is not a criterion." |
 
 ## Best practices
 
@@ -176,7 +172,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: implement resume before implementing anything else, including retries and parallel steps. Resume is the property the whole capability exists for and the one the definition of done gates on; retries built first will be written against a run that always starts at zero. Research query: is there a recorded build order or retrospective on this stack showing resume built and proven before retries or parallel steps, rather than this being an un-evidenced preference? | proposed | `F-b4-08` |
 | Proposed: make the side-effecting step in the conformance suite genuinely observable - a row appended to a table someone else counts - rather than a counter inside the run. An effect the run itself reports cannot show the run double-counting it. Research query: is there a recorded conformance run whose side-effecting step wrote to a table outside the run's own report, confirming this pattern was actually used rather than only recommended? | proposed | `F-part-c-04` |
 | cap-durable-execution already states the green-resume trap (F-a7-03). What it adds for an implementer, as this skill's own consequence and proposed: assert steps_replayed on the report rather than in a log line, because a suite whose kill silently failed will otherwise pass every other assertion it makes. | sourced | `F-a7-03` "Those establish well-formedness, not correctness" |
-| Apply build-adapter-pair: let the second executor fail the cross-process cases honestly instead of emulating a history server so both executors look alike; a declared gap the conformance run asserts on beats a silent emulation that would not survive a real restart. proposed pointer, see that skill. | proposed | `F-b1-04` |
 
 ## Adapters
 

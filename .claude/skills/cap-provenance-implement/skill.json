@@ -24,7 +24,7 @@
   "contract": {
     "shapes": [
       {
-        "name": "ProvenanceConformanceReport (proposed shape; the counters the definition of done below asserts on, per adapter)",
+        "name": "ProvenanceConformanceReport (the counters the definition of done below asserts on, per adapter)",
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:provenance:report:0.1",
@@ -92,11 +92,11 @@
             }
           }
         },
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
-          "F-b1-04",
-          "F-b4-05"
-        ]
+          "T-t9-06"
+        ],
+        "quote": "Swaps proven: every harness section executes one adapter swap with the conformance run before and after."
       }
     ],
     "invariants": [
@@ -105,13 +105,6 @@
         "origin": "proposed",
         "sources": [
           "F-b4-05"
-        ]
-      },
-      {
-        "text": "Proposed pointer, see build-adapter-pair's design rule 3 (F-b1-04) that swappability is a tested property: the build consequence is that both adapters implement the identical attest, verify, resolve and publish calls cap-provenance fixes, the running adapter is chosen by configuration with no code edit between runs, and the selection must appear in the conformance report, because an unobservable swap is indistinguishable from running one adapter twice.",
-        "origin": "proposed",
-        "sources": [
-          "F-b1-04"
         ]
       },
       {
@@ -154,14 +147,6 @@
           "F-b4-07"
         ],
         "quote": "Typed and machine-readable. Never parsed from prose"
-      },
-      {
-        "text": "Apply build-evidence-record: the conformance run and its breakage are written to the evidence store naming the code version and the tree hash under test, and stay claimed until they have actually been run here; proposed pointer, see that skill.",
-        "origin": "proposed",
-        "sources": [
-          "F-a5-04"
-        ],
-        "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
       }
     ]
   },
@@ -200,15 +185,6 @@
     },
     {
       "step": 4,
-      "action": "Migrate in that order and keep both adapters live behind the same call: digests only, then local signed envelopes, then keyless-and-published selected by configuration. Do not delete the local adapter once the log adapter exists.",
-      "why": "Proposed migration. Each step is independently revertible, and keeping the local adapter is what makes the pair testable later; an interface with one surviving implementation drifts back into the shape of whatever runs, which is the failure design rule 3 exists to catch. Research query: does a migration record for another two-adapter provenance-shaped capability in this repository already show 'digests only, local signed, keyless-and-published' as a proven revertible order, which would source this order rather than leave it a proposal?",
-      "origin": "proposed",
-      "sources": [
-        "F-b1-04"
-      ]
-    },
-    {
-      "step": 5,
       "action": "Wire attest at two places only: the emitter that returns a result to a caller, and the run-seal path that closes a run. agentic-stack fixes that cross-cutting guarantees are not optional (F-b1-08); the build consequence is that callers get no flag that skips either.",
       "why": "Proposed wiring, following cap-provenance's placement rule. Two enforcement points cover every output and every run boundary; a third would be a caller deciding for itself, which is the property a cross-cutting guarantee does not have.",
       "origin": "sourced",
@@ -218,7 +194,7 @@
       "quote": "Cross-cutting guarantees are not optional"
     },
     {
-      "step": 6,
+      "step": 5,
       "action": "Sign the sealed head as well as the individual outputs, and use the same envelope format for both so one verifier covers a run and its parts.",
       "why": "Proposed, and it is what docs/decomposition.md section 2.2.3 already specifies for the state seam: a chain gives no way for a third party to verify one record without the whole log, so the sealed head carries the run and the per-output statements carry the parts. Research query: does F-b5-05's chain description, read in full rather than as a table row, fix that the sealed head and the individual outputs must share one envelope format, or is that unification this facet's own design choice?",
       "origin": "proposed",
@@ -228,7 +204,7 @@
       ]
     },
     {
-      "step": 7,
+      "step": 6,
       "action": "cap-provenance and build-evidence-record already fix that an artifact must be verifiable with a tool we did not write (F-b4-05). The build consequence: make the conformance run adapter-parameterised and store-unmounted from the start: one command, one report shape, `--adapter` selecting which implementation signs, and the external verifier invoked as a subprocess with no access to our store.",
       "why": "Proposed. A suite written against one adapter and adapted later encodes that adapter's assumptions in its asserts, and a suite that can reach our store will eventually be satisfied by it, which is precisely the outcome the concern's contract forbids.",
       "origin": "sourced",
@@ -236,12 +212,6 @@
         "F-b4-05"
       ],
       "quote": "verifiable with a tool we did not write"
-    },
-    {
-      "step": 8,
-      "action": "Proposed: open references/provenance-adapters.md when you need the per-adapter mapping table, the failure modes each adapter can and cannot detect, or the step-by-step swap procedure. This skill body is enough to build either adapter without it.",
-      "why": "Proposed, progressive disclosure. The mapping table and the swap runbook are long material that a reader building the first adapter does not yet need.",
-      "origin": "proposed"
     }
   ],
   "best_practices": [
@@ -266,13 +236,6 @@
       "origin": "proposed",
       "sources": [
         "F-part-c-10"
-      ]
-    },
-    {
-      "text": "Proposed: give every emitted output the same statement shape whichever step kind produced it, and resist a fast path for cheap outputs. The moment one kind of output attests differently, the orphan count has to be re-proved for each kind, and the cheap path is where the habit of skipping forms. Research query: does a conformance-run record for another multi-step-kind capability in this repository already show a fast path for cheap outputs skipping a guarantee the slow path keeps, which would source this specific failure mode rather than leave it a proposed practice?",
-      "origin": "proposed",
-      "sources": [
-        "T-t2-03"
       ]
     }
   ],

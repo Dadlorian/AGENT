@@ -136,3 +136,6 @@ Commit a harness before measuring against it, so a restore can restore; measure.
 
 ## Orchestrator rule (2026-09-03)
 Never `git add -A` while a scope claim is live: the row 60 close swept in-flight row 61 edits into its commit. Stage explicit paths only; a live claim's paths are committed by the release step of that agent.
+
+## Lesson 61 (core, seams, cross-cutting acceptance, 2026-09-03)
+Measured texts quote their run (tools/expected_from_measured.py); a review that misses a plant is discarded and re-run by another reviewer; every implement facet now has a harness under harness/.

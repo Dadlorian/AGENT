@@ -315,9 +315,9 @@
   ],
   "definition_of_done": {
     "criterion": "bash harness/observability/test.sh",
-    "expected": "exit 0, `passed 37, failed 0` (dryrun conformance, the swap proof merging dryrun and second by configuration with adapters_run=2 selected_by=configuration, then the deliberate break-stamp case). Proposed tool (not run): python3 harness/observability/conformance.py --adapter in-process-sdk --report out/x5-a.json then --adapter pipeline-processor --report out/x5-b.json (adapter names as PASS.md A7 calls them), asserting missing_run_id == 0, missing_root_dispatch_id == 0, signals_checked > 0, levels_covered == 3, run_id_groups == 1 per entry and per signal kind, and across runs adapters_run == 2, selected_by == \"configuration\" (docs/decomposition.md section 3.4 row X5).",
+    "expected": "Measured by tools/measure.py at fb96f80: exit 0; last lines:   ok   the unit shape has nowhere to put a parent span | passed 37, failed 0",
     "breakage": "sed -i '71s#.*#        if level > 0:#' harness/observability/call.py",
-    "expected_failure": "test.sh exits 1 at step 1 already: the dispatch-tree caller re-stamps every level below the root unconditionally (the break_stamp gate is gone), so the clean dryrun run drops levels_covered to 1, run_id_groups above 1, and spans_missing_run_id above 0 before the swap proof or the deliberate breakage step is even reached (26 ok, 11 failed); git checkout -- harness/observability/call.py restores.",
+    "expected_failure": "Measured by tools/measure.py at fb96f80: exit 1; last lines:   ok   the unit shape has nowhere to put a parent span | passed 26, failed 11",
     "status": "measured",
     "sources": [
       "F-a7-02",
@@ -332,7 +332,9 @@
       "breakage_exit": 1,
       "breakage_output": "breakage (1)\n5. the failure path answers with problem details, never an exception\n  ok   unconfigured live adapter exits 2 (2)\n  ok   answer is problem details\n  ok   typed from the closed registry\n  ok   no traceback reached the caller\n6. the boundary holds in the source, not only at runtime\n  ok   no product name in interface.py, call.py or conformance.py\n  ok   caller code is 17 lines (under 40)\n  ok   the caller names no file in the adapter's own storage\n  ok   parentage is named in the interface only to forbid it\n  ok   the unit shape has nowhere to put a parent span\n\npassed 26, failed 11",
       "restored": true
-    }
+    },
+    "expected_design": "exit 0, `passed 37, failed 0` (dryrun conformance, the swap proof merging dryrun and second by configuration with adapters_run=2 selected_by=configuration, then the deliberate break-stamp case). Proposed tool (not run): python3 harness/observability/conformance.py --adapter in-process-sdk --report out/x5-a.json then --adapter pipeline-processor --report out/x5-b.json (adapter names as PASS.md A7 calls them), asserting missing_run_id == 0, missing_root_dispatch_id == 0, signals_checked > 0, levels_covered == 3, run_id_groups == 1 per entry and per signal kind, and across runs adapters_run == 2, selected_by == \"configuration\" (docs/decomposition.md section 3.4 row X5).",
+    "expected_failure_design": "test.sh exits 1 at step 1 already: the dispatch-tree caller re-stamps every level below the root unconditionally (the break_stamp gate is gone), so the clean dryrun run drops levels_covered to 1, run_id_groups above 1, and spans_missing_run_id above 0 before the swap proof or the deliberate breakage step is even reached (26 ok, 11 failed); git checkout -- harness/observability/call.py restores."
   },
   "composes_with": {
     "builds_on": [

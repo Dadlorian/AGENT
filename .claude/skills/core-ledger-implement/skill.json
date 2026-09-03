@@ -309,7 +309,7 @@
   ],
   "best_practices": [
     {
-      "text": "build-evidence-record already states the configuration finding (F-a7-04). What it adds here: assert the binding actually in effect at run time and log it beside the counts, because a binding written in the documented place and overridden by a stored row produces a conformance run that folded the same store twice and reported adapters_run=2.",
+      "text": "Assert the binding actually in effect at run time and log it beside the counts. A binding written in the documented place and overridden by a stored row produces a conformance run that folded the same store twice and reported adapters_run=2: build-evidence-record owns the finding that configuration validated, reviewed correctly and had no runtime effect (F-a7-04).",
       "origin": "sourced",
       "sources": [
         "F-a7-04"
@@ -340,7 +340,7 @@
       ]
     },
     {
-      "text": "build-evidence-record already states what the hash-chained store running today buys (F-a5-03): a closing digest that opens the next run makes an edit between runs detectable. What this adds: carry that property through the migration, because a ledger without it cannot show that a terminal entry was not written after the replay that read it.",
+      "text": "Carry the closing-digest property through the migration of the store pair cap-state-persistence-implement owns. A closing digest that opens the next run makes an edit between runs detectable (F-a5-03, build-evidence-record's), and a ledger without it cannot show that a terminal entry was not written after the replay that read it.",
       "origin": "sourced",
       "sources": [
         "F-a5-03"
@@ -378,9 +378,9 @@
   ],
   "definition_of_done": {
     "criterion": "bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second && bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second",
-    "expected": "each test.sh: exit 0, `passed <n>, failed 0`; provenance conformance.py: exit 0, `conformance PASSED: 26/26 cases, 2 binding(s)`; state-persistence conformance.py: exit 0, `conformance PASSED: 22/22 cases, 2 binding(s)`. Proposed tool (not run): python3 tools/ledger_conformance.py --binding bindings/today.json --binding bindings/second.json --corpus fixtures/runs/ --replay-key <k> --criteria criteria.txt --report out/ledger-conformance.json, asserting per binding entries_checked > 0, head_match == true, terminal_records_for_key == 1, records_appended_on_replay == 0, and across bindings adapters_run >= 2, replay_answer_mismatches == 0, criterion_leaks == 0 (docs/decomposition.md section 3.1 row C5).",
+    "expected": "Measured by tools/measure.py at f6bd56a: exit 0; last lines:   adapter=content-addressed merkle log over an object store (second adapter) cases=11 passed=11 appends=10 refusals=2 product_hits=0 | conformance PASSED: 22/22 cases, 2 binding(s)",
     "breakage": "sed -i '43s#.*#DIGEST = re.compile(r\"^sha256:[0-9a-f]{63}$\")#' harness/provenance/interface.py",
-    "expected_failure": "provenance conformance.py exits 1: the dryrun binding cannot be reached at all (its 64-hex digests no longer match the narrowed 63-hex pattern, `could not be reached`), and every case that carries a subject digest is refused document-invalid with `subjects[0].digest must match sha256:<64 hex>`; git checkout -- harness/provenance/interface.py restores and the state-persistence half is untouched throughout.",
+    "expected_failure": "Measured by tools/measure.py at f6bd56a: exit 1; last lines:   FAIL no reason given | passed 10, failed 17",
     "status": "measured",
     "sources": [
       "F-part-c-04",
@@ -395,7 +395,9 @@
       "breakage_exit": 1,
       "breakage_output": "its 0 (0)\n  ok   0 hits outside adapters/\n4. deliberate breakage: the artifact is rebuilt and the statement is not\n  ok   the breakage run exits non-zero (1)\n  FAIL the verifier rejected it on the subject digest, not on our store (expected 0, got 1)\n  ..   Traceback (most recent call last):\n  ..     File \"<stdin>\", line 2, in <module>\n  ..   FileNotFoundError: [Errno 2] No such file or directory: 'out/break-1.json'\n4b. deliberate breakage: the signature is dropped from the envelope\n  ok   the breakage run exits non-zero on the second adapter too (1)\n  FAIL no reason given\n\npassed 10, failed 17",
       "restored": true
-    }
+    },
+    "expected_design": "provenance test.sh: exit 0, `passed 27, failed 0`; provenance conformance.py: exit 0, `conformance PASSED: 26/26 cases, 2 binding(s)`; state-persistence test.sh: exit 0, `passed 20, failed 0`; state-persistence conformance.py: exit 0, `conformance PASSED: 22/22 cases, 2 binding(s)`. These are cap-provenance-implement's and cap-state-persistence-implement's harnesses, and the store pair they run is cap-state-persistence's (E-adapter-jsonl-hash-chain today, E-swap-candidate-relational second), so what the criterion measures is those two boundaries. The entry identity computed above the store, the uniqueness projection, the replay answer and the criterion-leak lint are this facet's own and stay claimed until the tool below is run. Proposed tool (not run): python3 tools/ledger_conformance.py --binding bindings/today.json --binding bindings/second.json --corpus fixtures/runs/ --replay-key <k> --criteria criteria.txt --report out/ledger-conformance.json, asserting per binding entries_checked > 0, head_match == true, terminal_records_for_key == 1, records_appended_on_replay == 0, and across bindings adapters_run >= 2, replay_answer_mismatches == 0, criterion_leaks == 0 (docs/decomposition.md section 3.1 row C5).",
+    "expected_failure_design": "The first command in the chain fails and the `&&` short-circuits: harness/provenance/test.sh runs the provenance conformance.py internally (harness/provenance/test.sh:15,44) over the interface.py the breakage edits, the dryrun binding can no longer be reached at all (its 64-hex digests no longer match the narrowed 63-hex pattern) and every case carrying a subject digest is refused document-invalid, so test.sh ends at its own summary `passed 10, failed 17`. The named provenance conformance.py and both state-persistence commands are never executed - skipped by the short-circuit, not shown to be untouched. git checkout -- harness/provenance/interface.py restores."
   },
   "composes_with": {
     "builds_on": [

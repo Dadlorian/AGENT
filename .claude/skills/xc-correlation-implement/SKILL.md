@@ -166,9 +166,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/observability/test.sh |
-| Expected | exit 0, `passed 37, failed 0` (dryrun conformance, the swap proof merging dryrun and second by configuration with adapters_run=2 selected_by=configuration, then the deliberate break-stamp case). Proposed tool (not run): python3 harness/observability/conformance.py --adapter in-process-sdk --report out/x5-a.json then --adapter pipeline-processor --report out/x5-b.json (adapter names as PASS.md A7 calls them), asserting missing_run_id == 0, missing_root_dispatch_id == 0, signals_checked > 0, levels_covered == 3, run_id_groups == 1 per entry and per signal kind, and across runs adapters_run == 2, selected_by == "configuration" (docs/decomposition.md section 3.4 row X5). |
+| Expected | Measured by tools/measure.py at fb96f80: exit 0; last lines:   ok   the unit shape has nowhere to put a parent span \| passed 37, failed 0 |
 | Deliberate breakage | sed -i '71s#.*#        if level > 0:#' harness/observability/call.py |
-| Expected failure | test.sh exits 1 at step 1 already: the dispatch-tree caller re-stamps every level below the root unconditionally (the break_stamp gate is gone), so the clean dryrun run drops levels_covered to 1, run_id_groups above 1, and spans_missing_run_id above 0 before the swap proof or the deliberate breakage step is even reached (26 ok, 11 failed); git checkout -- harness/observability/call.py restores. |
+| Expected failure | Measured by tools/measure.py at fb96f80: exit 1; last lines:   ok   the unit shape has nowhere to put a parent span \| passed 26, failed 11 |
 | Status | measured |
 | Evidence | `F-a7-02`, `F-a6-06` "A depth-3 task tree produces three unrelated root traces." |
 

@@ -147,7 +147,7 @@
         "quote": "Part A is substrate, not scope. Do not propose replacing what runs."
       },
       {
-        "text": "xc-budget states the ceiling and its placement (F-b4-02). What this adds on this stack: one enforcement point is not enough, because a cap that lives at the model gateway bounds only what crosses the gateway, and a run also spends on isolation, tool calls and delegated descendants that never appear in a completion request.",
+        "text": "The ceiling and its placement are xc-budget's (F-b4-02). On this stack one enforcement point is not enough, because a cap that lives at the model gateway - the adapter cap-model-access-implement owns - bounds only what crosses the gateway, and a run also spends on isolation, tool calls and delegated descendants that never appear in a completion request.",
         "origin": "sourced",
         "sources": [
           "F-b4-02",
@@ -163,7 +163,7 @@
         ]
       },
       {
-        "text": "build-evidence-record owns the record's contents (F-a5-04). What this adds: every statement in this skill about how an enforcement point behaves is claimed until the conformance report and its evidence record exist, and a reworded sentence never upgrades a label.",
+        "text": "The contents of a record of a run are build-evidence-record's (F-a5-04). Every statement in this skill about how an enforcement point behaves is claimed until the conformance report and its evidence record exist, and a reworded sentence never upgrades a label.",
         "origin": "sourced",
         "sources": [
           "F-a5-04"
@@ -257,7 +257,7 @@
       "quote": "hard budget cap, verified to terminate spend rather than merely record it"
     },
     {
-      "text": "agentic-stack already states the structurally-green-gate finding (F-a7-03), and xc-budget draws the consequence for a budget corpus. What this adds at the code level: report the counts per enforcement point, because a corpus replayed through two adapters can leave one of them with nothing to refuse and still exit green.",
+      "text": "Report the counts per enforcement point. A corpus replayed through two adapters can leave one of them with nothing to refuse and still exit green - the structurally-green-gate finding is agentic-stack's (F-a7-03) and xc-budget draws it for a budget corpus; this is the code-level form.",
       "origin": "sourced",
       "sources": [
         "F-a7-03"
@@ -280,7 +280,7 @@
       "quote": "a dedicated AI gateway sits between application code and provider APIs"
     },
     {
-      "text": "Keep the conformance suite in the enforcement path rather than beside it. xc-budget states why this layer exists (F-a6-04); what this adds is the code-level trap: a budget suite replaying a stored corpus never touches the path a live dispatch takes, so wire it to the same draw the dispatcher calls.",
+      "text": "Keep the conformance suite in the enforcement path rather than beside it. Why this layer exists is xc-budget's (F-a6-04); the code-level trap is that a budget suite replaying a stored corpus never touches the path a live dispatch takes, so wire it to the same draw the dispatcher calls.",
       "origin": "sourced",
       "sources": [
         "F-a6-04"
@@ -320,9 +320,9 @@
   ],
   "definition_of_done": {
     "criterion": "bash harness/gateway/test.sh && python3 harness/gateway/conformance.py --adapter dryrun --adapter second",
-    "expected": "test.sh: exit 0, `passed <n>, failed 0`; conformance.py: exit 0, `conformance PASSED: 24/24 cases, 2 binding(s)`. Proposed tool (not run): python3 tools/conformance_budget.py --adapter today --adapter second --corpus out/dispatches.jsonl --min-dispatches 100 --report out/budget-conformance.json, asserting per enforcement point non-null budget.ceiling_micros, one root run id per dispatch, overshoot at most one call's worth, enforcement_point_observed read from the refusal, and across enforcement points adapters_run >= 2, unbounded == 0, overshoot_violations == 0 (docs/decomposition.md section 3.4 row X1).",
+    "expected": "Measured by tools/measure.py at fb96f80: exit 0; last lines:   adapter=provider-native asynchronous batch (claim-and-poll) cases=12 passed=12 dispatches=7 refusals=2 overshoot_violations=0 endpoint_marker=batch-job-accepted product_hits=0 | conformance PASSED: 24/24 cases, 2 binding(s)",
     "breakage": "sed -i '235s#.*#        if estimate >= request.ceiling_micros \\* 100:#' harness/gateway/interface.py",
-    "expected_failure": "conformance.py exits 1: the pre-dispatch ceiling check no longer fires at the real ceiling on either binding, so the case asserting a request over its cap is refused before the call now gets a result instead of budget-exhausted, dropping to 22/24 cases (11/12 passed on each binding, refusals=1 instead of 2); git checkout -- harness/gateway/interface.py restores.",
+    "expected_failure": "Measured by tools/measure.py at fb96f80: exit 1; last lines:   ok   product_hits went from 0 to 1 | passed 16, failed 9",
     "status": "measured",
     "sources": [
       "F-part-c-04",
@@ -337,7 +337,9 @@
       "breakage_exit": 1,
       "breakage_output": "bf778bb0da2418e49f)\n  ok   the same caller code runs on the second adapter (0)\n  FAIL the two adapters differ in execution model on 3 or more axes (expected 0, got 1)\n  FAIL AssertionError: both bindings must pass the same cases\n3. no product name in the interface, the caller or the conformance run\n  ok   product scan over the shipped tree exits 0 (0)\n  ok   0 hits outside adapters/\n4. deliberate breakage: the caller branches on which adapter answered\n  ok   the breakage run exits non-zero (1)\n  ok   the run names the file that broke it\n  ok   product_hits went from 0 to 1\n\npassed 16, failed 9",
       "restored": true
-    }
+    },
+    "expected_design": "test.sh: exit 0, `passed 25, failed 0`; conformance.py: exit 0, `conformance PASSED: 24/24 cases, 2 binding(s)`. That is cap-model-access-implement's gateway harness and its adapter pair, so what the criterion measures is the gateway enforcement point this facet borrows: the second enforcement point the platform holds itself, and the reconciliation across both, stay claimed until the tool below is run. Proposed tool (not run): python3 tools/conformance_budget.py --adapter today --adapter second --corpus out/dispatches.jsonl --min-dispatches 100 --report out/budget-conformance.json, asserting per enforcement point non-null budget.ceiling_micros, one root run id per dispatch, overshoot at most one call's worth, enforcement_point_observed read from the refusal, and across enforcement points adapters_run >= 2, unbounded == 0, overshoot_violations == 0 (docs/decomposition.md section 3.4 row X1).",
+    "expected_failure_design": "The widened pre-dispatch ceiling comparison no longer fires at the real ceiling on either binding, so the case asserting a request over its cap is refused before the call gets a result instead of budget-exhausted. In the criterion as chained, harness/gateway/test.sh runs the same conformance.py internally (lines 15,45) over the edited interface.py and fails first, so the standalone conformance.py after the `&&` never runs and the chain ends at test.sh's own summary `passed 16, failed 9`; git checkout -- harness/gateway/interface.py restores."
   },
   "composes_with": {
     "builds_on": [

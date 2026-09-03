@@ -233,6 +233,7 @@
       "origin": "sourced",
       "sources": [
         "X-cross-structure-052",
+        "X-cross-structure-053",
         "F-b4-05"
       ],
       "quote": "a valid log can be cryptographically verified by any third-party"
@@ -349,9 +350,9 @@
   ],
   "definition_of_done": {
     "criterion": "bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second",
-    "expected": "test.sh: exit 0, `passed <n>, failed 0`; conformance.py: exit 0, `conformance PASSED: 22/22 cases, 2 binding(s)`. Proposed tool (not run): python3 tools/conformance/state_seam.py --adapter jsonl-hash-chain --runs 2 --repeats 100 --report out/seam-state-a.json then --adapter merkle-object-store --report out/seam-state-b.json, asserting projections_checked == 8, concurrent_appends_observed > 0, records_migrated > 0, selected_by == \"configuration\", consistency_proof_verified == true and distinct_results_per_projection == [1,1,1,1,1,1,1,1] on both (docs/decomposition.md section 3.3 row S2).",
+    "expected": "Measured by tools/measure.py at fb96f80: exit 0; last lines:   adapter=content-addressed merkle log over an object store (second adapter) cases=11 passed=11 appends=10 refusals=2 product_hits=0 | conformance PASSED: 22/22 cases, 2 binding(s)",
     "breakage": "sed -i '76s#.*#LEAF_PREFIX = b\"\\\\x02\"#' harness/state-persistence/interface.py",
-    "expected_failure": "conformance.py exits 1: the second (content-addressed merkle log) binding's independently recomputed external root no longer matches the adapter's stored head (`external root ... != adapter root ...`), dropping to 20/22 cases (10/11 passed on that binding) while the dryrun binding's hash-chain proof still verifies; git checkout -- harness/state-persistence/interface.py restores.",
+    "expected_failure": "Measured by tools/measure.py at fb96f80: exit 1; last lines:   ok   chain_break_at went from -1 to 2, the tampered record | passed 14, failed 6",
     "status": "measured",
     "sources": [
       "F-b5-05",
@@ -367,7 +368,9 @@
       "breakage_exit": 1,
       "breakage_output": "deliberate breakage: one record body edited in place in the store\nappended 5 records, head sha256:b387fc130af4d63ed78d847acceec6466a0ce31d3827879cfd68daa6af9e5bfa\n  ok   before tampering: chain_break_at is -1\n  ok   tampered 9a7b39f77fa01e8d6bf66d60cff92968f09220878635e84a90e2812e285aae21.json in place, record_id unchanged\n{\"count\": 5, \"root_hash\": \"sha256:f735f9be08c412f73916f80294bc30b81466e806b070a5e53f88396335c0444a\", \"chain_break_at\": 2}\nchain_break_at = 2\n  ok   the tampered run reports the edited index (0)\n  ok   chain_break_at went from -1 to 2, the tampered record\n\npassed 14, failed 6",
       "restored": true
-    }
+    },
+    "expected_design": "test.sh: exit 0, `passed <n>, failed 0`; conformance.py: exit 0, `conformance PASSED: 22/22 cases, 2 binding(s)`. Proposed tool (not run): python3 tools/conformance/state_seam.py --adapter jsonl-hash-chain --runs 2 --repeats 100 --report out/seam-state-a.json then --adapter merkle-object-store --report out/seam-state-b.json, asserting projections_checked == 8, concurrent_appends_observed > 0, records_migrated > 0, selected_by == \"configuration\", consistency_proof_verified == true and distinct_results_per_projection == [1,1,1,1,1,1,1,1] on both (docs/decomposition.md section 3.3 row S2).",
+    "expected_failure_design": "The breakage changes the merkle leaf prefix, so the second (content-addressed merkle log) binding's independently recomputed external root no longer matches the adapter's stored head (`external root ... != adapter root ...`) while the dryrun binding's hash-chain proof still verifies. In the criterion as chained, harness/state-persistence/test.sh runs that same conformance internally (lines 15,44) over the edited interface.py and fails first, so the standalone conformance.py after the `&&` never runs and the chain ends at test.sh's own summary `passed 14, failed 6`; git checkout -- harness/state-persistence/interface.py restores."
   },
   "composes_with": {
     "builds_on": [
@@ -382,10 +385,11 @@
     {
       "question": "Is the writer one process per run, or a lease service that any process may take a token from?",
       "evidence": "Measure, over the recorded run history, how many runs are concurrent at peak and how often a writer pauses long enough to be presumed dead. If concurrency is low and pauses are rare, a process per run needs no lease service at all and the token is bookkeeping.",
-      "default": "Proposed: a lease with a fencing token from the first stage, whoever holds it. The token costs one integer per record and it is the only thing that survives a writer that pauses, is presumed dead and wakes up; adding it later would mean re-deciding the shape of every record already written.",
+      "default": "Proposed: a lease with a fencing token from the first stage, whoever holds it. seam-state is where the write model, concurrency and single-writer guarantees have to be specified (F-b5-05); this is the build's answer to that. The token costs one integer per record and it is the only thing that survives a writer that pauses, is presumed dead and wakes up; adding it later would mean re-deciding the shape of every record already written.",
       "sources": [
         "F-b5-05"
-      ]
+      ],
+      "quote": "the write model, concurrency and single-writer guarantees"
     },
     {
       "question": "Which projections may be served from a snapshot on the hot path, given that a snapshot is a cache with a head on it?",
@@ -394,7 +398,8 @@
       "sources": [
         "X-seam-state-004",
         "F-b1-06"
-      ]
+      ],
+      "quote": "A snapshot is a periodic checkpoint of the aggregate's current state, stored alongside the event stream"
     }
   ],
   "provenance": {

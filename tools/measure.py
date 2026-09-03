@@ -74,7 +74,10 @@ def main(argv: list[str]) -> int:
             print(f"FAIL: breakage command did not apply (exit {brc}): {brout.strip().splitlines()[-1] if brout.strip() else 'no output'}")
             result.update({"breakage_applied": False}); ok = False
         rc2, out2 = run(d["criterion"])
-        run(opts.get("--restore-cmd", "git checkout -- ."))
+        if "--restore-cmd" not in opts:
+            print("FAIL: --breakage-cmd needs an explicit --restore-cmd; the old default 'git checkout -- .' would discard other agents' work")
+            return 2
+        run(opts["--restore-cmd"])
         after = tree_digest()
         not_restored = sorted(f for f in set(before) | set(after) if before.get(f) != after.get(f))
         result.update({"breakage_exit": rc2, "breakage_output": out2, "restored": not not_restored})

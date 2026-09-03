@@ -190,7 +190,7 @@
         "quote": "The core imports interfaces, never implementations"
       },
       {
-        "text": "build-evidence-record owns what a record of a run must contain (F-a5-04). What this adds: every claim in this skill about how a store behaves is claimed until such a record exists for it, with one exception that is labelled measured in the adapter row below and is narrower than the guarantee - it shows a byte-level alteration is detectable in one chained file by its own reader, and nothing about independence, scheduling, retention or outside verification.",
+        "text": "What a record of a run must contain is build-evidence-record's (F-a5-04). Every claim in this skill about how a store behaves is claimed until such a record exists for it, with one exception that is labelled measured in the adapter row below and is narrower than the guarantee - it shows a byte-level alteration is detectable in one chained file by its own reader, and nothing about independence, scheduling, retention or outside verification.",
         "origin": "sourced",
         "sources": [
           "F-a5-04",
@@ -204,7 +204,7 @@
     {
       "step": 1,
       "action": "Build the first store as a projection over the chained append-only file that already runs: read its records, emit one audit entry per action-bearing record, and add the actor, delegation chain and correlation triple at the writer rather than in the projection.",
-      "why": "build-evidence-record already states what the append-only store on this stack records per run (F-a5-04). Its consequence here: what is missing from that store is not durability but attribution and an index, so the projection adds neither. Adding the actor in the projection would make it derived rather than recorded, and a derived actor is a guess with a timestamp on it.",
+      "why": "What the append-only store on this stack records per run is build-evidence-record's (F-a5-04). Its consequence here: what is missing from that store is not durability but attribution and an index, so the projection adds neither. Adding the actor in the projection would make it derived rather than recorded, and a derived actor is a guess with a timestamp on it.",
       "origin": "sourced",
       "sources": [
         "E-provisioning-concern-evidence-store",
@@ -246,7 +246,7 @@
     {
       "step": 6,
       "action": "Read independent, scheduled and store_observed from what actually ran and answered - the identity the scan authenticated as, the entry kind that started it, the store that served the query - and put those observed values in the conformance report.",
-      "why": "agentic-stack already states the silently-overridden-configuration finding (F-a7-04): a report that names the store and the identity it was told to use cannot tell a real swap from a configuration that quietly fell back, which is the one thing a pair run exists to establish.",
+      "why": "The silently-overridden-configuration finding is agentic-stack's (F-a7-04): a report that names the store and the identity it was told to use cannot tell a real swap from a configuration that quietly fell back, which is the one thing a pair run exists to establish.",
       "origin": "sourced",
       "sources": [
         "F-a7-04"
@@ -267,7 +267,7 @@
   ],
   "best_practices": [
     {
-      "text": "agentic-stack already states the structurally-green-gate finding (F-a7-03). What it adds here: a pair run over a window containing no entries reports zero breaks twice and looks like proof of a swap, so assert entries_checked and adapters_run before reading chain_breaks as good news.",
+      "text": "Assert entries_checked and adapters_run before reading chain_breaks as good news. A pair run over a window containing no entries reports zero breaks twice and looks like proof of a swap - the structurally-green-gate finding is agentic-stack's (F-a7-03), and this is its shape for a trail.",
       "origin": "sourced",
       "sources": [
         "F-a7-03"
@@ -332,9 +332,9 @@
   ],
   "definition_of_done": {
     "criterion": "bash harness/xc-audit-trail/test.sh",
-    "expected": "What the run proves: Proposed tool, built with the first store: `python3 tools/conformance_audit_trail.py --adapter today --adapter second --trail <trail> --from-head <h0> --to-head <h1> --min-entries 100 --retention-floor-days 180 --report out/audit-trail.json`, the store selected by configuration with no code edit between runs. Per store it asserts `entries_checked >= 100`, `actors_missing == 0`, `correlation_missing == 0`, `chain_breaks == 0`, `oldest_retained_entry_age_days >= 180`, `external_verifications > 0` with our own reader unmounted, `scheduled_runs_observed >= 1`, that `entry_kinds_seen` contains all four of TARGET T6.2's entries (user, agent, service, schedule), and that `independent`, `scheduled` and `store_observed` were read from the identity, the entry kind and the store that actually ran. Across stores it asserts `adapters_run >= 2`. | exit 0 and one line per store of the form `store=<entity> entries_checked=100 actors_missing=0 correlation_missing=0 chain_breaks=0 oldest_retained_entry_age_days=180 external_verifications=1 scheduled_runs_observed=1 entry_kinds_seen=user,agent,service,schedule independent=true scheduled=true store_observed=<entity>`, followed by `adapters_run=2`.",
-    "breakage": "In harness/xc-audit-trail/interface.py, make the scan's chain check never fire (the comparison of each entry's prev and hash against the recomputed values), run the criterion (a tampered mid-trail entry goes unreported, chain_breaks stays 0 where the gate expects 1, and the gate exits 1), then git checkout harness/xc-audit-trail/interface.py.",
-    "expected_failure": "`independent` becomes false and `scheduled` becomes false, `scheduled_runs_observed` drops to 0, and the run exits non-zero naming the identity the scan authenticated as - the writer's. Everything else holds: `chain_breaks` stays 0, `entries_checked` stays at or above 100 and `adapters_run` stays 2, which is what shows the fault is the wiring that makes the check independent rather than anything wrong with the record. Claimed: no audit entry, projection, scan, schedule or conformance tool is built on this stack, so neither run has been performed. The narrower byte-flip measurement recorded in the adapter row above is a different assertion and is not this one.",
+    "expected": "Measured by tools/measure.py at f037f65: exit 0; last lines: chain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False | passed 18, failed 0",
+    "breakage": "sed -i '206s@.*@            if False:  # BREAKAGE@' harness/xc-audit-trail/interface.py -- the scan's chain comparison (each entry's prev and hash against the recomputed values, interface.py:206) never fires, so the tampered entry the conformance corpus plants goes unreported and the binding stops passing the case that catches it. Restore with git checkout -- harness/xc-audit-trail/interface.py.",
+    "expected_failure": "Measured by tools/measure.py at f037f65: exit 1; last lines: chain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False | passed 12, failed 6",
     "status": "measured",
     "sources": [
       "F-part-c-04",
@@ -349,7 +349,9 @@
       "breakage_exit": 1,
       "breakage_output": "bc60c7443871d4f8)\n  ok   the same caller code runs on the second adapter (0)\n  FAIL the two adapters differ in execution model on 3 or more axes (expected 0, got 1)\n  FAIL AssertionError: the dry-run binding must pass all its cases\n3. deliberate breakage: the scan's schedule declaration is gone, called inline from the writer\n  ok   the broken wiring exits non-zero (1)\n  ok   the failure names the identity: the writer's, not a scanner's\n  ok   the record itself held: only the wiring broke (0)\nchain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False\n\npassed 12, failed 6",
       "restored": true
-    }
+    },
+    "expected_design": "bash harness/xc-audit-trail/test.sh is the whole criterion and it prints one scan line, not one per store: exit 0, `chain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False`, then `passed 18, failed 0`. Those values are the harness's own embedded wiring fault (step 3), where the scan is called inline from the writer, which is why independent and scheduled are False in a passing run; the two bindings are exercised as separate reports (6/6 and 7/7 cases) rather than in one line. Everything that follows is the proposed tool and is not run: `python3 tools/conformance_audit_trail.py --adapter today --adapter second --trail <trail> --from-head <h0> --to-head <h1> --min-entries 100 --retention-floor-days 180 --report out/audit-trail.json`, the store selected by configuration with no code edit between runs. Per store it would assert `entries_checked >= 100`, `actors_missing == 0`, `correlation_missing == 0`, `chain_breaks == 0`, `oldest_retained_entry_age_days >= 180`, `external_verifications > 0` with our own reader unmounted, `scheduled_runs_observed >= 1`, that `entry_kinds_seen` contains all four of TARGET T6.2's entries (user, agent, service, schedule), and that `independent`, `scheduled` and `store_observed` were read from the identity, the entry kind and the store that actually ran; across stores `adapters_run >= 2`.",
+    "expected_failure_design": "The scan stops reporting the tampered entry, so the dry-run binding no longer passes all its cases and the swap proof fails with it: test.sh prints `FAIL conformance after the swap exits 0 (expected 0, got 1)`, `FAIL not 7/7`, `FAIL the two adapters differ in execution model on 3 or more axes` and `AssertionError: the dry-run binding must pass all its cases`, ending `passed 12, failed 6` at exit 1. The scan line itself is unchanged from the passing run - `chain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False`, since adapters_run is 1 per report and the embedded wiring fault is what sets independent and scheduled False in both runs - so the failing signal is the refused case count, never that line. Claimed: tools/conformance_audit_trail.py named above is not written and no projection, monitor, schedule or outside verifier runs on this stack, so nothing has been measured over 100 entries, two stores or a retention floor; the measured run is this harness's 24-entry projection and its byte-level tamper case alone."
   },
   "composes_with": {
     "builds_on": [

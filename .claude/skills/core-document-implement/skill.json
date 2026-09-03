@@ -213,7 +213,7 @@
     {
       "step": 3,
       "action": "Implement the digest over the canonical form of intent, definition_of_done and steps only, and record the algorithm in the binding record. Compute it in the constructor, never in a store adapter.",
-      "why": "core-document owns the field list this digest covers (F-b2-02). What this adds is where it is computed: a digest computed by the store is a property of the store, and computing it once at construction is what makes cross-store and cross-entry equality assertable at all, and it is the assertion the definition of done below rests on.",
+      "why": "The field list this digest covers is core-document's (F-b2-02). Where it is computed is this build's choice: a digest computed by the store is a property of the store, and computing it once at construction is what makes cross-store and cross-entry equality assertable at all - it is the assertion the definition of done below rests on.",
       "origin": "sourced",
       "sources": [
         "F-b2-02"
@@ -279,7 +279,7 @@
   ],
   "best_practices": [
     {
-      "text": "agentic-stack and build-evidence-record already state the configuration finding (F-a7-04). What it adds here: assert the store binding that is actually in effect at run time and log it beside the round-trip counts, because a binding written in the documented place and overridden by a stored row produces a run that tested one store twice.",
+      "text": "Assert the store binding that is actually in effect at run time and log it beside the round-trip counts. A binding written in the documented place and overridden by a stored row produces a run that tested one store twice: agentic-stack and build-evidence-record own the finding that configuration validated, reviewed correctly and had no runtime effect (F-a7-04).",
       "origin": "sourced",
       "sources": [
         "F-a7-04"
@@ -301,7 +301,7 @@
       ]
     },
     {
-      "text": "build-evidence-record already states what the store that runs today buys (F-a5-03): a closing digest that opens the next run makes a manual edit between runs detectable. What this adds: keep that property through the migration, because a document store without it cannot show that a declaration was not amended after the work was priced.",
+      "text": "Carry the closing-digest property through the migration. A closing digest that opens the next run makes a manual edit between runs detectable (F-a5-03, build-evidence-record's), and a document store without it cannot show that a declaration was not amended after the work was priced.",
       "origin": "sourced",
       "sources": [
         "F-a5-03"
@@ -339,9 +339,9 @@
   ],
   "definition_of_done": {
     "criterion": "bash harness/document-validation/test.sh && python3 harness/document-validation/conformance.py --adapter dryrun --adapter second",
-    "expected": "test.sh: exit 0, `passed <n>, failed 0`; conformance.py: exit 0, `conformance PASSED: 28/28 cases, 2 binding(s)`, one binding=dryrun and one binding=second line each showing cases=14 passed=14 product_hits=0. Proposed tool (not run): python3 tools/document_roundtrip.py --binding bindings/today.json --binding bindings/second.json --corpus fixtures/ --dispatch-log out/recorded-dispatch-requests.jsonl --report out/document-roundtrip.json, asserting per binding documents_round_tripped >= 21 with byte_mismatches == 0, and across bindings adapters_run >= 2, digest_mismatches == 0 and criterion_leaks == 0.",
+    "expected": "Measured by tools/measure.py at f8b9dcd: exit 0; last lines:   adapter=compiled-schema checker (compile once, check many) cases=14 passed=14 prepares=6 schema_reads=0 dialect_in_effect=https://json-schema.org/draft/2020-12/schema product_hits=0 | conformance PASSED: 28/28 cases, 2 binding(s)",
     "breakage": "sed -i '28s#.*#DIALECT_2020_12 = \"https://json-schema.org/draft/2020-12/schema-broken\"#' harness/document-validation/interface.py",
-    "expected_failure": "conformance.py exits 1: both bindings refuse every schema-carrying case as dialect-unsupported because the shared dialect constant no longer matches what the on-disk schemas declare, dropping to 6/28 cases (3 passed per binding, cases_passed=3 each), and test.sh's own dialect checks (step 1, step 4 product-scan aside) fail too; git checkout -- harness/document-validation/interface.py restores.",
+    "expected_failure": "Measured by tools/measure.py at f8b9dcd: exit 1; last lines:   ok   product_hits went from 0 to 1 | passed 12, failed 12",
     "status": "measured",
     "sources": [
       "F-part-c-04",
@@ -356,7 +356,9 @@
       "breakage_exit": 1,
       "breakage_output": "(expected 0, got 2)\n  FAIL the two adapters differ in execution model on 2 or more axes (expected 0, got 1)\n  FAIL AssertionError: only 1 axes differ; the swap would test configuration, not the contract\n3. no validator library name in the interface, the caller or the conformance run\n  ok   library-name scan over the shipped tree exits 0 (0)\n  ok   0 hits outside adapters/\n4. deliberate breakage: a validator library imported directly outside adapters/\n  ok   the breakage run exits non-zero (1)\n  ok   the run names the file that broke it\n  ok   product_hits went from 0 to 1\n\npassed 12, failed 12",
       "restored": true
-    }
+    },
+    "expected_design": "test.sh: exit 0, `passed 24, failed 0`; conformance.py: exit 0, `conformance PASSED: 28/28 cases, 2 binding(s)`, with one `adapter=<name> ... cases=14 passed=14 ... product_hits=0` line per binding (the run prints `adapter=`, never `binding=`). What that measures is the document-validation boundary this facet shares with cap-document-validation-implement, whose harness this criterion is; the store pair, the digest computed at construction and the criterion-leak lint are not exercised by it and stay claimed until the round-trip below is run. Proposed tool (not run): python3 tools/document_roundtrip.py --binding bindings/today.json --binding bindings/second.json --corpus fixtures/ --dispatch-log out/recorded-dispatch-requests.jsonl --report out/document-roundtrip.json, asserting per binding documents_round_tripped >= 21 with byte_mismatches == 0, and across bindings adapters_run >= 2, digest_mismatches == 0 and criterion_leaks == 0.",
+    "expected_failure_design": "test.sh fails first and the `&&` short-circuits, so the standalone conformance.py named in the criterion never runs: test.sh calls the same conformance.py internally (harness/document-validation/test.sh:19,51) over the interface.py the breakage edits, both bindings then refuse every schema-carrying case as dialect-unsupported because the shared dialect constant no longer matches what the on-disk schemas declare, test.sh's own dialect checks fail with it, and the chain ends at test.sh's own summary `passed 12, failed 12`; git checkout -- harness/document-validation/interface.py restores."
   },
   "composes_with": {
     "builds_on": [

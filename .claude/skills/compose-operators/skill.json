@@ -307,7 +307,7 @@
     ],
     "not_exposed": [
       {
-        "text": "The judging criterion, at any depth and in any operator's fields. agentic-stack states design rule 6 (F-b1-07); what it forbids on this vocabulary is specific - the judge operator carries an opaque criterion_ref and never the criterion body, no agent operator's task or input_from may name a step whose result is a criterion, and no child document may inherit one from its parent.",
+        "text": "The judging criterion, at any depth and in any operator's fields. agentic-stack states design rule 6 (F-b1-07) and cap-document-validation carries the same quote for a declared shape; what the rule forbids on this vocabulary is specific - the judge operator carries an opaque criterion_ref and never the criterion body, no agent operator's task or input_from may name a step whose result is a criterion, and no child document may inherit one from its parent.",
         "origin": "sourced",
         "sources": [
           "F-b1-07"
@@ -403,7 +403,7 @@
       "quote": "complexity lives in a named file"
     },
     {
-      "text": "Count what executed, not what passed. A conformance run over a composition asserts how many distinct operators were exercised and how many steps actually dispatched, because a deterministic gate can be structurally green and mean nothing.",
+      "text": "Count what executed, not what passed, and keep one reference composition that exercises every operator exactly once so the count is assertable. A conformance run over a composition asserts how many distinct operators were exercised and how many steps actually dispatched, because a deterministic gate can be structurally green and mean nothing - the finding build-ceremony and core-document cite from the same A7 record for their own gates.",
       "origin": "sourced",
       "sources": [
         "F-a7-03"
@@ -411,12 +411,12 @@
       "quote": "A deterministic gate can be structurally green and mean nothing."
     },
     {
-      "text": "Keep one reference composition that exercises every operator exactly once, and assert that count in the gate. An operator nobody has run is a claim about the vocabulary rather than a member of it, and a deterministic gate can otherwise be structurally green and mean nothing.",
+      "text": "Write the operator set down once and make the two copies prove they agree. The document schema admits a closed set and the running engine dispatches one; build-adapter-pair states that swappability is a tested property rather than an intention (F-b1-04), and the cheapest form of that test here is a per-engine drift count reported in the same run - schema_ops, executor_ops and drift - because an operator the schema admits and no engine dispatches is a vocabulary entry no caller can use, and one an engine dispatches without the schema admitting it is a composition nothing can validate.",
       "origin": "sourced",
       "sources": [
-        "F-a7-03"
+        "F-b1-04"
       ],
-      "quote": "Only diff, syntax and format ran."
+      "quote": "Swappability is a tested property, not an intention."
     }
   ],
   "adapters": [
@@ -447,10 +447,10 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "Proposed tool, built with the first implementation of this vocabulary: `python3 tools/conformance_operators.py --workflow examples/end-to-end/workflows/triage-and-fix.json --schema examples/end-to-end/schemas/workflow.schema.json --engine interpreted --engine compiled --report out/operators-conformance.json`. It asserts, in this order: the document validates against the operator schema through the imported validator with 0 errors; the graph built from the document is identical, node for node and edge for edge, to the graph built from the equivalent chained-call form of the same composition; operators_exercised == 6; depth_bound_checked_at == \"resolve\"; every parent's estimate equals the sum of its children's; every loop termination names one of exit_verdict, iteration_ceiling or budget_ceiling with unbounded == false; and across engines, engines_run >= 2 with identical step order and identical terminal outcome.",
-    "expected": "exit 0 and one line reading `validated=0-errors graphs_identical=true operators_exercised=6 depth_bound_checked_at=resolve reconcile=ok unbounded=0 engines_run=2`. Two legs are measured today, on 2026-09-03: `bash examples/end-to-end/test.sh` reports `passed 29, failed 0`, of which `ok   agent registry and workflow validate (0)` is the validation leg and four `reached completed` lines are the interpreted engine running every operator once. The graph-equality leg, the reconciliation leg and the second-engine leg are claimed: no chained-call form, no cost declaration per operator and no compiled engine exist in this repository yet.",
-    "breakage": "Append a seventh step to the composed document whose operator is outside the closed set - `{\"op\": \"branch\", \"id\": \"pick\", \"cases\": []}` added to `root.steps` of workflows/triage-and-fix.json - and change nothing else.",
-    "expected_failure": "The composition is refused before it is priced or dispatched: the imported validator returns 1 error, `$.root: matches none of the allowed step shapes`, the run exits 2 with `application/problem+json` typed `urn:agentic:problem:document-invalid`, and no ledger record is written. Measured on 2026-09-03 in this session: the same validator returned `valid` for the unmodified document and exactly `$.root: matches none of the allowed step shapes` (1 error) for the modified one, so the closed set is closed by something that can fail.",
+    "criterion": "bash harness/compose-operators/test.sh && python3 harness/compose-operators/conformance.py --engine dryrun --engine second",
+    "expected": "exit 0, `passed 34, failed 0` from the gate, and one line per engine - `engine_marker=interpreted-walk/0.1` and `engine_marker=compiled-state-machine/0.1` - each reading `schema_ops=6 executor_ops=6 drift=0 operators_exercised=6 terminal_outcome=completed checks=39/39`, closing on `engines_run=2 step_order=identical terminal_outcome=identical distinct_markers=2 differ=nothing`. That covers three of this facet's legs: every operator exercised once, the closed set closed by something that can fail, and one composition executed identically by two engines. It is the gate compose-operators-implement owns; run here on 2026-09-03 and exited 0. Claimed, stated as the gap: tools/conformance_operators.py does not exist, so the graph-equality leg against a chained-call form of the same composition, the parent-equals-sum-of-children reconciliation and `depth_bound_checked_at=resolve` have never been run - no chained-call form and no per-operator cost declaration exist in this repository.",
+    "breakage": "Have the interpreted engine register a branch arm the composition schema does not admit, so the operator set is written in two places, and restore the file afterwards.",
+    "expected_failure": "exit 1 with `FAIL drift between the schema and the executor (expected [], got [\"branch\"])`: executor_ops reads 7 on that engine while the compiled engine stays at 6, operators_exercised stays 6 and the terminal outcome stays completed, so the report names which copy of the vocabulary moved rather than only that something failed. Claimed here: this breakage moves the engine binding compose-operators-implement owns, not this facet's graph-equality or cost-reconciliation legs, which nothing on disk can make fail today.",
     "status": "claimed",
     "sources": [
       "F-part-c-04",

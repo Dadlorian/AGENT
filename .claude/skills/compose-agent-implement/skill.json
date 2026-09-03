@@ -67,7 +67,7 @@
     ],
     "invariants": [
       {
-        "text": "compose-agent already states that a composition introduces no new interface and reaches isolation, tools, packaging and the runtime turn through capability interfaces only. What this skill adds: the profile declaration is byte-identical on both registries and names neither, exactly as agentic-stack's rule 1 test requires (F-b1-02) - if a profile had to change to move registries, the boundary would be drawn wrong.",
+        "text": "compose-agent states that a composition introduces no new interface and reaches isolation, tools, packaging and the runtime turn through capability interfaces only. The consequence here: the profile declaration is byte-identical on both registries and names neither, exactly as agentic-stack's rule 1 test requires (F-b1-02) - if a profile had to change to move registries, the boundary would be drawn wrong.",
         "origin": "sourced",
         "sources": [
           "F-b1-02"
@@ -84,7 +84,7 @@
         "quote": "zero tools registered"
       },
       {
-        "text": "One unit per isolation admission, which compose-agent already states as its containment invariant, is already true of the substrate: one microVM starts per agent, startable without sudo. What this skill adds is that the migration needs no new isolation work to satisfy that row - it needs the registry, the tool registration and the identity field wired in front of an isolation boundary that already exists.",
+        "text": "One unit per isolation admission, which compose-agent states as its containment invariant, is already true of the substrate: one microVM starts per agent, startable without sudo. The consequence for the build is that the migration needs no new isolation work to satisfy that row - it needs the registry, the tool registration and the identity field wired in front of an isolation boundary that already exists.",
         "origin": "sourced",
         "sources": [
           "F-a2-02"
@@ -92,7 +92,7 @@
         "quote": "One microVM per agent, startable without sudo"
       },
       {
-        "text": "agentic-stack already states the trace-context finding: the runtime that serves cap-agent-runtime's turn today mints its own root trace and ignores an injected trace-context header (F-a7-02). What compose-agent-implement adds: an agent unit's correlation attribute has to be re-stamped at admission, not inherited from whatever the microVM's own process tree carries, or a depth-3 delegation tree produces unrelated root traces exactly as A7 finding 1 already describes.",
+        "text": "agentic-stack states the trace-context finding: the runtime that serves cap-agent-runtime's turn today mints its own root trace and ignores an injected trace-context header (F-a7-02). The consequence here: an agent unit's correlation attribute has to be re-stamped at admission, not inherited from whatever the microVM's own process tree carries, or a depth-3 delegation tree produces unrelated root traces exactly as A7 finding 1 already describes.",
         "origin": "sourced",
         "sources": [
           "F-a7-02"
@@ -105,7 +105,7 @@
     {
       "step": 1,
       "action": "Bind compose-agent's contract to the isolation boundary that already runs: one unit per microVM, admitted exactly as the substrate admits one microVM per agent today. Add nothing new here - this row of the migration is already satisfied.",
-      "why": "F-a2-02 already states one microVM per agent; duplicating that mechanism to satisfy compose-agent's containment invariant would be building a second isolation boundary this repository does not need.",
+      "why": "F-a2-02 states one microVM per agent; duplicating that mechanism to satisfy compose-agent's containment invariant would be building a second isolation boundary this repository does not need.",
       "origin": "sourced",
       "sources": [
         "F-a2-02"
@@ -153,7 +153,7 @@
     {
       "step": 6,
       "action": "Write one conformance suite against compose-agent's own definition of done - criterion_leaks, tool_mismatches, undeclared_skills - and parameterise it over both registries so the same 20 profiles run against each with only the registry-binding's `registry` field changed.",
-      "why": "build-definition-of-done already states that a criterion nothing can fail is not a criterion; a suite that only ever runs against the in-process registry has never shown the remote one can pass or fail the same checks.",
+      "why": "build-definition-of-done owns the rule that a criterion nothing can fail is not a criterion (F-part-c-04); a suite that only ever runs against the in-process registry has never shown the remote one can pass or fail the same checks. Until this step lands, the gate this skill's definition of done measures is harness/linked's cross-door suite, which exercises none of the three counters and no registry swap, so criterion_leaks, tool_mismatches and undeclared_skills stay claimed.",
       "origin": "sourced",
       "sources": [
         "F-part-c-04"
@@ -163,7 +163,7 @@
     {
       "step": 7,
       "action": "Wire the cross-cutting concerns to the unit, not to the process: re-stamp the correlation attribute at admission rather than trusting the microVM's own process tree, attach the budget slice when the plan resolves, and record the identity chain hop once step 4's field exists.",
-      "why": "agentic-stack already states the trace-context finding (F-a7-02): the runtime that serves this composition's turn mints its own root trace and ignores an injected trace-context header, so correlation has to be an explicit attribute this skill sets, not one it inherits.",
+      "why": "agentic-stack states the trace-context finding (F-a7-02): the runtime that serves this composition's turn mints its own root trace and ignores an injected trace-context header, so correlation has to be an explicit attribute this skill sets, not one it inherits.",
       "origin": "sourced",
       "sources": [
         "F-a7-02"
@@ -173,7 +173,7 @@
   ],
   "best_practices": [
     {
-      "text": "agentic-stack already states the trace-context finding (F-a7-02). What it adds here: do not trust cancel or completion timing measured from inside the microVM's own process tree either, since the same boundary that loses trace parentage is the boundary a naive timer would cross.",
+      "text": "agentic-stack states the trace-context finding (F-a7-02). The consequence for this build: do not trust cancel or completion timing measured from inside the microVM's own process tree either, since the same boundary that loses trace parentage is the boundary a naive timer would cross.",
       "origin": "sourced",
       "sources": [
         "F-a7-02"
@@ -181,7 +181,7 @@
       "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
     },
     {
-      "text": "agentic-stack already states the well-formedness finding (F-a7-03). What it adds here: a conformance run against an endpoint with zero tools registered cannot fail the tool-mismatch check no matter how the binding is written, so treat a green run recorded before step 3 lands as evidence of nothing.",
+      "text": "agentic-stack states the well-formedness finding (F-a7-03). The consequence for this build: a conformance run against an endpoint with zero tools registered cannot fail the tool-mismatch check no matter how the binding is written, so treat a green run recorded before step 3 lands as evidence of nothing.",
       "origin": "sourced",
       "sources": [
         "F-a7-03"
@@ -287,6 +287,14 @@
         "F-a6-05"
       ],
       "quote": "No identity field anywhere in the system"
+    },
+    {
+      "question": "Can this skill's adapter pair be run through one suite before step 2 lands, given the today adapter's own row records that declare_agent has no backing registry yet while the swap_procedure swaps exactly that operation between a remote registry and an in-process file?",
+      "evidence": "A declare_agent call resolving one profile against a file in this repository and against a conformant remote registry, reported side by side with identical required admission fields; until the file registry exists, one side of the swap has nothing to run.",
+      "default": "Treat the pair as blocked on step 2 rather than as a proven boundary: the isolation and turn halves run today, the declaration half does not, and no conformance result may be recorded against the pair until both sides answer the same call. Reported, not edited: adapters[] is outside this step's scope.",
+      "sources": [
+        "F-b1-04"
+      ]
     }
   ],
   "provenance": {

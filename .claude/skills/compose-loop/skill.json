@@ -256,8 +256,8 @@
     },
     {
       "step": 4,
-      "action": "Commit one checkpoint per iteration, keyed by the loop id and the iteration index, together with that iteration's effect; on restart read the resume point and continue at the first incomplete index.",
-      "why": "Every externally-triggered action is safe to replay only if the replay knows what already happened; a loop that checkpoints once at the end replays its whole body after a crash and pays twice.",
+      "action": "Commit one checkpoint per iteration in cap-durable-execution's vocabulary - step, idempotency key, checkpoint and resume point (F-b3-04) - keyed by the loop id and the iteration index, together with that iteration's effect; on restart read the resume point and continue at the first incomplete index.",
+      "why": "xc-idempotency-lease owns the replay guarantee this rests on (F-b4-08): an externally-triggered action is safe to replay only if the replay knows what already happened. What a loop adds is granularity - a loop that checkpoints once at the end replays its whole body after a crash and pays twice.",
       "origin": "sourced",
       "sources": [
         "F-b4-08",
@@ -325,10 +325,10 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "Run the loop conformance suite over 100 runs, mixing bodies that pass at the first attempt, bodies that never pass, and bodies that exhaust the ceiling mid-iteration: `python3 tools/loop_conformance.py --runs 100`. Assert that every run emits one loop-outcome whose terminated_by is one of verdict_pass, iteration_ceiling or budget_ceiling, that runs_checked == 100, that unbounded == 0, and that every cap termination carries an escalation problem object while every stop carries a result.",
-    "expected": "loop-conformance: runs_checked=100, verdict_pass=34, iteration_ceiling=33, budget_ceiling=33, unbounded=0, fourth_reason=0, escalations=66; exit 0",
-    "breakage": "Remove the iteration ceiling from the loop declaration - delete max_iterations and the check that reads it - and run the never-passing body against a large budget.",
-    "expected_failure": "The run never terminates and the suite stops it: `TIMEOUT after 600s: run 7 reached iteration 412 with no termination`, with unbounded=1 and runs_checked=6 while verdict_pass and budget_ceiling stay green on the runs that did finish. Status claimed: tools/loop_conformance.py does not exist in this repository yet, so neither run has been executed.",
+    "criterion": "bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second",
+    "expected": "exit 0, `passed 23, failed 0` from the gate, and `adapter=dryrun executor_marker=in-process-journal/0.1` then `adapter=second executor_marker=queue-state-machine/0.1`, each reading `steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28`, closing on `adapters_run=2 distinct_markers=2`. Cases C1-C3 run a loop to its iteration ceiling and D1 runs one that cannot afford its next iteration, so two of this facet's three terminated_by values are exercised on both executors. It is the gate compose-loop-implement owns; run here on 2026-09-03 and exited 0. Claimed, stated as the gap: tools/loop_conformance.py does not exist in this repository, so the 100-run mix this facet describes - runs_checked=100, unbounded=0, fourth_reason=0 and one escalation per cap - has never been run, and no run on disk drives a never-passing body against an unbounded declaration.",
+    "breakage": "Disable the per-iteration affordability check that fires the budget_ceiling termination in harness/workflow/flow.py's Driver.do_loop, so a loop that cannot afford its next iteration no longer caps, and restore the file afterwards.",
+    "expected_failure": "exit 1 with `FAIL every check passed (expected [], got [{\"check\": \"D1 a loop that cannot afford its next iteration terminates the unit\", \"detail\": \"rc 2 None\"}])` and `passed 17, failed 6`: only the budget_ceiling termination moves, while the iteration-ceiling cases, the crash-and-resume run and both executor markers stay green. Claimed here: the run proves a cap can fail on the executor pair compose-loop-implement owns; it says nothing about an unbounded loop, because no declaration on disk can omit max_iterations: harness/workflow/flow.py carries one loop node as a fixture and its driver iterates over that value.",
     "status": "claimed",
     "sources": [
       "F-part-c-04"

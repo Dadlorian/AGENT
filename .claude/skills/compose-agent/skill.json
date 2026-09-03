@@ -47,7 +47,7 @@
     "shapes": [],
     "invariants": [
       {
-        "text": "The profile is declared up front by what it is good at, and TARGET T6.5 states the reason: a caller has to be able to name what an agent is good at and how to sequence it before it is ever called. What compose-agent adds is the fixed field set that makes that declaration checkable rather than a paragraph of prose: good_at, not_for, model_class, tools, input/output shapes, cost_class and max_concurrency, matching examples/end-to-end/schemas/agent-profile.schema.json's required list.",
+        "text": "The profile is declared up front by what it is good at, and TARGET T6.5 states the reason: a caller has to be able to name what an agent is good at and how to sequence it before it is ever called. The consequence here is the fixed field set that makes that declaration checkable rather than a paragraph of prose: good_at, not_for, model_class, tools, input/output shapes, cost_class and max_concurrency, matching examples/end-to-end/schemas/agent-profile.schema.json's required list.",
         "origin": "sourced",
         "sources": [
           "T-t6-05"
@@ -55,16 +55,15 @@
         "quote": "Each agent is defined up front by what it is good at, so callers know how to call it and how to sequence it."
       },
       {
-        "text": "cap-agent-runtime already states that one prompt turn with a stop reason is the unit an agent runs (F-b3-05). What this composition adds: admission happens once per unit, before the turn opens - the tool surface and the capability set are bound at admit_agent, not renegotiated call by call inside the turn.",
+        "text": "The unit an agent runs belongs to cap-agent-runtime, not to this layer: PASS.md B3 gives that capability the Agent Client Protocol as its contract (F-b3-05), and compose-agent supplies the task and reads back the stop reason without adding a turn shape of its own. Where a composition binds the tool surface and the capability set is one admission before the first turn opens, which step 2 states.",
         "origin": "sourced",
         "sources": [
-          "F-b3-05",
-          "F-b3-01"
+          "F-b3-05"
         ],
-        "quote": "The middle column is the contract"
+        "quote": "Agent runtime** | Agent Client Protocol"
       },
       {
-        "text": "cap-isolation already states that a unit of work runs isolated (F-b3-02). What compose-agent adds: an agent is exactly one isolation admission, so nothing about a concurrently running sibling agent - its inputs, its partial outputs, its own admission - is reachable from inside this one. That containment, repeated per unit, is what keeps TARGET T6.6's well-over-a-hundred concurrent agents coherent without a shared coordinator watching all of them at once.",
+        "text": "cap-isolation owns the isolated unit of work (F-b3-02). The consequence here: an agent is exactly one isolation admission, so nothing about a concurrently running sibling agent - its inputs, its partial outputs, its own admission - is reachable from inside this one. That containment, repeated per unit, is what keeps TARGET T6.6's well-over-a-hundred concurrent agents coherent without a shared coordinator watching all of them at once.",
         "origin": "sourced",
         "sources": [
           "T-t6-06"
@@ -80,7 +79,7 @@
         "quote": "Prefix carries the contract."
       },
       {
-        "text": "agentic-stack already states design rule 6, that the grader is never visible to the graded (F-b1-07, F-b2-05). What compose-agent adds: core-judge grades a turn's result against criterion_ref after invoke_turn returns, never before, and the task built for invoke_turn is assembled from input_from and the declared input fields only - there is no field in the turn-request shape a wrapper at this layer could use to smuggle the criterion back in.",
+        "text": "agentic-stack owns design rule 6, that the grader is never visible to the graded (F-b1-07, F-b2-05). The consequence here: core-judge grades a turn's result against criterion_ref after invoke_turn returns, never before, and the task built for invoke_turn is assembled from input_from and the declared input fields only - there is no field in the turn-request shape a wrapper at this layer could use to smuggle the criterion back in.",
         "origin": "sourced",
         "sources": [
           "F-b1-07",
@@ -89,7 +88,7 @@
         "quote": "An agent sees its outcome, never the criterion it is judged against"
       },
       {
-        "text": "Reach the agent the way any capability is reached: TARGET T6.2's four entries - a human, an event, a schedule, an external system or agent - all name the same workflow_ref and the same agent step, and none of them may mint a fresh root agent invocation from inside a running turn. Proposed, following the reference example: a running unit's result may steer a later step; it may not start a new one with no actor and no ceiling of its own.",
+        "text": "Reach the agent the way any capability is reached, which is cap-consumption's contract for a caller and cap-work-intake's for normalising what a producer sent: TARGET T6.2's four entries - a human, an event, a schedule, an external system or agent - all name the same workflow_ref and the same agent step, and the consequence specific to an agent is that none of them may mint a fresh root agent invocation from inside a running turn. Proposed, following the reference example: a running unit's result may steer a later step; it may not start a new one with no actor and no ceiling of its own.",
         "origin": "sourced",
         "sources": [
           "T-t6-02"
@@ -99,7 +98,7 @@
     ],
     "not_exposed": [
       {
-        "text": "compose-loop already states, citing design rule 6 (F-b1-07), that the grader is never visible to the graded. compose-agent's consequence: the criterion string, the checks sampled for a grading, and the criterion-set digest never enter the task built for invoke_turn, the unit's environment, or anything the profile's declared inputs could carry - decomposition.md section 3.5 row M4 states this as the composition-level assertion that the criterion is absent from everything the unit can read.",
+        "text": "compose-loop applies design rule 6 to a loop's own exit condition (F-b1-07), and agentic-stack owns the rule itself. compose-agent's consequence: the criterion string, the checks sampled for a grading, and the criterion-set digest never enter the task built for invoke_turn, the unit's environment, or anything the profile's declared inputs could carry - decomposition.md section 3.5 row M4 states this as the composition-level assertion that the criterion is absent from everything the unit can read.",
         "origin": "sourced",
         "sources": [
           "F-b1-07"
@@ -107,7 +106,7 @@
         "quote": "The grader is never visible to the graded."
       },
       {
-        "text": "Which product serves the runtime, the isolation boundary, the tool endpoint or the packaging store behind any one profile. agentic-stack already states that products belong in the adapter column only (F-part-c-09); an agent profile carries a model_class prefix and a tool name, never a vendor or a version.",
+        "text": "Which product serves the runtime, the isolation boundary, the tool endpoint or the packaging store behind any one profile. agentic-stack owns the rule that products belong in the adapter column only (F-part-c-09); an agent profile carries a model_class prefix and a tool name, never a vendor or a version.",
         "origin": "sourced",
         "sources": [
           "F-part-c-09"
@@ -142,7 +141,7 @@
     {
       "step": 3,
       "action": "Reach the model only through cap-model-access, addressed by the profile's model_class prefix. Never let a profile, a task, or an admission record name a vendor or a specific model.",
-      "why": "agentic-stack already states that callers request a class, never a vendor, and that the prefix carries the contract; a profile is exactly such a caller.",
+      "why": "agentic-stack owns that rule (F-a4-01): callers request a class, never a vendor, and the prefix carries the contract; a profile is exactly such a caller.",
       "origin": "sourced",
       "sources": [
         "F-a4-01"
@@ -193,7 +192,7 @@
     },
     {
       "step": 8,
-      "action": "compose-loop already states, citing TARGET T6.3 and T6.2, that any entry can call complex workflows, agents and loops that run across the entire stack. Reach the agent the same way: one entry envelope, whichever of the four entries you are, naming the workflow and the agent step the intent points at, and never mint a fresh root agent invocation from inside a running turn.",
+      "action": "compose-loop carries TARGET T6.3 and T6.2 for the entry rule: any entry can call complex workflows, agents and loops that run across the entire stack. Reach the agent the same way: one entry envelope, whichever of the four entries you are, naming the workflow and the agent step the intent points at, and never mint a fresh root agent invocation from inside a running turn.",
       "why": "Any entry can call complex workflows, agents and loops that run across the entire stack, so an agent's size and its concurrency belong to the composition, not to which door the call came through.",
       "origin": "sourced",
       "sources": [
@@ -224,12 +223,12 @@
   ],
   "best_practices": [
     {
-      "text": "agentic-stack already states that callers request a class, never a vendor (F-a4-01). What it adds here: the rule reaches the composition layer unchanged, so a composed agent step names no vendor either.",
+      "text": "Count what an agent run actually exercised before calling a gate evidence about a profile. agentic-stack records the A7 finding that a deterministic gate can be structurally green and mean nothing (F-a7-03), and it applies exactly here: a suite that never admits a unit against a declared profile cannot fail a tool-surface or capability-set check however the binding is written, so assert units_checked and the three counters by name rather than reading an exit code.",
       "origin": "sourced",
       "sources": [
-        "F-a4-01"
+        "F-a7-03"
       ],
-      "quote": "Callers request a class, never a vendor"
+      "quote": "A deterministic gate can be structurally green and mean nothing."
     },
     {
       "text": "Proposed: write good_at entries specific enough to route on. A router takes input, determines intent, and routes the request to a handler without knowing what the handler does; the records on file describe this as the reason a router pattern scales, and it only works if good_at is a claim precise enough to route against rather than a category. The record is a search result rather than a page read, so take the shape and not a measurement from it.",
@@ -275,10 +274,10 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "Proposed tool: `python3 tools/agent_conformance.py --profiles examples/end-to-end/agents.json --units 20 --report out/agent-conformance.json`. For each of 20 admitted units it mounts a sentinel criterion string into the run's working state the way core-judge's criterion_ref would resolve it, runs the unit's declared task, and asserts: the sentinel string is absent from everything the unit can read (files, environment, tool list, prompt) so criterion_leaks stays 0; the unit's bound tool list equals agents.json's declared tools[] for that profile exactly so tool_mismatches stays 0; and the set of capabilities the unit actually loaded equals its declared capability set exactly so undeclared_skills stays 0. Assert units_checked == 20.",
-    "expected": "agent-conformance: units_checked=20, criterion_leaks=0, tool_mismatches=0, undeclared_skills=0; exit 0",
-    "breakage": "Mount the criterion file into the unit's filesystem alongside its declared inputs, the way decomposition.md section 3.5 row M4 states as the deliberate breakage for this row.",
-    "expected_failure": "criterion_leaks becomes non-zero for every unit whose working directory includes the mounted file: `FAIL: unit code-fixer-0007 read criterion sentinel at /work/.criterion`, criterion_leaks=20, while tool_mismatches and undeclared_skills stay 0 on the same run - isolating the fault to design rule 6 rather than to the tool or packaging binding. Status claimed: tools/agent_conformance.py does not exist in this repository yet, so neither run has been executed.",
+    "criterion": "bash harness/linked/test.sh && ADAPTER_CONTAINMENT=second ADAPTER_GATEWAY=second ADAPTER_TRACE=second ADAPTER_WORKFLOW=second python3 harness/linked/conformance.py --report out/linked-swap.json",
+    "expected": "exit 0, `passed 32, failed 0` from the gate and `verdict pass: 23 of 23 checks pass` from the all-second run, with `counters: {\"doors_checked\": 4, \"manifests_distinct\": 1, \"subjects_distinct\": 1, \"typed_refusals\": 4, \"replay_noops\": 4, \"traces_reassembled\": 4}`. It is the gate compose-agent-implement owns; run here on 2026-09-03 and exited 0. Claimed, stated as the gap: those 23 checks cover the four doors, one envelope, containment, spend, replay and typed refusals, and none of this facet's own three assertions - criterion_leaks == 0, tool_mismatches == 0 and undeclared_skills == 0 over 20 units admitted against examples/end-to-end/agents.json - has ever been run, because tools/agent_conformance.py does not exist in this repository and no profile-registry swap is wired into any harness.",
+    "breakage": "In harness/linked/linked.py, break the replay check submit() makes against the ledger so a prior completion is never recognised: sed -i 's/prior = self.ledger.completed(env.idempotency_key)/prior = None/' harness/linked/linked.py, then git checkout -- harness/linked/linked.py.",
+    "expected_failure": "exit 1 with `FAIL the same suite passes again once the door is restored (expected 0, got 1)` and `passed 20, failed 12`: checks D1 and D2 fail and replay_noops drops from 4 to 0 while the door, manifest and refusal counters are unchanged. Claimed here for the same reason the criterion is: this breakage moves the cross-door replay seam that compose-agent-implement owns, not the criterion-leak, tool-surface or capability-set binding this facet asserts, and no edit on disk can make those three fail today.",
     "status": "claimed",
     "sources": [
       "F-b1-07"

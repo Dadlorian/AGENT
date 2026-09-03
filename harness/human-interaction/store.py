@@ -179,7 +179,7 @@ class ParkedAskStore:
         with self._lock():
             parked = self.read(decision.ask_id)
             ask = parked.ask
-            if False:
+            if decision.correlation_id != ask["correlation_id"]:
                 self._append({"kind": "decision-refused", "ask_id": ask["ask_id"], "at": now,
                               "idempotency_key": decision.idempotency_key, "surface": surface,
                               "problem": "document-invalid"})

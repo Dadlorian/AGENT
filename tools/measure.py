@@ -21,6 +21,19 @@ def run(cmd: str) -> tuple[int, str]:
     return r.returncode, (r.stdout + r.stderr).strip()[-600:]
 
 
+def tree_digest() -> dict:
+    """sha256 of every file git knows or sees as untracked (ignored files excluded), so a breakage that a
+    restore command failed to undo is detected whether or not the file was ever committed."""
+    import hashlib
+    out = run("git ls-files --cached --others --exclude-standard")[1].splitlines()
+    digest = {}
+    for f in out:
+        fp = ROOT / f
+        if fp.is_file():
+            digest[f] = hashlib.sha256(fp.read_bytes()).hexdigest()
+    return digest
+
+
 def main(argv: list[str]) -> int:
     if not argv:
         print(__doc__); return 2
@@ -33,10 +46,18 @@ def main(argv: list[str]) -> int:
     result = {"clean_exit": rc1, "clean_output": out1}
     ok = rc1 == 0
     if "--breakage-cmd" in opts:
+        before = tree_digest()
         run(opts["--breakage-cmd"])
         rc2, out2 = run(d["criterion"])
         run(opts.get("--restore-cmd", "git checkout -- ."))
-        result.update({"breakage_exit": rc2, "breakage_output": out2})
+        after = tree_digest()
+        not_restored = sorted(f for f in set(before) | set(after) if before.get(f) != after.get(f))
+        result.update({"breakage_exit": rc2, "breakage_output": out2, "restored": not not_restored})
+        if not_restored:
+            # A restore that did not restore (git checkout on an untracked file does nothing) would leave the
+            # breakage in the tree and let it be committed; seen on 2026-09-03 in two harnesses.
+            print("FAIL: restore did not restore: " + ", ".join(not_restored[:5]))
+            ok = False
         ok = ok and rc2 != 0
     d["status"] = "measured" if ok else "claimed"
     d["measured_run"] = {"by": "tools/measure.py", "commit": run("git rev-parse --short HEAD")[1], **result}

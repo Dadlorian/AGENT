@@ -1,0 +1,56 @@
+{
+  "status_row": 60,
+  "reviewer": "60-cap-review-d",
+  "skills": [
+    "cap-evaluation",
+    "cap-evaluation-implement",
+    "cap-human-interaction",
+    "cap-human-interaction-implement"
+  ],
+  "findings": [
+    {
+      "id": "R60D-001",
+      "skill": "cap-human-interaction-implement",
+      "location": "definition_of_done",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "The record's status is 'measured' with a measured_run block (by tools/measure.py, commit d0fc589, clean_exit 0, breakage_exit 1). Re-running the exact commands the criterion names on the current, unmodified tree (git diff between commit 1984175 -- the only commit that ever touched harness/human-interaction/store.py, whose own commit message says '39 checks, swap proven across two surfaces; implement skill measured' -- and HEAD is empty, so nothing has changed since) does NOT reproduce a clean pass: `python3 harness/human-interaction/conformance.py --surface dryrun` exits 1 with one FAIL ('a decision on a handle the surface minted is refused: a decision on a minted handle resumed the run'); the same FAIL reproduces for `--surface second` alone and for the merged `--surface dryrun --surface second` (adapters_run=2 failures=2, not failures=0 as the recorded clean_output's tail claims). `bash harness/human-interaction/test.sh` itself exits 1 with 'passed 33, failed 6', including 'FAIL dry-run conformance exits 0 (expected 0, got 1)' and 'FAIL every check passed (expected [], got [\"a decision on a handle the surface minted is refused\"])' -- failures that occur in step 2 (against the FIRST/undamaged surface, before the deliberate-breakage section 4 even runs). The root cause: harness/human-interaction/store.py line 182 reads literally `if False:` guarding the entire block that would raise Problem('document-invalid', ...) when a decision's correlation_id does not match the parked ask's -- i.e. the exact refusal the DoD's own 'breakage' text describes disabling ('stop refusing a decision whose correlation_id is not the parked ask's') is already permanently disabled in the code that was supposedly measured passing, and has been since the commit that introduced the file. The recorded clean_output ('...adapters_run=2 failures=0') for this exact merged command cannot be reproduced against the tree cited in the record's own commit chain. Also note the measured_run's 'commit' field (d0fc589) does not even contain harness/human-interaction/store.py (git show d0fc589:harness/human-interaction/store.py returns nothing) -- the record cites a commit predating the harness's existence.",
+      "fix": "Remove the dead `if False:` guard in harness/human-interaction/store.py so the correlation-id-mismatch refusal actually executes, re-run `bash harness/human-interaction/test.sh` and `python3 harness/human-interaction/conformance.py --surface dryrun --surface second` from a clean tree, and replace the measured_run block with the real output and the correct commit."
+    },
+    {
+      "id": "R60D-002",
+      "skill": "cap-evaluation-implement",
+      "location": "definition_of_done",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "status is 'claimed' and the expected_failure text asserts 'neither adapter, the fixture corpus nor the tool exists in this tree, so this check starts red by construction' -- but harness/evaluation/ exists in this tree with test.sh and conformance.py both runnable today (bash harness/evaluation/test.sh: 55/55 checks pass, exit 0), and the record itself carries a measured_run block (by tools/measure.py, commit 1984175, clean_exit 0, breakage_exit 0) showing it WAS actually run -- the same claimed/measured-block contradiction R59A-015 flagged in build-adapter-pair. Separately, the criterion command `python3 harness/evaluation/conformance.py --adapter dryrun --adapter second` does not do what the record says it does: `--adapter` is a single-value argparse choice (dryrun|live|second), not a repeatable flag, so passing it twice silently keeps only the last value ('second') -- running it verbatim reproduces the recorded clean_output exactly ('...conformance PASSED: 22/22 cases, adapter=second') but only ever exercises the second adapter, never 'both adapters' as the criterion's own prose and the assertions ('adapters_run >= 2', 'verdict_divergence == 0 between the two adapters') claim. harness/evaluation/test.sh shows the correct two-adapter invocation requires running each `--adapter` separately and combining the two report files with `--merge report1 report2` (test.sh lines 39, 71-93). Finally, the measured_run's breakage_output is byte-identical to its clean_output (same 'conformance PASSED: 22/22 cases, adapter=second' tail, breakage_exit 0 same as clean_exit 0), so the recorded breakage run produced no observable failure at all -- the opposite of what expected_failure promises ('exit non-zero on both adapters with outcome=failed transitions=1'), i.e. as measured this criterion did not fail under its own described breakage.",
+      "fix": "Fix the criterion to build the report via two separate `--adapter` runs merged with `--merge`, change status to 'measured' (or drop the stale measured_run block if truly re-labelling as claimed), and re-capture clean/breakage output from an actual two-adapter run so breakage_output differs from clean_output as the expected_failure text requires."
+    },
+    {
+      "id": "R60D-003",
+      "skill": "cap-evaluation",
+      "location": "instructions[5]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "python3 tools/validate_skills.py --only cap-evaluation: \"sourced row restates and extends ('already states') without saying proposed; the clause after the marker needs its own quote or its own origin=proposed row: ' Pass rubric_ref into a case and resolve it only inside the scorer, af'\". instructions[5].why (step 6) reads 'Design rule 6 is agentic-stack's, and core-judge already states it for the runtime verdict (F-b1-07); the consequence here is that an evaluation harness is the one component structurally placed to break it, because the harness holds both the rubric and the case input and it is one line to hand over both.' -- the whole row is marked origin=sourced under F-b1-07's quote, but the clause after 'already states it' (the added consequence about the harness being structurally placed to break the rule) has no citation of its own.",
+      "fix": "Split the row: keep the F-b1-07 restatement as sourced, and move the added consequence ('an evaluation harness is the one component structurally placed to break it...') into its own origin=proposed row with a research query, per the R59A-009 precedent in build-definition-of-done."
+    },
+    {
+      "id": "R60D-004",
+      "skill": "cap-human-interaction-implement",
+      "location": "contract.invariants[4]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "python3 tools/validate_skills.py --only cap-human-interaction-implement: \"sourced row restates and extends ('already states') without saying proposed; the clause after the marker needs its own quote or its own origin=proposed row: \\\"A resume takes a lease on the decision's idempotency key and transitio\\\"\". contract.invariants[4].text reads 'A resume takes a lease on the decision's idempotency key and transitions the stored state in the same act. cap-human-interaction already states the replay rule for a decision (F-b4-08); the build consequence here is that a decision delivered by a retrying phone, a refreshed browser and a webhook redelivery is one act arriving three times, so the lease and the state transition have to be one write and not two.' -- the added build-specific consequence (lease-and-transition-as-one-write) has no citation of its own and the row is marked wholly origin=sourced.",
+      "fix": "Split the row: keep the F-b4-08 restatement as sourced, and move 'the lease and the state transition have to be one write and not two' into its own origin=proposed row."
+    }
+  ],
+  "metrics": {
+    "rows_checked": 119,
+    "sourced": 99,
+    "proposed": 20,
+    "quotes_verified": 99,
+    "harness_runs": 7
+  },
+  "summary": "Reviewed cap-evaluation, cap-evaluation-implement, cap-human-interaction and cap-human-interaction-implement row by row: every one of the 99 sourced+quoted rows verified as a verbatim substring of its cited kb/facts.jsonl, kb/research.jsonl, kb/target-facts.jsonl or kb/reference-facts.jsonl record (0 misquotes), no bare uncited claims, no restatement of another skill's fact without naming it beyond the 2 validator-flagged 'already states...extends' rows, adapters correctly differ on execution model (collector-backed/no-server, request-response/stream) with no product name leaking outside the Adapters section, no padding among the 20 proposed rows, and description trigger clauses fire on each skill's actual scope. validate_skills.py --only <name> ran clean (0 errors) for all four, 4 warnings total (2 'not a pure shell command' formatting notices on cap-evaluation and cap-human-interaction's ideal-facet DoD criteria, 2 restatement-and-extend notices reported as R60D-003/004). The two definitions of done in the -implement facets are the substantive findings: cap-human-interaction-implement's is labelled 'measured' with a claimed clean pass, but bash harness/human-interaction/test.sh and python3 harness/human-interaction/conformance.py (run directly on the unmodified tree, matching the git history behind the cited commit) both fail today because store.py's correlation-id-mismatch refusal is dead code (`if False:`) -- the exact property the record's own breakage text claims to disable is already permanently disabled, so the recorded clean run cannot be reproduced. cap-evaluation-implement's DoD is labelled 'claimed' (asserting nothing exists in this tree) while carrying a measured_run block, and its criterion command misuses a non-repeatable --adapter flag so it never actually runs 'both adapters' as claimed, with a breakage_output that is byte-identical to clean_output. Both are recorded as high-severity dod findings; the two low-severity restatement findings are validator-confirmed missing-citation clauses in otherwise-sourced rows."
+}

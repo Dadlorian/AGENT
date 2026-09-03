@@ -316,7 +316,7 @@ def gate_stage(report: EvaluationReport | None, evidence_record_id: str,
     exits zero, so an exit code cannot be the source of this field."""
     if report is None:
         return GateStageResult("evaluation", "skipped", 0, "", adapters_run, evidence_record_id)
-    status = report.outcome
+    status = report.outcome if report.cases_executed > 0 else INCONCLUSIVE
     return GateStageResult("evaluation", status, report.cases_executed,
                            report.report_id, adapters_run, evidence_record_id)
 

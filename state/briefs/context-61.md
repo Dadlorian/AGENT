@@ -125,3 +125,21 @@ these 36 skills):
   `python3 tools/kb.py ledger '{"kind":"ceremony","status_row":<row>,"ceremony":"<label>","agent":"<model>","result":"<one line>","status":"measured"}'`
 - Scope claim/release (captain-level): `python3 tools/scopes.py claim <label> <paths...>` /
   `python3 tools/scopes.py release <label>`.
+
+## 6. Harness per skill for the measure step (derived from harness/plan.json owner_skill and co_skills)
+
+- core-document: document-validation
+- core-document-implement: document-validation
+- core-ledger: provenance, state-persistence
+- core-ledger-implement: provenance, state-persistence
+- seam-state: state-persistence
+- seam-state-implement: state-persistence
+- xc-budget-implement: gateway
+- xc-correlation-implement: observability
+- xc-idempotency-lease-implement: idempotency
+- xc-identity-delegation-implement: identity
+- xc-policy-gate-implement: policy, tool-access
+- xc-provenance-chain-implement: provenance
+- xc-typed-errors-implement: errors
+
+No harness names these skills; their criterion stays claimed with the gap sentence unless a harness is built: core-graph, core-graph-implement, core-judge, core-judge-implement, core-planner, core-planner-implement, seam-dispatch, seam-dispatch-implement, xc-audit-trail, xc-audit-trail-implement, xc-budget, xc-compensation, xc-compensation-implement, xc-correlation, xc-enforcement-chain, xc-enforcement-chain-implement, xc-idempotency-lease, xc-identity-delegation, xc-policy-gate, xc-provenance-chain, xc-tenancy, xc-tenancy-implement, xc-typed-errors

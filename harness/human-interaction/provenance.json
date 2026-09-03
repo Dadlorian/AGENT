@@ -1,0 +1,90 @@
+{
+  "harness": "human-interaction",
+  "owner_skill": "cap-human-interaction-implement",
+  "co_skills": ["cap-human-interaction", "compose-approval-implement"],
+  "blueprint_tool_entry": "approve.service - the approval unit that already runs, as PASS.md A2 records it: systemd, enabled, running, bound on a Tailscale address 100.125.65.101:8088, purpose 'Approve / reject / return a parked workflow from a phone' (F-a2-01); configured by the approve and hitl Ansible roles (F-a5-01). blueprint tool_entries: component approve.service, capability human interaction, gap_ref approve-second-adapter",
+  "capability": "human interaction",
+  "standard": "AG-UI agent-to-user interaction events (no protocol version string found on file, search-only; blueprint standards_at_play version_status none-found). The typed-event property is implemented here; no event-type name is asserted from the standard",
+  "kb_ids": [
+    "F-a2-01", "F-a5-01", "F-a6-02", "F-a7-01", "F-a7-02",
+    "F-b1-02", "F-b1-04", "F-b1-07", "F-b1-08",
+    "F-b3-13", "F-b3-17",
+    "F-b4-01", "F-b4-03", "F-b4-06", "F-b4-07", "F-b4-08",
+    "F-part-c-09",
+    "T-t1-01", "T-t1-02", "T-t2-02", "T-t3-01", "T-t6-02", "T-t7-02", "T-t9-06",
+    "T-t10-04", "T-t10-05", "T-t10-07",
+    "E-host-unit-approve-service", "E-capability-state-persistence", "E-capability-work-intake",
+    "E-concern-identity", "E-concern-idempotency", "E-finding-a7-1", "E-not-running-temporal"
+  ],
+  "research_ids": [
+    "X-cap-human-interaction-001",
+    "X-cap-human-interaction-003",
+    "X-cap-human-interaction-006",
+    "X-cap-human-interaction-008",
+    "X-entry-composition-016",
+    "X-entry-composition-021",
+    "X-entry-composition-022",
+    "X-entry-composition-023",
+    "X-end-to-end-014",
+    "X-end-to-end-018",
+    "X-end-to-end-019",
+    "X-gap-a-005",
+    "REF-11-07"
+  ],
+  "proposed_entity_ids": [
+    "E-standard-ag-ui",
+    "E-adapter-parked-approval-unit",
+    "E-swap-candidate-ag-ui-browser-stream"
+  ],
+  "proposed_entity_note": "cap-human-interaction records all three as proposed entity ids: PASS.md B3 has no Human interaction row, so kb/entities.jsonl carries no entity for this capability's standard or either adapter. They are named here as the skill names them and are not cited as kb ids.",
+  "adapters": {
+    "dryrun": {
+      "surface_marker": "parked-item-request-response/0.1",
+      "delivery_model": "request_response",
+      "renders_run_in_flight": false,
+      "replayable_from_position": false,
+      "requires_open_session": false,
+      "max_edit_bytes": 256
+    },
+    "second": {
+      "surface_marker": "event-stream-client/0.1",
+      "delivery_model": "stream",
+      "renders_run_in_flight": true,
+      "replayable_from_position": true,
+      "requires_open_session": true,
+      "max_edit_bytes": 65536,
+      "differs_in_execution_model": [
+        "delivery_model: one parked item, request and response, against a stream a person watches for the whole run",
+        "replayable_from_position: watch(since=n) is refused with a type on the first surface and answered on the second",
+        "renders_run_in_flight: the first shows the question, the second shows the work that produced it",
+        "requires_open_session: the first is queued for whoever opens it, the second needs a session or a replay",
+        "max_edit_bytes: a form field against a diff"
+      ]
+    },
+    "live": {
+      "surface_marker": "approve-service/unverified",
+      "delivery_model": "request_response",
+      "renders_run_in_flight": false,
+      "replayable_from_position": false,
+      "requires_open_session": false,
+      "max_edit_bytes": 256
+    }
+  },
+  "measured": {
+    "dryrun": "bash harness/human-interaction/test.sh -> passed 39, failed 0. Conformance 25/25 against the first surface with resumed_on_same_correlation=4, edit_changed_artifact=true, duplicate_resumes=0 over 10 deliveries of one decision, untyped_refusals=0, selected_by=configuration and product_hits=0; the minimal call parks a run on an ask with a deadline, resumes it on the same correlation id, is refused idempotency-conflict 409 for a second decision on the same ask and deadline-exceeded 504 for a decision after the deadline, and prints the identity, correlation and ceiling stamped on the pause and again on the resume; DRYRUN_FAIL=1 exits 2 with a typed adapter-unavailable 503",
+    "swap": "conformance 25/25 before with surface parked-item-request-response/0.1 and 25/25 after with surface event-stream-client/0.1, chosen by ADAPTER/--surface with the sha256 of interface.py, store.py, run.py, call.py and conformance.py identical on both sides; adapters_run=2, two distinct surface markers, selected_by=configuration on both, delivery_model request_response against stream, and one store holding one open ask parked through the first surface and decided through the second with same_correlation=true and edit_changed_artifact=true",
+    "breakage": "python3 conformance.py --surface second --break-client-held exits 1 with duplicate_resumes=9 and resumed_on_same_correlation=3 while edit_changed_artifact stays true - the client-held copy has no lease and no state transition, so nine of the ten deliveries apply again and the respond case resumes on an identifier the client minted; the same flag against the first surface exits 0 with duplicate_resumes=0, and the streaming suite passes again once the store is the resume point"
+  },
+  "claimed": [
+    "live mode until run on the host: the approval unit's routes are not recorded anywhere on file, so every URL is supplied whole by the operator and nothing below the reachability check in adapters/live.py has been executed against the running unit; its payload shape, its auth and its subject field are unverified",
+    "the second surface as a faithful stub: the server-sent-event framing, the position replay, the declared gaps and the swap procedure are real and run here, but no browser client and no STREAM_URL endpoint was attached",
+    "the standard row: no protocol version string for the AG-UI event protocol is on file - every record for it is search-only and the blueprint records the version as none found - so the harness implements the typed-event property and asserts no event-type name from the standard",
+    "the problem type for an expired ask: urn:agentic:problem:human-ask-expired is proposed and not in the closed registry, so the registered deadline-exceeded is returned with the ask id in detail and ask_terminal as a declared extension member"
+  ],
+  "definition_of_done": {
+    "criterion": "bash harness/human-interaction/test.sh exits 0 with conformance green against both surfaces (resumed_on_same_correlation 4, edit_changed_artifact true, duplicate_resumes 0, untyped_refusals 0, selected_by configuration per surface), adapters_run 2, and one store holding one ask parked on one surface and decided on the other",
+    "breakage": "python3 conformance.py --surface second --break-client-held: in the streaming surface only, resume from the ask the client is holding rather than from the stored ParkedAsk, leaving the first surface and the store untouched",
+    "expected_failure": "the streaming run exits 1 with duplicate_resumes 9 and resumed_on_same_correlation 3 naming that surface, while the first surface's run still exits 0 - the failure is that the resume left the store, not that the run failed to resume",
+    "status": "measured"
+  }
+}

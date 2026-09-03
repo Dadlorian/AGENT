@@ -1,0 +1,71 @@
+{
+  "ceremony": 11,
+  "section": "compose",
+  "reviewer": "sonnet (fan-out reviewer, group compose)",
+  "date": "2026-09-03",
+  "numbering_note": "ls kb/ceremonies/ceremony-*-review.json shows ceremony-01 through ceremony-10 already closed (ceremony-10 for section wave-5). This fan-out review takes ceremony number 11, shared across the three parallel reviewer groups running in this section; this file covers only the compose group (compose-loop, compose-loop-implement, compose-approval, compose-approval-implement, compose-operators, compose-operators-implement).",
+  "findings": [
+    {
+      "id": "C11C-001",
+      "skill": "compose-operators, compose-approval",
+      "location": "compose-operators contract.shapes 'step' ($defs.approval, also references/operator-shapes.md lines 93-109) versus compose-approval contract.shapes ApprovalGate and GateOutcome",
+      "severity": "fix",
+      "category": "consistency",
+      "finding": "compose-operators' approval operator silently drops the fourth outcome compose-approval establishes as load-bearing. compose-approval states as an invariant that a gate has exactly four outcomes, and return_with_notes is 'the one enumeration of outcomes in this skill and every other row points at it' and 'the only one that puts work back' into the graph. compose-operators' approval step instead declares `decisions: {type: array, items: {enum: [approve, edit, reject]}}` -- three members, no return_with_notes -- and replaces it with an unrelated `on_reject: {enum: [stop, continue]}` field that controls sequence flow on rejection, not re-entry with notes. The worked example in examples/end-to-end/workflows/triage-and-fix.json (step id ship-approval) actually runs with decisions [approve, edit, reject] and no return path, confirming this is not a schema-only slip. Field names also diverge with no stated mapping: compose-operators requires `asks` (a single string), `returns: {fields: object}`; compose-approval requires `decider: {subject, wires}`, `deadline_at`, `outcomes`, `return_to_step_id`. Neither skill's builds_on/used_by names the other (docs/skill-manifest.json agrees: compose-operators.builds_on has no compose-approval, compose-approval.used_by has no compose-operators), so a caller who learns the approval operator from compose-operators has no path to discover that a real gate also carries a deadline, a decider, and a return-with-notes outcome the operator cannot express.",
+      "evidence": "compose-approval invariant: \"Proposed: four outcomes, and only one of them puts work back. ... This is the one enumeration of outcomes in this skill and every other row points at it.\" compose-operators/references/operator-shapes.md lines 93-109: \"required\": [\"op\", \"id\", \"asks\", \"view\", \"decisions\", \"returns\"] ... \"decisions\": {\"type\": \"array\", \"minItems\": 2, \"items\": {\"enum\": [\"approve\", \"edit\", \"reject\"]}} ... \"on_reject\": {\"enum\": [\"stop\", \"continue\"], \"default\": \"stop\"}. examples/end-to-end/workflows/triage-and-fix.json step ship-approval: \"decisions\": [\"approve\", \"edit\", \"reject\"], no return_with_notes anywhere in the file (verified by grep).",
+      "suggested_change": "Either (a) add compose-approval to compose-operators.builds_on in docs/skill-manifest.json and rewrite the approval $defs to reuse compose-approval's field names and four-outcome enum verbatim (decider, deadline_at, outcomes including return_with_notes, return_to_step_id), or (b) if the operator is intentionally a narrower caller-facing surface than the full ApprovalGate record, add an invariant to compose-operators stating that mapping explicitly (which caller field resolves to which ApprovalGate field, and why return_with_notes is out of scope for the operator syntax) so the two skills stop reading as two independent, disagreeing designs of the same gate."
+    },
+    {
+      "id": "C11C-002",
+      "skill": "compose-operators, compose-loop",
+      "location": "compose-operators contract.shapes 'termination' versus compose-loop contract.shapes 'loop-outcome'",
+      "severity": "fix",
+      "category": "consistency",
+      "finding": "The two ideal facets that both govern loop termination use different enum values for the same reasons and disagree on how many termination classes exist. compose-loop's LoopOutcome.terminated_by is exactly three members (verdict_pass, iteration_ceiling, budget_ceiling) classified by termination_class into exactly two (stop, cap), and states as an invariant that stop and cap 'are opposites and must not be collapsed.' compose-operators' Termination shape instead uses reason=exit_verdict (not verdict_pass -- a different string for the same event) plus tolerate_exceeded and approval_rejected (concepts compose-loop never mentions, which is fine since they belong to other operators) and also lists a bare 'cap' value in the same reason enum alongside the already-specific iteration_ceiling and budget_ceiling, so a reader cannot tell what a termination reason of 'cap' names that iteration_ceiling or budget_ceiling do not already say. compose-operators' outcome field is [success, failure, escalated] -- three members -- where compose-loop's is two (stop=success-shaped, cap=escalated-shaped); the unexplained third value 'failure' (presumably what tolerate_exceeded or approval_rejected produce) is never reconciled against the stop/cap invariant compose-operators repeats verbatim two paragraphs earlier ('a stop firing means the step is done ...; a cap firing means the step ran long ... escalates').",
+      "evidence": "compose-loop.contract.shapes 'loop-outcome': \"terminated_by\": {\"enum\": [\"verdict_pass\", \"iteration_ceiling\", \"budget_ceiling\"]}, \"termination_class\": {\"enum\": [\"stop\", \"cap\"]}. compose-loop invariant: \"stop and cap are opposites and must not be collapsed into one halt.\" compose-operators.contract.shapes 'termination': \"reason\": {\"enum\": [\"exit_verdict\", \"iteration_ceiling\", \"budget_ceiling\", \"tolerate_exceeded\", \"cap\", \"approval_rejected\"]}, \"outcome\": {\"enum\": [\"success\", \"failure\", \"escalated\"]}. compose-operators invariant (same wording as compose-loop's, restated): \"a stop firing means the step is done and terminates it as a success; a cap firing means the step ran long and terminates it as a failure that escalates to a human, and one shared halt loses exactly the difference a reader needs.\"",
+      "suggested_change": "Rename compose-operators' 'exit_verdict' to 'verdict_pass' so a loop nested inside a composition and a bare compose-loop declaration report the identical string for the identical event; drop the bare 'cap' value from the reason enum (iteration_ceiling and budget_ceiling already are the two cap reasons) or state explicitly what it names that they do not; and add one sentence reconciling the three-member outcome enum with the two-way stop/cap split -- e.g. stating that 'failure' is a third, non-escalating termination class that applies only to tolerate_exceeded and approval_rejected and does not appear on a bare loop, since compose-loop's own outcome space is only stop or cap."
+    },
+    {
+      "id": "C11C-003",
+      "skill": "compose-operators",
+      "location": "contract.shapes 'resolved-default'.properties.override",
+      "severity": "nit",
+      "category": "honesty",
+      "finding": "The precedence invariant this shape implements (sourced from REF-3-2-11) states an override is 'legal, logged, and tagged non-conformant', but the ResolvedDefault schema's override field only captures a boolean ('A caller override is legal and is recorded; it is never silent') and drops the non-conformant tag the cited source makes part of the same rule. Not a misquote -- the quoted text is accurate -- but the schema built from it is narrower than the rule it cites, with nowhere to write the tag.",
+      "evidence": "REF-3-2-11: \"An override is legal, logged, and tagged non-conformant: the rules can always be broken, and the platform always records that they were.\" compose-operators resolved-default shape: \"override\": {\"type\": \"boolean\", \"default\": false, \"description\": \"A caller override is legal and is recorded; it is never silent.\"}",
+      "suggested_change": "Either add a `non_conformant: true` (or similar) field alongside override so the tag the source requires has somewhere to land, or narrow the invariant's own wording to say the schema captures only that an override happened, not that it is tagged."
+    }
+  ],
+  "metrics": {
+    "skills": 6,
+    "rows_total": 177,
+    "rows_sourced": 49,
+    "rows_proposed": 128,
+    "validator_errors": 0,
+    "validator_warnings_repo": 43,
+    "validator_warnings_in_scope": 0,
+    "findings_block": 0,
+    "findings_fix": 2,
+    "findings_nit": 1
+  },
+  "brief_improvements": [
+    "Add a defect item: when two ideal facets embed the same concept independently (an operator's approval/loop shape re-derived inside compose-operators versus the owning gate/loop skill's own shape), the second author must either add the owning skill to builds_on and reuse its field names and enums verbatim, or state the mapping explicitly as an invariant; docs/skill-manifest.json's own builds_on lists are not enough to catch this because a manifest can validate (matches exactly) while the two skills still define disagreeing vocabularies for the same concept. This wave's compose-operators re-derived both compose-loop's termination enum and compose-approval's four-outcome gate without citing either, and the running example (examples/end-to-end/workflows/triage-and-fix.json) baked the narrower, disagreeing vocabulary into a file the definition of done already treats as measured evidence."
+  ],
+  "what_worked": [
+    "python3 tools/validate_skills.py --only <name> reports 0 errors and 0 warnings for all 6 skills individually, and none of the 6 appear among the 43 repo-wide warnings from a full run either.",
+    "Roughly 60 distinct F-, T-, X-, REF- and E- ids across the 6 skills were resolved with python3 tools/kb.py show and their quoted substrings checked against the returned text or snippet field; every quote in every invariant, instruction, best_practice and shape across all six skills verified as a true verbatim substring, with zero mismatches -- including X- research records, where the quotable field is `snippet` rather than `text` and both skills(compose-approval, compose-loop) used it correctly.",
+    "The claimed-versus-measured discipline held under direct re-execution: compose-operators' definition_of_done claims `bash examples/end-to-end/test.sh` reports `passed 29, failed 0` on 2026-09-03 and that its breakage (a 7th unmodified-schema operator) makes the validator return exactly `$.root: matches none of the allowed step shapes` (1 error) while the unmodified document returns zero errors -- both re-run in this review by extracting run.py's own validate() function and both reproduced the recorded output exactly, on both the clean and the appended-operator document.",
+    "composes_with.builds_on and .used_by match docs/skill-manifest.json exactly for all 6 skills in both directions (compose-loop's builds_on/used_by, compose-approval's, compose-operators', and all three -implement facets' single-parent builds_on with empty used_by).",
+    "Cross-cutting terminology that the task asked to check for agreement mostly does agree: 'internal steers but never starts' is stated with consistent phrasing and the same REF-3-4-15/REF-3-4-10 citations in all three ideal facets (compose-loop step 8, compose-approval invariant, compose-operators invariant); the depth-bound-checked-at-resolve rule (REF-5-2-13) and the cost-sums-up-the-tree rule (REF-5-2-12) are likewise stated identically in substance across all three, each correctly scoped as 'following the reference example' rather than claimed as PASS.md fact.",
+    "Every -implement facet's breakage is genuinely build-specific rather than copied from its ideal sibling (the pattern ceremony 10 flagged as a nit in three of four wave-5 pairs): compose-loop-implement's breakage moves the checkpoint from per-iteration to per-loop; compose-approval-implement's moves the idempotency lease out of the shared resume seam into one wire's handler; compose-operators-implement's registers a 7th operator in the interpreter's dispatch without adding it to the schema. All three name a wiring/binding fault distinct from their ideal facet's contract-level breakage, and all three expected_failure blocks name which counters stay green -- the lesson from ceremony 10's C10-001 finding was applied here."
+  ],
+  "provenance": {
+    "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+    "kb_heads": {
+      "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+      "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6"
+    },
+    "author": "session 2831cb4f (reviewer, group compose)"
+  }
+}

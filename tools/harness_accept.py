@@ -45,7 +45,7 @@ def main(argv: list[str]) -> int:
         print(f"plan.json: merged {e['name']} (capability: {e.get('capability')})")
     elif not any(h.get("name") == name for h in plan["harnesses"]):
         print(f"FAIL: no plan-entry.json and no plan.json row for {name}"); return 1
-    sh(f"python3 tools/scopes.py release 60-harness-{name}")
+    sh(f"python3 tools/scopes.py release 61-harness-{name} 2>/dev/null; python3 tools/scopes.py release 60-harness-{name}")
     for cmd in ("python3 tools/acceptance_check.py", "python3 tools/render_guide.py", "python3 tools/acceptance_check.py"):
         code, out = sh(cmd)
         if code != 0:

@@ -1,0 +1,845 @@
+{
+  "sections": [
+    {
+      "id": "identity",
+      "kind": "capability",
+      "source": "F-b3-14",
+      "name": "Identity",
+      "standard": {
+        "name": "OAuth 2.0 Token Exchange · workload identity",
+        "settledness": "contested",
+        "why": "Token exchange itself is a published RFC (RFC 8693) and is described in the window as the standards-based approach for multi-hop agent delegation, but it is not the only live candidate for how an agent obtains on-behalf-of authority: the Identity Assertion JWT Authorization Grant (ID-JAG, Cross App Access) reached IETF draft-04 on 2026-05-21 and is being positioned as the enterprise-managed authorization extension for tool access, while the resource side of the same problem is being fixed by RFC 9728 protected resource metadata and RFC 8707 resource indicators. The workload half is equally plural: attested workload identity (SPIFFE/SPIRE JWT-SVIDs) and cloud OIDC federation (Entra ID WIF, AWS STS, GCP IAM Pools) both mint the short-lived credentials a platform needs. Two or more mechanisms are live, so the future state names the property to hold - a verifiable actor plus an explicit acting party on every call - and not the winner.",
+        "cites": [
+          "X-litmus-c-001",
+          "X-litmus-c-003",
+          "X-litmus-c-004",
+          "X-litmus-c-005"
+        ]
+      },
+      "future_state": {
+        "text": "Every principal - human, workload and agent - is a first-class subject holding a short-lived credential the platform attested rather than a secret an operator configured, and no component mints, parses or validates a credential itself: one identity capability interface offers attest, exchange, attenuate and verify, and the core imports only that. Every outbound call carries a token produced by an exchange step that names both the subject the work is done for and the acting party doing it, because delegation is impossible with only a subject_token and no actor_token; each hop adds one acting-party entry and narrows scope rather than replacing the chain, and each token is bound to the audience of the single resource it is presented to, discovered from that resource rather than configured. Credentials are per-invocation and minutes-long, revocable while work is in flight, and the interface never leaks an issuer's token format upward, so an attestation-based workload identity plane, an OIDC provider, or an assertion-grant issuer can each serve behind it without the core learning which one answered.",
+        "origin": "sourced",
+        "cites": [
+          "F-b3-14",
+          "F-b1-02",
+          "X-litmus-c-001",
+          "X-litmus-c-003",
+          "X-litmus-c-004"
+        ],
+        "quote": "delegation is impossible with only a subject_token and no actor_token"
+      },
+      "direction": {
+        "text": "Inside the window the resource half settled hard: tool endpoints are now formally OAuth 2.1 resource servers that must publish protected resource metadata (RFC 9728) so a caller discovers the right authorization server, and callers must use resource indicators (RFC 8707) so a token cannot be replayed at a different server - shipped in the 2026-07-28 tool-protocol revision. Cross App Access is the friendly name for an IETF draft called the Identity Assertion JWT Authorization Grant (ID-JAG), currently at draft-04 and last updated 2026-05-21, and it is the live alternative for enterprise-mediated on-behalf-of access. Workload identity federation, where an attested JWT-SVID is exchanged at a cloud token service for temporary credentials, is displacing static multi-cloud keys. What is being abandoned: static long-lived API keys per agent, identity agreed once at connect time and never re-checked, and single broad tokens reused across resources. It would be an error now to build a bespoke per-agent key registry, or to mint impersonation-only tokens that erase the acting party, since that forecloses both live delegation mechanisms.",
+        "origin": "sourced",
+        "cites": [
+          "F-b3-14",
+          "X-litmus-c-003",
+          "X-litmus-c-004",
+          "X-litmus-c-005"
+        ],
+        "quote": "Cross App Access is the friendly name for an IETF draft called the Identity Assertion JWT Authorization Grant (ID-JAG), currently at draft-04 and last updated 2026-05-21"
+      },
+      "questions": [
+        {
+          "id": "identity-q1",
+          "angle": "presence",
+          "question": "Against the proposed future state, is there a single named identity capability interface that every credential passes through, such that no other component obtains, stores or validates a credential of its own?",
+          "evidence_expected": "The interface definition, plus a search across the rest of the codebase for credential handling and for secrets read from configuration or environment.",
+          "aligned_looks_like": "One interface with mint/exchange/verify operations; every other component receives an already-scoped credential and holds no secret material.",
+          "misaligned_looks_like": "No interface at all, or several components each reading their own keys from configuration, so identity is a convention rather than a boundary.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-14",
+            "F-b1-02"
+          ]
+        },
+        {
+          "id": "identity-q2",
+          "angle": "depth",
+          "question": "The proposed future state turns on deep use, so: in a call made three hops deep, does the presented credential name both the original subject and every acting party in order, or only one identity?",
+          "evidence_expected": "The decoded claims of a credential captured at the third hop of a real run, alongside the claims at hop one.",
+          "aligned_looks_like": "Subject preserved from hop one; one acting-party entry added per hop in order; audience and scope strictly narrower at each hop.",
+          "misaligned_looks_like": "A single subject with no acting party (impersonation), the chain flattened to the most recent actor, or the same broad token forwarded unchanged.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-14",
+            "X-litmus-c-001",
+            "X-litmus-c-002"
+          ]
+        },
+        {
+          "id": "identity-q3",
+          "angle": "depth",
+          "question": "The proposed future state turns on deep use, so: are credentials attested at issue time from the running environment and bound to the specific resource they are presented to, or are they long-lived bearer secrets with a broad audience?",
+          "evidence_expected": "Issue and expiry times from a sample of live credentials, the audience value each carries, and how the resource's authorization server was located.",
+          "aligned_looks_like": "Minutes-long lifetimes, one audience per resource, the authorization server discovered from the resource rather than hard-coded, and no static secret at rest.",
+          "misaligned_looks_like": "One token per environment with a wide or absent audience, lifetime measured in days, or endpoints and issuers pinned in configuration.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-14",
+            "X-litmus-c-003",
+            "X-litmus-c-004"
+          ]
+        },
+        {
+          "id": "identity-q4",
+          "angle": "boundary",
+          "question": "Against the proposed future state, are there two issuers behind the interface whose trust roots differ in kind - one attesting a workload from the platform it runs on, one an external assertion or OIDC issuer - and has a swap been executed rather than described?",
+          "evidence_expected": "The output of one conformance suite run against both issuers, and the change set that performed the swap.",
+          "aligned_looks_like": "Both pass the same suite; the swap touches only wiring; no issuer-specific claim name or token shape appears above the interface.",
+          "misaligned_looks_like": "One implementation, or a second that is another product of the same shape, or interface fields that only one issuer's tokens can populate.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-14",
+            "F-b1-04",
+            "X-litmus-c-003"
+          ]
+        },
+        {
+          "id": "identity-q5",
+          "angle": "guarantees",
+          "question": "The guarantee proposed here is applied, not requested, so: which cross-cutting guarantees attach at the moment a credential is issued or exchanged, and can a caller decline any of them?",
+          "evidence_expected": "The issue path with its policy check, telemetry attributes and recorded evidence, plus an attempt to obtain a credential while bypassing them.",
+          "aligned_looks_like": "Policy decides before issue, the issue and every exchange are recorded with the actor chain, and the bypass attempt is refused with a typed failure.",
+          "misaligned_looks_like": "Issue is unlogged or unpoliced, or the guarantees are parameters the caller passes and can therefore omit.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-14",
+            "F-b1-08",
+            "X-litmus-c-020"
+          ]
+        },
+        {
+          "id": "identity-q6",
+          "angle": "usage",
+          "question": "Against the proposed future state across every entry, for each of the four entries - a person, an event, a schedule, an external system - how is the initiating principal established before any work runs, and how does that principal reach the tool and model calls the work makes?",
+          "evidence_expected": "For one unit of work started at each entry: the credential presented at entry, the principal resolved from it, and the credential presented on the first outbound call.",
+          "aligned_looks_like": "All four resolve a named principal by the same interface, and each downstream call carries an exchanged token derived from it; the schedule and event entries name the principal that authorised the schedule or subscription.",
+          "misaligned_looks_like": "Some entry runs unauthenticated, or non-interactive entries collapse to one shared machine account, so the downstream call cannot say for whom it is acting.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-14",
+            "F-b3-08",
+            "X-litmus-c-005"
+          ]
+        },
+        {
+          "id": "identity-q7",
+          "angle": "direction",
+          "question": "Against the direction proposed for this section, does the build treat authorization as a property of each resource, discovered and audience-bound per call, or as one credential agreed once and reused everywhere?",
+          "evidence_expected": "The code path that acquires a credential for a newly added external resource, with no prior configuration for that resource.",
+          "aligned_looks_like": "The resource is asked which authorization server governs it, a token is minted for that audience alone, and adding a resource requires no core change.",
+          "misaligned_looks_like": "A shared token replayed at any resource, or a per-resource credential table maintained by hand - the pattern the window is abandoning because it enables token replay across servers.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-14",
+            "X-litmus-c-004"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "That an attested workload identity plane and an assertion-grant issuer can satisfy one identity interface without the interface leaking either token shape - asserted from the two mechanisms separately, not from a source describing both behind one abstraction.",
+          "research_query": "single workload identity abstraction over SPIFFE JWT-SVID and OAuth token exchange interface design 2026 pluggable issuer"
+        },
+        {
+          "claim": "That revocation of an agent credential reliably halts work already in flight rather than only preventing new calls.",
+          "research_query": "revoke short-lived agent credential in-flight task termination 2026 token revocation propagation latency"
+        }
+      ]
+    },
+    {
+      "id": "scheduling",
+      "kind": "capability",
+      "source": "F-b3-15",
+      "name": "Scheduling",
+      "standard": {
+        "name": "RFC 5545 recurrence rules",
+        "settledness": "baseline",
+        "why": "The recurrence grammar has no credible competitor. The same rule parsed by any conforming implementation produces the same result, whereas Vixie cron, systemd timers, AWS EventBridge, Google Cloud Scheduler and GitHub Actions each implement slightly different syntax, so a cron expression is not portable. The nearest alternative, JSCalendar (RFC 8984), positions itself as a successor serialisation for calendar data but its RecurrenceRule object is a JSON mapping of the iCalendar RECUR value type with the same semantics, so it restates the grammar rather than competing with it; conformant libraries continued to appear in the window, including ones extending to RFC 7529 non-Gregorian calendars. The open question is therefore depth of use, not choice of standard.",
+        "cites": [
+          "X-litmus-c-006",
+          "X-litmus-c-007",
+          "X-litmus-c-009"
+        ]
+      },
+      "future_state": {
+        "text": "Every recurring unit of work is declared as a recurrence rule in the standard grammar, stored with an explicit start instant and a named time zone, never as a platform-specific interval string, so that the same rule parsed by any conforming implementation producing the same result is a property the build can rely on when it moves hosts. A schedule is durable, addressable platform state - creatable, inspectable, pausable, editable and backfillable through the same interface at any entry - rather than configuration on a host, and it carries its operational policy with it: what happens when a fire is missed, how far back catch-up may reach, whether overlapping runs are allowed or skipped, and how much jitter spreads a fleet of schedules. Expansion of a rule into concrete fire times sits behind a recurrence capability so the parser can be replaced without touching the core, and each fire produces a unit of work through the same intake path as any other entry, carrying an idempotency key derived from the schedule's identity and the nominal fire time so that a catch-up, an operator backfill and a retry of the same fire converge on one execution.",
+        "origin": "sourced",
+        "cites": [
+          "F-b3-15",
+          "F-b3-16",
+          "X-litmus-c-006",
+          "X-litmus-c-007",
+          "X-litmus-c-008"
+        ],
+        "quote": "the same rule parsed by any conforming implementation producing the same result"
+      },
+      "direction": {
+        "text": "Inside the window, scheduling moved from host configuration to durable, observable state owned by an execution service: Cadence shipped Schedules in June 2026, where a Schedule lives on the server and can be observed, paused, updated, and backfilled without touching workflow code, with catch-up bounded to a lookback window and dispatch governed by a declared overlap policy; jitter as thundering-herd protection is now discussed as standard practice for scheduled agent workloads. Recurrence-rule services extended the grammar to agent triggers, and conforming RFC 5545 libraries built on modern time-zone-aware date APIs (including RFC 7529 RSCALE support) landed in the window. What is being abandoned: bare per-platform cron strings as the source of truth, and timers with no record of the last fire. It would be an error now to hold schedules only in a host crontab or an in-process timer, to store a rule without its time zone, or to expand recurrence in UTC and treat local wall time as incidental, since the grammar's whole value is portable, zone-correct expansion.",
+        "origin": "sourced",
+        "cites": [
+          "F-b3-15",
+          "X-litmus-c-006",
+          "X-litmus-c-008"
+        ],
+        "quote": "A Schedule lives on the server and can be observed, paused, updated, and backfilled without touching workflow code"
+      },
+      "questions": [
+        {
+          "id": "scheduling-q1",
+          "angle": "presence",
+          "question": "Against the proposed future state, is every recurring unit of work expressed as a recurrence rule in the standard grammar, and is that rule the stored source of truth rather than a derived artefact?",
+          "evidence_expected": "The stored representation of every schedule the platform holds, and whatever the runner actually reads at fire time.",
+          "aligned_looks_like": "One stored rule per schedule in the standard grammar, and the runner expands that rule; nothing else defines when work happens.",
+          "misaligned_looks_like": "Rules kept in a platform-specific interval syntax, or a standard rule stored for display while a hand-written timer decides the real fire times.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-15",
+            "X-litmus-c-007"
+          ]
+        },
+        {
+          "id": "scheduling-q2",
+          "angle": "depth",
+          "question": "The proposed future state turns on deep use, so: are the grammar's distinguishing mechanisms actually exercised - by-day and by-month-day selection, count and until bounds, and exception or override dates - or is every stored rule reducible to a fixed interval?",
+          "evidence_expected": "The set of distinct rule shapes in use, and one rule that cannot be expressed as a fixed interval, with the fire times it produces.",
+          "aligned_looks_like": "Rules use positional and calendar selectors and bounded ends; at least one rule in production is inexpressible as a fixed interval.",
+          "misaligned_looks_like": "Every rule is every-N-minutes or every-N-days, so the grammar is a label over what an interval timer would have done.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-15",
+            "X-litmus-c-006",
+            "X-litmus-c-007"
+          ]
+        },
+        {
+          "id": "scheduling-q3",
+          "angle": "depth",
+          "question": "The proposed future state turns on deep use, so: does expansion preserve local wall time across a daylight-saving transition, and are bounded ends interpreted in the absolute frame the standard requires?",
+          "evidence_expected": "The fire times produced for a daily rule spanning a daylight-saving boundary in a zone that observes one, and the interpretation of a bounded end.",
+          "aligned_looks_like": "The local time of day is unchanged either side of the transition, the skipped and repeated local times are handled explicitly, and the end bound is evaluated as an absolute instant.",
+          "misaligned_looks_like": "Fire times shift by an hour after the transition, an occurrence is silently lost or duplicated, or the rule was stored without a zone so the question cannot be answered.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-15",
+            "X-litmus-c-006"
+          ]
+        },
+        {
+          "id": "scheduling-q4",
+          "angle": "guarantees",
+          "question": "The guarantee proposed here is applied, not requested, so: when fires are missed because the platform was down, what does the schedule's declared policy say happens, and do the resulting runs carry budget, actor and replay-safety without the schedule's author supplying them?",
+          "evidence_expected": "A recovery after a deliberate outage spanning several fire times: the runs produced, their keys, their ceilings and their recorded actor.",
+          "aligned_looks_like": "Catch-up is bounded by a declared lookback and overlap policy, each recovered fire is keyed by schedule and nominal fire time so a repeat converges, and each run carries a ceiling and a named actor nobody passed in.",
+          "misaligned_looks_like": "Every missed fire replays as a storm, or all missed fires are silently dropped, or recovered runs are unattributed and uncapped.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-15",
+            "F-b4-02",
+            "F-b4-03",
+            "F-b4-08",
+            "X-litmus-c-008"
+          ]
+        },
+        {
+          "id": "scheduling-q5",
+          "angle": "usage",
+          "question": "Against the proposed future state across every entry, can a schedule be created, paused, edited and backfilled from any of the four entries, and does a fire travel the same downstream path as work arriving from a person, an event or an external system?",
+          "evidence_expected": "The same schedule operated once from an interactive entry and once by an external caller, plus a trace comparing a scheduled run with an equivalent run started by a person.",
+          "aligned_looks_like": "One interface for schedule operations regardless of entry, and the two traces differ only in how the work arrived.",
+          "misaligned_looks_like": "Schedules can only be changed by editing host configuration or redeploying, or scheduled fires take a separate code path with different validation, refusal or recording.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-15",
+            "F-b3-08",
+            "X-litmus-c-008"
+          ]
+        },
+        {
+          "id": "scheduling-q6",
+          "angle": "boundary",
+          "question": "Against the proposed future state, is rule expansion separated from fire delivery behind an interface, with a second implementation whose durability model differs, so the platform can move between a durable execution service and a plain conforming parser plus timer?",
+          "evidence_expected": "The interface, both implementations, and one suite of rules whose expected fire times both must produce.",
+          "aligned_looks_like": "Identical fire times from both; the swap changes only wiring; catch-up and overlap policy are expressed in the interface, not inherited from one runner's features.",
+          "misaligned_looks_like": "Scheduling semantics defined by whatever one runner happens to do, so the contract cannot be stated without naming it.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-15",
+            "F-b1-04",
+            "F-b3-18"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "That deriving a replay key from the schedule identity plus the nominal fire time is the prevailing convention for making catch-up and backfill converge, rather than my synthesis of the recurrence and idempotency findings.",
+          "research_query": "scheduled job idempotency key nominal fire time backfill deduplication convention 2026"
+        },
+        {
+          "claim": "The current revision status and adoption of the recurrence grammar's own base specification inside the window - searches returned libraries and successors but no ietf activity record for the base document.",
+          "research_query": "RFC 5545 errata revision calext working group activity 2026 icalendar base specification status"
+        }
+      ]
+    },
+    {
+      "id": "idempotency",
+      "kind": "capability",
+      "source": "F-b3-16",
+      "name": "Idempotency",
+      "standard": {
+        "name": "idempotency-key convention",
+        "settledness": "emerging",
+        "why": "The direction is unmistakable but nothing has ratified. The header is an IETF HTTPAPI working-group Internet-Draft at draft-ietf-httpapi-idempotency-key-header-07, published 15 October 2025 with intended status Standards Track and an expiry of 18 April 2026 - inside the window it lapsed without becoming an RFC, having run since 2021. Meanwhile the payload side is converging on the event envelope identifier as the stable dedup key, while provider conventions - retry windows, conflict codes, key scope - remain fragmented, so the practice is de facto rather than standard. The future state therefore names the mechanism to hold, a durable keyed claim, and the exit if the draft dies: the same claim store keyed off the envelope identifier, with the header treated as one accepted spelling among several.",
+        "cites": [
+          "X-litmus-c-010",
+          "X-litmus-c-011",
+          "X-litmus-c-012"
+        ]
+      },
+      "future_state": {
+        "text": "Every externally triggered unit of work carries a key on the wire in the convention's form, and the platform turns that key into a durable claim rather than a log line: a client-generated key, a database uniqueness constraint that arbitrates the race, a request fingerprint, an explicit in_progress state with a lease, and storing the outcome in the same transaction as the side effect. A replay with the same key and the same fingerprint returns the stored outcome without re-executing; a replay with the same key and a different fingerprint is refused with a typed conflict naming the mismatch rather than silently executing the new payload; a claim whose lease has expired because the holder died is reclaimable by exactly one contender, so a crash mid-run neither wedges the key forever nor permits two executions. Keys are scoped to the operation they protect, are retained for at least the longest retry window any producer is permitted, and where a producer supplies no key the platform derives one from the arriving envelope's own identifier, so replay-safety is a property of the entry rather than a courtesy of the caller. The exit, should the header convention be abandoned, is that only the accepted spelling changes: the claim store, the fingerprint and the lease are the contract.",
+        "origin": "sourced",
+        "cites": [
+          "F-b3-16",
+          "F-b4-08",
+          "X-litmus-c-010",
+          "X-litmus-c-011",
+          "X-litmus-c-012"
+        ],
+        "quote": "a client-generated key, a database uniqueness constraint that arbitrates the race, a request fingerprint, an explicit in_progress state with a lease, and storing the outcome in the same transaction as the side effect"
+      },
+      "direction": {
+        "text": "Inside the window the header draft stalled - version 07 of October 2025 expired in April 2026 with no RFC - so the convention is settling by practice rather than by ratification, and the practical centre of gravity moved to the durable claim behind the key and to the event envelope identifier as the key when a producer supplies none. Guidance is now explicit that your deduplication cache must persist at least as long as the provider's full retry window, and that check-then-act without a uniqueness constraint, writing the key after the side effect, and skipping the request fingerprint are the three ways an implementation looks correct and is not. What is being abandoned: short-lived in-memory dedup caches, and the assumption that networks can be made to deliver exactly once instead of making processing idempotent. It would be an error now to accept a key and merely record it, to give the key a shorter retention than the longest producer retry window, or to build a bespoke per-producer dedup scheme where the envelope identifier is already stable.",
+        "origin": "sourced",
+        "cites": [
+          "F-b3-16",
+          "X-litmus-c-010",
+          "X-litmus-c-011",
+          "X-litmus-c-012"
+        ],
+        "quote": "Your deduplication cache must persist at least as long as the provider's full retry window"
+      },
+      "questions": [
+        {
+          "id": "idempotency-q1",
+          "angle": "presence",
+          "question": "Against the proposed future state, is a key accepted on the wire at every externally triggered entry, and is a request that omits one still made replay-safe?",
+          "evidence_expected": "The accepted request shape at each entry, and the stored claim produced by a request that carried no key.",
+          "aligned_looks_like": "The key is accepted in the conventional form everywhere it can arrive, and where absent the platform derives one from the arriving envelope's identifier.",
+          "misaligned_looks_like": "Only one entry accepts a key, or a missing key means the request simply executes with no claim recorded.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-16",
+            "F-b4-08",
+            "X-litmus-c-012"
+          ]
+        },
+        {
+          "id": "idempotency-q2",
+          "angle": "depth",
+          "question": "The proposed future state turns on deep use, so: behind the key, is there a durable claim - a uniqueness constraint that arbitrates the race, a stored request fingerprint, an in-progress lease, and the outcome persisted with the side effect - or is the key only recorded?",
+          "evidence_expected": "Two identical requests issued concurrently with one key, and the resulting stored claim, outcome and responses.",
+          "aligned_looks_like": "Exactly one execution; the loser receives the stored outcome or an in-progress signal; the outcome and the claim were committed together.",
+          "misaligned_looks_like": "Both execute; or the loser gets an error with no stored outcome; or the claim is written after the side effect, leaving a crash window that double-executes.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-16",
+            "X-litmus-c-011"
+          ]
+        },
+        {
+          "id": "idempotency-q3",
+          "angle": "depth",
+          "question": "The proposed future state turns on deep use, so: what happens when the same key arrives with a different payload, and what happens when the holder of a claim dies mid-execution?",
+          "evidence_expected": "A replay of one key with an altered payload, and a run killed after claiming a key and before completing, followed by a retry of the same key.",
+          "aligned_looks_like": "The altered payload is refused as a typed conflict naming the fingerprint mismatch, with no side effect attempted; the abandoned claim is reclaimed by exactly one retry after its lease lapses.",
+          "misaligned_looks_like": "The altered payload silently returns the earlier result or silently executes the new one; the abandoned claim wedges the key permanently, or two retries both reclaim it.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-16",
+            "F-b3-13",
+            "X-litmus-c-011"
+          ]
+        },
+        {
+          "id": "idempotency-q4",
+          "angle": "guarantees",
+          "question": "The guarantee proposed here is applied, not requested, so: is claim retention at least as long as the longest retry window of any producer permitted to reach the platform, and is that relationship enforced rather than assumed?",
+          "evidence_expected": "The retention setting of the claim store, the maximum retry window of each admitted producer, and a replay issued just before retention expires.",
+          "aligned_looks_like": "Retention is derived from the longest admitted retry window and the late replay still returns the stored outcome without re-executing.",
+          "misaligned_looks_like": "A fixed short retention chosen for storage cost, so a late redelivery or an operator replay executes as new work.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-16",
+            "F-b4-08",
+            "X-litmus-c-012"
+          ]
+        },
+        {
+          "id": "idempotency-q5",
+          "angle": "usage",
+          "question": "Against the proposed future state across every entry, across a person retrying, an event redelivered, a scheduled fire caught up after an outage, and an external partner retrying a timed-out call, do all four converge on one execution and one answer for the same logical action?",
+          "evidence_expected": "One logical action driven through all four entries with the corresponding key, and the resulting execution count and returned bodies.",
+          "aligned_looks_like": "One execution total; every entry returns the same outcome body; the deduplication decision is made in one place, not per entry.",
+          "misaligned_looks_like": "Duplicate executions across entries, different answers for the same key depending on where the retry arrived, or per-entry dedup logic that can disagree.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-16",
+            "F-b3-08",
+            "F-b4-08"
+          ]
+        },
+        {
+          "id": "idempotency-q6",
+          "angle": "boundary",
+          "question": "Against the proposed future state, does the keyed claim store sit behind a capability interface, with a second implementation whose concurrency mechanism differs, and does the interface state its atomicity requirement rather than inheriting it?",
+          "evidence_expected": "The interface, both implementations, and a concurrency suite run against each.",
+          "aligned_looks_like": "The interface names the atomic claim-or-return operation and its lease semantics; both implementations pass the same race and reclaim tests.",
+          "misaligned_looks_like": "One store, or a contract whose correctness depends on a feature only the incumbent provides, so the claim cannot be moved.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-16",
+            "F-b1-04",
+            "X-litmus-c-011"
+          ]
+        },
+        {
+          "id": "idempotency-q7",
+          "angle": "direction",
+          "question": "Against the direction proposed for this section, is the key treated as one accepted spelling over a durable claim contract, so that the build survives the header convention failing to ratify?",
+          "evidence_expected": "The mapping from each accepted key source - the header form, the envelope identifier, a derived key - onto the same claim record.",
+          "aligned_looks_like": "All sources normalise to one claim; changing or adding a spelling touches only the intake mapping.",
+          "misaligned_looks_like": "The unratified header form is baked into storage, refusal codes and downstream logic, so abandoning it is a rewrite rather than a mapping change.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-16",
+            "X-litmus-c-010",
+            "X-litmus-c-012"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "Whether the header draft was revived, replaced or formally abandoned after its April 2026 expiry - the search returned the expired revision but no later working-group action.",
+          "research_query": "httpapi working group idempotency key header draft 08 status 2026 revived expired abandoned"
+        },
+        {
+          "claim": "That a typed conflict, rather than a plain rejection, is the settled response to a fingerprint mismatch - practitioner sources name conflict codes but none ties the response to a machine-readable failure format.",
+          "research_query": "idempotency key fingerprint mismatch RFC 9457 problem details typed error response 2026"
+        }
+      ]
+    },
+    {
+      "id": "state-persistence",
+      "kind": "capability",
+      "source": "F-b3-17",
+      "name": "State persistence",
+      "standard": {
+        "name": "— (no standard; original design under B5)",
+        "settledness": "none",
+        "why": "Part B records no standard for this boundary and points at B5, so the future state is original design held to the five things B5 requires a state contract to specify: the write model, concurrency and single-writer guarantees, the integrity mechanism, retention, and the query surface planning needs. The design is not unconstrained, though: three settled techniques are available to borrow from inside the window rather than invent. RFC 9162 shows that the append-only property of a log is obtained from a Merkle tree that yields inclusion and consistency proofs; commodity object storage now offers conditional writes that behave as compare-and-swap, so single-writer arbitration no longer needs a database; and event-store practice has converged on expected-version optimistic concurrency with projections for reads and snapshot or compaction for retention.",
+        "cites": [
+          "F-b5-05",
+          "X-litmus-c-013",
+          "X-litmus-c-014",
+          "X-litmus-c-015"
+        ]
+      },
+      "future_state": {
+        "text": "State is one append-only history behind a capability interface, not a file format: a write is an append of an immutable record to a named stream, admitted only if the caller's expected version is still current, so the store arbitrates a single logical writer per stream instead of trusting convention, and a torn or partial record is never visible to a reader. Integrity is stronger than a per-record hash link, because the append-only property of each log is achieved using Merkle Trees: a reader can be given an inclusion proof for one record and a consistency proof that the history it saw yesterday is a prefix of the history today, so an edit, a reorder and a truncation are all detectable, and detectable by an independent verifier that was not written by the platform. Retention is declared per stream, with snapshots or compaction bounding replay cost while the proof structure over the retained history survives, and deletion is itself a recorded, provable event rather than a silent gap. The read surface is stated as operations that cost planning actually needs - a record by identity, a stream from a version, and a materialised projection - so the contract mentions no file, path or layout, and an embedded log, an object store with conditional writes, or a transactional database can each serve behind it unchanged.",
+        "origin": "sourced",
+        "cites": [
+          "F-b3-17",
+          "F-b5-05",
+          "X-litmus-c-013",
+          "X-litmus-c-014",
+          "X-litmus-c-015"
+        ],
+        "quote": "the append-only property of each log is achieved using Merkle Trees"
+      },
+      "direction": {
+        "text": "Inside the window three things settled that a state design should now assume. First, conditional writes reached commodity object storage - S3 supports conditional writes using If-Match with ETag, and this pattern closely resembles a compare-and-swap (CAS) operation and enables optimistic concurrency control without locks - with nearly every other object store already offering preconditions, so a durable append-only log on plain storage with real single-writer arbitration is now ordinary rather than exotic, and write-ahead logs are being moved into the storage layer on that basis. Second, transparency-log technique (RFC 9162 Merkle inclusion and consistency proofs, already extended to key transparency and module mirrors) is being applied directly to agent audit history in 2026 research. Third, event-store practice has converged on expected-version optimistic concurrency, projections as the read surface, and snapshot or policy-driven compaction for retention. What is being abandoned: single-file, single-process state with no concurrency control, and integrity by chained hash alone with no proof of consistency or truncation. It would be an error now to write a contract in terms of a file layout, or to build a chain only the writer's own code can verify by re-reading the whole history.",
+        "origin": "sourced",
+        "cites": [
+          "F-b3-17",
+          "F-b5-05",
+          "X-litmus-c-013",
+          "X-litmus-c-014",
+          "X-litmus-c-015"
+        ],
+        "quote": "This pattern closely resembles a compare-and-swap (CAS) operation and enables optimistic concurrency control without locks"
+      },
+      "questions": [
+        {
+          "id": "state-persistence-q1",
+          "angle": "presence",
+          "question": "Against the proposed future state, is there a written state contract that specifies all five of the write model, concurrency and single-writer guarantees, the integrity mechanism, retention, and the query surface - stated without reference to any storage format?",
+          "evidence_expected": "The contract document or interface definition, with each of the five located in it.",
+          "aligned_looks_like": "All five specified, each with a checkable criterion, and no file, path or serialisation appears in the contract.",
+          "misaligned_looks_like": "Fewer than five specified, or the contract is the description of a file format, so replacing the storage means renegotiating the contract.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-17",
+            "F-b5-05"
+          ]
+        },
+        {
+          "id": "state-persistence-q2",
+          "angle": "depth",
+          "question": "The proposed future state turns on deep use, so: can an independent verifier prove that a given record is in the history and that an earlier history is a prefix of the current one, and does that verification detect a truncation of the most recent records?",
+          "evidence_expected": "A verification run by a tool the platform did not write, over a history that has been edited in the middle, and over one whose tail has been removed.",
+          "aligned_looks_like": "Both tampering forms are detected, and the proof needed to detect them is small rather than requiring the whole history to be re-read.",
+          "misaligned_looks_like": "Only a mid-history edit is caught while truncation passes, or verification requires the platform's own code and full replay, so no outside party can check it.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-17",
+            "F-b4-05",
+            "X-litmus-c-013"
+          ]
+        },
+        {
+          "id": "state-persistence-q3",
+          "angle": "depth",
+          "question": "The proposed future state turns on deep use, so: how is a concurrent write to the same stream arbitrated, and what does a reader see if the writer dies mid-append?",
+          "evidence_expected": "Two writers appending to one stream at the same expected version, and a write interrupted by killing the process, followed by a read.",
+          "aligned_looks_like": "The store rejects the stale write on an expected-version or conditional check and the loser retries; the interrupted append is either fully present or fully absent.",
+          "misaligned_looks_like": "Both writes land and one is lost or the history forks; or a partial record is readable; or single-writer holds only because one process happens to be running.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-17",
+            "F-b5-05",
+            "X-litmus-c-014",
+            "X-litmus-c-015"
+          ]
+        },
+        {
+          "id": "state-persistence-q4",
+          "angle": "boundary",
+          "question": "Against the proposed future state, are there two implementations with genuinely different durability models behind one interface, passing one conformance suite, and does the core import only the interface?",
+          "evidence_expected": "The suite output for both, and the change set that swapped them.",
+          "aligned_looks_like": "Both pass identical concurrency, integrity and query tests; the swap touches wiring only; no component reaches past the interface to the underlying store.",
+          "misaligned_looks_like": "One implementation, or a second of the same shape, or components that read the underlying storage directly for convenience.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-17",
+            "F-b1-02",
+            "F-b1-04"
+          ]
+        },
+        {
+          "id": "state-persistence-q5",
+          "angle": "usage",
+          "question": "Against the proposed future state across every entry, do units of work arriving from all four entries write through the same append path, and can cost planning answer its questions from the stated read operations without scanning the whole history?",
+          "evidence_expected": "The write path taken from each entry, and the reads a planning pass issues for a realistic history, with their cost.",
+          "aligned_looks_like": "One append path for every entry; planning is served by record-by-identity, stream-from-version and projection reads whose cost does not grow with total history.",
+          "misaligned_looks_like": "Some entry writes by a side path, or every planning pass replays the entire history because the read surface was never specified.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-17",
+            "F-b5-05",
+            "X-litmus-c-015"
+          ]
+        },
+        {
+          "id": "state-persistence-q6",
+          "angle": "direction",
+          "question": "Against the direction proposed for this section, is retention a declared, enforced policy per stream that keeps verification possible over what remains, or is history kept forever by default and pruned by hand when it hurts?",
+          "evidence_expected": "The retention policy per stream, a snapshot or compaction run, and a verification over the history after that run.",
+          "aligned_looks_like": "Retention declared with the unit of work it belongs to; compaction or snapshotting bounds replay cost; verification still succeeds afterwards and the removal is itself recorded.",
+          "misaligned_looks_like": "No retention policy, or pruning that breaks verification or leaves an unexplained gap, so the integrity claim quietly stops holding as the history grows.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-17",
+            "F-b5-05",
+            "X-litmus-c-015"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "That inclusion and consistency proofs are practical at the write rate a busy agent platform generates, rather than at certificate-issuance rates.",
+          "research_query": "transparency log throughput write rate benchmark 2026 merkle inclusion proof high volume application log"
+        },
+        {
+          "claim": "That a single read surface of record-by-identity, stream-from-version and projection is sufficient for cost planning over a typed dependency structure - this is my synthesis, not a sourced finding.",
+          "research_query": "event sourced graph query surface projections planning cost estimation read model design 2026"
+        }
+      ]
+    },
+    {
+      "id": "concern-budget",
+      "kind": "concern",
+      "source": "F-b4-02",
+      "name": "Budget",
+      "standard": {
+        "name": "— (no standard recorded; a platform-applied guarantee)",
+        "settledness": "emerging",
+        "why": "Part B records no standard for this concern, and none has settled, but the direction became visible inside the window: run-scoped, in-session enforcement moved from advice to shipped primitive, with two major agent platforms shipping run-level spend enforcement a day apart at different layers - one in the session object, one at the gateway - and practitioner guidance converging on a guard that checks cumulative spend before each call and terminates the session at the ceiling, backed by a second enforcement layer the agent's own code cannot bypass. The measurement substrate is still pre-stable: the GenAI semantic conventions that carry gen_ai.usage.input_tokens and gen_ai.usage.output_tokens remained in Development status as of May 2026 with no stabilisation timeline. The exit, should the accounting attributes change, is that the ceiling and its enforcement points are the contract and the unit of measure is a mapping.",
+        "cites": [
+          "X-litmus-c-016",
+          "X-litmus-c-017",
+          "X-litmus-c-018"
+        ]
+      },
+      "future_state": {
+        "text": "Every unit of work is admitted with a ceiling attached by the platform before execution, derived from an estimate produced by pure planning and compared against a policy limit, so refusal happens before spend rather than being discovered afterwards; the ceiling is expressed in units the platform actually measures - tokens, currency, wall time, tool invocations - and is carried on the unit, not held in an account-level cap. Enforcement is continuous rather than periodic: code that checks cumulative token or cost spend before each API call and terminates the agent session when a defined ceiling is hit, with a second checkpoint at the capability boundary so the code inside the unit cannot bypass it, and with sub-units drawing from the parent's remaining ceiling rather than each receiving a fresh one, because multi-agent spend compounds rather than adding. Exhaustion terminates that unit and only that unit: siblings and the platform continue, any partial result is retained and recorded, and the caller receives a typed refusal naming the ceiling, the consumption and the unit - never a truncated success. A resumed, retried or replayed unit continues under the ceiling it had left, and the consumption of every unit is recorded against the same attributes telemetry uses, so the ceiling and the accounting cannot drift apart. The exit, if the accounting attributes are renamed or stabilise differently, is a mapping at the recording boundary rather than a change to where ceilings are enforced.",
+        "origin": "sourced",
+        "cites": [
+          "F-b4-02",
+          "F-b1-06",
+          "F-b1-08",
+          "X-litmus-c-016",
+          "X-litmus-c-017",
+          "X-litmus-c-019"
+        ],
+        "quote": "code that checks cumulative token or cost spend before each API call and terminates the agent session when a defined ceiling is hit"
+      },
+      "direction": {
+        "text": "Inside the window budget control moved from reporting to enforcement. The framing that settled is blunt: the only reliable cost control mechanism is one that enforces a ceiling during the session - not one that estimates costs upfront and hopes; run-scoped enforcement shipped in two major agent platforms a day apart, Anthropic in the session object and AWS at the gateway, which shows the layer is still being chosen while the requirement is not. Alongside it, pre-execution admission is established practice in infrastructure automation - the agent proposes, the estimate is computed, the policy rejects, and nothing is created - and practitioners now describe three layers, a pre-run cost check that can reject, a platform quota, and a hard account backstop, of which only the first two prevent spend rather than reporting it. Token accounting has a standard vocabulary in the OpenTelemetry GenAI conventions but those remain in Development status as of May 2026. What is being abandoned: monthly account caps as the only guard, and per-call limits that do nothing about a loop. It would be an error now to make the budget advisory, to check it only between top-level steps, or to give each spawned sub-agent a fresh ceiling, since sub-agent context feeds back into the orchestrator and compounds.",
+        "origin": "sourced",
+        "cites": [
+          "F-b4-02",
+          "X-litmus-c-016",
+          "X-litmus-c-017",
+          "X-litmus-c-018",
+          "X-litmus-c-019"
+        ],
+        "quote": "The only reliable cost control mechanism is one that enforces a ceiling during the session - not one that estimates costs upfront and hopes"
+      },
+      "questions": [
+        {
+          "id": "concern-budget-q1",
+          "angle": "presence",
+          "question": "Against the proposed future state, does every unit of work carry a ceiling, including ones whose caller never mentioned a budget, and can the platform name that ceiling for any unit currently running?",
+          "evidence_expected": "The set of in-flight units with the ceiling attached to each, and a unit started by a request that carried no budget field.",
+          "aligned_looks_like": "Every unit has a ceiling; where the caller supplied none the platform attached one from policy at admission.",
+          "misaligned_looks_like": "Ceilings exist only where a caller passed one, or exist as a global account limit that cannot be attributed to a unit.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-02",
+            "F-b1-08"
+          ]
+        },
+        {
+          "id": "concern-budget-q2",
+          "angle": "depth",
+          "question": "The proposed future state turns on deep use, so: is the ceiling checked before each spending call within a unit, and does a sub-unit draw from its parent's remaining ceiling rather than receiving its own?",
+          "evidence_expected": "A run deliberately driven past its ceiling in a tight loop, with the point of termination, and a run that spawns sub-units, with the consumption accounted at each level.",
+          "aligned_looks_like": "Termination lands at the ceiling with at most one call of overshoot; parent and children share one remaining balance that decreases monotonically.",
+          "misaligned_looks_like": "The check happens only between top-level steps so a loop overshoots by a wide margin, or each sub-unit starts fresh so total spend is a multiple of the stated ceiling.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-02",
+            "X-litmus-c-016",
+            "X-litmus-c-017"
+          ]
+        },
+        {
+          "id": "concern-budget-q3",
+          "angle": "guarantees",
+          "question": "The guarantee proposed here is applied, not requested, so: can the code inside a unit exceed, raise or disable its own ceiling, and is there an enforcement point outside that code?",
+          "evidence_expected": "An attempt from inside a unit to raise its own ceiling or to call a capability directly, and the result.",
+          "aligned_looks_like": "The attempt is refused; a second checkpoint at the capability boundary stops the spend even when in-unit accounting is wrong or bypassed.",
+          "misaligned_looks_like": "The budget is a parameter the unit passes to itself, or the only check lives in the same code path the unit controls, so a bug or a prompt injection removes it.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-02",
+            "F-b1-08",
+            "X-litmus-c-017"
+          ]
+        },
+        {
+          "id": "concern-budget-q4",
+          "angle": "depth",
+          "question": "The proposed future state turns on deep use, so: when a ceiling is exhausted, what exactly stops, what survives, and what does the record say?",
+          "evidence_expected": "The state of the platform, sibling units and the exhausted unit's partial output immediately after an exhaustion, plus the recorded outcome.",
+          "aligned_looks_like": "Only that unit terminates; siblings and the platform continue; partial results are retained and marked as partial; the outcome records the ceiling, the consumption and the point of termination.",
+          "misaligned_looks_like": "The process or the whole run dies with it, or the unit continues while merely flagged, or the outcome is indistinguishable from an ordinary failure or a success.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-02",
+            "F-b4-07",
+            "X-litmus-c-017"
+          ]
+        },
+        {
+          "id": "concern-budget-q5",
+          "angle": "usage",
+          "question": "Against the proposed future state across every entry, for each of the four entries, where does the ceiling come from and what does the caller see when it is hit - including the schedule and event entries, where nobody is present to be asked?",
+          "evidence_expected": "One unit exhausted at each entry, with the origin of its ceiling and the body returned or recorded at that entry.",
+          "aligned_looks_like": "Every entry attaches a ceiling from policy without asking, and each returns or records the same typed refusal naming ceiling and consumption; non-interactive entries inherit the ceiling of the schedule or subscription owner.",
+          "misaligned_looks_like": "Only the interactive entry enforces, or non-interactive fires run uncapped, or the same exhaustion is reported differently at different entries.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-02",
+            "F-b3-08",
+            "F-b4-07"
+          ]
+        },
+        {
+          "id": "concern-budget-q6",
+          "angle": "direction",
+          "question": "Against the direction proposed for this section, is cost knowable before commitment - does an estimate exist before execution begins, get compared to the ceiling, and cause a refusal with nothing spent?",
+          "evidence_expected": "A unit whose estimate exceeds its ceiling, with the estimate, the refusal and the measured spend for that attempt.",
+          "aligned_looks_like": "The estimate is produced by planning alone, the refusal precedes any execution, spend for the refused attempt is zero, and estimate versus actual is recorded for later comparison.",
+          "misaligned_looks_like": "No estimate exists, or the estimate is produced by starting the work, or refusal happens after spend so the cap only reports what already happened.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-02",
+            "F-b1-06",
+            "X-litmus-c-019"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "That a resumed or replayed unit should continue under its remaining ceiling rather than a fresh one - stated as a design consequence here, with no source found that specifies budget carry-over across a restart.",
+          "research_query": "durable workflow resume remaining budget carry over restart token ceiling 2026 checkpoint budget state"
+        },
+        {
+          "claim": "A settled unit of measure for a ceiling that spans model tokens, tool invocations and wall time - sources measure tokens and currency but not a combined ceiling.",
+          "research_query": "unified agent work unit budget tokens tool calls wall clock combined ceiling normalisation 2026"
+        }
+      ]
+    },
+    {
+      "id": "concern-identity",
+      "kind": "concern",
+      "source": "F-b4-03",
+      "name": "Identity (applied)",
+      "standard": {
+        "name": "— (no standard recorded; a platform-applied guarantee)",
+        "settledness": "emerging",
+        "why": "Part B records no standard for the guarantee itself, and none governs it, but the direction is visible and converging inside the window. Multi-hop delegation has a standards-based expression - subject token plus nested act claims under RFC 8693 - and cross-organisation calls gained verifiable counterparty identity when A2A v1.0 introduced signed Agent Cards in January 2026. Audit practice has converged on recording two identities per action, the executing identity and the triggering identity, and on task-scoped ephemeral credentials of fifteen to thirty minutes rather than long-lived bearer tokens. Regulation arrived in the window too: the EU AI Act enters full application on 2 August 2026 and Article 12 requires automatic recording of events over a system's lifetime. No single specification ties these together into a guarantee a platform applies to every action, so the future state names the property and its exit: if the claim format changes, only the encoding of the chain changes, not the rule that every action names its actors.",
+        "cites": [
+          "X-litmus-c-020",
+          "X-litmus-c-021",
+          "X-litmus-c-022",
+          "X-litmus-c-023",
+          "X-litmus-c-024"
+        ]
+      },
+      "future_state": {
+        "text": "No action the platform takes is anonymous and none is attributed to a shared machine account. Every recorded action names two distinct identities: the executing identity, which is the OAuth connection used to make the API call, and the triggering identity, which is the human whose message caused the agent to run - and where no human is present, as on a scheduled fire or an inbound event, the triggering identity is the principal that authorised that schedule or subscription, so the field is never blank and never a placeholder. Delegation is explicit and cumulative: each hop appends one acting party and narrows authority, the chain is carried into every downstream call rather than discarded at the first handoff, and the platform attaches it at admission so a caller can neither supply, forge, omit nor overwrite it. Credentials are issued per invocation, scoped to the task, expire in minutes and are revocable while work is in flight, so an identity can be withdrawn and the work it authorised stops. The chain is written immutably beside the action, at a level of detail that lets an auditor reconstruct who authorised this from the record alone, without trusting the agent's own account of itself - and if the claim encoding changes, the exit is a change of encoding at the identity boundary, not a change to the rule.",
+        "origin": "sourced",
+        "cites": [
+          "F-b4-03",
+          "F-b1-08",
+          "X-litmus-c-020",
+          "X-litmus-c-021",
+          "X-litmus-c-022",
+          "X-litmus-c-023"
+        ],
+        "quote": "the executing identity, which is the OAuth connection used to make the API call, and the triggering identity, which is the human whose message caused the agent to run"
+      },
+      "direction": {
+        "text": "Inside the window the requirement hardened from good practice into an audit and compliance obligation. The multi-hop position is now explicit: when an agent calls another agent, the provenance of who authorized the original action must travel with the delegation chain rather than be discarded at the first handoff, carried as a subject token plus nested act claims, with least privilege applied at the per-invocation level. Cross-organisation calls gained verifiable counterparty identity with signed Agent Cards in A2A v1.0 (January 2026). Enterprise architecture has settled on short-lived task-scoped credentials of fifteen to thirty minutes with rotation, per-agent identity governance, and a traceable line back to an accountable human with a way to shut the agent down instantly. The EU AI Act's full application on 2 August 2026, with Article 12's logging requirement, makes attribution a legal matter, not only an operational one. What is being abandoned: fleet-wide shared API keys, long-lived bearer tokens, and audit records whose actor is simply agent. It would be an error now to attribute an agent's actions to the human's own identity, because impersonation erases the acting party and makes the chain unauditable after the fact.",
+        "origin": "sourced",
+        "cites": [
+          "F-b4-03",
+          "X-litmus-c-020",
+          "X-litmus-c-022",
+          "X-litmus-c-023",
+          "X-litmus-c-024"
+        ],
+        "quote": "the provenance of who authorized the original action must travel with the delegation chain rather than be discarded at the first handoff"
+      },
+      "questions": [
+        {
+          "id": "concern-identity-q1",
+          "angle": "presence",
+          "question": "Against the proposed future state, take a random sample of recorded actions from the last period of real operation: does every one name an actor, and is that actor ever a shared or generic account?",
+          "evidence_expected": "A sample of action records with their actor fields, and the count of distinct actor values.",
+          "aligned_looks_like": "No record has an empty, generic or placeholder actor; distinct actors correspond to distinct real principals.",
+          "misaligned_looks_like": "Some records have no actor, or a large share share one service account, so the field is present but says nothing.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-03",
+            "X-litmus-c-021"
+          ]
+        },
+        {
+          "id": "concern-identity-q2",
+          "angle": "depth",
+          "question": "The proposed future state turns on deep use, so: does each action record carry both the identity that executed it and the identity that caused it, plus the ordered chain of intervening actors, or a single conflated actor?",
+          "evidence_expected": "The action records from one run that passes through at least three actors before touching an external resource.",
+          "aligned_looks_like": "Executing and triggering identities are separate fields, the intervening actors appear in order, and each hop's authority is narrower than the one before.",
+          "misaligned_looks_like": "One actor field; or the chain flattened to the nearest caller; or the agent's actions recorded under the human's identity, which is impersonation.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-03",
+            "X-litmus-c-020",
+            "X-litmus-c-021"
+          ]
+        },
+        {
+          "id": "concern-identity-q3",
+          "angle": "guarantees",
+          "question": "The guarantee proposed here is applied, not requested, so: is the actor chain attached by the platform rather than supplied by the caller - what happens when a caller sends its own chain, an altered one, or none at all?",
+          "evidence_expected": "Three requests: one with a forged chain, one with an altered chain mid-run, one with none, and the recorded outcome of each.",
+          "aligned_looks_like": "The platform derives the chain from the presented credentials at admission; caller-supplied chains are ignored or refused with a typed failure; the missing case still produces a full chain.",
+          "misaligned_looks_like": "The chain is a header the platform trusts and copies, so any caller can claim to act for anyone, or omitting it produces an unattributed action.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-03",
+            "F-b1-08",
+            "F-b4-07"
+          ]
+        },
+        {
+          "id": "concern-identity-q4",
+          "angle": "usage",
+          "question": "Against the proposed future state across every entry, for a scheduled fire and for an inbound event - where no person is present at the moment of execution - what is recorded as the triggering identity, and can it be traced to an accountable human or an owning principal?",
+          "evidence_expected": "The action records for one scheduled run and one event-triggered run, and the trace from each triggering identity back to whoever authorised the schedule or the subscription.",
+          "aligned_looks_like": "The triggering identity names the authorising principal captured when the schedule or subscription was created, and the trace to an accountable party completes without guesswork.",
+          "misaligned_looks_like": "Non-interactive runs record system, root or the platform itself, so the two entries that run unattended are exactly the ones that cannot be attributed.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-03",
+            "F-b3-15",
+            "F-b3-08",
+            "X-litmus-c-023"
+          ]
+        },
+        {
+          "id": "concern-identity-q5",
+          "angle": "depth",
+          "question": "The proposed future state turns on deep use, so: are the credentials behind these actions per-invocation and short-lived, and does revoking an agent's identity stop work that is already running under it?",
+          "evidence_expected": "Credential lifetimes and scopes for a sample of actions, and a revocation performed against an agent with work in flight, with the time until its next call fails.",
+          "aligned_looks_like": "Minutes-long, task-scoped credentials; revocation causes the next capability call to fail promptly and the unit to terminate with a typed refusal.",
+          "misaligned_looks_like": "One durable credential per agent or per deployment; revocation only prevents new work while in-flight work continues to completion.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-03",
+            "X-litmus-c-022"
+          ]
+        },
+        {
+          "id": "concern-identity-q6",
+          "angle": "direction",
+          "question": "Against the direction proposed for this section, can an auditor answer who authorised this action, with what authority, for which task, from the immutable record alone - without access to the agent's reasoning and without the platform's cooperation in interpreting it?",
+          "evidence_expected": "One action selected by an outside reviewer, answered only from stored records, with the reviewer stating what they could not determine.",
+          "aligned_looks_like": "Agent, credential, task and authorising principal all recoverable from the record; the record is tamper-evident; nothing depends on the agent's own narration of what it did.",
+          "misaligned_looks_like": "The answer requires reading prompt transcripts or asking an operator, or the authorising principal was never recorded, which is the position the window's regulation and audit practice have closed off.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-03",
+            "F-b4-05",
+            "X-litmus-c-023"
+          ]
+        }
+      ],
+      "gaps": [
+        {
+          "claim": "That a maximum delegation depth, or a rule for refusing a chain that has grown too long, is established practice - sources describe accumulating chains but none names a bound.",
+          "research_query": "maximum delegation chain depth limit agent to agent act claim nesting bound policy 2026"
+        },
+        {
+          "claim": "That the triggering identity for a schedule created long ago should be the creating principal rather than the current owner of the schedule, when the creator has since left.",
+          "research_query": "scheduled automation authorising principal departed user ownership transfer attribution audit 2026"
+        }
+      ]
+    }
+  ]
+}

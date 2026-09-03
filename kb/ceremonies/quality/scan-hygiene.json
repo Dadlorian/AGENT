@@ -1,0 +1,61 @@
+{
+  "scanner": "haiku",
+  "area": "hygiene",
+  "findings": [
+    {
+      "id": "QH-001",
+      "file": "README.md line 36",
+      "severity": "fix",
+      "category": "readme-false",
+      "finding": "README claims 10 build skills; actual count is 11",
+      "evidence": "Line 36 table shows 'build | 10' but jq '.skills[] | select(.layer==\"build\") | .name' on skill-manifest.json returns 11 entries, validated by directory listing of .claude/skills/build-*",
+      "fix": "Update README table line 36 from 'build | 10 |' to 'build | 11 |'; and also update run-summary.json line 'build': 10 to 'build': 11"
+    },
+    {
+      "id": "QH-002",
+      "file": "README.md line 59",
+      "severity": "fix",
+      "category": "readme-false",
+      "finding": "README claims 22 ledger records; actual count is 26",
+      "evidence": "Line 59 table shows '22 append-only' but 'wc -l /home/user/AGENT/kb/ledger.jsonl' returns 26 lines; last record is L-00026 (run-summary and owner rule recorded)",
+      "fix": "Update README line 59 from '22 append-only' to '26 append-only'"
+    },
+    {
+      "id": "QH-003",
+      "file": "docs/skill-manifest.json / .claude/skills",
+      "severity": "nit",
+      "category": "manifest-mismatch",
+      "finding": "Manifest lists 100 skills but 101 skill directories on disk; agentic-stack is intentionally excluded from manifest",
+      "evidence": "jq '.skills | length' on skill-manifest.json = 100; ls /home/user/AGENT/.claude/skills | wc -l = 101; comm -23 shows agentic-stack is only on disk",
+      "fix": "No fix needed - design is intentional per skill-manifest.json layers description, but readme.md line 8 could clarify it refers to 100 manifest skills (excluding root)"
+    },
+    {
+      "id": "QH-004",
+      "file": ".claude/skills/build-status-table/skill.json",
+      "severity": "block",
+      "category": "status-unbacked",
+      "finding": "Validation error: build-status-table provenance target_facts head does not match kb/meta.json",
+      "evidence": "validate_skills output: 'error: build-status-table: provenance kb head 'target_facts' does not match kb/meta.json'; L-00025 ledger record shows corrected re-measurement but status remains blocked",
+      "fix": "Verify skill.json provenance heads against current kb/meta.json; regenerate or correct build-status-table skill.json target_facts hash"
+    },
+    {
+      "id": "QH-005",
+      "file": "kb/ceremonies/run-summary.json line 'by_layer'",
+      "severity": "fix",
+      "category": "status-unbacked",
+      "finding": "run-summary.json claims build layer has 10 skills but actual count is 11",
+      "evidence": "run-summary.json 'by_layer' shows 'build': 10 but jq group_by on skill-manifest shows build layer has 11 entries",
+      "fix": "Update run-summary.json 'by_layer.build' from 10 to 11"
+    }
+  ],
+  "verified_true": [
+    "End-to-end example runs 29/29 tests (line 44: verified with 'bash examples/end-to-end/test.sh')",
+    "kb/entities.jsonl has 184 named things (line 57: verified with 'wc -l')",
+    "kb/edges.jsonl has 109 typed links (line 58: verified with 'wc -l')",
+    "kb/research.jsonl has 541 search records (line 56: verified with 'wc -l')",
+    "No sensitive content found (emails, IP addresses, API tokens)",
+    ".gitignore is minimal and correct (covers *-workspace/, __pycache__/, *.pyc, examples/end-to-end/out/)",
+    "Knowledge base chain verifies intact (kb.py verify succeeded)"
+  ],
+  "summary": "Five findings found: build layer count wrong in README/run-summary (11 not 10), ledger record count wrong in README (26 not 22), and build-status-table validation error blocks one skill. Agentic-stack on-disk/off-manifest is by design. No sensitive content detected; generated files properly ignored."
+}

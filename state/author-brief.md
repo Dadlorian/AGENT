@@ -133,3 +133,6 @@ Launch messages point an agent at one file under state/briefs/ (source, measure,
 
 ## Lesson 60 (capability layer acceptance, 2026-09-03)
 Commit a harness before measuring against it, so a restore can restore; measure.py now refuses otherwise. The harness a criterion runs must exercise what its expected field describes. Split restate-and-extend rows: the extension is its own proposed row.
+
+## Orchestrator rule (2026-09-03)
+Never `git add -A` while a scope claim is live: the row 60 close swept in-flight row 61 edits into its commit. Stage explicit paths only; a live claim's paths are committed by the release step of that agent.

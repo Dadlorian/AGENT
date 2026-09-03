@@ -2,7 +2,7 @@
   "name": "xc-enforcement-chain",
   "layer": "xc",
   "wave": 7,
-  "description": "One ordered interception chain through which every unit of work passes, whichever way it entered: six typed slots applied in one declared order on the way in and in the inverse order on the way out, at three named points - admission before a work item is accepted, dispatch before a unit runs, and call before each model or tool call. Load it when asking where a cross-cutting guarantee is actually applied rather than what it decides, when a new concern needs somewhere to attach, when one door into the platform received a check the others did not, when a tool chosen at runtime reaches the outside without passing anything, when an agent loop has no ceiling on its own iterations, when an irreversible action is about to run on an approval granted earlier for something else, when someone proposes a fast path, a trusted caller or a per-team exemption, or when a review asks what precisely a caller cannot decline.",
+  "description": "One ordered interception chain through which every unit of work passes, whichever way it entered: six typed slots applied in one declared order on the way in and in the inverse order on the way out, at three named points - admission before a work item is accepted, dispatch before a unit runs, and call before each model or tool call. Load it when asking where a cross-cutting guarantee is actually applied rather than what it decides, when a new concern needs somewhere to attach, when one door into the platform received a check the others did not, when a tool chosen at runtime reaches the outside without passing anything, when an agent loop has no ceiling on its own iterations, when an irreversible action is about to run on an approval granted earlier for something else, when someone proposes a fast path around a whole point, a trusted caller or a per-team exemption, or when a review asks what precisely a caller cannot decline.",
   "purpose": {
     "text": "xc-typed-errors, xc-budget and xc-correlation each carry one guarantee across every entry point (T-t2-03). This skill fixes the single structure that carries all of them: one ordered chain of typed slots, applied at named enforcement points, entered before anything is spent and unwound in the inverse order on the way out, so that a guarantee is a property of the path rather than of the caller who remembered it.",
     "origin": "sourced",
@@ -112,13 +112,13 @@
         ]
       },
       {
-        "name": "chained entry, the three ways in (proposed worked instances; TARGET T1 names a human, an agent and an event, and the same chain stands at the admission point of all three)",
+        "name": "chained entry, T6.2's four entries (proposed worked instances; TARGET T6.2 names a human, an event, a schedule and an external system or agent, and the same chain stands at the admission point of all four)",
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:xc:enforcement-chain:entry:0.1",
           "title": "ChainedEntry",
           "type": "object",
-          "description": "Proposed. The minimum a caller supplies is the entry envelope cap-consumption already fixes; the chain is applied to it and there is nothing to add, set or request. What comes back is one result or one problem object. These three are the same envelope entering by three doors and traversing the same six slots.",
+          "description": "Proposed. The minimum a caller supplies is the entry envelope cap-consumption already fixes; the chain is applied to it and there is nothing to add, set or request. What comes back is one result or one problem object. These four are the same envelope entering by all four of TARGET T6.2's doors and traversing the same six slots. The event and schedule rows are not interchangeable: the reference example this repo follows states that an internal event steers work that already exists and never starts it, while a schedule entry starts root work of its own (REF-3-4-10, REF-3-4-15) - so the event row below carries a correlation the run already had, and the schedule row opens a new one.",
           "examples": [
             {
               "entry": { "kind": "human", "actor": { "subject": "user:corey" }, "correlation": { "run_id": "run-h-0001", "root_dispatch_id": "disp-h-0001" } },
@@ -129,17 +129,22 @@
               "chain": { "point": "admission", "unit_id": "disp-a-0001", "slots_run": 6, "refused_at": null }
             },
             {
-              "entry": { "kind": "event", "actor": { "subject": "service:alerting" }, "correlation": { "run_id": "run-e-0001", "root_dispatch_id": "disp-e-0001" } },
+              "entry": { "kind": "event", "actor": { "subject": "service:alerting" }, "correlation": { "run_id": "run-e-0001", "root_dispatch_id": "disp-e-0001" }, "note": "steers a live run; admitted only against a correlation that already exists" },
               "chain": { "point": "admission", "unit_id": "disp-e-0001", "slots_run": 6, "refused_at": null }
+            },
+            {
+              "entry": { "kind": "schedule", "actor": { "subject": "schedule:nightly-fault-sweep" }, "correlation": { "run_id": "run-s-0001", "root_dispatch_id": "disp-s-0001" }, "note": "starts a new root run under the schedule's own standing allocation, not a caller's" },
+              "chain": { "point": "admission", "unit_id": "disp-s-0001", "slots_run": 6, "refused_at": null }
             }
           ]
         },
         "origin": "proposed",
         "sources": [
-          "T-t1-01",
-          "T-t1-02",
-          "T-t1-03"
-        ]
+          "T-t6-02",
+          "REF-3-4-10",
+          "REF-3-4-15"
+        ],
+        "quote": "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent."
       },
       {
         "name": "worked refusal at the call point (proposed instance; the type is the registered budget-exhausted row of the closed registry in docs/decomposition.md section 2.1.6, and cap-errors owns the object)",
@@ -347,15 +352,15 @@
     },
     {
       "step": 7,
-      "action": "Wire the identical chain on each of TARGET T1's three ways in - a human, an agent, and an internal or external event - and prove it by replaying one corpus through each door and asserting the same slot order, the same inverses and zero ungated metered calls for all three.",
-      "why": "A guarantee wired only on the path someone remembered is declined by choosing another door, and entry is where doors multiply. Replaying one corpus through each is what turns 'whichever entry point was used' into a number.",
+      "action": "Wire the identical chain on each of TARGET T6.2's four entries - a human, an event, a schedule and an external system or agent - and prove it by replaying one corpus through each door and asserting the same slot order, the same inverses and zero ungated metered calls for all four. A schedule entry starts a new root run under its own standing allocation; an event entry only steers a run that already exists and is admitted just where a correlation for it is already open (REF-3-4-10, REF-3-4-15).",
+      "why": "A guarantee wired only on the path someone remembered is declined by choosing another door, and entry is where doors multiply. Replaying one corpus through each of the four is what turns 'whichever entry point was used' into a number, and treating schedule as a fourth alias of T1's three ways in would leave the one door that mints its own root work unchecked.",
       "origin": "sourced",
       "sources": [
-        "T-t1-01",
-        "T-t1-02",
-        "T-t1-03"
+        "T-t6-02",
+        "REF-3-4-10",
+        "REF-3-4-15"
       ],
-      "quote": "1. A human must be able to enter the system."
+      "quote": "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent."
     },
     {
       "step": 8,
@@ -446,10 +451,10 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "The manifest row for this piece, made precise: `python3 tools/conformance/enforcement_chain.py --corpus out/units.jsonl --points admission,dispatch,call --ways-in human,agent,event --min-units 100 --report out/chain.json` (proposed tool, built with the first chained point). Reading a pinned state head, for every unit and every point it crossed it asserts that a chain context exists, that all six declared slots appear with strictly increasing `seq` in the declared order, that each slot's inverse appears on exit with `inverse_seq` in the reverse of that order including on units that failed, and that no metered call has a start sequence earlier than the last entry slot of its point. It reports `units_checked`, `ways_in`, `points_covered`, `metered_units`, `slots_missing`, `out_of_order`, `missing_inverse` and `ungated_metered_calls`, and asserts `units_checked >= 100`, `metered_units > 0`, all three ways in covered, all three points covered, and `slots_missing == out_of_order == missing_inverse == ungated_metered_calls == 0`.",
-    "expected": "exit 0 and one summary line `units_checked=100 ways_in=human,agent,event points=admission,dispatch,call metered_units=<m> slots_missing=0 out_of_order=0 missing_inverse=0 ungated_metered_calls=0`, with `metered_units` greater than zero so the ordering assertion had something to order against.",
-    "breakage": "Activate a policy bundle that denies everything and replay the same corpus through all three ways in, changing nothing else: every unit must now be refused at the `policy.decide` slot of the first point it reaches, with `metered_units == 0` and a refusal recorded for every way in.",
-    "expected_failure": "exit 1 naming any way in that still produced a completed unit or a non-zero metered call under deny-all - that path is reaching work without traversing the chain - while `slots_missing`, `out_of_order` and `missing_inverse` stay 0 and `units_checked` stays at or above 100, which shows the corpus was still read and the assertion still ran rather than the run having gone empty.",
+    "criterion": "The manifest row for this piece, made precise: `python3 tools/conformance/enforcement_chain.py --corpus out/units.jsonl --points admission,dispatch,call --ways-in human,event,schedule,external --min-units 100 --report out/chain.json` (proposed tool, built with the first chained point). Reading a pinned state head, for every unit and every point it crossed it asserts that a chain context exists, that all six declared slots appear with strictly increasing `seq` in the declared order, that each slot's inverse appears on exit with `inverse_seq` in the reverse of that order including on units that failed, and that no metered call has a start sequence earlier than the last entry slot of its point. It reports `units_checked`, `ways_in`, `points_covered`, `metered_units`, `slots_missing`, `out_of_order`, `missing_inverse` and `ungated_metered_calls`, and asserts `units_checked >= 100`, `metered_units > 0`, all four of TARGET T6.2's entries covered (human, event, schedule, external), that every schedule-entered unit started a new root run rather than steering an existing one and every event-entered unit steered an existing correlation rather than starting one, all three points covered, and `slots_missing == out_of_order == missing_inverse == ungated_metered_calls == 0`.",
+    "expected": "exit 0 and one summary line `units_checked=100 ways_in=human,event,schedule,external points=admission,dispatch,call metered_units=<m> slots_missing=0 out_of_order=0 missing_inverse=0 ungated_metered_calls=0`, with `metered_units` greater than zero so the ordering assertion had something to order against.",
+    "breakage": "Activate a policy bundle that denies everything and replay the same corpus through all four entries, changing nothing else: every unit must now be refused at the `policy.decide` slot of the first point it reaches, with `metered_units == 0` and a refusal recorded for every entry.",
+    "expected_failure": "exit 1 naming any entry that still produced a completed unit or a non-zero metered call under deny-all - that path is reaching work without traversing the chain - while `slots_missing`, `out_of_order` and `missing_inverse` stay 0 and `units_checked` stays at or above 100, which shows the corpus was still read and the assertion still ran rather than the run having gone empty.",
     "status": "claimed",
     "sources": [
       "F-part-c-04",
@@ -473,7 +478,11 @@
     ],
     "used_by": [
       "xc-enforcement-chain-implement",
-      "xc-tenancy"
+      "xc-tenancy",
+      "xc-compensation",
+      "xc-audit-trail",
+      "xc-audit-trail-implement",
+      "build-entry-conformance"
     ]
   },
   "open_questions": [

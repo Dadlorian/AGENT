@@ -72,7 +72,7 @@
           "properties": {
             "adapter": { "type": "string", "description": "The entity id of the implementation under test." },
             "adapter_observed": { "type": "string", "description": "Read from the refusal that came back, never from the binding that selected the implementation." },
-            "ways_in": { "type": "array", "items": { "enum": ["human", "agent", "event"] } },
+            "ways_in": { "type": "array", "items": { "enum": ["human", "event", "schedule", "external"] }, "description": "TARGET T6.2's four entries, not T1's three ways in: schedule starts a new root run and event only steers an existing one." },
             "points_covered": { "type": "array", "items": { "enum": ["admission", "dispatch", "call"] } },
             "units_checked": { "type": "integer", "minimum": 0 },
             "metered_units": { "type": "integer", "minimum": 0 },
@@ -225,7 +225,7 @@
     },
     {
       "step": 8,
-      "action": "Run the definition of done below over both implementations and each of TARGET T1's three ways in, then run its breakage, and record both outputs as evidence records naming the script hash, the commit, the tree hash under test and whether the tree was dirty.",
+      "action": "Run the definition of done below over both implementations and each of TARGET T6.2's four entries, then run its breakage, and record both outputs as evidence records naming the script hash, the commit, the tree hash under test and whether the tree was dirty.",
       "why": "build-evidence-record fixes what a record contains (F-a5-04); a result from a dirty tree is not reproducible and may not be labelled measured. Running the breakage is what shows the attestation can fail rather than that it merely passed.",
       "origin": "sourced",
       "sources": [
@@ -307,10 +307,10 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "The manifest row for this piece, made precise and run over the implementation pair above: `python3 tools/conformance/enforcement_chain.py --adapter today --adapter second --corpus out/units.jsonl --points admission,dispatch,call --ways-in human,agent,event --min-units 100 --report out/chain-implement.json` (proposed tool, built with the first chained point), the implementation selected by configuration with no code edit between runs. Per implementation it asserts every unit has a chain context at every point it crossed, all six declared slots present with strictly increasing `seq` in declared order, every slot unwound on exit in the reverse order including on failed units, and `adapter_observed` read from the refusal rather than the binding. Across implementations it asserts `adapters_run >= 2`, `units_checked >= 100`, `metered_units > 0`, all three ways in and all three points covered, and `slots_missing == out_of_order == missing_inverse == ungated_metered_calls == chain_context_missing == 0`.",
-    "expected": "exit 0 and one line per implementation of the form `adapter=<entity> ways_in=human,agent,event points=admission,dispatch,call units_checked=100 metered_units=<m> slots_missing=0 out_of_order=0 missing_inverse=0 ungated_metered_calls=0 chain_context_missing=0 slots_noop_by_absent_owner=<n> adapter_observed=<entity>`, followed by `adapters_run=2`, with `metered_units` greater than zero on both so each assertion had something to assert on.",
-    "breakage": "Remove the chain binding from one door only: unbind the event producer's intake path from the admission point, leaving the human and agent doors wired and both implementations otherwise untouched, and replay the same corpus through all three doors.",
-    "expected_failure": "exit 1 with `chain_context_missing` and `ungated_metered_calls` non-zero for `ways_in=event` alone, naming the unit ids that reached work with no context, while the human and agent doors stay at zero on every count, `adapters_run` stays 2 and `units_checked` stays at or above 100 - which is what shows one binding was lost rather than the corpus having gone unread or an implementation having failed to run.",
+    "criterion": "The manifest row for this piece, made precise and run over the implementation pair above: `python3 tools/conformance/enforcement_chain.py --adapter today --adapter second --corpus out/units.jsonl --points admission,dispatch,call --ways-in human,event,schedule,external --min-units 100 --report out/chain-implement.json` (proposed tool, built with the first chained point), the implementation selected by configuration with no code edit between runs. Per implementation it asserts every unit has a chain context at every point it crossed, all six declared slots present with strictly increasing `seq` in declared order, every slot unwound on exit in the reverse order including on failed units, and `adapter_observed` read from the refusal rather than the binding. Across implementations it asserts `adapters_run >= 2`, `units_checked >= 100`, `metered_units > 0`, all four of TARGET T6.2's entries and all three points covered, and `slots_missing == out_of_order == missing_inverse == ungated_metered_calls == chain_context_missing == 0`.",
+    "expected": "exit 0 and one line per implementation of the form `adapter=<entity> ways_in=human,event,schedule,external points=admission,dispatch,call units_checked=100 metered_units=<m> slots_missing=0 out_of_order=0 missing_inverse=0 ungated_metered_calls=0 chain_context_missing=0 slots_noop_by_absent_owner=<n> adapter_observed=<entity>`, followed by `adapters_run=2`, with `metered_units` greater than zero on both so each assertion had something to assert on.",
+    "breakage": "Remove the chain binding from one door only: unbind the event producer's intake path from the admission point, leaving the human, schedule and external doors wired and both implementations otherwise untouched, and replay the same corpus through all four doors.",
+    "expected_failure": "exit 1 with `chain_context_missing` and `ungated_metered_calls` non-zero for `ways_in=event` alone, naming the unit ids that reached work with no context, while the human, schedule and external doors stay at zero on every count, `adapters_run` stays 2 and `units_checked` stays at or above 100 - which is what shows one binding was lost rather than the corpus having gone unread or an implementation having failed to run.",
     "status": "claimed",
     "sources": [
       "F-part-c-04",

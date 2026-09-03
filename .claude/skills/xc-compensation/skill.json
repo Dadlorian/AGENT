@@ -232,7 +232,7 @@
         "quote": "Irreversibility classes must be declared per action"
       },
       {
-        "name": "reaching the guarantee from each of TARGET T1's three ways in (proposed worked instances; minimal inputs and outputs, on the shared entry envelope in examples/end-to-end)",
+        "name": "reaching the guarantee from each of TARGET T6.2's four entries (proposed worked instances; minimal inputs and outputs, on the shared entry envelope in examples/end-to-end)",
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:xc:compensation:ways-in:0.1",
@@ -261,7 +261,7 @@
                 }
               },
               {
-                "way_in": "an agent enters the system",
+                "way_in": "an external system or agent enters the system (T6.2's External door; can start a run or steer one)",
                 "in": {
                   "actor": {
                     "subject": "agent:partner-sre-bot"
@@ -277,7 +277,7 @@
                 }
               },
               {
-                "way_in": "an internal or external event enters the system",
+                "way_in": "an event enters the system (T6.2's Internal door; steers a run that already exists and never starts one - REF-3-4-10, REF-3-4-15)",
                 "in": {
                   "actor": {
                     "subject": "service:alerting"
@@ -296,7 +296,7 @@
                 }
               },
               {
-                "way_in": "a recurrence fires (the fourth entry of the consumption reference, same shape)",
+                "way_in": "a schedule fires (T6.2's Time door; starts a new root run under its own standing allocation and never steers - REF-3-4-10)",
                 "in": {
                   "actor": {
                     "subject": "schedule:nightly-fault-sweep"
@@ -315,12 +315,11 @@
         },
         "origin": "proposed",
         "sources": [
-          "T-t1-01",
-          "T-t1-02",
-          "T-t1-03",
-          "T-t6-02"
+          "T-t6-02",
+          "REF-3-4-10",
+          "REF-3-4-15"
         ],
-        "quote": "Four entries cover nearly every situation"
+        "quote": "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent."
       },
       {
         "name": "the refusals this guarantee returns (proposed worked instances; cap-errors owns the object and the closed registry)",
@@ -454,7 +453,7 @@
         "quote": "In orchestration, a single orchestrator manages the transaction flow, invoking services and handling compensations when needed."
       },
       {
-        "text": "The guarantee is applied by the platform at the dispatch boundary and again at every step boundary, never requested by a caller: agentic-stack states rule 7 as a test (F-b1-08), and the consequence here is that there is no argument, flag or handler a caller supplies to obtain unwinding and none to opt out of declaring a class.",
+        "text": "xc-enforcement-chain names the dispatch point and its own slots as the one place every unit crosses before a call proceeds. This guarantee's declare_effect binds at that same dispatch point and again at the step boundary beneath it - not as a seventh slot of the chain, but as a check riding alongside `budget.reserve` and `idempotency.claim` at the same crossing - so there is no argument, flag or handler a caller supplies to obtain unwinding and none to opt out of declaring a class.",
         "origin": "sourced",
         "sources": [
           "F-b1-08",
@@ -589,15 +588,13 @@
     },
     {
       "step": 9,
-      "action": "Prove the guarantee cannot be declined by replaying one corpus through each of TARGET T1's three ways in, killing a run mid-effect in each, and asserting that every committed effect has an earlier compensation record and that every abandoned run either replayed or compensated every record it committed.",
-      "why": "A guarantee wired on the path someone remembered is declinable by choosing another door, which is why xc-idempotency-lease replays a corpus through the same three ways in for the lease, and an unwind that is never exercised is a code path nobody has run. Counting the compensations that actually executed is what turns cannot be declined into a number.",
+      "action": "Prove the guarantee cannot be declined by replaying one corpus through each of TARGET T6.2's four entries - human, event, schedule and external - killing a run mid-effect in each, and asserting that every committed effect has an earlier compensation record and that every abandoned run either replayed or compensated every record it committed. A schedule-entered run starts root work of its own and must be killed mid-effect on its own right, not folded into the event case that only steers.",
+      "why": "A guarantee wired on the path someone remembered is declinable by choosing another door, and entry is where doors multiply from T1's three ways in to T6.2's four; an unwind that is never exercised is a code path nobody has run. Counting the compensations that actually executed on all four is what turns cannot be declined into a number rather than a number for three of them.",
       "origin": "sourced",
       "sources": [
-        "T-t1-01",
-        "T-t1-02",
-        "T-t1-03"
+        "T-t6-02"
       ],
-      "quote": "An internal or external event must be able to enter the system."
+      "quote": "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent."
     },
     {
       "step": 10,
@@ -660,8 +657,8 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "Proposed tool, built with the first implementation of this placement (docs/decomposition.md section 3.4 has no compensation row; the open question below records the row this would add): `python3 tools/conformance/compensation.py --entries examples/end-to-end/entries --corpus out/effects.jsonl --kill-mid-effect 0.25 --report out/compensation.json`. Over a corpus replayed through each of TARGET T1's three ways in it asserts that every committed effect has a compensation record durable at a strictly earlier head, that every effect-committing step submitted without an irreversibility class was refused with the registered `document-invalid` rather than admitted, that every step classed irreversible carries a mandate reference, and that every run killed mid-effect either replayed the sealed response or ran the declared compensating action for each record it had committed. It reports `effects_checked`, `undeclared_class_admitted`, `records_after_effect`, `irreversible_without_mandate`, `runs_killed`, `replayed`, `compensated`, `unwind_failed` and `ways_in_covered`, and asserts `effects_checked > 0`, `undeclared_class_admitted == 0`, `records_after_effect == 0`, `irreversible_without_mandate == 0`, `runs_killed > 0`, `replayed + compensated == effects committed by killed runs`, `unwind_failed == 0` and `ways_in_covered == 3`.",
-    "expected": "exit 0 and one summary line `effects_checked=<n> undeclared_class_admitted=0 records_after_effect=0 irreversible_without_mandate=0 runs_killed=<k> replayed=<r> compensated=<c> unwind_failed=0 ways_in_covered=3`, with `k` greater than zero and `r + c` equal to the number of effects the killed runs had committed, so the unwind assertion had something to assert on.",
+    "criterion": "Proposed tool, built with the first implementation of this placement (docs/decomposition.md section 3.4 has no compensation row; the open question below records the row this would add): `python3 tools/conformance/compensation.py --entries examples/end-to-end/entries --corpus out/effects.jsonl --kill-mid-effect 0.25 --report out/compensation.json`. Over a corpus replayed through each of TARGET T6.2's four entries - human, event, schedule, external - it asserts that every committed effect has a compensation record durable at a strictly earlier head, that every effect-committing step submitted without an irreversibility class was refused with the registered `document-invalid` rather than admitted, that every step classed irreversible carries a mandate reference, and that every run killed mid-effect either replayed the sealed response or ran the declared compensating action for each record it had committed. It reports `effects_checked`, `undeclared_class_admitted`, `records_after_effect`, `irreversible_without_mandate`, `runs_killed`, `replayed`, `compensated`, `unwind_failed` and `ways_in_covered`, and asserts `effects_checked > 0`, `undeclared_class_admitted == 0`, `records_after_effect == 0`, `irreversible_without_mandate == 0`, `runs_killed > 0`, `replayed + compensated == effects committed by killed runs`, `unwind_failed == 0` and `ways_in_covered == 4`.",
+    "expected": "exit 0 and one summary line `effects_checked=<n> undeclared_class_admitted=0 records_after_effect=0 irreversible_without_mandate=0 runs_killed=<k> replayed=<r> compensated=<c> unwind_failed=0 ways_in_covered=4`, with `k` greater than zero and `r + c` equal to the number of effects the killed runs had committed, so the unwind assertion had something to assert on.",
     "breakage": "Let an absent irreversibility class default to reversible instead of refusing the document: leave the class optional in the declaration and treat a missing value as reversible everywhere else, and re-run the same command.",
     "expected_failure": "exit non-zero with `undeclared_class_admitted` equal to the number of effect-committing steps that declared no class, and `replayed + compensated` short of the effects the killed runs committed by exactly those steps, because an effect silently classed reversible has no compensating action to run and no mandate gate in front of it, while `effects_checked` holds its value and `ways_in_covered` stays 3 - which is what shows the failure is the default rather than a corpus that was never replayed. Claimed: nothing declares an irreversibility class today and this tool is not written, so neither run has been performed here.",
     "status": "claimed",
@@ -682,7 +679,8 @@
       "cap-durable-execution",
       "cap-idempotency",
       "xc-idempotency-lease",
-      "seam-dispatch"
+      "seam-dispatch",
+      "xc-enforcement-chain"
     ],
     "used_by": [
       "xc-compensation-implement"

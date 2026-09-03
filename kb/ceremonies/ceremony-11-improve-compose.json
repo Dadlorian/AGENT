@@ -1,0 +1,69 @@
+{
+  "ceremony": 11,
+  "section": "compose",
+  "improver": "sonnet-improver (fan-out improver, group compose)",
+  "date": "2026-09-03",
+  "numbering_note": "Paired with kb/ceremonies/ceremony-11-review-compose.json (ceremony 11, shared across the three parallel fan-out groups this section: compose, xc, and the group improving compose-agent/compose-improvement-loop/xc-tenancy). `ls kb/ceremonies/ceremony-*-review.json` at the time of writing shows ceremony-01 through ceremony-10 closed plus ceremony-11-review-compose.json and ceremony-11-review-xc.json already on disk; this improve record takes the same 11, matching its review by content rather than by filename suffix.",
+  "applied": [
+    {
+      "finding": "C11C-001",
+      "change": "compose-operators' approval operator now carries compose-approval's full four-outcome vocabulary instead of a silently narrower three: the step schema's approval $defs (both in skill.json's contract.shapes and in references/operator-shapes.md) gained return_with_notes to the decisions enum and a return_to_step_id property (required when return_with_notes is declared), matching compose-approval's ApprovalGate.outcomes and ApprovalGate.return_to_step_id field-for-field. Since composes_with may not be edited and compose-approval is not in compose-operators' builds_on, the mapping is stated explicitly instead of by link: a new invariant names compose-approval by name, states decisions is the caller-facing narrowing of ApprovalGate.outcomes, and states that fields the operator does not carry (decider, deadline_at, response_schema) resolve from the platform default per the resolved_default precedence invariant. The running example was updated to match: examples/end-to-end/schemas/workflow.schema.json's approval $defs gained the same enum value and optional return_to_step_id, and examples/end-to-end/workflows/triage-and-fix.json's ship-approval step now declares all four decisions with return_to_step_id: \"brief\". bash examples/end-to-end/test.sh was re-run after both changes: passed 29, failed 0, unchanged from before the fix.",
+      "files": [
+        ".claude/skills/compose-operators/skill.json",
+        ".claude/skills/compose-operators/references/operator-shapes.md",
+        "examples/end-to-end/schemas/workflow.schema.json",
+        "examples/end-to-end/workflows/triage-and-fix.json"
+      ]
+    },
+    {
+      "finding": "C11C-002",
+      "change": "compose-operators' termination shape now reuses compose-loop's LoopOutcome.terminated_by vocabulary by name instead of re-deriving a disagreeing one: reason's exit_verdict was renamed to verdict_pass (compose-loop's own name for the same event) and the redundant bare cap value was dropped, since iteration_ceiling and budget_ceiling already are the two cap reasons; a description now states which three reason values are compose-loop's own, named identically, and which two (tolerate_exceeded, approval_rejected) are this operator set's own that compose-loop never emits. The outcome enum's third member (failure) is now explained as applying only to those two operator-only reasons, so a loop nested inside a composition still only ever reports success or escalated, exactly as compose-loop's own two-way stop/cap split requires. The loop-bounded and stop/cap invariants were merged into one (both already said the same thing about compose-loop's vocabulary) and now name compose-loop's termination_class invariant explicitly by sentence, keeping the invariant count within compose-operators' 3-to-10 checked budget after the merge.",
+      "files": [
+        ".claude/skills/compose-operators/skill.json"
+      ]
+    },
+    {
+      "finding": "C11C-003",
+      "change": "compose-operators' resolved-default shape gained a non_conformant boolean field alongside override, defaulting to false and set true whenever override is true, so REF-3-2-11's rule that an override is 'legal, logged, and tagged non-conformant' now has somewhere for the tag to be written; previously the schema only captured that an override happened, not that it was marked as one.",
+      "files": [
+        ".claude/skills/compose-operators/skill.json"
+      ]
+    },
+    {
+      "finding": "review brief_improvements[0]",
+      "change": "Applied as defect item 18 in state/author-brief.md: when two skills at the same layer independently embed one concept with no builds_on link between them, the manifest-symmetry check cannot catch the drift, so the fix is to reuse the owning skill's field names and enum values verbatim and name it in prose regardless of builds_on - compose-operators's termination and approval shapes are the worked (until-now-broken) case. Headers retitled to ceremonies 1-11 and 'waves 1 to 5 and the wave-7 compose ceremony'; the compose ceremony's ~60-id quote spot-check and its re-run of compose-operators' claimed measurement were folded into the existing what-worked bullets; items 2, 7, 9, 12, 13, 14 and 16 were rewrapped (no claim shortened) to hold the brief at 119 lines under the 120-line cap.",
+      "files": [
+        "state/author-brief.md"
+      ]
+    }
+  ],
+  "declined": [],
+  "metrics_after": {
+    "skills_checked": 6,
+    "validator_errors": 0,
+    "validator_warnings": 0,
+    "warnings_naming_compose_skills": 0,
+    "findings_applied": 4,
+    "findings_declined": 0,
+    "skills_edited": 1,
+    "example_files_edited": 2,
+    "test_sh_before": "passed 29, failed 0 (unchanged by the fix)",
+    "test_sh_after": "passed 29, failed 0"
+  },
+  "lessons_for_next_section": [
+    "Two skills at the same layer can each independently derive the same concept's vocabulary when neither is in the other's builds_on, and the manifest-symmetry check cannot see it because there is no link to check; compose by name in an invariant when compose by builds_on edge is not available (composes_with is out of a ceremony improver's reach by design).",
+    "The example workflow is measured evidence, not documentation: a schema-vocabulary fix that does not reach examples/end-to-end/workflows/triage-and-fix.json and its schema leaves the one file the definition of done treats as ground truth still carrying the old, disagreeing vocabulary. bash examples/end-to-end/test.sh is the check that such a fix did not regress the reference example (passed 29, failed 0, both before and after).",
+    "An invariant count sitting exactly at the checked-budget ceiling has no room for a needed addition without a merge; two topically adjacent invariants merged into one without losing either citation, the same move wave-3c used for instruction-table overruns.",
+    "A nit's fix can be a single added schema field: when a sourced sentence ties two clauses together ('legal, logged, and tagged non-conformant'), a schema that only captures the first clause is narrower than the rule it cites even though the quote itself is accurate - add the field, don't just reword the description.",
+    "A size-capped shared file (state/author-brief.md) reached at its cap needs rewrapping, not shortening, to free room for a genuinely new item: five unrelated items were rewrapped without changing any claim, and rewrapping only frees a line when an embedded newline is actually removed, not merely when text is reworded."
+  ],
+  "provenance": {
+    "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+    "kb_heads": {
+      "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+      "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6"
+    },
+    "author": "session 2831cb4f (improver, group compose)"
+  }
+}

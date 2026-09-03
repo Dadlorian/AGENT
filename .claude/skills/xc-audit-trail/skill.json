@@ -252,6 +252,13 @@
               "type": "integer",
               "minimum": 0
             },
+            "entry_kinds_seen": {
+              "type": "array",
+              "items": {
+                "enum": ["user", "agent", "service", "schedule"]
+              },
+              "description": "TARGET T6.2's four entries as the identity capability spells the actor prefix, not T1's three ways in: a window with no schedule-originated entry has not been checked over a door that starts root work."
+            },
             "independent": {
               "type": "boolean",
               "description": "Read from the identity and credentials the scan actually ran under, never from the configuration that selected them."
@@ -312,7 +319,7 @@
         ]
       },
       {
-        "text": "agentic-stack states design rule 7: telemetry, policy, provenance and budget are applied by the platform, not requested by the caller. Its consequence here is that there is no audit call, no audit flag and no exempt list: the trail is derived from the ledger, identity, provenance and correlation records the platform already writes, so a caller cannot fail to log, and cannot choose not to.",
+        "text": "agentic-stack states design rule 7: telemetry, policy, provenance and budget are applied by the platform, not requested by the caller. xc-enforcement-chain names the structure that carries this at admission, dispatch and call: an entry has no field for an audit call, an audit flag or an exempt list because there is no field for a bypass of any slot at all. This guarantee's consequence is narrower and specific - the trail is a projection over what four of those six slots already wrote (`identity.resolve` for the actor and delegation chain, `policy.decide` for the outcome, `provenance.open` for the sealed head, `telemetry.open` for the correlation triple), never a second logging call bolted beside them.",
         "origin": "sourced",
         "sources": [
           "F-b1-08",
@@ -534,8 +541,8 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "Proposed tool, built with the first implementation of this guarantee: `python3 tools/conformance_audit_trail.py --trail <trail> --from-head <h0> --to-head <h1> --min-entries 100 --retention-floor-days 180 --external-verifier <third-party in-toto/DSSE verifier> --report out/audit-trail.json`. It reads every entry in the window, and asserts `entries_checked >= 100`, `actors_missing == 0`, `correlation_missing == 0`, `chain_breaks == 0`, `consistency_proofs_checked >= 1`, `external_verifications > 0` with our own reader unavailable, `oldest_retained_entry_age_days >= 180`, that `entry_kinds_seen` contains all three of TARGET T1's ways in, and that `independent` and `scheduled` were read from what the scan actually ran under.",
-    "expected": "exit 0 and one summary line `entries_checked=100 actors_missing=0 correlation_missing=0 chain_breaks=0 consistency_proofs_checked=1 external_verifications=1 oldest_retained_entry_age_days=180 entry_kinds_seen=user,agent,service independent=true scheduled=true`.",
+    "criterion": "Proposed tool, built with the first implementation of this guarantee: `python3 tools/conformance_audit_trail.py --trail <trail> --from-head <h0> --to-head <h1> --min-entries 100 --retention-floor-days 180 --external-verifier <third-party in-toto/DSSE verifier> --report out/audit-trail.json`. It reads every entry in the window, and asserts `entries_checked >= 100`, `actors_missing == 0`, `correlation_missing == 0`, `chain_breaks == 0`, `consistency_proofs_checked >= 1`, `external_verifications > 0` with our own reader unavailable, `oldest_retained_entry_age_days >= 180`, that `entry_kinds_seen` contains all four of TARGET T6.2's entries (user, agent, service and schedule, the identity capability's spelling of human, external, event and schedule), and that `independent` and `scheduled` were read from what the scan actually ran under. A window with no `schedule` entry has not exercised the one door that starts root work rather than steering it, and the assertion fails on that gap rather than passing over T1's narrower three.",
+    "expected": "exit 0 and one summary line `entries_checked=100 actors_missing=0 correlation_missing=0 chain_breaks=0 consistency_proofs_checked=1 external_verifications=1 oldest_retained_entry_age_days=180 entry_kinds_seen=user,agent,service,schedule independent=true scheduled=true`.",
     "breakage": "Flip one byte inside a historical entry that the window covers - one character of an actor name is enough - leave every other entry untouched, and let the monitor reach its next scheduled run.",
     "expected_failure": "`chain_breaks` becomes 1, the scan names the entry whose chain digest no longer verifies, exits non-zero and emits the typed problem document, while `entries_checked` stays at or above 100 and `actors_missing` stays 0 - which is what shows the failure is the altered record rather than a window that was never read. Claimed: no audit entry, monitor, schedule or conformance tool exists on this stack today. The nearest analogue that does run here was measured separately over this repository's own chained run ledger and is recorded in the adapter row of xc-audit-trail-implement.",
     "status": "claimed",
@@ -557,7 +564,8 @@
       "cap-scheduling",
       "core-ledger",
       "xc-provenance-chain",
-      "seam-state"
+      "seam-state",
+      "xc-enforcement-chain"
     ],
     "used_by": [
       "xc-audit-trail-implement"

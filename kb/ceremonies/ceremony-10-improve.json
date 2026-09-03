@@ -1,0 +1,103 @@
+{
+  "ceremony": 10,
+  "section": "wave-5",
+  "improver": "opus-improver",
+  "date": "2026-09-03",
+  "numbering_note": "Requested as ceremony 2 for section wave-5; ceremony 2 is closed for wave-1a. `ls kb/ceremonies/ceremony-*-review.json` was run before anything was written and shows ceremony-01 through ceremony-10 on disk, ceremony-10-review.json being this section's review (the reviewer had already renumbered the same way). Per the repo-global rule (state/author-brief.md defect item 7, build-ceremony) this improve record takes 10, the number of the review just written for wave-5. Ninth stale hint in a row: the loop passes the number as an argument and a running workflow executes the code it was launched with, so the durable fix stays in the brief, which every agent reads fresh from disk.",
+  "applied": [
+    {
+      "finding": "C10-001",
+      "change": "The three -implement facets whose deliberate breakage repeated their ideal facet's word for word now break something the build owns, so each pair demonstrates two failure modes instead of one twice. core-planner-implement: instead of repeating the planner's pricing-call violation, one binding's loader resolves the head itself at call time with a record appended between the two bindings' runs, so every per-binding assertion stays green (identical=yes, connects_inet=0, criterion_leaks=0) and only plan_digest_mismatches moves, isolating the fault to that binding's wiring. seam-state-implement: instead of repeating the unpinned-projection breakage, one migration stage copies a record without its predecessor link, so distinct_results_per_projection stays [1,...] while the external verifier fails and the equal-sealed_head_digest assertion fails - the mirror of the ideal facet's isolation. cap-evaluation-implement: instead of repeating the regression in the unit under test, the gate derives status from the tool's exit code alone, so both bindings still report outcome=passed and only the zero-case gate run fails, which is the structurally-green pipeline F-a7-03 records and the fault the gate itself owns. Criteria and expected outputs are unchanged; all three remain status=claimed.",
+      "files": [
+        ".claude/skills/core-planner-implement/skill.json",
+        ".claude/skills/core-planner-implement/SKILL.md",
+        ".claude/skills/seam-state-implement/skill.json",
+        ".claude/skills/seam-state-implement/SKILL.md",
+        ".claude/skills/cap-evaluation-implement/skill.json",
+        ".claude/skills/cap-evaluation-implement/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C10-001 (sweep beyond the reviewed wave)",
+      "change": "A scripted comparison of all 35 ideal/-implement pairs found the same defect outside wave-5: xc-budget-implement's breakage was byte-identical to xc-budget's ('make budget optional in the dispatch request schema'). It now breaks the delegation wiring at one enforcement point only - a child run opening its own ceiling instead of drawing from the root's - so unbounded stays 0 at both points (no ceiling left the envelope) and only the one-root and overshoot assertions move, at one point. xc-policy-gate-implement was examined and left alone: it applies the same fault as its ideal facet but at the dispatch-path placement only, and its expected_failure isolates one placement, which is a genuine second failure mode rather than a copy.",
+      "files": [
+        ".claude/skills/xc-budget-implement/skill.json",
+        ".claude/skills/xc-budget-implement/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C10-001 (root cause, the producing discipline)",
+      "change": "build-definition-of-done gained an eighth best practice (origin proposed, F-part-c-04): an ideal facet and its -implement facet each get a breakage that fails for a different reason - the ideal facet's contract violation, the implement facet's wiring, migration stage, binding or gate - because a breakage copied word for word re-proves the check the other facet already proved and leaves the build unexercised. The skill that teaches the discipline now states the rule the wave broke.",
+      "files": [
+        ".claude/skills/build-definition-of-done/skill.json",
+        ".claude/skills/build-definition-of-done/SKILL.md"
+      ]
+    },
+    {
+      "finding": "C10-001 (root cause, checking discipline)",
+      "change": "tools/validate_skills.py now warns when an -implement facet's definition_of_done breakage is byte-identical to its ideal facet's after normalising case and punctuation, or is wholly contained in it. The threshold is deliberately an outright copy and not a similarity score: a difflib ratio over the 35 pairs puts fifteen of them above 0.9, including legitimately escalated pairs like xc-policy-gate-implement, so a fuzzy check would have demanded rewrites across eight closed sections on a nit finding and mislabelled correct work. The strict check flagged exactly the two identical pairs (core-planner, xc-budget) and the two contained ones (seam-state, cap-evaluation, via containment or copy), and reports nothing after the fixes above. The module docstring records it as ceremony 10, C10-001.",
+      "files": [
+        "tools/validate_skills.py"
+      ]
+    },
+    {
+      "finding": "C10-002",
+      "change": "No skill edit, as the reviewer asked. state/loop.json now records that ceremony 10 reviewed all eight skills of this batch - the four ideal facets tagged wave 5 in docs/skill-manifest.json and the four -implement facets tagged wave 6 - so a section literally named 'wave-6' must not re-queue core-planner-implement, seam-dispatch-implement, seam-state-implement or cap-evaluation-implement for review. The manifest is not edited: the manifest governs links and wave order, and the wave numbers there match every skill.json exactly.",
+      "files": [
+        "state/loop.json"
+      ]
+    },
+    {
+      "finding": "C10-001 (author brief)",
+      "change": "state/author-brief.md gained defect item 17: an -implement facet's breakage breaks something the build owns - the wiring, one migration stage, a binding, the gate - never a repeat of its ideal facet's contract violation, with seam-dispatch/-implement named as the worked pair and a note that the check warns on an outright copy. Headers moved to ceremonies 1-10 and waves 1 to 5, wave 5's quote-verification result was folded into the existing quote bullet, and items 4, 7, 13, 14 and 16 were reflowed without changing what any of them asks for, holding the brief at 119 lines against the 120-line pointer budget.",
+      "files": [
+        "state/author-brief.md"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "finding": "C10-001, the reviewer's framing that no edit was required",
+      "reason": "The reviewer recorded C10-001 as a nit and wrote 'not a required edit to this wave', recommending only a second look next time. That half was declined and the finding applied instead: the ceremony exists so the producing skills improve, and a pair whose two breakages are the same edit gives a reader one failure mode where the record claims two. The escalation the implement criteria already perform (the same criterion run across concrete bindings) is real and was kept - only the breakage changed, so no criterion, expected output or status was touched."
+    },
+    {
+      "finding": "C10-001, a similarity-threshold check",
+      "reason": "Declined in favour of the strict copy check. difflib ratios over the 35 pairs are 1.00 for xc-budget and core-planner but 0.96 for xc-provenance-chain, 0.95 for cap-state-persistence and 0.92 for cap-telemetry, with no gap that separates copies from legitimate escalations; any threshold that caught cap-evaluation would have flagged roughly fifteen pairs across eight closed sections and reported xc-policy-gate-implement, which is correct, as a defect. 1-3-1 recorded in state/lessons.jsonl."
+    },
+    {
+      "finding": "C10-002, editing docs/skill-manifest.json",
+      "reason": "The reviewer explicitly asked for no skill edit, and the author brief tells authors to report manifest inconsistencies rather than edit them. The manifest is internally consistent - every skill.json wave matches it - so the note belongs in state/loop.json, where the next section boundary is decided."
+    },
+    {
+      "finding": "review brief_improvements[0]",
+      "reason": "The reviewer proposed no brief change. Partly declined: item 17 was added, because C10-001 turned out to be a repeated pattern rather than a one-off - the same defect was present in five of the 35 ideal/-implement pairs, in four different waves - and a rule that changes what an author writes on their next definition of done is exactly what the brief is for."
+    }
+  ],
+  "brief_changes": [
+    "Added defect item 17 on -implement breakages, naming seam-dispatch/-implement as the worked pair rather than restating the rule twice.",
+    "Updated the defect header to ceremonies 1-10 and the what-worked header to waves 1 to 5, and folded wave 5's spot-check result (~60 ids verified, no invented problem types since 4b) into the existing quote bullet instead of adding one.",
+    "Reflowed items 4, 7, 13, 14 and 16 without changing what any asks for, to hold the brief at 119 lines against the 120-line pointer budget."
+  ],
+  "metrics_after": {
+    "skills_checked": 81,
+    "validator_errors": 0,
+    "validator_warnings": 56,
+    "warnings_naming_wave_5_skills": 0,
+    "findings_applied": 6,
+    "findings_declined": 4,
+    "skills_edited": 5,
+    "tools_edited": 1,
+    "breakage_copy_pairs_before": 4,
+    "breakage_copy_pairs_after": 0,
+    "kb_verify": "chains intact, source hash matches, rebuild identical",
+    "ledger_verify": "chain intact"
+  },
+  "lessons_for_next_section": [
+    "A nit that appears in five of 35 comparable pairs is not a nit, it is a pattern with a small sample in front of it. Before accepting a reviewer's 'not required here', count the same shape across the repo; the count decides whether it is a wave fix or a brief rule.",
+    "Make a new check strict enough to be cleared by truth. A similarity score over definitions of done would have flagged fifteen pairs across eight closed sections and called a correct escalation a defect; the byte-identical-after-normalisation rule flagged exactly the copies and went quiet once they were fixed.",
+    "An -implement facet inherits its ideal facet's criterion legitimately, but never its breakage: the criterion is the same property checked over concrete bindings, while the breakage is where the two facets have to differ, because the build owns faults the contract cannot express - wiring, migration stages, bindings, gates.",
+    "The strongest breakage is the one whose expected_failure names what stays green. Every fix in this ceremony was written so that the untouched assertions hold and exactly one counter moves; that is what tells a reader a year later that the harness worked and the fault was real.",
+    "Ninth stale ceremony number in a row. Numbering from `ls kb/ceremonies/` costs one command and is the only step that keeps review, improve, lessons, ledger and known-issues tied to the same N.",
+    "Reading the review's what_worked list before the findings paid off: it named seam-dispatch-implement as the pair that got the breakage right, which supplied the worked example for both the fix and the brief item, so the rule ships with an instance instead of an assertion."
+  ]
+}

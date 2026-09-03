@@ -1,0 +1,50 @@
+{
+  "ceremony": 5,
+  "section": "wave-3b",
+  "reviewer": "sonnet",
+  "date": "2026-09-03",
+  "numbering_note": "Requested as ceremony 4, but ceremony 4 is closed for section wave-3a (kb/ceremonies/ceremony-04-review.json and -improve.json, ledger L-00007). Per the repo-global numbering rule build-ceremony states and every prior ceremony has applied (ceremony-02-improve.json, ceremony-03-improve.json numbering_note, ceremony-04-review.json numbering_note), this review and its improve record take the next unused number, 5, for section wave-3b.",
+  "findings": [
+    {
+      "id": "C5-001",
+      "skill": "cap-isolation, cap-policy",
+      "location": "contract.not_exposed",
+      "severity": "fix",
+      "category": "rule",
+      "finding": "Of the five wave-3b ideal-state skills, three (cap-model-access, cap-provenance, cap-scheduling) explicitly state design rule 6 (F-b1-07, 'the grader is never visible to the graded') as a not_exposed row, but cap-isolation and cap-policy carry no such row and cite F-b1-07 nowhere in the file. Both are plausible carriers of a leaked grading criterion: cap-isolation's run operation takes an opaque document handle for arbitrary work whose output will later be judged, and cap-policy's DecisionRequest carries an open 'resource' and 'context' object. The other three siblings treat this as worth saying explicitly even though their own interfaces are similarly shaped (a predicate, a schedule declaration); cap-isolation and cap-policy leave the same guarantee implicit, so the review requirement to check each skill against all seven B1 rules cannot be satisfied by reading either skill alone.",
+      "evidence": "grep -c 'F-b1-07' across the five wave-3b ideal skills: cap-model-access.skill.json has the not_exposed row 'the criterion a result will be judged against never travels in a completion request... (F-b1-07)'; cap-provenance.skill.json has 'the criterion a result is judged against never appears in a predicate... (F-b1-07)'; cap-scheduling.skill.json has 'the criterion a result will be judged against never rides on a schedule declaration... (F-b1-07)'. `grep -ino 'judge\\|criterion\\|graded\\|grading' .claude/skills/cap-isolation/skill.json` and the same over cap-policy/skill.json return zero genuine hits (cap-isolation's one match, line 40, is the substring 'graded' inside 'downgraded', not a citation).",
+      "suggested_change": "Add a not_exposed row to cap-isolation stating that the criterion a unit's output will be judged against never travels in the document handle or the isolation declaration (F-b1-07), and a matching row to cap-policy stating that the criterion never travels in a DecisionRequest's resource or context object, in the same form the three sibling skills already use."
+    },
+    {
+      "id": "C5-002",
+      "skill": "cap-provenance-implement",
+      "location": "adapters[0] (E-adapter-jsonl-evidence-records, role today).sources",
+      "severity": "nit",
+      "category": "links",
+      "finding": "The 'today' adapter row for the Provenance capability cites E-adapter-jsonl-hash-chain as one of its sources alongside F-b3-12 and F-a5-04. E-adapter-jsonl-hash-chain is not Provenance's adapter entity: kb/entities.jsonl records it as sourced from F-b3-17, which is the B3 table row for State persistence ('JSONL + hash chain'), a different capability from Provenance's own row F-b3-12 ('JSONL evidence records'), whose correct entity is E-adapter-jsonl-evidence-records (already the row's primary entity, correctly cited elsewhere in both cap-provenance and cap-provenance-implement). Citing a different capability's B3-row entity as evidence for this capability's adapter description risks a reader who traces the id landing on the wrong row of the capability table, exactly the kind of cross-boundary leak build-skill-authoring's citation discipline exists to prevent, even though nothing here is factually false and the validator's verbatim-quote check does not catch it (no quote is tied to this particular source id).",
+      "evidence": "cap-provenance-implement/skill.json adapters[0].sources: [\"F-b3-12\", \"F-a5-04\", \"E-adapter-jsonl-hash-chain\"]. kb/entities.jsonl: {\"id\": \"E-adapter-jsonl-hash-chain\", \"name\": \"JSONL + hash chain\", \"sources\": [\"F-b3-17\"]}. kb facts.jsonl F-b3-17: \"| **State persistence** | ... | JSONL + hash chain | ...\" versus F-b3-12: \"| **Provenance** | in-toto · SLSA · DSSE | JSONL evidence records | Sigstore · any attestation store |\".",
+      "suggested_change": "Drop E-adapter-jsonl-hash-chain from this row's sources, or replace it with a plain-text cross-reference to cap-scheduling... no, to the State-persistence capability's own row (once written) if the intent is to note that both capabilities' adapters share an underlying hash-chain mechanism; do not cite the other capability's entity id as if it were evidence for this row."
+    }
+  ],
+  "metrics": {
+    "skills": 15,
+    "rows_total": 401,
+    "rows_sourced": 168,
+    "rows_proposed": 233,
+    "findings_block": 0,
+    "findings_fix": 1,
+    "findings_nit": 1,
+    "validator_errors": 0,
+    "validator_warnings_in_scope": 0
+  },
+  "brief_improvements": [
+    "State a checked rule for the cap layer: every ideal-state skill whose interface takes an open document handle, predicate, resource object or declaration must carry an explicit not_exposed row citing design rule 6 (F-b1-07), not merely satisfy it by the shape of its schema. Three of five wave-3b ideal skills already do this (cap-model-access, cap-provenance, cap-scheduling); make it a rule the other two, and future capabilities, are checked against rather than a pattern a reviewer has to notice by comparison.",
+    "When an adapter row's sources array cites an E- entity, require that entity's own kb record to trace back to the same PASS.md capability row the skill is about (or, if it deliberately crosses capabilities, say so in the row's prose). E-adapter-jsonl-hash-chain (State persistence, F-b3-17) landing in a Provenance adapter row's sources shows the validator's existence check does not catch a citation that is valid but points at the wrong capability."
+  ],
+  "what_worked": [
+    "All four 'measured' definition_of_done claims in this section were independently re-run and reproduced exactly, not merely trusted: cap-isolation-use and cap-model-access-use's product-purity breakages both gave the precise validator error line, error/warning counts and exit code claimed, verified by editing a scratch copy of each skill.json, rendering and re-validating, then restoring via git checkout; cap-provenance-use's ledger-orphan assertion reproduced 'records=56 subjects=32 subjects_without_digest=0 attestations_found=0 orphan_subjects=32' exactly against a fresh examples/end-to-end/test.sh run, and its cited run.py sha256 (e54d31b9...) matches the file on disk exactly, confirming the tree has not moved since that measurement; cap-scheduling-use's breakage (kind: schedule -> cronjob) reproduced 'passed 27, failed 2' exactly and the repository was left clean afterward (git status confirmed no residual diff in examples/end-to-end/).",
+    "composes_with links for all 15 skills match docs/skill-manifest.json exactly in both directions (builds_on and used_by), checked programmatically -- zero asymmetry in this section, and every SKILL.md in this wave is byte-identical to a fresh render of its skill.json (spot-checked in full on cap-provenance, the largest file at 534 lines, and confirmed across all 15 by diffing a pre-render copy against a fresh render of each).",
+    "python3 tools/validate_skills.py reports 0 errors and 0 warnings scoped to any wave-3b skill (45 skills checked overall, 123 warnings, all pre-existing manifest-lists-unwritten-skill notices for future waves or compose-by-name notices on other sections' skills); no instruction table in this wave exceeds the 3-10 row budget (7-9 rows throughout), and ceremony 3's lesson to name which of TARGET.md's two entry enumerations a row cites (T1's three ways in versus T6.2's four entries) was carried forward precisely -- cap-isolation-use, cap-model-access-use, cap-policy-use and cap-provenance-use each cite T-t1-01/02/03 for the three ways in, and cap-scheduling-use's own invariant states outright that 'cap-scheduling cites TARGET T6.2's four entries for the envelope itself; this row is about the three ways a caller reaches an already-scheduled unit'.",
+    "Honest claimed/measured discipline held under real pressure across all five capabilities: no adapter, conformance tool or definition-of-done criterion in cap-isolation, cap-model-access, cap-policy or cap-provenance is written yet, and every one of their definition_of_done blocks is correctly labelled claimed with an explicit statement that the criterion or its breakage has not been run, rather than dressed up as passing (cap-policy's is the most exposed case: policy is recorded as defined and not wired into the enforcement path today, and its definition_of_done says so plainly). cap-scheduling-implement additionally records and reasons through a genuine departure -- building the standalone evaluator adapter before the recorded 'today' adapter, because PASS.md A6 records that engine as not listening -- rather than silently reordering the usual build-the-recorded-adapter-first pattern."
+  ]
+}

@@ -1,0 +1,364 @@
+{
+  "name": "cap-scheduling-use",
+  "layer": "cap",
+  "wave": 5,
+  "description": "How to use the Scheduling capability as a caller: write one recurrence string and a time zone on the unit of work, add a typed input schema beside it if a person should also be able to start it now, and stop writing timer code. Load it when something should happen every night, every third Tuesday or on the last working day of the month, when a job needs a run-it-now button as well as a clock, when deciding what a fired job carries and how to trace what it did, when a recurring job ran an hour late after a clock change or skipped a date, or when you are about to add a loop that sleeps and checks the time.",
+  "purpose": {
+    "text": "cap-scheduling states the contract this rests on (F-b3-15); this facet reduces it to one thing a caller does: declare when, as a single string with a time zone, on the unit that should run. Everything after that - computing occurrences, firing, identity, correlation, budget and replay safety - is the platform's work.",
+    "origin": "sourced",
+    "sources": [
+      "F-b3-15",
+      "T-t3-01"
+    ],
+    "quote": "RFC 5545 recurrence rules"
+  },
+  "entities": [
+    "E-capability-scheduling",
+    "E-standard-rfc-5545-recurrence-rules"
+  ],
+  "contract": {
+    "operations": [
+      {
+        "name": "declare a schedule (proposed)",
+        "input": "on the unit you already have: one recurrence rule string, the instant it counts from, an IANA time zone, and a catch-up answer",
+        "output": "the unit now runs itself; each occurrence arrives as an ordinary entry envelope of kind schedule, with the same identity, correlation, budget and idempotency fields any other entry carries",
+        "origin": "proposed",
+        "sources": [
+          "F-b3-15",
+          "T-t6-02"
+        ]
+      },
+      {
+        "name": "add the run-it-now sibling (proposed)",
+        "input": "a typed input schema on the same unit, describing what a person may fill in",
+        "output": "a rendered form on the surface and, when someone submits it, the same unit reached through the same envelope; you write no second code path and no second handler",
+        "origin": "proposed",
+        "sources": [
+          "X-entry-composition-045",
+          "X-entry-composition-044"
+        ]
+      },
+      {
+        "name": "ask when it next runs (proposed)",
+        "input": "the unit reference and an instant to look from",
+        "output": "the next occurrence, or none when the rule is exhausted; this is a pure read, so asking it in a test costs nothing and never fires anything",
+        "origin": "proposed",
+        "sources": [
+          "F-b3-15"
+        ]
+      },
+      {
+        "name": "read a rejected rule (proposed)",
+        "input": "a recurrence string the platform will not accept, or one using a rule part the selected adapter cannot evaluate",
+        "output": "a typed problem in the platform's failure shape with retryable false; the fix is a different rule, not a retry. An empty occurrence set is a different thing and is a valid answer, not a failure",
+        "origin": "proposed",
+        "sources": [
+          "F-b3-13"
+        ]
+      }
+    ],
+    "shapes": [
+      {
+        "name": "Worked example 1 (proposed): a nightly sweep declared once and fired by the clock",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:schedule:example:nightly",
+          "title": "A declared recurrence fires as an ordinary entry",
+          "description": "The declaration is the recurrence string plus its zone; what arrives is the standard entry envelope. Reproduced in examples/end-to-end on 2026-09-03: `python3 run.py --entry entries/schedule.json` exits 0, prints `RESULT  entry=schedule  actor=schedule:nightly-fault-sweep  correlation=corr-schedule-0001`, and closes with `completed: 11 steps, spent 551800 of 1500000 micros, estimate was 750000` - the same workflow the human, event and external entries run.",
+          "examples": [
+            {
+              "declared": {
+                "unit_ref": "workflows/triage-and-fix.json",
+                "recurrence": "FREQ=DAILY;BYHOUR=2;BYMINUTE=0",
+                "timezone": "Europe/London",
+                "catch_up": "skip"
+              },
+              "what_arrives": {
+                "kind": "schedule",
+                "actor": {
+                  "subject": "schedule:nightly-fault-sweep"
+                },
+                "occurred_at": "2026-09-03T02:00:00Z",
+                "idempotency_key": "nightly-fault-sweep-2026-09-03",
+                "correlation": {
+                  "run_id": "run-schedule-0001",
+                  "correlation_id": "corr-schedule-0001"
+                }
+              },
+              "what_you_wrote": "two fields on the unit; no timer, no loop, no scheduler client"
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b3-15",
+          "T-t6-02"
+        ]
+      },
+      {
+        "name": "Worked example 2 (proposed): the same unit started by a person, through the sibling trigger",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:schedule:example:manual",
+          "title": "Run it now, same unit, same envelope",
+          "description": "The manual trigger is declared beside the schedule as a typed input schema, and the surface renders it. Submitting it produces an envelope that differs from example 1 only in kind, actor and idempotency key; nothing downstream branches on which of the two produced it.",
+          "examples": [
+            {
+              "declared_beside_the_schedule": {
+                "trigger": {
+                  "input_schema": {
+                    "type": "object",
+                    "required": [
+                      "window_hours"
+                    ],
+                    "properties": {
+                      "window_hours": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 168
+                      }
+                    }
+                  },
+                  "label": "Run the fault sweep now"
+                }
+              },
+              "what_arrives": {
+                "kind": "human",
+                "actor": {
+                  "subject": "user:corey"
+                },
+                "idempotency_key": "fault-sweep-manual-2026-09-03T14:02:11Z",
+                "payload": {
+                  "window_hours": 24
+                }
+              },
+              "what_you_wrote": "one input schema; no form, no second handler, no second path into the unit"
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "X-entry-composition-045",
+          "X-entry-composition-044"
+        ]
+      },
+      {
+        "name": "The failure you handle (proposed): problem details, measured",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:schedule:example:problem",
+          "title": "A rejected schedule entry",
+          "$ref": "urn:agentic:problem:0.1",
+          "description": "cap-errors owns this shape and its registry; scheduling adds no failure format of its own. Measured in examples/end-to-end on 2026-09-03 by changing the schedule entry's kind to a private one: exit code 2, media type application/problem+json, nothing executed and nothing written.",
+          "examples": [
+            {
+              "type": "urn:agentic:problem:document-invalid",
+              "title": "Envelope failed schema validation",
+              "status": 422,
+              "detail": "$.kind: must be one of ['human', 'event', 'schedule', 'external']",
+              "retryable": false,
+              "instance": "entries/schedule.json"
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b3-13"
+        ]
+      }
+    ],
+    "invariants": [
+      {
+        "text": "All three of TARGET T1's ways in reach a scheduled unit the same way. A human reaches it through the sibling manual trigger, an agent or external system reaches it by submitting the same envelope, and an internal or external event must be able to enter the system on the same shape; the clock is a fourth producer of that one envelope, not a fourth door. cap-scheduling cites TARGET T6.2's four entries for the envelope itself; this row is about the three ways a caller reaches an already-scheduled unit.",
+        "origin": "sourced",
+        "sources": [
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03"
+        ],
+        "quote": "3. An internal or external event must be able to enter the system."
+      },
+      {
+        "text": "Proposed: one string and a zone are the whole obligation. There is no scheduler client to hold, no timer to run, no cursor to persist and no way to ask for or decline the cross-cutting fields the fired envelope carries; cap-scheduling fixes the contract and cap-scheduling-implement wires the firing.",
+        "origin": "proposed",
+        "sources": [
+          "F-b3-15",
+          "T-t3-01"
+        ]
+      },
+      {
+        "text": "Enhancing one aspect leaves the rest untouched: swapping the evaluator behind the interface, changing a catch-up policy, or adding a new entry kind changes nothing in a unit that declared one recurrence string, because the string is the only thing it was ever asked for.",
+        "origin": "sourced",
+        "sources": [
+          "T-t2-02"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
+      },
+      {
+        "text": "The declaration is kept to one string, one zone, one anchor and one catch-up answer because a contract that is daunting or overly complex will not be used, and a team that finds declaring a schedule expensive will write a sleep loop instead, which is the outcome this capability exists to prevent.",
+        "origin": "sourced",
+        "sources": [
+          "T-t3-02"
+        ],
+        "quote": "It cannot be daunting or overly complex, or no one will use it."
+      },
+      {
+        "text": "A scheduled entry has no private path in, and this is checked rather than asserted. cap-scheduling states the entry rule from TARGET T6.2 (T-t6-02); what this facet adds is the measurement: the schedule envelope is validated by the same validator, against the same enumeration of entry kinds, as every other entry, and an entry kind of the scheduler's own is refused. Measured in examples/end-to-end on 2026-09-03; the run is the definition of done below.",
+        "origin": "sourced",
+        "sources": [
+          "T-t6-02",
+          "F-b3-13"
+        ],
+        "quote": "All four enter through the same shape."
+      }
+    ],
+    "not_exposed": [
+      {
+        "text": "Proposed: you never see the ticker, the queue, the occurrence expansion or which adapter fired. A firing looks like an entry, which is the point; if a caller could tell the two adapters apart it would start writing code that depends on one of them.",
+        "origin": "proposed"
+      },
+      {
+        "text": "Proposed: there is no schedule handle to pause, resume or re-point. Changing when something runs is an edit to the declared string, reviewed like any other change to the unit, rather than a live call that leaves no diff.",
+        "origin": "proposed"
+      }
+    ]
+  },
+  "instructions": [
+    {
+      "step": 1,
+      "action": "Put one recurrence rule string on the unit, with the instant it counts from and an IANA time zone beside it. Write the zone even when it is UTC.",
+      "why": "Proposed usage of the contract cap-scheduling states (F-b3-15, X-entry-composition-049): the rule is one string and the zone is part of its meaning. For you the consequence is small - two extra fields - and the job no longer drifts by an hour twice a year.",
+      "origin": "proposed",
+      "sources": [
+        "F-b3-15",
+        "X-entry-composition-049"
+      ]
+    },
+    {
+      "step": 2,
+      "action": "If a person should also be able to start the unit on demand, declare a typed input schema beside the schedule instead of building a button that calls something else.",
+      "why": "Proposed. cap-scheduling records the prior art for declaring the clock and the person as siblings on one unit; using it means the manual run gets the same validation, the same envelope and the same audit trail as the nightly one, and you maintain one path rather than two.",
+      "origin": "proposed",
+      "sources": [
+        "X-entry-composition-044",
+        "X-entry-composition-045"
+      ]
+    },
+    {
+      "step": 3,
+      "action": "Delete any code that sleeps, polls the clock, or asks whether it is time yet. Declare, and let the occurrence arrive.",
+      "why": "Proposed. A timer inside a unit is a second scheduler with no vectors behind it, no time-zone handling and no idempotency key, and it is invisible to everything that traces what the platform did.",
+      "origin": "proposed",
+      "sources": [
+        "T-t2-03"
+      ]
+    },
+    {
+      "step": 4,
+      "action": "Read what fired from the entry envelope the unit receives - kind, occurred_at, actor and correlation - rather than from any scheduler-side API.",
+      "why": "Proposed. The envelope is the same one the other entries carry, so anything you write to handle it keeps working when the schedule is replaced by a webhook, and when the evaluator behind the interface is swapped.",
+      "origin": "proposed",
+      "sources": [
+        "T-t6-02"
+      ]
+    },
+    {
+      "step": 5,
+      "action": "Answer catch-up deliberately when you declare: skip, fire once, or fire all. Do not leave it to whatever the platform happens to do after an outage.",
+      "why": "Proposed. For a reconciliation, firing late is harmless; for a notification, a burst of late firings is worse than a miss. Only you know which yours is, and the outage is the wrong moment to find out.",
+      "origin": "proposed",
+      "sources": [
+        "F-b3-15"
+      ]
+    },
+    {
+      "step": 6,
+      "action": "Before declaring a rule you are unsure of, ask for its next few occurrences and read them. It is a pure read and it fires nothing.",
+      "why": "Proposed. A wrong rule is silent until the calendar reaches the case it gets wrong, which can be months; five printed instants take a second and catch nearly every mistake worth catching.",
+      "origin": "proposed",
+      "sources": [
+        "F-b3-15"
+      ]
+    },
+    {
+      "step": 7,
+      "action": "Handle exactly one failure: a rule the platform refuses, returned in the platform's problem-details shape with retryable false. Fix the rule; do not retry it. Everything else is the ordinary answer.",
+      "why": "cap-scheduling already routes a refused rule through cap-errors' registry rather than defining a failure of its own (F-b3-13), so a caller that already reads type and retryable needs no new branch here. An empty occurrence set is not this failure: it is a valid answer meaning the rule has nothing due in that window.",
+      "origin": "sourced",
+      "sources": [
+        "F-b3-13"
+      ],
+      "quote": "RFC 9457 problem details"
+    }
+  ],
+  "best_practices": [
+    {
+      "text": "Write the rule so a reviewer can read it aloud. cap-scheduling cites the same record for the grammar's readability (X-cap-scheduling-002): FREQ=WEEKLY;BYDAY=MO means every Monday, and a rule whose intent survives code review is one you will not have to debug from a calendar.",
+      "origin": "sourced",
+      "sources": [
+        "X-cap-scheduling-002"
+      ],
+      "quote": "For example FREQ=WEEKLY;BYDAY=MO means every Monday."
+    },
+    {
+      "text": "Think of the schedule and the manual button as one named thing rather than two features: prior art on file describes an entry point that listens for a specific external event or a predefined schedule, which is the mental model that keeps non-experts from building a second path in.",
+      "origin": "sourced",
+      "sources": [
+        "X-entry-composition-057"
+      ],
+      "quote": "listens for a specific external event or a predefined schedule"
+    },
+    {
+      "text": "Proposed: name the unit for its intent, not its cadence. A unit called nightly-sweep has to be renamed the day the rule becomes weekly, and the rename reaches logs, dashboards and everyone's muscle memory; the recurrence string already says when.",
+      "origin": "proposed",
+      "sources": [
+        "F-b3-15"
+      ]
+    },
+    {
+      "text": "Proposed: let a scheduled unit be re-runnable by hand from the start, even when nobody asks for it. The first incident is when someone needs to run the nightly job at noon, and adding the sibling trigger then is a change to a unit that is already on fire.",
+      "origin": "proposed",
+      "sources": [
+        "X-entry-composition-044"
+      ]
+    }
+  ],
+  "definition_of_done": {
+    "criterion": "`cd examples/end-to-end && bash test.sh`. Section 1 runs `entries/schedule.json`, whose payload carries the recurrence `FREQ=DAILY;BYHOUR=2;BYMINUTE=0`, through the same validator and the same workflow as the human, event and external entries, and asserts exit code 0 and that the run reached completed.",
+    "expected": "exit 0 and a closing line `passed 29, failed 0`, with section 1 printing `ok   schedule exits 0 (0)` and `ok   schedule reached completed`; the standalone run `python3 run.py --entry entries/schedule.json` prints `RESULT  entry=schedule  actor=schedule:nightly-fault-sweep  correlation=corr-schedule-0001` and `completed: 11 steps, spent 551800 of 1500000 micros, estimate was 750000`.",
+    "breakage": "In `examples/end-to-end/entries/schedule.json`, change `\"kind\": \"schedule\"` to `\"kind\": \"cronjob\"`, a private entry kind of the scheduler's own. Change nothing else, and re-run the same command.",
+    "expected_failure": "exit 1 and `passed 27, failed 2`: section 1 reports `FAIL schedule exits 0 (expected 0, got 2)` and `FAIL schedule did not complete`, and the entry's own output is problem details with media type application/problem+json, `\"type\": \"urn:agentic:problem:document-invalid\"`, `\"status\": 422` and `\"detail\": \"$.kind: must be one of ['human', 'event', 'schedule', 'external']\"`. The other three entries still pass, which is the useful part: the failure is exactly the schedule's attempt to enter on a shape of its own. Measured in session cap-scheduling 2831cb4f on 2026-09-03; both runs were performed and entries/schedule.json was restored.",
+    "status": "measured",
+    "sources": [
+      "T-t6-02",
+      "F-b3-13"
+    ],
+    "quote": "All four enter through the same shape."
+  },
+  "composes_with": {
+    "builds_on": [
+      "cap-scheduling",
+      "cap-scheduling-implement"
+    ],
+    "used_by": []
+  },
+  "open_questions": [
+    {
+      "question": "What does a caller see when an occurrence fired while the unit's previous run was still going?",
+      "evidence": "Count, across declared units, how often one occurrence overlaps the previous run, and whether any of those units are safe to run concurrently with themselves.",
+      "default": "Proposed: the second occurrence enters as an ordinary entry and the unit's own idempotency and state decide, rather than the scheduler suppressing it silently. A suppression a caller cannot see is a missed run they will look for in the wrong place.",
+      "sources": [
+        "F-b3-15"
+      ]
+    }
+  ],
+  "provenance": {
+    "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+    "kb_heads": {
+      "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+      "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6"
+    },
+    "author": "session cap-scheduling 2831cb4f, 2026-09-03"
+  }
+}

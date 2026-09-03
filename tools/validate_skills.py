@@ -24,6 +24,10 @@ Warnings:
     skill, without naming that skill: compose by name, not by copy (author-brief defect item 2)
   - a cap ideal skill with neither an adapters[] pair nor an open question saying where its pair
     lives (author-brief defect item 9)
+  - a cap ideal skill with no not_exposed row citing design rule 6, the grader rule (author-brief
+    defect item 11): the rule has to be stated, not merely satisfied by the shape of the schema
+  - an adapter row citing another capability's adapter or swap-candidate entity in its sources:
+    a citation that exists but points at the wrong row of the capability table (defect item 12)
 """
 from __future__ import annotations
 
@@ -53,6 +57,9 @@ NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
 
 KB_TEXT: dict[str, str] = {}
+# entity records, needed to tell whether a cited entity belongs to the capability row a skill is about
+ENTITIES: dict[str, dict] = {}
+GRADER_RULE = "F-b1-07"  # design rule 6: the grader is never visible to the graded
 
 
 def load_kb() -> tuple[set[str], dict]:
@@ -65,6 +72,8 @@ def load_kb() -> tuple[set[str], dict]:
                 r = json.loads(line)
                 ids.add(r["id"])
                 KB_TEXT[r["id"]] = r.get("text") or json.dumps(r, ensure_ascii=False)
+                if f == "entities":
+                    ENTITIES[r["id"]] = r
     return ids, json.loads((KB / "meta.json").read_text())
 
 
@@ -242,6 +251,25 @@ def main() -> int:
         if sk.get("layer") == "cap" and not name.endswith(("-implement", "-use")) and not sk.get("adapters"):
             if not any("adapter" in (q.get("question") or "").lower() for q in sk.get("open_questions", [])):
                 warns.append(f"{name}: cap ideal skill with no adapters[] and no open question naming where the adapter pair lives")
+        # design rule 6 is stated, not merely satisfied: a cap ideal skill says what the grader rule
+        # forbids on its own interface, so a reader checking the skill against the seven rules can
+        # find it without comparing siblings (author-brief defect item 11).
+        if sk.get("layer") == "cap" and not name.endswith(("-implement", "-use")):
+            ne = (sk.get("contract") or {}).get("not_exposed") or []
+            if not any(GRADER_RULE in (r.get("sources") or []) for r in ne if isinstance(r, dict)):
+                warns.append(f"{name}: cap ideal skill with no not_exposed row citing {GRADER_RULE} (the grader rule)")
+        # an adapter row's sources may cite adapter entities of its own capability (a row split across
+        # two entities, a sibling swap candidate), never another capability's: the ids exist either way,
+        # so only the fact each entity is sourced from tells them apart (author-brief defect item 12).
+        for a in sk.get("adapters", []):
+            own = set((ENTITIES.get(a.get("entity"), {}) or {}).get("sources") or []) | set(a.get("sources") or [])
+            for sid in a.get("sources") or []:
+                e = ENTITIES.get(sid)
+                if not e or sid == a.get("entity") or e.get("entity_type") not in ("adapter", "swap_candidate"):
+                    continue
+                if not (set(e.get("sources") or []) & own):
+                    warns.append(f"{name}: adapter row {a.get('entity')} cites {sid}, whose kb record is sourced from "
+                                 f"{', '.join(e.get('sources') or []) or 'nothing'} -- another capability's row")
         for field, rows, lo, hi in (
             ("instructions", sk.get("instructions", []), 6, 10),
             ("invariants", sk.get("contract", {}).get("invariants", []), 3, 10),

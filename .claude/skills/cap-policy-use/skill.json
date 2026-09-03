@@ -1,0 +1,313 @@
+{
+  "name": "cap-policy-use",
+  "layer": "cap",
+  "wave": 5,
+  "description": "How to use the Policy capability as a caller: send exactly what you already send, and either the work happens or you get one typed refusal back before anything was spent. Load it when writing a client, an agent, a workflow step or an event receiver against this platform, when a request came back refused and you have to explain why, when you are tempted to ask whether something is allowed before doing it, when you are adding a new call site that ought to be governed, or when someone suggests a fast path that skips the check.",
+  "purpose": {
+    "text": "cap-policy states the contract this rests on (F-b4-04): refusal is deterministic and happens before execution, not after spend. This facet reduces it to what a caller actually does, which is nothing extra on the way in and one typed failure to recognise on the way out.",
+    "origin": "sourced",
+    "sources": [
+      "F-b4-04",
+      "T-t3-01"
+    ],
+    "quote": "Refusal is deterministic and happens before execution, not after spend"
+  },
+  "entities": [
+    "E-capability-policy",
+    "E-concern-policy"
+  ],
+  "contract": {
+    "operations": [
+      {
+        "name": "send (proposed)",
+        "input": "your entry envelope exactly as it already is. There is no policy field, no allowed flag, no check to call first, and no way to ask for the decision to be skipped",
+        "output": "the ordinary result if the decision was allow, or a typed refusal if it was deny, returned before the first metered call so a refused request costs nothing",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-04"
+        ]
+      },
+      {
+        "name": "read a refusal (proposed)",
+        "input": "a problem body of type urn:agentic:problem:policy-denied, status 403, retryable false, carrying the rule_id that decided",
+        "output": "the identifier of the rule to quote in a ticket or show a user. The fix is a changed request or a changed rule; a retry of the same request under the same policy version returns the same refusal, by construction",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-07",
+          "F-b4-04"
+        ]
+      },
+      {
+        "name": "register a decision point (proposed)",
+        "input": "only if you own a new call site that should be governed: a decision-point name and the JSON Schema for what it acts on, added to the registry once",
+        "output": "every call through that site is decided from then on, with no further work at the call site and nothing for its callers to pass",
+        "origin": "proposed",
+        "sources": [
+          "F-b3-09"
+        ]
+      }
+    ],
+    "shapes": [
+      {
+        "name": "Worked example 1 (proposed): an allowed request, where nothing about the call changes",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:policy:example:allow",
+          "title": "An allow is invisible to the caller",
+          "description": "Send examples/end-to-end/entries/human.json unchanged. The decision is taken at dispatch-admit before the plan is priced, a policy-decided record is written naming the rule and the bundle digest, and the caller receives the ordinary result. Proposed: policy is not wired into the reference runner today, so this is the shape the example would print, not a recorded run.",
+          "examples": [
+            {
+              "sent": "entries/human.json, unmodified",
+              "caller_added_fields": [],
+              "decision_recorded": {
+                "effect": "allow",
+                "decision_point": "dispatch-admit",
+                "rule_id": "allow-human-entry-within-ceiling",
+                "policy_version": "sha256:<bundle digest>"
+              },
+              "answer": {"state": "completed", "run_id": "run-human-0001"}
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b4-04"
+        ]
+      },
+      {
+        "name": "Worked example 2 (proposed): a refused request, returned as RFC 9457 problem details",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:policy:example:deny",
+          "title": "A deny costs nothing",
+          "$ref": "urn:agentic:problem:0.1",
+          "description": "Send examples/end-to-end/entries/event.json for an action a rule denies. The body arrives with media type application/problem+json, the ledger spend delta for that dispatch is 0, and no metered call was made. Proposed: the shape a refusal would take, not a recorded run.",
+          "examples": [
+            {
+              "type": "urn:agentic:problem:policy-denied",
+              "title": "Refused before execution",
+              "status": 403,
+              "detail": "external tool invocation requires a mandate; none present on this entry",
+              "rule_id": "deny-external-tool-without-mandate",
+              "retryable": false,
+              "spend_delta_micros": 0
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b4-07",
+          "F-b4-04"
+        ]
+      }
+    ],
+    "invariants": [
+      {
+        "text": "All three of TARGET T1's ways in reach this the same way. A human must be able to enter the system, an agent must be able to enter the system, and an internal or external event must be able to enter the system; each is decided at the same registered decision points, and nothing downstream branches on which of the three it was.",
+        "origin": "sourced",
+        "sources": [
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03"
+        ],
+        "quote": "2. An agent must be able to enter the system."
+      },
+      {
+        "text": "Proposed: your obligation is zero fields. There is no decision to request, no token to carry, no pre-check to make and no way to decline; cap-policy fixes the contract and cap-policy-implement wires the call into the platform's own path, so a caller that adds nothing is already governed.",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-04",
+          "T-t3-01"
+        ]
+      },
+      {
+        "text": "Enhancing one aspect leaves the rest untouched: a rule edit, a new decision point, or a swap of the engine behind the decision changes nothing in a caller that sends an envelope and reads a typed failure, because neither the rule text nor the engine ever appeared in what it reads.",
+        "origin": "sourced",
+        "sources": [
+          "T-t2-02"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
+      },
+      {
+        "text": "The obligation is kept at zero fields because a contract that is daunting or overly complex will not be used, and a governance step a caller has to remember is a governance step that new call sites quietly skip.",
+        "origin": "sourced",
+        "sources": [
+          "T-t3-02",
+          "T-t3-01"
+        ],
+        "quote": "It cannot be daunting or overly complex, or no one will use it."
+      },
+      {
+        "text": "Proposed: a refusal is free and a refusal is stable. Nothing is spent before the decision, so a denied request costs no budget, and the same request under the same policy version yields the same refusal and the same rule_id, so a retry loop cannot get a different answer by trying harder.",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-04"
+        ]
+      },
+      {
+        "text": "Proposed: composition inherits the decision rather than passing it on. A workflow step, a loop iteration or a sub-agent's tool call is decided at its own call site, so wrapping work in more layers adds no policy plumbing and removes no coverage.",
+        "origin": "proposed",
+        "sources": [
+          "T-t2-03"
+        ]
+      }
+    ],
+    "not_exposed": [
+      {
+        "text": "Proposed: you never see the rule text, the evaluation trace, or which engine answered. A refusal gives you an identifier and a sentence, which is what a ticket needs; the rule itself can then be rewritten without anything you built noticing.",
+        "origin": "proposed"
+      },
+      {
+        "text": "Proposed: there is no advisory call. You cannot ask whether something would be allowed without asking for it to happen, because the answer to that question is only true until the moment you act on it.",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-04"
+        ]
+      }
+    ]
+  },
+  "instructions": [
+    {
+      "step": 1,
+      "action": "Send what you already send. Add no policy field, carry no approval flag, and delete any you inherited from another system.",
+      "why": "Proposed usage of the contract cap-policy states (F-b4-04). The decision is taken on the platform's own path, so a field claiming a check already happened is at best ignored and at worst a habit that survives into a system where it is trusted.",
+      "origin": "proposed",
+      "sources": [
+        "F-b4-04"
+      ]
+    },
+    {
+      "step": 2,
+      "action": "Handle exactly one new typed failure: type urn:agentic:problem:policy-denied, status 403, retryable false. Branch on the type member, never on the words in the detail string.",
+      "why": "Proposed. cap-errors owns the failure shape and its closed registry (F-b4-07), so a caller that already reads type and retryable needs no new parser here, only one more registered type to recognise.",
+      "origin": "proposed",
+      "sources": [
+        "F-b4-07"
+      ]
+    },
+    {
+      "step": 3,
+      "action": "When you have to explain a refusal, quote the rule_id rather than the detail sentence, and record it next to the request you sent.",
+      "why": "Proposed. The identifier is what a rule owner can look up and what stays stable across rewordings, where the sentence is prose that may change with the next bundle; the pair of request and rule_id is also what makes a disputed refusal reproducible.",
+      "origin": "proposed",
+      "sources": [
+        "F-b4-04"
+      ]
+    },
+    {
+      "step": 4,
+      "action": "Do not pre-check. Send the request and let it be refused, rather than asking whether it would be allowed and then sending it.",
+      "why": "Proposed. Check-then-send is two decisions with a gap between them: the policy version can change in the gap, and the second decision is the only one that governs anything. It also doubles the work for a case that costs nothing when it is refused.",
+      "origin": "proposed",
+      "sources": [
+        "F-b4-04"
+      ]
+    },
+    {
+      "step": 5,
+      "action": "If you own a new call site that ought to be governed, register its decision point once with the schema of what it acts on, and change nothing at the call site afterwards.",
+      "why": "Proposed, following cap-policy's registration rule. Registration is the only policy work a builder does, it happens once per site rather than once per call, and an unregistered point is refused rather than silently allowed, so forgetting it is loud.",
+      "origin": "proposed",
+      "sources": [
+        "F-b3-09"
+      ]
+    },
+    {
+      "step": 6,
+      "action": "Do not retry a refusal, and do not queue it for later. Change the request, or ask the rule owner to change the rule.",
+      "why": "Proposed. The refusal is deterministic under a pinned policy version, so the same request returns the same answer; retryable is false for exactly that reason, and a retry loop around it burns attempts to reach a conclusion that was already final.",
+      "origin": "proposed",
+      "sources": [
+        "F-b4-04",
+        "F-b4-07"
+      ]
+    },
+    {
+      "step": 7,
+      "action": "Expect the decision to be taken at each call, including calls your agent decides on at runtime, and do not assume an allow at entry covers what happens later in the run.",
+      "why": "cap-policy states the finding this rests on (X-end-to-end-062): dynamic tool-switching, where agents select tools at runtime, defeats static policy. For a caller that means an entry that was admitted can still have an individual tool call refused, and that refusal is the ordinary typed failure, not a special case.",
+      "origin": "sourced",
+      "sources": [
+        "X-end-to-end-062"
+      ],
+      "quote": "Dynamic tool-switching, where agents select tools at runtime, defeats static policy."
+    }
+  ],
+  "best_practices": [
+    {
+      "text": "Do not trust an approval carried in your own inbound payload. cap-policy states that interoperability protocols cannot interpret, validate, or enforce their governance semantics, so a field in a message saying the action was approved is data, and the platform's decision is the only approval that governs anything here.",
+      "origin": "sourced",
+      "sources": [
+        "X-entry-composition-059"
+      ],
+      "quote": "cannot interpret, validate, or enforce their governance semantics"
+    },
+    {
+      "text": "Proposed: log the rule_id with the request that was refused, not only the message. When a refusal is disputed, the pair of request and rule identifier is what makes it reproducible; a message alone leaves you comparing timestamps.",
+      "origin": "proposed",
+      "sources": [
+        "F-b4-04"
+      ]
+    },
+    {
+      "text": "Proposed: treat an unexpected refusal at a new call site as a registration you owe, not as an outage. A point that is not registered is refused rather than allowed, which is the design working: the loud failure is cheaper than a governed-looking call site that was never governed.",
+      "origin": "proposed",
+      "sources": [
+        "F-b3-09"
+      ]
+    },
+    {
+      "text": "Proposed: keep your retry logic type-driven and let it stay that way. Because retryable is a member of the failure rather than something inferred from the status code, adding a governed call site never obliges you to teach your client a new rule about which 4xx to retry.",
+      "origin": "proposed",
+      "sources": [
+        "F-b4-07"
+      ]
+    }
+  ],
+  "definition_of_done": {
+    "criterion": "`cd examples/end-to-end && bash test.sh` with the proposed policy section added to the reference runner: it sends entries/human.json, entries/external.json and entries/event.json unmodified against a bundle whose rules deny one of the three, and asserts for the denied entry exit code 2, a body on stdout with media type application/problem+json of type `urn:agentic:problem:policy-denied` carrying a non-empty `rule_id` and `retryable: false`, a ledger spend delta of 0 for that dispatch, and for the two allowed entries that the answer is unchanged from the runs recorded today.",
+    "expected": "exit 0 and a closing line `passed 33, failed 0`, with the policy section printing `ok   denied entry exits 2`, `ok   problem type policy-denied with rule_id`, `ok   spend delta 0 on refusal`, and `ok   allowed entries unchanged`.",
+    "breakage": "Remove the decide call from the entry path in `examples/end-to-end/run.py`, leaving the rule bundle and every envelope exactly as they are, and re-run the same command.",
+    "expected_failure": "exit 1 and `passed 30, failed 3`: the denied entry exits 0, `FAIL problem type policy-denied with rule_id` because no problem body is produced at all, and `FAIL spend delta 0 on refusal` because the whole workflow ran and was charged. `ok   allowed entries unchanged` still passes, which is the useful part: with nothing consulting the decision, the system looks entirely healthy from every entry that would have been allowed anyway. Claimed: policy is not wired into the reference runner today, the section described here does not exist, and neither the criterion nor the breakage has been run. This check starts red by construction and that is correct.",
+    "status": "claimed",
+    "sources": [
+      "F-b4-04",
+      "F-a6-04"
+    ],
+    "quote": "not after spend"
+  },
+  "composes_with": {
+    "builds_on": [
+      "cap-policy",
+      "cap-policy-implement"
+    ],
+    "used_by": []
+  },
+  "open_questions": [
+    {
+      "question": "When a caller is refused, does it learn enough from rule_id alone to fix the request without being shown the rule?",
+      "evidence": "Across recorded refusals, count how many were resolved by the caller changing the request versus escalated to a rule owner, and how many escalations were answered by quoting a condition the caller could have been told in the detail string.",
+      "default": "Proposed: rule_id plus a one-sentence detail written by the rule author, and no rule text. If most refusals escalate, the remedy is better detail sentences rather than exposing the bundle, which would make every rule edit a caller-visible change.",
+      "sources": [
+        "F-b4-07"
+      ]
+    },
+    {
+      "question": "Should a caller ever be able to ask which decision points will govern a request it is about to send?",
+      "evidence": "Count how often a caller's failure to anticipate a mid-run refusal wasted work that a list of the points on its path would have avoided, and whether that list can be given without becoming the advisory call this facet refuses to expose.",
+      "default": "Proposed: publish the decision-point registry as documentation rather than as a call. A list of where decisions are taken is not an advisory decision, and it stays true regardless of the request.",
+      "sources": [
+        "F-b3-09"
+      ]
+    }
+  ],
+  "provenance": {
+    "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+    "kb_heads": {
+      "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+      "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6"
+    },
+    "author": "session cap-policy 2831cb4f, 2026-09-03"
+  }
+}

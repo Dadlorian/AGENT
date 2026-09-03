@@ -1,0 +1,59 @@
+{
+  "skills": [
+    {"name": "cap-agent-runtime", "proposed_before": 14, "proposed_after": 9, "converted": 5, "deleted": 0, "left_with_query": 8},
+    {"name": "cap-capability-packaging", "proposed_before": 10, "proposed_after": 8, "converted": 2, "deleted": 0, "left_with_query": 6},
+    {"name": "cap-capability-registry", "proposed_before": 4, "proposed_after": 2, "converted": 2, "deleted": 0, "left_with_query": 1},
+    {"name": "cap-consumption", "proposed_before": 9, "proposed_after": 5, "converted": 4, "deleted": 0, "left_with_query": 2},
+    {"name": "cap-document-validation", "proposed_before": 8, "proposed_after": 4, "converted": 4, "deleted": 0, "left_with_query": 3},
+    {"name": "cap-evaluation", "proposed_before": 8, "proposed_after": 6, "converted": 2, "deleted": 0, "left_with_query": 5},
+    {"name": "cap-idempotency", "proposed_before": 15, "proposed_after": 6, "converted": 9, "deleted": 0, "left_with_query": 5},
+    {"name": "cap-mandate-broker", "proposed_before": 5, "proposed_after": 2, "converted": 3, "deleted": 0, "left_with_query": 1},
+    {"name": "cap-provenance", "proposed_before": 10, "proposed_after": 5, "converted": 5, "deleted": 0, "left_with_query": 4},
+    {"name": "cap-scheduling", "proposed_before": 14, "proposed_after": 9, "converted": 5, "deleted": 0, "left_with_query": 8},
+    {"name": "cap-state-persistence", "proposed_before": 12, "proposed_after": 2, "converted": 10, "deleted": 0, "left_with_query": 0},
+    {"name": "cap-tool-access", "proposed_before": 11, "proposed_after": 3, "converted": 8, "deleted": 0, "left_with_query": 2}
+  ],
+  "totals": {
+    "proposed_before": 120,
+    "proposed_after": 61,
+    "converted": 59,
+    "deleted": 0,
+    "left_with_query": 45,
+    "rows_scoped": "contract.invariants, contract.not_exposed, instructions, best_practices across the 12 cap-layer ideal facets named in the task (cap-agent-runtime, cap-capability-packaging, cap-capability-registry, cap-consumption, cap-document-validation, cap-evaluation, cap-idempotency, cap-mandate-broker, cap-provenance, cap-scheduling, cap-state-persistence, cap-tool-access). adapters, definition_of_done and composes_with were off limits per instruction and not touched. open_questions not touched: every row there already carries sources and a quote."
+  },
+  "conversion_rate": "59/120",
+  "method": "Same method as sourcing-01: for each proposed row, ran python3 tools/kb.py show plus grep -i over kb/facts.jsonl, kb/target-facts.jsonl, kb/reference-facts.jsonl and kb/research.jsonl (each skill's own X-<skill>-* lens, plus X-cross-structure-*/X-end-to-end-*/X-entry-composition-* records already informing a row), and read kb/decisions.jsonl for background only - no D- id is a valid citation prefix per schemas/skill.schema.json. Converted to sourced only when a verbatim quote from a cited record supported the row's own specific claim rather than merely sharing vocabulary: several rows that already carried a plausible-looking citation in their proposed form (e.g. cap-provenance invariants#6 on one envelope covering both predicate types, cap-scheduling invariants#2 on pure-function recurrence framed explicitly as 'ours, not PASS.md's', cap-state-persistence's canonicalisation-scheme row that already defers to an open question) stayed proposed rather than being converted on an adjacent but non-supporting record. Design-rule facts shared across the whole platform (F-b1-04 swappability, F-b1-06 planning purity, F-b1-07 grader invisibility, F-b1-08 cross-cutting guarantees not optional, F-part-c-09 products in the adapter column, F-b4-04/F-b4-07 policy and error contracts) were the largest single source of conversions: a proposed row that named the design rule and explained its consequence for this specific capability, with a literal quote from the rule's own text, was converted the same way sourcing-01's cap-errors/cap-policy examples were. No row was deleted or trimmed to a sibling pointer this iteration: every proposed row in the 12 skills was found to be doing work specific to its own capability (a claim about this interface's shape, not a restatement of what a sibling's contract already owns), so the deletion path from the brief was not exercised, mirroring sourcing-01's own 0-deletion result. The 45 rows left proposed had a 'Research query:' sentence appended to their text (or their instruction's 'why' field) naming the specific record or measurement that would source them, except a small structural class left untouched with no added query: one references/*.md progressive-disclosure pointer per skill (12 total), two invariants rows in cap-evaluation and one in cap-state-persistence whose only citation is a REF- example or an explicit open-question hand-off, matching the sourcing-01 precedent that a navigational or REF-anchored row is not researchable in the same sense.",
+  "quality_note": "Every candidate quote was checked programmatically as a literal substring of at least one of its row's cited kb records before conversion (including the json.dumps fallback validate_skills.py itself uses for research.jsonl records with no text field, e.g. X-cap-agent-runtime-006, X-entry-composition-044/045, X-cap-idempotency-001/007). Cross-skill quote reuse was checked against each edited skill's own composes_with.builds_on chain plus agentic-stack; where a converted row's natural quote was already claimed by a sibling inside a builds_on relationship (cap-agent-runtime vs seam-dispatch on F-a3-03; cap-capability-packaging vs cap-document-validation on F-b1-07; cap-tool-access vs cap-tool-access-implement on F-b4-04; cap-state-persistence vs seam-state on F-b1-06/F-b5-05; cap-provenance vs xc-provenance-chain on F-b1-08; cap-capability-packaging vs its own -implement facet on X-cap-capability-packaging-004) the row was re-quoted to a different verbatim substring of the same record, or the colliding owner was named in the row's own text, until tools/validate_skills.py (run on the full repo, not just --only) reported no new restate warning for that pair. F-b1-07 and F-b1-08 are cited by 60-80+ skills across the whole repository with only two or three natural substrings between them, so a small number of cross-skill collisions with skills this ceremony does not own (xc-audit-trail on F-b1-07 against both cap-provenance and cap-scheduling; xc-idempotency-lease on F-b4-07 and T-t2-03 against cap-idempotency) could not be eliminated by requoting alone without the un-owned file also naming the citer - those are pre-existing systemic collisions common to nearly every skill using those two facts and are not new problems introduced by a citer this ceremony does not touch. tools/render_skill.py and tools/validate_skills.py --only <skill> were run after every skill and after every subsequent collision fix: final result is 0 errors for all 12, and warning counts (cap-agent-runtime 7, cap-capability-packaging 3, cap-capability-registry 2, cap-consumption 1, cap-document-validation 3, cap-evaluation 1, cap-idempotency 0, cap-mandate-broker 3, cap-provenance 1, cap-scheduling 0, cap-state-persistence 1, cap-tool-access 6) are byte-identical in content to the pre-ceremony baseline for each skill's own name, verified per file by diffing against git HEAD before editing - no new warning was introduced under any of the 12 skills' own --only name. A full, unscoped validate_skills.py run across all 102 skills also dropped from 258 to 248 warnings over the course of this ceremony, net, after the collision-driven requoting.",
+  "examples": [
+    {
+      "skill": "cap-idempotency",
+      "row": "a key carried on the wire deduplicates nothing by itself... which is the state the adapter-today column records",
+      "source": "F-b3-16",
+      "quote": "key on the wire, no lease"
+    },
+    {
+      "skill": "cap-state-persistence",
+      "row": "treat anything that cannot be derived by folding the log from empty as cache rather than state. The Ledger's requirement is to be append-only across runs; the deduplication authority",
+      "source": "F-b2-06",
+      "quote": "append-only across runs; the deduplication authority"
+    },
+    {
+      "skill": "cap-tool-access",
+      "row": "the three building blocks stay distinct at the boundary - a tool is called and may change something, a resource is read and changes nothing, a prompt is a template",
+      "source": "X-cap-tool-access-001",
+      "quote": "Tools are software functions that an LLM can directly call to gain access to external resource data, Resources are passive data sources that can provide read only access to data for context, and Prompts are pre-built instruction templates"
+    },
+    {
+      "skill": "cap-scheduling",
+      "row": "a schedule and a manual trigger are sibling entries declared on the same unit... both produce the same envelope",
+      "source": "X-entry-composition-044",
+      "quote": "A widely-used system exposes git event, schedule and human trigger as sibling entries under one declaration key."
+    },
+    {
+      "skill": "cap-evaluation",
+      "row": "make passing this gate a precondition for a self-improvement loop applying its own change, not a report the loop writes afterwards",
+      "source": "X-end-to-end-040",
+      "quote": "A regression suite is the gate that makes a self-improvement loop safe to run automatically."
+    }
+  ]
+}

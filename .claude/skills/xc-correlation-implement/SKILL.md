@@ -120,7 +120,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Invariant | Origin | Evidence |
 |---|---|---|
-| Proposed: xc-correlation owns the guarantee, its scope over the three signal kinds and its field set (F-b4-06, F-a7-02). Nothing here restates it. This facet owns only three things: where the stamp is written, where the omission count is taken, and how the two implementations are selected. | proposed | `F-b4-06`, `F-a7-02` |
 | What runs today is the counter-example, not the baseline to extend. A trace header is injected at dispatch and the agent runtime ignores it and mints its own root trace, so this build removes a dependency on an inherited context rather than adding a feature on top of one. | sourced | `F-a7-02`, `E-finding-a7-1` "mints its own root trace" |
 | The stamp is written by the platform at the dispatch seam and read by adapters; no adapter derives it. agentic-stack states design rule 1 (F-b1-02); the consequence here is that an implementation which computes a run identifier inside a backend integration has moved the guarantee into the thing the guarantee is meant to survive. | sourced | `F-b1-02`, `E-seam-dispatch` "The core imports interfaces, never implementations" |
 | The audit runs unchanged against both implementations, selected by configuration with no code edit between runs, and a merged report showing fewer than two is a failed run rather than a partial one. build-adapter-pair owns the rule and the axis test (F-b1-04); what this facet adds is that the two differ in where enforcement executes, not in which vendor supplies it. | sourced | `F-b1-04` "Swappability is a tested property, not an intention." |
@@ -132,7 +131,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Item | Origin | Evidence |
 |---|---|---|
 | Proposed: the choice of implementation is not visible to anything that emits. No emitter, no core component and no workflow author can tell which of the two is receiving, because a caller that could tell them apart would encode the difference and the swap would stop being free. | proposed | `F-b1-05` |
-| Proposed: no configuration key disables the stamp or the audit for a deployment, an environment or a fast path. xc-correlation states why a caller cannot decline the guarantee (F-b1-08); the consequence for the build is that the off switch must not exist in the configuration surface either, or the zero-omission assertion becomes a statement about how one environment was configured. | proposed | `F-b1-08` |
+| agentic-stack states design rule 7 (F-b1-08); xc-correlation applies it to why a caller cannot decline the guarantee. The consequence for the build is that no configuration key disables the stamp or the audit for a deployment, an environment or a fast path: the off switch must not exist in the configuration surface either, or the zero-omission assertion becomes a statement about how one environment was configured. | sourced | `F-b1-08` "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller" |
 
 ## Instructions
 
@@ -153,7 +152,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 |---|---|---|
 | Count non-conformant records in the pipeline stage; never drop them. A stage that silently discards what it cannot verify produces a clean report from a broken system, which is the same shape of green as a gate whose behavioural stages all skipped - agentic-stack states it as a best practice and build-evidence-record and build-definition-of-done both build on it (F-a7-03). | sourced | `F-a7-03` "Those establish well-formedness, not correctness" |
 | Verify that the stamp took effect at runtime rather than that it was configured: configuration written in the documented place was silently discarded here before, so read a resource attribute back off the wire in the audit instead of asserting that a file or an environment variable was set. | sourced | `F-a7-04` "Configuration written in the documented place was silently discarded." |
-| Proposed: hold the read-only audit open for a full week of real traffic before gating, and keep the per-kind counts separately per entry point. The omission that matters is the emission site nobody remembered, and it will not appear in a fixture written by the person who is trying to remember them all. | proposed | `F-part-c-04` |
 | Proposed: when an omission is found, fix the boundary that failed to stamp and re-run, rather than teaching the audit to tolerate that emission site. A tolerated site is a permanent hole with a comment on it, and the count is the only thing standing between the guarantee and a convention. | proposed | `F-b1-08` |
 
 ## Adapters

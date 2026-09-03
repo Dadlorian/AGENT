@@ -362,15 +362,6 @@
         "quote": "duplicate requests will return the same result as the original request"
       },
       {
-        "text": "Proposed: every lease carries an owner and an expiry, and a lease past its expiry is reclaimable by anyone. An unbounded lease converts one crashed owner into a key nobody can ever use again, which is the failure this guarantee's own breakage is built to produce. Research query: is there a fetched source stating an unbounded lease specifically (versus an unbounded retry or an undelivered acknowledgment) is the failure mode, or is that this row's own extension of the general crash-and-redeliver pattern the cited records describe?",
-        "origin": "proposed",
-        "sources": [
-          "X-xc-idempotency-lease-005",
-          "X-xc-idempotency-lease-001"
-        ],
-        "quote": "A handler can update the database successfully but fail before acknowledgment, causing the broker to deliver the same message again."
-      },
-      {
         "text": "Proposed: reclaim fences the previous owner. The returning owner's token is stale, so its seal is refused rather than overwriting a result the new owner produced; an expiry without fencing trades a stuck key for two writers. Research query: is there a fetched source on fencing tokens for a reclaimed lease specifically, rather than this row's own extension of cap-idempotency's replay contract to the reclaim path?",
         "origin": "proposed",
         "sources": [
@@ -408,8 +399,8 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: there is no header, field, role or configuration flag that skips the acquisition, sets the expiry to nothing, or turns an attach into a second execution. The guarantee is applied rather than requested, and the only honest way to say that in a schema is to leave nothing for a caller to set. Research query: is there a fetched source naming these specific escape hatches (a skipped acquisition, a nulled expiry, an attach turned into a second execution) as the ones a lease guarantee must close, or is the list reasoned from design rule 7's general non-optionality alone?",
-        "origin": "proposed",
+        "text": "agentic-stack states design rule 7 (F-b1-08, F-b4-01): cross-cutting guarantees are not optional. For the lease, there is no header, field, role or configuration flag that skips the acquisition, sets the expiry to nothing, or turns an attach into a second execution; the only honest way to say that in a schema is to leave nothing for a caller to set.",
+        "origin": "sourced",
         "sources": [
           "F-b1-08",
           "F-b4-01"
@@ -521,15 +512,6 @@
         "T-t1-03"
       ],
       "quote": "An internal or external event must be able to enter the system."
-    },
-    {
-      "step": 9,
-      "action": "Open references/lease-placement.md when you need the full lease schema, the per-entry key-derivation table, the attach state machine or the worked envelopes in full. Proposed: the body of this skill is enough to wire the guarantee and to judge whether an implementation actually holds it.",
-      "why": "Proposed, progressive disclosure. The state machine and the derivation table are long material, and a reader deciding whether a second execution can happen does not need them open. TARGET T3 warns that something daunting will not be used.",
-      "origin": "proposed",
-      "sources": [
-        "T-t3-02"
-      ]
     }
   ],
   "best_practices": [

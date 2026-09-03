@@ -1,0 +1,407 @@
+{
+  "auditor": "opus",
+  "date": "2026-09-03",
+  "skills_existing": 89,
+  "skills_planned": 127,
+  "counting_note": "89 skill.json files exist on disk: 88 manifest-listed plus agentic-stack, which the manifest excludes by design as the root contract. docs/skill-manifest.json lists 126; 126 + root = 127 planned, 38 of them not yet written. The brief's figure of 87 is two low against the tree as of this audit.",
+  "method": "Every skill.json parsed for description, purpose.text, instructions[].action, contract.invariants[].text and every sources[]/quote pair. Overlap measured three ways: shared cited kb ids, shared verbatim quotes, and shared (id,quote) pairs; near-duplicate action text by difflib ratio over case- and punctuation-normalised strings; description trigger collision by tf-idf cosine over content words with connectives stopped out. tools/validate_skills.py run clean at 0 errors, 76 warnings, of which 38 are the 'restates <id> under the same quote as <skill>, without naming it' form. SKILL.md, references and adapters were not read.",
+  "overlap_pairs": [
+    {
+      "a": "cap-agent-runtime-use",
+      "b": "cap-isolation-use",
+      "shared_ids": 12,
+      "shared_quotes": 7,
+      "overlap_kind": "same-content",
+      "evidence": "Instruction rows are byte-identical after backtick normalisation: both say 'Read a failure as a problem object: branch on type, use retryable and retry_after_s as given, and never parse the words.' (difflib 1.00). Four more rows are near-identical: 'Compose upward, not inward: a turn/one contained unit is one step...' (0.89), 'To change which runtime.../what contains your work..., change configuration. Do not add an argument, and do not write a branch on what answered.' (0.74), the T1 three-ways-in row, and the closing 'If this page starts to feel like something you must study before calling, stop and cut it rather than adding to it.' 12 of 15 cited ids are shared. Only steps 1-3 of each are concern-specific.",
+      "recommendation": "merge-into:cap-consumption",
+      "why": "Five of the six shared rows are not about agent turns or about containment; they are the platform's caller doctrine, repeated per capability. Move that doctrine to one cap-consumption skill and leave each capability's genuinely distinct part - the fields you send and the field you branch on - as a short usage section inside the ideal skill. TARGET T6.1 asks for one way to consume the platform shown end to end, which 21 near-identical -use pages actively contradict."
+    },
+    {
+      "a": "cap-agent-runtime-use",
+      "b": "cap-tool-access-use",
+      "shared_ids": 12,
+      "shared_quotes": 6,
+      "overlap_kind": "same-trigger",
+      "evidence": "Highest cross-family description similarity in the repository (tf-idf cosine 0.399). Both descriptions open with the same frame - 'How to run one agent turn and read what came back' vs 'How to let a unit of work reach a tool and read what came back' - and both continue 'the N things you supply, the one field you branch on, two worked X, what a failure looks like, and why changing X changes nothing you wrote', then trigger on the same phrase 'when a human, an agent or an event needs...'. cap-isolation-use (0.361), cap-durable-execution-use (0.232) and cap-model-access-use (0.220) sit in the same cluster.",
+      "recommendation": "merge-into:cap-consumption",
+      "why": "A newcomer holding the task 'run some work' has five pages whose descriptions differ only in the noun. The shared frame is a template, so the trigger text cannot discriminate. One consumption skill that names the five call shapes in one table discriminates on the noun, which is the only thing that actually differs."
+    },
+    {
+      "a": "cap-durable-execution-use",
+      "b": "cap-tool-access-use",
+      "shared_ids": 12,
+      "shared_quotes": 6,
+      "overlap_kind": "facet-thin",
+      "evidence": "12 of 14 cited ids shared. Both close on the same near-verbatim row (difflib 0.88) 'If this page starts to feel like something you must study before calling, stop and cut it rather than adding to it: the caller-facing surface is ...' and both carry 'Compose upward, not inward: one call/a durable run is one step. Retries, ... and a whole agent are built above this call rather than by adding fields to it.' Each page is 12-14 rows; after removing rows shared with three or more sibling -use skills, roughly half remains.",
+      "recommendation": "merge-into:cap-consumption",
+      "why": "The self-referential instruction to cut the page if it grows is itself replicated across four pages, which is the clearest possible sign the facet has become a form to fill in rather than a skill with something to say."
+    },
+    {
+      "a": "cap-capability-packaging-use",
+      "b": "cap-capability-registry-use",
+      "shared_ids": 7,
+      "shared_quotes": 5,
+      "overlap_kind": "same-content",
+      "evidence": "A byte-identical instruction row in both files (difflib 1.00): 'Read the outcome's resolved member, and when it is false branch on the problem's type member. Show detail to a person; never parse it, key metrics on it, or branch on it.' Description similarity 0.326. cap-mandate-broker-use carries the same row, making it a three-skill cluster.",
+      "recommendation": "merge-into:cap-consumption",
+      "why": "Identical text under identical citations in two files is duplication by definition, not two skills that happen to agree. The row belongs to whoever owns the outcome shape once."
+    },
+    {
+      "a": "cap-provenance-use",
+      "b": "cap-telemetry-use",
+      "shared_ids": 9,
+      "shared_quotes": 2,
+      "overlap_kind": "facet-thin",
+      "evidence": "Rows align one-for-one at difflib 0.81: 'Send what you were already sending. Do not add a provenance field, a signing option or a request to attest; there is not one.' against 'Send what you were already sending. Do not add a tracing call, a span of your own, or a request to be observed; there is not one.' Step 2 of both is 'Read the <identifier> off the result and keep it next to whatever you do with the output' (shared with cap-state-persistence-use). Step 5 of both is 'Handle exactly one failure, the 422/404 in worked example 2'. Step 7 of both is 'Proposed: if you want to see the starting state, use examples/end-to-end.' Six of seven instructions are the template.",
+      "recommendation": "merge-into:cap-consumption",
+      "why": "These are ambient guarantees: the caller does nothing and the platform does everything. A skill whose entire instruction to a caller is 'send what you were already sending' does not need its own page. cap-idempotency-use, cap-identity-use, cap-policy-use, cap-provenance-use, cap-state-persistence-use and cap-telemetry-use are exactly the six that share the T1 row 'All three of TARGET T1's ways in reach this the same way'; they collapse to one paragraph plus a six-row table of what each stamps on the result."
+    },
+    {
+      "a": "cap-idempotency-use",
+      "b": "cap-provenance-use",
+      "shared_ids": 8,
+      "shared_quotes": 2,
+      "overlap_kind": "same-content",
+      "evidence": "difflib 0.92 on 'Handle exactly one failure, the 409 in worked example 2, and handle it by minting a new key rather than retrying' against 'Handle exactly one failure, the 422 in worked example 2, and handle it by refusing the artifact rather than by retrying.' Both cite F-b4-07. The sentence is a template with the status code and the remedy substituted.",
+      "recommendation": "merge-into:cap-consumption",
+      "why": "The instruction that survives substitution is 'handle exactly one failure and do not retry it', which is one rule about the problem-details contract, not two rules about two capabilities. The status code and remedy are a table row."
+    },
+    {
+      "a": "cap-agent-runtime-implement",
+      "b": "cap-model-access-implement",
+      "shared_ids": 16,
+      "shared_quotes": 8,
+      "overlap_kind": "same-content",
+      "evidence": "Highest shared (id,quote) count in the repository at 16. A byte-identical row in both (difflib 1.00): 'Run the definition of done below, then run its breakage, and record both outputs as an evidence record naming the code version and the tree hash under test.' The same row appears verbatim in cap-durable-execution-implement, cap-errors-implement, cap-isolation-implement and cap-tool-access-implement - six skills. A second cluster, 'Keep every statement about runtime behaviour labelled claimed until that evidence record exists, and never upgrade a label by rewording a sentence', spans ten -implement skills.",
+      "recommendation": "keep-both",
+      "why": "The two capabilities are genuinely different and must stay apart; the duplication is not between them but between each of them and build-definition-of-done and build-evidence-record, which already own these sentences. Across 31 -implement skills, 20 clusters of three or more skills cover 82 of 497 rows. Delete those rows and cite the discipline by name instead. This is the fix the validator is already asking for in its 38 'restates ... without naming it' warnings, applied to sibling skills the validator cannot see because it only compares against builds_on ancestors."
+    },
+    {
+      "a": "xc-budget-implement",
+      "b": "xc-identity-delegation-implement",
+      "shared_ids": 9,
+      "shared_quotes": 4,
+      "overlap_kind": "same-content",
+      "evidence": "Three separate byte-identical rows (difflib 1.00 each): 'Run the definition of done below over both enforcement points, then run its breakage, and record both outputs as evidence records naming the script hash...'; 'Record differs_in_execution_model with the three axes in the shape above, leave measured false until the swap has actually been run...'; 'Keep every statement here labelled claimed until that evidence record exists...'. The first and second also appear in xc-idempotency-lease-implement, xc-policy-gate-implement and xc-provenance-chain-implement.",
+      "recommendation": "keep-both",
+      "why": "Budget and identity delegation share nothing conceptually; three identical rows out of nine means a third of the xc- implement facet is a form. Strip to build-adapter-pair and build-definition-of-done, leaving the six rows that name the actual placements and the actual migration. Do not merge the skills."
+    },
+    {
+      "a": "core-graph-implement",
+      "b": "core-ledger-implement",
+      "shared_ids": 13,
+      "shared_quotes": 8,
+      "overlap_kind": "same-content",
+      "evidence": "Description similarity 0.323, highest among core. 'Record every conformance run as an evidence record naming what was run, the code version and the tree hash under test' is verbatim across core-graph-implement, core-judge-implement and core-ledger-implement (difflib 0.99-1.00). Two more rows - 'Proposed: open references/implementation-notes.md when you are writing the construction path...' and 'Proposed: each store ships a binding record conforming to the shape above, and the two records differ on at least one axis of the differs_in_execution_model...' - are shared by all four core -implement skills.",
+      "recommendation": "keep-both",
+      "why": "core-graph and core-ledger are unambiguously distinct components: typed nodes and edge-type rules against an append-only prior_result authority, with zero shared (id,quote) pairs between the two ideal skills. The overlap is entirely in the implement scaffold. Strip the scaffold; keep four core components."
+    },
+    {
+      "a": "cap-capability-packaging",
+      "b": "cap-capability-registry",
+      "shared_ids": 4,
+      "shared_quotes": 3,
+      "overlap_kind": "same-trigger",
+      "evidence": "Both ideal skills cite the same capability entity E-capability-capability-packaging, the same standard E-standard-agent-skills-spec, the same today-adapter E-adapter-skill-files and the same swap candidate E-swap-candidate-any-spec-conformant-registry, all sourced to the single fact F-b3-07. kb/entities.jsonl records 16 capability entities against 20 written cap- ideal skills, and there is no E-capability-capability-registry. Their -implement descriptions are the second-most-similar cross-family pair in the repo at 0.378, their -use pair shares a byte-identical row.",
+      "recommendation": "keep-both",
+      "why": "The instruction content is genuinely distinct - frontmatter fields and load tiers against semantic version, signature and digest verification - at only 4 shared ids of 27, and cap-capability-registry names a second standard, E-standard-a2a-messaging, that packaging does not. Merging would produce one oversized skill. The real defect is that registry borrows packaging's capability entity, so design rule 2 cannot be evaluated on it: give registry its own capability entity or state in one sentence, as cap-policy does for xc-policy-gate, where packaging stops and resolution begins. Do not merge on the strength of the shared entity alone."
+    },
+    {
+      "a": "cap-document-validation-implement",
+      "b": "core-document-implement",
+      "shared_ids": 9,
+      "shared_quotes": 5,
+      "overlap_kind": "same-trigger",
+      "evidence": "Description similarity 0.278 driven entirely by the word 'document', which means two different things: cap-document-validation is a schema checker for any payload, core-document is the declarable artifact carrying intent, definition of done and steps. A newcomer told to 'go work on documents' has no way to tell these apart from the names.",
+      "recommendation": "keep-both",
+      "why": "Distinct boundaries with distinct standards; this is a naming collision, not a content overlap. Rename cap-document-validation to cap-schema-validation, or core-document to core-work-document, and the collision disappears at zero structural cost."
+    },
+    {
+      "a": "seam-entry-envelope",
+      "b": "cap-work-intake",
+      "shared_ids": 0,
+      "shared_quotes": 0,
+      "overlap_kind": "same-content",
+      "evidence": "seam-entry-envelope is planned but unwritten; its manifest purpose is 'Make every driving adapter produce one identical internal record, so nothing downstream ever branches on how the work arrived.' cap-work-intake is written and its first two instructions already discharge exactly that: 'Fix one canonical envelope first and treat every producer as a mapper into it. Do not carry two first-class in[put shapes]' and 'Require kind, actor with delegation chain, intent, correlation, budget ceiling, idempotency key and payload on every envelope', with instruction 5 'Route, meter, log and audit on envelope fields only.' Further, the manifest's own layers block defines seam as 'the two boundaries with no standard to adopt, Dispatch and State' - by that definition entry-envelope is not a seam, yet the manifest plans four seam ideals.",
+      "recommendation": "drop:seam-entry-envelope",
+      "why": "Writing it would duplicate a written skill and would break the manifest's own two-seam definition. Fold any residue into cap-work-intake. Shared ids are zero only because the skill does not exist yet; the evidence is the purpose against the written instructions."
+    },
+    {
+      "a": "seam-agent-ingress",
+      "b": "cap-work-intake",
+      "shared_ids": 0,
+      "shared_quotes": 0,
+      "overlap_kind": "same-content",
+      "evidence": "Planned purpose: 'Let an external agent enter the platform with the client it already has, over a protocol it already speaks.' cap-work-intake's producer-adapter model already covers this - every producer is a mapper into the one envelope, and its instruction 3 records how each adapter derives the idempotency key. The external agent's discoverability half is already carried by cap-capability-registry instruction 6, 'Register another party's agent as a record of the same shape, carrying what it is good at, its modalities and its authentication', which cites E-standard-a2a-messaging.",
+      "recommendation": "drop:seam-agent-ingress",
+      "why": "An external agent is one more producer, which is what cap-work-intake is for, plus one more registry record, which is what cap-capability-registry is for. Confidence is lower here than for seam-entry-envelope because the skill is unwritten and the A2A transport may yet prove to need original design; if it does, it is an adapter of cap-work-intake, not a seam. Restoring seam to Dispatch and State also restores the manifest's own definition."
+    },
+    {
+      "a": "xc-correlation-envelope",
+      "b": "xc-correlation",
+      "shared_ids": 0,
+      "shared_quotes": 0,
+      "overlap_kind": "same-content",
+      "evidence": "xc-correlation-envelope is planned as 'Fix the named, versioned field set that says which run a signal belongs to, and the carrier it rides on at each boundary.' The written xc-correlation already fixes both halves: instruction 1 'Stamp the correlation record once, at entry, onto the envelope, before anything is planned or priced; every later record is derived from it', and instruction 2 'Re-stamp at every boundary a unit crosses - a new process, an isolated unit, an event on a bus, a call into a runtime whose instrumenta[tion]...'. The versioned field set is cap-telemetry's CorrelationResourceAttributes, named in its instruction 2.",
+      "recommendation": "drop:xc-correlation-envelope",
+      "why": "The field set belongs to cap-telemetry, the carrier and the re-stamping belong to xc-correlation, and both are already written. A third skill between them has nothing left to own."
+    },
+    {
+      "a": "compose-workflow",
+      "b": "compose-operators",
+      "shared_ids": 0,
+      "shared_quotes": 0,
+      "overlap_kind": "same-content",
+      "evidence": "compose-operators is planned as 'Compose typed steps with one closed set of deterministic operators, sequence, parallel, loop-until, branch and approve'; compose-workflow as 'Assemble a plan into a sequence of dispatches whose every step is durable before the next begins.' A workflow is the sequence operator plus the durability guarantee cap-durable-execution already owns. core-document instruction 3 confirms the single vocabulary: 'Draw every step from the closed operator vocabulary the composition layer publishes, and put no free text in the step position.'",
+      "recommendation": "merge-into:compose-operators",
+      "why": "One closed operator set with a per-operator section is exactly one page a composer reads; a separate skill per operator re-opens the set the vocabulary was defined to close. compose-loop and compose-approval carry substantive content beyond their operator - a termination reason and a park-and-resume-exactly-once contract - so they stay."
+    },
+    {
+      "a": "build-adapter-pair",
+      "b": "agentic-stack",
+      "shared_ids": 10,
+      "shared_quotes": 5,
+      "overlap_kind": "same-content",
+      "evidence": "The validator emits 11 warnings for this one pair, the most of any skill: 'build-adapter-pair: restates F-b1-02 / F-meta-04 / F-b1-08 / F-b4-01 / F-part-c-08 / F-b1-05 / F-part-c-09 / F-a7-04 / F-a7-02 / F-a4-01 / F-b1-04 under the same quote as agentic-stack, without naming it (compose by name, not by copy)'. build-skill-authoring adds 5 more of the same form.",
+      "recommendation": "keep-both",
+      "why": "The discipline is distinct - choosing a second implementation that breaks a different assumption, and the conformance suite both must pass - and no build- skill shares a near-duplicate action row with any other build- skill at the 0.55 threshold. The fix is to name agentic-stack in the row text, which is what the warning asks for, not to merge. Repairing these 38 warnings is the cheapest way to make the validator's restatement check meaningful again."
+    }
+  ],
+  "facet_verdict": {
+    "cap": "fold use into ideal",
+    "core": "keep 2",
+    "xc": "keep 2",
+    "compose": "keep 2",
+    "why": "Measured within-family, the ideal and implement facets are genuinely different: shared (id,quote) pairs between an ideal and its own implement run 0-6 against 13-25 distinct ids each, and the content divides cleanly into what the contract is against which two adapters serve it, how to migrate, and where the guarantees attach. xc-policy-gate against xc-policy-gate-implement is typical - placement rules and an ordering assertion against two concrete placements, a shadow-then-gate migration, and a conformance run. That split earns its keep at every layer, so implement stays. The use facet does not. Across 20 written -use skills, 8 clusters of three or more skills cover 29 of 255 rows verbatim or near-verbatim, the five 'run something' -use descriptions form the tightest trigger collision in the repository (cosine 0.23-0.40, peaking at cap-agent-runtime-use against cap-tool-access-use), two -use skills share a byte-identical instruction row, and the six ambient-guarantee -use skills reduce to 'send what you were already sending' plus one field to read. What is genuinely per-capability - the fields you send, the field you branch on, one worked call, one worked rejection - is a card, not a page, and belongs in the ideal skill that already owns the contract. Every -use skill also declares builds_on its own -implement, all 20 of 20, which drags builder-facing pages into a composer's load path and is the single largest avoidable cost to T3."
+  },
+  "cap_xc_verdict": [
+    {
+      "concern": "idempotency",
+      "cap": "cap-idempotency",
+      "xc": "xc-idempotency-lease",
+      "verdict": "keep-split",
+      "why": "6 shared ids of 39, 1 shared quote. cap-idempotency fixes claim(key, payload_digest, scope) with three outcomes and the retention window; xc-idempotency-lease fixes that acquisition sits on the shared entry path before planning, that a lease carries an owner, an expiry and a fencing token, and that a fresh lease is taken at every re-entry boundary - a resumed step, a delivered approval. Neither is derivable from the other."
+    },
+    {
+      "concern": "identity",
+      "cap": "cap-identity",
+      "xc": "xc-identity-delegation",
+      "verdict": "keep-split",
+      "why": "4 shared ids of 32 and zero shared quotes, the cleanest split of the seven. cap-identity adopts the token-exchange and workload-attestation standards and fixes attest, delegate and verify; xc-identity-delegation fixes that the actor is bound in the driving adapter rather than the core or dispatch, that actor is required on the envelope with no nullable variant, and that a chain is checkable for acyclicity and a root nobody asserted."
+    },
+    {
+      "concern": "errors",
+      "cap": "cap-errors",
+      "xc": "xc-typed-errors",
+      "verdict": "keep-split",
+      "why": "5 shared ids of 28. The handoff is explicit in the text: xc-typed-errors instruction 1 reads 'Take the failure object, its members and the closed type registry from cap-errors and add no shape here. This layer decides only three things'. What it adds is a tree-wide audit - convert one boundary at a time, count the remainder untyped, assert zero sites extracting failure information by matching a string. That is a measurement over the whole tree, not a restatement of the object."
+    },
+    {
+      "concern": "policy",
+      "cap": "cap-policy",
+      "xc": "xc-policy-gate",
+      "verdict": "keep-split",
+      "why": "The strongest case for the split, and the model the other six should copy. cap-policy instruction 8 states the boundary in the skill itself: 'Stop at the decision. Where it is consulted, and the rule that it must precede the first metered call, belong to xc-policy-gate.' The 6 shared (id,quote) pairs are the highest of the seven concerns but they sit either side of a boundary the text names."
+    },
+    {
+      "concern": "provenance",
+      "cap": "cap-provenance",
+      "xc": "xc-provenance-chain",
+      "verdict": "keep-split",
+      "why": "4 shared ids of 25, zero shared quotes. cap-provenance fixes the three-layer signed statement and the rule that a verifier nobody here wrote must check it with our store unreachable; xc-provenance-chain fixes closure - enumerate every artifact digest a result references as an obligation list, refuse the release when no statement can be produced, and sweep for orphans at a pinned head. Existence of a statement per artifact is a different property from what a statement is."
+    },
+    {
+      "concern": "telemetry and correlation",
+      "cap": "cap-telemetry",
+      "xc": "xc-correlation",
+      "verdict": "keep-split",
+      "why": "Keep the split but repair a leak. 5 shared ids of 29. cap-telemetry properly owns the pinned transport and the separately versioned attribute mapping; xc-correlation properly owns the checked property that spans, log records and problem objects all carry the stamped identifiers and that a run is reassembled by equality rather than by walking a parent chain. But cap-telemetry instruction 2, 'Set the correlation attribute set as resource attributes at dispatch', is a placement statement inside the interface skill, which is precisely what the layer split exists to prevent. Move the where to xc-correlation and leave the shape in cap-telemetry. Also drop the planned xc-correlation-envelope, which would sit between two skills that already cover it."
+    },
+    {
+      "concern": "budget",
+      "cap": "none - no cap-budget exists or is planned",
+      "xc": "xc-budget",
+      "verdict": "keep-split",
+      "why": "The asymmetry is correct rather than a gap, and worth recording so nobody 'fixes' it by inventing a cap-budget. There is no budget interface to import: the metering surface belongs to cap-model-access, cap-tool-access and cap-isolation, and xc-budget builds_on cap-model-access and cap-errors accordingly. Budget is placement only - a ceiling applied outside the unit, terminating the unit rather than the platform. This proves the cap/xc pairing is a pattern the concerns earn individually, not a grid the layers impose."
+    }
+  ],
+  "build_verdict": [
+    {
+      "skill": "build-skill-authoring",
+      "verdict": "keep",
+      "why": "The only skill that tells an author what a skill.json must contain and how the render-then-validate loop ends at zero errors. Nothing else can own it. Repair the 5 validator warnings by naming agentic-stack where it restates the root's quotes."
+    },
+    {
+      "skill": "build-definition-of-done",
+      "verdict": "keep",
+      "why": "Owns criterion plus deliberate breakage plus both recorded outputs. Its sentences are currently copied into six -implement skills verbatim; those copies should cite it by name, which makes this skill more load-bearing, not less."
+    },
+    {
+      "skill": "build-evidence-record",
+      "verdict": "keep",
+      "why": "Owns claimed against measured and the hash-chained record. Distinct from build-definition-of-done, which owns the criterion: 22 and 11 distinct ids with negligible mutual overlap. The 'Keep every statement labelled claimed until that evidence record exists' row that ten -implement skills carry is this skill's sentence and should live only here."
+    },
+    {
+      "skill": "build-adapter-pair",
+      "verdict": "keep",
+      "why": "Owns the second-implementation-breaks-a-different-assumption test and differs_in_execution_model. Restates 10 root ids under shared quotes across 11 warnings, which is a citation defect to repair by naming, not a reason to merge - no build- skill shares a near-duplicate action row with any other at the 0.55 threshold."
+    },
+    {
+      "skill": "build-research-record",
+      "verdict": "keep",
+      "why": "Owns one record per search, source and quote and the rule that a cited quote is a verbatim substring of the record it names - the rule the validator enforces. Distinct from build-evidence-record, which is about runs rather than sources."
+    },
+    {
+      "skill": "build-ceremony",
+      "verdict": "keep",
+      "why": "Zero ids shared with agentic-stack and no near-duplicate rows with any build- sibling. Discharges TARGET T4.4 and T5.1 directly; this audit is an instance of it."
+    },
+    {
+      "skill": "build-simplicity-budget",
+      "verdict": "keep",
+      "why": "Zero shared ids with the root. It is the only skill that holds a surface to a counted budget, and it is the discipline this very audit applies. Under-used rather than redundant: applied to the -use facet it would have caught the template before 20 pages were written."
+    },
+    {
+      "skill": "build-interface-versioning",
+      "verdict": "keep",
+      "why": "Zero shared ids with the root and one warning against build-skill-authoring. Owns per-call version declaration, the frozen core field set and stated deprecation windows - nothing in cap- or xc- covers it."
+    },
+    {
+      "skill": "build-entry-conformance",
+      "verdict": "keep",
+      "why": "Planned, unwritten. Proving the three entry points with third-party tooling and a deliberately broken adapter is TARGET T1 turned into a check, and no written skill discharges it. The single most valuable unwritten build- skill; write it before any further cap- work."
+    }
+  ],
+  "proposed_count": {
+    "before": 127,
+    "after": 99,
+    "by_layer_after": {
+      "root": 1,
+      "build": 9,
+      "core": 10,
+      "cap": 43,
+      "xc": 22,
+      "seam": 4,
+      "compose": 10
+    }
+  },
+  "count_derivation": "cap 63 to 43: 21 ideal and 21 implement unchanged, 21 use facets replaced by 1 cap-consumption skill. xc 24 to 22: drop xc-correlation-envelope and its implement. seam 8 to 4: drop seam-entry-envelope and seam-agent-ingress with their implements, restoring the manifest's own two-seam definition of Dispatch and State. compose 12 to 10: merge compose-workflow into compose-operators. build, core and root unchanged. Net 127 minus 28 equals 99.",
+  "load_path_example": {
+    "task": "run one agent turn contained with budget and identity",
+    "before": [
+      "agentic-stack",
+      "cap-agent-runtime",
+      "cap-agent-runtime-implement",
+      "cap-agent-runtime-use",
+      "cap-isolation",
+      "cap-isolation-implement",
+      "cap-isolation-use",
+      "cap-errors",
+      "cap-identity",
+      "cap-model-access",
+      "xc-budget",
+      "xc-identity-delegation",
+      "build-adapter-pair",
+      "build-definition-of-done",
+      "build-evidence-record",
+      "build-skill-authoring"
+    ],
+    "before_note": "16 skills. Computed as the transitive builds_on closure of the four skills a composer would name for this task. Four of the sixteen are build- authoring disciplines that a caller never needs, and two are -implement skills pulled in only because all 20 -use skills declare builds_on their own -implement.",
+    "after": [
+      "agentic-stack",
+      "cap-consumption",
+      "cap-agent-runtime",
+      "cap-isolation",
+      "xc-budget",
+      "xc-identity-delegation"
+    ],
+    "after_note": "6 skills, and 3 of those are read once rather than per task: agentic-stack and cap-consumption are the standing contract, leaving the two capabilities being called and the two guarantees being applied. Achieved by three changes: fold each -use into its ideal, cut the -use to -implement links, and stop cap- ideals from forcing build- disciplines into a caller's closure by moving those links to the -implement facet where authors actually need them."
+  },
+  "risks_of_consolidating": [
+    "Folding 21 use facets into their ideal skills pushes the ideal pages past the author brief's checked budget of 6-10 instructions and 3-10 invariants unless the -implement boilerplate strip happens first. Do the strip first; the two changes are only safe together.",
+    "cap-consumption becomes a single page every caller depends on, which cuts against TARGET T2.2, enhancing one aspect without touching the rest. Mitigate by keeping the per-capability call cards in the ideal skills and letting cap-consumption hold only the doctrine that is provably identical across capabilities - the eight clusters this audit measured.",
+    "Dropping seam-agent-ingress rests on a manifest purpose line, not on a written skill. If the A2A transport turns out to need original design rather than an adapter of cap-work-intake, the decision reverses. Re-check when cap-work-intake-implement's second adapter is chosen.",
+    "The manifest's used_by links are checked for symmetry by the validator, so removing 21 skills breaks links in every skill that names a -use sibling. The link rewrite must be done in the same commit as the removal or the tree will not validate.",
+    "Merging compose-workflow into compose-operators concentrates the composition vocabulary in one unwritten skill; if it is written badly it is a single point of failure for the whole compose layer. Write compose-operators before compose-agent so the vocabulary exists before anything consumes it.",
+    "Stripping shared rows from -implement skills removes cited quotes, and the validator requires every sourced row to carry a verbatim quote. Removal is safe but any rewrite of a surviving row risks breaking the verbatim-substring check; re-run tools/validate_skills.py to zero errors after each batch.",
+    "Consolidation reduces the count but not the concept load. A newcomer still meets 16 capability entities, 7 cross-cutting concerns and 4 core components. If T3 is still unmet at 99, the next lever is the -implement facet, not further cap- merging."
+  ],
+  "keep_as_is": [
+    "core-document, core-graph, core-judge, core-ledger - four ideal skills with zero shared (id,quote) pairs between any two; a declarable artifact, a typed structure, a pure grading function and an append-only replay authority are four different things.",
+    "The seven cap- and xc- concern pairs - every one measured at 4-6 shared ids against 23-39 in the union, with cap-policy naming the boundary in its own instruction 8; the interface-versus-placement split is earning its keep.",
+    "cap-work-intake against cap-human-interaction - 4 shared ids of 35 and zero shared quotes despite both citing E-capability-work-intake; normalising a producer's message into one envelope and parking a run to ask a person are unrelated contracts.",
+    "cap-identity against cap-mandate-broker - 3 shared ids of 35 and zero shared quotes; who an actor is, versus a short-lived destination-bound credential for doing one irreversible thing, are different boundaries.",
+    "All 8 build- disciplines - zero near-duplicate action rows between any two of them at the 0.55 threshold, the only layer in the repository with that property.",
+    "The 7 written xc- ideal skills - zero near-duplicate action rows across 61 rows, the cleanest-written layer in the repository; whatever process produced these should be applied to the -implement facet.",
+    "xc-budget's lack of a cap- twin - the asymmetry is correct and should be recorded so it is not 'fixed' by inventing a budget interface that has nothing to import.",
+    "cap-evaluation as distinct from core-judge - grading one result against a resolved criterion is not scoring a versioned unit against a versioned case set with external effects stubbed; keep both, but make cap-evaluation name core-judge in one sentence."
+  ],
+  "plan": [
+    {
+      "step": 1,
+      "action": "Cut the builds_on link from every -use skill to its own -implement sibling, in both skill.json and docs/skill-manifest.json, keeping used_by symmetric. All 20 of 20 written -use skills carry this link today. Re-run tools/validate_skills.py to zero errors.",
+      "affects": ["all 20 written -use skills", "docs/skill-manifest.json"],
+      "mechanical": true
+    },
+    {
+      "step": 2,
+      "action": "Move the build- discipline links (build-adapter-pair, build-definition-of-done, build-evidence-record, build-skill-authoring) off the cap- and xc- ideal skills and onto their -implement facets, where the author actually applies them. This alone takes the worked load path from 16 skills to 8 without removing a single skill.",
+      "affects": ["all cap- and xc- ideal skills", "docs/skill-manifest.json"],
+      "mechanical": true
+    },
+    {
+      "step": 3,
+      "action": "Repair the 38 validator warnings of the form 'restates <id> under the same quote as <skill>, without naming it' by naming the owning skill in the row text. Do not change the citation or the quote.",
+      "affects": ["build-adapter-pair", "build-evidence-record", "build-interface-versioning", "build-research-record", "build-skill-authoring", "cap-document-validation and its 2 facets", "cap-errors and its 2 facets"],
+      "mechanical": false
+    },
+    {
+      "step": 4,
+      "action": "Delete the 20 measured boilerplate clusters from the 31 written -implement skills - 82 of 497 rows - replacing each with a single row that names build-definition-of-done, build-evidence-record or build-adapter-pair. Verify each surviving row still carries a verbatim quote from a cited record.",
+      "affects": ["all 31 written -implement skills", "build-definition-of-done", "build-evidence-record", "build-adapter-pair"],
+      "mechanical": false
+    },
+    {
+      "step": 5,
+      "action": "Write cap-consumption: one skill carrying the caller doctrine measured as identical across capabilities - branch on one field and no other, read failures as problem-details and never parse the words, compose upward not inward, change configuration rather than adding an argument, all three of TARGET T1's ways in reach it the same way - plus a table of the per-capability call shape. This is the one-way-to-consume page TARGET T6.1 asks for.",
+      "affects": ["new cap-consumption", "docs/skill-manifest.json"],
+      "mechanical": false
+    },
+    {
+      "step": 6,
+      "action": "Fold each -use skill's concern-specific residue - the fields you send, the field you branch on, one worked call, one worked rejection - into a usage section of its ideal skill, then remove the 21 -use entries from the manifest and the 20 directories from .claude/skills/. Rewrite every used_by that names a removed skill.",
+      "affects": ["all 21 planned -use skills", "all 21 cap- ideal skills", "docs/skill-manifest.json"],
+      "mechanical": false
+    },
+    {
+      "step": 7,
+      "action": "Remove seam-entry-envelope, seam-agent-ingress and xc-correlation-envelope with their -implement facets from the manifest, folding their purposes into cap-work-intake, cap-capability-registry and xc-correlation respectively. Restores the manifest's own definition of seam as the two boundaries Dispatch and State.",
+      "affects": ["docs/skill-manifest.json", "cap-work-intake", "cap-capability-registry", "xc-correlation", "cap-telemetry"],
+      "mechanical": false
+    },
+    {
+      "step": 8,
+      "action": "Merge compose-workflow into compose-operators in the manifest, so the closed operator set is defined once and the sequence operator is a section of it rather than a skill. Keep compose-loop, compose-approval, compose-agent and compose-improvement-loop.",
+      "affects": ["docs/skill-manifest.json", "compose-operators", "compose-workflow", "core-document"],
+      "mechanical": true
+    },
+    {
+      "step": 9,
+      "action": "Fix capability-entity hygiene: give cap-capability-registry its own capability entity or a one-sentence handoff to cap-capability-packaging in the style of cap-policy instruction 8; do the same for cap-human-interaction against cap-work-intake. Move cap-telemetry instruction 2's placement statement into xc-correlation.",
+      "affects": ["cap-capability-registry", "cap-capability-packaging", "cap-human-interaction", "cap-work-intake", "cap-telemetry", "xc-correlation", "kb/entities.jsonl"],
+      "mechanical": false
+    },
+    {
+      "step": 10,
+      "action": "Rename one side of the document collision - cap-document-validation to cap-schema-validation, or core-document to core-work-document - and add a trigger-collision check to tools/validate_skills.py that fails when two skills' descriptions exceed a tf-idf cosine threshold, so the -use template cannot recur.",
+      "affects": ["cap-document-validation and its facets", "core-document and its facet", "tools/validate_skills.py", "docs/skill-manifest.json"],
+      "mechanical": false
+    },
+    {
+      "step": 11,
+      "action": "Write build-entry-conformance before any further cap- work. It is the only unwritten build- discipline and it turns TARGET T1's three ways in into a check with third-party tooling and a deliberately broken adapter - the evidence every xc- skill's 'replay one corpus through each of the three ways in' instruction currently assumes exists.",
+      "affects": ["new build-entry-conformance", "all 7 written xc- ideal skills"],
+      "mechanical": false
+    }
+  ]
+}

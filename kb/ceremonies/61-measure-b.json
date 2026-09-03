@@ -1,0 +1,41 @@
+{
+  "status_row": 61,
+  "ceremony": "61-measure-b",
+  "agent": "sonnet",
+  "date": "2026-09-03",
+  "skills": {
+    "xc-identity-delegation-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "harness": "harness/identity",
+      "criterion": "bash harness/identity/test.sh && python3 harness/identity/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "sed -i 's/if not wanted_set <= held_set:/if False:/' harness/identity/interface.py -- classify_scope never reports \"wider\", so the widening hop that must be refused (403 policy-denied, rule_id scope-must-narrow) is instead issued. Restored with git checkout harness/identity/interface.py.",
+      "measure_py_last_line": "xc-identity-delegation-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "xc-policy-gate-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "harness": "harness/policy (harness/tool-access also co-serves this skill per harness/plan.json; measured against policy per this ceremony's scope instruction)",
+      "criterion": "bash harness/policy/test.sh && python3 harness/policy/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "sed -i 's/effect, rule_id, detail = self._evaluate(request, bundle)$/effect, rule_id, detail = self._evaluate(request, bundle); rule_id = \"\"/' harness/policy/interface.py -- every decision comes back with an empty rule_id, so the concrete admit() gate can no longer attribute an allow or a deny and refuses adapter-unavailable instead, on both bindings. Restored with git checkout harness/policy/interface.py.",
+      "measure_py_last_line": "xc-policy-gate-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "xc-provenance-chain-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "harness": "harness/provenance",
+      "criterion": "bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "sed -i 's/{64}\\$\"/{65}$\"/' harness/provenance/interface.py -- widens the DIGEST regex by one hex character so no real sha256 digest matches, and every attest request is refused document-invalid before a statement is ever produced. Restored with git checkout harness/provenance/interface.py.",
+      "measure_py_last_line": "xc-provenance-chain-implement: measured (clean exit 0, breakage exit 1)"
+    },
+    "xc-typed-errors-implement": {
+      "before_status": "claimed",
+      "after_status": "measured",
+      "harness": "harness/errors",
+      "criterion": "bash harness/errors/test.sh && python3 harness/errors/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "sed -i '98a\\    retryable = True' harness/errors/interface.py -- construct() forces every registered problem to report retryable=True regardless of its registry row, so a caller can no longer decide retry from the type alone and the two adapters stop differing on retryable-derived behaviour. Restored with git checkout harness/errors/interface.py.",
+      "measure_py_last_line": "xc-typed-errors-implement: measured (clean exit 0, breakage exit 1)"
+    }
+  },
+  "note": "For all 4 skills, definition_of_done.criterion was rewritten to a pure shell command chain running the named harness's test.sh gate plus its conformance.py --adapter dryrun --adapter second swap run, per state/briefs/context-61.md section 6 (harness/identity, harness/policy for xc-policy-gate-implement even though harness/tool-access co-serves it, harness/provenance, harness/errors). The prior prose criterion, which named a proposed tools/conformance_*.py script never written, was moved into definition_of_done.expected with the harness's real check counts (identity 46/32, policy 38/28, provenance 27/26, errors 23/18). breakage and expected_failure were rewritten to a real one-line sed edit to each harness's interface.py (not call.py, since these four breakages target the shared decision/check logic in the capability interface rather than a product-name leak), restored with git checkout. Every breakage was dry-run by hand first (bash test.sh and conformance.py exiting non-zero with the expected failure counts, then git checkout leaving a clean diff) before being wired into tools/measure.py --breakage-cmd/--restore-cmd; each measure.py invocation was run alone, one skill at a time, and git status on the touched harness/*/interface.py after every run showed a clean restore (measure.py's own restored:true tree-digest check agrees). A stale __pycache__ under harness/provenance (predating this session, likely left by a concurrent run) caused one manual pre-check of the provenance criterion to fail spuriously with unrelated FileNotFoundError/AssertionError symptoms; deleting harness/provenance/__pycache__ and harness/provenance/adapters/__pycache__ fixed it before any measure.py run, and __pycache__ dirs (untracked, gitignored) were cleared under harness/identity, harness/policy, harness/provenance and harness/errors after every run so no stale bytecode could affect the sibling measure agent or a future run. render_skill.py and validate_skills.py --only <skill> were run after the edit and again after measure.py's own re-render for all four skills: all validate at 0 errors, with the same pre-existing restatement warnings (2, 5, 3, 0 respectively) present before and after, confirmed by git diff --stat touching only the definition_of_done lines in skill.json/SKILL.md. No commit or push was made. Only files touched: the 4 named skill.json/SKILL.md pairs (plus their harness/*/interface.py files, edited and restored transiently by tools/measure.py itself) and this record; no other STATUS row, no cap- skill, and no file outside .claude/skills/<these 4>/ or kb/ceremonies/61-measure-b.json was edited by hand."
+}

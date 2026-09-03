@@ -333,20 +333,29 @@
         "F-b3-11",
         "F-b1-04"
       ],
-      "quote": "Cedar \u00b7 any policy engine with a decision API"
+      "quote": "Cedar · any policy engine with a decision API"
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.4 row X3, made precise and run over the placement pair above: `python3 tools/conformance/policy_gate.py --placement today --placement second --corpus out/dispatches.jsonl --min-dispatches 100 --ways-in human,agent,event --report out/policy-gate.json` (proposed tool, built with the first enforcing placement), the placement selected by configuration with no code edit between runs. Per placement it asserts that every dispatch has a `policy-decided` record with a non-empty `rule_id` whose `(decided_at, decided_seq)` precedes that dispatch's first metered call, that every denied dispatch has `spend_delta_micros == 0`, and that `placement_observed` was read from the refusal rather than from the binding. Across placements it asserts `placements_run >= 2`, `inversions == 0`, `missing_decision == 0`, `dispatches_checked >= 100`, `metered_dispatches > 0` and that all three ways in were covered.",
-    "expected": "exit 0 and one line per placement of the form `placement=<entity> dispatches_checked=100 metered_dispatches=<m> denied=<d> missing_decision=0 inversions=0 ungated_calls_found=<u> placement_observed=<entity>`, followed by `placements_run=2 ways_in=human,agent,event`, with `metered_dispatches` and `denied` greater than zero on both so the ordering and zero-spend assertions each had something to assert on.",
-    "breakage": "Consult policy asynchronously in parallel with the first call: start the decision and the first metered call together and await the decision afterwards, on the dispatch-path placement only, changing nothing else.",
-    "expected_failure": "exit 1 with `inversions` non-zero for the dispatch-path placement and still 0 for the boundary placement, naming the dispatch ids whose first metered call started before their `policy-decided` record, while `placements_run` stays 2, `missing_decision` stays 0 and `dispatches_checked` stays at or above 100 - which is what shows one placement lost the ordering rather than the corpus having gone unread or a placement having failed to run.",
-    "status": "claimed",
+    "criterion": "bash harness/policy/test.sh && python3 harness/policy/conformance.py --adapter dryrun --adapter second",
+    "expected": "docs/decomposition.md section 3.4 row X3, run over harness/policy (harness/tool-access also serves this skill per harness/plan.json co_skills, but the measured run here is policy): test.sh exits 0 (38 checks: dry run, the swap proof, one deliberate breakage restoring clean); conformance.py --adapter dryrun --adapter second then exits 0 with 28/28 cases across 2 bindings.",
+    "breakage": "sed -i 's/effect, rule_id, detail = self._evaluate(request, bundle)$/effect, rule_id, detail = self._evaluate(request, bundle); rule_id = \"\"/' harness/policy/interface.py -- every decision comes back with an empty rule_id, so the concrete admit() gate can no longer attribute an allow or a deny and refuses adapter-unavailable instead. Restore: git checkout harness/policy/interface.py",
+    "expected_failure": "test.sh exits 1 (17 passed, 21 failed): the gate itself stops deciding on both bindings, so the ordering, zero-spend, and configuration-swap assertions all fail together, including an unhandled AssertionError from the harness's own conformance check. Restoring the file with git checkout returns the tree to a clean run.",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
       "F-b4-04"
     ],
-    "quote": "A criterion nothing can fail is not a criterion"
+    "quote": "A criterion nothing can fail is not a criterion",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "52a1457",
+      "clean_exit": 0,
+      "clean_output": "ny-cross-tenant-resource, spend_delta_micros=0\n  ok   nothing names an engine, a rule language or a bundle on the way out: a decision carries an effect, a rule, a version and a digest, and nothing about who answered\n  ok   a point this binding cannot serve is declared, never answered allow: declared subset ['dispatch.data_query'] refused, not answered allow\n  adapter=in-process-typed-entity cases=14 passed=14 decisions_taken=8 decided_before_first_metered_call=8 spend_delta_micros=0 rule_id_present=True subset=['dispatch.data_query'] product_hits=0\nconformance PASSED: 28/28 cases, 2 binding(s)",
+      "breakage_exit": 1,
+      "breakage_output": "zero on the adapter that lost the ordering (1)\n  FAIL the ordering and zero-spend counters inverted (expected 0, got 1)\n  ok   Traceback (most recent call last):\n  File \"<stdin>\", line 5, in <module>\nAssertionError: {'adapter': 'out-of-process-document-query', 'adapters_run': 1, 'decided_before_first_metered_call': 0, 'decisions_taken': 0, 'rule_id_present': True, 'selected_by': 'configuration', 'spend_delta_micros': 0}\n  ok   the run names what broke: the binding took over the gate\n  FAIL the untouched adapter still exits 0 (expected 0, got 1)\n  FAIL both adapters failed\n\npassed 17, failed 21",
+      "restored": true
+    }
   },
   "composes_with": {
     "builds_on": [

@@ -320,17 +320,26 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.4 row X2, extended with the swap. Proposed tool, built with the first enforcement point: `python3 tools/conformance_identity_delegation.py --enforcement-point today --corpus out/actions.jsonl --min-actions 100 --report out/identity-a.json`, then the same command with `--enforcement-point second --report out/identity-b.json`, the enforcement point chosen by configuration with no code edit between runs. Both reports must validate against IdentityDelegationReport (xc-identity-delegation references/identity-delegation-checks.md) and assert, per enforcement point, `null_actor == 0`, `cyclic == 0`, `unrooted == 0`, `bound_at_entry == actions_checked` and `delegated_actions_checked > 0`. Across enforcement points it asserts `enforcement_points_run >= 2` and that `enforcement_point` in every finding was read from the stamp rather than from the configuration.",
-    "expected": "both runs exit 0 and one line per enforcement point of the form `enforcement_point=<entity> actions_checked=100 delegated_actions_checked=<k> null_actor=0 cyclic=0 unrooted=0 bound_at_entry=100`, followed by `enforcement_points_run=2`.",
-    "breakage": "Permit a `direct` hop to name an actor already present earlier in the chain, in the in-process binding only: re-exchange one delegated action back to the intake service that already appears at hop 1, and leave the out-of-process step untouched.",
-    "expected_failure": "The acyclicity check fails for one enforcement point and not the other: the first run exits 1 with `cyclic == 1` naming that action and the repeated actor, the second run still exits 0, and `enforcement_points_run` stays 2 with `actions_checked` at or above 100 on both. Singling out one enforcement point is the point - a suite that fails both, or neither, has not tested the swap. Claimed: PASS.md A6 records no identity field anywhere in the system, neither enforcement point is written and the tool does not exist, so neither run has been performed here and the check starts red by construction.",
-    "status": "claimed",
+    "criterion": "bash harness/identity/test.sh && python3 harness/identity/conformance.py --adapter dryrun --adapter second",
+    "expected": "docs/decomposition.md section 3.4 row X2: harness/identity/test.sh exits 0 (46 checks: 16 conformance cases per adapter, the 50-action delegation-chain corpus, the swap proof by configuration, the product-name scan, and its own internal deliberate breakage restoring clean); conformance.py --adapter dryrun --adapter second then exits 0 with 32/32 cases across 2 bindings, selected_by=configuration.",
+    "breakage": "sed -i 's/if not wanted_set <= held_set:/if False:/' harness/identity/interface.py -- classify_scope never reports \"wider\", so the widening hop that must be refused (403 policy-denied, rule_id scope-must-narrow) is instead issued. Restore: git checkout harness/identity/interface.py",
+    "expected_failure": "test.sh exits 1 (35 passed, 11 failed): its own internal breakage/restore checks fail because scope narrowing no longer distinguishes wider from narrower, so a forwarded credential and a restored hop both misreport. Restoring the file with git checkout returns the tree to a clean run.",
+    "status": "measured",
     "sources": [
       "F-a6-05",
       "F-b1-04",
       "F-part-c-04"
     ],
-    "quote": "No identity field anywhere in the system"
+    "quote": "No identity field anywhere in the system",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "52a1457",
+      "clean_exit": 0,
+      "clean_output": "issued\n  ok   one hop record per hop, appended, with the enforcement point read off the answer: 9 records, enforcement_point workload-attestor\n  ok   the delegation-chain corpus (P13): every action names an actor and a whole chain: actions_checked=50 missing_subject=0 short_chains=0 cyclic=0 executing_unit_mismatch=0\n  adapter=attested workload identity with a local trust bundle cases=16 passed=16 actions_checked=50 short_chains=0 cyclic=0 executing_unit_mismatch=0 authority_calls=0 marker=workload-attestor product_hits=0\nconformance PASSED: 32/32 cases, 2 binding(s), selected_by=configuration",
+      "breakage_exit": 1,
+      "breakage_output": "ok   the breakage run exits non-zero (nonzero)\n  ok   chains shorter than the hops that occurred (1)\n  ok   actions whose current actor did not execute (1)\n  ok   still 50 actions, so this is a defect and not a missing run (50)\n  ok   the run names the action and the chain it found\n  FAIL the same breakage leaves the second adapter green (expected 0, got 1)\n  ok   its chains are still whole (0)\n  ok   the breakage singles out one binding: a document naming its attested unit cannot be forwarded\n  FAIL the same suite passes again once the hop is restored (expected 0, got 1)\n\npassed 35, failed 11",
+      "restored": true
+    }
   },
   "composes_with": {
     "builds_on": [

@@ -309,20 +309,29 @@
         "F-b1-04",
         "E-swap-candidate-any-attestation-store"
       ],
-      "quote": "Sigstore \u00b7 any attestation store"
+      "quote": "Sigstore · any attestation store"
     }
   ],
   "definition_of_done": {
-    "criterion": "Proposed tool, built with the first enforcement point (docs/decomposition.md section 3.4 row X4): `python3 tools/conformance_provenance_chain.py --adapter today --adapter second --corpus out/results.jsonl --at-head <sealed head> --min-artifacts 100 --report out/provenance-chain.json`, the enforcement point selected by configuration with no code edit between runs. It replays the same corpus of at least 100 artifacts through each enforcement point and asserts, per point, that every artifact digest referenced by a result has an attestation-recorded record whose subject_digest matches it, that `entry_kinds_seen` contains all three of TARGET T1's ways in, that `external_resolutions > 0` with our own store unmounted, and that `enforcement_point_observed` was read from the accept or the refusal rather than from the binding. Across points it asserts `adapters_run >= 2`, `artifacts_checked >= 100` and `orphans == 0`.",
-    "expected": "exit 0 and one line per enforcement point of the form `adapter=<entity> artifacts_checked=100 attestations_matched=100 orphans=0 external_resolutions=<n> entry_kinds_seen=user,agent,service enforcement_point_observed=<entity>`, followed by `adapters_run=2`.",
-    "breakage": "Emit an output without recording an attestation: remove the attestation-recorded append from one release path, push the same corpus through it unchanged, and re-run the command exactly as written.",
-    "expected_failure": "The orphan count becomes non-zero: `orphans` becomes 1 under the first enforcement point, which reports the unattested subject digest and exits non-zero, while the second refuses the release outright and returns the registered adapter-unavailable problem instead of writing, so the same breakage surfaces as a count on one point and as a refused write on the other. `adapters_run` stays 2 and `artifacts_checked` stays at or above 100, which is what shows the failure is the missing statement rather than one point having failed to run. Claimed: neither enforcement point is built, no attestation-recorded record is written anywhere on this stack today and the conformance tool does not exist, so neither run has been performed here.",
-    "status": "claimed",
+    "criterion": "bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second",
+    "expected": "docs/decomposition.md section 3.4 row X4: test.sh exits 0 (27 checks: conformance against the dry-run adapter, the caller-region check, the swap proof, the product scan, two deliberate breakages restoring clean); conformance.py --adapter dryrun --adapter second then exits 0 with 26/26 cases across 2 bindings.",
+    "breakage": "sed -i 's/{64}\\$\"/{65}$\"/' harness/provenance/interface.py -- widens the DIGEST regex by one hex character so no real sha256 digest matches, and every attest request is refused document-invalid before a statement is ever produced. Restore: git checkout harness/provenance/interface.py",
+    "expected_failure": "test.sh exits 1 (10 passed, 17 failed): attestation fails on both adapters before verification is reached, so the swap proof, the caller-region round trip, and both deliberate-breakage checks fail in turn (one surfaces as a missing out/break-1.json rather than a rejected verification, because the run that would write it never got that far). Restoring the file with git checkout returns the tree to a clean run.",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
       "F-b4-05"
     ],
-    "quote": "A criterion nothing can fail is not a criterion"
+    "quote": "A criterion nothing can fail is not a criterion",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "f037f65",
+      "clean_exit": 0,
+      "clean_output": " accepts both predicates in the same envelope\n  ok   the declared subset is honest: a proof is verified or declared unsupported: inclusion proof over a log of 1 entries verified\n  ok   the store's own integrity check is not what verification rests on: append-only merkle log head f58212cacc29 over 2 entries, verified\n  entity=an identity that expires, and a public append-only log (Sigstore-shaped)\n  cases=13 passed=13 emitted=2 verified=1 subject_mismatches=0 orphan_subjects=0 store_mounted=False verifier_exit=0 log_inclusion_proofs=1 product_hits=0\nconformance PASSED: 26/26 cases, 2 binding(s)",
+      "breakage_exit": 1,
+      "breakage_output": "its 0 (0)\n  ok   0 hits outside adapters/\n4. deliberate breakage: the artifact is rebuilt and the statement is not\n  ok   the breakage run exits non-zero (1)\n  FAIL the verifier rejected it on the subject digest, not on our store (expected 0, got 1)\n  ..   Traceback (most recent call last):\n  ..     File \"<stdin>\", line 2, in <module>\n  ..   FileNotFoundError: [Errno 2] No such file or directory: 'out/break-1.json'\n4b. deliberate breakage: the signature is dropped from the envelope\n  ok   the breakage run exits non-zero on the second adapter too (1)\n  FAIL no reason given\n\npassed 10, failed 17",
+      "restored": true
+    }
   },
   "composes_with": {
     "builds_on": [

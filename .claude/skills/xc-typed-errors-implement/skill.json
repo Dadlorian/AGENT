@@ -288,21 +288,30 @@
         "F-b3-13",
         "F-b1-04"
       ],
-      "quote": "\u2014 adopt the RFC directly"
+      "quote": "— adopt the RFC directly"
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.4 row X6, made precise and run over the pair above: `python3 tools/conformance/typed_errors_audit.py --implementation tree-scan --entry human --entry agent --entry event --report out/x6-a.json` then the same command with `--implementation response-interceptor --report out/x6-b.json` (proposed tool), the implementation chosen by configuration with no code edit between runs. Each run performs row X6's check - zero occurrences of failure information extracted by string matching anywhere outside the problem-details parser, `grep -rn -E 'match.*(error|failed|timeout)' src/ --include='*.py'` excluding `src/problem/` for the scan, the equivalent count over intercepted bodies for the interceptor - and raises one shared refusal under each of the three ways in. Both reports must validate against the TypedErrorsConformanceReport shape above and assert `string_match_sites == 0`, `untyped == 0`, `unregistered_types == 0`, `failures_checked > 0` per entry, `observed_population > 0`, and one distinct `shared_refusal_type`. Across runs it asserts two implementations, `selected_by == \"configuration\"`, and two distinct `checks_at` values.",
-    "expected": "both runs exit 0; each report shows `string_match_sites == 0`, `untyped == 0`, `unregistered_types == 0`, `observed_population > 0`, `failures_checked > 0` for each of the three entries and one distinct `shared_refusal_type`; the merged report shows two implementations, `selected_by == \"configuration\"`, `checks_at` values `build_time` and `run_time`, and both reports carry an `evidence_record_ref`.",
-    "breakage": "Add a retry heuristic that matches on the substring \"rate limit\" in a response body, in a module outside `src/problem/`, and make that module execute on one of the three entry paths. Leave both implementations, the fixtures and the command untouched.",
-    "expected_failure": "both runs exit 1 with `string_match_sites == 1`, the tree scan naming the file and line and the interceptor naming the boundary whose retry decision changed without a type; `untyped` stays 0 in both, which is what locates the defect in a consumer rather than in a producer. A run where only the tree scan fails means the heuristic never executed and the fixture does not exercise that path; a run where only the interceptor fails means the scan's pattern does not cover that module's language, and either asymmetry is the finding rather than a pass. Claimed: typed errors are absent, no failure site returns the object, neither implementation exists, `src/` and the audit tool are not written, so neither run has been performed here and the check starts red by construction.",
-    "status": "claimed",
+    "criterion": "bash harness/errors/test.sh && python3 harness/errors/conformance.py --adapter dryrun --adapter second",
+    "expected": "docs/decomposition.md section 3.4 row X6: test.sh exits 0 (23 checks in dry run: 9/9 conformance, the caller-line count, the retryable-from-type-not-message pair, the live binding's own typed refusal, the swap proof, the product scan, one deliberate breakage restoring clean); conformance.py --adapter dryrun --adapter second then exits 0 with 18/18 cases across 2 bindings.",
+    "breakage": "sed -i '98a\\    retryable = True' harness/errors/interface.py -- construct() forces every registered problem to report retryable=True regardless of its registry row, so a caller can no longer decide retry from the type alone. Restore: git checkout harness/errors/interface.py",
+    "expected_failure": "test.sh exits 1 (16 passed, 7 failed): the swap proof's own conformance run fails 9/9 with the two adapters no longer differing on retryable-derived behaviour, so the axis-difference and case counts fail together while the earlier dry-run and live-refusal checks still pass. Restoring the file with git checkout returns the tree to a clean run.",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
       "F-b1-04",
       "F-a6-06"
     ],
-    "quote": "plus the deliberate breakage that proves the check can fail"
+    "quote": "plus the deliberate breakage that proves the check can fail",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "f037f65",
+      "clean_exit": 0,
+      "clean_output": "d, counted, and never crashes the caller: classified to urn:agentic:problem:adapter-unavailable, untyped=1\n  ok   the edge adapter's own failure path: wrong media type is counted: text/plain body counted as untyped and wrong_media_type, never forwarded unchanged\n  ok   byte-identical problem bodies from both adapters: 7 members, canonical JSON identical byte for byte across both adapters\n  adapter=edge component that answers on behalf of a service cases=9 passed=9 responses_checked=14 untyped=1 unregistered_types=0 wrong_media_type=1 product_hits=0\nconformance PASSED: 18/18 cases, 2 binding(s)",
+      "breakage_exit": 1,
+      "breakage_output": "same caller code runs on the second adapter (0)\n  FAIL the two adapters differ in execution model on 2 or more axes (expected 0, got 1)\n  FAIL axes did not differ\n3. no product name anywhere in this harness\n  ok   product scan over the shipped tree exits 0 (0)\n  ok   0 hits (PASS.md B3 records no component for this element)\n4. deliberate breakage: the edge adapter forwards an untyped upstream body unchanged\n  ok   the breakage run exits non-zero (1)\n  ok   the run names the file the breakage broke\n  ok   an untyped upstream body is no longer converted; the check catches it\n\npassed 16, failed 7",
+      "restored": true
+    }
   },
   "composes_with": {
     "builds_on": [
@@ -351,7 +360,7 @@
         "F-b3-13",
         "T-t5-02"
       ],
-      "quote": "\u2014 adopt the RFC directly"
+      "quote": "— adopt the RFC directly"
     }
   ],
   "provenance": {

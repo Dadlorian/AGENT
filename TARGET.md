@@ -66,3 +66,15 @@ Stated by the platform owner on 2026-09-03 as the baseline target. PASS.md Part 
 7. Review honesty: every review catches both planted defects, or it is discarded.
 8. Freshness: zero status rows stale against the ledger at every checkpoint.
 9. Verification: every standard has a fetched record when the environment allows fetch.
+
+## T10. Acceptance
+
+1. What is left is cleaned up in ordered phases, and the improvement loop runs at the end of each phase, by group or layer, not on every iteration.
+2. The desired future state is as modern as the last 90 days allow and no more engineered than that: consumable, composable, and running across every layer in production with hundreds of agents.
+3. Every definition of done carries a measuring stick and a stopping point, so no phase runs forever.
+4. The measuring sticks walk down each stack element, the tool that holds it today (Firecracker, goose, LiteLLM, Temporal, Langfuse with OpenTelemetry) and the standards they interoperate with.
+5. Each element can be swapped behind its standard: Firecracker for another isolation, goose inside the microVM for another agent, Langfuse for another observability, Temporal for another workflow engine; the swap is proven by the conformance run, never asserted.
+6. Complexity is composed down into repeatable, executable elements.
+7. Every element has an example and an integration guide that a builder can run, inside the end-to-end example or beside it.
+8. All information is trust-linked to the knowledge base with a source reference; nothing is made up, and the knowledge structure controls the flow of information toward the future state.
+9. The remaining elements are accepted through a formal ceremony per layer, run in parallel where scopes are disjoint, and closed by one final acceptance against the scorecard.

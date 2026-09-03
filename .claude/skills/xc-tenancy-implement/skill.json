@@ -32,14 +32,31 @@
           "minItems": 3,
           "examples": [
             [
-              { "axis": "locus_of_the_tenant_boundary", "today_value": "a principal column filtered at read time within one shared keyspace", "second_value": "a wholly separate store instance selected by principal before any read or write", "measured": false },
-              { "axis": "failure_mode_of_a_wrong_or_missing_principal", "today_value": "returns another principal's rows if the filter is dropped or wrong", "second_value": "fails to resolve a store at all, returning nothing", "measured": false },
-              { "axis": "provisioning_cost_of_a_new_principal", "today_value": "a new principal needs only a new value in an existing column", "second_value": "a new principal needs a new store instance created before its first write can succeed", "measured": false }
+              {
+                "axis": "locus_of_the_tenant_boundary",
+                "today_value": "a principal column filtered at read time within one shared keyspace",
+                "second_value": "a wholly separate store instance selected by principal before any read or write",
+                "measured": false
+              },
+              {
+                "axis": "failure_mode_of_a_wrong_or_missing_principal",
+                "today_value": "returns another principal's rows if the filter is dropped or wrong",
+                "second_value": "fails to resolve a store at all, returning nothing",
+                "measured": false
+              },
+              {
+                "axis": "provisioning_cost_of_a_new_principal",
+                "today_value": "a new principal needs only a new value in an existing column",
+                "second_value": "a new principal needs a new store instance created before its first write can succeed",
+                "measured": false
+              }
             ]
           ]
         },
         "origin": "proposed",
-        "sources": ["F-b1-04"]
+        "sources": [
+          "F-b1-04"
+        ]
       },
       {
         "name": "ScopeAssignmentRecord (proposed; what one unit's principal resolution writes through the state seam, for the shadow-migration report to read back)",
@@ -50,66 +67,104 @@
           "type": "object",
           "additionalProperties": false,
           "description": "Proposed. One record per unit, appended rather than mutated, so the adapter a corpus check reads back is the adapter that actually resolved the unit and not the one the configuration selected.",
-          "required": ["run_id", "unit_id", "principal", "adapter", "written_at"],
+          "required": [
+            "run_id",
+            "unit_id",
+            "principal",
+            "adapter",
+            "written_at"
+          ],
           "properties": {
-            "run_id": { "type": "string", "minLength": 1 },
-            "unit_id": { "type": "string", "format": "uuid" },
-            "principal": { "type": "string", "minLength": 1 },
-            "adapter": { "type": "string", "description": "Read from the stamp the resolution produced, never from the configuration that selected it." },
-            "written_at": { "type": "string" }
+            "run_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "unit_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "principal": {
+              "type": "string",
+              "minLength": 1
+            },
+            "adapter": {
+              "type": "string",
+              "description": "Read from the stamp the resolution produced, never from the configuration that selected it."
+            },
+            "written_at": {
+              "type": "string"
+            }
           }
         },
         "origin": "proposed",
-        "sources": ["F-a5-03"]
+        "sources": [
+          "F-a5-03"
+        ]
       }
     ],
     "invariants": [
       {
         "text": "Proposed: the two adapters differ on three of build-adapter-pair's axes - locus_of_the_tenant_boundary, failure_mode_of_a_wrong_or_missing_principal, and provisioning_cost_of_a_new_principal - recorded in the shape above. A second store that only relocated the same filter would agree with the first on all three, so swapping to it would test a database and not the boundary shape.",
         "origin": "proposed",
-        "sources": ["F-b1-04"],
+        "sources": [
+          "F-b1-04"
+        ],
         "quote": "Swappability is a tested property, not an intention."
       },
       {
         "text": "build-adapter-pair and agentic-stack state design rule 1 (F-b1-02). Its consequence here: which adapter resolved a unit's store is configuration, and no core code, no workflow and no policy rule branches on it; the adapter appears in the conformance report, never in a field a caller can read and route on.",
         "origin": "sourced",
-        "sources": ["F-b1-02"],
+        "sources": [
+          "F-b1-02"
+        ],
         "quote": "The core imports interfaces, never implementations"
       },
       {
         "text": "xc-tenancy already states the placement and that tenancy is absent from the substrate: no fact in PASS.md names a tenant, and A6 records no identity field anywhere in the system (F-a6-05). What this adds on this stack: there is no field to migrate from, so the today adapter is written rather than replaced, and every assertion in the definition of done below is red until it exists.",
         "origin": "sourced",
-        "sources": ["F-a6-05"],
+        "sources": [
+          "F-a6-05"
+        ],
         "quote": "No identity field anywhere in the system"
       },
       {
         "text": "cap-state-persistence's own recorded row, which xc-tenancy also cites, names JSONL plus hash chain as today's adapter and an object store, a relational store or an event log as swap candidates for the whole capability (F-b3-17). This skill's pair answers a narrower question than that row does: not which store cap-state-persistence should use, but whether the store's tenant boundary is a filter over shared partitions or a partition of its own - so the two adapter tables can share entities without re-answering the same question.",
         "origin": "sourced",
-        "sources": ["F-b3-17"],
+        "sources": [
+          "F-b3-17"
+        ],
         "quote": "JSONL + hash chain"
       },
       {
         "text": "The research on file names three multi-tenant database patterns - shared database with shared schema, shared database with separate schemas, and database per tenant (X-xc-tenancy-001). The two adapters below sit at the two ends of that range: a principal column on the shared log today, and database-per-tenant as the second.",
         "origin": "sourced",
-        "sources": ["X-xc-tenancy-001"],
+        "sources": [
+          "X-xc-tenancy-001"
+        ],
         "quote": "Database per Tenant"
       },
       {
         "text": "agentic-stack and build-adapter-pair already state that correlation must ride on an explicit resource attribute set at dispatch, because parentage did not survive the agent boundary when tried (F-a7-02). What tenancy adds: principal is stamped beside that same explicit attribute rather than inferred from it, so a scope-assignment record and a correlation record are written from the same call and can never name two different runs for one unit.",
         "origin": "sourced",
-        "sources": ["F-a7-02"],
+        "sources": [
+          "F-a7-02"
+        ],
         "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
       },
       {
         "text": "agentic-stack and build-definition-of-done state the structurally-green-gate finding (F-a7-03). What it costs here: a corpus replayed through two adapters can leave one of them with only a single principal represented and still report every cross-principal count at zero, so report principals_covered per adapter and fail when either is below two.",
         "origin": "sourced",
-        "sources": ["F-a7-03"],
+        "sources": [
+          "F-a7-03"
+        ],
         "quote": "Those establish well-formedness, not correctness"
       },
       {
         "text": "Apply build-evidence-record: every statement here about how an adapter behaves stays claimed until the conformance run and its evidence record exist, naming the code version and the tree hash under test, and rewording a sentence never upgrades a label; proposed pointer, see that skill.",
         "origin": "proposed",
-        "sources": ["F-a5-04"]
+        "sources": [
+          "F-a5-04"
+        ]
       }
     ]
   },
@@ -119,7 +174,11 @@
       "action": "Write the today adapter as the observed substrate, not an incumbent that already enforces tenancy: a principal column added to every record cap-state-persistence appends, filtered at read time, sitting beside a per-VM uid jail and per-group scoped budget keys that already run for unrelated reasons and carry no principal concept of their own.",
       "why": "PASS.md A6 records no identity field anywhere in the system and no fact names a tenant; the jail and the keys are the nearest measured analogues, not evidence that tenancy already runs, so the first adapter to exist is the one described here.",
       "origin": "sourced",
-      "sources": ["F-a6-05", "F-a3-06", "F-a4-07"],
+      "sources": [
+        "F-a6-05",
+        "F-a3-06",
+        "F-a4-07"
+      ],
       "quote": "No identity field anywhere in the system"
     },
     {
@@ -127,14 +186,19 @@
       "action": "Proposed: build the second adapter on the database-per-tenant pattern - each principal's records resolve to a separate store instance selected before any append or read, so a missing or wrong principal fails to resolve a store at all rather than under-filtering one.",
       "why": "Proposed: this breaks the assumption behind the today adapter that isolation is a query filter someone remembered to add. It also fails differently - provisioning a new principal needs a new store instance, not a new value in a column - which is what makes the pair a test of the boundary shape rather than of a database product.",
       "origin": "proposed",
-      "sources": ["X-xc-tenancy-001", "F-b1-04"]
+      "sources": [
+        "X-xc-tenancy-001",
+        "F-b1-04"
+      ]
     },
     {
       "step": 3,
       "action": "Apply build-adapter-pair: record differs_in_execution_model from the shape above, leave measured false until the swap has actually run, and write each adapter's gaps down as gaps rather than as caveats; proposed pointer, see that skill.",
       "why": "differs_in_execution_model and the rule that measured stays false until the swap has run belong to build-adapter-pair; naming the axes here without restating that rule keeps one owner for it.",
       "origin": "proposed",
-      "sources": ["F-b1-04"],
+      "sources": [
+        "F-b1-04"
+      ],
       "quote": "Swappability is a tested property, not an intention."
     },
     {
@@ -142,7 +206,10 @@
       "action": "Migrate in three steps from nothing: add principal as optional and stamp it wherever an adapter can, recording how often it could not; run the corpus check in shadow over that period and reconcile what it would have refused; then make principal required, refuse a write or a read with none, and keep the shadow report as the regression baseline.",
       "why": "There is no principal field anywhere in the system today, so making it required on day one would refuse every unit the platform currently accepts. The shadow period is where the paths that cannot yet establish a principal are found, before the refusal is live.",
       "origin": "sourced",
-      "sources": ["F-a6-05", "F-part-c-11"],
+      "sources": [
+        "F-a6-05",
+        "F-part-c-11"
+      ],
       "quote": "No identity field anywhere in the system"
     },
     {
@@ -150,7 +217,9 @@
       "action": "Wire the cross-cutting attachments at both adapters: stamp principal beside the run identifier on the same explicit attribute correlation already uses at dispatch, append one scope-assignment record per unit through the state seam, and hand the policy gate the resolved principal alongside the current actor.",
       "why": "agentic-stack and build-adapter-pair already state that correlation must ride on an explicit attribute because parentage did not survive the agent boundary; a principal that rode on inference instead of the same attribute would be unattributable for the same reason, and the policy gate cannot decide a cross-principal refusal it was never handed the principal for.",
       "origin": "sourced",
-      "sources": ["F-a7-02"],
+      "sources": [
+        "F-a7-02"
+      ],
       "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
     },
     {
@@ -158,7 +227,9 @@
       "action": "Read the adapter and the principal from the stamp or the refusal that actually came back, rather than the value the configuration selected, and report both per unit.",
       "why": "agentic-stack and build-evidence-record already state the silently-discarded-configuration finding, measured on this host: settings written in the documented place had no runtime effect. A scope believed enforced because it was configured is that failure with an audit trail attached.",
       "origin": "sourced",
-      "sources": ["F-a7-04"],
+      "sources": [
+        "F-a7-04"
+      ],
       "quote": "had no runtime effect"
     },
     {
@@ -166,7 +237,9 @@
       "action": "Apply build-definition-of-done: run the definition of done below over both adapters and then its deliberate breakage, and record both outputs as an evidence record the way build-evidence-record fixes, before calling this facet done; proposed pointer, see those skills.",
       "why": "build-definition-of-done owns criterion plus deliberate breakage plus both recorded outputs, and build-evidence-record owns what the record names, so this row points at them instead of restating what every sibling -implement skill already states once.",
       "origin": "proposed",
-      "sources": ["F-part-c-04"],
+      "sources": [
+        "F-part-c-04"
+      ],
       "quote": "A criterion nothing can fail is not a criterion."
     }
   ],
@@ -174,25 +247,33 @@
     {
       "text": "Expect the two adapters to disagree during the shadow step and treat the difference as the finding. build-adapter-pair states why a second adapter exists (F-b1-04); the gap it exposes here is concrete: the units the shared-store adapter can filter correctly and the ones it cannot are the ones nobody was actually scoping.",
       "origin": "sourced",
-      "sources": ["F-b1-04"],
+      "sources": [
+        "F-b1-04"
+      ],
       "quote": "Every interface ships with at least two adapters"
     },
     {
       "text": "agentic-stack and build-definition-of-done state the structurally-green-gate finding (F-a7-03). What it costs here: a corpus with one principal represented can report cross_tenant_reads at zero and prove nothing; require principals_covered >= 2 per adapter, not only across the merged report.",
       "origin": "sourced",
-      "sources": ["F-a7-03"],
+      "sources": [
+        "F-a7-03"
+      ],
       "quote": "Those establish well-formedness, not correctness"
     },
     {
       "text": "The research on file (X-xc-tenancy-003) places namespace and cgroup isolation at the containment layer, not the store layer. Do not re-decide cap-isolation's own namespace-versus-dedicated-pool question here: this pair is about cap-state-persistence's row, and xc-tenancy's own open question already tracks whether the isolation pair is a second load-bearing swap or the same axis proven twice.",
       "origin": "sourced",
-      "sources": ["X-xc-tenancy-003"],
+      "sources": [
+        "X-xc-tenancy-003"
+      ],
       "quote": "Namespaces provide process isolation by creating separate views of system resources"
     },
     {
       "text": "Apply build-evidence-record's naming rule to every claim in this skill about how an adapter behaves: claimed until the conformance run has actually produced the exact output recorded, and rewording a sentence never upgrades the label.",
       "origin": "sourced",
-      "sources": ["F-a5-04"],
+      "sources": [
+        "F-a5-04"
+      ],
       "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
     }
   ],
@@ -204,7 +285,11 @@
       "cannot": "Cannot refuse a cross-tenant read today: nothing in the substrate carries a principal to check, so a caller who can name another run's record, another routing class's key, or another VM's jail path meets no scope check at all, only whichever isolation or budget boundary that resource already has for an unrelated reason. Once a principal column is added, it still cannot prevent isolation structurally - a dropped filter returns another principal's rows rather than failing to resolve anything.",
       "swap_procedure": "Add principal as a required field in every appended record's canonical body and a required claim on every routing-class key stamp, so filtering by tenant becomes a check over the store's existing partition key rather than a second store. Select the adapter by configuration with no code edit between runs, replay the identical corpus through both, and require the merged report to show adapters_run == 2 with adapter read from the stamp rather than the configuration.",
       "status": "claimed",
-      "sources": ["F-a3-06", "F-a4-07", "F-b3-17"],
+      "sources": [
+        "F-a3-06",
+        "F-a4-07",
+        "F-b3-17"
+      ],
       "quote": "JSONL + hash chain"
     },
     {
@@ -214,7 +299,11 @@
       "cannot": "Proposed: cannot answer a cross-tenant query at all, even an authorised platform-level audit, without a second read that unions every tenant's store; and cannot share one fenced writer per run_id across tenants the way the shared store does, because the store boundary is now per tenant as well as per run, so a writer's fencing lease has to be taken per tenant-and-run pair instead of per run alone.",
       "swap_procedure": "Proposed: the axes that differ are locus_of_the_tenant_boundary (a filtered column versus a separate store instance), failure_mode_of_a_wrong_or_missing_principal (returns the wrong rows versus resolves no store) and provisioning_cost_of_a_new_principal (a new column value versus a new store instance). Select the store by principal at the same slot identity.resolve already resolves the actor at, before dispatch; replay the identical corpus through both adapters and assert the merged report shows adapters_run == 2, with cross_tenant_reads forced to zero structurally on this adapter and only by the added filter on the first.",
       "status": "claimed",
-      "sources": ["F-b3-17", "X-xc-tenancy-001", "F-b1-04"],
+      "sources": [
+        "F-b3-17",
+        "X-xc-tenancy-001",
+        "F-b1-04"
+      ],
       "quote": "Database per Tenant"
     }
   ],
@@ -224,7 +313,10 @@
     "breakage": "In the today adapter's read path only, drop the principal filter from the state-read query, leaving the write-time required field, the second adapter, and every other check untouched.",
     "expected_failure": "the today adapter's run exits 1 with `cross_tenant_reads` naming at least one crossed record, while the second adapter's run still exits 0 with `cross_tenant_reads == 0` - because its isolation is structural, a filter was never in its path to drop - and `adapters_run` stays 2 with `units_checked` at or above 100 on both. Singling out one adapter is the point: a suite that fails both, or neither, has not tested the swap. Claimed: PASS.md records no principal field, neither adapter is written, the tool does not exist, and this run has not been performed here, so the check starts red by construction.",
     "status": "claimed",
-    "sources": ["F-part-c-04", "F-a6-05"],
+    "sources": [
+      "F-part-c-04",
+      "F-a6-05"
+    ],
     "quote": "A criterion nothing can fail is not a criterion"
   },
   "composes_with": {
@@ -241,14 +333,20 @@
       "question": "This guarantee has no adapter or swap-candidate entity of its own, on top of the absence xc-tenancy already records for tenancy generally: both entities used above belong to cap-state-persistence's B3 row (F-b3-17, JSONL + hash chain today). Should the tenancy pair get its own entities instead of sharing that row's?",
       "evidence": "1-3-1 applied (TARGET T5), the same way xc-identity-delegation-implement records its own entity gap. Options: (a) mint E-adapter-shared-keyspace-tenancy and E-swap-candidate-store-per-tenant, which needs a knowledge-base rebuild and would invalidate the provenance heads of every skill already written; (b) record the pair against cap-state-persistence's existing entities and state in each row which question that table answers, which is what this skill does; (c) leave the pair unentitied until a later wave, which would leave this guarantee with no tested swap at all. Recommendation followed: (b). The question closes when a ceremony rebuilds the knowledge base and the two entities exist.",
       "default": "Keep the pair on cap-state-persistence's existing entities, with the difference from that capability's own adapter table stated in both rows above so a reader is not sent to the wrong question.",
-      "sources": ["F-b3-17", "T-t5-02"],
+      "sources": [
+        "F-b3-17",
+        "T-t5-02"
+      ],
       "quote": "JSONL + hash chain"
     },
     {
       "question": "xc-tenancy's own open question asks whether cap-isolation's namespace-versus-dedicated-pool pair and this skill's store-per-tenant pair are the same axis proven twice or two genuinely different swaps. Does the isolation pair belong in this skill too, or stay entirely in a future cap-isolation-implement?",
       "evidence": "Run both pairs' conformance reports once they exist and compare the refusals each catches that the other does not, exactly as xc-tenancy's open question proposes at the guarantee level.",
       "default": "Leave the isolation pair to cap-isolation-implement. This skill's adapters answer only cap-state-persistence's row; naming a second pair here before cap-isolation-implement exists would answer a question that skill has not been written to ask yet.",
-      "sources": ["F-b3-02", "T-t5-02"],
+      "sources": [
+        "F-b3-02",
+        "T-t5-02"
+      ],
       "quote": "OCI Runtime Spec"
     }
   ],
@@ -257,7 +355,9 @@
     "kb_heads": {
       "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
       "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
-      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6"
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+      "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+      "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
     },
     "author": "session xc-tenancy-implement 2831cb4f, 2026-09-03"
   }

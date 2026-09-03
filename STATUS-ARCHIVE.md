@@ -38,3 +38,10 @@
 | 46 | Swap proof | Each harness section executes one adapter swap | Done | 5 of 5 swaps measured | 2026-09-03 34e24b1 |
 | 41 | Planted-defect reviews | Every review catches both planted defects | Done | Harness review caught 2 of 2 | 2026-09-03 7a956d8 |
 | 49 | Skill graph | Every diagram is one focal group under the mermaid limits | Done | 10 diagrams, largest is 36 edges | 2026-09-03 3c6f181 |
+| 18 | Adapter entities | No skill mints its own entity ids | Done | Folded into row 53 | 2026-09-03 8efde22 |
+| 19 | Problem-type registry | Every refusal a skill emits has a row | Done | Folded into row 53 | 2026-09-03 8efde22 |
+| 20 | Consumption link | cap-consumption links to cap-work-intake | Done | Folded into row 53 | 2026-09-03 8efde22 |
+| 42 | Sourcing pass | Proposed rows are under 30 percent | Done | Folded into rows 52 to 55 | 2026-09-03 8efde22 |
+| 48 | Effect table interface | Workflow flow.py reaches the executor effect table only through the interface | Done | Folded into row 53 | 2026-09-03 8efde22 |
+| 50 | Direction | TARGET.md T10 states the acceptance measuring sticks | Done | Nine items added | 2026-09-03 8efde22 |
+| 51 | Acceptance matrix | Every stack element has a derived row with five sticks | Done | 16 elements, 0 accepted | 2026-09-03 8efde22 |

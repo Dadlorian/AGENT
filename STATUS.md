@@ -11,10 +11,7 @@
 | 19 | Problem-type registry | Every refusal a skill emits has a row | Open | 5 missing |
 | 20 | Consumption link | cap-consumption links to cap-work-intake | Open | Unlinked |
 | 21 | Continuous improvement loop | One iteration per fire moves a metric and checkpoints | Not started | Awaiting go |
-| 27 | Linked harness | One document runs through all four harnesses | In progress | Author running |
-| 28 | Impact map | A component swap lists every affected adapter, test, and skill | Open | Not started |
 | 37 | Live run access | Harness live mode runs against the host from a session | Blocked | Owner decision |
 | 41 | Planted-defect reviews | Every review catches both planted defects | In progress | plant.py ready |
 | 42 | Sourcing pass | Proposed rows are under 30 percent | In progress | Iteration 1 on 10 skills |
 | 45 | Fetch allowlist | Standards sites are fetchable from the environment | Blocked | Owner decision |
-| 46 | Swap proof | Each harness section executes one adapter swap | Not started | Queued |

@@ -193,36 +193,40 @@
         "quote": "Typed errors | Absent"
       },
       {
-        "text": "Proposed (from docs/decomposition.md section 2.1.6): every failure body of every seam and every adapter carries the media type application/problem+json, whatever transport it leaves through, and the members are the standard five with declared extensions.",
-        "origin": "proposed",
+        "text": "Every failure body of every seam and every adapter carries the media type application/problem+json, whatever transport it leaves through: a Problem Details response uses that content type and includes the fields type, title, status, detail and instance, extensible with application-specific fields. Docs/decomposition.md section 2.1.6 fixes this for the platform (proposed).",
+        "origin": "sourced",
         "sources": [
           "X-cap-errors-002"
-        ]
+        ],
+        "quote": "A Problem Details response uses the application/problem+json content type and includes fields: type (URI identifying the error category), title (short human-readable summary), status (HTTP status code), detail (specific explanation), and instance (URI identifying the specific request)."
       },
       {
-        "text": "Proposed: the type member must resolve to a row in the closed registry in docs/decomposition.md section 2.1.6. An unregistered type URI is a conformance failure, and extending the set means adding a row there before any code emits it. Proposed: a skill may state an unregistered suffix only while it is marked proposed and pending registration with a registered fallback named; tools/validate_skills.py warns per suffix when that marker is missing.",
-        "origin": "proposed",
+        "text": "The type member must resolve to a row in the closed registry in docs/decomposition.md section 2.1.6: the governing standard itself keeps an IANA registry for problem type URIs and requires registration before reuse. An unregistered type URI is a conformance failure on this platform (proposed, stricter than the standard's own Specification-Required bar), and extending the set means adding a row there before any code emits it. Proposed: a skill may state an unregistered suffix only while it is marked proposed and pending registration with a registered fallback named; tools/validate_skills.py warns per suffix when that marker is missing.",
+        "origin": "sourced",
         "sources": [
           "X-cap-errors-003"
-        ]
+        ],
+        "quote": "RFC 9457 introduces an IANA registry for hosting common problem type URIs. The registry promotes reuse of widely used problem types and requires Specification Required registration for new entries."
       },
       {
-        "text": "Proposed: retryable is a member, never an inference from the status code, so a 503 that must not be retried says so. The base problem schema keeps all standard members optional, which is why the platform profile is what requires it on emission rather than the standard.",
-        "origin": "proposed",
+        "text": "retryable is a member, never an inference from the status code, so a 503 that must not be retried says so. The base schema keeps all standard members optional and allows problem-specific extensions, which is why the platform profile (proposed) is what requires retryable on emission rather than the standard.",
+        "origin": "sourced",
         "sources": [
           "X-cross-structure-040"
-        ]
+        ],
+        "quote": "The base schema keeps all standard members optional and allows problem-specific extensions."
       },
       {
-        "text": "Proposed: a failure that cannot be typed is itself a conformance failure of the adapter that raised it. It is returned as adapter-unavailable with the untyped payload in detail and it is counted; an adapter whose untyped count is non-zero is not conformant, however green its own tests are.",
+        "text": "Proposed: a failure that cannot be typed is itself a conformance failure of the adapter that raised it. It is returned as adapter-unavailable with the untyped payload in detail and it is counted; an adapter whose untyped count is non-zero is not conformant, however green its own tests are. Research query: has any adapter in this repo actually been run through a suite that counts its untyped-failure rate, or is 'however green its own tests are' an assertion with no measured adapter behind it yet?",
         "origin": "proposed"
       },
       {
-        "text": "Proposed consequence of design rule 6, which agentic-stack states under F-b1-07: a problem body is caller-visible, so the criterion a result is judged against must never appear in detail, in causes, or in any extension member.",
-        "origin": "proposed",
+        "text": "Consequence of design rule 6, which agentic-stack states under F-b1-07: an agent sees its outcome, never the criterion it is judged against. A problem body is caller-visible (proposed), so the criterion a result is judged against must never appear in detail, in causes, or in any extension member.",
+        "origin": "sourced",
         "sources": [
           "F-b1-07"
-        ]
+        ],
+        "quote": "never the criterion it is judged against"
       },
       {
         "text": "A human, an event, a schedule and an external system or agent get the same object. All four entry kinds enter through the same shape, and the failure half is not specialised per entry, so one handler covers every way work arrived.",
@@ -246,21 +250,23 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: stack traces, internal hostnames, credentials and adapter identities stay out of the problem body. agentic-stack states the products-in-adapters-only rule (F-part-c-09); the consequence here is that a caller cannot tell which implementation failed from the failure it receives.",
-        "origin": "proposed",
+        "text": "Stack traces, internal hostnames, credentials and adapter identities stay out of the problem body: products belong in the adapter column only. agentic-stack states that rule (F-part-c-09); the consequence here (proposed) is that a caller cannot tell which implementation failed from the failure it receives.",
+        "origin": "sourced",
         "sources": [
           "F-part-c-09"
-        ]
+        ],
+        "quote": "Products belong in the adapter column only."
       },
       {
-        "text": "Proposed: the criterion the Judge grades against is not exposed through the failure path, which is the one path most likely to leak it while explaining why something did not pass.",
-        "origin": "proposed",
+        "text": "The criterion the Judge grades against is not exposed through the failure path, which is the one path most likely to leak it while explaining why something did not pass: an agent sees its outcome, never the criterion it is judged against (proposed application of design rule 6).",
+        "origin": "sourced",
         "sources": [
           "F-b1-07"
-        ]
+        ],
+        "quote": "never the criterion it is judged against"
       },
       {
-        "text": "Proposed: the transport is not part of the contract. The shape and its media type are adopted; the HTTP binding is not required for this object to be the failure shape of a stdio or message-based seam.",
+        "text": "Proposed: the transport is not part of the contract. The shape and its media type are adopted; the HTTP binding is not required for this object to be the failure shape of a stdio or message-based seam. Research query: has this shape actually been round-tripped over a non-HTTP transport (stdio or a message queue) to confirm the media type alone travels cleanly, or is transport-independence argued rather than run?",
         "origin": "proposed",
         "sources": [
           "X-cap-errors-002"
@@ -292,12 +298,13 @@
     {
       "step": 3,
       "action": "Proposed: register the platform's own problem-type namespace as urn:agentic:problem:<suffix> and keep it a closed registry, each row fixing the suffix, the status, whether it is retryable and when it is raised. Add a row to docs/decomposition.md section 2.1.6 before any code emits a new suffix. When a failure mode has no row in that registry, apply 1-3-1 rather than minting a suffix at the call site: state the problem, list the three best registry changes, follow the recommendation, and record it as an open question with the row you would add. Until that row lands, the skill that needs the type marks the suffix proposed and pending registration in the same sentence that states it and names the registered type an implementation returns meanwhile, carrying the proposed suffix in detail, so no caller branches on a URI no conformant implementation may emit.",
-      "why": "Proposed, from docs/decomposition.md section 2.1.6. The standard's own registry promotes reuse of widely used problem types and requires Specification Required registration for new entries, and a namespace that anyone may extend at the call site is not a registry. The same act governs the missing row: applying the operating protocol, when a problem comes up, use 1-3-1: define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation.",
-      "origin": "proposed",
+      "why": "From docs/decomposition.md section 2.1.6 (proposed). The standard's own registry promotes reuse of widely used problem types and requires Specification Required registration for new entries, and a namespace that anyone may extend at the call site is not a registry. The same act governs the missing row: when a problem comes up, use 1-3-1: define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation.",
+      "origin": "sourced",
       "sources": [
         "X-cap-errors-003",
         "T-t5-02"
-      ]
+      ],
+      "quote": "The registry promotes reuse of widely used problem types and requires Specification Required registration for new entries."
     },
     {
       "step": 4,
@@ -312,12 +319,13 @@
     },
     {
       "step": 5,
-      "action": "Proposed: emit retryable on every problem, and pair it with retry_after_s where the wait is knowable, instead of leaving a caller to read the status code.",
-      "why": "Proposed platform profile. Best practice for this standard is to include Retry-After on 429 and 503 responses, and a boolean alone cannot carry the rate-limited case; the status code alone cannot distinguish a 503 that will clear from one that will not.",
-      "origin": "proposed",
+      "action": "Emit retryable on every problem, and pair it with retry_after_s where the wait is knowable, instead of leaving a caller to read the status code.",
+      "why": "Best practice for this standard is to include Retry-After on 429 and 503 responses. What this adds (proposed, platform profile): a boolean alone cannot carry the rate-limited case; the status code alone cannot distinguish a 503 that will clear from one that will not.",
+      "origin": "sourced",
       "sources": [
         "X-cap-errors-004"
-      ]
+      ],
+      "quote": "Include Retry-After on 429 and 503 responses"
     },
     {
       "step": 6,
@@ -331,13 +339,13 @@
     },
     {
       "step": 7,
-      "action": "Proposed: treat an untyped failure as a defect of the adapter that raised it. Map it to adapter-unavailable, carry the untyped payload in detail, count it, and judge an implementation conformant only when that count is zero.",
+      "action": "Treat an untyped failure as a defect of the adapter that raised it. Map it to adapter-unavailable, carry the untyped payload in detail, count it, and judge an implementation conformant only when that count is zero. Research query: see the untyped-failure-count research query on the sibling invariant row above.",
       "why": "Proposed, from docs/decomposition.md section 2.1.6. Without the counter, the adapters that never learned to type their failures are exactly the ones a conformance run cannot see, because they answer with something rather than nothing.",
       "origin": "proposed"
     },
     {
       "step": 8,
-      "action": "Proposed: keep the object bound to its media type and not to HTTP, so a stdio, message or in-process seam returns the identical body and a caller writes one branch for all of them.",
+      "action": "Proposed: keep the object bound to its media type and not to HTTP, so a stdio, message or in-process seam returns the identical body and a caller writes one branch for all of them. Research query: see the transport-independence research query on the sibling not_exposed row above.",
       "why": "Proposed, from docs/decomposition.md section 1. The standard defines a media type and a member set; nothing forces the transport to be HTTP for the shape to be adopted, and binding it to one transport would make the failure path the only part of a seam that cannot be swapped.",
       "origin": "proposed",
       "sources": [
@@ -346,12 +354,13 @@
     },
     {
       "step": 9,
-      "action": "Proposed: before declaring an implementation done, grep every problem body it can emit for the text of the criterion the result is judged against, and treat a hit as a rule-6 breach rather than a wording problem.",
-      "why": "Proposed check. agentic-stack states design rule 6 under F-b1-07; the consequence specific to this capability is that the failure path is the path most tempted to explain why something did not pass.",
-      "origin": "proposed",
+      "action": "Before declaring an implementation done, grep every problem body it can emit for the text of the criterion the result is judged against, and treat a hit as a rule-6 breach rather than a wording problem.",
+      "why": "agentic-stack states design rule 6 under F-b1-07: an agent sees its outcome, never the criterion it is judged against. The consequence specific to this capability (proposed) is that the failure path is the path most tempted to explain why something did not pass.",
+      "origin": "sourced",
       "sources": [
         "F-b1-07"
-      ]
+      ],
+      "quote": "never the criterion it is judged against"
     },
     {
       "step": 10,
@@ -396,12 +405,13 @@
       "quote": "to carry machine-readable details of errors in HTTP response content"
     },
     {
-      "text": "Proposed: copy the correlation identifier onto the problem body, not only into the log line. Structured logs should include correlation IDs for error tracking, and agentic-stack states the correlation finding (F-a7-02); what this adds is that the failure a caller holds is often the only artifact that survives the boundary.",
-      "origin": "proposed",
+      "text": "Copy the correlation identifier onto the problem body, not only into the log line: structured logs should be in JSON format and include correlation IDs for error tracking, and agentic-stack states the correlation finding (F-a7-02: correlation must ride on an explicit resource attribute set at dispatch). What this adds (proposed): the failure a caller holds is often the only artifact that survives the boundary.",
+      "origin": "sourced",
       "sources": [
         "X-cap-errors-006",
         "F-a7-02"
-      ]
+      ],
+      "quote": "structured logs should be in JSON format and include correlation IDs for error tracking"
     },
     {
       "text": "Cite the current RFC, not the one a library's documentation names: RFC 7807 has been succeeded by RFC 9457, so a dependency that still speaks of 7807 is describing an older member set than the one this contract adopts.",

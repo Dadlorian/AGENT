@@ -1,0 +1,72 @@
+{
+  "harness": "linked",
+  "owner_skill": "cap-consumption",
+  "co_skills": ["build-entry-conformance", "compose-agent-implement"],
+  "blueprint_tool_entry": null,
+  "capability": "consumption: the one way in, composed over the four component harnesses",
+  "standard": "RFC 9457 problem details for the refusal half and CloudEvents for the entry half, both unverified and both owned by other skills; this harness fixes only what is identical across the four doors",
+  "composes": {
+    "containment": "harness/containment (cap-isolation-implement, cap-agent-runtime-implement)",
+    "gateway": "harness/gateway (cap-model-access-implement, xc-budget-implement)",
+    "observability": "harness/observability (cap-telemetry-implement, xc-correlation-implement)",
+    "workflow": "harness/workflow (cap-durable-execution-implement, compose-loop-implement, compose-approval-implement)"
+  },
+  "kb_ids": [
+    "T-t1-01", "T-t1-02", "T-t1-03",
+    "T-t2-01", "T-t2-02", "T-t2-03",
+    "T-t3-01", "T-t3-02",
+    "T-t6-01", "T-t6-02", "T-t6-03", "T-t6-04", "T-t6-05",
+    "T-t7-01", "T-t7-02", "T-t7-03", "T-t7-04", "T-t7-05",
+    "T-t9-06",
+    "F-b1-02", "F-b1-05", "F-b1-06", "F-b1-07",
+    "F-b3-08", "F-b3-13",
+    "F-b4-01", "F-b4-02", "F-b4-03", "F-b4-06", "F-b4-07", "F-b4-08",
+    "F-a7-02", "F-a7-03", "F-part-c-04",
+    "REF-3-4-08", "REF-3-4-15",
+    "E-capability-isolation", "E-capability-model-access",
+    "E-capability-telemetry", "E-capability-durable-execution"
+  ],
+  "research_ids": [
+    "X-cap-errors-002",
+    "X-entry-composition-059",
+    "X-end-to-end-035"
+  ],
+  "adapters": {
+    "note": "This harness binds no adapter of its own. Its adapters are the four component harnesses' adapters, selected by ADAPTER_CONTAINMENT, ADAPTER_GATEWAY, ADAPTER_TRACE and ADAPTER_WORKFLOW; the swap proof moves all four at once and then one at a time.",
+    "first": {
+      "containment": "contained-by:simulated-machine-unit",
+      "gateway": "dryrun-completions",
+      "workflow": "in-process-journal/0.1",
+      "trace": "semantic_queries_supported=True"
+    },
+    "second": {
+      "containment": "contained-by:capability-granted-unit",
+      "gateway": "batch-job-accepted",
+      "workflow": "queue-state-machine/0.1",
+      "trace": "semantic_queries_supported=False"
+    },
+    "markers_read_from": {
+      "containment": "the marker the host read out of the running unit",
+      "gateway": "the marker the completion response carried",
+      "workflow": "the executor marker on the journal the run wrote",
+      "trace": "the declared capability axis of the telemetry pair, because both members are required to report the same attribute-mapping version"
+    }
+  },
+  "measured": {
+    "dryrun": "bash harness/linked/test.sh -> passed 31, failed 0; conformance 23 of 23 with the first adapter of every component: one subject digest and one resolved plan across the human, event, schedule and external doors, four distinct actors with 1, 2, 2 and 3 delegation hops, one contained unit and one completion by class per run, three steps committed through the executor, one trace group per run over three unrelated trace ids with zero spans missing the run id or the root dispatch id, spend equal to the sum of the nested step costs and equal to the executor's own total, four replay no-ops and four typed 422 refusals that wrote nothing",
+    "swap": "the same 23 cases before and after ADAPTER_CONTAINMENT, ADAPTER_GATEWAY, ADAPTER_TRACE and ADAPTER_WORKFLOW were all set to second: both sides verdict pass, identical case list, identical counters, call.py byte-identical across the swap, and all four markers different. Then each variable alone: four runs, each verdict pass with exactly one marker moved",
+    "breakage": "python3 conformance.py --break-door-budget gives the event door a ceiling of its own: exit 1, verdict fail, manifests_distinct 2 and subjects_distinct 2, and the four failures are A2, A3, A6 and A8 only - every per-door case stays green, which is the defect a per-door run cannot see. It fails identically under the second adapters, and the suite passes again once the door is restored"
+  },
+  "claimed": [
+    "live mode until run on the host: no component's live adapter has been run from this session, and test.sh --live skips with the list of unset variables",
+    "the cross-door suite is driven from one raw script only; build-entry-conformance also requires a client generated from a published description document, and no such document exists here, so the report records client_shape raw-script",
+    "the model completion is emitted under the telemetry mapping's tool operation because it is the unit's outward call; this harness adds no key to that mapping",
+    "the standard rows are the component harnesses' and the owner skill's, all unverified from this environment"
+  ],
+  "definition_of_done": {
+    "criterion": "bash harness/linked/test.sh exits 0 with 23 of 23 conformance checks against every component's first adapter, the same 23 after all four are swapped to their second, and one marker moved per single-component swap",
+    "breakage": "python3 harness/linked/conformance.py --break-door-budget: the event door alone carries ceiling_micros 2000000 and nothing else changes",
+    "expected_failure": "exit 1, verdict fail, manifests_distinct 2, and only the cross-door cases A2, A3, A6 and A8 fail",
+    "status": "measured"
+  }
+}

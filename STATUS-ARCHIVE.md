@@ -33,3 +33,6 @@
 | 23 | Containment harness | One turn runs in a microVM through the interface and cancels | Done | 23 checks dry run, live claimed | 2026-09-03 57819f9 |
 | 26 | Workflow harness | One durable flow survives a crash and resumes | Done | 28 checks pass and the swap holds | 2026-09-03 2b7c091 |
 | 44 | Freshness gate | A checkpoint fails on a stale status row | Done | status_check --freshness, breakage measured | 2026-09-03 a839efd |
+| 27 | Linked harness | One document runs through all four harnesses | Done | 31 checks, swap proof | 2026-09-03 34e24b1 |
+| 28 | Impact map | A component swap lists every affected adapter, test, and skill | Done | 5 harness tests linked | 2026-09-03 34e24b1 |
+| 46 | Swap proof | Each harness section executes one adapter swap | Done | 5 of 5 swaps measured | 2026-09-03 34e24b1 |

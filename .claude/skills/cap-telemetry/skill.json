@@ -256,7 +256,7 @@
         "quote": "These resource attributes MUST NOT be ever changed"
       },
       {
-        "text": "Proposed: this interface is two contracts on two cadences, not one. The transport and shape half is pinned and rarely moves, the attribute-mapping half is versioned separately and may be revised without touching a single emitter. build-interface-versioning states the general discipline and names this interface as its first application; what is added here is that the split is part of the capability's contract rather than a release habit.",
+        "text": "Proposed: this interface is two contracts on two cadences, not one. The transport and shape half is pinned and rarely moves, the attribute-mapping half is versioned separately and may be revised without touching a single emitter. build-interface-versioning states the general discipline and names this interface as its first application; what is added here is that the split is part of the capability's contract rather than a release habit. Research query: has a GenAI semantic-convention revision actually landed since this repo was built, so the mapping-adapter split can be measured against a real version bump rather than argued from the maturity difference alone?",
         "origin": "proposed",
         "sources": [
           "F-b3-10",
@@ -282,7 +282,7 @@
         "quote": "and not one is marked Stable"
       },
       {
-        "text": "Proposed: the platform's own correlation fields are independent of the attribute mapping. A revision of the vocabulary changes the mapping adapter and nothing in the entry envelope, which is what keeps a pre-stable dependency from reaching the one shape every caller fills in.",
+        "text": "Proposed: the platform's own correlation fields are independent of the attribute mapping. A revision of the vocabulary changes the mapping adapter and nothing in the entry envelope, which is what keeps a pre-stable dependency from reaching the one shape every caller fills in. Research query: is there a fetched (not search-only) record of the GenAI semantic-conventions stability status, to confirm 'pre-stable' still holds rather than being a stale assumption?",
         "origin": "proposed",
         "sources": [
           "T-t2-02",
@@ -313,21 +313,23 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: the criterion a result is judged against never appears as a span attribute, a metric label or a resource attribute. agentic-stack states design rule 6 (F-b1-07); what this interface forbids specifically is a judged step emitting the rule alongside its verdict, because telemetry is the one signal that reaches every backend and every reader, including the agent's own tooling.",
-        "origin": "proposed",
+        "text": "The criterion a result is judged against never appears as a span attribute, a metric label or a resource attribute: an agent sees its outcome, never the criterion it is judged against. agentic-stack states design rule 6 (F-b1-07); what this interface forbids specifically (proposed) is a judged step emitting the rule alongside its verdict, because telemetry is the one signal that reaches every backend and every reader, including the agent's own tooling.",
+        "origin": "sourced",
         "sources": [
           "F-b1-07"
-        ]
+        ],
+        "quote": "An agent sees its outcome, never the criterion it is judged against."
       },
       {
-        "text": "Proposed: prompt and completion payloads, credentials and personal data are not on this interface. cap-identity reads the same record for the propagated key-value store; the rule here is the emitter's: an attribute value is a non-secret reference, and a payload that must be inspected is fetched from the store by its digest rather than copied onto a span.",
-        "origin": "proposed",
+        "text": "Prompt and completion payloads, credentials and personal data are not on this interface: do not put secrets, tokens, or PII in the propagated key-value store. cap-identity reads the same record for that store; the rule here (proposed) is the emitter's: an attribute value is a non-secret reference, and a payload that must be inspected is fetched from the store by its digest rather than copied onto a span.",
+        "origin": "sourced",
         "sources": [
           "X-cross-structure-006"
-        ]
+        ],
+        "quote": "Do not put secrets, tokens, or PII in baggage."
       },
       {
-        "text": "Proposed: the identity of the backend is not visible on the interface. No operation names a destination, a query language or a UI concept, because a caller that could tell one backend from another would encode the difference and the swap would stop being free.",
+        "text": "Proposed: the identity of the backend is not visible on the interface. No operation names a destination, a query language or a UI concept, because a caller that could tell one backend from another would encode the difference and the swap would stop being free. Research query: does the OTLP export protocol itself define a backend-identity field the interface must actively suppress, or is there simply nothing in the wire format that names one?",
         "origin": "proposed",
         "sources": [
           "F-b1-05"
@@ -338,7 +340,7 @@
   "instructions": [
     {
       "step": 1,
-      "action": "Draw the interface as two halves before writing an emitter: a pinned transport and shape contract, and a separately versioned attribute mapping. Emitters bind to the first half only and reach the second through a lookup.",
+      "action": "Draw the interface as two halves before writing an emitter: a pinned transport and shape contract, and a separately versioned attribute mapping. Emitters bind to the first half only and reach the second through a lookup. Research query: see the two-cadence research query on the sibling invariant row above.",
       "why": "Proposed. The two halves have measurably different maturities, so binding an emitter to both means every vocabulary revision edits every emitter. Splitting them makes a revision a change to one adapter.",
       "origin": "proposed",
       "sources": [
@@ -416,11 +418,12 @@
     {
       "step": 8,
       "action": "Send what you were already sending. Do not add a tracing call, a span of your own, or a request to be observed; there is nothing to opt into.",
-      "why": "Proposed usage of the placement this skill fixes. The platform applies this concern rather than offering it, so a caller-side switch would be a hole rather than a feature, and a span you mint yourself is the one thing in the run with no correlation attributes on it.",
-      "origin": "proposed",
+      "why": "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller. What this adds (proposed): a caller-side switch would be a hole rather than a feature, and a span you mint yourself is the one thing in the run with no correlation attributes on it.",
+      "origin": "sourced",
       "sources": [
         "F-b1-08"
-      ]
+      ],
+      "quote": "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller."
     },
     {
       "step": 9,
@@ -467,11 +470,12 @@
       "quote": "Framework-native tracing cannot span boundaries between heterogeneous stacks"
     },
     {
-      "text": "Proposed: measure the correlation property on a depth-3 tree, never on a single call. Depth 1 passes under both designs, so a suite that only exercises one hop will report green on exactly the arrangement that has already been measured to fail.",
-      "origin": "proposed",
+      "text": "Measure the correlation property on a depth-3 tree, never on a single call: a depth-3 task tree produces three unrelated root traces under the substrate's default behaviour. Depth 1 passes under both designs (proposed), so a suite that only exercises one hop will report green on exactly the arrangement that has already been measured to fail.",
+      "origin": "sourced",
       "sources": [
         "F-a7-02"
-      ]
+      ],
+      "quote": "A depth-3 task tree produces three unrelated root traces."
     }
   ],
   "adapters": [

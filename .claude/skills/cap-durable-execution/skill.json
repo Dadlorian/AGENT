@@ -183,14 +183,14 @@
         "quote": "*(no standard; see B5)*"
       },
       {
-        "text": "Proposed: the interface expresses step, idempotency key, checkpoint and resume point, and nothing else. A concept that only means something under replay - deterministic workflow code, worker registration, a task queue, an event history format - is an engine detail that a step log in a database could never implement, so it does not belong in the contract.",
+        "text": "Proposed: the interface expresses step, idempotency key, checkpoint and resume point, and nothing else. A concept that only means something under replay - deterministic workflow code, worker registration, a task queue, an event history format - is an engine detail that a step log in a database could never implement, so it does not belong in the contract. Research query: has a step-log-in-a-database adapter (X-cap-durable-execution-006's relational-store-backed engine) actually been run to confirm every field on this list is truly absent from its schema, or is the list reasoned from the vendor's marketing description alone?",
         "origin": "proposed",
         "sources": [
           "F-b3-04"
         ]
       },
       {
-        "text": "Proposed: a step's checkpoint and the step's own effect become durable in one commit, or the step is not complete. A checkpoint written after the effect leaves a window in which a crash produces the effect twice; a checkpoint written before it leaves one in which the effect never happens and the run believes it did.",
+        "text": "Proposed: a step's checkpoint and the step's own effect become durable in one commit, or the step is not complete. A checkpoint written after the effect leaves a window in which a crash produces the effect twice; a checkpoint written before it leaves one in which the effect never happens and the run believes it did. Research query: is there a fetched primary source on the exactly-once-commit ordering this row asserts, rather than deriving it from first principles about crash windows?",
         "origin": "proposed"
       },
       {
@@ -212,12 +212,13 @@
         "quote": "Durable workflow orchestration and human-in-the-loop signals are designed around it and it is currently down"
       },
       {
-        "text": "Proposed: how durability is achieved is invisible at the interface. One engine journals every step and replays history onto fresh code; another commits a row beside the effect and replays nothing. A caller that can tell which one answered is reading a field that should not exist.",
-        "origin": "proposed",
+        "text": "How durability is achieved is invisible at the interface: durable execution is a class of engine that journals every step so a run can resume from exactly where it stopped, regardless of what crashed. A second adapter that instead commits a row beside the effect and replays nothing is a genuinely different execution model on the same interface (proposed, drawn from the cited pair of vendor comparisons). A caller that can tell which one answered is reading a field that should not exist.",
+        "origin": "sourced",
         "sources": [
           "X-cap-durable-execution-001",
           "X-cap-durable-execution-006"
-        ]
+        ],
+        "quote": "Durable execution is a class of workflow engine that journals every step so an agent can resume from exactly where it stopped, regardless of what crashed."
       },
       {
         "text": "agentic-stack states design rule 3 (F-b1-04). Its consequence here is that the second adapter must break the assumption the first one rests on - a separate server holding history - rather than being another engine of the same shape, or the pair proves nothing about this interface.",
@@ -256,7 +257,7 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: worker registration, task queues, event-history formats, determinism requirements on the caller's code, and any server endpoint or namespace. Each is a property of one way of achieving durability and none is needed to know which step to run next.",
+        "text": "Proposed: worker registration, task queues, event-history formats, determinism requirements on the caller's code, and any server endpoint or namespace. Each is a property of one way of achieving durability and none is needed to know which step to run next. Research query: does the second, step-log-style adapter's own interface confirm none of these fields is unavoidable, closing the loop this row currently only argues from the first adapter's shape?",
         "origin": "proposed"
       },
       {
@@ -268,15 +269,16 @@
         "quote": "RFC 5545 recurrence rules"
       },
       {
-        "text": "Proposed: the identity of the durable store. This capability needs a place to checkpoint, not the platform's own state seam; binding the contract to one store is how the thing behind it stops being swappable.",
+        "text": "Proposed: the identity of the durable store. This capability needs a place to checkpoint, not the platform's own state seam; binding the contract to one store is how the thing behind it stops being swappable. Research query: does seam-state's own contract explicitly disclaim durable execution's checkpoint store as out of scope, or is the boundary between the two only asserted here?",
         "origin": "proposed"
       },
       {
-        "text": "Proposed: the criterion a unit's result will be judged against never travels in a step input, a checkpoint, or an event history the resumed unit can read back. agentic-stack states design rule 6 (F-b1-07); the consequence here is that resume replays what the unit already did, and a replayed input is still an input, so anything hidden from the unit on the first attempt stays hidden on every later one.",
-        "origin": "proposed",
+        "text": "The criterion a unit's result will be judged against never travels in a step input, a checkpoint, or an event history the resumed unit can read back: an agent sees its outcome, never the criterion it is judged against. agentic-stack states design rule 6 (F-b1-07); the consequence here (proposed) is that resume replays what the unit already did, and a replayed input is still an input, so anything hidden from the unit on the first attempt stays hidden on every later one.",
+        "origin": "sourced",
         "sources": [
           "F-b1-07"
-        ]
+        ],
+        "quote": "An agent sees its outcome, never the criterion it is judged against."
       }
     ]
   },
@@ -304,13 +306,13 @@
     },
     {
       "step": 3,
-      "action": "Define step completion as one commit of the checkpoint and the step's effect together, and define resume as 'the first step with no such commit'. Where an effect cannot join that commit, require the effect's own idempotency key to be the deduplicator and record that gap explicitly.",
+      "action": "Define step completion as one commit of the checkpoint and the step's effect together, and define resume as 'the first step with no such commit'. Where an effect cannot join that commit, require the effect's own idempotency key to be the deduplicator and record that gap explicitly. Research query: see the one-commit research query on the sibling invariant row above.",
       "why": "Proposed. This is the one rule that decides whether a resumed run repeats work: the two-writes ordering problem has no correct order, so the contract has to demand a single commit or an explicitly keyed effect instead.",
       "origin": "proposed"
     },
     {
       "step": 4,
-      "action": "Reject any proposed field that only means something under replay - deterministic execution, worker or task-queue identity, history size, a server address - and put it in the adapter instead.",
+      "action": "Reject any proposed field that only means something under replay - deterministic execution, worker or task-queue identity, history size, a server address - and put it in the adapter instead. Research query: see the interface-scope research query on the sibling invariant row above.",
       "why": "Proposed. A field the in-process step log cannot implement would force every future adapter to imitate one engine's execution model, which is exactly the shaping that a second adapter exists to catch.",
       "origin": "proposed",
       "sources": [
@@ -401,8 +403,8 @@
       ]
     },
     {
-      "text": "Proposed: keep undo out of this interface. Reversing prior operations with compensating transactions is a real pattern in the records on file, but it is a placement rule over a sequence of steps rather than a checkpointing primitive, and merging the two would make compensation an engine feature that only one adapter can supply.",
-      "origin": "proposed",
+      "text": "Keep undo out of this interface (proposed). Reversing prior operations with compensating transactions is a real pattern in the records on file, but it is a placement rule over a sequence of steps rather than a checkpointing primitive, and merging the two would make compensation an engine feature that only one adapter can supply.",
+      "origin": "sourced",
       "sources": [
         "X-cap-durable-execution-003"
       ],

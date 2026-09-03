@@ -77,3 +77,6 @@ These are the review findings from wave 1. Each cost a fix; none should recur.
 ## Reply
 
 Reply in under 200 words: skills written, validator result for them, any manifest inconsistency found (report; do not edit the manifest), and any claim you wanted to make but could not source (list them as proposed items you added or omitted).
+
+## When something blocks you (TARGET T5, cite T-t5-02)
+Define the problem in one line. List the three best solutions that serve the goal. Pick the recommended one and proceed; record the choice as a proposed row or an open_question with the deciding evidence. If none is clearly best, drop the two weakest, find two more, repeat. Never stop and wait.

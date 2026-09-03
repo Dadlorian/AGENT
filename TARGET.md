@@ -25,3 +25,9 @@ Stated by the platform owner on 2026-09-03 as the baseline target. PASS.md Part 
 2. Decompose it; add the skills, loops, and agents needed to reach it.
 3. PASS.md's list is a limited baseline: understand what an end-to-end version is, make up for the gaps, and solve it.
 4. Work through every item with a self-improvement loop: at the end of each section a ceremony re-reviews the output, improves the skills that produced it, and the loop continues.
+
+## T5. Operating protocol
+
+1. Do not stop at ceremonies; run them and continue.
+2. When a problem comes up, use 1-3-1: define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation.
+3. If no recommendation is found, drop the two lowest solutions, find two more, and repeat until solved.

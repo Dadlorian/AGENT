@@ -10,7 +10,7 @@ export const meta = {
 // args: { sections: [{name, items:[{name, layer, kb_ids:[...], facets:[skillName...]}]}], brief: path, date: 'YYYY-MM-DD', startAt: sectionIndex }
 const SUMMARY = { type: 'object', properties: { ok: { type: 'boolean' }, summary: { type: 'string' }, numbers: { type: 'object' } }, required: ['ok', 'summary'] }
 const ROOT = '/home/user/AGENT'
-const common = `Work in ${ROOT}. Do not commit or push (a checkpoint agent does that). Skills are data: skill.json per schemas/skill.schema.json, rendered by tools/render_skill.py, checked by tools/validate_skills.py. Every statement is origin=sourced with kb ids and a verbatim quote, or origin=proposed with the word proposed in its text. Never invent a URL, version, fact, or quote. Date for records: ${args.date}.`
+const common = `Work in ${ROOT}. Do not commit or push (a checkpoint agent does that). Skills are data: skill.json per schemas/skill.schema.json, rendered by tools/render_skill.py, checked by tools/validate_skills.py. Every statement is origin=sourced with kb ids and a verbatim quote, or origin=proposed with the word proposed in its text. Never invent a URL, version, fact, or quote. If blocked, apply TARGET.md T5 (1-3-1): define the problem, list the three best goal-aligned solutions, follow the recommendation, and record it; never stop and wait. Date for records: ${args.date}.`
 
 function researchPrompt(item) {
   return `${common}

@@ -407,14 +407,17 @@
     },
     {
       "step": 2,
-      "action": "Put a prompt, a response JSON Schema, the run's correlation id, the proposed action with its diff and irreversibility class, and a deadline on every ask. Refuse to park an ask that is missing any of them.",
-      "why": "Proposed, and the reason each field is there: the schema makes the answer checkable, the correlation id is what the decision comes back on, the diff and the irreversibility class are what a reviewer needs to judge an action before it happens, and the deadline is what stops a run waiting forever. An ask completed later has a window in which a run is parked with nobody accountable for it.",
+      "action": "Put a prompt, a response JSON Schema, the run's correlation id, the proposed action with its diff and irreversibility class, a named view that renders what is being decided, and a deadline on every ask. Refuse to park an ask that is missing any of them.",
+      "why": "Proposed, and the reason each field is there: the schema makes the answer checkable, the correlation id is what the decision comes back on, the diff and the irreversibility class are what a reviewer needs to judge an action before it happens, and the deadline is what stops a run waiting forever. An ask completed later has a window in which a run is parked with nobody accountable for it. The view is required for the same reason, and is proposed here following the reference example in docs/reference/composable-plan.md: a gate whose view is missing is not decidable, and a reviewer shown raw output is being asked to grade the work rather than to decide it.",
       "origin": "proposed",
       "sources": [
         "X-entry-composition-016",
         "X-end-to-end-063",
-        "X-cap-human-interaction-008"
-      ]
+        "X-cap-human-interaction-008",
+        "REF-10-05",
+        "REF-3-4-03"
+      ],
+      "quote": "Decidable: every gate has a view"
     },
     {
       "step": 3,
@@ -630,6 +633,17 @@
         "F-b3-08"
       ],
       "quote": "A human must be able to enter the system."
+    },
+    {
+      "question": "Who may answer a gate, and over what wire, once a plan nests? A depth-3 run with a gate at each level has to say whether the decider is the root run's owner, the subject named on the ask, or whoever holds the surface, and whether a decision may arrive over a wire other than the one that watched.",
+      "evidence": "Park a gate at each level of a depth-3 run across both surfaces this capability ships and record, per gate, which subject the policy admitted as decider and which wire carried the decision; the reference example lists this as unsolved and names the common workaround, running each stage as its own workflow, as a constraint rather than an answer.",
+      "default": "Until then: the ask names one deciding subject, resolved from the root run's owner and the policy verdict, and a decision is accepted from any surface that can authenticate that subject against the run's correlation id.",
+      "sources": [
+        "REF-11-07",
+        "REF-7-07",
+        "REF-12-10"
+      ],
+      "quote": "Who may answer a gate, over what wire"
     }
   ],
   "provenance": {

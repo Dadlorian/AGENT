@@ -34,6 +34,9 @@ Warnings:
   - a problem type urn:agentic:problem:<suffix> whose suffix has no row in the closed registry in
     docs/decomposition.md section 2.1.6 and is not marked "pending registration" near where the skill
     states it, with a registered type named as the fallback (author-brief defect item 14)
+  - an -implement facet whose definition_of_done breakage repeats its ideal facet's word for word,
+    or is wholly contained in it (ceremony 10, C10-001): the pair then demonstrates one failure mode
+    twice, and nothing shows the build's own wiring, migration stage, binding or gate can fail
   - an adapters[].entity id that resolves nowhere in kb/entities.jsonl and is not said to be proposed
     in the row that states it (ceremony 9, C9-001): the schema checks only the E-(adapter|swap-
     candidate)- name pattern and the unknown-id error covers the top-level entities list, so a minted
@@ -191,6 +194,11 @@ def rows_of(sk: dict):
     if isinstance(p, dict):
         out.append(p)
     return out
+
+
+def norm_breakage(text: str | None) -> str:
+    """Compare breakages by their words: punctuation and case never make two edits different."""
+    return re.sub(r"[^a-z0-9]+", " ", (text or "").lower()).strip()
 
 
 def check_structure(sk: dict, name: str, errs: list[str]):
@@ -387,6 +395,22 @@ def main() -> int:
         ):
             if rows and not lo <= len(rows) <= hi:
                 warns.append(f"{name}: {len(rows)} {field}, outside the checked budget of {lo} to {hi}")
+
+    # an ideal facet and its -implement facet each carry a deliberate breakage; if the second is a
+    # copy of the first, the pair proves the same criterion can fail twice and the build itself -
+    # its wiring, its migration stages, its bindings, its gate - is never shown to be checkable
+    # (ceremony 10, C10-001). Only an outright copy is reported, since a genuinely escalated
+    # breakage (the same fault applied at one binding only) is a legitimate second failure mode.
+    for name, sk in skills.items():
+        if not name.endswith("-implement") or name[: -len("-implement")] not in skills:
+            continue
+        ideal = skills[name[: -len("-implement")]]
+        a = norm_breakage((ideal.get("definition_of_done") or {}).get("breakage"))
+        b = norm_breakage((sk.get("definition_of_done") or {}).get("breakage"))
+        if a and b and (a == b or a in b or b in a):
+            warns.append(f"{name}: definition_of_done breakage repeats {name[: -len('-implement')]}'s "
+                         f"word for word; break something the build owns (wiring, a migration stage, "
+                         f"a binding, the gate) so the pair shows two failure modes")
 
     # compose by name, not by copy: a row citing an id its root contract or a builds_on skill
     # already cites must name that skill, so a change to the fact lands in one place.

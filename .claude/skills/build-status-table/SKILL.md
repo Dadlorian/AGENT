@@ -23,7 +23,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Columns are exactly: #, Work item, Definition of done, Status, Result. (proposed: our convention) | proposed | - |
 | Status is one of Done, In progress, Open, Blocked, Not started. (proposed: our convention) | proposed | - |
 | Every cell is one statement: no semicolons, no parentheses, no dependency words, at most 12 words, work item at most 5. (proposed: our convention) | proposed | - |
-| A Done row carries a measured result, never a pending one. | sourced | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
+| As agentic-stack states, a Done row carries a measured result, never a pending one. | sourced | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
 | Dependencies live in docs/skill-manifest.json and the ledger, never in the table. (proposed: our convention) | proposed | - |
 
 ## Instructions
@@ -32,8 +32,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 |---|---|---|---|---|
 | 1 | Run python3 tools/status_check.py before and after every edit of STATUS.md. | Proposed: the checker is the definition; a table that fails it is not the status. | proposed | - |
 | 2 | Add a work item as one row: a five-word name, a definition of done that is a verifiable statement, a status from the closed set, and a result that is a number or a plain fact. | Proposed: one idea per cell keeps the table readable at a glance. | proposed | - |
-| 3 | Write the definition of done as the state that would make the row Done, not as the work to do. | A criterion nothing can fail is not a criterion, so state the observable end. | sourced | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
-| 4 | Mark a row Done only when the result was measured; otherwise leave it Open or In progress and put the current number in Result. | Distinguish claimed from measured throughout. | sourced | `F-part-c-08` "Distinguish **claimed** from **measured** throughout" |
+| 3 | Write the definition of done as the state that would make the row Done, not as the work to do. | As agentic-stack states, a criterion nothing can fail is not a criterion, so state the observable end. | sourced | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
+| 4 | Mark a row Done only when the result was measured; otherwise leave it Open or In progress and put the current number in Result. | As agentic-stack states, claimed and measured are kept apart. | sourced | `F-part-c-08` "Distinguish **claimed** from **measured** throughout" |
 | 5 | When a cell needs a second idea, split the row or move the detail to the run summary. Never widen the table. | Proposed: the table is the decision view, not the record. | proposed | - |
 | 6 | Keep row numbers contiguous; retire a row by marking it Done or by deleting it and renumbering. | Proposed: stable numbering lets a conversation refer to a row. | proposed | - |
 
@@ -43,7 +43,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 |---|---|---|
 | Prefer a number in Result over a word; 29 of 29 beats passing. (proposed: our convention) | proposed | - |
 | Blocked names what blocks it in the Result cell in three words or fewer. (proposed: our convention) | proposed | - |
-| State facts, never reasons, in the table; reasons go to the ceremony records. | sourced | `F-part-c-09` "Products belong in the adapter column only" |
+| As agentic-stack states, facts belong in the table and reasons in the ceremony records; products only in adapter columns. | sourced | `F-part-c-09` "Products belong in the adapter column only" |
 
 ## Definition of done
 
@@ -52,7 +52,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Criterion | python3 tools/status_check.py |
 | Expected | N rows, 0 errors |
 | Deliberate breakage | Change one Result cell to a run-on with a dependency word: 'Verified; depends on the loop (see row 5)' |
-| Expected failure | errors naming the semicolon, parentheses and 'depends'; exit 1. Measured 2026-09-03 in session claude/auto-skill-creation-i8javu: 5 errors reported, exit 1; restored file passes with 21 rows, 0 errors. |
+| Expected failure | exit 1 with: error: row 1: Result contains 'depends'; error: row 1: Result contains ';'; error: row 1: Result contains '('; error: row 1: Result contains ')'; 22 rows, 4 errors. Measured 2026-09-03 in session claude/auto-skill-creation-i8javu; restored file passes with 22 rows, 0 errors. An earlier attempt edited the wrong line and passed; that run was not a measurement and is recorded in the ledger. |
 | Status | measured |
 | Evidence | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
 

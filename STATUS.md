@@ -13,4 +13,4 @@
 | 61 | Phase 3: core, seams, cross-cutting | Ceremony closes with every stick met or recorded absent | In progress | Sourcing crew of four running |
 | 62 | Phase 4: composition | Ceremony closes and the end-to-end example runs | Not started | 10 skills |
 | 63 | Phase 5: final acceptance | Scorecard and acceptance matrix hold at one commit | Not started | None yet |
-| 64 | Skill structure review | An independent review against the Agent Skills guidance proposes the organisation | In progress | Opus reviewer running |
+| 64 | Skill structure review | An independent review against the Agent Skills guidance proposes the organisation | Blocked | Owner decision on option C |

@@ -1,0 +1,528 @@
+{
+  "name": "xc-correlation",
+  "layer": "xc",
+  "wave": 4,
+  "description": "The cross-cutting guarantee that every signal one run emits - every span, every log record, and every problem object - carries the run identifier and the root dispatch identifier the platform stamped at entry, so a run is reassembled by grouping on a field rather than by walking a trace tree. Load it when a run comes back as several unrelated trees, when a sub-agent's output cannot be tied to the work that started it, when someone proposes injecting a trace header across an agent boundary and trusting it, when a new emission point, entry point or process boundary is being added, when a failure body arrives with no way to tell which run produced it, when a caller asks to switch the identifiers off on a fast path, and when auditing that nothing a run emitted was left unstamped.",
+  "purpose": {
+    "text": "Make it a checked property that every span, log record and problem object emitted during a run carries the identifiers the platform stamped at entry, so a run is reassembled by grouping on an explicit field rather than by walking a parent chain that has been measured not to reach across an agent boundary.",
+    "origin": "sourced",
+    "sources": [
+      "F-a7-02",
+      "F-b4-06",
+      "E-finding-a7-1",
+      "E-concern-telemetry"
+    ],
+    "quote": "W3C trace context does not survive the agent boundary"
+  },
+  "entities": [
+    "E-finding-a7-1",
+    "E-concern-telemetry",
+    "E-capability-telemetry",
+    "E-rule-b1-7",
+    "E-seam-dispatch",
+    "E-standard-otlp"
+  ],
+  "contract": {
+    "standards": [
+      {
+        "entity": "E-standard-otlp",
+        "version": "unverified here; cap-telemetry owns the standards row for this capability and records both the version a search-only record names and why it stays unverified, and no specification was fetched from this environment",
+        "version_status": "unverified",
+        "url": null,
+        "sources": [
+          "F-b3-10",
+          "X-xc-correlation-001"
+        ]
+      }
+    ],
+    "operations": [
+      {
+        "name": "stamp (proposed; the platform's call, not a caller's)",
+        "input": "an entry envelope's correlation record - the run identifier and the root dispatch identifier, with the parent dispatch identifier and depth when there is a parent",
+        "output": "an emission context bound to the unit of work beneath this boundary, from which every span, log record and problem object takes those identifiers; the caller supplies nothing and can suppress nothing",
+        "origin": "proposed",
+        "sources": [
+          "F-a7-02",
+          "F-b1-08"
+        ]
+      },
+      {
+        "name": "derive_child (proposed)",
+        "input": "the correlation record in force plus the identifier of the dispatch about to be created",
+        "output": "a child correlation record carrying the same run identifier and the same root dispatch identifier, with the parent dispatch identifier set to the current dispatch and depth incremented; nothing is read from an ambient trace context to build it",
+        "origin": "proposed",
+        "sources": [
+          "F-a7-02",
+          "E-finding-a7-1"
+        ]
+      },
+      {
+        "name": "audit (proposed)",
+        "input": "every span, log record and problem object recorded for one run identifier, across every subtree and every entry point",
+        "output": "per signal kind, the count of records missing either identifier; zero is the only conformant value, and the count is over the whole population rather than a sample",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-07",
+          "F-b1-08"
+        ]
+      },
+      {
+        "name": "reassemble (proposed)",
+        "input": "a run identifier",
+        "output": "every record of that run in one group, produced by equality on the stamped field; the operation takes no parent span and no trace identifier as an input, so an implementation cannot quietly fall back to parentage and still satisfy it",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-06",
+          "X-xc-correlation-004"
+        ]
+      }
+    ],
+    "shapes": [
+      {
+        "name": "CorrelationRecord (proposed): the stamped field set, the machine-readable form of the invariants below",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:correlation:record:0.1",
+          "title": "CorrelationRecord",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "run_id",
+            "root_dispatch_id"
+          ],
+          "properties": {
+            "run_id": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The grouping key. Equality on it returns exactly one group per run, whatever the trace identifiers say."
+            },
+            "root_dispatch_id": {
+              "type": "string",
+              "description": "The dispatch the run was entered through. Constant for the whole run; it is what makes a subtree attributable to its origin."
+            },
+            "parent_dispatch_id": {
+              "type": "string",
+              "description": "Present below depth 0. Lineage is recorded and never relied on for reassembly."
+            },
+            "depth": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "entry_kind": {
+              "type": "string",
+              "description": "Which way in the run came through. The vocabulary belongs to the entry envelope, not to this guarantee."
+            }
+          }
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-a7-02",
+          "F-b4-06"
+        ]
+      },
+      {
+        "name": "StampedAtEntry (proposed worked instances): the same record produced by a human, by an agent, and by an event or a schedule, which are TARGET T1's three ways in",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:correlation:stamped-at-entry:0.1",
+          "title": "StampedAtEntry",
+          "type": "object",
+          "required": [
+            "actor_subject",
+            "correlation"
+          ],
+          "properties": {
+            "actor_subject": {
+              "type": "string"
+            },
+            "correlation": {
+              "$ref": "urn:agentic:correlation:record:0.1"
+            }
+          },
+          "examples": [
+            {
+              "actor_subject": "user:corey",
+              "correlation": {
+                "run_id": "run-human-0001",
+                "root_dispatch_id": "d-human-0001",
+                "depth": 0,
+                "entry_kind": "human"
+              }
+            },
+            {
+              "actor_subject": "agent:partner-sre-bot",
+              "correlation": {
+                "run_id": "run-external-0001",
+                "root_dispatch_id": "d-external-0001",
+                "parent_dispatch_id": "d-partner-77c1",
+                "depth": 1,
+                "entry_kind": "external"
+              }
+            },
+            {
+              "actor_subject": "service:alerting",
+              "correlation": {
+                "run_id": "run-event-0001",
+                "root_dispatch_id": "d-event-0001",
+                "depth": 0,
+                "entry_kind": "event"
+              }
+            },
+            {
+              "actor_subject": "schedule:nightly-fault-sweep",
+              "correlation": {
+                "run_id": "run-schedule-0001",
+                "root_dispatch_id": "d-schedule-0001",
+                "depth": 0,
+                "entry_kind": "schedule"
+              }
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03"
+        ]
+      },
+      {
+        "name": "CorrelationRejection (proposed worked instance): what comes back when an entry arrives with no correlation record, as an RFC 9457 problem object carrying a registered type",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:correlation:rejection:0.1",
+          "title": "CorrelationRejection",
+          "type": "object",
+          "required": [
+            "type",
+            "title",
+            "status"
+          ],
+          "properties": {
+            "type": {
+              "const": "urn:agentic:problem:document-invalid"
+            },
+            "title": {
+              "type": "string"
+            },
+            "status": {
+              "const": 422
+            },
+            "detail": {
+              "type": "string"
+            },
+            "retryable": {
+              "const": false
+            },
+            "correlation": {
+              "$ref": "urn:agentic:correlation:record:0.1"
+            }
+          },
+          "examples": [
+            {
+              "type": "urn:agentic:problem:document-invalid",
+              "title": "Entry envelope is not valid",
+              "status": 422,
+              "detail": "correlation.run_id is required and was absent; the entry was refused before any work was planned",
+              "retryable": false
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b4-07",
+          "F-b1-08"
+        ]
+      }
+    ],
+    "invariants": [
+      {
+        "text": "cap-telemetry owns the concern's one-sentence contract, that correlation rides on explicit attributes rather than trace parentage (F-b4-06). What this layer adds is the scope: the rule binds every span, every log record and every problem object a run emits, not only the spans a telemetry backend happens to receive.",
+        "origin": "sourced",
+        "sources": [
+          "F-b4-06",
+          "E-concern-telemetry"
+        ],
+        "quote": "not trace parentage — see A7 finding 1"
+      },
+      {
+        "text": "The identifiers are re-stamped at every boundary a unit of work crosses and are never inherited from an ambient context, because the ambient context is measured not to arrive: W3C trace context does not survive the agent boundary.",
+        "origin": "sourced",
+        "sources": [
+          "F-a7-02",
+          "E-finding-a7-1"
+        ],
+        "quote": "W3C trace context does not survive the agent boundary"
+      },
+      {
+        "text": "More than one trace identifier inside one run is permitted; a missing run identifier is not. cap-telemetry states the measured behaviour this permission exists for, that a depth-3 task tree produces three unrelated root traces (F-a7-02); the consequence here is asymmetric enforcement, one field counted to zero omissions and the other left unconstrained.",
+        "origin": "sourced",
+        "sources": [
+          "F-a7-02"
+        ],
+        "quote": "A depth-3 task tree produces three unrelated root traces."
+      },
+      {
+        "text": "A caller cannot decline this guarantee, because cross-cutting guarantees are not optional and telemetry is one of the four the platform applies rather than the caller requesting; correlation is that concern's whole contract, so there is no field on any request that switches the identifiers off and no sampling rate that omits them.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-08",
+          "F-b4-01",
+          "F-b4-06"
+        ],
+        "quote": "Cross-cutting guarantees are not optional."
+      },
+      {
+        "text": "Proposed: declining is not merely forbidden, it is inexpressible. The correlation record is a required member of the entry envelope and of the dispatch request, so an entry without it fails document validation before any work is planned rather than running uncorrelated and being noticed later.",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-01",
+          "T-t2-03"
+        ]
+      },
+      {
+        "text": "Reassembly is equality on a stamped field, never a walk up a parent chain. The common advice is the opposite - reuse the trace identifier as the correlation identifier because it already propagates automatically - and that is precisely the design PASS.md A7 finding 1 rules out for this platform.",
+        "origin": "sourced",
+        "sources": [
+          "X-xc-correlation-004",
+          "F-a7-02"
+        ],
+        "quote": "you can reuse the trace ID as your correlation ID, since it already propagates automatically"
+      },
+      {
+        "text": "The failure body is in scope, not an exception to it: errors are typed and machine-readable and never parsed from prose, so a problem object carries the correlation record as a declared member rather than mentioning the run inside a human-readable detail string.",
+        "origin": "sourced",
+        "sources": [
+          "F-b4-07"
+        ],
+        "quote": "Typed and machine-readable. Never parsed from prose"
+      },
+      {
+        "text": "Proposed: the audit asserts zero omissions over the whole population of a run's signals, not a rate and not a sample, and it asserts a non-zero population in the same run, so an audit that collected nothing cannot report success.",
+        "origin": "proposed",
+        "sources": [
+          "F-part-c-04"
+        ]
+      }
+    ],
+    "not_exposed": [
+      {
+        "text": "Proposed: the criterion a unit is judged against is never a correlation field. agentic-stack states design rule 6 (F-b1-07); the consequence here is sharper than on any single interface, because this field set is copied onto every span, every log line and every failure body, so a criterion placed in it would reach the graded unit through the one channel that touches everything.",
+        "origin": "proposed",
+        "sources": [
+          "F-b1-07",
+          "E-rule-b1-7"
+        ]
+      },
+      {
+        "text": "Proposed: no secret, token, credential or personal datum is a correlation field. The propagated key-value carriers these identifiers ride on are explicitly not a place for such values - do not put secrets, tokens, or PII in baggage - and the correlation set is the most widely copied field set in the platform.",
+        "origin": "sourced",
+        "sources": [
+          "X-cross-structure-006"
+        ],
+        "quote": "Do not put secrets, tokens, or PII in baggage."
+      },
+      {
+        "text": "Proposed: there is no opt-out flag, no sampling knob and no per-caller correlation policy on any request shape. A knob that could be set to off would make the zero-omission assertion a statement about configuration rather than about the platform.",
+        "origin": "proposed",
+        "sources": [
+          "F-b1-08"
+        ]
+      }
+    ]
+  },
+  "instructions": [
+    {
+      "step": 1,
+      "action": "Stamp the correlation record once, at entry, onto the envelope, before anything is planned or priced; every later record is derived from that one rather than re-derived from whatever context is ambient at the emission site.",
+      "why": "agentic-stack already carries the remedy as a best practice (F-a7-02): correlation must ride on an explicit resource attribute set at dispatch. The consequence for this guarantee is that one place stamps and every other place copies, because a value re-derived per site is a value some site will derive differently and the group-by will return two groups.",
+      "origin": "sourced",
+      "sources": [
+        "F-a7-02"
+      ],
+      "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+    },
+    {
+      "step": 2,
+      "action": "Re-stamp at every boundary a unit crosses - a new process, an isolated unit, an event on a bus, a call into a runtime whose instrumentation this platform does not control - and treat propagation as a bonus that is never asserted on.",
+      "why": "Trace context breaks at agent boundaries and a depth-3 tree yields unrelated root traces, so a design that stamps at the top and propagates downward is correct on paper and produces three orphan trees in practice.",
+      "origin": "sourced",
+      "sources": [
+        "X-xc-correlation-006",
+        "F-a7-02"
+      ],
+      "quote": "W3C trace context does not survive the agent boundary; a depth-3 task tree produces three unrelated root traces."
+    },
+    {
+      "step": 3,
+      "action": "Bind all three emission kinds at once - spans, log records and problem objects - and count them separately in the audit rather than reporting one total.",
+      "why": "A single total hides the kind that was never wired: failure bodies are the usual omission because they are produced on the path where the emission context has already been torn down, and errors that are typed and machine-readable are exactly the ones a reader will try to join to a run.",
+      "origin": "sourced",
+      "sources": [
+        "F-b4-07",
+        "F-b4-06"
+      ],
+      "quote": "Typed and machine-readable. Never parsed from prose"
+    },
+    {
+      "step": 4,
+      "action": "Report the distinct trace identifiers seen inside a run and never assert on them; assert only on the stamped identifiers.",
+      "why": "Automatic propagation is what makes a broken hop invisible: instrumentation links child spans back to their parent by default, so a check that demanded one tree would pass everywhere the propagation happened to work and be switched off the first time it correctly failed.",
+      "origin": "sourced",
+      "sources": [
+        "X-xc-correlation-002"
+      ],
+      "quote": "with every outgoing HTTP request, gRPC call, or message carrying a traceparent header that links child spans back to their parent"
+    },
+    {
+      "step": 5,
+      "action": "Reassemble a run by equality on the stamped identifier and give the guarantee no operation that accepts a parent span or a trace identifier as an input.",
+      "why": "The correlation model has three legs and only the third is under this platform's control; an interface that could be handed a parent will eventually be handed one, and the fallback is silent because it produces a plausible partial tree rather than an error.",
+      "origin": "sourced",
+      "sources": [
+        "X-xc-correlation-005"
+      ],
+      "quote": "The correlation model relies on three key concepts: trace context, span context, and resource attributes."
+    },
+    {
+      "step": 6,
+      "action": "Audit on a depth-3 tree entered once through each of the three ways in - a human, an agent, and an internal or external event - and assert zero omissions per signal kind for each, using the worked instances in the shapes above as the input fixtures.",
+      "why": "The guarantee is that the concern holds whichever entry point was used, so an audit that only exercises the entry a developer happens to use proves the property for one path and asserts it for four.",
+      "origin": "sourced",
+      "sources": [
+        "T-t1-01",
+        "T-t1-02",
+        "T-t1-03"
+      ],
+      "quote": "An internal or external event must be able to enter the system."
+    },
+    {
+      "step": 7,
+      "action": "Judge a candidate implementation on four questions: is the record stamped in exactly one place per boundary; does the audit report zero omissions per signal kind across a depth-3 tree under every entry; is a run reassembled without any operation reading a parent pointer; and is there no request field, header or configuration value a caller could set that removes the identifiers.",
+      "why": "These are the four the definition of done below mechanises, and the fourth is the one that separates a guarantee from a default: a concern the caller can decline is a feature, and cross-cutting guarantees are not optional.",
+      "origin": "sourced",
+      "sources": [
+        "F-b1-08",
+        "F-b4-01"
+      ],
+      "quote": "The platform applies each; a caller cannot decline them."
+    },
+    {
+      "step": 8,
+      "action": "Proposed: open references/correlation-audit.md when you need the per-boundary stamping notes, the depth-3 walkthrough the audit fixture follows, or the ledger of what each cited research record does and does not establish. This skill body is enough to wire and judge the guarantee without it.",
+      "why": "Proposed, progressive disclosure. The boundary notes change whenever a boundary is added, and material that moves on its own cadence does not belong in the part of the contract meant to stay still.",
+      "origin": "proposed"
+    }
+  ],
+  "best_practices": [
+    {
+      "text": "Do not let the run identifier be the trace identifier, however convenient. A correlation identifier is a flat string meant for log search, which is exactly the property wanted here; a trace identifier is minted by whatever runtime happens to be executing, which is the property that failed.",
+      "origin": "sourced",
+      "sources": [
+        "X-xc-correlation-004",
+        "F-a7-02"
+      ],
+      "quote": "A correlation ID is a flat string meant for log search"
+    },
+    {
+      "text": "Do not shape the run identifier like a trace identifier either. Trace identifiers are a fixed 128-bit hexadecimal form, and a field declared with that width invites the next implementer to fill it from the trace identifier and reintroduce the coupling this guarantee removes.",
+      "origin": "sourced",
+      "sources": [
+        "X-xc-correlation-001"
+      ],
+      "quote": "a trace ID is 128 bits, rendered as a 32-character hexadecimal string"
+    },
+    {
+      "text": "Point the audit at the deepest subtree first. cap-telemetry and build-evidence-record both cite the same measured depth-3 result (F-a7-02); the practice this layer adds is where to look, because the breakage this guarantee is defined against is a sub-agent emitting without re-stamping, every level above it looks correct, and an audit that samples from the top reports green on the arrangement that is broken.",
+      "origin": "sourced",
+      "sources": [
+        "F-a7-02",
+        "E-finding-a7-1"
+      ],
+      "quote": "A depth-3 task tree produces three unrelated root traces."
+    },
+    {
+      "text": "Keep the stamped set small. The propagated carriers add overhead to requests, and every field added here is added to every span, every log line and every failure body of every run, so a field that is merely nice to have is paid for on every signal the platform emits.",
+      "origin": "sourced",
+      "sources": [
+        "X-cross-structure-006",
+        "X-cross-structure-005"
+      ],
+      "quote": "Baggage adds overhead to requests"
+    },
+    {
+      "text": "Record which carrier a hop used alongside the identifiers. The available propagators differ per hop and a hop that silently dropped its carrier is indistinguishable from a hop that never had one, unless the carrier in force was written down at the boundary.",
+      "origin": "sourced",
+      "sources": [
+        "X-xc-correlation-003"
+      ],
+      "quote": "Currently supported options include W3C Trace-Context HTTP Propagator, W3C Correlation-Context HTTP Propagator, and B3 Zipkin HTTP Propagator."
+    }
+  ],
+  "definition_of_done": {
+    "criterion": "docs/decomposition.md section 3.4 row X5, made precise: `python3 tools/conformance/correlation_audit.py --entry human --entry agent --entry event --depth 3 --report out/x5.json` (proposed tool). Per entry it runs a depth-3 task tree from the matching fixture in the StampedAtEntry shape above, collects every span, log record and problem object recorded for that run, and asserts `missing_run_id == 0` and `missing_root_dispatch_id == 0` for each of the three signal kinds, `signals_checked > 0` per kind, `levels_covered == 3`, and `run_id_groups == 1`; `distinct_trace_ids` is reported and never constrained. Across entries it asserts `entries_run == 3`.",
+    "expected": "exit 0 with, per entry, `missing_run_id == 0` and `missing_root_dispatch_id == 0` for spans, log records and problem objects, `signals_checked > 0` for each kind, `levels_covered == 3` and `run_id_groups == 1`, `distinct_trace_ids` reported without assertion, followed by `entries_run=3`.",
+    "breakage": "Emit spans from a sub-agent without re-stamping the resource attributes, relying on parentage instead, leaving the audit command and the fixtures untouched.",
+    "expected_failure": "exit 1 under every entry with `missing_run_id` equal to the sub-agent's span count, `levels_covered == 1` and `run_id_groups` greater than 1: correlation collapses into unrelated trees, which is PASS.md A7 finding 1 reproduced. A run that still exits 0 means the audit filled the field in by walking span parents, which is the failure this guarantee exists to prevent, and the audit itself is then the defect. Claimed: this platform emits no span, no correlated log record and no problem object today, and the audit tool does not exist, so neither run has been performed here; the check starts red by construction and that is the correct starting state.",
+    "status": "claimed",
+    "sources": [
+      "F-a7-02",
+      "F-part-c-04"
+    ],
+    "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+  },
+  "composes_with": {
+    "builds_on": [
+      "agentic-stack",
+      "build-definition-of-done",
+      "build-skill-authoring",
+      "cap-telemetry",
+      "build-evidence-record"
+    ],
+    "used_by": [
+      "seam-dispatch",
+      "xc-correlation-envelope",
+      "xc-correlation-implement"
+    ]
+  },
+  "open_questions": [
+    {
+      "question": "Does the audit read the identifiers off resource attributes, off span attributes, or off both, while docs/decomposition.md section 5 question 8 is undecided?",
+      "evidence": "cap-telemetry owns question 8 and its experiment: emit both for one week across depth-3 trees and measure which survives the agent boundary and which each collector in the path drops or truncates. What this layer needs in addition is which surface the zero-omission count is taken from, since a record present on one surface and absent on the other is either a pass or a failure depending on the answer.",
+      "default": "Count omissions on the resource surface, because that is the surface the measured remedy names, and treat a span attribute as an additional carrier that is recorded and never substituted for it. Reversible by widening the audit to both surfaces, which costs one query and no interface change.",
+      "sources": [
+        "X-xc-correlation-005",
+        "F-a7-02"
+      ],
+      "quote": "trace context, span context, and resource attributes"
+    },
+    {
+      "question": "Which name does the second identifier carry, given that the reference consumption example names it `correlation_id` on the entry envelope while the dispatch request and row X5 both name it `root_dispatch_id`?",
+      "evidence": "Reconciling examples/end-to-end/schemas/entry.schema.json against docs/decomposition.md section 2.1.1 and row X5; the two shapes agree on `run_id` and disagree on the second field, and no knowledge-base record fixes either name.",
+      "default": "Proposed: assert on the pair by role - the grouping key and the origin dispatch - and record the disagreement rather than silently picking one, because xc-correlation-envelope is the skill that fixes the field names and carriers. Reversible at the cost of one rename in the audit fixtures.",
+      "sources": [
+        "F-b4-06"
+      ],
+      "quote": "Correlation rides on explicit attributes"
+    },
+    {
+      "question": "Are log records in scope of the zero-omission count today, or only spans and problem objects?",
+      "evidence": "Count, over the emission sites that exist, how many produce a log record on a path where the emission context is still bound; row X5 names log records explicitly, so the question is whether the platform can satisfy the row rather than whether the row is right.",
+      "default": "In scope and asserted, with the count starting red for the log-record kind. agentic-stack states the rule this default follows (F-part-c-04); the consequence here is that dropping a signal kind from the audit because nothing emits it yet would turn the guarantee into a claim about the kinds that were easy.",
+      "sources": [
+        "F-part-c-04",
+        "F-b4-06"
+      ],
+      "quote": "A criterion nothing can fail is not a criterion"
+    }
+  ],
+  "provenance": {
+    "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+    "kb_heads": {
+      "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+      "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6"
+    },
+    "author": "session xc-correlation 2831cb4f, 2026-09-03"
+  }
+}

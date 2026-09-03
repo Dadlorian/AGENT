@@ -32,235 +32,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Operation | Input | Output | Origin | Evidence |
 |---|---|---|---|---|
-| declare_agent (proposed operation set; a composition introduces no new interface, so these are assembly points over interfaces the lower layers already publish) | a profile - good_at, not_for, model_class, the declared tools[], input/output shapes, cost_class, max_concurrency - plus the budget and depth already consumed by whatever is calling it (proposed) | a priced admission plan whose cost is one turn under the declared model_class and cost_class, or a refusal issued before anything runs when a declared tool or capability cannot be resolved (proposed) | proposed | `T-t6-05`, `F-a4-01` |
-| admit_agent (proposed) | the admission plan (proposed) | one isolated unit bound to exactly the declared tool surface and exactly the declared capability set, with nothing else reachable from inside it (proposed) | proposed | `F-b3-02`, `F-b3-06`, `F-b3-07` |
-| invoke_turn (proposed) | the admitted unit's session handle and one task built from input_from, carrying the declared input fields and never the criterion (proposed) | one turn result - stop reason, outputs, usage - reconciled against the admission plan's cost (proposed) | proposed | `F-b3-05`, `F-b1-07` |
+| declare_agent (proposed operation set; a composition introduces no new interface, so these are assembly points over interfaces the lower layers already publish; admission, the turn and release are cap-isolation's admit/terminate and cap-agent-runtime's prompt directly - only declare_agent and delegate add composition-specific shape) | a profile - good_at, not_for, model_class, the declared tools[], input/output shapes, cost_class, max_concurrency - plus the budget and depth already consumed by whatever is calling it (proposed) | a priced admission plan whose cost is one turn under the declared model_class and cost_class, or a refusal issued before anything runs when a declared tool or capability cannot be resolved (proposed) | proposed | `T-t6-05`, `F-a4-01` |
 | delegate (proposed) | a sub-agent profile name, a task, the parent's delegation chain, and a budget slice cut from the parent's remaining ceiling (proposed) | the sub-agent's turn result plus one new chain hop recorded against it, so the sub-agent's spend and its actor both trace back to the same root as the parent's (proposed) | proposed | `F-b4-03`, `F-b4-02` |
-| release_agent (proposed) | the unit and its turn result (proposed) | the unit terminated, its cost reconciled up the tree, and one record naming which of the profile's declared outputs were produced (proposed) | proposed | `F-b4-02` |
-
-### Shapes (JSON Schema 2020-12)
-
-**agent-profile (proposed summary shape, field names kept identical to examples/end-to-end/schemas/agent-profile.schema.json and examples/end-to-end/agents.json; the full schema, the delegation-call shape and three worked declarations are in references/usage.md)** (proposed; sources: `T-t6-05`, `F-a4-01`)
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:agentic:compose:agent:profile:0.1",
-  "title": "AgentProfile",
-  "type": "object",
-  "additionalProperties": false,
-  "description": "Proposed. Declared once, before any unit is admitted. model_class is a routing prefix, never a vendor.",
-  "required": [
-    "name",
-    "good_at",
-    "not_for",
-    "model_class",
-    "tools",
-    "inputs",
-    "outputs",
-    "cost_class",
-    "max_concurrency"
-  ],
-  "properties": {
-    "name": {
-      "type": "string",
-      "pattern": "^[a-z0-9][a-z0-9-]{2,47}$"
-    },
-    "good_at": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "type": "string",
-        "minLength": 20
-      },
-      "description": "Specific enough to route on."
-    },
-    "not_for": {
-      "type": "string",
-      "minLength": 10,
-      "description": "The call that should go to a different profile."
-    },
-    "model_class": {
-      "type": "string",
-      "pattern": "^(f|i|b|cli)-[a-z0-9-]*$",
-      "description": "A routing class by prefix, never a vendor."
-    },
-    "tools": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Exactly what admit_agent binds. Nothing else is reachable."
-    },
-    "inputs": {
-      "type": "object",
-      "description": "required[] and fields{}; see references/usage.md for the full shape."
-    },
-    "outputs": {
-      "type": "object",
-      "description": "required[] and fields{}; see references/usage.md for the full shape."
-    },
-    "cost_class": {
-      "enum": [
-        "free",
-        "low",
-        "medium",
-        "high"
-      ]
-    },
-    "max_concurrency": {
-      "type": "integer",
-      "minimum": 1,
-      "maximum": 512
-    }
-  }
-}
-```
-
-**agent-admission (proposed shape: what declare_agent resolves a profile to before any unit is admitted)** (proposed; sources: `F-b1-06`, `F-a4-01`)
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:agentic:compose:agent:admission:0.1",
-  "title": "AgentAdmission",
-  "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "unit_id",
-    "profile_name",
-    "model_class",
-    "declared_tools",
-    "capability_set",
-    "cost_ceiling_micros",
-    "correlation"
-  ],
-  "properties": {
-    "unit_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "profile_name": {
-      "type": "string"
-    },
-    "model_class": {
-      "type": "string",
-      "pattern": "^(f|i|b|cli)-[a-z0-9-]*$"
-    },
-    "declared_tools": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "Bound at admission; admit_agent asserts the unit's actual tool list equals this exactly."
-    },
-    "capability_set": {
-      "type": "array",
-      "items": {
-        "type": "string"
-      },
-      "description": "The packaged skills this unit may load; nothing undeclared may load."
-    },
-    "cost_ceiling_micros": {
-      "type": "integer",
-      "minimum": 0,
-      "description": "This unit's slice of whatever ceiling called it."
-    },
-    "correlation": {
-      "type": "object",
-      "description": "Inherited, never re-derived: run_id, correlation_id, depth."
-    }
-  }
-}
-```
-
-**delegation-call (proposed shape: what a running agent hands a sub-agent, an internal step rather than a fresh entry - REF-3-4-15's rule, which compose-loop already applies to a loop's own root and this shape applies to a delegate call; field names for the chain follow examples/end-to-end/schemas/entry.schema.json's actor.delegation_chain)** (proposed; sources: `F-b4-03`, `REF-3-4-15`)
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:agentic:compose:agent:delegation-call:0.1",
-  "title": "DelegationCall",
-  "type": "object",
-  "additionalProperties": false,
-  "description": "Proposed. Not an entry envelope: it reports into a run that already exists rather than minting one.",
-  "required": [
-    "sub_agent",
-    "task",
-    "delegation_chain",
-    "budget_slice_micros",
-    "parent_correlation_id"
-  ],
-  "properties": {
-    "sub_agent": {
-      "type": "string"
-    },
-    "task": {
-      "type": "string",
-      "minLength": 1
-    },
-    "delegation_chain": {
-      "type": "array",
-      "minItems": 2,
-      "items": {
-        "type": "object",
-        "required": [
-          "actor",
-          "obtained_via"
-        ],
-        "properties": {
-          "actor": {
-            "type": "string"
-          },
-          "obtained_via": {
-            "enum": [
-              "direct",
-              "token_exchange",
-              "workload_attestation"
-            ]
-          }
-        }
-      },
-      "description": "The parent's chain plus exactly one new hop for the sub-agent."
-    },
-    "budget_slice_micros": {
-      "type": "integer",
-      "minimum": 0,
-      "description": "Cut from the parent's remaining ceiling, never a fresh root ceiling."
-    },
-    "parent_correlation_id": {
-      "type": "string",
-      "minLength": 1
-    }
-  }
-}
-```
-
-**What a refusal looks like (proposed worked instance): an agent step asks for a tool outside its declared list** (proposed; sources: `F-b4-03`)
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:agentic:compose:agent:example:undeclared-tool",
-  "title": "Refused before the unit could reach a tool it never declared",
-  "description": "The registered policy-denied row in docs/decomposition.md section 2.1.6: a scope refusal is a policy refusal, and it carries rule_id.",
-  "examples": [
-    {
-      "type": "urn:agentic:problem:policy-denied",
-      "title": "Tool outside the unit's declared tool surface",
-      "status": 403,
-      "detail": "unit code-fixer-0007 requested run_shell, which is not in its declared tools [read_file, write_file, run_tests]",
-      "retryable": false,
-      "rule_id": "declared-tool-surface",
-      "correlation": {
-        "run_id": "run-human-0001",
-        "correlation_id": "corr-human-0001",
-        "depth": 0
-      }
-    }
-  ]
-}
-```
 
 ### Invariants
 
@@ -269,12 +42,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | The profile is declared up front by what it is good at, and TARGET T6.5 states the reason: a caller has to be able to name what an agent is good at and how to sequence it before it is ever called. What compose-agent adds is the fixed field set that makes that declaration checkable rather than a paragraph of prose: good_at, not_for, model_class, tools, input/output shapes, cost_class and max_concurrency, matching examples/end-to-end/schemas/agent-profile.schema.json's required list. | sourced | `T-t6-05` "Each agent is defined up front by what it is good at, so callers know how to call it and how to sequence it." |
 | cap-agent-runtime already states that one prompt turn with a stop reason is the unit an agent runs (F-b3-05). What this composition adds: admission happens once per unit, before the turn opens - the tool surface and the capability set are bound at admit_agent, not renegotiated call by call inside the turn. | sourced | `F-b3-05`, `F-b3-01` "The middle column is the contract" |
 | cap-isolation already states that a unit of work runs isolated (F-b3-02). What compose-agent adds: an agent is exactly one isolation admission, so nothing about a concurrently running sibling agent - its inputs, its partial outputs, its own admission - is reachable from inside this one. That containment, repeated per unit, is what keeps TARGET T6.6's well-over-a-hundred concurrent agents coherent without a shared coordinator watching all of them at once. | sourced | `T-t6-06` "The target scale is well over a hundred agents running at a time, working together, managing state, breaking problems down, and self-improving where they can." |
-| Proposed: cap-tool-access already states the operations an agent's declared tools are bound through (F-b3-06); cap-capability-packaging already states the operations its declared capability set is resolved through (F-b3-07). What compose-agent adds is the exactness: the tool list a unit actually holds after admit_agent equals the profile's declared tools[] exactly, and the skills it can load equal its declared capability set exactly - the two assertions decomposition.md section 3.5 row M4 names alongside the criterion's absence. | proposed | `F-b3-06`, `F-b3-07` |
 | Proposed: models are reached only through cap-model-access, and a profile's model_class is a routing class rather than a vendor - the same rule agentic-stack already states for every caller (F-a4-01). A profile that named a vendor model would make the swap agentic-stack requires of that capability impossible to honour from this layer. | sourced | `F-a4-01` "Prefix carries the contract." |
 | agentic-stack already states design rule 6, that the grader is never visible to the graded (F-b1-07, F-b2-05). What compose-agent adds: core-judge grades a turn's result against criterion_ref after invoke_turn returns, never before, and the task built for invoke_turn is assembled from input_from and the declared input fields only - there is no field in the turn-request shape a wrapper at this layer could use to smuggle the criterion back in. | sourced | `F-b1-07`, `F-b2-05` "An agent sees its outcome, never the criterion it is judged against" |
-| Proposed, drawing on xc-identity-delegation (F-b4-03) and xc-budget (F-b4-02, F-b1-08): a delegate call adds exactly one hop to the chain the parent already carries and cuts a slice from the ceiling the parent already has, never a fresh root actor and never a fresh root ceiling. A hundred agents delegating in parallel therefore still sum to one traceable chain and one traceable ceiling apiece, rather than a hundred untraceable ones. | proposed | `F-b4-03`, `F-b4-02`, `F-b1-08` |
-| Proposed: compose-loop already states that a loop's iterations sum upward and that depth is bounded and checked at resolve time, not run time. What compose-agent adds: an agent invoked from a loop body is one more kind that must declare its cost contribution in that iteration's envelope - a fix-and-check loop whose body is an agent step is not a special case, it nests exactly the way any other step nests. | proposed | `REF-5-2-12`, `REF-5-2-13` "Depth must be bounded, and checked at resolve time, not run time." |
-| Proposed: compose-loop already states that stop and cap are opposite terminations that must not be collapsed (REF-5-3-08). What compose-agent adds: a unit that ran out of its budget slice mid-turn is a cap, never a quiet success, however useful its partial output - the same distinction a loop's iteration ceiling makes, applied to one agent's turn. | proposed | `REF-5-3-08` "opposites and must not be collapsed" |
 | Reach the agent the way any capability is reached: TARGET T6.2's four entries - a human, an event, a schedule, an external system or agent - all name the same workflow_ref and the same agent step, and none of them may mint a fresh root agent invocation from inside a running turn. Proposed, following the reference example: a running unit's result may steer a later step; it may not start a new one with no actor and no ceiling of its own. | sourced | `T-t6-02` "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent. All four enter through the same shape." |
 
 ### Deliberately not exposed
@@ -283,7 +52,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 |---|---|---|
 | compose-loop already states, citing design rule 6 (F-b1-07), that the grader is never visible to the graded. compose-agent's consequence: the criterion string, the checks sampled for a grading, and the criterion-set digest never enter the task built for invoke_turn, the unit's environment, or anything the profile's declared inputs could carry - decomposition.md section 3.5 row M4 states this as the composition-level assertion that the criterion is absent from everything the unit can read. | sourced | `F-b1-07` "The grader is never visible to the graded." |
 | Which product serves the runtime, the isolation boundary, the tool endpoint or the packaging store behind any one profile. agentic-stack already states that products belong in the adapter column only (F-part-c-09); an agent profile carries a model_class prefix and a tool name, never a vendor or a version. | sourced | `F-part-c-09` "Products belong in the adapter column only" |
-| Proposed: another concurrently admitted agent's unit_id, its inputs, its partial outputs or its own cost ceiling. Nothing a sibling unit is doing is a field this composition exposes to the unit in hand, which is the isolation boundary restated as a fact about the composition rather than about the sandbox alone. | proposed | `F-b3-02` |
 
 ## Instructions
 
@@ -305,12 +73,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Practice | Origin | Evidence |
 |---|---|---|
 | agentic-stack already states that callers request a class, never a vendor (F-a4-01). What it adds here: the rule reaches the composition layer unchanged, so a composed agent step names no vendor either. | sourced | `F-a4-01` "Callers request a class, never a vendor" |
-| Proposed - this is our agent-profile schema, not a PASS.md fact: model_class is a required field of the profile itself, so the composer has no field left over to put a vendor in. | proposed | - |
-| cap-agent-runtime states the stop-reason reading as proposed, and this skill inherits it as proposed rather than as a sourced fact: end_turn means this unit stopped, not that its output is acceptable to whatever step reads it next - ask core-judge, and never substitute a stop reason for a verdict when deciding whether to continue a workflow. | proposed | - |
 | Proposed: write good_at entries specific enough to route on. A router takes input, determines intent, and routes the request to a handler without knowing what the handler does; the records on file describe this as the reason a router pattern scales, and it only works if good_at is a claim precise enough to route against rather than a category. The record is a search result rather than a page read, so take the shape and not a measurement from it. | proposed | `X-compose-agent-003` "A router takes input, determines intent, and routes the request to a handler without knowing what the handler does." |
-| Proposed: treat a delegation call as an ordinary outcome of a turn, not a failure to have routed correctly the first time. The records on file describe a handoff as an agent explicitly saying another profile is better equipped to continue, which is the same shape as this composition's delegate operation; the record is a search result rather than a page read. | proposed | `X-compose-agent-005` "this other agent is better equipped to handle this entire conversation from here on" |
 | Proposed: keep the profile declaration itself independent of which runtime, registry or process happens to serve it. The records on file describe an agent registry as a control plane that does not care how an agent runs, only that it is registered, governed and observable; that is the property this skill's own second adapter exists to test. The record is a search result rather than a page read. | proposed | `X-compose-agent-006` "does not care how your agent runs, only that it is registered, governed, and observable" |
-| Proposed: pick max_concurrency from a measured admission ceiling, not from an aspiration. A number the isolation adapter cannot actually honour concurrently is not a max, it is a promise the platform breaks the first time a hundred callers test it at once. | proposed | `T-t6-06` |
 
 ## Adapters
 

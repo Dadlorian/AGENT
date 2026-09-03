@@ -33,204 +33,17 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Operation | Input | Output | Origin | Evidence |
 |---|---|---|---|---|
 | declare_gate (proposed operator set; the composition adds a gate to a step, it does not define what an ask is - cap-human-interaction owns that) | the step whose action is irreversible, a named view the decider is shown, the deciding subject and the wires a decision may arrive over, a deadline, the outcome set, and the step to re-enter on return-with-notes (proposed) | a gate declaration resolved with the plan: refused before execution if the view is missing, if the deadline is missing, or if the plan would nest past its depth bound (proposed) | proposed | `REF-10-05`, `REF-5-2-13`, `REF-3-2-10` |
-| park (proposed) | the resolved gate and the run's correlation id at the moment the step would have executed | a durable gate record at a head, plus one ask per bound wire; the run holds no process and accrues no spend while it waits (proposed) | proposed | `X-entry-composition-029`, `X-cross-structure-046` |
-| resume (proposed) | one delivered outcome - approve, edit or reject - carrying the gate id, the run's correlation id, the deciding actor, a body valid against the gate's response schema, and an idempotency key | exactly one continuation of the same run, whichever wire delivered it and however many times it was delivered; a duplicate attaches to the first continuation and a decision delivered after the gate closed is a no-op (proposed) | proposed | `F-b4-08`, `X-entry-composition-024` |
 | return_with_notes (proposed) | the fourth outcome: the decider's notes and the gate id | re-entry at the step named on the gate with the notes as input, under the budget that remains, and a fresh gate id; this is the only outcome that puts work back into the graph rather than ending the gate (proposed) | proposed | `F-a2-01`, `X-end-to-end-018` |
-| expire (proposed) | a gate whose deadline has passed with nothing delivered | the gate is terminal, the run terminates as a failure that escalates rather than as a success, and the registered deadline-exceeded problem is what a caller reads (proposed) | proposed | `X-cap-human-interaction-008`, `REF-5-3-04` |
-
-### Shapes (JSON Schema 2020-12)
-
-**ApprovalGate (proposed summary shape; the full schema, the outcome schema and the three worked declarations are in references/usage.md)** (proposed; sources: `REF-10-05`, `REF-5-2-12`, `X-compose-approval-005`)
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:agentic:compose:approval-gate:0.1",
-  "title": "ApprovalGate",
-  "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "gate_id",
-    "correlation_id",
-    "step_id",
-    "view",
-    "decider",
-    "deadline_at",
-    "outcomes"
-  ],
-  "properties": {
-    "gate_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "correlation_id": {
-      "type": "string",
-      "minLength": 1,
-      "description": "The run's own id. The gate stores it; no wire may mint a handle that replaces it."
-    },
-    "step_id": {
-      "type": "string",
-      "minLength": 1,
-      "description": "The step that would have executed the irreversible action."
-    },
-    "view": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Required. The name of what the decider is shown. A gate with no view is refused at resolve time."
-    },
-    "decider": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "subject",
-        "wires"
-      ],
-      "properties": {
-        "subject": {
-          "type": "string",
-          "pattern": "^(user|agent|service|schedule):[a-z0-9][a-z0-9._@-]*$"
-        },
-        "wires": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "type": "string"
-          },
-          "description": "Which channels may carry a decision for this gate."
-        }
-      }
-    },
-    "deadline_at": {
-      "type": "string",
-      "format": "date-time",
-      "description": "Required, and a cap rather than a stop: expiry terminates the run as a failure that escalates."
-    },
-    "outcomes": {
-      "type": "array",
-      "minItems": 1,
-      "items": {
-        "enum": [
-          "approve",
-          "edit",
-          "reject",
-          "return_with_notes"
-        ]
-      },
-      "default": [
-        "approve",
-        "edit",
-        "reject",
-        "return_with_notes"
-      ]
-    },
-    "return_to_step_id": {
-      "type": "string",
-      "description": "Required when return_with_notes is in outcomes."
-    },
-    "response_schema": {
-      "type": "object",
-      "description": "JSON Schema 2020-12. An outcome body is validated against it before the run resumes."
-    },
-    "cost_contribution_micros": {
-      "type": "integer",
-      "minimum": 0,
-      "description": "Declared at resolve time so a parent estimate is the sum of its children, not a guess."
-    }
-  }
-}
-```
-
-**GateOutcome (proposed summary shape; the full schema is in references/usage.md)** (proposed; sources: `F-b4-03`, `F-b4-08`, `X-compose-approval-005`)
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:agentic:compose:gate-outcome:0.1",
-  "title": "GateOutcome",
-  "type": "object",
-  "additionalProperties": false,
-  "required": [
-    "gate_id",
-    "correlation_id",
-    "outcome",
-    "actor",
-    "idempotency_key"
-  ],
-  "properties": {
-    "gate_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "correlation_id": {
-      "type": "string",
-      "minLength": 1
-    },
-    "outcome": {
-      "enum": [
-        "approve",
-        "edit",
-        "reject",
-        "return_with_notes"
-      ]
-    },
-    "actor": {
-      "type": "string",
-      "pattern": "^(user|agent|service|schedule):[a-z0-9][a-z0-9._@-]*$",
-      "description": "Deciding on a gate is an action, so it names an actor and extends the delegation chain."
-    },
-    "body": {
-      "type": "object",
-      "description": "Required for edit, reject and return_with_notes; on edit it is the artifact the run continues with, on the other two it carries the notes."
-    },
-    "idempotency_key": {
-      "type": "string",
-      "minLength": 8,
-      "description": "Scoped to gate_id. Ten deliveries of one outcome resume the run once."
-    },
-    "delivered_over": {
-      "type": "string",
-      "description": "Which wire carried it. Recorded for audit; nothing in the workflow branches on it."
-    }
-  }
-}
-```
-
-**The failure a caller handles when nobody answered (proposed worked instance; the type is a registered row of the closed registry cap-errors owns, not a new one)** (proposed; sources: `X-cap-human-interaction-008`, `REF-5-3-08`)
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:agentic:problem:example:gate-expired",
-  "title": "The gate closed before anyone decided",
-  "$ref": "urn:agentic:problem:0.1",
-  "description": "Media type application/problem+json. The deadline is a cap and not a stop, so expiry terminates the run as a failure that escalates; a decision presented afterwards is a no-op and the remedy is a new run, which is why retryable is false on the gate that closed.",
-  "examples": [
-    {
-      "type": "urn:agentic:problem:deadline-exceeded",
-      "title": "The gate closed before anyone decided",
-      "status": 504,
-      "detail": "gate-deploy-0007 on step publish-release opened at 2026-09-03T09:00:00Z with deadline 2026-09-03T17:00:00Z and closed undecided; decider user:ops.lead was asked over wire parked-item and wire queued-inbox.",
-      "retryable": false,
-      "correlation_id": "corr-release-0007",
-      "instance": "urn:agentic:gate:gate-deploy-0007"
-    }
-  ]
-}
-```
 
 ### Invariants
 
 | Invariant | Origin | Evidence |
 |---|---|---|
-| Proposed, following the reference example in docs/reference/composable-plan.md: every gate names a view, and a gate with no view is refused when the plan resolves rather than discovered when someone is finally asked. The reference states the requirement as a rule (Decidable: every gate has a view) and lists a gate with no view among the conditions that stop a plan before any model call, and makes the view a required field the moment a step declares a human gate. cap-human-interaction owns what an ask carries; what this composition adds is that the view is a required field of the gate declaration, which is the gap REF-12-10 records against this skill. | proposed | `REF-10-05`, `REF-5-04`, `REF-3-2-10`, `REF-12-10` |
 | Proposed: four outcomes, and only one of them puts work back. cap-human-interaction states the four decisions a person may return (X-entry-composition-023); this composition binds three of them to gate outcomes that end the gate - approve, edit and reject - and adds return-with-notes, which re-enters the graph at the step named on the gate with the notes as input and parks again. This is the one enumeration of outcomes in this skill and every other row points at it. The unit PASS.md A2 records already offers the triple plus the return. | sourced | `F-a2-01`, `X-entry-composition-023` "Approve / reject / return a parked workflow from a phone" |
-| Proposed, following the reference example: the deadline on a gate is a cap and not a stop. cap-human-interaction states that every ask carries an explicit timeout (X-cap-human-interaction-008); the consequence this composition must preserve is that expiry terminates as failure and escalates, because the reference records that stop firing means done, cap firing means escalate, and that merging them into one halt is a mistake already made once. A gate that expires into success is an approval nobody gave. | proposed | `REF-5-3-08`, `REF-5-3-04`, `X-cap-human-interaction-008` |
 | cap-human-interaction fixes resume identity for the interface: the client continues the interaction by sending a new message with the same taskId and contextId. The consequence a composition must preserve is that the gate record stores the run's own correlation id and an outcome is matched against it, so the run that continues is provably the run that parked and not a new one wearing its name. | sourced | `X-end-to-end-014` "the client continues the interaction by sending a new message with the same taskId and contextId" |
 | xc-idempotency-lease states the placement of the claim and cap-idempotency the claim itself: Every externally-triggered action is safe to replay. A delivered decision is externally triggered, so the consequence here is that the resume boundary acquires its own lease scoped to the gate id - ten deliveries of one outcome resume the run once, a duplicate arriving while the first resume is still running attaches to it, and a decision delivered after the gate closed is a no-op rather than a second run. | sourced | `F-b4-08`, `T-t2-03` "Every externally-triggered action is safe to replay" |
-| Proposed, and this composition's answer to the gap REF-12-10 names: who may answer and over what wire are declared fields of the gate, not properties of whoever happens to be holding a screen. The gate names one deciding subject and the wires a decision may be carried on, and an outcome from a subject the gate did not name, or over a wire it did not list, is refused with the registered policy-denied rather than applied. The reference records that depth and holds make this load-bearing and names running each stage as its own workflow as the common workaround rather than an answer. | proposed | `REF-12-10`, `REF-11-07`, `REF-7-07` |
 | agentic-stack states design rule 5 as a test (F-b1-06): Planning is a pure function and completes before execution begins. Three consequences a gate must preserve, the last two following the reference example: the gate declares its own cost contribution so a parent estimate is the sum of its children rather than a guess; the depth bound is checked at resolve time, so a sub-plan that would nest past the limit is refused before anything executes; and a parked gate accrues no spend at all, because it holds no process while it waits. | sourced | `F-b1-06`, `REF-5-2-12`, `REF-5-2-13`, `X-entry-composition-029` "Planning is a pure function and completes before execution begins" |
 | The cross-cutting guarantees are not suspended while a run is parked, and a gate is not a place a caller may opt out of them: cap-work-intake and cap-consumption state the rule for an entry - the platform applies each; a caller cannot decline them - and the consequence a composition must preserve is that the gate record, the ask, the outcome and the resumed step each carry the run's correlation attributes, a non-null actor, a budget ceiling and a lease, so a gate offering a way to continue without any of them is not a gate. | sourced | `F-b4-01`, `F-b1-08` "The platform applies each; a caller cannot decline them." |
-| Proposed, following the reference example: a delivered decision steers the run that already exists and never starts a new one. The reference gives the internal entry the job of escalating to the parent's owner rather than minting work, and cap-consumption states the same constraint for callers generally; the consequence here is that a resume carries no new root identity, no new budget allocation and no new provenance root - it continues the run whose correlation id it names, or it is refused. | proposed | `REF-3-4-13`, `REF-3-4-15`, `T-t6-03` |
 
 ### Deliberately not exposed
 
@@ -263,7 +76,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Give the decider the artifact, not a verdict box. Optional edit-in-place beats approve-then-fix, and a gate whose view is a summary with two buttons quietly degrades edit and return-with-notes into approve-with-a-comment. | sourced | `X-end-to-end-018`, `X-end-to-end-019` "Optional edit-in-place beats approve-then-fix." |
 | Test the clock and the duplicate in the same fixture. Prior art states the pair as one rule: messages will be delivered more than once, and every step should have a timeout - so a suite that fires ten copies but never lets a deadline pass has tested half of what a gate is for, and one that expires gates but never duplicates a decision has tested the other half. | sourced | `X-xc-compensation-006`, `X-cap-human-interaction-008` "Every step in a saga should have a timeout" |
 | agentic-stack states the structurally-green-gate finding (F-a7-03): those establish well-formedness, not correctness. Its consequence for an approval suite is that a run in which no gate ever parked will pass every assertion about duplicate resumes, so assert that gates were declared and parked before asserting anything about how they resumed. | sourced | `F-a7-03` "Those establish well-formedness, not correctness" |
-| Proposed: keep the wire a view of the gate and never the gate itself. cap-human-interaction states that the parked state belongs to the platform (X-entry-composition-022); the composer's version of that judgment is to be able to delete every channel between the ask and the decision and still resume the run from the record, which is also the only way a second channel can be proved equivalent to the first. | proposed | `X-entry-composition-022`, `F-b1-04` |
 
 ## Definition of done
 

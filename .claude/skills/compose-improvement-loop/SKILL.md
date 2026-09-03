@@ -30,15 +30,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Operation | Input | Output | Origin | Evidence |
 |---|---|---|---|---|
-| seed_candidate (proposed; the only two legitimate origins for a candidate) | a finding_id from a closed build-ceremony improve record's applied list, or a transition entry (case_id, was, now) from a cap-evaluation report that moved from pass to fail against the current baseline (proposed) | one ImprovementCandidate in status proposed, naming the target skill, brief or discipline by kind, name and ref, the seed it came from, and a rationale that describes the failure without restating the criterion behind it (proposed) | proposed | `T-t4-04` |
-| author_revision (proposed) | a candidate_id and the current content of its target - a skill.json and its render, the author brief, or a discipline skill's own text; on a retry the additional input is the prior gate's verdict and failed_check_ids only, never the case set core-judge and cap-evaluation already withhold from the graded unit (F-b1-07) (proposed) | a revised content_ref for the same candidate_id and loop_id, unpublished (proposed) | proposed | `F-b1-07` |
-| gate_revision (cap-evaluation's evaluate, cited by name and reused unchanged) | the candidate's content_ref as unit_under_test, the target's registered case_set_id and the current baseline_id, mode replay by default (proposed composition of cap-evaluation's own operation) | one EvaluationReport, cap-evaluation's own shape, with outcome passed, failed or inconclusive; inconclusive is treated exactly like failed for promotion purposes and is never silently promoted (proposed) | proposed | `T-t4-04` |
-| iterate_or_close (compose-loop's evaluate_exit and close_loop, cited by name and reusing its terminated_by/termination_class vocabulary verbatim) | the EvaluationReport's outcome and, on failed, its transitions; the iteration index and what remains of the loop's declared ceiling (proposed) | on passed: proceeds to promote_revision. On failed inside the ceiling: author_revision runs again in the same loop_id with only the verdict and failed_check_ids. On iteration_ceiling or budget_ceiling: one loop-outcome, compose-loop's own shape, termination_class cap, escalated to a human and recorded declined (proposed) | proposed | `T-t4-04` |
 | promote_revision (cap-capability-registry's publish, cited by name and reused unchanged) | a passed EvaluationReport, the candidate's content_ref, and rollback_to set to the target's currently resolved registry version (proposed) | cap-capability-registry already states that a change is a new version record, never an edit to the one that is there; the consequence here is that promote_revision writes only there, and the candidate's outcome - promoted with the record, or declined with the reason - is appended to the section's improve record and to kb/ledger.jsonl | sourced | `X-cap-capability-registry-007` "Mutable metadata are represented as new versioned records rather than in-place edits" |
 
 ### Shapes (JSON Schema 2020-12)
 
-**ImprovementCandidate (proposed summary shape; keeps ceremony, finding_id and case_id spelled the way build-ceremony's review-record shape and cap-evaluation's EvaluationReport already spell them, so a ceremony finding and a loop candidate carry the same fields)** (proposed; sources: `T-t4-04`)
+**ImprovementCandidate (proposed summary shape; keeps ceremony, finding_id and case_id spelled the way build-ceremony's review-record shape and cap-evaluation's EvaluationReport already spell them, so a ceremony finding and a loop candidate carry the same fields; the worked seed_candidate call for each of TARGET T1's three ways in, and the worked rejection, are in references/usage.md)** (proposed; sources: `T-t4-04`)
 
 ```json
 {
@@ -218,134 +214,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**Worked calls (proposed): the same seed_candidate request from a human, from an agent and from an event** (proposed; sources: `T-t1-01`, `T-t1-02`, `T-t1-03`)
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:agentic:compose:improvement-loop:worked-calls:0.1",
-  "description": "Proposed. cap-consumption owns the entry envelope and the caller doctrine; these are this composition's payloads inside it, one per way in TARGET T1 names. The finding id and file paths are this repository's own, from kb/ceremonies/ceremony-09-improve.json.",
-  "type": "object",
-  "examples": [
-    {
-      "kind": "human",
-      "actor": {
-        "subject": "user:corey",
-        "delegation_chain": [
-          {
-            "actor": "user:corey",
-            "obtained_via": "direct"
-          }
-        ]
-      },
-      "intent": {
-        "capability": "compose-improvement-loop",
-        "operation": "seed_candidate",
-        "why": "a ceremony finding is worth an automated gate before a hand edit"
-      },
-      "payload": {
-        "ceremony": 9,
-        "target": {
-          "kind": "skill",
-          "name": "xc-typed-errors-implement",
-          "ref": ".claude/skills/xc-typed-errors-implement/skill.json"
-        },
-        "seed": {
-          "kind": "finding",
-          "ref": "C9-001"
-        },
-        "rationale": "the adapter row's minted entity id needs recording as an open question, the way three wave-4c siblings already record the same gap"
-      }
-    },
-    {
-      "kind": "external",
-      "actor": {
-        "subject": "agent:compose-improvement-loop",
-        "delegation_chain": [
-          {
-            "actor": "user:corey",
-            "obtained_via": "direct"
-          },
-          {
-            "actor": "agent:compose-improvement-loop",
-            "obtained_via": "rfc8693_token_exchange"
-          }
-        ]
-      },
-      "intent": {
-        "capability": "compose-improvement-loop",
-        "operation": "seed_candidate",
-        "why": "lessons_for_next_section named a defect recurring across five closed ceremonies"
-      },
-      "payload": {
-        "ceremony": 10,
-        "target": {
-          "kind": "discipline",
-          "name": "build-ceremony",
-          "ref": ".claude/skills/build-ceremony/skill.json"
-        },
-        "seed": {
-          "kind": "finding",
-          "ref": "lessons-row-10-numbering"
-        },
-        "rationale": "a session-supplied ceremony number drifted from the repository-global counter in at least five closed ceremonies; the discipline's own step 3 should refuse a taken number rather than only describe the correction"
-      }
-    },
-    {
-      "kind": "event",
-      "actor": {
-        "subject": "service:nightly-regression-scan",
-        "delegation_chain": [
-          {
-            "actor": "service:nightly-regression-scan",
-            "obtained_via": "workload_attestation"
-          }
-        ]
-      },
-      "intent": {
-        "capability": "compose-improvement-loop",
-        "operation": "seed_candidate",
-        "why": "a scheduled cap-evaluation replay moved a case from pass to fail against the current baseline"
-      },
-      "payload": {
-        "ceremony": null,
-        "target": {
-          "kind": "skill",
-          "name": "agent:release-reviewer",
-          "ref": "config/agents/release-reviewer.json"
-        },
-        "seed": {
-          "kind": "transition",
-          "ref": "cs-release-review#case-12"
-        },
-        "rationale": "case-12's tool-use dimension regressed against baseline bl-2026-08-27 with no ceremony open at the time"
-      }
-    }
-  ]
-}
-```
-
-**The failure shape (proposed): gate_revision's case set or baseline does not resolve** (proposed; sources: `F-b3-13`, `F-b4-07`)
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:agentic:compose:improvement-loop:problem-instance:0.1",
-  "description": "cap-evaluation already states this failure shape for its own evaluate call (F-b3-13, F-b4-07); it is the instance a candidate's gate_revision step actually receives when the target names a case_set_id or baseline_id nothing resolves. criterion-unresolvable is the registered row that fits.",
-  "type": "object",
-  "examples": [
-    {
-      "type": "urn:agentic:problem:criterion-unresolvable",
-      "title": "The candidate's case set or baseline does not resolve",
-      "status": 422,
-      "detail": "candidate cand-2026-09-03-014 names baseline_id bl-2026-09-02, which no version of the registered baseline store resolves",
-      "retryable": false,
-      "correlation_id": "run-2026-09-03-0091"
-    }
-  ]
-}
-```
-
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -355,18 +223,12 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | core-judge and cap-evaluation already state design rule 6 (F-b1-07): the grader is never visible to the graded. This composition's consequence: author_revision's retry input is failed_check_ids and a verdict only, across every iteration of the same candidate_id - the loop is the place this rule is cheapest to break, because the obvious way to fix a candidate is to show it what it failed. | sourced | `F-b1-07` "The grader is never visible to the graded" |
 | cap-capability-registry already states that a record is immutable and a change is a new version, never an edit in place. This composition's consequence: promote_revision never writes to a target's checked-out file; a passed candidate becomes a new registry record with rollback_to set to the resolved baseline, which is not yet how the skills in this repository are edited - a gap named as an open question and carried into compose-improvement-loop-implement. | sourced | `X-cap-capability-registry-007` "Mutable metadata are represented as new versioned records rather than in-place edits" |
 | compose-loop already states, following the reference example, that internal steers but never starts (REF-3-4-15, T-t4-04, T-t6-02). This composition's consequence: a running iteration may report a lesson into the rationale of the next candidate, but the compose-loop instance that gates and promotes a candidate is opened only by a person closing a ceremony, a schedule, or the outside event that produced the seed - never by author_revision or iterate_or_close themselves. | sourced | `REF-3-4-15`, `T-t4-04` "A loop that can mint its own root work has no provenance and no ceiling." |
-| Proposed: a candidate's rationale describes the failure a finding or a transition names, never a rubric line or a criterion text a ceremony's reviewer judged the section against. A rationale that quotes what the reviewer graded is design rule 6 broken through the ceremony record rather than through the gate, and neither build-ceremony's finding shape nor cap-evaluation's transition shape requires the criterion to write one. | proposed | `F-b1-07` |
-| Proposed: improvement is measured as a trend across closed ceremonies, never assumed from one passing gate - agentic-stack and build-definition-of-done already state that a criterion nothing can fail is not a criterion (F-part-c-04) and that a structurally green run can mean nothing (F-a7-03). This repository's own instance is `python3 tools/ceremony_check.py` read against kb/ceremonies/ceremony-01 through ceremony-10, state/lessons.jsonl and kb/ledger.jsonl: block-plus-fix findings per skill fall from 1.00 at ceremony 1 to 0.00 at ceremonies 8 and 10, measured in this session on 2026-09-03, with no gate and no registry behind any of it yet. | proposed | `F-part-c-04`, `F-a7-03`, `T-t4-04` |
-| Proposed: this repository's own review/improve half of the loop carries one recurring, named defect that a candidate gated through this composition would have caught sooner - a session-supplied ceremony number drifting from the repository-global counter build-ceremony's own step 3 requires. state/lessons.jsonl records the correction happening by hand across at least five consecutive closed ceremonies, each fixed in the ceremony that found it rather than by a candidate this loop promoted. | proposed | `T-t4-04` |
-| Proposed: core-judge already names the risk that a judge grading with a model carries systematic biases and should not grade its own model family's output without a stated control. This repository's own ceremony 11 review of the compose group names its reviewer as 'sonnet (fan-out reviewer, group compose)' over skills substantially authored by sonnet and opus sessions in the same wave, with no held-out audit recorded against it - the bias core-judge's audit operation exists to catch, and this loop has not yet wired one. | proposed | `F-b1-07` |
-| Proposed: this composition owns no state type of its own. Its candidate, revision and promotion sequence is built entirely from state two siblings already own - compose-loop's iteration record for the termination that ended a round, and cap-evaluation's evaluation case, verdict and baseline for what a candidate is measured against - reused rather than re-derived, so there is no persisted record here that is not one of theirs read back. | proposed | `T-t4-04`, `T-t6-06` |
 
 ### Deliberately not exposed
 
 | Item | Origin | Evidence |
 |---|---|---|
 | core-judge and cap-evaluation already state design rule 6 (F-b1-07): the grader is never visible to the graded. On this composition it forbids the case set and the rubric text gate_revision scores against from reaching author_revision's retry input, which carries a verdict and failed_check_ids only. | sourced | `F-b1-07` "An agent sees its outcome, never the criterion it is judged against" |
-| Proposed: cap-evaluation already withholds which model, ensemble or human review a scorer used to reach a verdict, and this composition adds nothing that would reveal it. seed_candidate and author_revision read a finding_id or a case_id only, never the identity of whoever or whatever authored the finding or ran the scorer, so a candidate cannot be tuned to please a particular reviewer or judge. | proposed | - |
 | Proposed: cap-capability-registry already withholds the publisher's evaluation scores, the canary traffic share and the identity of who approved a promotion from a resolving caller; this composition adds that a candidate's own author_revision step cannot read them either, so a retry cannot learn how close a prior attempt came to passing beyond the failed_check_ids core-judge already permits. |  | - |
 
 ## Instructions
@@ -391,7 +253,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: this repository's own ceremony trend, read with `python3 tools/ceremony_check.py`, is evidence the review/improve discipline works at all - block-plus-fix findings per skill fell from 1.00 at ceremony 1 to 0.07 or below by ceremony 4 and to 0.00 at ceremonies 8 and 10 - but the same trend names an unresolved defect this loop has not closed: the proposed-row share sits between 0.34 and 0.58 across all ten ceremonies with no consistent downward trend, so a rising share of what this repository states is not yet grounded in a source and no gate here catches that. | proposed | `F-part-c-04` |
 | build-ceremony already states that a ceremony number is a repository-global counter, never derived from a caller's position in its own run. This repository's own state/lessons.jsonl records that correction happening by hand across at least five consecutive closed ceremonies - the exact recurring defect a candidate gated through this loop, rather than a reviewer's memory, should catch before the sixth. | sourced | `T-t5-01` "Do not stop at ceremonies; run them and continue." |
 | Proposed: core-judge already states that a judge grading with a model carries systematic biases and should not grade its own model family's output without a stated control. This repository's own ceremony 11 compose-group review names its reviewer as a single model with no held-out audit behind it - name this as an open defect rather than a settled property of the loop. | proposed | `F-b1-07` |
-| Proposed: build-ceremony already states that the applied set should stay small and attributable, because a ceremony that lands twenty changes at once cannot tell which of them moved the next section's metrics. The same reasoning bounds this loop's own promotions: prefer a small number of candidates a gate can actually attribute a regression to over a large batch promoted together. | proposed | `T-t4-04` |
 | Accept a self-modification only on measured evidence using two splits - a held-in split that checks the targeted weakness was resolved, and a held-out split the proposer never sees that checks nothing else regressed - rather than on the targeted case alone. | sourced | `X-compose-improvement-loop-006` "a held-in split that checks the targeted weakness was resolved, and a held-out split the proposer never sees that checks nothing else regressed" |
 
 ## Definition of done

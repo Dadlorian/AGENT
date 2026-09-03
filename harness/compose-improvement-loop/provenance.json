@@ -1,0 +1,81 @@
+{
+  "harness": "compose-improvement-loop",
+  "owner_skill": "compose-improvement-loop-implement",
+  "co_skills": [
+    "compose-improvement-loop",
+    "cap-evaluation-implement",
+    "compose-loop"
+  ],
+  "blueprint_tool_entry": "this repository's own ceremony loop (state/loop-workflow.js, kb/ceremonies/, state/lessons.jsonl) as the instance that runs today. docs/architecture/blueprint.json carries no tool_entries row for it and no impact_map row for this composition - its own open question asks whether compose-operators and compose-improvement-loop are deliberately stateless - so the nearest impact row is 'the durable executor is replaced', which names compose-loop",
+  "capability": "improvement loop",
+  "standard": "none adopted; the loop shape (one iteration moves the metric furthest from its target, gated by an evaluation that can say no, checkpointed each fire) is this repository's design, TARGET T9.1 (T-t9-01) and the compose-improvement-loop skill. JSON Schema 2020-12 governs the loop declaration check and RFC 9457 the failure body; both are reached through shapes harness/evaluation already ships",
+  "kb_ids": [
+    "T-t1-01", "T-t1-02", "T-t1-03", "T-t2-02", "T-t3-01",
+    "T-t4-04", "T-t6-06", "T-t7-02", "T-t9-01", "T-t9-06",
+    "T-t10-04", "T-t10-05", "T-t10-07",
+    "F-b1-04", "F-b1-07", "F-b4-02", "F-b4-08",
+    "F-a5-04", "F-a7-02", "F-a7-03", "F-part-c-04", "F-part-c-09",
+    "REF-5-3-08",
+    "E-core-component-judge", "E-concern-budget", "E-rule-b1-6", "E-rule-b1-7",
+    "E-standard-rfc-9457-problem-details", "E-standard-json-schema-2020-12"
+  ],
+  "research_ids": [
+    "X-compose-improvement-loop-001",
+    "X-compose-improvement-loop-002",
+    "X-compose-improvement-loop-003",
+    "X-compose-improvement-loop-004",
+    "X-compose-improvement-loop-006",
+    "X-compose-loop-002",
+    "X-compose-loop-005",
+    "X-cap-evaluation-002",
+    "X-cap-evaluation-003",
+    "X-cap-capability-registry-007"
+  ],
+  "adapters": {
+    "dryrun": {
+      "execution_model": "bounded-in-process",
+      "checkpoint_store": "in-memory",
+      "survives_process_loss": false,
+      "promotion_authority": "evaluation_gate"
+    },
+    "second": {
+      "execution_model": "one-iteration-per-fire",
+      "checkpoint_store": "file",
+      "survives_process_loss": true,
+      "promotion_authority": "evaluation_gate",
+      "differs_in_execution_model": [
+        "execution_model: one process holds the whole loop vs no process between iterations",
+        "checkpoint_store: in-memory vs a file per checkpoint",
+        "survives_process_loss: a fresh binding refuses vs a fresh binding resumes"
+      ]
+    },
+    "live": {
+      "execution_model": "session-per-section",
+      "checkpoint_store": "ceremony-records",
+      "survives_process_loss": true,
+      "promotion_authority": "evaluation_gate",
+      "component": "this repository's ceremony loop: state/loop-workflow.js fires research, authoring, a ceremony review and an improve pass per section; its records are kb/ceremonies/ceremony-NN-review.json and -improve.json, state/lessons.jsonl and state/loop.json"
+    }
+  },
+  "design_notes": [
+    "The gate is not declared here. harness/evaluation/interface.py is imported under its own module name and its adapter is loaded by path; every candidate is decided by that capability's evaluate call, and this harness re-states no case set, rubric, verdict or baseline logic. test.sh section 6 asserts the identity of those objects rather than trusting the claim.",
+    "Extensions to the owner skills' shapes, so a reader can tell them from the skills: compose-improvement-loop's CandidateOutcome (promoted|declined) is carried here as the decision field of an IterationRecord that also names the metric, the distance before and after, the checkpoint in force and whether it advanced - the scorecard half TARGET T9.1 fixes and that skill does not shape. compose-loop's terminated_by and termination_class are used verbatim, three members and no fourth.",
+    "compose-improvement-loop's promote_revision writes to a capability registry; there is no registry running here, so promotion in this harness moves a checkpoint and a metric value and writes no target file at all. no_in_place_edit_operation() asserts the interface has nowhere to name one. Wiring promotion to a registry is named as the open gap, not simulated.",
+    "The escalation for a capped loop returns the registered urn:agentic:problem:deadline-exceeded and names the proposed urn:agentic:problem:iteration-ceiling-reached in detail, which is compose-loop's own open-question default; no unregistered type is minted.",
+    "The scorecard fixture's metric ids are TARGET T9's row names (measured_done_share, proposed_share, stale_status_rows) and its numbers are fixture values chosen to exercise a failed, an inconclusive and four passing gates. Nothing in this harness measures this repository's actual scorecard.",
+    "Running out of candidates for a metric is a typed refusal (criterion-unresolvable), never a fourth termination reason."
+  ],
+  "measured": {
+    "dryrun": "bash harness/compose-improvement-loop/test.sh -> passed 62, failed 0. Conformance against dryrun exits 0 at 25/25: scorecard digest sha256:e94b0b2ac2ff374450b8befb18bd78ae over 3 metrics and 6 candidates; 6 iterations working measured_done_share, measured_done_share, stale_status_rows, stale_status_rows, proposed_share, measured_done_share - the furthest metric each time, never the first listed; gate outcomes failed, passed, inconclusive, passed, passed, passed; 4 promoted and 2 declined; both declined iterations left the standing checkpoint (ck-a16c7afd5613 and ck-9629dc65a393) in place with checkpoint_advanced false; terminated_by verdict_pass (stop) with 3/3 targets held at 1500000 of 3000000 micros; the same scorecard under a ceiling of 2 terminated_by iteration_ceiling (cap) escalating urn:agentic:problem:deadline-exceeded carrying the proposed iteration-ceiling-reached suffix; under a 600000-micro budget, budget_ceiling (cap) at 500000; a loop declared with no iteration ceiling refused with urn:agentic:problem:document-invalid (422) leaving no checkpoint; a re-delivered iteration returned the identical record and wrote no new checkpoint. The minimal call is 22 lines of caller code, under 40, naming no driver storage.",
+    "swap": "conformance before with dryrun and after with second, selected by ADAPTER= with no code edit (the sha256 of interface.py, call.py and conformance.py is identical before and after: d3ab54d66fa12f8623ff227515e8624a84a5b7aeccc20b37ab893d97d1d5e7be); both exit 0 at 25/25 and the merged report shows adapters_run 2, record_divergence 0, selected_by configuration. Both drivers wrote byte-identical iteration records, records_digest sha256:03731dea2b4a582f164b39774dde4535 on each side. The pair differs on all three declared axes: bounded-in-process vs one-iteration-per-fire, in-memory vs file checkpoints, and a fresh binding refusing with typed problem details vs resuming from the checkpoint - so it is not one driver run twice. call.py prints identical tables and identical PROOF lines on both.",
+    "breakage": "conformance --break-gate replaces the promotion rule with one that advances the checkpoint whatever the gate said, changing nothing else. Both drivers exit 1 identically on the same two checks - C5 (a failed gate declines and holds the checkpoint) reading 'cand-md-01: promoted, checkpoint ck-a16c7afd5613->ck-b63bcad4c534' and C6 (an inconclusive gate is treated exactly like a failed one) reading 'cand-sr-01: promoted/None' - while the unbounded refusal stays document-invalid and the capped loop still terminates by iteration_ceiling, which locates the fault in the checkpoint rule rather than in the declaration check, the ceiling or either driver. This is the gate that cannot say no, reproduced on purpose.",
+    "live_read_only": "IMPROVE_LOOP_CEREMONY_DIR=kb/ceremonies IMPROVE_LOOP_SHADOW_DIR=<scratch> IMPROVE_LOOP_STATE_FILE=state/loop.json bash harness/compose-improvement-loop/test.sh --live -> passed 6, failed 0: 25/25 conformance against the live driver with checkpoint_store ceremony-records, the same records_digest sha256:03731dea2b4a582f164b39774dde4535 as both other drivers, the merged swap proof exiting 0 and the breakage exiting 1. The adapter read kb/ceremonies and state/loop.json and wrote only the shadow directory; git status showed kb/ and state/ unchanged afterwards."
+  },
+  "claimed": [
+    "live mode with the component actually fired, until run on the host: IMPROVE_LOOP_FIRE_CMD was unset in every run, so state/loop-workflow.js was never launched by this harness. The live run above read the ceremony records that loop has already written; it did not drive a section of it",
+    "the mapping of register_scorecard, open_loop, run_iteration, evaluate_exit and read_checkpoint onto that loop, stated in the header of adapters/live.py: one fire of the section loop is one iteration, state/loop.json is its checkpoint, and kb/ceremonies/ceremony-NN-improve.json is its record",
+    "promotion_authority evaluation_gate on the live row is the migration, not a description of what runs unattended today: compose-improvement-loop-implement records that the loop running here has no cap-evaluation call and promotes by editing the target file in place and committing, with a session reviewer's judgment as the only authority. This harness never writes a target file and never writes into kb/ceremonies, state/lessons.jsonl or state/loop.json",
+    "the scorecard is a fixture written for this harness: its metric names are TARGET T9's rows but its values are chosen to exercise the three gate outcomes, and no value here was measured from this repository",
+    "the working tree carried unrelated in-flight edits from parallel agents (skill files under .claude/skills) when test.sh was run, per F-a5-04. Every file the run exercised is inside harness/compose-improvement-loop/; at commit eaca6335b0c337bad5bfe4b0d8b2da2e9b878e70 the digest of its files (find . -path ./out -prune -o -type f -print | sort | xargs sha256sum | sha256sum) was bc15d63439a0797082a821c9cf27f3f8776321b818e4038e9bcc3916a14b6205"
+  ]
+}

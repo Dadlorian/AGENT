@@ -30,3 +30,4 @@
 | 26 | Workflow harness | One durable flow survives a crash and resumes | Open | Not started |
 | 27 | Linked harness | One document runs through all four harnesses | Open | Not started |
 | 28 | Impact map | A component swap lists every affected adapter, test, and skill | Open | Not started |
+| 29 | Solution architecture | Every state type has an owner, a home, and a caller path | In progress | Architect running |

@@ -18,6 +18,7 @@ Usage:
 Files:
   kb/facts.jsonl      one record per fact (table row, list item, or paragraph) in PASS.md
   kb/target-facts.jsonl  one record per numbered requirement in TARGET.md (T- ids, status target-owner)
+  kb/reference-facts.jsonl  docs/reference/composable-plan.md as REF- records, status reference (an example, never a fact)
   kb/research.jsonl   research records (X- ids) merged from kb/research/*.jsonl by `merge-research`
   kb/entities.jsonl   named things the facts are about, each citing the facts it comes from
   kb/edges.jsonl      typed links between entities, each citing the fact that states the link
@@ -45,6 +46,8 @@ TARGET_SRC = ROOT / "TARGET.md"
 KB = ROOT / "kb"
 FACTS, ENTITIES, EDGES, META = KB / "facts.jsonl", KB / "entities.jsonl", KB / "edges.jsonl", KB / "meta.json"
 TARGET_FACTS = KB / "target-facts.jsonl"
+REF_SRC = ROOT / "docs" / "reference" / "composable-plan.md"
+REF_FACTS = KB / "reference-facts.jsonl"
 
 
 def sha256(data: bytes) -> str:
@@ -99,7 +102,12 @@ def parse_units(lines: list[str]) -> list[dict]:
             section_title[section] = m.group(2)
             i += 1
             continue
-        if s.startswith("# "):
+        m = re.match(r"^##+\s+(\d+(?:\.\d+)*)\b", s)
+        if m and part not in ("A", "B", "C"):
+            section, table_header = m.group(1).replace(".", "-"), None
+            i += 1
+            continue
+        if s.startswith("#"):
             i += 1
             continue
         if s.startswith("|"):
@@ -132,6 +140,9 @@ def parse_units(lines: list[str]) -> list[dict]:
         while i < n and lines[i].strip() and not lines[i].strip().startswith(("|", "#", "- ")) and not re.match(r"^\d+\.\s", lines[i].strip()) and lines[i].strip() != "---":
             buf.append(lines[i].strip())
             i += 1
+        if not buf:  # a line no branch claimed; never loop forever on it
+            i += 1
+            continue
         text = " ".join(buf)
         u = {"kind": "paragraph", "part": part, "section": section, "line_start": start + 1, "line_end": i, "text": text}
         units.append(u)
@@ -302,8 +313,31 @@ def build_target(src_hash: str, lines: list[str]) -> list[dict]:
     return out
 
 
+def build_reference(src_hash: str, lines: list[str]) -> list[dict]:
+    """docs/reference/composable-plan.md: an owner-supplied EXAMPLE, status 'reference'. Never a fact about the host or the target;
+    skills may cite it as an example (REF- ids) but a REF- citation does not make a row sourced to PASS or TARGET."""
+    units = parse_units(lines)
+    out, counters = [], {}
+    for u in units:
+        key = u["section"] or "top"
+        counters[key] = counters.get(key, 0) + 1
+        rec = {"id": f"REF-{slug(key)}-{counters[key]:02d}", "type": "fact", "kind": u["kind"], "part": "REF", "section": u["section"],
+               "status": "reference", "source": {"file": "docs/reference/composable-plan.md", "sha256": src_hash, "line_start": u["line_start"], "line_end": u["line_end"]},
+               "text": u["text"]}
+        if "columns" in u:
+            rec["columns"] = u["columns"]
+        out.append(rec)
+    return out
+
+
 def build() -> int:
     KB.mkdir(exist_ok=True)
+    if REF_SRC.is_file():
+        rdata = REF_SRC.read_bytes()
+        rfacts = chain(build_reference(sha256(rdata), rdata.decode().split("\n")))
+        write_jsonl(REF_FACTS, rfacts)
+    else:
+        rfacts = []
     tdata = TARGET_SRC.read_bytes()
     tfacts = chain(build_target(sha256(tdata), tdata.decode().split("\n")))
     write_jsonl(TARGET_FACTS, tfacts)
@@ -319,12 +353,12 @@ def build() -> int:
     write_jsonl(EDGES, edges)
     META.write_text(json.dumps({
         "source": {"file": "PASS.md", "sha256": src_hash, "lines": len(lines)},
-        "sources": {"PASS.md": src_hash, "TARGET.md": sha256(tdata)},
-        "counts": {"facts": len(facts), "entities": len(ents), "edges": len(edges), "target_facts": len(tfacts)},
-        "heads": {"facts": facts[-1]["hash"], "entities": ents[-1]["hash"], "edges": edges[-1]["hash"], "target_facts": tfacts[-1]["hash"]},
+        "sources": {"PASS.md": src_hash, "TARGET.md": sha256(tdata), **({"docs/reference/composable-plan.md": sha256(REF_SRC.read_bytes())} if rfacts else {})},
+        "counts": {"facts": len(facts), "entities": len(ents), "edges": len(edges), "target_facts": len(tfacts), "reference_facts": len(rfacts)},
+        "heads": {"facts": facts[-1]["hash"], "entities": ents[-1]["hash"], "edges": edges[-1]["hash"], "target_facts": tfacts[-1]["hash"], **({"reference_facts": rfacts[-1]["hash"]} if rfacts else {})},
         "builder": "tools/kb.py",
     }, indent=2) + "\n")
-    print(f"built {len(facts)} facts, {len(ents)} entities, {len(edges)} edges from PASS.md {src_hash[:12]}; {len(tfacts)} target facts from TARGET.md")
+    print(f"built {len(facts)} facts, {len(ents)} entities, {len(edges)} edges from PASS.md {src_hash[:12]}; {len(tfacts)} target facts from TARGET.md; {len(rfacts)} reference facts")
     return 0
 
 
@@ -344,7 +378,14 @@ def verify() -> int:
         if f["text"] != tlines[f["source"]["line_start"] - 1].strip():
             print(f"FAIL: {f['id']} text does not match TARGET.md line {f['source']['line_start']}")
             ok = False
-    for name, path in (("facts", FACTS), ("entities", ENTITIES), ("edges", EDGES), ("target_facts", TARGET_FACTS)):
+    if REF_FACTS.is_file():
+        rlines = REF_SRC.read_bytes().decode().split("\n")
+        for f in read_jsonl(REF_FACTS):
+            sl, el = f["source"]["line_start"], f["source"]["line_end"]
+            if f["text"] != " ".join(l.strip() for l in rlines[sl - 1:el] if l.strip()):
+                print(f"FAIL: {f['id']} text does not match the reference lines {sl}-{el}")
+                ok = False
+    for name, path in (("facts", FACTS), ("entities", ENTITIES), ("edges", EDGES), ("target_facts", TARGET_FACTS)) + ((("reference_facts", REF_FACTS),) if REF_FACTS.is_file() else ()):
         recs = read_jsonl(path)
         prev = "genesis"
         for r in recs:
@@ -375,7 +416,7 @@ def verify() -> int:
 
 def load_all() -> dict[str, dict]:
     idx = {}
-    for p in (FACTS, ENTITIES, EDGES, TARGET_FACTS, KB / "research.jsonl"):
+    for p in (FACTS, ENTITIES, EDGES, TARGET_FACTS, KB / "research.jsonl", REF_FACTS):
         if not p.is_file():
             continue
         for r in read_jsonl(p):

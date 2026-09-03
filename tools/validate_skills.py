@@ -65,7 +65,7 @@ PRODUCTS = [
 # in the row, in these words (ceremony 9, C9-001).
 MINTED_ENTITY_RE = re.compile(r"proposed[^.]{0,80}entity id", re.I)
 PRODUCT_RE = re.compile(r"\b(" + "|".join(re.escape(p) for p in PRODUCTS) + r")\b")
-ID_RE = re.compile(r"^[FERTX]-[a-z0-9-]+$")
+ID_RE = re.compile(r"^(F|E|R|T|X|REF)-[a-z0-9-]+$")
 NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
 
@@ -127,7 +127,7 @@ def unmarked_problem_types(skill_dir: Path, registered: set[str]) -> list[str]:
 
 def load_kb() -> tuple[set[str], dict]:
     ids = set()
-    for f in ("facts", "entities", "edges", "target-facts", "research"):
+    for f in ("facts", "entities", "edges", "target-facts", "research", "reference-facts"):
         if not (KB / f"{f}.jsonl").is_file():
             continue
         for line in (KB / f"{f}.jsonl").read_text().splitlines():

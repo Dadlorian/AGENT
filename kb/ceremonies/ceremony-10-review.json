@@ -1,0 +1,53 @@
+{
+  "ceremony": 10,
+  "section": "wave-5",
+  "reviewer": "sonnet",
+  "date": "2026-09-03",
+  "numbering_note": "The prompt's hint was ceremony 2, stale: ls kb/ceremonies/ceremony-*-review.json shows ceremony-01 through ceremony-09 already closed (ceremony 9 for section wave-4c, state/loop.json ceremony=9). Per the repo-global rule build-ceremony states (a counter global to the repository, never per-section, never reused) and state/author-brief.md defect item 7, this review takes the next unused number, 10, for section wave-5. `ls kb/ceremonies/ceremony-*-review.json` was run before writing anything.",
+  "findings": [
+    {
+      "id": "C10-001",
+      "skill": "core-planner-implement, seam-state-implement, cap-evaluation-implement",
+      "location": "definition_of_done.breakage",
+      "severity": "nit",
+      "category": "consistency",
+      "finding": "In three of the four ideal/implement pairs in this wave, the implement facet's deliberate breakage is copied verbatim from its ideal facet's breakage rather than exercising something specific to the build (a wiring defect, a migration-stage regression, a binding mismatch). The fourth pair, seam-dispatch / seam-dispatch-implement, does this correctly: the ideal facet breaks typed-error conformance (an adapter returning its native error object) while the implement facet breaks durability ordering (assembling the result before the state-seam write returns), so the pair actually demonstrates two different failure modes. The other three pairs demonstrate the same one twice.",
+      "evidence": "core-planner.definition_of_done.breakage: \"Make the planner call the model-access interface to estimate one step's cost, and change nothing else.\" core-planner-implement.definition_of_done.breakage: identical string, word for word. seam-state.definition_of_done.breakage and seam-state-implement.definition_of_done.breakage: both \"Let one projection - `open_dispatches` - resolve the head itself and read live instead of reading at the `at_head` it was passed\" with only trailing wording differing (\"Change nothing else\" vs \"Same adapters, same record sequence, same command\"). cap-evaluation.definition_of_done.breakage and cap-evaluation-implement.definition_of_done.breakage: both \"drop the instruction that makes it call the diff tool before answering\" in the release-reviewer prompt. Contrast seam-dispatch-implement.definition_of_done.breakage: \"In one adapter's shim, assemble the result before the state-seam write returns - move the write after the result is built - and change nothing else, then re-run the interrupted-run case\" — a distinct build-level fault from seam-dispatch's native-error-object breakage.",
+      "suggested_change": "Not a rule violation (build-definition-of-done does not require an ideal facet and its implement facet to differ, and each implement DoD's criterion text does say it is the same check 'made runnable' or 'made precise' across concrete bindings, which is a legitimate escalation). Recorded because the wave is otherwise unusually careful about differentiation and seam-dispatch-implement shows a build-specific breakage is available for this shape of pair (e.g. core-planner-implement could break the loader that pins the head, or the binding wiring, rather than repeat the pricing-call violation; seam-state-implement could break one migration stage; cap-evaluation-implement could break the gate's exit-code-derived status rather than the unit under test). Worth a second look next time an -implement facet's DoD is drafted, not a required edit to this wave."
+    },
+    {
+      "id": "C10-002",
+      "skill": "core-planner-implement, seam-dispatch-implement, seam-state-implement, cap-evaluation-implement",
+      "location": "docs/skill-manifest.json wave field",
+      "severity": "nit",
+      "category": "process",
+      "finding": "docs/skill-manifest.json tags all four -implement skills of this batch as wave 6, not wave 5, while this ceremony was invoked to review section \"wave-5\" and was handed all eight skills (four ideal facets at wave 5, four implement facets at wave 6) together. This is not a defect in the skills themselves (skill.json's own \"wave\" field matches the manifest exactly in all eight cases, and composes_with.builds_on/used_by match the manifest exactly), but it means a future ceremony invoked for a literal \"wave-6\" section could re-review these four -implement skills, or a loop driven strictly by the wave number could skip them if it assumes wave 5 already covered everything tagged wave 5.",
+      "evidence": "python3 -c based manifest scan: core-planner.wave=5, core-planner-implement.wave=6, seam-dispatch.wave=5, seam-dispatch-implement.wave=6, seam-state.wave=5, seam-state-implement.wave=6, cap-evaluation.wave=5, cap-evaluation-implement.wave=6 (all four pairs), matching the corresponding skill.json \"wave\" fields exactly in every case.",
+      "suggested_change": "No skill edit needed. Record in this ceremony's metrics and in state/loop.json (or wherever the next section boundary is decided) that ceremony 10 already reviewed all eight of these skills, so a section literally named \"wave-6\" should not re-queue core-planner-implement, seam-dispatch-implement, seam-state-implement or cap-evaluation-implement for review."
+    }
+  ],
+  "metrics": {
+    "skills": 8,
+    "rows_total": 246,
+    "rows_sourced": 149,
+    "rows_proposed": 97,
+    "validator_errors": 0,
+    "validator_warnings_repo": 56,
+    "validator_warnings_in_scope": 0,
+    "findings_block": 0,
+    "findings_fix": 0,
+    "findings_nit": 2
+  },
+  "brief_improvements": [
+    "No brief change proposed from this ceremony. Both findings are nits specific to this wave's own internal consistency (C10-001) or to cross-ceremony bookkeeping (C10-002), not repeated patterns that a future author needs a new rule to avoid; state/author-brief.md's existing 16 defect items already cover every category of mistake actually found in ceremonies 1-9, and none of that catalogue recurred here."
+  ],
+  "what_worked": [
+    "All 246 rows across the 8 skills were checked for structure; every sourced row's quote was spot-checked against `python3 tools/kb.py show <id>` across roughly 60 distinct F-, T-, X- and E- ids spanning root facts, target items, and search-only research records — every quote verified as a true verbatim substring, with zero mismatches found.",
+    "python3 tools/validate_skills.py reports 0 errors across 80 skills and 56 warnings, none naming any of the 8 wave-5 skills — none of the recurring defect classes from ceremonies 1-9 (compose-by-copy, unmarked minted entity ids, unregistered problem-type suffixes, missing not_exposed rows for design rule 6, oversized standards version fields, instructions/invariants/best_practices outside budget) recur in this wave.",
+    "composes_with.builds_on and composes_with.used_by match docs/skill-manifest.json exactly for all 8 skills (scripted comparison, both directions, all 8 pass), including the seam-layer skills' unusually long builds_on lists (seam-dispatch alone builds on 17 other skills) staying byte-for-byte consistent with the manifest.",
+    "Every adapters[].entity id resolves in kb/entities.jsonl or is explicitly marked a proposed/minted id in maps_to with a matching 1-3-1 open_question recording the gap and the recommendation taken (core-planner-implement, seam-dispatch, seam-dispatch-implement, seam-state, seam-state-implement, cap-evaluation, cap-evaluation-implement all follow the pattern ceremony 9's C9-001 fix established) — the one prior wave's single violation of this rule does not recur anywhere in wave-5.",
+    "Cross-skill honesty checks held up under verification: core-planner's claim that 'xc-budget owns the ceiling guarantee (F-b4-02)' is backed by xc-budget's own skill.json citing F-b4-02 three times; cap-evaluation's problem-type reuse of the closed registry's criterion-unresolvable and document-invalid rows matches the ten-row table in docs/decomposition.md section 2.1.6 exactly; and every ideal facet's definition_of_done that cites a decomposition.md row (core-planner's C2, seam-dispatch's S1, seam-state's S2) quotes that row's actual criterion and breakage rather than paraphrasing it.",
+    "The usability-section requirement (author-brief item 13) is met by all four ideal facets carrying it (core-planner, seam-dispatch, seam-state per their manifest notes) via a worked call for each of TARGET T1's three ways in plus a worked rejection, split correctly between the skill body and references/ so the body stays within the progressive-disclosure budget while the references file (checked directly, not just via the validator's regex pass) actually contains the promised material.",
+    "python3 tools/render_skill.py re-run against seam-state produced byte-identical output to the committed SKILL.md, confirming the render pipeline validate_skills.py already checks for all 80 skills holds for the skill spot-checked here directly too."
+  ]
+}

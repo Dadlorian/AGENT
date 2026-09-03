@@ -1,0 +1,231 @@
+{
+  "id": "66-litmus-review",
+  "type": "ceremony",
+  "ceremony": "review",
+  "status_row": 66,
+  "subject": "docs/litmus/questionnaire.json",
+  "reviewer": "claude-opus-5[1m]",
+  "date": "2026-09-03",
+  "inputs_read": [
+    "state/briefs/litmus-review.md",
+    "state/briefs/context-66.md",
+    "docs/litmus/frame.json",
+    "docs/litmus/questionnaire.json"
+  ],
+  "method": "Judged questions only, against the seven checks in state/briefs/litmus-review.md. Did not answer any question and did not open any other file in the repository, including anything the questionnaire describes. Window claims were checked against the verbatim quote each direction and future_state field carries, since the research records themselves are outside the files this brief permits.",
+  "sections_checked": [
+    "isolation", "model-access", "durable-execution", "agent-runtime", "tool-access",
+    "capability-packaging", "work-intake", "document-validation", "telemetry", "policy",
+    "provenance", "errors", "identity", "scheduling", "idempotency", "state-persistence",
+    "concern-budget", "concern-identity", "concern-policy", "concern-provenance",
+    "concern-telemetry", "concern-errors", "concern-idempotency"
+  ],
+  "counts_seen": {"sections": 23, "questions": 140, "capability_sections": 16, "concern_sections": 7},
+  "findings": [
+    {
+      "id": "R66-001",
+      "section": "concern-telemetry",
+      "question": "concern-telemetry-q5, concern-telemetry-q4, concern-telemetry-q3, concern-telemetry-q2",
+      "severity": "block",
+      "kind": "distinct",
+      "evidence": "Four of the six concern questions restate the capability section. concern-telemetry-q5 asks 'Can the telemetry backend be changed by pointing the exporter somewhere else, with no change to instrumentation or to the attributes emitted?' with evidence 'The same run exported to two different collectors or backends, and a diff of what arrived at each'; telemetry-q3 asks 'Is the telemetry backend replaceable by configuration alone, demonstrated rather than asserted' with evidence 'The record of one run exported to two different receivers, the diff of the change that switched them'. concern-telemetry-q4 asks 'can an operator answer from telemetry alone what it cost, what was decided about it, why it stopped, and which actor ran it' across the four entries; telemetry-q5 asks 'can an operator answer from telemetry alone what it cost, which model and tool calls it made, whether it was refused or terminated on budget' across the four entries. concern-telemetry-q3 ('is the whole unit modelled as a lifecycle of named operations rather than a single span around a model call', misaligned 'a single opaque span per unit') repeats telemetry-q2 (misaligned 'The whole unit is one flat span') and its schema-version half repeats telemetry-q6. concern-telemetry-q2 (join across a dropped parent context) repeats telemetry-q4 ('does correlation ride on explicit attributes carried in the work envelope rather than on trace parentage').",
+      "fix": "Cut concern-telemetry-q5 and concern-telemetry-q4 outright and let the capability section own backend replaceability and the operator query; narrow concern-telemetry-q3 to the schema-version-and-rename half only if telemetry-q6 is also narrowed. Re-spend the freed slots on what only the concern can ask: whether an adapter added tomorrow is instrumented without anyone instrumenting it, and whether a caller can emit more than the guarantee allows."
+    },
+    {
+      "id": "R66-002",
+      "section": "concern-provenance",
+      "question": "concern-provenance-q3, concern-provenance-q2",
+      "severity": "block",
+      "kind": "distinct",
+      "evidence": "concern-provenance-q3 asks 'Can a record be verified end to end by a verifier this build did not write, given only the published format and the public verification material, and does that verifier reject a tampered record?' with evidence 'the command and output of an independent verifier run against a good record and against the same record with one byte altered'. provenance-q3 already asks 'Can a third party verify an attestation with a general-purpose verifier and public key material alone, with no code from this platform, and has that been demonstrated?' with evidence 'the recorded output of a verification run using a tool this platform did not write ... and the recorded output of the same run against a deliberately mutated artifact'. The two aligned anchors are the same sentence: 'The independent verifier accepts the genuine artifact and rejects the mutated one' against 'The independent verifier accepts the good record and rejects the tampered one'. concern-provenance-q2 ('Does one record bind the artifact digest, the code version, the digests of every input and the acting identity') is provenance-q2 ('Does the predicate actually name ... the code version, every input by digest, the acting agent and the human it acts for').",
+      "fix": "Delete concern-provenance-q3 and concern-provenance-q2 as written. The concern's own ground is emission the caller cannot decline (already q1), attestation of refused and failed units, and whether an artifact whose attestation does not verify is refused at the point of consumption (currently buried as the second half of q6). Promote those to full questions."
+    },
+    {
+      "id": "R66-003",
+      "section": "concern-errors",
+      "question": "concern-errors-q2, concern-errors-q6, concern-errors-q3",
+      "severity": "block",
+      "kind": "distinct",
+      "evidence": "concern-errors-q2 asks 'Is the set of failure type identifiers closed, versioned and documented, with extension members that carry machine-actionable detail rather than putting the specifics only in human-readable text?'; errors-q2 asks 'Are the type identifiers drawn from a published closed registry with documented extension members per type, and do the extension members carry what a caller must act on ... rather than the human-readable members carrying it?'. Both misaligned anchors are the same: 'Type identifiers invented at the call site' against 'Type identifiers are minted per throw site'. concern-errors-q6 ('Does the typed failure survive transports that are not HTTP') repeats errors-q6 ('is the same problem shape produced on transports that are not request-and-response'), and concern-errors-q3 ('Can a caller decide retry, escalate to a human, or stop from the type identifier and members alone') repeats the retryability half of errors-q6 and the branching half of errors-q3.",
+      "fix": "Keep the registry, transport-mapping and retry questions in exactly one section. The concern section should instead ask what the capability section cannot: that a budget termination and a policy refusal are typed failures and not silent stops (currently errors-q4, which belongs in B4), and that a failure on the schedule or event entry, where no one is waiting, is still produced and recorded."
+    },
+    {
+      "id": "R66-004",
+      "section": "state-persistence",
+      "question": "section angle set (presence, depth, depth, boundary, usage, direction)",
+      "severity": "block",
+      "kind": "missing-angle",
+      "evidence": "state-persistence is the only section with no guarantees question, yet it is the element every concern rides on: F-b2-06 makes the ledger 'append-only across runs; the deduplication authority', concern-provenance requires 'the whole record set is append-only and tamper-evident', concern-idempotency requires a claim 'enforced by an atomic claim with a time-bounded lease', and concern-identity requires the chain 'written immutably beside the action'. Nothing in the section asks whether identity, policy, telemetry and provenance attach to a write without the caller asking, who is permitted to append, or whether a component can write a record that names no actor. state-persistence-q5 (usage) asks only 'do units of work arriving from all four entries write through the same append path'.",
+      "fix": "Add a guarantees question: which cross-cutting guarantees attach at the moment of an append, evidence being one append record showing actor, correlation and policy decision plus an attempt to append bypassing them; aligned when every record names an actor and a correlation nobody passed in and the bypass is refused, misaligned when a record can be appended with no actor or a component writes to the store directly. Drop one of the two depth questions if the section must stay at six."
+    },
+    {
+      "id": "R66-005",
+      "section": "concern-policy",
+      "question": "concern-policy-q3, concern-policy-q2, concern-policy-q5",
+      "severity": "fix",
+      "kind": "distinct",
+      "evidence": "concern-policy-q3 asks 'Does every evaluation leave a decision record carrying the input, the outcome, the policy version and the timestamp, and can a past decision be replayed against the policy in force today?'; policy-q2 already asks for 'a structured decision record per query carrying the input, result, decision identifier and bundle version' with aligned 'The refusal can be replayed later from its record against the exact bundle version that produced it'. concern-policy-q2 ('policy held as versioned, separately testable data through a decision API, or ... conditionals compiled into the execution path') repeats policy-q1 ('Are policy rules expressed as data evaluated by a decision engine, separate from the code that acts', misaligned 'Permission logic is spread through conditionals in the code that performs the action'). concern-policy-q5 ('a second engine proven against the same decision suite') repeats policy-q3 ('a second engine in a different policy language proved against the same decision corpus').",
+      "fix": "Leave the decision record, the data-not-conditionals test and the second engine to the capability section. The concern section keeps q1 (no entry reaches execution undecided, nothing can skip it), q4 (same input shape at every door) and q6 (determinism and fail-closed), and fills the three freed slots with the guarantee's own edges: what a sub-unit spawned mid-run is decided against, whether an allow decays or is re-evaluated, and whether the enforcement point is reachable from a new adapter by default."
+    },
+    {
+      "id": "R66-006",
+      "section": "concern-idempotency",
+      "question": "concern-idempotency-q5, concern-idempotency-q1, concern-idempotency-q6",
+      "severity": "fix",
+      "kind": "distinct",
+      "evidence": "concern-idempotency-q5 asks 'Is the claim store reached through a capability interface, and does a second store pass the same concurrency, lease-expiry and fencing suite as the first?'; idempotency-q6 asks 'does the keyed claim store sit behind a capability interface, with a second implementation whose concurrency mechanism differs'. concern-idempotency-q1 ('is every externally-triggered unit of work deduplicated even when the caller supplies no key') repeats idempotency-q1 ('is a request that omits one still made replay-safe', aligned 'where absent the platform derives one from the arriving envelope's identifier'). concern-idempotency-q6's first half ('Does the design hold the replay-safety property independently of the wire convention that carries the key') repeats idempotency-q7 ('is the key treated as one accepted spelling over a durable claim contract').",
+      "fix": "Drop concern-idempotency-q5 (the capability section owns the boundary) and merge q1 into the usage question, which is genuinely distinct because it asks about tenant scoping and about the same work arriving by two doors. Give the freed slots to what only the concern can ask: whether a caller can opt out, and whether a unit the platform itself generates internally is keyed."
+    },
+    {
+      "id": "R66-007",
+      "section": "concern-identity",
+      "question": "concern-identity-q5, concern-identity-q2",
+      "severity": "fix",
+      "kind": "distinct",
+      "evidence": "concern-identity-q5 asks 'are the credentials behind these actions per-invocation and short-lived', aligned 'Minutes-long, task-scoped credentials'; identity-q3 already asks 'are credentials attested at issue time from the running environment and bound to the specific resource they are presented to, or are they long-lived bearer secrets', aligned 'Minutes-long lifetimes, one audience per resource'. concern-identity-q2 ('does each action record carry both the identity that executed it and the identity that caused it, plus the ordered chain of intervening actors') sits close to identity-q2 ('in a call made three hops deep, does the presented credential name both the original subject and every acting party in order'); both use a three-hop run as the evidence.",
+      "fix": "Cut the credential-lifetime half of concern-identity-q5 and keep only the revocation-in-flight half, which the capability section does not ask. Sharpen concern-identity-q2 so it is unambiguously about the recorded action rather than the presented credential - the record is the concern's ground, the token is the capability's."
+    },
+    {
+      "id": "R66-008",
+      "section": "scheduling",
+      "question": "section angle set (presence, depth, depth, guarantees, usage, boundary)",
+      "severity": "fix",
+      "kind": "missing-angle",
+      "evidence": "Scheduling is the only section with a populated direction field and no direction question. The direction states substantive window claims an answerer is given no way to score: 'scheduling moved from host configuration to durable, observable state owned by an execution service', 'jitter as thundering-herd protection is now discussed as standard practice for scheduled agent workloads', and 'It would be an error now to hold schedules only in a host crontab or an in-process timer ... or to expand recurrence in UTC and treat local wall time as incidental'. Jitter appears in the future state ('how much jitter spreads a fleet of schedules') and in no question at all.",
+      "fix": "Add a direction question asking whether a schedule is durable, inspectable platform state rather than host configuration or an in-process timer, and whether a fleet of schedules declares jitter or overlap policy; evidence being the stored schedule set and the fire-time distribution for many schedules sharing one rule. The boundary question (q6) can absorb one of the two depth questions if six is a ceiling."
+    },
+    {
+      "id": "R66-009",
+      "section": "concern-provenance",
+      "question": "concern-provenance-q6",
+      "severity": "fix",
+      "kind": "decidable",
+      "evidence": "The aligned anchor reads 'Signing uses short-lived credentials with a log entry, or a documented equivalent with stated rotation', while the misaligned anchor reads 'A long-lived signing key lives with the build'. A long-lived key with a written rotation policy satisfies both anchors, so the same evidence scores 2 and -1. The section's own direction says what is being abandoned is 'long-lived signing keys', which the aligned anchor readmits.",
+      "fix": "Delete 'or a documented equivalent with stated rotation'. If an escape is wanted, name the property rather than the paperwork: the signing identity is bound at signing time and its material is not recoverable from the build after the fact."
+    },
+    {
+      "id": "R66-010",
+      "section": "concern-policy",
+      "question": "concern-policy-q5",
+      "severity": "fix",
+      "kind": "decidable",
+      "evidence": "The aligned anchor reads 'a second engine answers the same suite with the same outcomes, or every difference is written down as a known divergence'. Any divergence, once written down, scores aligned, so the question cannot fail on substance; its misaligned anchor only catches 'the second engine has never been run against the suite', which reduces the question to presence.",
+      "fix": "Bound the escape: divergences are aligned only where the interface declares them and the suite asserts the declared outcome for each; an undeclared divergence, or one the interface cannot express, is misaligned."
+    },
+    {
+      "id": "R66-011",
+      "section": "telemetry, model-access",
+      "question": "telemetry-q6, model-access-q6",
+      "severity": "fix",
+      "kind": "depth",
+      "evidence": "telemetry-q6 accepts as evidence 'the record of one convention change absorbed, or a written statement of how one would be', but its aligned anchor requires 'old and new names can be emitted during a transition' - which a written statement cannot show. model-access-q6 accepts 'a demonstration or a written migration path showing what a second wire family would require', while its aligned anchor requires 'adding a second wire family touches only adapters and their conformance runs'. In both, a document scores the same as a demonstration, which collapses the scale's own distinction between 1 exists ('its use is nominal or its direction cannot be judged from the evidence') and 2 aligned.",
+      "fix": "Make the demonstration the evidence and the document the fallback that caps the score at 1: state in the anchor that a written path with no exercised transition is 'exists', not 'aligned'."
+    },
+    {
+      "id": "R66-012",
+      "section": "scheduling, concern-budget, state-persistence",
+      "question": "future_state.origin",
+      "severity": "fix",
+      "kind": "window",
+      "evidence": "Three sections mark future_state 'sourced' while their own gaps say the load-bearing part of that future state is unsourced synthesis. scheduling future_state says the fire carries 'an idempotency key derived from the schedule's identity and the nominal fire time', and its gap says 'That deriving a replay key from the schedule identity plus the nominal fire time is the prevailing convention ... rather than my synthesis'. concern-budget future_state says 'A resumed, retried or replayed unit continues under the ceiling it had left', and its gap says 'no source found that specifies budget carry-over across a restart'. state-persistence future_state says 'The read surface is stated as operations that cost planning actually needs - a record by identity, a stream from a version, and a materialised projection', and its gap says 'this is my synthesis, not a sourced finding'. In each the quote that carries the 'sourced' label covers a different sentence than the one the gap disclaims.",
+      "fix": "Either mark these three future_state.origin as proposed (the context file requires proposed text to contain the word proposed) or split the field so the sourced sentence and the synthesised sentence are separable. A reader scoring against a future state needs to know which parts of it a record actually supports."
+    },
+    {
+      "id": "R66-013",
+      "section": "work-intake, concern-identity",
+      "question": "standard.why / direction.text",
+      "severity": "fix",
+      "kind": "window",
+      "evidence": "The two sections date the same release differently. work-intake says 'A2A reached v1.0 in April 2026 under the Linux Foundation with over 150 organisations, and v1.0.1 in May 2026 added an extension mechanism'. concern-identity says 'cross-organisation calls gained verifiable counterparty identity when A2A v1.0 introduced signed Agent Cards in January 2026' and repeats '(January 2026)' in its direction. Both are cited to research records. One of them is wrong, and January 2026 is outside the stated window of 2026-03-03 to 2026-09-03 while being presented under the sentence 'Inside the window'.",
+      "fix": "Reconcile the two against the records and correct the one that does not match; if the signed-card release genuinely predates 2026-03-03, say so rather than folding it under 'inside the window', since the window is what the direction claim is about."
+    },
+    {
+      "id": "R66-014",
+      "section": "concern-idempotency",
+      "question": "concern-idempotency-q2, future_state",
+      "severity": "fix",
+      "kind": "decidable",
+      "evidence": "The future state requires that 'a stalled holder that returns mid-effect is fenced out by the resource refusing its lower token', and q2's aligned anchor requires 'the resumed stale holder is refused because its token is lower than the one the resource has accepted'. That condition is satisfiable only where the platform owns the resource; against an external tool surface or a partner API it is not implementable at all, so a build that has done everything right against resources it does not own still scores misaligned, and a build that only ever touches its own store scores aligned for a narrower achievement.",
+      "fix": "Split the anchor by who owns the resource: for platform-owned effects require the fencing rejection; for foreign effects require the next-best property the platform can hold, such as the effect being made through a keyed operation whose stored outcome the stale holder reads before writing. Otherwise the question measures the resource inventory rather than the build."
+    },
+    {
+      "id": "R66-015",
+      "section": "concern-budget",
+      "question": "section angle set (presence, depth, guarantees, depth, usage, direction)",
+      "severity": "fix",
+      "kind": "missing-angle",
+      "evidence": "The section states its own exit - 'The exit, if the accounting attributes are renamed or stabilise differently, is a mapping at the recording boundary rather than a change to where ceilings are enforced' - and no question asks about it, so the exit is unscoreable. The section also has no boundary question, so nothing asks whether metering and the claim on remaining budget sit behind an interface the core imports; the future state's 'second checkpoint at the capability boundary' is asked about only as an enforcement point in q3, never as a swappable seam.",
+      "fix": "Add a boundary question covering both: is the unit of measure a declared mapping at one recording point, and can the metering source be replaced without moving the enforcement points. Evidence: the single place accounting attributes are mapped, and the diff of a change of measurement source."
+    },
+    {
+      "id": "R66-016",
+      "section": "capability-packaging",
+      "question": "direction.text vs standard.why",
+      "severity": "fix",
+      "kind": "window",
+      "evidence": "The direction opens 'Inside the window packaging went from one vendor's convention to a foundation-stewarded open standard with roughly 40 conformant products', but the section's own standard.why dates that event before the window: 'The packaging specification was published as an open standard in December 2025'. The window is 2026-03-03 to 2026-09-03. What actually moved inside the window, by the section's own evidence, is the count of conformant products and the registry scale, not the standardisation.",
+      "fix": "Restate the direction's first sentence around what moved inside the window - the roughly 40 conformant products by June 2026, the four registries at 64K/91K/36K/288K as of May 2026, and the 26.1% vulnerability scan - and move the December 2025 publication to context."
+    },
+    {
+      "id": "R66-017",
+      "section": "isolation, capability-packaging",
+      "question": "isolation-q2, capability-packaging-q1",
+      "severity": "nit",
+      "kind": "decidable",
+      "evidence": "isolation-q2 aligned requires 'every non-default is justified'; capability-packaging-q1 aligned requires 'the required fields are present and meaningful'. Both put a judgement in the anchor, and neither evidence_expected produces anything that settles it - 'The generated runtime configuration for one real unit' and 'One package's directory listing and manifest' show what the values are, not whether they are justified or meaningful.",
+      "fix": "Replace the judgement with the observable: for isolation, that each non-default field is traceable to a field in the unit's declaration; for packaging, that the description field is the one a selector actually matches on, shown by a selection that changed when it changed."
+    },
+    {
+      "id": "R66-018",
+      "section": "concern-policy",
+      "question": "direction.quote vs concern-policy-q6",
+      "severity": "nit",
+      "kind": "window",
+      "evidence": "The section's only direction quote is 'Before any side effect occurs, the system extracts string-bearing content from tool arguments, performs content-first risk scanning, applies composable policy checks, and returns one of three decisions: allow, block, or pending.' The quote's central mechanism is content risk scanning, while q6's misaligned anchor is 'The decision depends on model output, a guardrail prompt or a post-hoc classifier'. An answerer reading the section's own evidence could reasonably read content scanning as the endorsed pattern and the question as forbidding it.",
+      "fix": "Either quote the part of the record that supports the framework-agnostic mediation point and the closed outcome set, or add one clause to q6 distinguishing a deterministic check over the arguments from a probabilistic judgement over the model's output."
+    },
+    {
+      "id": "R66-019",
+      "section": "scheduling",
+      "question": "future_state",
+      "severity": "nit",
+      "kind": "idealistic",
+      "evidence": "The future state's operational half - 'creatable, inspectable, pausable, editable and backfillable through the same interface', 'what happens when a fire is missed, how far back catch-up may reach, whether overlapping runs are allowed or skipped, and how much jitter spreads a fleet' - is the feature list of the shipped product the direction names ('a Schedule lives on the server and can be observed, paused, updated, and backfilled', 'catch-up bounded to a lookback window and dispatch governed by a declared overlap policy'). The recurrence standard specifies none of it. The section therefore sets its bar at a currently shipping product's surface rather than past it.",
+      "fix": "Keep the operations, and add the thing no shipped scheduler gives: that the schedule's own recurrence, its catch-up bound and its overlap policy are declared in one portable record that moves between runners intact - which is what the section's boundary question (q6) already presumes and the future state does not require."
+    },
+    {
+      "id": "R66-020",
+      "section": "document-validation",
+      "question": "section angle set",
+      "severity": "nit",
+      "kind": "missing-angle",
+      "evidence": "The section asks how the dialect version is declared (q6) but never how a schema changes. Every other boundary-shaped section asks about evolution - capability-packaging-q6 asks whether 'a breaking change is visible before load' and whether a bad version can be withdrawn; concern-errors-q2 asks whether the type vocabulary is 'closed, versioned and documented'. Nothing asks whether the envelope schema that four doors validate against is versioned, or what a caller on the previous schema receives.",
+      "fix": "Add or fold into q6: is each boundary schema versioned independently of the dialect, and what does a document written to the previous version get back - evidence being one schema change and the failure object produced for a document valid under the old version."
+    },
+    {
+      "id": "R66-021",
+      "section": "concern-errors",
+      "question": "concern-errors-q1",
+      "severity": "nit",
+      "kind": "distinct",
+      "evidence": "concern-errors-q1 asks whether 'every boundary return[s] the typed failure object without the caller asking, including refusals taken before execution, ceilings exceeded during execution, validation rejections and faults raised inside an adapter', with evidence 'One captured failure of each of those four kinds'. errors-q1 asks 'Does every boundary return the standard problem object with its five standard members and its media type' with evidence 'One failure captured from each boundary kind: an entry, a capability adapter, a validation rejection, a policy refusal, a budget termination'. The distinguishing clause is only 'without the caller asking', which the same captured bodies cannot show either way.",
+      "fix": "Point concern-errors-q1's evidence at the thing that distinguishes it - the shared path where the failure is constructed, plus an adapter added without error-handling code that still produces a typed failure - rather than at the same five captured bodies."
+    }
+  ],
+  "summary": {
+    "sections_checked": 23,
+    "questions_checked": 140,
+    "counts_by_severity": {"block": 4, "fix": 12, "nit": 5, "total": 21},
+    "counts_by_kind": {
+      "distinct": 6,
+      "decidable": 4,
+      "missing-angle": 4,
+      "window": 4,
+      "depth": 1,
+      "idealistic": 1,
+      "tool-agnostic": 0
+    },
+    "statement": "The questionnaire is strong on the two checks that usually fail: depth and tool-agnosticism. Every section asks how a standard's distinguishing mechanisms are used rather than whether the standard is named, evidence_expected is almost always an artifact or a run rather than an assertion, and no product name appears in any question, evidence anchor or future state - the only near-miss is the phrase 'Merkle Trees' in state-persistence, which is a technique and not a product. The failures cluster in one place: the six B3/B4 pairs the owner asked to be written so each asks what the other does not. Telemetry, provenance and errors each repeat a capability question in the concern section with the same evidence and near-identical anchors, and policy, idempotency and identity repeat one or two. Second, state-persistence carries no guarantees question although it is the element every concern rides on. Third, a scattering of anchors readmit what their own misaligned clause forbids, or accept a written intention where the scale needs a demonstration.",
+    "not_checked": "Whether each direction quote is a verbatim substring of the research record it cites, and whether the cited records fall inside the window, could not be verified from the three files this brief permits; the quotes were judged only on whether they support the claim made beside them."
+  }
+}

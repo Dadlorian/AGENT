@@ -5,7 +5,7 @@ Usage: python3 tools/status_check.py [STATUS.md]
 Rules (errors):
   - the file is one heading and one table, nothing else
   - columns are exactly: #, Work item, Definition of done, Status, Result
-  - row numbers strictly increase (gaps allowed: archived rows keep their numbers)
+  - live row numbers strictly increase (gaps allowed); archive rows are in closing order with unique numbers
   - STATUS-ARCHIVE.md uses the same columns plus Closed, and every row is Done
   - Status is one of: Done, In progress, Open, Blocked, Not started
   - every cell is one statement: no semicolons, no parentheses, no " and then ", no "depends", "after", "requires", "blocked by"
@@ -43,6 +43,7 @@ def main(path: str) -> int:
     if header != cols:
         errs.append(f"columns must be {COLUMNS} or {ARCH_COLUMNS}, found {header}")
     last = 0
+    seen_nums = set()
     for raw in table[2:]:
         cells = [c.strip() for c in raw.strip("|").split("|")]
         if len(cells) != len(cols):
@@ -52,8 +53,12 @@ def main(path: str) -> int:
             n = int(row["#"])
         except ValueError:
             errs.append(f"row number {row['#']!r} is not an integer"); n = last + 1
-        if n <= last:
+        if cols is ARCH_COLUMNS:
+            if n in seen_nums:
+                errs.append(f"row number {n} appears twice in the archive")
+        elif n <= last:
             errs.append(f"row numbering must increase: {n} after {last}")
+        seen_nums.add(n)
         last = n
         if cols is ARCH_COLUMNS and row["Status"] != "Done":
             errs.append(f"row {n}: archive rows must be Done")

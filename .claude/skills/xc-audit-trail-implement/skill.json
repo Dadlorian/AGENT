@@ -331,16 +331,25 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "Proposed tool, built with the first store: `python3 tools/conformance_audit_trail.py --adapter today --adapter second --trail <trail> --from-head <h0> --to-head <h1> --min-entries 100 --retention-floor-days 180 --report out/audit-trail.json`, the store selected by configuration with no code edit between runs. Per store it asserts `entries_checked >= 100`, `actors_missing == 0`, `correlation_missing == 0`, `chain_breaks == 0`, `oldest_retained_entry_age_days >= 180`, `external_verifications > 0` with our own reader unmounted, `scheduled_runs_observed >= 1`, that `entry_kinds_seen` contains all four of TARGET T6.2's entries (user, agent, service, schedule), and that `independent`, `scheduled` and `store_observed` were read from the identity, the entry kind and the store that actually ran. Across stores it asserts `adapters_run >= 2`.",
-    "expected": "exit 0 and one line per store of the form `store=<entity> entries_checked=100 actors_missing=0 correlation_missing=0 chain_breaks=0 oldest_retained_entry_age_days=180 external_verifications=1 scheduled_runs_observed=1 entry_kinds_seen=user,agent,service,schedule independent=true scheduled=true store_observed=<entity>`, followed by `adapters_run=2`.",
-    "breakage": "Break the wiring rather than the record: delete the scan's schedule declaration and call the scan inline from the appending process at the end of each write, with the scan code, the trail and the window left exactly as they were.",
+    "criterion": "bash harness/xc-audit-trail/test.sh",
+    "expected": "What the run proves: Proposed tool, built with the first store: `python3 tools/conformance_audit_trail.py --adapter today --adapter second --trail <trail> --from-head <h0> --to-head <h1> --min-entries 100 --retention-floor-days 180 --report out/audit-trail.json`, the store selected by configuration with no code edit between runs. Per store it asserts `entries_checked >= 100`, `actors_missing == 0`, `correlation_missing == 0`, `chain_breaks == 0`, `oldest_retained_entry_age_days >= 180`, `external_verifications > 0` with our own reader unmounted, `scheduled_runs_observed >= 1`, that `entry_kinds_seen` contains all four of TARGET T6.2's entries (user, agent, service, schedule), and that `independent`, `scheduled` and `store_observed` were read from the identity, the entry kind and the store that actually ran. Across stores it asserts `adapters_run >= 2`. | exit 0 and one line per store of the form `store=<entity> entries_checked=100 actors_missing=0 correlation_missing=0 chain_breaks=0 oldest_retained_entry_age_days=180 external_verifications=1 scheduled_runs_observed=1 entry_kinds_seen=user,agent,service,schedule independent=true scheduled=true store_observed=<entity>`, followed by `adapters_run=2`.",
+    "breakage": "In harness/xc-audit-trail/interface.py, make the scan's chain check never fire (the comparison of each entry's prev and hash against the recomputed values), run the criterion (a tampered mid-trail entry goes unreported, chain_breaks stays 0 where the gate expects 1, and the gate exits 1), then git checkout harness/xc-audit-trail/interface.py.",
     "expected_failure": "`independent` becomes false and `scheduled` becomes false, `scheduled_runs_observed` drops to 0, and the run exits non-zero naming the identity the scan authenticated as - the writer's. Everything else holds: `chain_breaks` stays 0, `entries_checked` stays at or above 100 and `adapters_run` stays 2, which is what shows the fault is the wiring that makes the check independent rather than anything wrong with the record. Claimed: no audit entry, projection, scan, schedule or conformance tool is built on this stack, so neither run has been performed. The narrower byte-flip measurement recorded in the adapter row above is a different assertion and is not this one.",
-    "status": "claimed",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
       "F-a7-03"
     ],
-    "quote": "A criterion nothing can fail is not a criterion"
+    "quote": "A criterion nothing can fail is not a criterion",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "f037f65",
+      "clean_exit": 0,
+      "clean_output": "620412662fe15e1c07abe7a6818f5a3)\n  ok   the same caller code runs on the second adapter (0)\n  ok   the two adapters differ in execution model on 3 or more axes (0)\n  ok   3 axes differ; only the second store is externally checkable\n3. deliberate breakage: the scan's schedule declaration is gone, called inline from the writer\n  ok   the broken wiring exits non-zero (1)\n  ok   the failure names the identity: the writer's, not a scanner's\n  ok   the record itself held: only the wiring broke (0)\nchain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False\n\npassed 18, failed 0",
+      "breakage_exit": 1,
+      "breakage_output": "bc60c7443871d4f8)\n  ok   the same caller code runs on the second adapter (0)\n  FAIL the two adapters differ in execution model on 3 or more axes (expected 0, got 1)\n  FAIL AssertionError: the dry-run binding must pass all its cases\n3. deliberate breakage: the scan's schedule declaration is gone, called inline from the writer\n  ok   the broken wiring exits non-zero (1)\n  ok   the failure names the identity: the writer's, not a scanner's\n  ok   the record itself held: only the wiring broke (0)\nchain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False\n\npassed 12, failed 6",
+      "restored": true
+    }
   },
   "composes_with": {
     "builds_on": [

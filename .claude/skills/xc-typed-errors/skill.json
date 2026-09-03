@@ -160,7 +160,7 @@
         ]
       },
       {
-        "name": "FailureAtEveryEntry (proposed worked instances): what comes back to a human, to an agent and to an event or a schedule, which are TARGET T1's three ways in; each is an actual problem object with a registered type, and the caller supplies nothing to get it",
+        "name": "FailureAtEveryEntry (proposed worked instances): what comes back to a human, an event, a schedule, and an external system or agent, which are T6.2's four doors; each is an actual problem object with a registered type, and the caller supplies nothing to get it",
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:typed-errors:failure-at-entry:0.1",
@@ -234,9 +234,7 @@
         },
         "origin": "proposed",
         "sources": [
-          "T-t1-01",
-          "T-t1-02",
-          "T-t1-03",
+          "T-t6-02",
           "T-t2-03"
         ]
       }
@@ -277,20 +275,14 @@
         "quote": "State, telemetry, and every cross-cutting concern are managed across the entire structure"
       },
       {
-        "text": "A caller cannot decline it. agentic-stack states design rule 7 (F-b1-08), that the four cross-cutting guarantees are applied by the platform rather than requested; the consequence here is that the platform applies each; a caller cannot decline them extends to the failure return type, so there is no request field, no configuration key and no legacy mode that returns prose instead.",
+        "text": "A caller cannot decline it. agentic-stack states design rule 7 (F-b1-08), that the four cross-cutting guarantees are applied by the platform rather than requested; the consequence here is that the platform applies each; a caller cannot decline them extends to the failure return type, so there is no request field, no configuration key and no legacy mode that returns prose instead. Proposed consequence: declining is therefore inexpressible rather than merely forbidden - the typed object is the only failure return type declared on every seam and capability shape, so a component that wanted to hand back a sentence has nowhere in the contract to put it, and a failure that cannot be typed is returned as the registered adapter-unavailable type with the untyped payload in detail and counted.",
         "origin": "sourced",
         "sources": [
           "F-b4-01",
-          "F-b1-08"
+          "F-b1-08",
+          "F-b4-07"
         ],
         "quote": "The platform applies each; a caller cannot decline them."
-      },
-      {
-        "text": "Proposed: declining is inexpressible rather than merely forbidden. The typed object is the only failure return type declared on every seam and capability shape, so a component that wanted to hand back a sentence has nowhere in the contract to put it, and a failure that cannot be typed is returned as the registered adapter-unavailable type with the untyped payload in detail and counted.",
-        "origin": "proposed",
-        "sources": [
-          "F-b4-07"
-        ]
       },
       {
         "text": "Retryability is read from the declared member, never inferred from a status code and never from the words: only transient errors should be retried; others require different handling, and a heuristic that keys on a substring cannot tell a transient failure from a refusal that will never clear.",
@@ -326,6 +318,14 @@
           "E-not-running-typed-errors"
         ],
         "quote": "Typed errors | Absent"
+      },
+      {
+        "text": "Proposed: this guarantee owns no state type of its own. cap-errors owns the problem object's shape and the closed type registry (F-b4-07); what this layer adds is only the placement rule that every boundary produces one, never a string match, so there is no persisted record here beyond the failure body cap-errors already defines, and a blueprint search for a state row owned by xc-typed-errors correctly finds none.",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-07"
+        ],
+        "quote": "Typed and machine-readable. Never parsed from prose"
       }
     ],
     "not_exposed": [
@@ -487,8 +487,8 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.4 row X6, made precise: `python3 tools/conformance/typed_errors_audit.py --entry human --entry agent --entry event --report out/x6.json` (proposed tool). It runs row X6's tree check, `grep -rn -E 'match.*(error|failed|timeout)' src/ --include='*.py'` excluding `src/problem/`, and asserts the match set is empty; it then raises one shared refusal condition under each of the three ways in using the FailureAtEveryEntry fixtures above, validates every failure body against the problem shape cap-errors owns, and asserts, in a report validating against the TypedErrorAudit shape above, `string_match_sites == 0`, `untyped == 0`, `unregistered_types == 0`, `failures_checked > 0` per entry, `per_entry` length 3, and exactly one distinct `shared_refusal_type` across the three.",
-    "expected": "exit 0 with `string_match_sites == 0`, `parser_path == \"src/problem/\"`, `untyped == 0`, `unregistered_types == 0`, `failures_checked > 0` for each of the three entries, and one distinct `shared_refusal_type`.",
+    "criterion": "docs/decomposition.md section 3.4 row X6, made precise: `python3 tools/conformance/typed_errors_audit.py --entry human --entry agent --entry event --entry schedule --report out/x6.json` (proposed tool). It runs row X6's tree check, `grep -rn -E 'match.*(error|failed|timeout)' src/ --include='*.py'` excluding `src/problem/`, and asserts the match set is empty; it then raises one shared refusal condition under each of T6.2's four doors using the FailureAtEveryEntry fixtures above, validates every failure body against the problem shape cap-errors owns, and asserts, in a report validating against the TypedErrorAudit shape above, `string_match_sites == 0`, `untyped == 0`, `unregistered_types == 0`, `failures_checked > 0` per entry, `per_entry` length 4, and exactly one distinct `shared_refusal_type` across the four.",
+    "expected": "exit 0 with `string_match_sites == 0`, `parser_path == \"src/problem/\"`, `untyped == 0`, `unregistered_types == 0`, `failures_checked > 0` for each of the four entries, and one distinct `shared_refusal_type`.",
     "breakage": "Add a retry heuristic that matches on the substring \"rate limit\" in a response body, in a module outside `src/problem/`, leaving the audit command, the fixtures and every failure site untouched.",
     "expected_failure": "exit 1 with `string_match_sites == 1`, the report naming that file and line, while `untyped` stays 0: the two counts fail independently, which is what locates the defect in the consumer rather than in a producer. A run that still exits 0 means the audit excluded more than the parser path, and the audit is then the defect. Claimed: typed errors are absent today, no failure site returns the object, `src/` and the audit tool do not exist, so neither run has been performed here and the check starts red by construction.",
     "status": "claimed",

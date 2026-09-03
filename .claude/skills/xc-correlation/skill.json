@@ -122,7 +122,7 @@
         ]
       },
       {
-        "name": "StampedAtEntry (proposed worked instances): the same record produced by a human, by an agent, and by an event or a schedule, which are TARGET T1's three ways in",
+        "name": "StampedAtEntry (proposed worked instances): the same record produced by a human, an event, a schedule and an external system or agent, which are T6.2's four doors",
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:correlation:stamped-at-entry:0.1",
@@ -182,9 +182,7 @@
         },
         "origin": "proposed",
         "sources": [
-          "T-t1-01",
-          "T-t1-02",
-          "T-t1-03"
+          "T-t6-02"
         ]
       },
       {
@@ -244,7 +242,7 @@
           "F-b4-06",
           "E-concern-telemetry"
         ],
-        "quote": "not trace parentage — see A7 finding 1"
+        "quote": "not trace parentage \u2014 see A7 finding 1"
       },
       {
         "text": "The identifiers are re-stamped at every boundary a unit of work crosses and are never inherited from an ambient context, because the ambient context is measured not to arrive: W3C trace context does not survive the agent boundary.",
@@ -461,10 +459,10 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.4 row X5, made precise: `python3 tools/conformance/correlation_audit.py --entry human --entry agent --entry event --depth 3 --report out/x5.json` (proposed tool). Per entry it runs a depth-3 task tree from the matching fixture in the StampedAtEntry shape above, collects every span, log record and problem object recorded for that run, and asserts `missing_run_id == 0` and `missing_root_dispatch_id == 0` for each of the three signal kinds, `signals_checked > 0` per kind, `levels_covered == 3`, and `run_id_groups == 1`; `distinct_trace_ids` is reported and never constrained. Across entries it asserts `entries_run == 3`.",
-    "expected": "exit 0 with, per entry, `missing_run_id == 0` and `missing_root_dispatch_id == 0` for spans, log records and problem objects, `signals_checked > 0` for each kind, `levels_covered == 3` and `run_id_groups == 1`, `distinct_trace_ids` reported without assertion, followed by `entries_run=3`.",
+    "criterion": "docs/decomposition.md section 3.4 row X5, made precise: `python3 tools/conformance/correlation_audit.py --entry human --entry agent --entry event --entry schedule --depth 3 --report out/x5.json` (proposed tool). Per entry it runs a depth-3 task tree from the matching fixture in the StampedAtEntry shape above, collects every span, log record and problem object recorded for that run, and asserts `missing_run_id == 0` and `missing_root_dispatch_id == 0` for each of the three signal kinds, `signals_checked > 0` per kind, `levels_covered == 3`, and `run_id_groups == 1`; `distinct_trace_ids` is reported and never constrained. Across entries it asserts `entries_run == 4`.",
+    "expected": "exit 0 with, per entry, `missing_run_id == 0` and `missing_root_dispatch_id == 0` for spans, log records and problem objects, `signals_checked > 0` for each kind, `levels_covered == 3` and `run_id_groups == 1`, `distinct_trace_ids` reported without assertion, followed by `entries_run=4`.",
     "breakage": "Emit spans from a sub-agent without re-stamping the resource attributes, relying on parentage instead, leaving the audit command and the fixtures untouched.",
-    "expected_failure": "exit 1 under every entry with `missing_run_id` equal to the sub-agent's span count, `levels_covered == 1` and `run_id_groups` greater than 1: correlation collapses into unrelated trees, which is PASS.md A7 finding 1 reproduced. A run that still exits 0 means the audit filled the field in by walking span parents, which is the failure this guarantee exists to prevent, and the audit itself is then the defect. Claimed: this platform emits no span, no correlated log record and no problem object today, and the audit tool does not exist, so neither run has been performed here; the check starts red by construction and that is the correct starting state.",
+    "expected_failure": "exit 1 under every entry with `missing_run_id` equal to the sub-agent's span count, `levels_covered == 1` and `run_id_groups` greater than 1: correlation collapses into unrelated trees, which is PASS.md A7 finding 1 reproduced, checked across all four T6.2 doors including schedule. A run that still exits 0 means the audit filled the field in by walking span parents, which is the failure this guarantee exists to prevent, and the audit itself is then the defect. Claimed: this platform emits no span, no correlated log record and no problem object today, and the audit tool does not exist, so neither run has been performed here; the check starts red by construction and that is the correct starting state.",
     "status": "claimed",
     "sources": [
       "F-a7-02",

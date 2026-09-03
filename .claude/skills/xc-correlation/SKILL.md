@@ -84,7 +84,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**StampedAtEntry (proposed worked instances): the same record produced by a human, by an agent, and by an event or a schedule, which are TARGET T1's three ways in** (proposed; sources: `T-t1-01`, `T-t1-02`, `T-t1-03`)
+**StampedAtEntry (proposed worked instances): the same record produced by a human, an event, a schedule and an external system or agent, which are T6.2's four doors** (proposed; sources: `T-t6-02`)
 
 ```json
 {
@@ -239,10 +239,10 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | docs/decomposition.md section 3.4 row X5, made precise: `python3 tools/conformance/correlation_audit.py --entry human --entry agent --entry event --depth 3 --report out/x5.json` (proposed tool). Per entry it runs a depth-3 task tree from the matching fixture in the StampedAtEntry shape above, collects every span, log record and problem object recorded for that run, and asserts `missing_run_id == 0` and `missing_root_dispatch_id == 0` for each of the three signal kinds, `signals_checked > 0` per kind, `levels_covered == 3`, and `run_id_groups == 1`; `distinct_trace_ids` is reported and never constrained. Across entries it asserts `entries_run == 3`. |
-| Expected | exit 0 with, per entry, `missing_run_id == 0` and `missing_root_dispatch_id == 0` for spans, log records and problem objects, `signals_checked > 0` for each kind, `levels_covered == 3` and `run_id_groups == 1`, `distinct_trace_ids` reported without assertion, followed by `entries_run=3`. |
+| Criterion | docs/decomposition.md section 3.4 row X5, made precise: `python3 tools/conformance/correlation_audit.py --entry human --entry agent --entry event --entry schedule --depth 3 --report out/x5.json` (proposed tool). Per entry it runs a depth-3 task tree from the matching fixture in the StampedAtEntry shape above, collects every span, log record and problem object recorded for that run, and asserts `missing_run_id == 0` and `missing_root_dispatch_id == 0` for each of the three signal kinds, `signals_checked > 0` per kind, `levels_covered == 3`, and `run_id_groups == 1`; `distinct_trace_ids` is reported and never constrained. Across entries it asserts `entries_run == 4`. |
+| Expected | exit 0 with, per entry, `missing_run_id == 0` and `missing_root_dispatch_id == 0` for spans, log records and problem objects, `signals_checked > 0` for each kind, `levels_covered == 3` and `run_id_groups == 1`, `distinct_trace_ids` reported without assertion, followed by `entries_run=4`. |
 | Deliberate breakage | Emit spans from a sub-agent without re-stamping the resource attributes, relying on parentage instead, leaving the audit command and the fixtures untouched. |
-| Expected failure | exit 1 under every entry with `missing_run_id` equal to the sub-agent's span count, `levels_covered == 1` and `run_id_groups` greater than 1: correlation collapses into unrelated trees, which is PASS.md A7 finding 1 reproduced. A run that still exits 0 means the audit filled the field in by walking span parents, which is the failure this guarantee exists to prevent, and the audit itself is then the defect. Claimed: this platform emits no span, no correlated log record and no problem object today, and the audit tool does not exist, so neither run has been performed here; the check starts red by construction and that is the correct starting state. |
+| Expected failure | exit 1 under every entry with `missing_run_id` equal to the sub-agent's span count, `levels_covered == 1` and `run_id_groups` greater than 1: correlation collapses into unrelated trees, which is PASS.md A7 finding 1 reproduced, checked across all four T6.2 doors including schedule. A run that still exits 0 means the audit filled the field in by walking span parents, which is the failure this guarantee exists to prevent, and the audit itself is then the defect. Claimed: this platform emits no span, no correlated log record and no problem object today, and the audit tool does not exist, so neither run has been performed here; the check starts red by construction and that is the correct starting state. |
 | Status | claimed |
 | Evidence | `F-a7-02`, `F-part-c-04` "Correlation must ride on an explicit resource attribute set at dispatch" |
 

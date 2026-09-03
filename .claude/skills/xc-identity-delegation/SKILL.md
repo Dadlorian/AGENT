@@ -116,16 +116,16 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**ActorBindingByWayIn (proposed worked instances, one per way in)** (proposed; sources: `T-t1-01`, `T-t1-02`, `T-t1-03`)
+**ActorBindingByWayIn (proposed worked instances, one per T6.2 door)** (proposed; sources: `T-t6-02`)
 
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:agentic:xc:identity:ways-in:0.1",
   "title": "ActorBindingByWayIn",
-  "description": "Proposed. One worked binding for each of the three ways in TARGET T1 names, taken from the runnable reference in examples/end-to-end. The chain is current actor first and least recent last, the ordering cap-identity settled. Nothing downstream branches on which way in produced the record.",
+  "description": "Proposed. One worked binding for each of T6.2's four doors, taken from the runnable reference in examples/end-to-end. The chain is current actor first and least recent last, the ordering cap-identity settled. Nothing downstream branches on which door produced the record.",
   "type": "array",
-  "minItems": 3,
+  "minItems": 4,
   "examples": [
     [
       {
@@ -172,6 +172,22 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
             {
               "actor": "service:intake",
               "obtained_via": "token_exchange"
+            }
+          ]
+        }
+      },
+      {
+        "way_in": "schedule",
+        "actor": {
+          "subject": "user:corey",
+          "delegation_chain": [
+            {
+              "actor": "schedule:nightly-fault-sweep",
+              "obtained_via": "workload_attestation"
+            },
+            {
+              "actor": "user:corey",
+              "obtained_via": "direct"
             }
           ]
         }

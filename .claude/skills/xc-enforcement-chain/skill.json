@@ -73,14 +73,27 @@
           ],
           "properties": {
             "point": {
-              "enum": ["admission", "dispatch", "call"],
+              "enum": [
+                "admission",
+                "dispatch",
+                "call"
+              ],
               "description": "The named enforcement point being crossed. The same chain runs at each."
             },
-            "unit_id": { "type": "string", "format": "uuid" },
-            "entered_seq": { "type": "integer", "minimum": 0 },
+            "unit_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "entered_seq": {
+              "type": "integer",
+              "minimum": 0
+            },
             "correlation": {
               "type": "object",
-              "required": ["run_id", "root_dispatch_id"]
+              "required": [
+                "run_id",
+                "root_dispatch_id"
+              ]
             },
             "slots": {
               "type": "array",
@@ -88,13 +101,33 @@
               "description": "One record per declared slot, in declared order: identity resolve, policy decide, budget reserve, telemetry open, idempotency claim, provenance open. A slot may record a no-op; it may not be absent.",
               "items": {
                 "type": "object",
-                "required": ["slot", "seq", "outcome"],
+                "required": [
+                  "slot",
+                  "seq",
+                  "outcome"
+                ],
                 "properties": {
                   "slot": {
-                    "enum": ["identity.resolve", "policy.decide", "budget.reserve", "telemetry.open", "idempotency.claim", "provenance.open"]
+                    "enum": [
+                      "identity.resolve",
+                      "policy.decide",
+                      "budget.reserve",
+                      "telemetry.open",
+                      "idempotency.claim",
+                      "provenance.open"
+                    ]
                   },
-                  "seq": { "type": "integer", "minimum": 0 },
-                  "outcome": { "enum": ["passed", "no-op", "refused"] },
+                  "seq": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "outcome": {
+                    "enum": [
+                      "passed",
+                      "no-op",
+                      "refused"
+                    ]
+                  },
                   "inverse_seq": {
                     "type": "integer",
                     "minimum": 0,
@@ -121,20 +154,78 @@
           "description": "Proposed. The minimum a caller supplies is the entry envelope cap-consumption already fixes; the chain is applied to it and there is nothing to add, set or request. What comes back is one result or one problem object. These four are the same envelope entering by all four of TARGET T6.2's doors and traversing the same six slots. The event and schedule rows are not interchangeable: the reference example this repo follows states that an internal event steers work that already exists and never starts it, while a schedule entry starts root work of its own (REF-3-4-10, REF-3-4-15) - so the event row below carries a correlation the run already had, and the schedule row opens a new one.",
           "examples": [
             {
-              "entry": { "kind": "human", "actor": { "subject": "user:corey" }, "correlation": { "run_id": "run-h-0001", "root_dispatch_id": "disp-h-0001" } },
-              "chain": { "point": "admission", "unit_id": "disp-h-0001", "slots_run": 6, "refused_at": null }
+              "entry": {
+                "kind": "human",
+                "actor": {
+                  "subject": "user:corey"
+                },
+                "correlation": {
+                  "run_id": "run-h-0001",
+                  "root_dispatch_id": "disp-h-0001"
+                }
+              },
+              "chain": {
+                "point": "admission",
+                "unit_id": "disp-h-0001",
+                "slots_run": 6,
+                "refused_at": null
+              }
             },
             {
-              "entry": { "kind": "external", "actor": { "subject": "agent:partner-sre-bot" }, "correlation": { "run_id": "run-a-0001", "root_dispatch_id": "disp-a-0001" } },
-              "chain": { "point": "admission", "unit_id": "disp-a-0001", "slots_run": 6, "refused_at": null }
+              "entry": {
+                "kind": "external",
+                "actor": {
+                  "subject": "agent:partner-sre-bot"
+                },
+                "correlation": {
+                  "run_id": "run-a-0001",
+                  "root_dispatch_id": "disp-a-0001"
+                }
+              },
+              "chain": {
+                "point": "admission",
+                "unit_id": "disp-a-0001",
+                "slots_run": 6,
+                "refused_at": null
+              }
             },
             {
-              "entry": { "kind": "event", "actor": { "subject": "service:alerting" }, "correlation": { "run_id": "run-e-0001", "root_dispatch_id": "disp-e-0001" }, "note": "steers a live run; admitted only against a correlation that already exists" },
-              "chain": { "point": "admission", "unit_id": "disp-e-0001", "slots_run": 6, "refused_at": null }
+              "entry": {
+                "kind": "event",
+                "actor": {
+                  "subject": "service:alerting"
+                },
+                "correlation": {
+                  "run_id": "run-e-0001",
+                  "root_dispatch_id": "disp-e-0001"
+                },
+                "note": "steers a live run; admitted only against a correlation that already exists"
+              },
+              "chain": {
+                "point": "admission",
+                "unit_id": "disp-e-0001",
+                "slots_run": 6,
+                "refused_at": null
+              }
             },
             {
-              "entry": { "kind": "schedule", "actor": { "subject": "schedule:nightly-fault-sweep" }, "correlation": { "run_id": "run-s-0001", "root_dispatch_id": "disp-s-0001" }, "note": "starts a new root run under the schedule's own standing allocation, not a caller's" },
-              "chain": { "point": "admission", "unit_id": "disp-s-0001", "slots_run": 6, "refused_at": null }
+              "entry": {
+                "kind": "schedule",
+                "actor": {
+                  "subject": "schedule:nightly-fault-sweep"
+                },
+                "correlation": {
+                  "run_id": "run-s-0001",
+                  "root_dispatch_id": "disp-s-0001"
+                },
+                "note": "starts a new root run under the schedule's own standing allocation, not a caller's"
+              },
+              "chain": {
+                "point": "admission",
+                "unit_id": "disp-s-0001",
+                "slots_run": 6,
+                "refused_at": null
+              }
             }
           ]
         },
@@ -153,7 +244,11 @@
           "$id": "urn:agentic:xc:enforcement-chain:refusal:0.1",
           "title": "ChainRefusalInstance",
           "description": "Proposed. What a caller actually receives when a slot refuses, shown rather than described. It names the point and the slot, never the engine or process that decided, and it arrives before the call it refused, so the spend for that call is zero.",
-          "allOf": [ { "$ref": "urn:agentic:problem:0.1" } ],
+          "allOf": [
+            {
+              "$ref": "urn:agentic:problem:0.1"
+            }
+          ],
           "examples": [
             {
               "type": "urn:agentic:problem:budget-exhausted",
@@ -162,7 +257,11 @@
               "detail": "enforcement point call, slot budget.reserve: the model call would cross the ceiling of run-e-0001",
               "dispatch_id": "disp-e-0001",
               "retryable": false,
-              "correlation": { "run_id": "run-e-0001", "root_dispatch_id": "disp-e-0001", "depth": 2 }
+              "correlation": {
+                "run_id": "run-e-0001",
+                "root_dispatch_id": "disp-e-0001",
+                "depth": 2
+              }
             }
           ]
         },
@@ -257,6 +356,14 @@
           "REF-5-08",
           "REF-5-05",
           "REF-5-06"
+        ]
+      },
+      {
+        "text": "Proposed: this skill owns no state type of its own. It is the ordered structure - the chain of typed slots entered before anything is spent and unwound in the inverse order on the way out - and every record that structure produces belongs to the guarantee occupying the slot: the policy-decided record to xc-policy-gate, the budget reservation to xc-budget, the lease to xc-idempotency-lease, the actor and delegation chain to xc-identity-delegation, the correlation record to xc-correlation, the failure object to xc-typed-errors. A blueprint search for a state row owned by xc-enforcement-chain correctly finds none.",
+        "origin": "proposed",
+        "sources": [
+          "T-t2-03",
+          "F-b1-08"
         ]
       }
     ],

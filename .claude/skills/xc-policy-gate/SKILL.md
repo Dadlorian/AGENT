@@ -93,7 +93,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**gated entry, the three ways in (proposed worked instances; TARGET T1 names a human, an agent and an event, and the same gate stands in front of all three)** (proposed; sources: `T-t1-01`, `T-t1-02`, `T-t1-03`)
+**gated entry, T6.2's four doors (proposed worked instances; TARGET T6.2 names a human, an event, a schedule and an external system or agent, and the same gate stands in front of all four)** (proposed; sources: `T-t6-02`)
 
 ```json
 {
@@ -101,7 +101,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
   "$id": "urn:agentic:xc:policy-gate:gated-entry:0.1",
   "title": "GatedEntry",
   "type": "object",
-  "description": "Proposed. The minimum a caller supplies is nothing: the actor and the correlation are already on the entry envelope, and the gate is applied to them. These three are the same envelope entering by three doors and receiving the same admission token shape.",
+  "description": "Proposed. The minimum a caller supplies is nothing: the actor and the correlation are already on the entry envelope, and the gate is applied to them. These four are the same envelope entering by T6.2's four doors and receiving the same admission token shape.",
   "examples": [
     {
       "entry": {
@@ -158,6 +158,25 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
         "effect": "allow",
         "rule_id": "allow-alert-triage",
         "decided_seq": 3
+      }
+    },
+    {
+      "entry": {
+        "kind": "schedule",
+        "actor": {
+          "subject": "schedule:nightly-fault-sweep"
+        },
+        "correlation": {
+          "run_id": "run-schedule-0001",
+          "root_dispatch_id": "disp-schedule-0001"
+        }
+      },
+      "admission": {
+        "dispatch_id": "disp-schedule-0001",
+        "decision_point": "dispatch.admit",
+        "effect": "allow",
+        "rule_id": "allow-scheduled-sweep",
+        "decided_seq": 2
       }
     }
   ]

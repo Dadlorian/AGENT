@@ -165,6 +165,8 @@ def walk_sourced(obj, path, errs, kb_ids, name):
                 errs.append(f"{name}: {path} is origin=sourced but has no sources")
             if obj["origin"] == "sourced" and not obj.get("quote"):
                 errs.append(f"{name}: {path} is origin=sourced but has no quote (verbatim evidence required)")
+            if obj["origin"] == "sourced" and obj.get("sources") and all(str(x).startswith("REF-") for x in obj["sources"]):
+                errs.append(f"{name}: {path} is origin=sourced on a reference-only citation (REF- is an example followed, not a source; mark it proposed)")
             if obj["origin"] == "proposed":
                 text = " ".join(str(obj.get(k, "")) for k in ("text", "action", "why", "name", "input", "output"))
                 if "proposed" not in text.lower() and "our design" not in text.lower():

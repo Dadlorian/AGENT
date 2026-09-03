@@ -119,3 +119,4 @@ docs/reference/composable-plan.md is one worked answer to the problems this plat
 Every commit that changes a work item's state updates its STATUS.md row in the same commit. Run python3 tools/status_check.py before committing.
 Done rows are archived by python3 tools/status_archive.py in the same commit; row numbers never change.
 Read OWNER.md first: one line per owner correction; each line overrides anything here that contradicts it.
+Before launching an agent the orchestrator claims its file scope with python3 tools/scopes.py; an overlapping claim is refused.

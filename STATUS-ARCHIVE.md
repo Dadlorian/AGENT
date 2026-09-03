@@ -28,3 +28,5 @@
 | 36 | Impact map in knowledge base | A component swap query lists adapters, tests, and skills | Done | 803 records, skill-name owners | 2026-09-03 45e473d |
 | 35 | Skill reconciliation | Every written skill agrees with the blueprint | Done | 26 applied, 17 declined | 2026-09-03 adfabbb |
 | 25 | Observability harness | One trace carries correlation on explicit attributes | Done | 36 checks pass and the swap holds | 2026-09-03 0ef877a |
+| 24 | Gateway harness | One completion by class runs under a scoped cap | Done | 24 checks pass and the swap holds | 2026-09-03 1c90af9 |
+| 43 | Agent scope registry | No two agents edit the same file in one round | Done | scopes.py, refusal measured | 2026-09-03 1c90af9 |

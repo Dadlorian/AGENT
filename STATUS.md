@@ -12,14 +12,12 @@
 | 20 | Consumption link | cap-consumption links to cap-work-intake | Open | Unlinked |
 | 21 | Continuous improvement loop | One iteration per fire moves a metric and checkpoints | Not started | Awaiting go |
 | 23 | Containment harness | One turn runs in a microVM through the interface and cancels | In progress | Author running |
-| 24 | Gateway harness | One completion by class runs under a scoped cap | Done | 24 checks pass and the swap holds |
 | 26 | Workflow harness | One durable flow survives a crash and resumes | In progress | Author running |
 | 27 | Linked harness | One document runs through all four harnesses | Open | Not started |
 | 28 | Impact map | A component swap lists every affected adapter, test, and skill | Open | Not started |
 | 37 | Live run access | Harness live mode runs against the host from a session | Blocked | Owner decision |
 | 41 | Planted-defect reviews | Every review catches both planted defects | In progress | plant.py ready |
 | 42 | Sourcing pass | Proposed rows are under 30 percent | In progress | Iteration 1 on 10 skills |
-| 43 | Agent scope registry | No two agents edit the same file in one round | Not started | Queued |
 | 44 | Freshness gate | A checkpoint fails on a stale status row | Not started | Queued |
 | 45 | Fetch allowlist | Standards sites are fetchable from the environment | Blocked | Owner decision |
 | 46 | Swap proof | Each harness section executes one adapter swap | Not started | Queued |

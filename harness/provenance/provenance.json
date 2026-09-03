@@ -1,0 +1,35 @@
+{
+  "owner_skill": "cap-provenance-implement",
+  "co_skills": ["cap-provenance", "xc-provenance-chain-implement", "core-ledger"],
+  "blueprint_tool_entry": "append-only JSONL evidence store (the JSONL evidence records PASS.md B3 names today; kb/ledger.jsonl is the live instance of that shape)",
+  "capability": "provenance",
+  "standard": "in-toto Statement v1 in a DSSE envelope with SLSA predicates (versions on file unverified)",
+  "kb_ids": [
+    "F-a5-03", "F-a5-04", "F-b1-02", "F-b1-04", "F-b1-08", "F-b3-12", "F-b4-05", "F-b4-07",
+    "F-b5-05", "F-part-c-11",
+    "T-t2-03", "T-t6-02", "T-t7-02", "T-t7-05", "T-t9-02", "T-t9-04", "T-t9-06",
+    "T-t10-04", "T-t10-05", "T-t10-07"
+  ],
+  "research_ids": [
+    "X-cap-provenance-001", "X-cap-provenance-002", "X-cap-provenance-003", "X-cap-provenance-004",
+    "X-cap-provenance-005", "X-cap-provenance-006",
+    "X-cross-structure-050", "X-cross-structure-051", "X-cross-structure-052",
+    "X-cross-structure-053", "X-cross-structure-054",
+    "X-build-definition-of-done-007", "X-gap-c-001"
+  ],
+  "measured": {
+    "dryrun": "bash harness/provenance/test.sh on 2026-09-03: passed 27, failed 0. conformance PASSED 13/13 against the dry-run adapter; the verification case ran in a separate process (conformance.py --verify-bundle) with the store path pointed at a path that does not exist, and that child reported store_mounted=false and imported no adapter module; the minimal call is 22 lines of caller code and names no adapter storage; the caller read a verified statement over the artifact digest and saw the same envelope rejected after one byte of the artifact was edited (subject_mismatches=1, returned as document-invalid 422 carrying the proposed attestation-unverifiable type as an extension); SKIP_PROVENANCE=1 is refused 422 with nothing emitted because there is no attest flag; PROVENANCE_FAIL=1 returns adapter-unavailable 503 saying no statement was emitted; PROVENANCE_OFFLINE=1 refuses the second adapter, which cannot sign offline.",
+    "swap": "conformance PASSED 13/13 before (dryrun, local-signed-jsonl) and 13/13 after (second, keyless-transparency-log) with the same 13 cases; sha256 of interface.py+call.py+conformance.py identical across both runs (7fbc16d2e67dd4e2c093401ae5b475b4307c11e6e7cd03d002c0d551610a8792), so the swap was configuration; 7 execution-model axes differ (signer authority possession vs expiring-identity, key lifetime long-lived vs per-run discarded, store hash-chained jsonl vs append-only merkle log, verifying material out-of-band vs published with the envelope, offline capable true vs false, inclusion proofs declared unsupported vs 1 verified, store integrity chain recompute vs log-root recompute); both reports carry store_mounted=false, external_verifier_exit=0, attestations_verified>0, subject_mismatches=0, orphan_subjects=0, selected_by=configuration, merged adapters_run=2; the same caller code ran unchanged on both and the log binding returned an inclusion proof the caller never asked for.",
+    "breakage": "two, both fail. (1) the definition-of-done breakage: the artifact is rebuilt from a modified input and the attestation is left alone (conformance.py --break rebuilt-artifact); the run exits 1 with subject_mismatches=1, attestations_verified=0 and the store-unmounted verifier exiting 1 on the subject digest, not on our store. (2) the signature is dropped from the envelope (--break dropped-signature) on the second adapter; the run exits 1 and names 'the envelope carries no signature'. The green checks in steps 1 and 2 can therefore fail.",
+    "live": "bash harness/provenance/test.sh --live on 2026-09-03 with EVIDENCE_STORE=kb/ledger.jsonl, ATTESTATION_STORE=harness/provenance/out/live-attestations.jsonl and PROVENANCE_KEY_FILE set: passed 30, failed 0. conformance PASSED 13/13 against the live binding and the same caller code ran unchanged; each envelope record names the head of the live evidence store it was written beside (evidence_record id L-00057) and kb/ledger.jsonl was read and never written. Today's component for this capability is a local store, so no endpoint was involved."
+  },
+  "claimed": [
+    "verification by a tool we did not write: no third-party verifier is available in this environment, so external_verifier names this repository's own conformance.py run as a separate process. What is measured is that verification reads only the envelope, the trust policy and the digest the holder computed, with our store unreachable and no adapter imported; that it would also satisfy a foreign verifier is claimed (F-b4-05, X-cap-provenance-005)",
+    "public verifiability: hmac-sha256 over the DSSE pre-authentication encoding stands in for a signature, because only hashlib and hmac are available here, so the verifying material is the signing key and a holder of it could also sign. The envelope, the PAE, the subject binding, the inclusion proof and the swap are real; replacing mac() in interface.py with an asymmetric signer changes nothing else in the file",
+    "the standards' versions: in-toto Statement v1, SLSA v1.1-or-v1.0 and DSSE are unverified, every record on file for them being a search result rather than a fetched page (STATUS row 45, absent-by-owner on the standard stick). The DSSE PAE spelling and the log's audit-path format are unverified for the same reason",
+    "the predicate type URIs are this platform's own and are proposed: no fetched record on file carries a predicate type URI for a build or for an agent action (cap-provenance instruction 4)",
+    "the networked form of the second adapter until TRANSPARENCY_LOG_URL and IDENTITY_URL point at real routes; the dry run exercises its identity, log, proof and refusal-to-sign-offline in process",
+    "SLSA level: no build-track level is claimed here at all (X-build-definition-of-done-007); this harness signs a statement, it does not assert a hardened build platform",
+    "monitoring the log: store_integrity() recomputes the root over every entry when asked, which is a check on demand and not a monitor anybody runs (X-cross-structure-053, cap-provenance step 7)"
+  ]
+}

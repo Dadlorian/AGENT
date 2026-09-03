@@ -44,12 +44,13 @@ Keep each skill.json focused, and treat these as checked budgets, not aspiration
 
 ## Defects found in ceremonies 1-11 - do not repeat them
 
-Findings from waves 1 through 5 and the wave-7 compose ceremony. Each cost a fix; none should recur. Items 2, 4 and 14 recurred across ceremonies, so each carries the sharper check that would have caught it.
+Findings from waves 1 through 5 and the wave-7/8 compose and xc ceremonies. Each cost a fix; none should recur. Items 2, 4 and 14 recurred across ceremonies, so each carries the sharper check that would have caught it.
 
 1. There are SEVEN layers, not six: root, core, cap, xc, seam, compose, build. `root` is reserved for
    agentic-stack alone (schema enum and validator both know it); count them there before you write the count.
 2. Do not restate a fact a skill under your builds_on already states: grep that skill's skill.json for the id first, and open with "agentic-stack already states this (F-...)" and add only your consequence. Compose by
-   name, not by copy - per citation, not per skill; warns when a row cites an id under the same quote as the root or a builds_on skill without naming it.
+   name, not by copy - per citation, not per skill; warns when a row cites an id under the same quote as the root or a builds_on skill without naming it. A later-wave formalizing skill (an enforcement-chain, a
+   placement skill) gets composed by name into every earlier skill restating its placement once it lands, not left for each to rediscover (C11X-002).
 3. Any machine-readable field you name in an invariant or an instruction gets a formal shape in the same skill's
    contract.shapes (JSON Schema 2020-12, proposed unless PASS.md gives the shape). Prose thrice is not a spec.
 4. origin=sourced covers the scope of the claim, not only its wording: do not widen one concrete fact into a claim
@@ -60,23 +61,24 @@ Findings from waves 1 through 5 and the wave-7 compose ceremony. Each cost a fix
    a result" fires on every sentence in the repo; name the artifact or the moment instead.
 6. agentic-stack's composes_with is empty by design and the root is exempt from the used_by symmetry check; do
    not "fix" it, and do not read "Builds on: -" in the root skill as unused.
-7. Ceremony numbers are a counter global to the repository, never per-section, never reused: N is one more
-   than the highest kb/ceremonies/ceremony-NN-review.json on disk; a taken number belongs to a closed ceremony,
-   so take the next unused one and say so in a numbering_note. Same N ties review, improve, lessons, ledger and
-   known-issues (`tools/ceremony_check.py`). Ten sections running with a stale hint from the caller: list first.
+7. Ceremony numbers are a counter global to the repository, never per-section, never reused: N is one more than
+   the highest kb/ceremonies/ceremony-NN-review.json on disk; take the next unused one and say so. Same N ties
+   review, improve, lessons, ledger, known-issues (`ceremony_check.py`); list first, every time - eleven sections running with a stale hint from the caller.
 8. State an enumeration ONCE per skill and have every other row point at that list rather than re-list it.
    TARGET.md T1 lists three ways in (human, agent, event) and T6.2 four entries (human, event, schedule,
-   external system or agent); they are different lists, so name which one you are citing.
-9. A cap- ideal skill (no -implement suffix) carries its own adapters[] pair and a definition_of_done over
-   both asserting `adapters_run >= 2`. Defer the pair to -implement only when PASS.md's adapter-today column is
-   literally *absent*, then say so in an open_question citing that row, as cap-identity does.
+   external system or agent); they are different lists, so name which one you are citing. Where a skill's own
+   shape already implies the wider door (a scan that runs on a schedule, a worked example under a schedule
+   actor), its definition_of_done and worked-entries section must assert T6.2's four, not T1's narrower three,
+   and say what a schedule entry changes (starts root work) against an event (steers only) - four xc skills
+   asserted only three until ceremony 11 found it (C11X-001).
+9. A cap- ideal skill (no -implement suffix) carries its own adapters[] pair and a definition_of_done asserting
+   `adapters_run >= 2`; defer to -implement only when PASS.md's adapter-today column is literally *absent*, in an open_question citing that row, as cap-identity does.
 10. Adapting a sibling's template: reread the prose, not only the code fences, for a noun belonging to the donor skill (a "runtime" in a durable-execution skill). Nothing checks it.
 11. A cap- ideal skill STATES design rule 6, it does not merely satisfy it: carry a not_exposed row citing
    F-b1-07 saying what the grader rule forbids on this interface (the criterion never travels in a completion
    request, a document handle, a DecisionRequest's context). Warns when the row is missing.
-12. An E- id in an adapter row's sources belongs to the same capability row as the adapter: E-adapter-jsonl-
-   hash-chain (State persistence, F-b3-17) in a Provenance row sends a reader to the wrong B3 row. Siblings of
-   your own capability are fine; warns when the entity's kb sources do not overlap the row's.
+12. An E- id in an adapter row's sources belongs to the same capability row as the adapter: E-adapter-jsonl-hash-
+   chain (State persistence, F-b3-17) in a Provenance row sends a reader to the wrong B3 row; siblings are fine, warns when the entity's kb sources do not overlap the row's.
 13. Every ideal facet carries the usability section, so meet its bar: a worked instance for EACH of TARGET T1's
    three ways in (declared_by / actor `user:`, `agent:`, `service:` or `schedule:`) and a worked rejection as an
    actual `urn:agentic:problem:` object, not prose pointing at cap-errors. Both may live in usage.md. Warns.
@@ -87,10 +89,9 @@ Findings from waves 1 through 5 and the wave-7 compose ceremony. Each cost a fix
 15. A contract.standards row's `version` is a value a reader scans, not the sentence explaining it: put the
    version a record names, or "unverified", in `version`, and which record named it, whether the spec was
    fetched and which skill owns the row in `version_note`, rendered as a footnote. Warns above 60 characters.
-16. An adapters[].entity id is not yours to mint quietly. Run `python3 tools/kb.py tree` for your capability
-   first: reuse a real entity of the same B3 row where one exists; where none exists (wave-4c's three xc--implement
-   skills), record the gap as a 1-3-1 open_question and say in maps_to that the id is proposed, never under
-   `entities`. Warns per unmarked minted id.
+16. An adapters[].entity id is not yours to mint quietly. Run `python3 tools/kb.py tree` for your capability first:
+   reuse a real entity of the same B3 row where one exists; where none exists (wave-4c's xc--implement skills),
+   record the gap as a 1-3-1 open_question and say in maps_to the id is proposed, never under `entities`. Warns per unmarked minted id.
 17. An `-implement` facet's breakage breaks something the BUILD owns - the wiring, one migration stage, a
    binding, the gate - never a repeat of its ideal facet's contract violation: two identical breakages prove
    one failure mode twice. seam-dispatch/-implement is the worked pair. Warns on an outright copy.

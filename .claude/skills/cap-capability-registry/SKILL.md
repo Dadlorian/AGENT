@@ -29,8 +29,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-agent-skills-spec` | no published version string was read; the record, not the package format, carries the semantic version this interface orders on | unverified | https://agentskills.io/specification | `F-b3-07`, `X-end-to-end-025`, `X-end-to-end-023` |
-| `E-standard-a2a-messaging` | no version string was read from the specification in this environment | unverified | https://a2a-protocol.org/latest/specification/ | `F-b3-08`, `X-cap-capability-registry-006` |
+| `E-standard-agent-skills-spec` | unversioned | unverified | https://agentskills.io/specification | `F-b3-07`, `X-end-to-end-025`, `X-end-to-end-023` |
+| `E-standard-a2a-messaging` | unverified | unverified | https://a2a-protocol.org/latest/specification/ | `F-b3-08`, `X-cap-capability-registry-006` |
+
+- `E-standard-agent-skills-spec` version note: no published version string was read; the record, not the package format, carries the semantic version this interface orders on
+- `E-standard-a2a-messaging` version note: no version string was read from the specification in this environment
 
 ### Operations
 

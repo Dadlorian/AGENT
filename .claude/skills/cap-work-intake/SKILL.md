@@ -32,8 +32,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-cloudevents` | the manifest records CloudEvents v1.0.2 for this row; every research record on file for it is search-only and the specification text was not fetched from this environment, so no version string is asserted here | unverified | https://cloudevents.io/ | `F-b3-08`, `X-cap-work-intake-001`, `X-cap-work-intake-005` |
-| `E-standard-a2a-messaging` | the manifest records A2A protocol v1.0 for this row and notes that the specification text could not be fetched because the domain was egress-blocked; both records on file are search-only, so no version string is asserted here | unverified | https://a2a-protocol.org/latest/ | `F-b3-08`, `X-cap-work-intake-002` |
+| `E-standard-cloudevents` | unverified | unverified | https://cloudevents.io/ | `F-b3-08`, `X-cap-work-intake-001`, `X-cap-work-intake-005` |
+| `E-standard-a2a-messaging` | unverified | unverified | https://a2a-protocol.org/latest/ | `F-b3-08`, `X-cap-work-intake-002` |
+
+- `E-standard-cloudevents` version note: the manifest records CloudEvents v1.0.2 for this row; every research record on file for it is search-only and the specification text was not fetched from this environment, so no version string is asserted here
+- `E-standard-a2a-messaging` version note: the manifest records A2A protocol v1.0 for this row and notes that the specification text could not be fetched because the domain was egress-blocked; both records on file are search-only, so no version string is asserted here
 
 ### Operations
 

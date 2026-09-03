@@ -1,0 +1,53 @@
+{
+  "ceremony": 8,
+  "section": "wave-4b",
+  "reviewer": "sonnet",
+  "date": "2026-09-03",
+  "numbering_note": "Requested as ceremony 7, but ceremony 7 is closed for section wave-4a (kb/ceremonies/ceremony-07-review.json and -improve.json, state/loop.json ceremony=7). Per the repo-global numbering rule build-ceremony states and every prior ceremony has applied (ceremony-02-improve.json C2-001 through ceremony-07's own numbering_note), and per state/loop-workflow.js's own instruction to derive N from `ls kb/ceremonies/ceremony-*-review.json` rather than trust the number handed in, this review and its paired improve record take the next unused number, 8, for section wave-4b.",
+  "findings": [
+    {
+      "id": "C8-001",
+      "skill": "xc-correlation, xc-idempotency-lease",
+      "location": "contract.standards[0].version",
+      "severity": "nit",
+      "category": "usefulness",
+      "finding": "Both skills' single standards row puts a multi-clause explanatory sentence in the `version` field instead of a version string, so the rendered Standards table's Version column carries a paragraph rather than a scannable value. xc-correlation's row reads 'unverified here; cap-telemetry owns the standards row for this capability and records both the version a search-only record names and why it stays unverified, and no specification was fetched from this environment' (over 200 characters); xc-idempotency-lease's is comparably long. A fresh author scanning the Standards table for 'what version does this cite' gets an essay instead of a value, even though `version_status` already carries 'unverified' and the explanation belongs there or in a footnote invariant. The pattern is inherited from cap-telemetry's own standards rows (an earlier, already-reviewed wave), so it is a repo convention rather than a wave-4b invention, and it is schema-valid (version is an unconstrained string) and fully honest — it does not misstate a version, it just uses the wrong field for the explanation.",
+      "evidence": "xc-correlation/skill.json contract.standards[0]: \"version\": \"unverified here; cap-telemetry owns the standards row for this capability and records both the version a search-only record names and why it stays unverified, and no specification was fetched from this environment\". Rendered in SKILL.md line 31: \"| `E-standard-otlp` | unverified here; cap-telemetry owns the standards row for this capability and records both the version a search-only record names and why it stays unverified, and no specification was fetched from this environment | unverified | - | `F-b3-10`, `X-xc-correlation-001` |\". cap-telemetry/skill.json contract.standards[0].version carries the same pattern: \"1.11.0 named by one search-only record, which also says the specification is stable for the trace, metric and log signals; the specification was not fetched from this environment, so the version stays unverified\".",
+      "suggested_change": "Put a short value in `version` (e.g. \"unverified\" or the bare version string a search-only record names, e.g. \"1.11.0 (unnamed record, unfetched)\") and move the explanation into an adjacent invariant row or a note in the skill's prose, the way the rest of the contract already separates a value from its justification. If the convention is deliberately kept as-is, record that choice once (e.g. in agentic-stack or build-skill-authoring) so it stops looking like an oversight in each citing skill."
+    },
+    {
+      "id": "C8-002",
+      "skill": "xc-idempotency-lease-implement",
+      "location": "references/ (directory)",
+      "severity": "nit",
+      "category": "size",
+      "finding": "The skill ships an empty `references/` directory. Nothing in skill.json's nine instructions points a reader at a references file (unlike xc-budget-implement and core-judge-implement's siblings, which either cite one or, like xc-budget-implement, carry no references directory at all), and the directory holds zero files. It is dead scaffolding left over from skill creation rather than a defect in the content, but build-skill-authoring's progressive-disclosure rule frames references/ as the place long material that does not fit the body goes — an empty one signals unfinished material to a reader who checks it.",
+      "evidence": "`find .claude/skills/xc-idempotency-lease-implement/references -type f -o -type l` returns nothing. `git status --short .claude/skills/xc-idempotency-lease-implement/` shows the whole directory as untracked (`?? .claude/skills/xc-idempotency-lease-implement/`), and no instruction step in skill.json's instructions array mentions `references/` (compare xc-budget-implement, whose instructions likewise never mention references/ and which correctly carries no references/ directory at all).",
+      "suggested_change": "Either remove the empty directory so the skill matches its sibling xc-budget-implement (no references/ at all), or, if long material (the migration procedure, the wiring table) was intended to move there per the progressive-disclosure budget, add it and cite it from an instruction step the way core-judge-implement and core-ledger-implement do with their references/implementation-notes.md."
+    }
+  ],
+  "metrics": {
+    "skills": 10,
+    "rows_total": 339,
+    "rows_sourced": 169,
+    "rows_proposed": 126,
+    "findings_block": 0,
+    "findings_fix": 0,
+    "findings_nit": 2,
+    "validator_errors": 0,
+    "validator_warnings_in_scope": 0,
+    "validator_warnings_repo": 82
+  },
+  "brief_improvements": [
+    "When a contract.standards row has nothing but an unfetched, search-only version to cite, keep `version` short (a value or 'unverified') and put the justification in an invariant or a note rather than in the version field itself — xc-correlation and xc-idempotency-lease both inherited a pattern from cap-telemetry that turns the rendered Standards table's Version column into a paragraph. Either state this rule once in build-skill-authoring, or accept the pattern explicitly so it stops reading as an oversight in every skill that repeats it.",
+    "When a proposed references/<file>.md is dropped from a skill's plan (or never needed, as in xc-budget-implement), delete the references/ directory rather than leaving it empty — xc-idempotency-lease-implement ships one with zero files and no instruction step pointing at it."
+  ],
+  "what_worked": [
+    "This wave visibly carried forward ceremony 7's lesson: none of the ten skills mints an unregistered `urn:agentic:problem:` suffix. Every problem type used anywhere in the ten skill.json files and their references/*.md — criterion-unresolvable, idempotency-conflict, document-invalid, budget-exhausted — is a row already closed in docs/decomposition.md section 2.1.6, checked by grepping every skill.json and references/*.md in the wave; no open_question about a pending-registration suffix was needed because none was invented.",
+    "All five ideal-facet skills (core-judge, core-ledger, xc-budget, xc-correlation, xc-idempotency-lease) carry the usability section the manifest assigns their layer (no separate -use skill exists for core-/xc-): every one has a worked instance for a human, an agent, and an internal-or-external event/schedule producer (checked by grepping for user:/agent:/service:/schedule: actor subjects in each skill's references/*.md and skill.json), and every one carries a worked rejection as an actual RFC 9457 problem object rather than a prose rule pointing at cap-errors — the exact gap ceremony 6 found and fixed in core-document one wave earlier.",
+    "Every sourced quote spot-checked across all ten skills (39 kb ids resolved with `python3 tools/kb.py show`, spanning F-, T-, X- and cited E- ids, drawn from every skill in the wave rather than one) verified as a true verbatim substring of its cited record's text/snippet/claim field, including several long, precisely-worded quotes (e.g. core-judge's 'rubric dropout, which randomly drops criteria before computing reward so the policy never optimizes the same rubric twice, while evaluation always uses the full rubric', xc-idempotency-lease's 'An idempotency fingerprint MAY be used in conjunction with an idempotency key'); `python3 tools/validate_skills.py` independently confirms this with 0 errors across the whole repository (83 skills, 82 warnings, none naming a wave-4b skill).",
+    "composes_with for all ten skills matches docs/skill-manifest.json exactly in both directions, checked programmatically with no exceptions and no manual reconciliation needed. xc-correlation's SKILL.md, spot-checked by copying its skill.json to a scratch directory and re-running tools/render_skill.py, is byte-identical to the committed render.",
+    "The five ideal/implement pairs handle two structural gaps in the knowledge base honestly rather than papering over them: xc-budget has no PASS.md B3 adapter row at all (its own open_question applies TARGET T5's 1-3-1 and records the standard in an invariant instead of a fabricated contract.standards entry), and both xc-budget and xc-idempotency-lease's implement facets record their second-adapter entity against the sibling capability's swap-candidate entity (any-keyed-lease-store) rather than inventing an unbacked one, with the reasoning for each choice spelled out inline as a 1-3-1 open_question rather than asserted silently.",
+    "Every definition_of_done across all ten skills is honestly labelled claimed, every one names the proposed tool that does not yet exist and several say so explicitly ('neither run has been performed here'), and no adapter or standards row anywhere in the wave carries status or version_status 'measured' — checked by grepping the ten skill.json files for '\"status\": \"measured\"', which returned zero matches. All five implement facets carry exactly two adapters differing on three concretely named execution-model axes apiece (e.g. xc-idempotency-lease-implement's unit_of_conditionality, who_evaluates_expiry, processes_required_for_progress), closing the gap ceremony 1's C1-003 finding first identified in build-adapter-pair."
+  ]
+}

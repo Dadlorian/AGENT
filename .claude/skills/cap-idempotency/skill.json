@@ -27,7 +27,8 @@
     "standards": [
       {
         "entity": "E-standard-idempotency-key-convention",
-        "version": "draft-ietf-httpapi-idempotency-key-header-07 (search-only research records place it in the IETF httpapi working group and say it expired without becoming an RFC; the draft text was not fetched from this environment)",
+        "version": "draft-ietf-httpapi-idempotency-key-header-07",
+        "version_note": "draft-ietf-httpapi-idempotency-key-header-07 (search-only research records place it in the IETF httpapi working group and say it expired without becoming an RFC; the draft text was not fetched from this environment)",
         "version_status": "unverified",
         "url": "https://datatracker.ietf.org/doc/html/draft-ietf-httpapi-idempotency-key-header-07",
         "sources": [
@@ -87,17 +88,44 @@
           "title": "IdempotencyClaim",
           "type": "object",
           "additionalProperties": false,
-          "required": ["idempotency_key", "payload_digest", "scope", "claimed_at", "retention_s"],
+          "required": [
+            "idempotency_key",
+            "payload_digest",
+            "scope",
+            "claimed_at",
+            "retention_s"
+          ],
           "properties": {
-            "idempotency_key": {"type": "string", "minLength": 8, "maxLength": 255},
-            "payload_digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$",
-                               "description": "Digest of the canonical payload. The payload itself is never held here."},
-            "scope": {"type": "string", "description": "The resource owner within which the key must be unique."},
-            "claimed_at": {"type": "string", "format": "date-time"},
-            "retention_s": {"type": "integer", "minimum": 1,
-                            "description": "Declared window. After it elapses the key is claimable again."},
-            "result_ref": {"type": ["string", "null"],
-                           "description": "Set by complete; null while the one execution is still in flight."}
+            "idempotency_key": {
+              "type": "string",
+              "minLength": 8,
+              "maxLength": 255
+            },
+            "payload_digest": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$",
+              "description": "Digest of the canonical payload. The payload itself is never held here."
+            },
+            "scope": {
+              "type": "string",
+              "description": "The resource owner within which the key must be unique."
+            },
+            "claimed_at": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "retention_s": {
+              "type": "integer",
+              "minimum": 1,
+              "description": "Declared window. After it elapses the key is claimable again."
+            },
+            "result_ref": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Set by complete; null while the one execution is still in flight."
+            }
           }
         },
         "origin": "proposed",
@@ -114,20 +142,65 @@
           "title": "ClaimOutcome",
           "type": "object",
           "additionalProperties": false,
-          "required": ["outcome"],
+          "required": [
+            "outcome"
+          ],
           "properties": {
-            "outcome": {"enum": ["fresh", "duplicate", "conflict"]},
-            "result_ref": {"type": "string", "description": "Required when outcome is duplicate."},
-            "in_flight": {"type": "boolean",
-                          "description": "True when a duplicate is answered while the first execution has not finished."},
-            "problem": {"$ref": "urn:agentic:problem:0.1",
-                        "description": "Required when outcome is conflict. The failure shape belongs to cap-errors."}
+            "outcome": {
+              "enum": [
+                "fresh",
+                "duplicate",
+                "conflict"
+              ]
+            },
+            "result_ref": {
+              "type": "string",
+              "description": "Required when outcome is duplicate."
+            },
+            "in_flight": {
+              "type": "boolean",
+              "description": "True when a duplicate is answered while the first execution has not finished."
+            },
+            "problem": {
+              "$ref": "urn:agentic:problem:0.1",
+              "description": "Required when outcome is conflict. The failure shape belongs to cap-errors."
+            }
           },
           "allOf": [
-            {"if": {"properties": {"outcome": {"const": "duplicate"}}, "required": ["outcome"]},
-             "then": {"required": ["result_ref"]}},
-            {"if": {"properties": {"outcome": {"const": "conflict"}}, "required": ["outcome"]},
-             "then": {"required": ["problem"]}}
+            {
+              "if": {
+                "properties": {
+                  "outcome": {
+                    "const": "duplicate"
+                  }
+                },
+                "required": [
+                  "outcome"
+                ]
+              },
+              "then": {
+                "required": [
+                  "result_ref"
+                ]
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "outcome": {
+                    "const": "conflict"
+                  }
+                },
+                "required": [
+                  "outcome"
+                ]
+              },
+              "then": {
+                "required": [
+                  "problem"
+                ]
+              }
+            }
           ]
         },
         "origin": "proposed",

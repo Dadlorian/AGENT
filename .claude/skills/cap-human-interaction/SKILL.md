@@ -31,9 +31,13 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-ag-ui` | proposed entity id and version unverified: PASS.md B3 has no Human interaction row, so kb/entities.jsonl carries no entity for this standard and none may be added without rewriting the entity chain every written skill pins; the manifest records the AG-UI Agent-User Interaction Protocol with version unverified, and all three records on file for it are search-only, so no version string is asserted here | unverified | https://docs.ag-ui.com/introduction | `X-cap-human-interaction-001`, `X-entry-composition-020`, `X-entry-composition-021` |
-| `E-standard-a2a-messaging` | the manifest records the A2A input-required task state at v0.3.0; the records on file are search-only and the specification text was not fetched from this environment, so no version string is asserted here | unverified | https://a2a-protocol.org/v0.3.0/specification/ | `F-b3-08`, `X-end-to-end-014`, `X-entry-composition-014` |
-| `E-standard-model-context-protocol` | the manifest records MCP elicitation/create at revision 2025-06-18; both records on file are search-only and neither is the specification itself, so no revision string is asserted here | unverified | - | `F-b3-06`, `X-entry-composition-016`, `X-cap-human-interaction-006` |
+| `E-standard-ag-ui` | unverified | unverified | https://docs.ag-ui.com/introduction | `X-cap-human-interaction-001`, `X-entry-composition-020`, `X-entry-composition-021` |
+| `E-standard-a2a-messaging` | unverified | unverified | https://a2a-protocol.org/v0.3.0/specification/ | `F-b3-08`, `X-end-to-end-014`, `X-entry-composition-014` |
+| `E-standard-model-context-protocol` | unverified | unverified | - | `F-b3-06`, `X-entry-composition-016`, `X-cap-human-interaction-006` |
+
+- `E-standard-ag-ui` version note: proposed entity id and version unverified: PASS.md B3 has no Human interaction row, so kb/entities.jsonl carries no entity for this standard and none may be added without rewriting the entity chain every written skill pins; the manifest records the AG-UI Agent-User Interaction Protocol with version unverified, and all three records on file for it are search-only, so no version string is asserted here
+- `E-standard-a2a-messaging` version note: the manifest records the A2A input-required task state at v0.3.0; the records on file are search-only and the specification text was not fetched from this environment, so no version string is asserted here
+- `E-standard-model-context-protocol` version note: the manifest records MCP elicitation/create at revision 2025-06-18; both records on file are search-only and neither is the specification itself, so no revision string is asserted here
 
 ### Operations
 

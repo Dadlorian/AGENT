@@ -31,7 +31,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-rfc-5545-recurrence-rules` | RFC 5545, the iCalendar core object specification, of which the recurrence rule (RRULE) grammar is the part adopted here; every record on file for it is search-only and the RFC itself was not fetched from this environment, so no version or revision date is asserted | unverified | https://www.rfc-editor.org/rfc/rfc5545.html | `F-b3-15`, `X-cap-scheduling-001`, `X-entry-composition-049` |
+| `E-standard-rfc-5545-recurrence-rules` | RFC 5545 | unverified | https://www.rfc-editor.org/rfc/rfc5545.html | `F-b3-15`, `X-cap-scheduling-001`, `X-entry-composition-049` |
+
+- `E-standard-rfc-5545-recurrence-rules` version note: RFC 5545, the iCalendar core object specification, of which the recurrence rule (RRULE) grammar is the part adopted here; every record on file for it is search-only and the RFC itself was not fetched from this environment, so no version or revision date is asserted
 
 ### Operations
 

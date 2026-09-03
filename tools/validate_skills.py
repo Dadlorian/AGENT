@@ -87,6 +87,8 @@ USABILITY_EVIDENCE = {
 PROBLEM_RE = re.compile(r"urn:agentic:problem:([a-z][a-z0-9-]+)")
 PENDING = "pending registration"
 PROBLEM_WINDOW = 1500  # chars between the suffix and its marker, within one file of the skill
+# a standards row's version is a scannable value; the justification goes in version_note
+VERSION_MAX = 60
 DECOMP = ROOT / "docs" / "decomposition.md"
 
 
@@ -346,6 +348,19 @@ def main() -> int:
         for suffix in unmarked_problem_types(d, REGISTERED_PROBLEMS):
             warns.append(f"{name}: states urn:agentic:problem:{suffix}, which has no row in the closed registry in "
                          f"docs/decomposition.md section 2.1.6 and is not marked '{PENDING}' where it is stated")
+        # a standards row's `version` is a value a reader scans, not the paragraph explaining it:
+        # anything longer than VERSION_MAX belongs in version_note, which renders as a footnote
+        # under the Standards table (ceremony 8, C8-001).
+        for s in (sk.get("contract") or {}).get("standards", []):
+            v = str(s.get("version") or "")
+            if len(v) > VERSION_MAX:
+                warns.append(f"{name}: standards row {s.get('entity')} has a {len(v)}-character version; keep "
+                             f"`version` under {VERSION_MAX} characters and move the justification to version_note")
+        # an empty references/ directory is dead scaffolding: progressive disclosure means a reader who
+        # opens references/ finds the long material an instruction sent them to (ceremony 8, C8-002).
+        refs = d / "references"
+        if refs.is_dir() and not any(refs.iterdir()):
+            warns.append(f"{name}: empty references/ directory; add the long material or remove the directory")
         for field, rows, lo, hi in (
             ("instructions", sk.get("instructions", []), 6, 10),
             ("invariants", sk.get("contract", {}).get("invariants", []), 3, 10),

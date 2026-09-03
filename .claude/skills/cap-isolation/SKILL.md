@@ -28,7 +28,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-oci-runtime-spec` | v1.2 or later; version unverified. Two search-only records describe the standard as the configuration interface for low-level container runtimes and report a v1.3.0 release, but the specification itself was not fetched from this environment. | unverified | - | `F-b3-02`, `X-cap-isolation-001`, `X-cap-isolation-002` |
+| `E-standard-oci-runtime-spec` | v1.2 or later (unverified) | unverified | - | `F-b3-02`, `X-cap-isolation-001`, `X-cap-isolation-002` |
+
+- `E-standard-oci-runtime-spec` version note: v1.2 or later; version unverified. Two search-only records describe the standard as the configuration interface for low-level container runtimes and report a v1.3.0 release, but the specification itself was not fetched from this environment.
 
 ### Operations
 

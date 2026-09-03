@@ -31,7 +31,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-idempotency-key-convention` | draft-ietf-httpapi-idempotency-key-header-07 (search-only research records place it in the IETF httpapi working group and say it expired without becoming an RFC; the draft text was not fetched from this environment) | unverified | https://datatracker.ietf.org/doc/html/draft-ietf-httpapi-idempotency-key-header-07 | `F-b3-16`, `X-cap-idempotency-001`, `X-cap-idempotency-002`, `X-cross-structure-041` |
+| `E-standard-idempotency-key-convention` | draft-ietf-httpapi-idempotency-key-header-07 | unverified | https://datatracker.ietf.org/doc/html/draft-ietf-httpapi-idempotency-key-header-07 | `F-b3-16`, `X-cap-idempotency-001`, `X-cap-idempotency-002`, `X-cross-structure-041` |
+
+- `E-standard-idempotency-key-convention` version note: draft-ietf-httpapi-idempotency-key-header-07 (search-only research records place it in the IETF httpapi working group and say it expired without becoming an RFC; the draft text was not fetched from this environment)
 
 ### Operations
 

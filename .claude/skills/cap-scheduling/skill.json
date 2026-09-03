@@ -26,7 +26,8 @@
     "standards": [
       {
         "entity": "E-standard-rfc-5545-recurrence-rules",
-        "version": "RFC 5545, the iCalendar core object specification, of which the recurrence rule (RRULE) grammar is the part adopted here; every record on file for it is search-only and the RFC itself was not fetched from this environment, so no version or revision date is asserted",
+        "version": "RFC 5545",
+        "version_note": "RFC 5545, the iCalendar core object specification, of which the recurrence rule (RRULE) grammar is the part adopted here; every record on file for it is search-only and the RFC itself was not fetched from this environment, so no version or revision date is asserted",
         "version_status": "unverified",
         "url": "https://www.rfc-editor.org/rfc/rfc5545.html",
         "sources": [
@@ -86,14 +87,46 @@
           "title": "ScheduleDeclaration",
           "type": "object",
           "additionalProperties": false,
-          "required": ["unit_ref", "recurrence", "starts_at", "timezone", "catch_up"],
+          "required": [
+            "unit_ref",
+            "recurrence",
+            "starts_at",
+            "timezone",
+            "catch_up"
+          ],
           "properties": {
-            "unit_ref": {"type": "string", "minLength": 1, "description": "The one unit of work this schedule and its sibling manual trigger both reach."},
-            "recurrence": {"type": "string", "pattern": "^FREQ=[A-Z]+(;[A-Z]+=[^;]+)*$", "description": "One RFC 5545 recurrence rule, as a single string."},
-            "starts_at": {"type": "string", "format": "date-time", "description": "The instant the rule counts from; without it a rule has no anchor."},
-            "timezone": {"type": "string", "pattern": "^[A-Za-z]+/[A-Za-z_+-]+$|^UTC$", "description": "IANA zone. Required, because the occurrence set is undefined at a clock change without it."},
-            "catch_up": {"enum": ["skip", "fire_once", "fire_all"], "description": "Declared policy for occurrences missed while the evaluator was down."},
-            "trigger": {"type": "object", "description": "The sibling manual entry: a typed input schema the surface renders. Absent means the unit has no manual trigger."}
+            "unit_ref": {
+              "type": "string",
+              "minLength": 1,
+              "description": "The one unit of work this schedule and its sibling manual trigger both reach."
+            },
+            "recurrence": {
+              "type": "string",
+              "pattern": "^FREQ=[A-Z]+(;[A-Z]+=[^;]+)*$",
+              "description": "One RFC 5545 recurrence rule, as a single string."
+            },
+            "starts_at": {
+              "type": "string",
+              "format": "date-time",
+              "description": "The instant the rule counts from; without it a rule has no anchor."
+            },
+            "timezone": {
+              "type": "string",
+              "pattern": "^[A-Za-z]+/[A-Za-z_+-]+$|^UTC$",
+              "description": "IANA zone. Required, because the occurrence set is undefined at a clock change without it."
+            },
+            "catch_up": {
+              "enum": [
+                "skip",
+                "fire_once",
+                "fire_all"
+              ],
+              "description": "Declared policy for occurrences missed while the evaluator was down."
+            },
+            "trigger": {
+              "type": "object",
+              "description": "The sibling manual entry: a typed input schema the surface renders. Absent means the unit has no manual trigger."
+            }
           }
         },
         "origin": "proposed",
@@ -110,22 +143,49 @@
           "title": "OccurrenceSet",
           "type": "object",
           "additionalProperties": false,
-          "required": ["recurrence", "timezone", "window", "occurrences"],
+          "required": [
+            "recurrence",
+            "timezone",
+            "window",
+            "occurrences"
+          ],
           "properties": {
-            "recurrence": {"type": "string"},
-            "timezone": {"type": "string"},
+            "recurrence": {
+              "type": "string"
+            },
+            "timezone": {
+              "type": "string"
+            },
             "window": {
               "type": "object",
               "additionalProperties": false,
-              "required": ["from", "to"],
-              "properties": {"from": {"type": "string", "format": "date-time"}, "to": {"type": "string", "format": "date-time"}}
+              "required": [
+                "from",
+                "to"
+              ],
+              "properties": {
+                "from": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "to": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
             },
             "occurrences": {
               "type": "array",
-              "items": {"type": "string", "format": "date-time"},
+              "items": {
+                "type": "string",
+                "format": "date-time"
+              },
               "description": "Ascending, de-duplicated, half-open on the window: from is included, to is not."
             },
-            "truncated": {"type": "boolean", "description": "True when the rule is unbounded and the window was capped rather than exhausted."}
+            "truncated": {
+              "type": "boolean",
+              "description": "True when the rule is unbounded and the window was capped rather than exhausted."
+            }
           }
         },
         "origin": "proposed",

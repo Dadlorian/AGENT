@@ -33,10 +33,14 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-model-context-protocol` | revision 2026-07-28 - cited as a pattern for per-call version declaration and a bounded deprecation window, not as a standard that governs this discipline | unverified | https://modelcontextprotocol.io/docs/2026-07-28/learn/versioning | `X-cross-structure-061` |
-| `E-standard-otlp` | unverified - the stable transport half of the telemetry split, pinned while the attribute mapping moves | unverified | - | `F-b3-10`, `X-cross-structure-012` |
-| `E-standard-genai-semantic-conventions` | unverified - the separately versioned attribute mapping half of the telemetry split; the version each run emitted against is recorded | unverified | - | `F-b3-10` |
+| `E-standard-model-context-protocol` | revision 2026-07-28 | unverified | https://modelcontextprotocol.io/docs/2026-07-28/learn/versioning | `X-cross-structure-061` |
+| `E-standard-otlp` | unverified | unverified | - | `F-b3-10`, `X-cross-structure-012` |
+| `E-standard-genai-semantic-conventions` | unverified | unverified | - | `F-b3-10` |
 | `E-standard-json-schema-2020-12` | 2020-12 | unverified | - | `F-b3-09` |
+
+- `E-standard-model-context-protocol` version note: revision 2026-07-28 - cited as a pattern for per-call version declaration and a bounded deprecation window, not as a standard that governs this discipline
+- `E-standard-otlp` version note: unverified - the stable transport half of the telemetry split, pinned while the attribute mapping moves
+- `E-standard-genai-semantic-conventions` version note: unverified - the separately versioned attribute mapping half of the telemetry split; the version each run emitted against is recorded
 
 ### Operations
 

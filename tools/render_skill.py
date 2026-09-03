@@ -52,6 +52,9 @@ def render(sk: dict) -> str:
         if c.get("standards"):
             L += ["### Standards", ""] + table(["Standard", "Version", "Version status", "URL", "Sources"],
                                                [[f"`{s['entity']}`", s["version"], s["version_status"], s.get("url") or "-", ids(s)] for s in c["standards"]])
+            notes = [s for s in c["standards"] if s.get("version_note")]
+            if notes:
+                L += [f"- `{s['entity']}` version note: {s['version_note']}" for s in notes] + [""]
         if c.get("operations"):
             L += ["### Operations", ""] + table(["Operation", "Input", "Output", "Origin", "Evidence"],
                                                 [[o["name"], o["input"], o["output"], origin(o), ev(o)] for o in c["operations"]])

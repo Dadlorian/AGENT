@@ -28,7 +28,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-model-context-protocol` | revision unverified. The skill manifest carries specification revision 2026-07-28 as claimed; the two records on file for it - the specification landing page and a release-candidate announcement describing that revision as the largest since launch - are search-only, and neither was fetched from this environment. | unverified | - | `F-b3-06`, `X-cap-tool-access-001`, `X-cap-tool-access-002` |
+| `E-standard-model-context-protocol` | unverified | unverified | - | `F-b3-06`, `X-cap-tool-access-001`, `X-cap-tool-access-002` |
+
+- `E-standard-model-context-protocol` version note: revision unverified. The skill manifest carries specification revision 2026-07-28 as claimed; the two records on file for it - the specification landing page and a release-candidate announcement describing that revision as the largest since launch - are search-only, and neither was fetched from this environment.
 
 ### Operations
 

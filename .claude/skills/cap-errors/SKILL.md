@@ -29,7 +29,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-rfc-9457-problem-details` | RFC 9457 (a search-only research record dates it July 2023 and says it obsoletes RFC 7807; the specification was not fetched from this environment) | unverified | https://www.rfc-editor.org/info/rfc9457/ | `F-b3-13`, `X-cross-structure-039`, `X-cap-errors-001`, `X-cap-errors-005` |
+| `E-standard-rfc-9457-problem-details` | RFC 9457 | unverified | https://www.rfc-editor.org/info/rfc9457/ | `F-b3-13`, `X-cross-structure-039`, `X-cap-errors-001`, `X-cap-errors-005` |
+
+- `E-standard-rfc-9457-problem-details` version note: RFC 9457 (a search-only research record dates it July 2023 and says it obsoletes RFC 7807; the specification was not fetched from this environment)
 
 ### Operations
 

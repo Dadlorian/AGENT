@@ -30,8 +30,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-oauth-2-0-token-exchange` | RFC 8693 (a search-only research record titles it 'RFC 8693 OAuth 2.0 Token Exchange January 2020'; the specification itself was not fetched from this environment) | unverified | https://datatracker.ietf.org/doc/html/rfc8693 | `F-b3-14`, `X-cap-identity-001`, `X-cap-identity-002` |
-| `E-standard-workload-identity` | unverified: the recorded column names workload identity as the governing standard without naming a document, and no specification was fetched here | unverified | - | `F-b3-14`, `X-cap-identity-005` |
+| `E-standard-oauth-2-0-token-exchange` | RFC 8693 | unverified | https://datatracker.ietf.org/doc/html/rfc8693 | `F-b3-14`, `X-cap-identity-001`, `X-cap-identity-002` |
+| `E-standard-workload-identity` | unverified | unverified | - | `F-b3-14`, `X-cap-identity-005` |
+
+- `E-standard-oauth-2-0-token-exchange` version note: RFC 8693 (a search-only research record titles it 'RFC 8693 OAuth 2.0 Token Exchange January 2020'; the specification itself was not fetched from this environment)
+- `E-standard-workload-identity` version note: unverified: the recorded column names workload identity as the governing standard without naming a document, and no specification was fetched here
 
 ### Operations
 

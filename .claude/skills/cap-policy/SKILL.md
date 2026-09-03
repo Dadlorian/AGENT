@@ -32,7 +32,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-rego-opa` | unverified. The recorded row names a declarative policy language paired with a decision API rather than a ratified specification, and the research records for this capability are search-only: no specification text was fetched from this environment, so no version string is asserted. | unverified | https://www.openpolicyagent.org/docs/policy-language | `F-b3-11`, `X-cap-policy-002`, `E-standard-rego-opa` |
+| `E-standard-rego-opa` | unverified | unverified | https://www.openpolicyagent.org/docs/policy-language | `F-b3-11`, `X-cap-policy-002`, `E-standard-rego-opa` |
+
+- `E-standard-rego-opa` version note: unverified. The recorded row names a declarative policy language paired with a decision API rather than a ratified specification, and the research records for this capability are search-only: no specification text was fetched from this environment, so no version string is asserted.
 
 ### Operations
 

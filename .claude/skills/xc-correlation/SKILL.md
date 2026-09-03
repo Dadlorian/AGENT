@@ -30,7 +30,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-otlp` | unverified here; cap-telemetry owns the standards row for this capability and records both the version a search-only record names and why it stays unverified, and no specification was fetched from this environment | unverified | - | `F-b3-10`, `X-xc-correlation-001` |
+| `E-standard-otlp` | unverified | unverified | - | `F-b3-10`, `X-xc-correlation-001` |
+
+- `E-standard-otlp` version note: unverified here; cap-telemetry owns the standards row for this capability and records both the version a search-only record names and why it stays unverified, and no specification was fetched from this environment
 
 ### Operations
 

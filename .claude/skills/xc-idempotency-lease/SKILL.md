@@ -31,7 +31,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-idempotency-key-convention` | cap-idempotency owns this standard row and records the draft it names, together with the finding that it expired without becoming an RFC; nothing was fetched from this environment, so no version is asserted here and the lease semantics this skill places are ours | unverified | - | `F-b3-16`, `X-entry-composition-047` |
+| `E-standard-idempotency-key-convention` | unverified | unverified | - | `F-b3-16`, `X-entry-composition-047` |
+
+- `E-standard-idempotency-key-convention` version note: cap-idempotency owns this standard row and records the draft it names, together with the finding that it expired without becoming an RFC; nothing was fetched from this environment, so no version is asserted here and the lease semantics this skill places are ours
 
 ### Operations
 

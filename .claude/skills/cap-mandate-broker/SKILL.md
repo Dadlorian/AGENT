@@ -29,9 +29,13 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-oauth-2-0-token-exchange` | the record on file says the token-exchange RFC was published in January 2020, and it is search-only rather than fetched, so no version of the exchange profile this interface uses is asserted here | unverified | https://www.ietf.org/rfc/rfc8693.pdf | `F-b3-14`, `X-cap-mandate-broker-001`, `X-cap-mandate-broker-002` |
-| `E-standard-model-context-protocol` | the manifest records the authorization revision 2025-11-25 together with the resource-indicators RFC; both records on file are search-only and neither is the specification text, so no revision string is asserted here | unverified | https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization | `F-b3-06`, `X-end-to-end-028`, `X-cap-mandate-broker-003` |
-| `E-standard-w3c-verifiable-credentials` | proposed entity id and version unverified: PASS.md B3 carries no mandate or credential-brokering row, so kb/entities.jsonl holds no entity for this standard and none may be added without rewriting the entity chain every written skill pins; both records on file are search-only, so no version is asserted here | unverified | https://docs.walt.id/concepts/digital-credentials/verifiable-credentials-w3c | `X-cap-mandate-broker-005`, `X-end-to-end-070` |
+| `E-standard-oauth-2-0-token-exchange` | unverified | unverified | https://www.ietf.org/rfc/rfc8693.pdf | `F-b3-14`, `X-cap-mandate-broker-001`, `X-cap-mandate-broker-002` |
+| `E-standard-model-context-protocol` | unverified | unverified | https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization | `F-b3-06`, `X-end-to-end-028`, `X-cap-mandate-broker-003` |
+| `E-standard-w3c-verifiable-credentials` | unverified | unverified | https://docs.walt.id/concepts/digital-credentials/verifiable-credentials-w3c | `X-cap-mandate-broker-005`, `X-end-to-end-070` |
+
+- `E-standard-oauth-2-0-token-exchange` version note: the record on file says the token-exchange RFC was published in January 2020, and it is search-only rather than fetched, so no version of the exchange profile this interface uses is asserted here
+- `E-standard-model-context-protocol` version note: the manifest records the authorization revision 2025-11-25 together with the resource-indicators RFC; both records on file are search-only and neither is the specification text, so no revision string is asserted here
+- `E-standard-w3c-verifiable-credentials` version note: proposed entity id and version unverified: PASS.md B3 carries no mandate or credential-brokering row, so kb/entities.jsonl holds no entity for this standard and none may be added without rewriting the entity chain every written skill pins; both records on file are search-only, so no version is asserted here
 
 ### Operations
 

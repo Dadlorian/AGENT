@@ -27,7 +27,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-agent-client-protocol` | protocol version unverified; a search-only record describes the protocol as an open JSON-RPC standard at v1 stable with SDKs in five languages, and the manifest carries a TypeScript SDK version seen in search results. The specification itself was not fetched from this environment. | unverified | - | `F-b3-05`, `X-cap-agent-runtime-001`, `X-cap-agent-runtime-004` |
+| `E-standard-agent-client-protocol` | unverified | unverified | - | `F-b3-05`, `X-cap-agent-runtime-001`, `X-cap-agent-runtime-004` |
+
+- `E-standard-agent-client-protocol` version note: protocol version unverified; a search-only record describes the protocol as an open JSON-RPC standard at v1 stable with SDKs in five languages, and the manifest carries a TypeScript SDK version seen in search results. The specification itself was not fetched from this environment.
 
 ### Operations
 

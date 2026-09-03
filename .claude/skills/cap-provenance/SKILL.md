@@ -32,9 +32,13 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-in-toto` | Attestation Framework, Statement v1 (unverified; a search-only record quotes the statement type URI, and the specification was not fetched from this environment) | unverified | https://github.com/in-toto/attestation | `F-b3-12`, `X-cross-structure-050`, `X-end-to-end-052`, `X-cap-provenance-001` |
-| `E-standard-dsse` | unverified (no version string appears in any record on file; the envelope format is named, not versioned) | unverified | - | `F-b3-12`, `X-cap-provenance-003`, `X-cross-structure-050` |
-| `E-standard-slsa` | v1.1 per one search-only record, against v1.0 in the manifest entry for this skill; neither was fetched, so the version stays unverified and the open question below records the disagreement | unverified | https://slsa.dev/spec/v1.1/ | `F-b3-12`, `X-end-to-end-051`, `X-cap-provenance-002` |
+| `E-standard-in-toto` | Statement v1 (unverified) | unverified | https://github.com/in-toto/attestation | `F-b3-12`, `X-cross-structure-050`, `X-end-to-end-052`, `X-cap-provenance-001` |
+| `E-standard-dsse` | unverified | unverified | - | `F-b3-12`, `X-cap-provenance-003`, `X-cross-structure-050` |
+| `E-standard-slsa` | v1.1 or v1.0, unverified | unverified | https://slsa.dev/spec/v1.1/ | `F-b3-12`, `X-end-to-end-051`, `X-cap-provenance-002` |
+
+- `E-standard-in-toto` version note: Attestation Framework, Statement v1 (unverified; a search-only record quotes the statement type URI, and the specification was not fetched from this environment)
+- `E-standard-dsse` version note: unverified (no version string appears in any record on file; the envelope format is named, not versioned)
+- `E-standard-slsa` version note: v1.1 per one search-only record, against v1.0 in the manifest entry for this skill; neither was fetched, so the version stays unverified and the open question below records the disagreement
 
 ### Operations
 

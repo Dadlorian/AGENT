@@ -32,8 +32,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Standard | Version | Version status | URL | Sources |
 |---|---|---|---|---|
-| `E-standard-otlp` | 1.11.0 named by one search-only record, which also says the specification is stable for the trace, metric and log signals; the specification was not fetched from this environment, so the version stays unverified | unverified | https://opentelemetry.io/docs/specs/otlp/ | `F-b3-10`, `X-cross-structure-011`, `X-cap-telemetry-001` |
-| `E-standard-genai-semantic-conventions` | pre-stable; two search-only records place every attribute at Development stability in 2026 and no record on file fixes a version this platform has adopted, so the mapping version is recorded per run rather than asserted here | unverified | https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/ | `F-b3-10`, `X-entry-composition-051`, `X-cross-structure-010`, `X-entry-composition-050` |
+| `E-standard-otlp` | 1.11.0 (unverified) | unverified | https://opentelemetry.io/docs/specs/otlp/ | `F-b3-10`, `X-cross-structure-011`, `X-cap-telemetry-001` |
+| `E-standard-genai-semantic-conventions` | pre-stable (unverified) | unverified | https://opentelemetry.io/docs/specs/semconv/registry/attributes/gen-ai/ | `F-b3-10`, `X-entry-composition-051`, `X-cross-structure-010`, `X-entry-composition-050` |
+
+- `E-standard-otlp` version note: 1.11.0 named by one search-only record, which also says the specification is stable for the trace, metric and log signals; the specification was not fetched from this environment, so the version stays unverified
+- `E-standard-genai-semantic-conventions` version note: pre-stable; two search-only records place every attribute at Development stability in 2026 and no record on file fixes a version this platform has adopted, so the mapping version is recorded per run rather than asserted here
 
 ### Operations
 

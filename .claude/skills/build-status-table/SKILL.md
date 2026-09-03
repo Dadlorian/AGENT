@@ -25,6 +25,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Every cell is one statement: no semicolons, no parentheses, no dependency words, at most 12 words, work item at most 5. (proposed: our convention) | proposed | - |
 | As agentic-stack states, a Done row carries a measured result, never a pending one. | sourced | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
 | Dependencies live in docs/skill-manifest.json and the ledger, never in the table. (proposed: our convention) | proposed | - |
+| STATUS.md is the owner's view: every commit that changes the state of a work item updates its row in the same commit (proposed: owner rule). | proposed | - |
 
 ## Instructions
 
@@ -36,6 +37,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 4 | Mark a row Done only when the result was measured; otherwise leave it Open or In progress and put the current number in Result. | As agentic-stack states, claimed and measured are kept apart. | sourced | `F-part-c-08` "Distinguish **claimed** from **measured** throughout" |
 | 5 | When a cell needs a second idea, split the row or move the detail to the run summary. Never widen the table. | Proposed: the table is the decision view, not the record. | proposed | - |
 | 6 | Keep row numbers contiguous; retire a row by marking it Done or by deleting it and renumbering. | Proposed: stable numbering lets a conversation refer to a row. | proposed | - |
+| 7 | Before committing any change that moves a work item, edit its row and run the checker; commit the row with the change. | Proposed: the owner reads the table, not the log; a stale row is a false statement. | proposed | - |
 
 ## Best practices
 

@@ -114,3 +114,6 @@ examples/end-to-end/ is the reference for how the platform is consumed: one entr
 
 ## Reference example (owner-supplied, not a definition)
 docs/reference/composable-plan.md is one worked answer to the problems this platform solves. It is citable as REF- ids (kb/reference-facts.jsonl; grep that file). A REF- citation is an example followed, not a source: rows that rest on it are origin=proposed and cite the REF- id. Section 12 of the reference (REF-12-*) maps its concepts to our skills and names a gap per skill; if your skill is in that table, address its gap row. Take the shapes and the failures; leave its field names, layer count and engines. Composition skills (compose-loop, compose-operators, compose-approval, compose-agent) must state the stop-versus-cap distinction (REF-5-3-*), the depth bound at resolve time (REF-5-2-*), cost summed up the tree, and that internal events steer but never start (REF-3-4-*).
+
+## STATUS.md is the owner's view
+Every commit that changes a work item's state updates its STATUS.md row in the same commit. Run python3 tools/status_check.py before committing.

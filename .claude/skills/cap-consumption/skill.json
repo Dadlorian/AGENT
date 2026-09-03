@@ -455,16 +455,24 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "`bash examples/end-to-end/test.sh`, the runnable reference for this contract: it submits all four of TARGET T6.2's entries - human, event, schedule, external - through the one envelope, checks that each reaches a result, that a replayed key appends nothing, that a ceiling below the plan floor refuses before anything runs, and that a malformed envelope is refused as problem details.",
-    "expected": "`passed 29, failed 0` and exit 0.",
-    "breakage": "Delete the required `idempotency_key` member from one entry envelope - `python3 -c \"import json;d=json.load(open('examples/end-to-end/entries/human.json'));d.pop('idempotency_key');json.dump(d,open('/tmp/human-nokey.json','w'))\"` - and run `python3 examples/end-to-end/run.py --entry /tmp/human-nokey.json`.",
-    "expected_failure": "exit 2 and `PROBLEM (application/problem+json):` carrying `\"type\": \"urn:agentic:problem:document-invalid\"`, `\"status\": 422`, `\"detail\": \"$: missing required property 'idempotency_key'\"` and `\"retryable\": false` - a typed refusal rather than a stack trace, which is what makes the one-answer-or-one-problem rule checkable. Measured in session consolidation-A 2831cb4f on 2026-09-03: the gate printed `passed 29, failed 0` at exit 0, and the breakage produced exactly that problem object at exit 2.",
+    "criterion": "bash examples/end-to-end/test.sh",
+    "expected": "`passed 30, failed 0` and exit 0. The gate is the runnable reference for this contract: it submits all four of TARGET T6.2's entries - human, event, schedule, external - through the one envelope, checks that each reaches a result, that a replayed key appends nothing, that a ceiling below the plan floor refuses before anything runs, and that a malformed envelope is refused as problem details. The count read `passed 29, failed 0` until 2026-09-03, when the suite's own check count reached 30 (ceremony 60, finding R60A-002); the criterion command itself never changed.",
+    "breakage": "Delete the required `idempotency_key` member from the human entry envelope the gate reads, exactly: `python3 -c \"import json,pathlib; p=pathlib.Path('examples/end-to-end/entries/human.json'); d=json.loads(p.read_text()); d.pop('idempotency_key'); p.write_text(json.dumps(d, indent=2) + chr(10))\"`. Restore with `git checkout -- examples/end-to-end/entries/human.json`.",
+    "expected_failure": "The gate exits 1 and prints `passed 22, failed 8`: the human entry is refused at admission, so the checks that depend on it - its result, its replay and the budget cases that reuse it - fail with it. The refusal itself is a typed problem, not a stack trace: the same deletion written to a copy and run as `python3 examples/end-to-end/run.py --entry <copy>` prints `PROBLEM (application/problem+json):` carrying `\"type\": \"urn:agentic:problem:document-invalid\"`, `\"status\": 422`, `\"detail\": \"$: missing required property 'idempotency_key'\"` and `\"retryable\": false` at exit 2, which is what makes the one-answer-or-one-problem rule checkable. Both halves re-run on 2026-09-03 for finding R60A-002.",
     "status": "measured",
     "sources": [
       "T-t6-01",
       "X-end-to-end-076"
     ],
-    "quote": "There is one way to consume the platform, shown as code end to end: what is called, with what, and what comes back."
+    "quote": "There is one way to consume the platform, shown as code end to end: what is called, with what, and what comes back.",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "6dee0cd",
+      "clean_exit": 0,
+      "clean_output": "4. budget enforcement (deliberate breakage)\n  ok   ceiling below the plan floor exits 2 (2)\n  ok   typed as budget-exhausted (402)\n  ok   refused before any step ran\n  ok   no dispatch in the ledger\n  ok   ceiling that runs dry mid-loop exits 2 (2)\n  ok   tripped at the step that would cross it\n5. malformed envelope\n  ok   malformed envelope exits 2 (2)\n  ok   answer is problem details\n  ok   typed as document-invalid (422)\n  ok   names the missing field\n  ok   nothing written for an invalid envelope\n6. ledger still verifies after everything\n  ok   final chain verifies (0)\n\npassed 30, failed 0",
+      "breakage_exit": 1,
+      "breakage_output": "got 2)\n  FAIL replay not recognised\n  ok   no records appended (42)\n4. budget enforcement (deliberate breakage)\n  ok   ceiling below the plan floor exits 2 (2)\n  FAIL not typed\n  FAIL ran anyway\n  ok   no dispatch in the ledger\n  ok   ceiling that runs dry mid-loop exits 2 (2)\n  FAIL wrong step\n5. malformed envelope\n  ok   malformed envelope exits 2 (2)\n  ok   answer is problem details\n  ok   typed as document-invalid (422)\n  ok   names the missing field\n  ok   nothing written for an invalid envelope\n6. ledger still verifies after everything\n  ok   final chain verifies (0)\n\npassed 22, failed 8"
+    }
   },
   "composes_with": {
     "builds_on": [
@@ -492,7 +500,7 @@
       "sources": [
         "F-b3-08"
       ],
-      "quote": "A2A messaging \u00b7 CloudEvents"
+      "quote": "A2A messaging · CloudEvents"
     }
   ],
   "provenance": {

@@ -88,7 +88,7 @@
         "quote": "The middle column is the contract"
       },
       {
-        "text": "Both adapters are chosen by a binding record read as configuration. If selecting one requires editing a file the core owns, the boundary is drawn wrong and the pair has found the defect it exists to find.",
+        "text": "Per the boundary-drawn-wrong finding agentic-stack and build-adapter-pair carry (F-meta-04), both adapters are chosen by a binding record read as configuration. If selecting one requires editing a file the core owns, the boundary is drawn wrong and the pair has found the defect it exists to find.",
         "origin": "sourced",
         "sources": [
           "F-meta-04"
@@ -104,7 +104,7 @@
         "quote": "If integration requires our SDK, a boundary is bespoke where a standard existed"
       },
       {
-        "text": "agentic-stack already states this as design rule 7 (F-b1-08, F-b4-01): telemetry, policy, provenance and budget are applied by the platform, not requested by the caller. What this skill adds: for validation that means the admission path applies it before the first metered call, and there is no flag, header or field by which a caller can ask to skip it.",
+        "text": "agentic-stack already states this as design rule 7 (F-b1-08, F-b4-01): telemetry, policy, provenance and budget are applied by the platform, not requested by the caller. What this skill adds, as its own consequence and proposed: for validation that means the admission path applies it before the first metered call, and there is no flag, header or field by which a caller can ask to skip it.",
         "origin": "sourced",
         "sources": [
           "F-b1-08",
@@ -149,7 +149,7 @@
     {
       "step": 2,
       "action": "Build the adapter that runs today as a thin wrapper: prepare a schema once per schema URI and dialect, expose validate, check_schema and dialect_in_effect, and translate the library's native errors into the outcome shape at the wrapper's edge.",
-      "why": "The row records this adapter as already in place, so the work is not writing a validator but confining one, and the translation at the edge is what stops the library's error class becoming the platform's error contract.",
+      "why": "cap-document-validation carries the row that records this adapter as already in place (F-b3-09), so the work is not writing a validator but confining one, and the translation at the edge is what stops the library's error class becoming the platform's error contract.",
       "origin": "sourced",
       "sources": [
         "F-b3-09"
@@ -186,7 +186,7 @@
     {
       "step": 6,
       "action": "Write one conformance run parameterised over the binding records, point it at a vendored copy of the official suite for the dialect at a pinned revision, and run it for every adapter on every change.",
-      "why": "One suite over two adapters is what makes the swap a tested property; pinning the suite is what makes a new failure attributable to our change rather than to the suite moving underneath it.",
+      "why": "cap-document-validation names the official suite this pins (X-cap-document-validation-004). One suite over two adapters is what makes the swap a tested property; pinning the suite is what makes a new failure attributable to our change rather than to the suite moving underneath it.",
       "origin": "sourced",
       "sources": [
         "X-cap-document-validation-004"
@@ -196,7 +196,7 @@
     {
       "step": 7,
       "action": "Have each adapter report, at start-up, the dialect it actually resolved, and compare it against its binding record's declared dialect; a mismatch fails the definition of done for that adapter.",
-      "why": "build-definition-of-done requires the effective configuration to be attested rather than assumed, and cap-document-validation already states why this capability in particular needs it (F-a7-04).",
+      "why": "build-definition-of-done requires the effective configuration to be attested rather than assumed, and cap-document-validation carries why this capability in particular needs it (F-a7-04).",
       "origin": "sourced",
       "sources": [
         "F-a7-04"
@@ -212,7 +212,7 @@
   ],
   "best_practices": [
     {
-      "text": "cap-document-validation already states the configuration finding for this capability (F-a7-04). What this skill adds: make the comparison a start-up assertion rather than a review item, because a validator silently bound to an older draft passes almost every document and fails only on the newest keywords, which is the shape of a defect that ships.",
+      "text": "cap-document-validation and build-evidence-record already state the configuration finding for this capability (F-a7-04). What this skill adds, as its own consequence and proposed: make the comparison a start-up assertion rather than a review item, because a validator silently bound to an older draft passes almost every document and fails only on the newest keywords, which is the shape of a defect that ships.",
       "origin": "sourced",
       "sources": [
         "F-a7-04"
@@ -228,7 +228,7 @@
       "origin": "proposed"
     },
     {
-      "text": "Proposed: run both adapters over the platform's own instances, not only over the suite. The suite tests the validator; the diff tests whether our schemas mean the same thing to implementations in other language runtimes, which is the property the swap depends on.",
+      "text": "Proposed, over the cross-language dialect row cap-document-validation carries (X-cap-document-validation-006): run both adapters over the platform's own instances, not only over the suite. The suite tests the validator; the diff tests whether our schemas mean the same thing to implementations in other language runtimes, which is the property the swap depends on.",
       "origin": "sourced",
       "sources": [
         "X-cap-document-validation-006"
@@ -240,7 +240,7 @@
     {
       "entity": "E-adapter-in-place",
       "role": "today",
-      "maps_to": "validate, check_schema and dialect_in_effect served in-process by a Python jsonschema validator loaded inside the adapter directory. PASS.md records the adapter only as in place; naming the library is the manifest's entry and is proposed here.",
+      "maps_to": "validate, check_schema and dialect_in_effect served in-process by a Python jsonschema validator loaded inside the adapter directory. cap-document-validation carries the row that records this adapter only as in place (F-b3-09); naming the library is the manifest's entry and is proposed here.",
       "cannot": "Proposed: cannot serve a caller in another runtime without a process boundary being added, and reads the schema on the interpreted path, so its per-instance cost scales with schema size rather than being paid once at compile time.",
       "swap_procedure": "Change the binding record's role and schema_store, restart, confirm the reported dialect matches the declared one, then run the conformance suite and the instance diff. No core file is edited.",
       "status": "claimed",
@@ -254,7 +254,7 @@
       "role": "second",
       "maps_to": "the same three operations served by a compiled-schema validator in a different language runtime, for example a Rust or Go 2020-12 implementation invoked out of process or through a foreign function boundary.",
       "cannot": "Proposed: cannot receive the caller's live objects, exception types or file handles, and cannot be handed a schema outside the declared dialect - so anything it cannot implement was an in-process assumption leaking into the contract.",
-      "swap_procedure": "Its binding record differs from today's on start_and_teardown_cost (schema compiled ahead of use versus schema read per call) and on processes_required_for_progress. One parameterised conformance run covers both, and the pair stays claimed until that run is recorded.",
+      "swap_procedure": "cap-document-validation chooses the pair on execution model (F-b3-09, F-b1-04). Its binding record differs from today's on start_and_teardown_cost (schema compiled ahead of use versus schema read per call) and on processes_required_for_progress. One parameterised conformance run covers both, and the pair stays claimed until that run is recorded.",
       "status": "claimed",
       "sources": [
         "F-b3-09",

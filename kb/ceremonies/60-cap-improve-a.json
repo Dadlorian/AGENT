@@ -1,0 +1,216 @@
+{
+  "status_row": 60,
+  "improver": "60-cap-improve-a",
+  "date": "2026-09-03",
+  "review_record": "kb/ceremonies/60-cap-review-a.json",
+  "note": "Every entry carries both `id` and `finding` with the same value: the record shape the launch message names uses `id`, and tools/check_ceremony.py reads `finding`.",
+  "scope": [
+    "cap-agent-runtime",
+    "cap-agent-runtime-implement",
+    "cap-capability-packaging",
+    "cap-capability-packaging-implement",
+    "cap-capability-registry",
+    "cap-capability-registry-implement",
+    "cap-consumption",
+    "cap-document-validation",
+    "cap-document-validation-implement",
+    "cap-durable-execution",
+    "cap-durable-execution-implement",
+    "cap-errors",
+    "cap-errors-implement"
+  ],
+  "applied": [
+    {
+      "id": "R60A-001",
+      "skill": "cap-errors-implement",
+      "change": "Breakage rewritten to one exact command, and re-measured with tools/measure.py against that same command, so text and evidence now agree. The finding is confirmed at its root: harness/errors/test.sh section 4 copies adapters/ to out/breakage/ and applies the media-type/registered-type patch to second.py itself, asserting 'the breakage pattern was not found; test.sh is out of sync with second.py' if the shipped file no longer matches -- so the old documented hand edit to adapters/second.py desynchronised the harness's own self-check and the recorded breakage_output was that assertion, not the AttributeError the text claimed. New breakage, verbatim the command run: sed -i 's/^    row = REGISTRY.get(suffix)$/    row = REGISTRY.get(suffix, (500, \"Unregistered\", True, ()))/' harness/errors/interface.py, restored with git checkout -- harness/errors/interface.py. It opens the closed registry gate, which is a property the conformance run actually covers (case 'a type with no row in the closed registry is refused at construction') on both bindings, and it does not collide with section 4's internal patch. New expected_failure records what was observed: exit 1, 'passed 16, failed 7', section 1 'FAIL 9 cases exit 0 (expected 0, got 1)' and 'FAIL not 9/9', section 1b 'FAIL not rejected', section 2 failing the same way after the swap, and section 4 still passing because it patches a copy. The breakage text also names the collision and the finding id so the old recipe is not reintroduced. tools/measure.py re-ran both halves: clean exit 0 ('conformance PASSED: 18/18 cases, 2 binding(s)'), breakage exit 1 ('passed 16, failed 7'), status stays measured. No adapter, composes_with or criterion text was changed.",
+      "files": [
+        ".claude/skills/cap-errors-implement/skill.json",
+        ".claude/skills/cap-errors-implement/SKILL.md"
+      ],
+      "finding": "R60A-001"
+    },
+    {
+      "id": "R60A-002",
+      "skill": "cap-consumption",
+      "change": "The stale count is replaced with the count the run now reports and the run re-recorded. expected now reads '`passed 30, failed 0` and exit 0', keeps the prose describing the four entries the gate drives, and says the count read 29 until 2026-09-03 while the criterion command never changed. criterion was also reduced to the pure shell command 'bash examples/end-to-end/test.sh' (its prose moved into expected), because tools/measure.py cannot run a criterion carrying backticks or prose (lesson 59) and the row had status measured with no measured_run at all. breakage is now the exact command applied - python3 -c \"import json,pathlib; p=pathlib.Path('examples/end-to-end/entries/human.json'); d=json.loads(p.read_text()); d.pop('idempotency_key'); p.write_text(json.dumps(d, indent=2) + chr(10))\" - the same deletion the old text described, applied to the entry the gate actually reads rather than to a /tmp copy, so that it makes the criterion fail; restore is git checkout -- examples/end-to-end/entries/human.json. expected_failure records exit 1 with 'passed 22, failed 8' (the human entry is refused at admission and the checks depending on it fail with it) and keeps the typed-refusal half, re-verified: the same deletion written to a copy and run through run.py still prints PROBLEM (application/problem+json) with type urn:agentic:problem:document-invalid, status 422, detail \"$: missing required property 'idempotency_key'\", retryable false, at exit 2. measure.py: clean exit 0, breakage exit 1, status measured, measured_run now present.",
+      "files": [
+        ".claude/skills/cap-consumption/skill.json",
+        ".claude/skills/cap-consumption/SKILL.md"
+      ],
+      "finding": "R60A-002"
+    },
+    {
+      "id": "R60A-003",
+      "skill": "cap-agent-runtime",
+      "change": "All 6 restate-and-extend rows fixed by marking the post-marker clause as this skill's own proposed consequence: instructions[0], [5], [7] ('What this adds:' -> 'What this adds, as this skill's own consequence and proposed:'), instructions[6] ('what this adds is that' -> 'what this adds, as this skill's own consequence and proposed, is that'), best_practices[0] and [1] ('What it adds here:' -> 'What it adds here, as this skill's own consequence and proposed:'). Splitting each row into a second physical row was rejected on budget grounds and on repository precedent: this skill already carries 10 instructions and 10 invariants, the ceiling the validator checks, so a split would trade one warning class for another; and the phrase 'as this skill's own consequence and proposed' (the marker this repository's other skills already use, e.g. cap-tool-access, cap-policy, cap-model-access) is how cap-tool-access, cap-tool-access-implement, cap-policy, cap-model-access, cap-work-intake and cap-errors itself already carry the same shape at zero warnings. No claim was reworded, no quote or citation touched. 7 warnings -> 1.",
+      "files": [
+        ".claude/skills/cap-agent-runtime/skill.json",
+        ".claude/skills/cap-agent-runtime/SKILL.md"
+      ],
+      "finding": "R60A-003"
+    },
+    {
+      "id": "R60A-004",
+      "skill": "cap-agent-runtime-implement",
+      "change": "Same treatment on all 5 rows: instructions[0], [2], [5], [7] and best_practices[2] now mark the clause after the marker as this skill's own proposed consequence. Sourced restatements, quotes and citations unchanged. 5 warnings -> 0.",
+      "files": [
+        ".claude/skills/cap-agent-runtime-implement/skill.json",
+        ".claude/skills/cap-agent-runtime-implement/SKILL.md"
+      ],
+      "finding": "R60A-004"
+    },
+    {
+      "id": "R60A-005",
+      "skill": "cap-capability-packaging",
+      "change": "invariants[4] 'The consequence here is a separation of checks:' -> 'The consequence stated here is this skill's own and proposed - a separation of checks:'; invariants[5] 'The consequence here is that frontmatter' -> 'The consequence stated here is this skill's own and proposed: frontmatter'; best_practices[0] marks its 'What it adds here' clause proposed. 4 warnings -> 1 (the remaining one is the prose definition_of_done.criterion of a claimed row, which is not a finding here and was left alone).",
+      "files": [
+        ".claude/skills/cap-capability-packaging/skill.json",
+        ".claude/skills/cap-capability-packaging/SKILL.md"
+      ],
+      "finding": "R60A-005"
+    },
+    {
+      "id": "R60A-006",
+      "skill": "cap-capability-packaging-implement",
+      "change": "best_practices[0]: 'What this skill adds:' -> 'What this skill adds, as its own consequence and proposed:'. The packages_checked consequence is now marked as this skill's own; the F-a7-03 restatement keeps its quote. 1 warning -> 0.",
+      "files": [
+        ".claude/skills/cap-capability-packaging-implement/skill.json",
+        ".claude/skills/cap-capability-packaging-implement/SKILL.md"
+      ],
+      "finding": "R60A-006"
+    },
+    {
+      "id": "R60A-007",
+      "skill": "cap-capability-registry",
+      "change": "Both halves fixed. best_practices[0] now opens 'agentic-stack and build-ceremony already state the structurally-green finding (F-a7-03)', which is the one-clause pointer naming the other holder of the identical quote, and its 'What it adds here' clause is marked as this skill's own proposed consequence. invariants[0] 'The consequence here is where design rule 2's version lives:' -> 'The consequence stated here is this skill's own and proposed - where design rule 2's version lives:'. 4 warnings -> 1 (prose criterion on a claimed row, left alone).",
+      "files": [
+        ".claude/skills/cap-capability-registry/skill.json",
+        ".claude/skills/cap-capability-registry/SKILL.md"
+      ],
+      "finding": "R60A-007"
+    },
+    {
+      "id": "R60A-008",
+      "skill": "cap-capability-registry-implement",
+      "change": "instructions[2].why 'The consequence here is specific:' -> 'The consequence stated here is this skill's own and proposed:'; best_practices[0] 'What this skill adds:' -> 'What this skill adds, as its own consequence and proposed:'. 2 warnings -> 0.",
+      "files": [
+        ".claude/skills/cap-capability-registry-implement/skill.json",
+        ".claude/skills/cap-capability-registry-implement/SKILL.md"
+      ],
+      "finding": "R60A-008"
+    },
+    {
+      "id": "R60A-009",
+      "skill": "cap-document-validation",
+      "change": "instructions[0].why now names the owner of the shared F-b3-18 quote in one clause: 'build-adapter-pair carries the template row this reads from (F-b3-18): the contract has to survive the implementation, so that when a validation need changes the adapter changes and the core does not.' best_practices[0] and [1] mark their 'What it adds here' clauses as this skill's own proposed consequence. 4 warnings -> 1 (prose criterion on a claimed row, left alone).",
+      "files": [
+        ".claude/skills/cap-document-validation/skill.json",
+        ".claude/skills/cap-document-validation/SKILL.md"
+      ],
+      "finding": "R60A-009"
+    },
+    {
+      "id": "R60A-010",
+      "skill": "cap-document-validation-implement",
+      "change": "All 9 warnings cleared. Owner named in one clause per row: instructions[1] 'cap-document-validation carries the row that records this adapter as already in place (F-b3-09)'; instructions[5] 'cap-document-validation names the official suite this pins (X-cap-document-validation-004).'; invariants[1] 'Per the boundary-drawn-wrong finding agentic-stack and build-adapter-pair carry (F-meta-04), ...'; best_practices[0] 'cap-document-validation and build-evidence-record already state the configuration finding for this capability (F-a7-04)'; best_practices[3] 'Proposed, over the cross-language dialect row cap-document-validation carries (X-cap-document-validation-006): ...'; adapters[0].maps_to 'cap-document-validation carries the row that records this adapter only as in place (F-b3-09)'; adapters[1].swap_procedure 'cap-document-validation chooses the pair on execution model (F-b3-09, F-b1-04).' (adapters[1] carried both flagged ids under one quote, so one pointer clears both). Restate-and-extend: invariants[3] and best_practices[0] now mark their 'What this skill adds' clause proposed; instructions[6] carried the 'already states' marker with no extension at all, so the marker was replaced by a plain pointer ('cap-document-validation carries why this capability in particular needs it') rather than a proposed marker, since there is nothing there to propose. 9 warnings -> 0.",
+      "files": [
+        ".claude/skills/cap-document-validation-implement/skill.json",
+        ".claude/skills/cap-document-validation-implement/SKILL.md"
+      ],
+      "finding": "R60A-010"
+    },
+    {
+      "id": "R60A-011",
+      "skill": "cap-durable-execution",
+      "change": "instructions[3], [4] ('What this adds:'), instructions[5] ('what this adds is that') and best_practices[0] ('What it adds here:') now mark the clause after the marker as this skill's own proposed consequence. 5 warnings -> 1 (prose criterion on a claimed row, left alone).",
+      "files": [
+        ".claude/skills/cap-durable-execution/skill.json",
+        ".claude/skills/cap-durable-execution/SKILL.md"
+      ],
+      "finding": "R60A-011"
+    },
+    {
+      "id": "R60A-012",
+      "skill": "cap-durable-execution-implement",
+      "change": "All 7 rows marked: instructions[0] ('What this adds at the code level:'), instructions[2], [5], [6], invariants[3], invariants[5] ('What this adds:') and best_practices[2] ('What it adds for an implementer:'). Sourced restatements, quotes and citations unchanged. 7 warnings -> 0.",
+      "files": [
+        ".claude/skills/cap-durable-execution-implement/skill.json",
+        ".claude/skills/cap-durable-execution-implement/SKILL.md"
+      ],
+      "finding": "R60A-012"
+    },
+    {
+      "id": "R60A-013",
+      "skill": "cap-errors",
+      "change": "open_questions[1] now names the other holder of the identical T-t5-02 quote in one clause, in the default field where 1-3-1 is actually invoked: '1-3-1 as build-definition-of-done states it (T-t5-02), applied and recorded on 2026-09-03.' The finding suggested the evidence field; default is where the rule is used, and the validator scans every prose field of the row, so the pointer sits next to the claim it qualifies. 3 warnings -> 2 (prose criterion on a claimed row, and the 11-instruction budget, neither of which is a finding here).",
+      "files": [
+        ".claude/skills/cap-errors/skill.json",
+        ".claude/skills/cap-errors/SKILL.md"
+      ],
+      "finding": "R60A-013"
+    },
+    {
+      "id": "R60A-014",
+      "skill": "cap-errors-implement",
+      "change": "All 6 warnings cleared. Owner named in one clause per row: instructions[1].why and invariants[2] both open 'cap-errors carries the row recording typed errors as Absent (F-a6-06[, E-not-running-typed-errors])' - both rows carried the same quote, so both had to name it; instructions[6].why 'Per design rule 1 as agentic-stack and build-adapter-pair state it (F-b1-02), the core imports interfaces, never implementations, ...'; open_questions[0].evidence and adapters[1].swap_procedure both open with 'cap-errors carries the recorded swap-candidate row ... (F-b3-13)'; open_questions[1].evidence opens 'agentic-stack, build-definition-of-done and build-evidence-record hold the claimed-versus-measured rule this answers under (F-part-c-08)'. instructions[7].why marks its 'What this step adds' clause as this skill's own proposed consequence. 6 warnings -> 0.",
+      "files": [
+        ".claude/skills/cap-errors-implement/skill.json",
+        ".claude/skills/cap-errors-implement/SKILL.md"
+      ],
+      "finding": "R60A-014"
+    }
+  ],
+  "declined": [],
+  "validator_after": {
+    "cap-agent-runtime": "0 errors, 1 warnings",
+    "cap-agent-runtime-implement": "0 errors, 0 warnings",
+    "cap-capability-packaging": "0 errors, 1 warnings",
+    "cap-capability-packaging-implement": "0 errors, 0 warnings",
+    "cap-capability-registry": "0 errors, 1 warnings",
+    "cap-capability-registry-implement": "0 errors, 0 warnings",
+    "cap-consumption": "0 errors, 1 warnings",
+    "cap-document-validation": "0 errors, 1 warnings",
+    "cap-document-validation-implement": "0 errors, 0 warnings",
+    "cap-durable-execution": "0 errors, 1 warnings",
+    "cap-durable-execution-implement": "0 errors, 0 warnings",
+    "cap-errors": "0 errors, 2 warnings",
+    "cap-errors-implement": "0 errors, 0 warnings"
+  },
+  "warnings_before_after": {
+    "cap-agent-runtime": "7 -> 1",
+    "cap-agent-runtime-implement": "5 -> 0",
+    "cap-capability-packaging": "4 -> 1",
+    "cap-capability-packaging-implement": "1 -> 0",
+    "cap-capability-registry": "4 -> 1",
+    "cap-capability-registry-implement": "2 -> 0",
+    "cap-consumption": "2 -> 1",
+    "cap-document-validation": "4 -> 1",
+    "cap-document-validation-implement": "9 -> 0",
+    "cap-durable-execution": "5 -> 1",
+    "cap-durable-execution-implement": "7 -> 0",
+    "cap-errors": "3 -> 2",
+    "cap-errors-implement": "6 -> 0"
+  },
+  "remaining_warnings": "8 across the 13 skills, none of them a finding in this review: 6 rows carry a definition_of_done.criterion that is prose rather than a pure shell command (cap-agent-runtime, cap-capability-packaging, cap-capability-registry, cap-document-validation, cap-durable-execution, cap-errors), all of them status=claimed rows naming a tool that is not built, which this step has no mandate to rewrite; and 2 skills exceed the 6-10 instruction budget (cap-consumption and cap-errors, 11 each), which cannot be fixed by deleting a row without dropping a claim. cap-consumption's prose criterion was the one exception, rewritten because R60A-002 required a tools/measure.py run and measure.py cannot execute a criterion with backticks in it.",
+  "measure_runs": [
+    {
+      "skill": "cap-errors-implement",
+      "by": "tools/measure.py",
+      "criterion": "bash harness/errors/test.sh && python3 harness/errors/conformance.py --adapter dryrun --adapter second",
+      "breakage_cmd": "sed -i 's/^    row = REGISTRY.get(suffix)$/    row = REGISTRY.get(suffix, (500, \"Unregistered\", True, ()))/' harness/errors/interface.py",
+      "restore_cmd": "git checkout -- harness/errors/interface.py",
+      "result": "measured (clean exit 0, breakage exit 1); clean tail 'conformance PASSED: 18/18 cases, 2 binding(s)', breakage tail 'passed 16, failed 7'"
+    },
+    {
+      "skill": "cap-consumption",
+      "by": "tools/measure.py",
+      "criterion": "bash examples/end-to-end/test.sh",
+      "breakage_cmd": "python3 -c \"import json,pathlib; p=pathlib.Path('examples/end-to-end/entries/human.json'); d=json.loads(p.read_text()); d.pop('idempotency_key'); p.write_text(json.dumps(d, indent=2) + chr(10))\"",
+      "restore_cmd": "git checkout -- examples/end-to-end/entries/human.json",
+      "result": "measured (clean exit 0, breakage exit 1); clean tail 'passed 30, failed 0', breakage tail 'passed 22, failed 8'"
+    }
+  ],
+  "planted_defects": "None in this part, as the launch message states, and none was found: every finding named a row that was present in the tree exactly as described.",
+  "summary": "All 14 findings applied, none declined. Warnings across the 13 skills in scope fall from 59 to 8, errors stay at 0 for every skill. The 12 restatement findings (R60A-003..R60A-014) were fixed two ways and never by rewording a claim: a row that repeats a fact an owner skill already states under the identical quote got a one-clause pointer naming that owner (build-adapter-pair, build-ceremony, build-definition-of-done, build-evidence-record, agentic-stack, cap-errors or cap-document-validation, whichever the validator named), and a row that restated a fact and then extended it got the clause after the marker marked as this skill's own proposed consequence. Physically splitting each restate-and-extend row into a second row was considered and not taken: five of the twelve skills already sit at the 10-instruction or 10-invariant ceiling the validator checks, so a split would have traded one warning class for another, and the in-row proposed marker is the form cap-tool-access, cap-tool-access-implement, cap-policy, cap-model-access, cap-work-intake and cap-errors itself already use at zero warnings, so the batch now reads the same way as the rest of the repository. The two definition-of-done findings were both closed by rewriting the text to the exact command and then re-running tools/measure.py against that same command, so text and evidence agree by construction rather than by assertion. R60A-001's root cause is recorded in the breakage text itself: harness/errors/test.sh section 4 applies the adapters/second.py patch internally to a copy, so a hand edit to the shipped file makes its own string replace miss and the harness reports a desynchronisation instead of the failure under test; the new breakage opens the closed registry gate in interface.py instead, which the conformance run covers on both bindings and which section 4 tolerates. Both re-measured rows keep status measured. No definition_of_done was touched outside the two findings, no adapters or composes_with row was edited, and no quote or citation was changed anywhere."
+}

@@ -100,7 +100,7 @@
         "quote": "The core imports interfaces, never implementations."
       },
       {
-        "text": "Proposed: there is nothing to migrate. Typed errors are recorded as Absent, so the work is conversion of untyped failure paths rather than translation of an existing error object, and the count of converted paths is the progress measure.",
+        "text": "Proposed: there is nothing to migrate. cap-errors carries the row recording typed errors as Absent (F-a6-06), so the work is conversion of untyped failure paths rather than translation of an existing error object, and the count of converted paths is the progress measure.",
         "origin": "sourced",
         "sources": [
           "F-a6-06"
@@ -159,7 +159,7 @@
     {
       "step": 2,
       "action": "Enumerate every failure path in what runs, map each to a registry row, and convert them one at a time. Where the failure has no row, route it through classify to adapter-unavailable and increment the untyped counter rather than inventing a suffix.",
-      "why": "Typed errors are recorded as Absent, so this is conversion from nothing rather than migration from an existing shape; the counter is what stops an unconverted path from looking finished.",
+      "why": "cap-errors carries the row recording typed errors as Absent (F-a6-06, E-not-running-typed-errors), so this is conversion from nothing rather than migration from an existing shape; the counter is what stops an unconverted path from looking finished.",
       "origin": "sourced",
       "sources": [
         "F-a6-06",
@@ -214,7 +214,7 @@
     {
       "step": 7,
       "action": "Write one conformance suite against the capability and parameterise it over adapters, selecting the adapter by configuration with no code edit between runs, and emit the report shape defined above.",
-      "why": "The core imports interfaces, never implementations, so the suite must import the capability and never an adapter type; a per-adapter branch inside the suite would test two things and prove neither swappable.",
+      "why": "Per design rule 1 as agentic-stack and build-adapter-pair state it (F-b1-02), the core imports interfaces, never implementations, so the suite must import the capability and never an adapter type; a per-adapter branch inside the suite would test two things and prove neither swappable.",
       "origin": "sourced",
       "sources": [
         "F-b1-02"
@@ -224,7 +224,7 @@
     {
       "step": 8,
       "action": "Verify at runtime which adapter actually answered, rather than trusting the configuration that selected it, by asserting the report's adapter field against a marker the running adapter emits.",
-      "why": "agentic-stack already states the configuration finding (F-a7-04): values written to the documented place validated, reviewed correctly, and had no runtime effect. What this step adds: assert the report's adapter field against a marker the running adapter emits rather than against the binding record, because a swap job that never left the first adapter reports two green runs of the same code.",
+      "why": "agentic-stack already states the configuration finding (F-a7-04): values written to the documented place validated, reviewed correctly, and had no runtime effect. What this step adds, as this skill's own consequence and proposed: assert the report's adapter field against a marker the running adapter emits rather than against the binding record, because a swap job that never left the first adapter reports two green runs of the same code.",
       "origin": "sourced",
       "sources": [
         "F-a7-04"
@@ -284,7 +284,7 @@
       "role": "second",
       "maps_to": "Proposed adapter, and a proposed entity id: no swap-candidate entity exists for this capability because the recorded swap-candidate column is the instruction to adopt the RFC directly. It is a filter at the edge that maps an upstream failure into the problem-details body and media type without the service being touched.",
       "cannot": "Cannot see raise-site context: it holds only the wire response, so rule_id, causes and a detail written at the point of failure are unavailable unless the service already emitted them. It also needs a separate process on the response path, where the first adapter needs none.",
-      "swap_procedure": "Select the adapter by configuration only, run the same conformance suite against each, and assert adapters_run is at least two with a runtime marker proving the second actually served.",
+      "swap_procedure": "cap-errors carries the recorded swap-candidate row for this capability (F-b3-13). Select the adapter by configuration only, run the same conformance suite against each, and assert adapters_run is at least two with a runtime marker proving the second actually served.",
       "status": "claimed",
       "sources": [
         "F-b3-13",
@@ -296,8 +296,8 @@
   "definition_of_done": {
     "criterion": "bash harness/errors/test.sh && python3 harness/errors/conformance.py --adapter dryrun --adapter second",
     "expected": "The gate (23 checks) and the conformance run together prove one typed RFC 9457 problem for every registered failure mode under an in-process raise-site adapter and an edge-filter adapter that sees only a wire response: the retry decision reads from retryable alone, never from detail text, an unregistered type is refused before a body is built, the edge adapter never forwards an untyped body unchanged, and no product name appears outside adapters/ (adapters_run=2, product_hits=0). Earlier criterion named tools/conformance/errors_fuzz.py, replaced by the harness on 2026-09-03.",
-    "breakage": "In harness/errors/adapters/second.py, remove the media-type/registered-type guard in classify() so it assigns body = wire.get(\"body\") and reshapes unchanged before checking its shape, and change nothing else (the harness README's breakage); restore with git checkout -- harness/errors/adapters/second.py.",
-    "expected_failure": "The edge adapter, with no guard before assuming the wire body is a well-formed dict, crashes with a traceback (AttributeError) on the first body that is not one, and the conformance run exits non-zero naming adapters/second.py; the in-process adapter is unaffected and still passes — a crash or an explicit FAIL is exactly what the harness's own check for this breakage requires.",
+    "breakage": "Open the closed registry gate in `harness/errors/interface.py` so an unregistered suffix can reach a wire body, with exactly this command and nothing else: `sed -i 's/^    row = REGISTRY.get(suffix)$/    row = REGISTRY.get(suffix, (500, \"Unregistered\", True, ()))/' harness/errors/interface.py`. Restore with `git checkout -- harness/errors/interface.py`. Do not hand-edit `harness/errors/adapters/second.py` for this: test.sh section 4 already applies that edit itself, to a copy under out/breakage/, and a hand edit to the shipped file makes its internal string replace miss, so the harness's own self-check throws and the run reports a harness desynchronisation instead of the failure under test (ceremony 60, finding R60A-001).",
+    "expected_failure": "The gate exits 1 and prints `passed 16, failed 7`. Both bindings fail the same case - `a type with no row in the closed registry is refused at construction` - so section 1 reports `FAIL 9 cases exit 0 (expected 0, got 1)` and `FAIL not 9/9`, section 1b reports `FAIL not rejected` where call.py expected an unregistered suffix to be rejected before a body was ever built, and section 2 fails the same way after the swap. Section 4, the harness's own internal breakage, still passes: it patches a copy, so it is unaffected. The failure is the property this capability exists to hold - the registry is closed and a type outside it never reaches a body - and it is caught identically on the in-process and the edge adapter, which is what makes the two a single interface rather than two code paths.",
     "status": "measured",
     "sources": [
       "F-part-c-04",
@@ -307,11 +307,11 @@
     "quote": "A criterion nothing can fail is not a criterion",
     "measured_run": {
       "by": "tools/measure.py",
-      "commit": "16d354c",
+      "commit": "6dee0cd",
       "clean_exit": 0,
       "clean_output": "d, counted, and never crashes the caller: classified to urn:agentic:problem:adapter-unavailable, untyped=1\n  ok   the edge adapter's own failure path: wrong media type is counted: text/plain body counted as untyped and wrong_media_type, never forwarded unchanged\n  ok   byte-identical problem bodies from both adapters: 7 members, canonical JSON identical byte for byte across both adapters\n  adapter=edge component that answers on behalf of a service cases=9 passed=9 responses_checked=14 untyped=1 unregistered_types=0 wrong_media_type=1 product_hits=0\nconformance PASSED: 18/18 cases, 2 binding(s)",
       "breakage_exit": 1,
-      "breakage_output": ". no product name anywhere in this harness\n  ok   product scan over the shipped tree exits 0 (0)\n  ok   0 hits (PASS.md B3 records no component for this element)\n4. deliberate breakage: the edge adapter forwards an untyped upstream body unchanged\n  ok   the breakage run exits non-zero (1)\n  ok   the run names the file the breakage broke\n  ok   an untyped upstream body is no longer converted; the check catches it\n\npassed 17, failed 6\nTraceback (most recent call last):\n  File \"<stdin>\", line 18, in <module>\nAssertionError: the breakage pattern was not found; test.sh is out of sync with second.py"
+      "breakage_output": "same caller code runs on the second adapter (0)\n  FAIL the two adapters differ in execution model on 2 or more axes (expected 0, got 1)\n  FAIL axes did not differ\n3. no product name anywhere in this harness\n  ok   product scan over the shipped tree exits 0 (0)\n  ok   0 hits (PASS.md B3 records no component for this element)\n4. deliberate breakage: the edge adapter forwards an untyped upstream body unchanged\n  ok   the breakage run exits non-zero (1)\n  ok   the run names the file the breakage broke\n  ok   an untyped upstream body is no longer converted; the check catches it\n\npassed 16, failed 7"
     }
   },
   "composes_with": {
@@ -326,7 +326,7 @@
   "open_questions": [
     {
       "question": "The second adapter has no entity in the knowledge base. E-swap-candidate-gateway-problem-filter is a proposed id minted here because the schema requires an adapter entity and the recorded swap-candidate column for Errors is an instruction rather than a candidate list. Should it become a real entity?",
-      "evidence": "Whether a knowledge-base rebuild that derives swap candidates from sources other than the B3 table produces an entity for this filter. Until then the id resolves nowhere and a reader must take this row as proposed.",
+      "evidence": "cap-errors carries the recorded swap-candidate row this reads from (F-b3-13). Whether a knowledge-base rebuild that derives swap candidates from sources other than the B3 table produces an entity for this filter. Until then the id resolves nowhere and a reader must take this row as proposed.",
       "default": "Keep the proposed id, keep the row marked claimed, and do not list the id under entities so the validator's entity check is not silently satisfied by an invented record.",
       "sources": [
         "F-b3-13"
@@ -335,7 +335,7 @@
     },
     {
       "question": "Can the edge-filter adapter reach `untyped == 0` at all, given that it cannot type what an upstream never described?",
-      "evidence": "Run the fuzz suite against a fixture upstream that returns a known mix of typed and untyped failures, and measure how many the filter can classify from status code and body alone. If a residue remains, the honest answer is a declared conformance subset rather than a claim of parity.",
+      "evidence": "agentic-stack, build-definition-of-done and build-evidence-record hold the claimed-versus-measured rule this answers under (F-part-c-08). Run the fuzz suite against a fixture upstream that returns a known mix of typed and untyped failures, and measure how many the filter can classify from status code and body alone. If a residue remains, the honest answer is a declared conformance subset rather than a claim of parity.",
       "default": "Require parity and let the suite fail. A declared subset is available if the measurement shows the residue is small and unrelated to the paths the platform actually uses, but overclaiming parity is worse than documenting the subset.",
       "sources": [
         "F-part-c-08"

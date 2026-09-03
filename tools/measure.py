@@ -59,7 +59,12 @@ def main(argv: list[str]) -> int:
     ok = rc1 == 0
     if "--breakage-cmd" in opts:
         before = tree_digest()
-        run(opts["--breakage-cmd"])
+        brc, brout = run(opts["--breakage-cmd"])
+        if brc != 0 or tree_digest() == before:
+            # A breakage that did not apply (non-zero exit, or no file changed) would let the clean run stand in
+            # for the broken one; seen 2026-09-03 on xc-compensation-implement.
+            print(f"FAIL: breakage command did not apply (exit {brc}): {brout.strip().splitlines()[-1] if brout.strip() else 'no output'}")
+            result.update({"breakage_applied": False}); ok = False
         rc2, out2 = run(d["criterion"])
         run(opts.get("--restore-cmd", "git checkout -- ."))
         after = tree_digest()

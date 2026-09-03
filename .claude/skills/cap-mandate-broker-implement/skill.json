@@ -1,0 +1,355 @@
+{
+  "name": "cap-mandate-broker-implement",
+  "layer": "cap",
+  "wave": 5,
+  "description": "How to build mandate and credential brokering on this stack: the host-side broker that already keeps the real key outside the sandbox, a second binding whose authority a non-issuer can verify offline, the migration from a dummy key plus one filtered egress path to a minted handle per destination and a signed mandate per irreversible action, where a mint and a verification are wired so the platform's guarantees ride on them, and the run that decides whether either binding may serve. Load it when writing or reviewing the broker, the exchange path or the mandate verifier, when a component is about to be handed a static secret, when planning the move off long-lived keys, when someone asks 'where does the mint actually happen', 'can we prove the token never got inside', or 'what did we run to know the expiry check works', and before recording any brokering result as passing.",
+  "purpose": {
+    "text": "Build what cap-mandate-broker specifies: two authority bindings selected by configuration, one conformance run that drives both over the same fixtures and diffs acceptances and typed refusals, and the wiring that makes a mint and a mandate verification recorded steps rather than an unobserved call to a key store. build-adapter-pair owns why there are two.",
+    "origin": "sourced",
+    "sources": [
+      "F-b1-04",
+      "F-part-c-05"
+    ],
+    "quote": "chosen to prove the interface is not shaped around its current implementation"
+  },
+  "entities": [
+    "E-sandbox-property-guest-credential",
+    "E-sandbox-property-guest-network",
+    "E-sandbox-property-model-egress",
+    "E-sandbox-property-field-filtering",
+    "E-standard-oauth-2-0-token-exchange"
+  ],
+  "contract": {
+    "shapes": [
+      {
+        "name": "broker-binding (proposed): the configuration record that selects an authority binding, and the only file that changes when the pair is swapped",
+        "origin": "proposed",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:cap:mandate-broker:binding:0.1",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "binding_id",
+            "role",
+            "authority_kind",
+            "verification",
+            "operations"
+          ],
+          "properties": {
+            "binding_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "role": {
+              "enum": [
+                "today",
+                "second"
+              ]
+            },
+            "authority_kind": {
+              "enum": [
+                "issuer_validated_token",
+                "offline_verifiable_credential"
+              ],
+              "description": "Proposed: the axis the pair differs on, stated as a field so a conformance report can group by it instead of by product name."
+            },
+            "verification": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "verifier_is_issuer",
+                "contacts_issuer"
+              ],
+              "properties": {
+                "verifier_is_issuer": {
+                  "type": "boolean"
+                },
+                "contacts_issuer": {
+                  "type": "boolean"
+                }
+              }
+            },
+            "operations": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "enum": [
+                  "mint",
+                  "exchange",
+                  "attach",
+                  "issue_mandate",
+                  "verify_mandate"
+                ]
+              },
+              "description": "Proposed: which of cap-mandate-broker's five operations this binding serves. A binding that serves a subset declares it here rather than failing at call time."
+            },
+            "max_lifetime_seconds": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3600
+            }
+          }
+        }
+      }
+    ],
+    "invariants": [
+      {
+        "text": "agentic-stack and build-adapter-pair already state design rule 1 (F-b1-02). The consequence here is a file boundary: every key store, token client, signature library and network client lives inside a binding directory, so a core module that can name a key path has made the broker load-bearing.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-02"
+        ],
+        "quote": "The core imports interfaces, never implementations"
+      },
+      {
+        "text": "Swapping the pair is a configuration change to a broker-binding record and nothing else. build-adapter-pair states the rule (F-b1-04); the consequence here is a concrete file boundary: if a swap needs an edit anywhere but the binding record and the binding directory, the pair has not been proved and the run that says it has is wrong.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-04",
+          "F-meta-04"
+        ],
+        "quote": "If Part B cannot swap an implementation without touching the core, the boundary is drawn wrong"
+      },
+      {
+        "text": "The guest keeps no real secret and reaches nothing directly. What runs today already puts a dummy key inside and defaults egress to off; the implementation may narrow that, never widen it, so 'the credential never entered the unit of work' stays checkable by inspecting the guest rather than by trusting the broker.",
+        "origin": "sourced",
+        "sources": [
+          "F-a3-04",
+          "F-a3-05"
+        ],
+        "quote": "Egress is a flag, default off"
+      },
+      {
+        "text": "cap-mandate-broker states that expiry is the revocation mechanism (X-cap-mandate-broker-006). The consequence for the build is that there is no renewal endpoint to write: a task that outlives its authority fails and is re-dispatched with a fresh mint, and no code path exists that could hand back a longer-lived credential.",
+        "origin": "sourced",
+        "sources": [
+          "X-cap-mandate-broker-006"
+        ],
+        "quote": "non-refreshable by design"
+      },
+      {
+        "text": "A binding that cannot express a bound records it as a gap in the conformance report rather than skipping the fixture. build-definition-of-done states why (F-a7-03): a skipped fixture is how a pair passes while only one half was ever exercised.",
+        "origin": "sourced",
+        "sources": [
+          "F-a7-03"
+        ],
+        "quote": "with every behavioural stage skipped"
+      },
+      {
+        "text": "Every conformance run is an evidence record before its result is quoted anywhere. build-evidence-record owns the record's fields (F-a5-04); the consequence here is that the brokering pair stays labelled claimed until a run on a named session and date has produced both the passing and the failing output.",
+        "origin": "sourced",
+        "sources": [
+          "F-a5-04",
+          "F-part-c-08"
+        ],
+        "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+      }
+    ],
+    "not_exposed": [
+      {
+        "text": "Proposed: the key store, the signing keys and the credential bytes stay inside the binding directory and never cross into a shape any other layer imports. A test fixture holds a throwaway key generated at run time, never a copy of a real one.",
+        "origin": "proposed"
+      },
+      {
+        "text": "Proposed: the binding's transport, its endpoint and its retry policy. The conformance report names the binding_id and the authority_kind; how the binding reached its issuer is not something a report consumer branches on.",
+        "origin": "proposed"
+      }
+    ]
+  },
+  "instructions": [
+    {
+      "step": 1,
+      "action": "Put both bindings behind the broker-binding record and keep key paths, token clients, signature verification and network calls inside their binding directories. Select the binding by configuration at start-up; never by an import in core or seam code.",
+      "why": "build-adapter-pair states rule 3 (F-b1-04) and cap-mandate-broker fixes five operations and nothing about where a key lives; a core module that can name a key path has already decided which binding wins, and the swap the pair is supposed to prove becomes an edit rather than a setting.",
+      "origin": "sourced",
+      "sources": [
+        "F-b1-02",
+        "F-b1-04"
+      ],
+      "quote": "Every interface ships with at least two adapters"
+    },
+    {
+      "step": 2,
+      "action": "Build today's binding on what already runs: the host-side broker outside the sandbox that holds the real key, picks the endpoint and drops model and destination overrides by name. Extend it from one egress path to a mint per destination, and have it return a handle rather than a token.",
+      "why": "cap-mandate-broker's today row is this broker (F-a3-07); the work is not a new component but two changes to an existing one - one destination per authority instead of one endpoint for all, and a handle at the boundary instead of a credential.",
+      "origin": "sourced",
+      "sources": [
+        "F-a3-07",
+        "F-a3-08"
+      ],
+      "quote": "Model and destination overrides dropped by name at the broker"
+    },
+    {
+      "step": 3,
+      "action": "Build the second binding as a mandate a verifier that did not issue it can check offline: sign the whole record, publish the key, and run the verifier in a process that holds no issuer key and makes no call to the issuer. Assert both of those in the run, not in a comment.",
+      "why": "cap-mandate-broker chooses the pair on where verification happens (X-cap-mandate-broker-005). A verifier that quietly reaches the issuer passes the same fixtures while proving nothing, so the two verifier constants are the only evidence that the second execution model is real.",
+      "origin": "sourced",
+      "sources": [
+        "X-cap-mandate-broker-005",
+        "X-end-to-end-070"
+      ],
+      "quote": "cryptographically signed records of what the user approved"
+    },
+    {
+      "step": 4,
+      "action": "Proposed migration, in this order: inventory every destination a unit of work reaches today; mint and attach in shadow beside the current path and diff the requests that leave the host; flip one destination at a time to refuse an unminted request; then add mandates for the spend, deploy and send classes; then remove every remaining static credential and fail the build if one reappears.",
+      "why": "Proposed: the inventory is what stops a flip from breaking a destination nobody remembered, the shadow diff is what shows the attach point is byte-equivalent before anything depends on it, and doing mandates after destinations means each step has one observable failure mode instead of two.",
+      "origin": "proposed"
+    },
+    {
+      "step": 5,
+      "action": "Wire the cross-cutting concerns onto the mint and verification paths: set the correlation attribute explicitly at dispatch and carry it on every mint, ask policy before minting rather than after, and append an evidence record for every mint, exchange and mandate verification.",
+      "why": "agentic-stack and build-adapter-pair already state the correlation finding (F-a7-02): trace parentage did not survive the agent boundary, so a mint made inside a unit of work is unattributable unless the attribute was set where the work was dispatched.",
+      "origin": "sourced",
+      "sources": [
+        "F-a7-02",
+        "F-b1-08"
+      ],
+      "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+    },
+    {
+      "step": 6,
+      "action": "Have each binding report at start-up the authority kind it serves, the operations it implements, the maximum lifetime it will mint and the trust anchor it verifies against, and compare that report against its binding record. Fail start-up on a mismatch.",
+      "why": "build-evidence-record already states the silent-override finding (F-a7-04): configuration written in the documented place can be discarded, so a binding that says it mints five-minute credentials proves nothing until it has said so from inside the running process, which is why the report is compared rather than read.",
+      "origin": "sourced",
+      "sources": [
+        "F-a7-04"
+      ],
+      "quote": "had no runtime effect"
+    },
+    {
+      "step": 7,
+      "action": "Write one conformance run parameterised over the binding records: drive the same fixtures through every configured binding, assert the per-binding counters, and diff acceptances, refusals and refusal types across bindings. Include a scan of the guest filesystem and environment after the run.",
+      "why": "cap-mandate-broker states the replay property (X-cap-mandate-broker-004); the consequence for the run is that neither it nor 'the credential never got inside the sandbox' is visible from a mint that returned successfully, so the run needs a second destination and a post-run scan.",
+      "origin": "sourced",
+      "sources": [
+        "X-cap-mandate-broker-004",
+        "F-a3-05"
+      ],
+      "quote": "stops a stolen or misdirected token from being replayed against a different service"
+    },
+    {
+      "step": 8,
+      "action": "Record each conformance run as an evidence record naming the command, the fixture set, the code version and tree hash, and whether the tree was dirty, and leave the pair labelled claimed until a run has produced both the passing and the failing output on a named session and date.",
+      "why": "build-evidence-record owns the claimed-versus-measured distinction (F-part-c-08); the consequence here is that a brokering result is the one result nobody should take on trust, because the thing it asserts is that a secret did not leak.",
+      "origin": "sourced",
+      "sources": [
+        "F-part-c-08",
+        "F-a5-04"
+      ],
+      "quote": "Distinguish **claimed** from **measured** throughout"
+    },
+    {
+      "step": 9,
+      "action": "Proposed: open cap-mandate-broker's references/mandate-broker-shapes.md when implementing the mint request, the mandate record, the verification outcome or the refusal types. The body of this skill is enough to build and wire the pair without opening that file.",
+      "why": "Proposed: the full shapes and the refusal registry belong to the contract rather than to the build, and duplicating them here would give the next author two places to change one field.",
+      "origin": "proposed"
+    }
+  ],
+  "best_practices": [
+    {
+      "text": "Proposed: generate every key a test uses at run time and throw it away with the fixture. A committed test key is a long-lived credential in the repository, which is the exact thing this capability exists to remove.",
+      "origin": "proposed"
+    },
+    {
+      "text": "build-definition-of-done already states the structurally-green finding (F-a7-03). What it adds here: count what the run actually exercised - bindings_run, destinations_probed, mandates_verified, sandbox_credential_sightings - and fail on a zero, because a brokering run pointed at one destination with no expired fixture exercises neither audience nor expiry and still exits green.",
+      "origin": "sourced",
+      "sources": [
+        "F-a7-03"
+      ],
+      "quote": "because the generated work contained nothing those tools apply to"
+    },
+    {
+      "text": "Proposed: keep the shadow phase long enough to see the destinations that are reached rarely. The inventory finds the paths that are exercised; the diff over time finds the ones that are not, and those are where a static credential survives a migration.",
+      "origin": "proposed"
+    },
+    {
+      "text": "Proposed: make an unminted outbound request fail closed at the attach point rather than being passed through unauthenticated. A request that leaves without an authority is the failure mode that looks like success until the destination happens to be permissive.",
+      "origin": "proposed"
+    }
+  ],
+  "adapters": [
+    {
+      "entity": "E-adapter-vsock-credential-broker",
+      "role": "today",
+      "maps_to": "Proposed adapter and proposed entity id, for the reason cap-mandate-broker records: PASS.md B3 has no mandate or credential-brokering row, so no adapter entity exists for this capability. Built on the host-side broker in PASS.md A3, reached over vsock from a guest with no network and a dummy key, extended to mint one handle per destination and to serve exchange and attach; the real key, the endpoint choice and the by-name override filter stay on the host side of the boundary.",
+      "cannot": "Proposed: cannot issue an authority a third party can check, cannot express a ceiling or a validity period inside the credential, and cannot survive the host that holds the key - so it serves mint, exchange and attach, and leaves issue_mandate and verify_mandate to the second binding.",
+      "swap_procedure": "Point the runner at config/broker/mandate.json instead of config/broker/today.json and change nothing else. The same fixtures must produce the same acceptances and the same typed refusals for the operations both bindings serve, and a gap for the ones only one serves.",
+      "status": "claimed",
+      "sources": [
+        "F-a3-07",
+        "F-a3-05",
+        "F-a3-04"
+      ],
+      "quote": "vsock → host broker, which holds the real key and picks the endpoint"
+    },
+    {
+      "entity": "E-swap-candidate-verifiable-credential-mandate",
+      "role": "second",
+      "maps_to": "Proposed adapter and proposed entity id, same reason. A mandate signed as a verifiable credential, carrying the ceiling, the destinations and the validity period, verified by a process holding no issuer key and making no issuer call; it serves issue_mandate and verify_mandate over the identical fixtures.",
+      "cannot": "Proposed: cannot attach itself to an outbound request, cannot be withdrawn before its validity period ends without a separate status channel, and cannot keep its bounds from the party it is shown to.",
+      "swap_procedure": "The execution models differ on where verification happens: one authority is validated by the issuer that minted it, the other is checked offline by a holder. The conformance run groups its report by the binding record's authority_kind, so the report shows the axis rather than a pair of names.",
+      "status": "claimed",
+      "sources": [
+        "X-cap-mandate-broker-005",
+        "X-end-to-end-071",
+        "F-b1-04"
+      ],
+      "quote": "delegated tasks where the human signs an Intent Mandate upfront and the agent acts autonomously later"
+    }
+  ],
+  "definition_of_done": {
+    "criterion": "Two checks, both from the repository root. (1) Cross-binding conformance, proposed tool: `python3 tools/conformance_mandate_broker.py --binding config/broker/today.json --binding config/broker/mandate.json --fixtures tests/fixtures/mandate-broker --report out/mandate-broker-conformance.json`, over a fixture set of one credential minted for destination A and presented at A and at B, and three mandates - one within bounds and validity, one past expiry, one naming a destination outside its bounds - verified by a process with no issuer key. Assert adapters_run >= 2, credentials_minted > 0, accepted_at_intended == credentials_minted, accepted_at_other == 0, mandates_verified == 3, mandates_accepted == 1, refusals == 3, refusals_typed == refusals with every refusal carrying a `urn:agentic:problem:` type, verifier_is_issuer == false, contacts_issuer == false, and sandbox_credential_sightings == 0 from a scan of the guest filesystem and environment after the run. (2) Containment: `grep -rIlE '(BEGIN [A-Z ]*PRIVATE KEY|api[_-]?key|client_secret|/etc/broker/keys)' src/core/ src/seam/` returns no files, so key material and key paths appear only inside the binding directories.",
+    "expected": "(1) exit 0 with one line per binding reading `binding=<role> authority_kind=<kind> credentials_minted=1 accepted_at_intended=1 accepted_at_other=0 mandates_verified=3 mandates_accepted=1 refusals=3 refusals_typed=3 sandbox_credential_sightings=0` followed by `adapters_run=2 refusal_divergence=0`. (2) grep exits 1 printing nothing.",
+    "breakage": "In one change, drop the audience comparison at destination B so it accepts any well-formed credential, and hard-code the broker's key path inside a core module.",
+    "expected_failure": "Check (1) exits non-zero with `accepted_at_other=1 refusals=2` on both bindings, naming destination B as having accepted a credential minted for A while the expiry and out-of-bounds refusals still stand - which is what shows the run tells audience apart from expiry rather than passing or failing as a block. Check (2) exits 0 and prints the core module that now names the key path.",
+    "status": "claimed",
+    "sources": [
+      "F-part-c-04",
+      "F-a7-03"
+    ],
+    "quote": "A criterion nothing can fail is not a criterion"
+  },
+  "composes_with": {
+    "builds_on": [
+      "cap-mandate-broker",
+      "build-adapter-pair",
+      "build-definition-of-done",
+      "build-evidence-record"
+    ],
+    "used_by": [
+      "cap-mandate-broker-use"
+    ]
+  },
+  "open_questions": [
+    {
+      "question": "Where does the attach point sit once a unit of work reaches more than one kind of destination: one broker per destination class, or one broker that routes?",
+      "evidence": "Count, over a shadow migration, how many distinct destination classes a single unit reaches and how many of the by-name override filters differ between them; one filter set for all of them argues for one broker, several argue for one per class.",
+      "default": "Proposed: one broker that routes, because what runs today already picks the endpoint at the broker, and splitting it duplicates the by-name override filter cap-mandate-broker cites (F-a3-08), which is the part most likely to drift.",
+      "sources": [
+        "F-a3-07",
+        "F-a3-08"
+      ],
+      "quote": "Model and destination overrides dropped by name at the broker"
+    },
+    {
+      "question": "How is a mandate withdrawn before its validity period ends, given the second binding is verified offline?",
+      "evidence": "Measure how often an approving actor wants to withdraw inside the validity window; if it is rare, short validity periods are cheaper than a status channel every verifier must reach, which would undo offline verification.",
+      "default": "Proposed: keep validity periods short enough that expiry is the withdrawal mechanism, and record the requirement here rather than adding a revocation lookup that would make an offline verifier reach the issuer after all.",
+      "sources": [
+        "X-cap-mandate-broker-005"
+      ],
+      "quote": "decentralised"
+    }
+  ],
+  "provenance": {
+    "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+    "kb_heads": {
+      "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+      "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6"
+    },
+    "author": "session cap-mandate-broker 2831cb4f, 2026-09-03"
+  }
+}

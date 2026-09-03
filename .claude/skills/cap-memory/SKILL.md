@@ -1,0 +1,313 @@
+---
+name: cap-memory
+description: The memory contract: write, retrieve and expire scoped items so a later run can read what earlier runs learned without being handed their whole transcript. Load it when a run needs something an earlier run found out, when an agent is being passed a transcript because there is nowhere else to put what it learned, when deciding what should still be known next week and what should have expired by then, when a recall must never cross a principal, an agent or a tenant boundary, when someone asks 'why did it remember that', 'how do we forget it', or 'is this the same thing as the ledger', and before an embedding index, a similarity threshold or a store layout is allowed anywhere near the interface.
+---
+
+# cap-memory
+
+Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Source IDs resolve with `python3 tools/kb.py show <id>`.
+
+## Purpose
+
+| Statement | Origin | Evidence |
+|---|---|---|
+| Fix one contract for writing, recalling and expiring scoped memory items, so a later run can act on what an earlier run learned without being handed its transcript, and the store that holds the items stays an adapter. PASS.md has no memory row in any section, so this capability exists because TARGET requires the gaps in that baseline to be made up. | sourced | `T-t4-03`, `X-end-to-end-001` "make up for the gaps, and solve it" |
+
+## Entities
+
+| Entity |
+|---|
+| `E-capability-identity` |
+| `E-capability-state-persistence` |
+| `E-capability-errors` |
+| `E-core-component-ledger` |
+| `E-standard-json-schema-2020-12` |
+| `E-standard-rfc-9457-problem-details` |
+
+## Contract
+
+### Operations
+
+| Operation | Input | Output | Origin | Evidence |
+|---|---|---|---|---|
+| remember | one item: scope, body, kind, provenance (what produced it, when, on which correlation id) and a staleness policy | a memory_id, and the id of any item this one supersedes (proposed) | proposed | `X-end-to-end-002`, `X-cap-memory-008` |
+| recall | a scope selector naming at least one dimension, a need expressed as text or an explicit key, and a limit | items in an unspecified order, each with its provenance and its age, plus the selector that was applied (proposed) | proposed | `X-cap-memory-002`, `X-cap-memory-004` |
+| supersede | a memory_id and a replacement body with its own provenance | the new memory_id; the superseded item stops being recallable and is not rewritten in place (proposed) | proposed | `X-cap-memory-008` |
+| forget | a selector: one memory_id, or a scope plus a reason (expiry, erasure request, retention limit) | the count removed and the reason recorded; expiry also happens without this call being made (proposed) | proposed | `X-cap-memory-005` |
+
+### Shapes (JSON Schema 2020-12)
+
+**MemoryItem (proposed summary shape; the full schema and the scope grammar are in references/memory-item.md)** (proposed; sources: `X-end-to-end-002`, `X-cap-memory-005`, `X-cap-memory-007`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:memory:item:0.1",
+  "type": "object",
+  "required": [
+    "memory_id",
+    "scope",
+    "kind",
+    "body",
+    "provenance",
+    "staleness"
+  ],
+  "properties": {
+    "memory_id": {
+      "type": "string"
+    },
+    "scope": {
+      "type": "object",
+      "minProperties": 1,
+      "properties": {
+        "principal": {
+          "type": "string",
+          "examples": [
+            "user:corey"
+          ]
+        },
+        "agent": {
+          "type": "string",
+          "examples": [
+            "agent:release-reviewer"
+          ]
+        },
+        "run": {
+          "type": "string"
+        },
+        "org": {
+          "type": "string"
+        }
+      }
+    },
+    "kind": {
+      "enum": [
+        "working",
+        "episodic",
+        "semantic",
+        "procedural"
+      ]
+    },
+    "body": {
+      "type": "object"
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "produced_by",
+        "observed_at",
+        "correlation_id"
+      ],
+      "properties": {
+        "produced_by": {
+          "type": "string"
+        },
+        "observed_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "correlation_id": {
+          "type": "string"
+        },
+        "supersedes": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "staleness": {
+      "type": "object",
+      "required": [
+        "expires_at"
+      ],
+      "properties": {
+        "expires_at": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        },
+        "review_after": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "format": "date-time"
+        }
+      }
+    }
+  }
+}
+```
+
+**RecallQuery and RecallResult (proposed summary shape; ranking inputs are absent by design)** (proposed; sources: `X-cap-memory-002`, `X-cap-memory-001`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:memory:recall:0.1",
+  "type": "object",
+  "required": [
+    "query",
+    "result"
+  ],
+  "properties": {
+    "query": {
+      "type": "object",
+      "required": [
+        "scope",
+        "limit"
+      ],
+      "properties": {
+        "scope": {
+          "$ref": "urn:agentic:memory:item:0.1#/properties/scope"
+        },
+        "need": {
+          "type": "string",
+          "description": "what the caller is trying to answer, in words"
+        },
+        "key": {
+          "type": "string",
+          "description": "an explicit item key, when the caller knows it"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "not": {
+        "anyOf": [
+          {
+            "required": [
+              "embedding"
+            ]
+          },
+          {
+            "required": [
+              "similarity_threshold"
+            ]
+          },
+          {
+            "required": [
+              "index"
+            ]
+          }
+        ]
+      }
+    },
+    "result": {
+      "type": "object",
+      "required": [
+        "items",
+        "scope_applied"
+      ],
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "urn:agentic:memory:item:0.1"
+          }
+        },
+        "scope_applied": {
+          "$ref": "urn:agentic:memory:item:0.1#/properties/scope"
+        },
+        "age_seconds": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+### Invariants
+
+| Invariant | Origin | Evidence |
+|---|---|---|
+| Every write carries a scope and every recall names at least one scope dimension. The dimensions are the identity subjects cap-identity already establishes - principal, agent, run, org - and they tag an item rather than nesting it, so cross-principal contamination is kept out of results by construction rather than by a filter someone remembered to add. | sourced | `X-cap-memory-002`, `X-end-to-end-002` "Every search must include at least one of these dimensions in filters" |
+| Every item carries a staleness policy at write time. A store with no temporal validity model with no expiry dates or conflict detection lets a run act with confidence on state that has moved, so an item with no declared expiry is a rejected write, not a permanent one. | sourced | `X-cap-memory-004`, `X-cap-memory-005` "no temporal validity model with no expiry dates or conflict detection" |
+| Every item carries provenance: what produced it, when it was observed, and the correlation id of the run it came from, alongside metadata like timestamps and the source message. An item that cannot say where it came from cannot be judged, superseded or defended when it turns out to be wrong. | sourced | `X-cap-memory-007` "alongside metadata like timestamps and the source message" |
+| A correction supersedes; it does not edit. Active supersession on every write so contradictions never accumulate is what keeps two versions of a fact from both being recallable, and the superseded item stays readable to provenance even though recall no longer returns it. | sourced | `X-cap-memory-008` "active supersession on every write so contradictions never accumulate" |
+| Memory is not the Ledger. cap-state-persistence owns the ledger row, which is append-only across runs; the deduplication authority - it answers whether work already happened, for the platform. Memory answers what a run should know, for an agent, and its items are scoped, expirable and supersedable; merging the two would make a dedup record expire or a memory item permanent. | sourced | `F-b2-06`, `X-end-to-end-001` "append-only across runs; the deduplication authority" |
+| Proposed: ranking is not in the contract. A caller names a scope and a need or an explicit key, never an embedding, a similarity threshold, a k or an index name; how candidates are ordered belongs to the adapter, which is what lets an approximate ranker and an exact key lookup satisfy the same interface. | proposed | `X-cap-memory-001` "rank candidate memories by cosine similarity" |
+| Proposed: no ratified standard governs this interface. The records on file say that no prior protocol provides verified memory portability, and the one protocol proposal found is a 2026 preprint, so unlike the rest of the capability table this shape is designed here rather than adopted - PASS.md's position is that everything else in B3 is a decision someone else already published, and this is the exception the manifest records as none found. | proposed | `X-end-to-end-003`, `F-b5-06` "no prior protocol provides verified memory portability" |
+| A refusal is typed. cap-errors owns the closed registry of RFC 9457 problem details; on this interface the refusals a caller meets are an out-of-scope recall, a write with no staleness policy, and a supersede naming an item that is already gone. An empty recall is not a refusal - it is a result with zero items and the applied scope. | sourced | `F-b3-13` "RFC 9457 problem details" |
+
+### Deliberately not exposed
+
+| Item | Origin | Evidence |
+|---|---|---|
+| The criterion an agent's output will be judged against. agentic-stack states design rule 6 (F-b1-07); on this interface it forbids exactly one thing: a memory item whose body is a grading rubric, an acceptance criterion or a judge prompt may never be recallable at a scope the graded agent can read, because recall places items directly into that agent's context. A criterion may be remembered at the judge's own scope, and its identifier may appear in an item, never its body. | sourced | `F-b1-07` "An agent sees its outcome, never the criterion it is judged against" |
+| Proposed: the embedding model, the index type, the similarity metric, the store layout and whether there is one store or two. None of them is a field of a query or of a result. | proposed | `X-cap-memory-006` "a hybrid dual-store architecture combining vector-based semantic search and graph-based entity-relationship storage" |
+| Proposed: the existence of items outside the caller's scope. An out-of-scope recall returns zero items or a typed refusal; it never reports how many items it declined to show, which would leak another principal's activity through a count. | proposed | `X-cap-memory-002` "keeps cross-user contamination out of results by construction" |
+
+## Instructions
+
+| Step | Action | Why | Origin | Evidence |
+|---|---|---|---|---|
+| 1 | Before designing anything, decide whether what you want to keep is a memory item at all. If the platform reads it to decide whether work already happened, it is a ledger record and belongs to cap-state-persistence and the State seam; if a later run reads it to act better, it is a memory item and belongs here. | cap-state-persistence owns the ledger row (F-b2-06), which is append-only across runs; the deduplication authority. Deciding this first is what stops a store that must never forget and a store that must forget on schedule from being built as one thing. | sourced | `F-b2-06` "append-only across runs; the deduplication authority" |
+| 2 | Draw the interface as remember, recall, supersede and forget, and nothing else. Keep every ranking input out of the signatures: a caller supplies a scope and a need or an explicit key. | agentic-stack states design rule 1 (F-b1-02): the core imports interfaces, never implementations. A k, a threshold or an index name in the signature is the store's shape leaking into the contract, and it is what would make an exact-key adapter unable to implement it. | sourced | `F-b1-02`, `X-cap-memory-001` "The core imports interfaces, never implementations" |
+| 3 | Derive the scope dimensions from identity rather than inventing them: principal, agent, run and org, each an actor subject cap-identity already establishes, tagged onto the item at write time. | The prior art on file records that each memory write is tagged with one or more identity scopes; taking the subjects from identity means a scope cannot name a principal the platform cannot authenticate, and tenancy questions are answered once rather than twice. | sourced | `X-end-to-end-002` "each memory write is tagged with one or more identity scopes" |
+| 4 | Require a staleness policy on every write and make expiry the default path rather than a cleanup job someone runs. Episodic items - transcript extracts, run notes - get a time-to-live at the moment they are written. | Systems must actively update or expire memories rather than treat them as immutable logs, and raw episodic data should always carry one, because transcripts grow without bound and carry retention constraints. A store that only ever grows becomes a store nobody dares recall from. | sourced | `X-cap-memory-005` "raw episodic data should always carry one" |
+| 5 | Return provenance and age with every recalled item, and let the caller see both. Do not silently drop an old item that is still within its policy. | An agent that retrieved a deployment guide last updated eighteen months ago can note this staleness rather than presenting the information as current - which is only possible if the age travels with the item instead of being flattened away by the ranker. | sourced | `X-cap-memory-004`, `X-cap-memory-007` "note this staleness rather than presenting the information as current" |
+| 6 | Make correction a supersede, not an update, and keep the superseded item readable to provenance while removing it from recall. | Active supersession on every write so contradictions never accumulate is the mechanism; keeping the old item readable is what lets a wrong answer later be traced to the item that caused it rather than to the item that replaced it. | sourced | `X-cap-memory-008` "active supersession on every write so contradictions never accumulate" |
+| 7 | Type every refusal against the registry cap-errors owns, and keep an empty recall out of that path: zero items plus the applied scope is a result. | cap-errors adopts RFC 9457 problem details whole, so a caller branches on a type rather than parsing a message. Treating 'nothing to recall' as an error would make the common case of a first run look like a fault. | sourced | `F-b3-13` "RFC 9457 problem details" |
+| 8 | Judge an implementation by the conformance run in the definition of done, over both adapters in the pair below, not by whether one store works. | build-adapter-pair states the rule (F-b1-04): swappability is a tested property, not an intention. Here the axis that must differ is how a candidate is found - approximate ranking over an index versus exact lookup on a scope key - because an interface shaped around ranking cannot be served by a key lookup at all. | sourced | `F-b1-04` "Swappability is a tested property, not an intention." |
+| 9 | Proposed: open references/memory-item.md when writing the item schema, the scope grammar or the retention table. The body of this skill is enough to draw and review the interface without it. | Proposed: the full schema, the scope grammar and the retention defaults are longer than the interface they serve, and inlining them would bury the four operations a reader came for. | proposed | - |
+
+## Best practices
+
+| Practice | Origin | Evidence |
+|---|---|---|
+| Set the three policies together, not one at a time: TTL on long-tail entries to bound storage, decay on retrieval scores to bound interference, and supersession on write. Two of the three leave a failure mode open - TTL alone lets contradictions pile up inside the window, supersession alone lets the store grow forever. | sourced | `X-cap-memory-008` "TTL on long-tail entries to bound storage" |
+| Proposed: write the claim, not the transcript. Memory exists so an agent can remember information across turns, sessions, and tasks; an item that is a pasted conversation moves the summarising work to every future reader and expires as a block instead of per fact. | proposed | `X-cap-memory-003` "remember information across turns, sessions, and tasks" |
+| Proposed: keep the store count out of the contract. Whether an adapter is one index or a hybrid dual-store architecture combining vector-based semantic search and graph-based entity-relationship storage is its own decision; a contract that names a graph acquires a graph's query language and stops being implementable by a file. | proposed | `X-cap-memory-006` "a hybrid dual-store architecture combining vector-based semantic search and graph-based entity-relationship storage" |
+| Proposed: scope narrowly on write and widen on read. An item written at run scope can be promoted to principal scope once it proves useful, but an item written at org scope cannot be un-shared, and the prior art's warning is exactly that a search without a dimension filter is what lets one tenant's facts reach another. | proposed | `X-cap-memory-002` "keeps cross-user contamination out of results by construction" |
+
+## Adapters
+
+| Adapter | Role | Maps to | Cannot | Swap procedure | Status | Evidence |
+|---|---|---|---|---|---|---|
+| `E-adapter-embedding-ranked-memory-store` | today | Proposed adapter, and a proposed entity id: PASS.md has no memory row in A5, A6 or B3, so kb/entities.jsonl carries no adapter entity for this capability and none may be added without rewriting the entity chain every written skill pins in provenance. What the manifest records as today's adapter is a hosted memory service that embeds queries and stored memories and ranks candidate memories by cosine similarity, with the four operations mapped onto its write, search, update and delete calls and the scope dimensions mapped onto its filter tags. | Proposed: cannot answer 'give me the item at exactly this key' without ranking, cannot explain why one item outranked another, cannot run where no embedding endpoint is reachable, and cannot be read by a person opening a file - so an operator debugging a bad recall has nothing to look at but the ranker's output. | Select the store by configuration only, with no core edit, and run the identical write-then-recall fixture through both; cap-memory-implement owns the migration and the wiring, this row records what the pair is and the axis it differs on. | claimed | `X-cap-memory-001`, `X-cap-memory-002` "rank candidate memories by cosine similarity" |
+| `E-swap-candidate-scope-keyed-file-store` | second | Proposed adapter, and a proposed entity id: a file-backed store - one document per scope, or a single-file relational database - where recall is an exact lookup on the scope key and expiry is a comparison on a stored timestamp. It reads the same scope dimensions, which are tagging dimensions, not nested layers, so the same selector that filters the ranked store indexes this one. | Proposed: cannot answer a need expressed only in words, cannot rank, and cannot scale past the point where one process can read the files. That is the axis build-adapter-pair asks for: the first adapter finds candidates by approximate similarity over an index it owns, the second finds them by exact key in a file the caller could open, so any operation shaped around ranking fails outright here rather than degrading. | One conformance run writes the same fixture items through both adapters and recalls them at the same scopes, diffing returned item ids, cross-scope hits, expired items served and refusal types; the report must show adapters_run >= 2 and no divergence on which items are recallable. | claimed | `X-cap-memory-002`, `F-b1-04` "which are tagging dimensions, not nested layers" |
+
+## Definition of done
+
+| Field | Value |
+|---|---|
+| Criterion | One conformance run over both adapters, from the repository root, with a proposed tool: `python3 tools/conformance_memory.py --adapter config/memory/today.json --adapter config/memory/scope-keyed.json --fixtures tests/fixtures/memory --report out/memory-conformance.json`. The fixture set is three writes in run A - one item scoped to `user:corey`, one scoped to `agent:release-reviewer`, one written with `expires_at` already in the past - and four recalls in run B: the same scope as each write, and one recall at `user:corey` for the item written at `agent:release-reviewer`. Assert `adapters_run >= 2`, `recalled_across_runs == 2`, `cross_scope_hits == 0`, `expired_served == 0`, `items_without_provenance == 0`, `refusals_typed == refusals` with every refusal carrying a `urn:agentic:problem:` type, and `result_divergence == 0` on the item ids the two adapters return. |
+| Expected | exit 0 with one line per adapter reading `adapter=<role> recalled_across_runs=2 cross_scope_hits=0 expired_served=0 items_without_provenance=0 refusals_typed=1` followed by `adapters_run=2 result_divergence=0`. |
+| Deliberate breakage | In the recall path of both adapters, drop the scope predicate and search the whole store, leaving the expiry comparison exactly as it is. |
+| Expected failure | exit non-zero on both adapters with `cross_scope_hits=1`, naming the item written at `agent:release-reviewer` as returned to a recall scoped to `user:corey`, while `expired_served=0` still holds. Claimed: neither adapter, the fixture set nor the tool exists in this tree, so this check starts red by construction and is not dressed up as passing. The expiry counter staying green under the breakage is what shows the run separates the scope filter from the staleness filter rather than passing or failing as a block. |
+| Status | claimed |
+| Evidence | `F-part-c-04`, `X-cap-memory-002` "keeps cross-user contamination out of results by construction" |
+
+## Composes with
+
+Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `build-research-record`, `build-ceremony`, `cap-errors`, `cap-identity`, `cap-state-persistence`
+
+Used by: `cap-memory-implement`, `cap-memory-use`
+
+## Open questions
+
+| Question | Deciding evidence | Default until then | Evidence |
+|---|---|---|---|
+| Which standard governs this interface, given that the manifest records none found and PASS.md has no memory row to read a standard column from? | 1-3-1 applied and recorded on 2026-09-03. Options: (a) declare no governing standard and design the shape here, recording the one protocol proposal on file as prior art rather than as a standard; (b) adopt that proposal as the governing standard now; (c) shape the interface around a tool-server memory convention and call the convention the standard. Recommendation and followed: (a). The record on file states that no prior protocol provides verified memory portability and is a 2026 preprint that was not fetched from this environment, so (b) would cite a version nobody here has read, and (c) would adopt a product convention as a standard, which the adapter rule forbids. What would settle it is a fetch of the proposal recording a version string and a ratification status; the proxy blocked documentation fetches in this session. | No standard row is carried, and the shapes above are proposed. If the proposal is ratified, the item and recall shapes are the two things that would be replaced, and nothing in the four operations changes. | `X-end-to-end-003`, `F-part-c-10` "no prior protocol provides verified memory portability" |
+| Where does the adapter pair for this capability live, and under what entity ids, given that kb/entities.jsonl has no adapter or swap-candidate entity for a capability PASS.md does not have a row for? | 1-3-1 applied and recorded on 2026-09-03. Options: (a) carry the pair here with proposed entity ids declared as proposed in the row itself, as cap-human-interaction does for the same reason; (b) append new entities to kb/entities.jsonl, which rewrites the entity chain head that every written skill pins in provenance; (c) defer the pair to cap-memory-implement and carry none here. Recommendation and followed: (a), so a reader of the ideal facet alone can name both adapters and the axis they differ on. | The pair above, with proposed entity ids. A kb rebuild that adds a memory row to PASS.md is what would replace them with real ones. | `T-t5-02`, `F-b1-04` "When a problem comes up, use 1-3-1" |
+| Is memory a capability with adapters, or a third boundary with no standard to adopt, alongside Dispatch and State - and if the second, does it belong in the seam layer rather than the cap layer? | Whether an adapter pair can be made to agree on this contract at all. If the conformance run above can be satisfied by two stores with different execution models, memory is a capability whose store is swappable; if the contract has to be rewritten to admit the second store, it is original design and the seam layer is where it belongs. PASS.md names two such boundaries and says everything else in B3 is a decision someone else already published; this one is neither in B3 nor published, which is why the question is open. | Proposed: it stays a capability in the cap layer, as the manifest places it, and the conformance run is what would move it. Treating it as a seam now would put an interface with two candidate adapters into the layer reserved for boundaries that have none. | `F-b5-06`, `F-b5-01` "Everything else in B3 is a decision someone else already published." |
+
+## Provenance
+
+| Field | Value |
+|---|---|
+| PASS.md sha256 | cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96 |
+| kb facts head | 9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e |
+| kb entities head | 747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604 |
+| kb edges head | a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6 |
+| Author | session claude/auto-skill-creation cap-memory author 2026-09-03 |

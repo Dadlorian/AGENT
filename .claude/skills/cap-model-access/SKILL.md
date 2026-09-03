@@ -1,6 +1,6 @@
 ---
-name: cap-model-access
-description: The ideal state of the Model access capability: one contract for obtaining a completion from a class of model, with no vendor named by the caller and no way to tell whether the answer came back in a second or overnight. Load it when deciding how a step reaches a language model, when a request object is about to grow a vendor name, an endpoint, a member model or a sampling knob, when someone asks which model a step should use, how to run work cheaply overnight, or whether the gateway can be replaced, when routing rules or fallbacks are being written, and whenever an inference boundary is being shaped around whichever gateway happens to be installed.
+name: "cap-model-access"
+description: "The ideal state of the Model access capability: one contract for obtaining a completion from a class of model, with no vendor named by the caller and no way to tell whether the answer came back in a second or overnight. Load it when deciding how a step reaches a language model, when a request object is about to grow a vendor name, an endpoint, a member model or a sampling knob, when someone asks which model a step should use, how to run work cheaply overnight, or whether the gateway can be replaced, when routing rules or fallbacks are being written, and whenever an inference boundary is being shaped around whichever gateway happens to be installed."
 ---
 
 # cap-model-access

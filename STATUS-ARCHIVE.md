@@ -66,3 +66,4 @@
 | 68 | Conformance questionnaire | Every question answered in isolation, checker at zero failures | Done | 144 answers, spot-check 13 of 15 agree | 2026-09-03 c55b1b9 |
 | 67 | Litmus assessment | Every question answered with evidence and scored | Done | 144 answers, spot-check 13 of 15 exact | 2026-09-03 b2f00e9 |
 | 69 | Combined reading | Both answer sets joined per PASS.md row, neither reads the other | Done | 42 rows joined, 6 tensions | 2026-09-03 b2f00e9 |
+| 70 | SKILL.md frontmatter | Every rendered frontmatter parses as strict YAML | Done | 98 of 103 were invalid, all fixed | 2026-09-03 81aa71f |

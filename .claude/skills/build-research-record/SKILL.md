@@ -1,6 +1,6 @@
 ---
-name: build-research-record
-description: The discipline of keeping one record per search, source and quote, so a claim a skill makes can be traced back to text that was actually read. Load before citing an X- id in a skill, when a statement needs a source and none is on file, before searching for prior art for a capability or a seam, when deciding whether a page was read or only its search result seen, before writing down a URL, a title or a version string, when a reviewer asks where a sentence came from, and when a search found nothing and you have to say so anyway. Fixes the record's fields (lens, topic, query, url, title, verbatim snippet, read, status search-only versus fetched), the rule that a cited quote is a verbatim substring of the record it names, and the merge that makes an X- id resolve at all.
+name: "build-research-record"
+description: "The discipline of keeping one record per search, source and quote, so a claim a skill makes can be traced back to text that was actually read. Load before citing an X- id in a skill, when a statement needs a source and none is on file, before searching for prior art for a capability or a seam, when deciding whether a page was read or only its search result seen, before writing down a URL, a title or a version string, when a reviewer asks where a sentence came from, and when a search found nothing and you have to say so anyway. Fixes the record's fields (lens, topic, query, url, title, verbatim snippet, read, status search-only versus fetched), the rule that a cited quote is a verbatim substring of the record it names, and the merge that makes an X- id resolve at all."
 ---
 
 # build-research-record

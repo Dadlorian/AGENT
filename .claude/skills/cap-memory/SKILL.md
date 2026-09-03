@@ -1,6 +1,6 @@
 ---
-name: cap-memory
-description: The memory contract: write, retrieve and expire scoped items so a later run can read what earlier runs learned without being handed their whole transcript. Load it when a run needs something an earlier run found out, when an agent is being passed a transcript because there is nowhere else to put what it learned, when deciding what should still be known next week and what should have expired by then, when a recall must never cross a principal, an agent or a tenant boundary, when someone asks 'why did it remember that', 'how do we forget it', or 'is this the same thing as the ledger', and before an embedding index, a similarity threshold or a store layout is allowed anywhere near the interface.
+name: "cap-memory"
+description: "The memory contract: write, retrieve and expire scoped items so a later run can read what earlier runs learned without being handed their whole transcript. Load it when a run needs something an earlier run found out, when an agent is being passed a transcript because there is nowhere else to put what it learned, when deciding what should still be known next week and what should have expired by then, when a recall must never cross a principal, an agent or a tenant boundary, when someone asks 'why did it remember that', 'how do we forget it', or 'is this the same thing as the ledger', and before an embedding index, a similarity threshold or a store layout is allowed anywhere near the interface."
 ---
 
 # cap-memory

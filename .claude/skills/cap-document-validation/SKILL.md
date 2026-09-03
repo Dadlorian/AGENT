@@ -1,6 +1,6 @@
 ---
-name: cap-document-validation
-description: The document-validation capability: one contract for checking a declared shape against a published schema dialect, JSON Schema 2020-12, with the operations the core imports, the outcome shape, and the criteria that decide whether a candidate validator is good enough. Load it before writing or changing any schema this platform ships, when deciding whether a payload may enter, when someone asks 'is this envelope well-formed', 'why was this request rejected before it ran', 'which checker do we use and can we replace it', or 'the file in the repo no longer matches the data', and whenever a boundary is about to grow its own hand-written field checks instead of a declared schema.
+name: "cap-document-validation"
+description: "The document-validation capability: one contract for checking a declared shape against a published schema dialect, JSON Schema 2020-12, with the operations the core imports, the outcome shape, and the criteria that decide whether a candidate validator is good enough. Load it before writing or changing any schema this platform ships, when deciding whether a payload may enter, when someone asks 'is this envelope well-formed', 'why was this request rejected before it ran', 'which checker do we use and can we replace it', or 'the file in the repo no longer matches the data', and whenever a boundary is about to grow its own hand-written field checks instead of a declared schema."
 ---
 
 # cap-document-validation

@@ -1,6 +1,6 @@
 ---
-name: xc-compensation-implement
-description: How to make the compensation guarantee real on this stack, starting from nothing: no register exists today, so this facet proposes the first one - held by the durable-execution engine that PASS.md records as installed and not listening - and a second that keeps the register in the append-only chained log instead, breaking the assumption that a workflow engine is up at all. Load it when writing or reviewing the code that records what will undo an effect, when deciding where the declaration is bound so no operator can commit an effect around it, when planning the migration from a platform that records nothing, when an unwind reproduces on one register and not the other, or when deciding what the second register should be.
+name: "xc-compensation-implement"
+description: "How to make the compensation guarantee real on this stack, starting from nothing: no register exists today, so this facet proposes the first one - held by the durable-execution engine that PASS.md records as installed and not listening - and a second that keeps the register in the append-only chained log instead, breaking the assumption that a workflow engine is up at all. Load it when writing or reviewing the code that records what will undo an effect, when deciding where the declaration is bound so no operator can commit an effect around it, when planning the migration from a platform that records nothing, when an unwind reproduces on one register and not the other, or when deciding what the second register should be."
 ---
 
 # xc-compensation-implement

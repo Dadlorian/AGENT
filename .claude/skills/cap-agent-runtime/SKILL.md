@@ -1,6 +1,6 @@
 ---
-name: cap-agent-runtime
-description: The ideal state of the Agent runtime capability: one prompt turn with a stop reason as the unit of agent execution, governed by the Agent Client Protocol, with the operations the core imports, the turn shapes, what the boundary refuses to expose, and the criteria that decide whether a candidate runtime may serve the interface. Load it when deciding how a single agent turn is started, streamed, permitted or cancelled, when asking 'why did that turn stop', 'how do we stop a run that is already mid-tool-call', or 'can we drive a different agent without touching the core', and whenever an interface is about to require a live session, a stream or a callback that a one-shot, headless or batch runner could never provide.
+name: "cap-agent-runtime"
+description: "The ideal state of the Agent runtime capability: one prompt turn with a stop reason as the unit of agent execution, governed by the Agent Client Protocol, with the operations the core imports, the turn shapes, what the boundary refuses to expose, and the criteria that decide whether a candidate runtime may serve the interface. Load it when deciding how a single agent turn is started, streamed, permitted or cancelled, when asking 'why did that turn stop', 'how do we stop a run that is already mid-tool-call', or 'can we drive a different agent without touching the core', and whenever an interface is about to require a live session, a stream or a callback that a one-shot, headless or batch runner could never provide."
 ---
 
 # cap-agent-runtime

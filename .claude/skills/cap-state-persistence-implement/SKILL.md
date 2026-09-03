@@ -1,6 +1,6 @@
 ---
-name: cap-state-persistence-implement
-description: How to build the State persistence capability on this stack: what the hash-chained line-delimited stores that already run give you and what they cannot give anyone else, a first adapter that adds content-addressed ids, a Merkle tree and sealed heads to the file that exists, a second adapter with a different execution model built from immutable objects under a content address and a compare-and-swap head, the migration between them, where the append path is wired so no writer can bypass it, and a definition of done with the breakage that makes it fail. Load it when writing the code behind append, read_at or prove, when adding a lease to a store that assumed one process, when a conformance run reports a forked log, or when deciding what to do with the file that is already there.
+name: "cap-state-persistence-implement"
+description: "How to build the State persistence capability on this stack: what the hash-chained line-delimited stores that already run give you and what they cannot give anyone else, a first adapter that adds content-addressed ids, a Merkle tree and sealed heads to the file that exists, a second adapter with a different execution model built from immutable objects under a content address and a compare-and-swap head, the migration between them, where the append path is wired so no writer can bypass it, and a definition of done with the breakage that makes it fail. Load it when writing the code behind append, read_at or prove, when adding a lease to a store that assumed one process, when a conformance run reports a forked log, or when deciding what to do with the file that is already there."
 ---
 
 # cap-state-persistence-implement

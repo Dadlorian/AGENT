@@ -1,6 +1,6 @@
 ---
-name: cap-capability-registry
-description: The capability-registry contract: one record per capability or agent, resolved by name and a version constraint, signed, digest-matched against the package it names, and never edited in place. Load it before anything asks 'which version of this capability do I get', when a capability or an agent has to be found rather than hard-wired, when another party's agent must be discoverable by what it is good at and how to authenticate to it, when a new version of a skill, workflow or agent profile is about to be rolled out or rolled back, when someone asks 'where is the version number', 'how do we know this is the same thing we signed', 'can an outside team publish here', or 'how do we take a bad version back', and before any code joins a path to reach a capability instead of naming it.
+name: "cap-capability-registry"
+description: "The capability-registry contract: one record per capability or agent, resolved by name and a version constraint, signed, digest-matched against the package it names, and never edited in place. Load it before anything asks 'which version of this capability do I get', when a capability or an agent has to be found rather than hard-wired, when another party's agent must be discoverable by what it is good at and how to authenticate to it, when a new version of a skill, workflow or agent profile is about to be rolled out or rolled back, when someone asks 'where is the version number', 'how do we know this is the same thing we signed', 'can an outside team publish here', or 'how do we take a bad version back', and before any code joins a path to reach a capability instead of naming it."
 ---
 
 # cap-capability-registry

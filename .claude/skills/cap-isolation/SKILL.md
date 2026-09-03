@@ -1,6 +1,6 @@
 ---
-name: cap-isolation
-description: The ideal state of the Isolation capability: one unit of work runs with declared resources and declared egress, governed by the OCI Runtime Spec, with the operations the core imports, the declaration and containment-report shapes, what the boundary refuses to expose, and the criteria that decide whether a containment technology may serve the interface. Load it when deciding how a unit of work is contained, when a request field describes a machine instead of a resource declaration, when asking 'can this run somewhere we do not own hardware', 'what stops this unit reaching the network', or 'where does the real credential live', when a sandbox is about to be coupled to whatever runs inside it, and whenever containment is about to be trusted because the unit reported it rather than because something outside the unit asserted it.
+name: "cap-isolation"
+description: "The ideal state of the Isolation capability: one unit of work runs with declared resources and declared egress, governed by the OCI Runtime Spec, with the operations the core imports, the declaration and containment-report shapes, what the boundary refuses to expose, and the criteria that decide whether a containment technology may serve the interface. Load it when deciding how a unit of work is contained, when a request field describes a machine instead of a resource declaration, when asking 'can this run somewhere we do not own hardware', 'what stops this unit reaching the network', or 'where does the real credential live', when a sandbox is about to be coupled to whatever runs inside it, and whenever containment is about to be trusted because the unit reported it rather than because something outside the unit asserted it."
 ---
 
 # cap-isolation

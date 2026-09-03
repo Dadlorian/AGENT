@@ -1,6 +1,6 @@
 ---
-name: core-ledger
-description: The Ledger: one append-only record that outlives the run and is the single authority on whether a unit of work was already done. Load it before writing anything that records what happened, before answering 'has this already run', when a replay must return a prior result instead of doing the work twice, when a duplicate key is about to overwrite a row, when a planner is about to re-plan finished work, and when someone asks 'what survives the run', 'where is the receipt', 'why can we not just update the status field', or 'how would we know if someone edited history'. Where the entries are kept, and at which snapshot they are read, belong to the state seam: an entry addressed by file offset or row id means the boundary was drawn wrong.
+name: "core-ledger"
+description: "The Ledger: one append-only record that outlives the run and is the single authority on whether a unit of work was already done. Load it before writing anything that records what happened, before answering 'has this already run', when a replay must return a prior result instead of doing the work twice, when a duplicate key is about to overwrite a row, when a planner is about to re-plan finished work, and when someone asks 'what survives the run', 'where is the receipt', 'why can we not just update the status field', or 'how would we know if someone edited history'. Where the entries are kept, and at which snapshot they are read, belong to the state seam: an entry addressed by file offset or row id means the boundary was drawn wrong."
 ---
 
 # core-ledger

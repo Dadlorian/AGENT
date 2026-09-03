@@ -41,7 +41,9 @@ def table(headers: list[str], rows: list[list[str]]) -> list[str]:
 
 
 def render(sk: dict) -> str:
-    L = ["---", f"name: {sk['name']}", f"description: {sk['description']}", "---", "", f"# {sk['name']}", ""]
+    # frontmatter values are written as YAML double-quoted scalars: a bare description that contains ": " is not valid YAML
+    # ("mapping values are not allowed here"), and a strict parser skips the skill (owner, 2026-09-03)
+    L = ["---", f"name: {json.dumps(sk['name'])}", f"description: {json.dumps(sk['description'], ensure_ascii=False)}", "---", "", f"# {sk['name']}", ""]
     L += ["Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Source IDs resolve with `python3 tools/kb.py show <id>`.", ""]
     L += ["## Purpose", ""] + table(["Statement", "Origin", "Evidence"], [[sk["purpose"]["text"], origin(sk["purpose"]), ev(sk["purpose"])]])
     if sk.get("entities"):

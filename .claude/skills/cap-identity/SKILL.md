@@ -1,6 +1,6 @@
 ---
-name: cap-identity
-description: The ideal state of the Identity capability: every action names an actor, delegated agent actors included, and the chain that produced the right to act is explicit rather than reconstructed afterwards. Load it when deciding what an action records about who asked for it, when one agent hands work to another, when a unit of work needs a credential nobody hand-issued, when judging whether an implementation's actor model is conformant, or when a review asks why an authorisation decision reads only one hop of a chain. Also load it when a component is about to invent its own user field, when a service account is about to be shared between agents, when a long-lived secret is about to be planted inside a sandbox, or when an audit cannot say which agent actually did a thing.
+name: "cap-identity"
+description: "The ideal state of the Identity capability: every action names an actor, delegated agent actors included, and the chain that produced the right to act is explicit rather than reconstructed afterwards. Load it when deciding what an action records about who asked for it, when one agent hands work to another, when a unit of work needs a credential nobody hand-issued, when judging whether an implementation's actor model is conformant, or when a review asks why an authorisation decision reads only one hop of a chain. Also load it when a component is about to invent its own user field, when a service account is about to be shared between agents, when a long-lived secret is about to be planted inside a sandbox, or when an audit cannot say which agent actually did a thing."
 ---
 
 # cap-identity

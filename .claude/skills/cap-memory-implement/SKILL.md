@@ -1,6 +1,6 @@
 ---
-name: cap-memory-implement
-description: How to build the memory capability on this stack: a ranked store behind a binding record, a second store that answers by exact scope key, the migration from handing a run its predecessor's transcript to writing items it can recall, where a write and a recall are wired so the platform's guarantees ride on them, and the run that decides whether either store may be called done. Load it when standing up a memory store, when choosing what goes inside an adapter and what stays in the interface, when an item survives an expiry it should not have, when a recall works on one store and not the other, or when a memory change has to be shown to have taken effect rather than merely configured.
+name: "cap-memory-implement"
+description: "How to build the memory capability on this stack: a ranked store behind a binding record, a second store that answers by exact scope key, the migration from handing a run its predecessor's transcript to writing items it can recall, where a write and a recall are wired so the platform's guarantees ride on them, and the run that decides whether either store may be called done. Load it when standing up a memory store, when choosing what goes inside an adapter and what stays in the interface, when an item survives an expiry it should not have, when a recall works on one store and not the other, or when a memory change has to be shown to have taken effect rather than merely configured."
 ---
 
 # cap-memory-implement

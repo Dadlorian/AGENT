@@ -1,6 +1,6 @@
 ---
-name: cap-isolation-implement
-description: How to build the Isolation capability on this stack: today's adapter over the per-agent microVM service that already runs, a second adapter that grants capabilities instead of a machine, how the two existing unit shapes become two profiles behind one declaration, where budget, policy, identity, telemetry and provenance attach around a unit rather than inside it, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that admits, runs, terminates or inspects a contained unit, when wiring a containment technology behind the declaration, when a resource profile has to be resolved or refused, when choosing what the second containment technology should be, or when a containment check passes under one adapter and cannot even be expressed under the other.
+name: "cap-isolation-implement"
+description: "How to build the Isolation capability on this stack: today's adapter over the per-agent microVM service that already runs, a second adapter that grants capabilities instead of a machine, how the two existing unit shapes become two profiles behind one declaration, where budget, policy, identity, telemetry and provenance attach around a unit rather than inside it, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that admits, runs, terminates or inspects a contained unit, when wiring a containment technology behind the declaration, when a resource profile has to be resolved or refused, when choosing what the second containment technology should be, or when a containment check passes under one adapter and cannot even be expressed under the other."
 ---
 
 # cap-isolation-implement

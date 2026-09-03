@@ -1,6 +1,6 @@
 ---
-name: xc-policy-gate
-description: The policy gate as a placement over the call path: the decision is taken, recorded and returned before the first metered call of a dispatch, and a denied dispatch spends exactly nothing. Load it when deciding where a refusal is consulted rather than what it decides, when wiring an admission check in front of anything that costs money, occupies a machine or leaves the platform, when a decision is about to be consulted concurrently with the work it governs, when a refusal arrives after tokens were already burned, when someone proposes a fast path, an advisory mode or a warn-only rollout for a check, when a conformance suite exists and nothing on the live path calls it, or when a review asks how a human, an agent and an event all pass through the same gate.
+name: "xc-policy-gate"
+description: "The policy gate as a placement over the call path: the decision is taken, recorded and returned before the first metered call of a dispatch, and a denied dispatch spends exactly nothing. Load it when deciding where a refusal is consulted rather than what it decides, when wiring an admission check in front of anything that costs money, occupies a machine or leaves the platform, when a decision is about to be consulted concurrently with the work it governs, when a refusal arrives after tokens were already burned, when someone proposes a fast path, an advisory mode or a warn-only rollout for a check, when a conformance suite exists and nothing on the live path calls it, or when a review asks how a human, an agent and an event all pass through the same gate."
 ---
 
 # xc-policy-gate

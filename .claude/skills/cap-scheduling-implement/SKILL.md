@@ -1,6 +1,6 @@
 ---
-name: cap-scheduling-implement
-description: How to build the Scheduling capability on this stack: what today's engine-owned schedules give you and what they cost, a standalone recurrence evaluator that computes occurrences as a pure call and enqueues them, the migration between the two with the declaration held still, where firing is wired so an occurrence cannot bypass identity, correlation, budget or replay safety, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that decides a recurring unit is due, when moving recurrence out of the engine that runs the work, when a repeating job fired at the wrong hour after a clock change, when choosing where the ticker lives and how far ahead it looks, or when a conformance run reports a computed occurrence set that does not match its vector.
+name: "cap-scheduling-implement"
+description: "How to build the Scheduling capability on this stack: what today's engine-owned schedules give you and what they cost, a standalone recurrence evaluator that computes occurrences as a pure call and enqueues them, the migration between the two with the declaration held still, where firing is wired so an occurrence cannot bypass identity, correlation, budget or replay safety, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that decides a recurring unit is due, when moving recurrence out of the engine that runs the work, when a repeating job fired at the wrong hour after a clock change, when choosing where the ticker lives and how far ahead it looks, or when a conformance run reports a computed occurrence set that does not match its vector."
 ---
 
 # cap-scheduling-implement

@@ -1,6 +1,6 @@
 ---
-name: core-judge-implement
-description: How to build the Judge on this stack: a verdict function that links no model client and no store, a criterion store the graded unit cannot reach, a derived-seed sampler and a held-out audit, two grading engines behind one binding - a deterministic check gate and a model-graded rubric judge - the migration off the gate that decides done today, where the cross-cutting concerns attach, and the conformance run that decides whether either engine may serve. Load it when writing or reviewing that code, when a grading is about to call a model, when a criterion file is about to be mounted somewhere convenient, and when someone asks 'where does the verdict actually come from', 'can we change the grader without touching the core', or 'why did the same result get two different verdicts on two runs'.
+name: "core-judge-implement"
+description: "How to build the Judge on this stack: a verdict function that links no model client and no store, a criterion store the graded unit cannot reach, a derived-seed sampler and a held-out audit, two grading engines behind one binding - a deterministic check gate and a model-graded rubric judge - the migration off the gate that decides done today, where the cross-cutting concerns attach, and the conformance run that decides whether either engine may serve. Load it when writing or reviewing that code, when a grading is about to call a model, when a criterion file is about to be mounted somewhere convenient, and when someone asks 'where does the verdict actually come from', 'can we change the grader without touching the core', or 'why did the same result get two different verdicts on two runs'."
 ---
 
 # core-judge-implement

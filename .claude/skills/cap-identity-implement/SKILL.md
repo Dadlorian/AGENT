@@ -1,6 +1,6 @@
 ---
-name: cap-identity-implement
-description: How to build the Identity capability on this stack from a starting point of nothing: a first adapter that issues exchanged tokens at each hop, a second whose execution model is the opposite of it, attesting units from platform facts and verifying against distributed trust material with no authority call per action, the order to migrate in, where issuance and verification are wired so no entry can skip them, and a definition of done with the breakage that makes it fail. Load it when writing the code that puts an actor on a request, when an agent hands work to another agent, when a sandboxed unit needs a name without a planted secret, when choosing where credentials are minted and verified, or when a conformance run reports actions with a one-hop chain.
+name: "cap-identity-implement"
+description: "How to build the Identity capability on this stack from a starting point of nothing: a first adapter that issues exchanged tokens at each hop, a second whose execution model is the opposite of it, attesting units from platform facts and verifying against distributed trust material with no authority call per action, the order to migrate in, where issuance and verification are wired so no entry can skip them, and a definition of done with the breakage that makes it fail. Load it when writing the code that puts an actor on a request, when an agent hands work to another agent, when a sandboxed unit needs a name without a planted secret, when choosing where credentials are minted and verified, or when a conformance run reports actions with a one-hop chain."
 ---
 
 # cap-identity-implement

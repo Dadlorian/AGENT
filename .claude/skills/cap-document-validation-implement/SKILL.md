@@ -1,6 +1,6 @@
 ---
-name: cap-document-validation-implement
-description: How to build the document-validation capability on this stack: the adapter that runs today, a second adapter whose execution model differs, the migration off the keyword-subset checks that run now, where validation is wired so no caller can decline it, and the conformance run that decides whether either adapter may serve. Load it when you are writing or reviewing that adapter, when a schema check is about to be hand-rolled inside a component, when someone asks 'where does the checking actually happen', 'can we replace the checker without touching the core', or 'why did this document pass here and fail there', and before recording any conformance result as passing.
+name: "cap-document-validation-implement"
+description: "How to build the document-validation capability on this stack: the adapter that runs today, a second adapter whose execution model differs, the migration off the keyword-subset checks that run now, where validation is wired so no caller can decline it, and the conformance run that decides whether either adapter may serve. Load it when you are writing or reviewing that adapter, when a schema check is about to be hand-rolled inside a component, when someone asks 'where does the checking actually happen', 'can we replace the checker without touching the core', or 'why did this document pass here and fail there', and before recording any conformance result as passing."
 ---
 
 # cap-document-validation-implement

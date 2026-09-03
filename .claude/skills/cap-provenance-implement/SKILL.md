@@ -1,6 +1,6 @@
 ---
-name: cap-provenance-implement
-description: How to build the Provenance capability on this stack: what the append-only evidence records and the hash-chained store already give you and what they do not, a first adapter that wraps an existing record in a signed envelope with a held key, a second with a different execution model that signs with an ephemeral identity and publishes to a public append-only log, the migration between them, where the attest call is wired so no output can skip it, and a definition of done with the breakage that makes it fail. Load it when writing the code that emits or checks a statement, when picking where envelopes are stored, when adding signing to a pipeline that today only rehashes its own file, or when a conformance run reports an output with no statement over its digest.
+name: "cap-provenance-implement"
+description: "How to build the Provenance capability on this stack: what the append-only evidence records and the hash-chained store already give you and what they do not, a first adapter that wraps an existing record in a signed envelope with a held key, a second with a different execution model that signs with an ephemeral identity and publishes to a public append-only log, the migration between them, where the attest call is wired so no output can skip it, and a definition of done with the breakage that makes it fail. Load it when writing the code that emits or checks a statement, when picking where envelopes are stored, when adding signing to a pipeline that today only rehashes its own file, or when a conformance run reports an output with no statement over its digest."
 ---
 
 # cap-provenance-implement

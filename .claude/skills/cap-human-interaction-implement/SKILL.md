@@ -1,6 +1,6 @@
 ---
-name: cap-human-interaction-implement
-description: How to build the Human interaction capability on this stack: the durable parked-ask store first, the approval unit that already runs wrapped as the first surface, a streaming browser client as the second surface behind the same interface, the migration between them with the ask and decision shapes held still, the one place identity, correlation, budget and replay are stamped on a pause and on a resume, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that parks a run and resumes it, when adding a second place people can decide, when a decision arrived twice or arrived after the deadline, when deciding what stores the parked item, or when a resume conformance run reports that an edit changed the verdict and not the artifact.
+name: "cap-human-interaction-implement"
+description: "How to build the Human interaction capability on this stack: the durable parked-ask store first, the approval unit that already runs wrapped as the first surface, a streaming browser client as the second surface behind the same interface, the migration between them with the ask and decision shapes held still, the one place identity, correlation, budget and replay are stamped on a pause and on a resume, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that parks a run and resumes it, when adding a second place people can decide, when a decision arrived twice or arrived after the deadline, when deciding what stores the parked item, or when a resume conformance run reports that an edit changed the verdict and not the artifact."
 ---
 
 # cap-human-interaction-implement

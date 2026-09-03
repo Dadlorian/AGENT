@@ -1,6 +1,6 @@
 ---
-name: cap-tool-access-implement
-description: How to build the Tool access capability on this stack: an adapter over the endpoint that already runs, a second adapter that is a catalogue nobody here controls, how to migrate work that reaches its tools by hard-wired code today, where the budget, policy, identity, telemetry, provenance and idempotency guarantees attach to a call, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the client that discovers, validates and dispatches a tool call, when registering something into the endpoint that is live with nothing in it, when deciding what the second catalogue should be, or when a check on the tool surface passes and the unit still cannot do anything.
+name: "cap-tool-access-implement"
+description: "How to build the Tool access capability on this stack: an adapter over the endpoint that already runs, a second adapter that is a catalogue nobody here controls, how to migrate work that reaches its tools by hard-wired code today, where the budget, policy, identity, telemetry, provenance and idempotency guarantees attach to a call, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the client that discovers, validates and dispatches a tool call, when registering something into the endpoint that is live with nothing in it, when deciding what the second catalogue should be, or when a check on the tool surface passes and the unit still cannot do anything."
 ---
 
 # cap-tool-access-implement

@@ -1,6 +1,6 @@
 ---
-name: compose-operators-implement
-description: How the closed operator set is actually built here: the interpreted workflow document that runs today, a second engine that compiles the same document ahead of the run, the migration off an operator set that lives in two places at once, where budget, correlation, actor and idempotency attach to an operator, and a definition of done whose breakage is a drift between the schema and the executor. Load it when writing or reviewing the code that walks or compiles a composition, when a component is about to grow its own if-else over operator names, when someone asks 'where is the operator set actually enforced', 'can we run this definition on something else without editing it', or 'why did this workflow run here and refuse there', and before recording any engine-independence result as passing.
+name: "compose-operators-implement"
+description: "How the closed operator set is actually built here: the interpreted workflow document that runs today, a second engine that compiles the same document ahead of the run, the migration off an operator set that lives in two places at once, where budget, correlation, actor and idempotency attach to an operator, and a definition of done whose breakage is a drift between the schema and the executor. Load it when writing or reviewing the code that walks or compiles a composition, when a component is about to grow its own if-else over operator names, when someone asks 'where is the operator set actually enforced', 'can we run this definition on something else without editing it', or 'why did this workflow run here and refuse there', and before recording any engine-independence result as passing."
 ---
 
 # compose-operators-implement

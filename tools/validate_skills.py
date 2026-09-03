@@ -243,6 +243,27 @@ def norm_breakage(text: str | None) -> str:
     return re.sub(r"[^a-z0-9]+", " ", (text or "").lower()).strip()
 
 
+def check_frontmatter(skill_dir: Path, name: str, errs: list[str]):
+    """The rendered SKILL.md frontmatter must parse as strict YAML (a bare description containing ': ' does not; owner, 2026-09-03)."""
+    p = skill_dir / "SKILL.md"
+    if not p.is_file():
+        return
+    m = re.match(r"^---\n(.*?)\n---\n", p.read_text(), re.S)
+    if not m:
+        errs.append(f"{name}: SKILL.md has no frontmatter"); return
+    try:
+        import yaml
+        d = yaml.safe_load(m.group(1))
+    except ImportError:
+        return
+    except Exception as e:
+        errs.append(f"{name}: SKILL.md frontmatter is not valid YAML: {str(e).splitlines()[0]}"); return
+    if not isinstance(d, dict) or d.get("name") != name or not isinstance(d.get("description"), str):
+        errs.append(f"{name}: SKILL.md frontmatter must carry name (= directory) and description")
+    elif len(d["description"]) > 1024:
+        errs.append(f"{name}: SKILL.md description is {len(d['description'])} characters; the Agent Skills limit is 1024")
+
+
 def check_structure(sk: dict, name: str, errs: list[str], warns: list[str]):
     req = ["name", "layer", "description", "purpose", "instructions", "definition_of_done", "composes_with", "provenance"]
     for k in req:
@@ -339,7 +360,7 @@ def main() -> int:
             errs.append(f"{name}: skill.json is not valid JSON: {e}")
             continue
         skills[name] = sk
-        check_structure(sk, name, errs, warns)
+        check_structure(sk, name, errs, warns); check_frontmatter(d, name, errs)
         walk_sourced(sk, "", errs, kb_ids, name)
         for e in sk.get("entities", []):
             if e not in kb_ids:

@@ -1,6 +1,6 @@
 ---
-name: xc-audit-trail
-description: The audit trail as a guarantee rather than a habit: every action attributable to an actor and its delegation chain, the whole run reachable by one correlation id, the record chained so interference shows, and kept for a stated period - all of it applied by the platform from records it already writes, never logged by the caller. Load it when someone asks who did this and under whose authority, when a reviewer needs everything that happened under one identifier, when an integrity check is only ever run by the same process that writes, when a retention period is about to be picked with no obligation named, when an outsider has to be able to check the record without our credentials, and when a system of record is being confused with the operational signal that watches it.
+name: "xc-audit-trail"
+description: "The audit trail as a guarantee rather than a habit: every action attributable to an actor and its delegation chain, the whole run reachable by one correlation id, the record chained so interference shows, and kept for a stated period - all of it applied by the platform from records it already writes, never logged by the caller. Load it when someone asks who did this and under whose authority, when a reviewer needs everything that happened under one identifier, when an integrity check is only ever run by the same process that writes, when a retention period is about to be picked with no obligation named, when an outsider has to be able to check the record without our credentials, and when a system of record is being confused with the operational signal that watches it."
 ---
 
 # xc-audit-trail

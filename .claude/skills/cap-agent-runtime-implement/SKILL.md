@@ -1,6 +1,6 @@
 ---
-name: cap-agent-runtime-implement
-description: How to build the Agent runtime capability on this stack: an interactive adapter over the runtime that already runs, a second adapter that has no session at all, how to migrate execution paths that today share no contract, where the budget, policy, identity, telemetry, provenance and idempotency guarantees attach to a turn, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that starts, streams, permits or cancels an agent turn, when wiring a runtime behind the turn interface, when a ceiling above the turn needs somewhere to terminate it, when choosing what the second runtime should be, or when a cancellation test passes on one runtime and times out on another.
+name: "cap-agent-runtime-implement"
+description: "How to build the Agent runtime capability on this stack: an interactive adapter over the runtime that already runs, a second adapter that has no session at all, how to migrate execution paths that today share no contract, where the budget, policy, identity, telemetry, provenance and idempotency guarantees attach to a turn, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that starts, streams, permits or cancels an agent turn, when wiring a runtime behind the turn interface, when a ceiling above the turn needs somewhere to terminate it, when choosing what the second runtime should be, or when a cancellation test passes on one runtime and times out on another."
 ---
 
 # cap-agent-runtime-implement

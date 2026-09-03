@@ -1,6 +1,6 @@
 ---
-name: build-adapter-pair
-description: The discipline of shipping two adapters behind one capability interface, where the second is chosen because it breaks a different assumption than the first. Load it when picking a second implementation for a boundary, when writing the conformance suite both implementations must pass, when wiring the swap into CI, or when auditing whether a contract has been quietly shaped around whatever runs today. Also load it when a boundary has only one implementation, when someone says the thing behind it can be changed later, when a review asks whether a field belongs to the capability or to the thing behind it, or when a proposed alternative is a different product of the same shape.
+name: "build-adapter-pair"
+description: "The discipline of shipping two adapters behind one capability interface, where the second is chosen because it breaks a different assumption than the first. Load it when picking a second implementation for a boundary, when writing the conformance suite both implementations must pass, when wiring the swap into CI, or when auditing whether a contract has been quietly shaped around whatever runs today. Also load it when a boundary has only one implementation, when someone says the thing behind it can be changed later, when a review asks whether a field belongs to the capability or to the thing behind it, or when a proposed alternative is a different product of the same shape."
 ---
 
 # build-adapter-pair

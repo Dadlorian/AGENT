@@ -1,6 +1,6 @@
 ---
-name: cap-capability-packaging-implement
-description: How to build capability packaging on this stack: the filesystem adapter that runs today, a registry adapter that changes where the bytes come from and what identity means, the migration off directories that are rendered and checked in place, where a package resolution is wired so the platform's guarantees ride on it, and the conformance run that decides whether either source may serve. Load it when writing or reviewing the resolver, when a component is about to join a path to find a package, when someone asks 'where does loading actually happen', 'can we serve these from a registry without touching the core', or 'why did this package resolve here and not there', and before recording any packaging conformance result as passing.
+name: "cap-capability-packaging-implement"
+description: "How to build capability packaging on this stack: the filesystem adapter that runs today, a registry adapter that changes where the bytes come from and what identity means, the migration off directories that are rendered and checked in place, where a package resolution is wired so the platform's guarantees ride on it, and the conformance run that decides whether either source may serve. Load it when writing or reviewing the resolver, when a component is about to join a path to find a package, when someone asks 'where does loading actually happen', 'can we serve these from a registry without touching the core', or 'why did this package resolve here and not there', and before recording any packaging conformance result as passing."
 ---
 
 # cap-capability-packaging-implement

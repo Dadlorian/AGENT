@@ -1,6 +1,6 @@
 ---
-name: cap-work-intake-implement
-description: How to build the Work intake capability on this stack: the repository-event producer that already runs as a deployment role, an agent-message producer as the second implementation behind the same interface, the migration between them with the canonical envelope held still, the one place cross-cutting fields are stamped so no producer can enter without them, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that turns a producer message into a job, when adding a submission path beside the one that runs today, when an actor or a correlation identifier is missing from something that already entered, when deciding where the envelope is built and validated, or when an equivalence run reports two digests for one job.
+name: "cap-work-intake-implement"
+description: "How to build the Work intake capability on this stack: the repository-event producer that already runs as a deployment role, an agent-message producer as the second implementation behind the same interface, the migration between them with the canonical envelope held still, the one place cross-cutting fields are stamped so no producer can enter without them, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that turns a producer message into a job, when adding a submission path beside the one that runs today, when an actor or a correlation identifier is missing from something that already entered, when deciding where the envelope is built and validated, or when an equivalence run reports two digests for one job."
 ---
 
 # cap-work-intake-implement

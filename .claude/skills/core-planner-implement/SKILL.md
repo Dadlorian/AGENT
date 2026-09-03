@@ -1,6 +1,6 @@
 ---
-name: core-planner-implement
-description: How to build the Planner on this stack: a pricing module that links no client of any metered interface, a loader that pins the head and hands the cost table and quantiles in as values, one plan call every producer maps into, the record store those pinned reads sit in today and a second whose execution model differs, the migration from discovering cost by spending it, where the cross-cutting concerns attach to a plan, and the run that decides whether either store may serve. Load it when writing or reviewing that code, when an estimate is about to be fetched instead of looked up, when a cost row is about to be defaulted, and when someone asks 'where do the numbers actually come from', 'can we change that store without touching the core', or 'why did the same document price differently on two machines'.
+name: "core-planner-implement"
+description: "How to build the Planner on this stack: a pricing module that links no client of any metered interface, a loader that pins the head and hands the cost table and quantiles in as values, one plan call every producer maps into, the record store those pinned reads sit in today and a second whose execution model differs, the migration from discovering cost by spending it, where the cross-cutting concerns attach to a plan, and the run that decides whether either store may serve. Load it when writing or reviewing that code, when an estimate is about to be fetched instead of looked up, when a cost row is about to be defaulted, and when someone asks 'where do the numbers actually come from', 'can we change that store without touching the core', or 'why did the same document price differently on two machines'."
 ---
 
 # core-planner-implement

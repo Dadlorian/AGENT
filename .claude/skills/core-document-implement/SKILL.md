@@ -1,6 +1,6 @@
 ---
-name: core-document-implement
-description: How to build the Document on this stack: one construction path every way in maps into, the schema resource shipped for the validation interface to check, a content digest that survives a store swap, the store that holds declared work today and a second whose execution model differs, the migration off it, where the cross-cutting concerns are wired so no declarer can decline them, and the round-trip run that decides whether either store may serve. Load it when writing or reviewing that code, when an intake path is about to normalise a document on write, and when someone asks 'where do declarations actually get persisted', 'can we change that without touching the core', or 'why did the same declaration come back with a different digest'.
+name: "core-document-implement"
+description: "How to build the Document on this stack: one construction path every way in maps into, the schema resource shipped for the validation interface to check, a content digest that survives a store swap, the store that holds declared work today and a second whose execution model differs, the migration off it, where the cross-cutting concerns are wired so no declarer can decline them, and the round-trip run that decides whether either store may serve. Load it when writing or reviewing that code, when an intake path is about to normalise a document on write, and when someone asks 'where do declarations actually get persisted', 'can we change that without touching the core', or 'why did the same declaration come back with a different digest'."
 ---
 
 # core-document-implement

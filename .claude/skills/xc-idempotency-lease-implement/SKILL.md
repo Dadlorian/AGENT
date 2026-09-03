@@ -1,6 +1,6 @@
 ---
-name: xc-idempotency-lease-implement
-description: How to make the idempotency lease real on this stack: today's provider, which carries the key on the envelope and into the append-only chained store without ever claiming it, a second provider that takes a keyed compare-and-set with a store-evaluated expiry, the key-derivation rule each one publishes, how to migrate from one to both without a window in which two copies can both execute, where the lease attaches to correlation, identity, provenance and typed failures, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that stops a repeat, when a key is recorded but nothing was claimed, when a duplicate lands while the first copy is still running, when a crashed owner has left a key held, or when deciding what the second provider should be.
+name: "xc-idempotency-lease-implement"
+description: "How to make the idempotency lease real on this stack: today's provider, which carries the key on the envelope and into the append-only chained store without ever claiming it, a second provider that takes a keyed compare-and-set with a store-evaluated expiry, the key-derivation rule each one publishes, how to migrate from one to both without a window in which two copies can both execute, where the lease attaches to correlation, identity, provenance and typed failures, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that stops a repeat, when a key is recorded but nothing was claimed, when a duplicate lands while the first copy is still running, when a crashed owner has left a key held, or when deciding what the second provider should be."
 ---
 
 # xc-idempotency-lease-implement

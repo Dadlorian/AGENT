@@ -1,6 +1,6 @@
 ---
-name: cap-telemetry-implement
-description: How to build the Telemetry capability on this stack: what the trace UI and ingestion API already running gives you and what it does not, an emitter bound to the pinned transport half, a separately versioned attribute-mapping adapter behind it, a second backend with a different execution model that understands no model calls at all, the migration order, where the correlation attribute set is injected so no step can skip it, and a definition of done with the breakage that makes it fail. Load it when writing the code that emits a span or a metric, when adding an exporter or a pipeline stage, when a run arrives at the backend as several unrelated trees, when a vocabulary revision lands, or when a conformance run reports a step with no run identifier on it.
+name: "cap-telemetry-implement"
+description: "How to build the Telemetry capability on this stack: what the trace UI and ingestion API already running gives you and what it does not, an emitter bound to the pinned transport half, a separately versioned attribute-mapping adapter behind it, a second backend with a different execution model that understands no model calls at all, the migration order, where the correlation attribute set is injected so no step can skip it, and a definition of done with the breakage that makes it fail. Load it when writing the code that emits a span or a metric, when adding an exporter or a pipeline stage, when a run arrives at the backend as several unrelated trees, when a vocabulary revision lands, or when a conformance run reports a step with no run identifier on it."
 ---
 
 # cap-telemetry-implement

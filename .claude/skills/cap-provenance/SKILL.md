@@ -1,6 +1,6 @@
 ---
-name: cap-provenance
-description: The ideal state of the Provenance capability: a signed statement binding an artifact to the code version, inputs and actor that produced it, in a format a verifier we did not write can check standing alone. Load it when deciding what makes an output accountable after the fact, when choosing an attestation format or a predicate, when judging whether a store's own integrity check counts as verification, or when a review asks how an outsider would confirm that this output came from that input. Also load it when someone proposes proving an output by rehashing our own log, when an agent action rather than a build artifact is the thing to be vouched for, when signing keys or a transparency log come up, and when a record is described as tamper-proof.
+name: "cap-provenance"
+description: "The ideal state of the Provenance capability: a signed statement binding an artifact to the code version, inputs and actor that produced it, in a format a verifier we did not write can check standing alone. Load it when deciding what makes an output accountable after the fact, when choosing an attestation format or a predicate, when judging whether a store's own integrity check counts as verification, or when a review asks how an outsider would confirm that this output came from that input. Also load it when someone proposes proving an output by rehashing our own log, when an agent action rather than a build artifact is the thing to be vouched for, when signing keys or a transparency log come up, and when a record is described as tamper-proof."
 ---
 
 # cap-provenance

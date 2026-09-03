@@ -1,6 +1,6 @@
 ---
-name: cap-policy-implement
-description: How to build the Policy capability on this stack: what the rule sets that exist today already give you and what they do not, a first enforcing adapter that wraps the engine already provisioned behind one decide call, a second with a different execution model that evaluates in process against a typed entity model, the migration between them, where the call is wired so no path can skip it, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that asks for a decision, when adding a decision point or a rule bundle to the running system, when choosing where the policy-decided record is written, when a refusal arrives after money has been spent, or when a conformance run reports a non-zero spend delta on a denied dispatch.
+name: "cap-policy-implement"
+description: "How to build the Policy capability on this stack: what the rule sets that exist today already give you and what they do not, a first enforcing adapter that wraps the engine already provisioned behind one decide call, a second with a different execution model that evaluates in process against a typed entity model, the migration between them, where the call is wired so no path can skip it, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that asks for a decision, when adding a decision point or a rule bundle to the running system, when choosing where the policy-decided record is written, when a refusal arrives after money has been spent, or when a conformance run reports a non-zero spend delta on a denied dispatch."
 ---
 
 # cap-policy-implement

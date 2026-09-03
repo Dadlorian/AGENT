@@ -1,6 +1,6 @@
 ---
-name: core-graph
-description: The Graph: typed nodes and three typed edge kinds - existence, interface, implementation - whose validity is decidable in memory with no store attached, so that design rule 1 stops being a review convention and becomes a check a machine runs. Load it before adding a node kind or an edge kind, before relaxing a type rule so a rejected edge can get through, when a step has to be expanded into the implementations that could serve it, and when someone asks 'how do we know this composes', 'why can one adapter not just call another', 'where does the platform record what implements what', or 'why does this structure not have a head or a snapshot'. Persistence belongs to the state seam; a node identified by a file offset or a row key means the boundary was drawn wrong.
+name: "core-graph"
+description: "The Graph: typed nodes and three typed edge kinds - existence, interface, implementation - whose validity is decidable in memory with no store attached, so that design rule 1 stops being a review convention and becomes a check a machine runs. Load it before adding a node kind or an edge kind, before relaxing a type rule so a rejected edge can get through, when a step has to be expanded into the implementations that could serve it, and when someone asks 'how do we know this composes', 'why can one adapter not just call another', 'where does the platform record what implements what', or 'why does this structure not have a head or a snapshot'. Persistence belongs to the state seam; a node identified by a file offset or a row key means the boundary was drawn wrong."
 ---
 
 # core-graph

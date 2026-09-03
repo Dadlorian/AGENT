@@ -1,6 +1,6 @@
 ---
-name: cap-tool-access
-description: The ideal state of the Tool access capability: a unit of work reaches tools published by anyone, governed by the Model Context Protocol, with the operations the core imports, the tool-descriptor and call shapes, what the boundary refuses to carry, and the criteria that decide whether a candidate tool server may serve the interface. Load it when deciding how a unit discovers what it can call, how arguments are checked before a call leaves the platform, or how a tool published by someone else is reached without linking against their library; when asking 'what can this agent actually do', 'where does the list of callable things come from', or 'is this endpoint working or just answering'; and whenever a health check on a tool surface is about to report green without counting anything.
+name: "cap-tool-access"
+description: "The ideal state of the Tool access capability: a unit of work reaches tools published by anyone, governed by the Model Context Protocol, with the operations the core imports, the tool-descriptor and call shapes, what the boundary refuses to carry, and the criteria that decide whether a candidate tool server may serve the interface. Load it when deciding how a unit discovers what it can call, how arguments are checked before a call leaves the platform, or how a tool published by someone else is reached without linking against their library; when asking 'what can this agent actually do', 'where does the list of callable things come from', or 'is this endpoint working or just answering'; and whenever a health check on a tool surface is about to report green without counting anything."
 ---
 
 # cap-tool-access

@@ -1,6 +1,6 @@
 ---
-name: cap-durable-execution-implement
-description: How to build the Durable execution capability on this stack: a thin adapter over the external workflow orchestrator that is installed but not listening, a second adapter that has no server at all, how to bring workflows that checkpoint nothing today in front of one interface, where budget, policy, identity, telemetry, provenance and idempotency attach to a step and to a restart, and a definition of done with the crash that makes it fail. Load it when writing or reviewing the code that starts, checkpoints, resumes or reads a multi-step run, when wiring an executor behind the step interface, when deciding what the second executor should be, when a resumed run has to continue under the budget it had left, or when a restart quietly re-does a side effect.
+name: "cap-durable-execution-implement"
+description: "How to build the Durable execution capability on this stack: a thin adapter over the external workflow orchestrator that is installed but not listening, a second adapter that has no server at all, how to bring workflows that checkpoint nothing today in front of one interface, where budget, policy, identity, telemetry, provenance and idempotency attach to a step and to a restart, and a definition of done with the crash that makes it fail. Load it when writing or reviewing the code that starts, checkpoints, resumes or reads a multi-step run, when wiring an executor behind the step interface, when deciding what the second executor should be, when a resumed run has to continue under the budget it had left, or when a restart quietly re-does a side effect."
 ---
 
 # cap-durable-execution-implement

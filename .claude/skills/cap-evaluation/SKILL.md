@@ -1,6 +1,6 @@
 ---
-name: cap-evaluation
-description: The evaluation contract: score a versioned unit of work against a versioned case set - synthetic scenarios and recorded runs replayed with their external effects served from the record - and return passed, failed or inconclusive against a stored baseline. Load it before a prompt, a model, a skill or a workflow change is allowed to ship, when a self-improvement loop needs a gate that can actually say no, when someone asks 'did that change make it worse', 'how do we test an agent without calling the real thing', 'what exactly is this scored against', or 'is this not just the Judge again', when a recorded run is about to be re-executed rather than replayed, and whenever a green test run turns out to have executed no cases at all.
+name: "cap-evaluation"
+description: "The evaluation contract: score a versioned unit of work against a versioned case set - synthetic scenarios and recorded runs replayed with their external effects served from the record - and return passed, failed or inconclusive against a stored baseline. Load it before a prompt, a model, a skill or a workflow change is allowed to ship, when a self-improvement loop needs a gate that can actually say no, when someone asks 'did that change make it worse', 'how do we test an agent without calling the real thing', 'what exactly is this scored against', or 'is this not just the Judge again', when a recorded run is about to be re-executed rather than replayed, and whenever a green test run turns out to have executed no cases at all."
 ---
 
 # cap-evaluation

@@ -1,6 +1,6 @@
 ---
-name: cap-errors
-description: The ideal state of the Errors capability: one typed, machine-readable failure object for every boundary in the platform, governed by RFC 9457 problem details and a closed registry of problem types. Load it when deciding what a failure returns, when adding a failure mode or a new type URI, when judging whether an implementation's failure paths are conformant, or when a review asks why an error carries the fields it does. Also load it when a component is about to define its own error object, when a caller would have to read a message to learn what went wrong, when a status code alone is being used to decide whether to retry, or when someone proposes handing a stack trace, a log line or free text back to whoever called.
+name: "cap-errors"
+description: "The ideal state of the Errors capability: one typed, machine-readable failure object for every boundary in the platform, governed by RFC 9457 problem details and a closed registry of problem types. Load it when deciding what a failure returns, when adding a failure mode or a new type URI, when judging whether an implementation's failure paths are conformant, or when a review asks why an error carries the fields it does. Also load it when a component is about to define its own error object, when a caller would have to read a message to learn what went wrong, when a status code alone is being used to decide whether to retry, or when someone proposes handing a stack trace, a log line or free text back to whoever called."
 ---
 
 # cap-errors

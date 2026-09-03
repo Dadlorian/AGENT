@@ -1,6 +1,6 @@
 ---
-name: agentic-stack
-description: Root contract for building the agentic platform in PASS.md. Load first whenever work touches the platform: its core (Document, Planner, Graph, Judge, Ledger), any capability interface, standard, or adapter, the Dispatch or State seams, a cross-cutting guarantee, a workflow, loop, or agent composition, or any skill in this repo. Fixes the vocabulary, the seven design rules as pass/fail tests, claimed versus measured labeling, the definition of done, and how skills cite the knowledge base. Every other skill assumes this one is loaded.
+name: "agentic-stack"
+description: "Root contract for building the agentic platform in PASS.md. Load first whenever work touches the platform: its core (Document, Planner, Graph, Judge, Ledger), any capability interface, standard, or adapter, the Dispatch or State seams, a cross-cutting guarantee, a workflow, loop, or agent composition, or any skill in this repo. Fixes the vocabulary, the seven design rules as pass/fail tests, claimed versus measured labeling, the definition of done, and how skills cite the knowledge base. Every other skill assumes this one is loaded."
 ---
 
 # agentic-stack

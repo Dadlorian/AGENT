@@ -1,6 +1,6 @@
 ---
-name: core-document
-description: The Document: the one declarable artifact this platform owns - declared intent, a definition of done that is a list of runnable checks with risk tiers, and steps drawn from a closed operator vocabulary - produced in the same shape whether a human, an agent or an event entered, and written before anything reads it. Load it before adding a field to what a caller declares, before an intake path stamps a default of its own, when a unit of work is about to be described in free text, and when someone asks 'where does the task actually live', 'what does done mean here and who checks it', 'why may the planner not rewrite this', or 'why did the same request produce two different digests'.
+name: "core-document"
+description: "The Document: the one declarable artifact this platform owns - declared intent, a definition of done that is a list of runnable checks with risk tiers, and steps drawn from a closed operator vocabulary - produced in the same shape whether a human, an agent or an event entered, and written before anything reads it. Load it before adding a field to what a caller declares, before an intake path stamps a default of its own, when a unit of work is about to be described in free text, and when someone asks 'where does the task actually live', 'what does done mean here and who checks it', 'why may the planner not rewrite this', or 'why did the same request produce two different digests'."
 ---
 
 # core-document

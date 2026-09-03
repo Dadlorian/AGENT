@@ -1,6 +1,6 @@
 ---
-name: cap-errors-implement
-description: How to build the Errors capability on this stack: the first adapter, a second one with a different execution model, what to do when there is nothing to migrate from, how the budget, policy, identity, idempotency and correlation guarantees land in a failure body, and a definition of done with the breakage that makes it fail. Load it when you are writing or reviewing the code that produces a failure, when wiring a capability adapter's failure path, when adding an edge component that answers on behalf of a service, when a cross-cutting concern needs somewhere to report a refusal, or when a conformance run reports untyped failures and you have to find which adapter produced them.
+name: "cap-errors-implement"
+description: "How to build the Errors capability on this stack: the first adapter, a second one with a different execution model, what to do when there is nothing to migrate from, how the budget, policy, identity, idempotency and correlation guarantees land in a failure body, and a definition of done with the breakage that makes it fail. Load it when you are writing or reviewing the code that produces a failure, when wiring a capability adapter's failure path, when adding an edge component that answers on behalf of a service, when a cross-cutting concern needs somewhere to report a refusal, or when a conformance run reports untyped failures and you have to find which adapter produced them."
 ---
 
 # cap-errors-implement

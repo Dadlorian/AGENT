@@ -1,6 +1,6 @@
 ---
-name: build-evidence-record
-description: The discipline of recording claimed versus measured evidence, so a reader can tell what was observed from what was believed. Load whenever you are about to record a definition-of-done outcome or an entry in the evidence store, label a check as passing, upgrade a claim to a measurement, cite evidence inside a skill, or reconcile a measurement that contradicts what the design says: it fixes what an evidence record contains (what was run, the code version and tree hash under test, whether the tree was dirty, the output, the status label), how records are appended and chained so an edit is detectable, and what a contradicting measurement obliges you to do.
+name: "build-evidence-record"
+description: "The discipline of recording claimed versus measured evidence, so a reader can tell what was observed from what was believed. Load whenever you are about to record a definition-of-done outcome or an entry in the evidence store, label a check as passing, upgrade a claim to a measurement, cite evidence inside a skill, or reconcile a measurement that contradicts what the design says: it fixes what an evidence record contains (what was run, the code version and tree hash under test, whether the tree was dirty, the output, the status label), how records are appended and chained so an edit is detectable, and what a contradicting measurement obliges you to do."
 ---
 
 # build-evidence-record

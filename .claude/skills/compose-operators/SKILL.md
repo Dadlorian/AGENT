@@ -1,6 +1,6 @@
 ---
-name: compose-operators
-description: The closed set of composition operators a caller may write - sequence, parallel with fan-out and tolerate, bounded loop, approval gate, agent call, judge - each with its shape as JSON Schema 2020-12, how they nest because a step is itself a document, and the rule that new capability widens what a field may say and never what syntax a caller must learn. Load it before you add a control structure, a branch, a retry, a gate or a seventh operator to a plan; when someone asks 'how do I express this workflow', 'where does the loop bound live', 'why is there no goto', 'can this definition run on a different engine', or 'what stops a nested plan lying about its cost'; and whenever a criterion, a record of earlier attempts, or the thing a result is compared against is about to travel down a tree with the work.
+name: "compose-operators"
+description: "The closed set of composition operators a caller may write - sequence, parallel with fan-out and tolerate, bounded loop, approval gate, agent call, judge - each with its shape as JSON Schema 2020-12, how they nest because a step is itself a document, and the rule that new capability widens what a field may say and never what syntax a caller must learn. Load it before you add a control structure, a branch, a retry, a gate or a seventh operator to a plan; when someone asks 'how do I express this workflow', 'where does the loop bound live', 'why is there no goto', 'can this definition run on a different engine', or 'what stops a nested plan lying about its cost'; and whenever a criterion, a record of earlier attempts, or the thing a result is compared against is about to travel down a tree with the work."
 ---
 
 # compose-operators

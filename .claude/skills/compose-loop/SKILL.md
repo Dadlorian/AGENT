@@ -1,6 +1,6 @@
 ---
-name: compose-loop
-description: A bounded loop assembled from lower layers: a body that runs, a verdict that decides, and two ceilings that end it. Load it when work has to be attempted more than once - fix-and-check, evaluator-optimizer, a self-improvement cycle - when writing a loop's exit condition, when deciding what an iteration may see of the criterion it is graded against, when a nested loop's cost or depth has to be known before it starts, when an iteration has to survive a crash, and when someone asks what stops this running forever, why did this stop, who pays for iteration nine, whether a running step may start a loop of its own, or how a run that ended for a fourth reason should be classified.
+name: "compose-loop"
+description: "A bounded loop assembled from lower layers: a body that runs, a verdict that decides, and two ceilings that end it. Load it when work has to be attempted more than once - fix-and-check, evaluator-optimizer, a self-improvement cycle - when writing a loop's exit condition, when deciding what an iteration may see of the criterion it is graded against, when a nested loop's cost or depth has to be known before it starts, when an iteration has to survive a crash, and when someone asks what stops this running forever, why did this stop, who pays for iteration nine, whether a running step may start a loop of its own, or how a run that ended for a fourth reason should be classified."
 ---
 
 # compose-loop

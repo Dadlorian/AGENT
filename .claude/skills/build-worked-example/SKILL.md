@@ -1,6 +1,6 @@
 ---
-name: build-worked-example
-description: The discipline of writing a worked example of this platform in use, so every example answers the same six questions, shows one document through all four entries, and is graded by the same six criteria. Load it before writing or reviewing any example under docs/reference/ or examples/, when a new entry point, capability or composition needs a demonstration, when someone asks 'what would a caller actually write' or 'what does this look like from the event or schedule door', or when an example names a product or restates a default. v1: it fixes the shape of an example and its check; it does not fix where examples live or how they are run.
+name: "build-worked-example"
+description: "The discipline of writing a worked example of this platform in use, so every example answers the same six questions, shows one document through all four entries, and is graded by the same six criteria. Load it before writing or reviewing any example under docs/reference/ or examples/, when a new entry point, capability or composition needs a demonstration, when someone asks 'what would a caller actually write' or 'what does this look like from the event or schedule door', or when an example names a product or restates a default. v1: it fixes the shape of an example and its check; it does not fix where examples live or how they are run."
 ---
 
 # build-worked-example

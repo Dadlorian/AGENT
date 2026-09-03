@@ -1,6 +1,6 @@
 ---
-name: cap-idempotency
-description: The ideal state of the Idempotency capability: one claim over a key and a payload digest that turns a repeated externally-triggered request into one execution and one answer, governed by the idempotency-key convention and by lease semantics this platform specifies itself. Load it when deciding what makes a repeated request safe, when a request may arrive more than once from a retry, a redelivery or a re-fire, when judging whether an implementation actually deduplicates or merely records a key, or when a review asks why a key alone is not enough. Also load it when the same operation could run twice and charge, send or write twice, when two copies of one request could be in flight at the same moment, when someone proposes reusing a key across attempts, or when a retention window is about to be chosen by accident.
+name: "cap-idempotency"
+description: "The ideal state of the Idempotency capability: one claim over a key and a payload digest that turns a repeated externally-triggered request into one execution and one answer, governed by the idempotency-key convention and by lease semantics this platform specifies itself. Load it when deciding what makes a repeated request safe, when a request may arrive more than once from a retry, a redelivery or a re-fire, when judging whether an implementation actually deduplicates or merely records a key, or when a review asks why a key alone is not enough. Also load it when the same operation could run twice and charge, send or write twice, when two copies of one request could be in flight at the same moment, when someone proposes reusing a key across attempts, or when a retention window is about to be chosen by accident."
 ---
 
 # cap-idempotency

@@ -1,6 +1,6 @@
 ---
-name: cap-idempotency-implement
-description: How to build the Idempotency capability on this stack: what the key on the wire already gives you and what it does not, a first enforcing adapter that folds the append-only log at entry, a second with a different execution model that takes a conditional-write lease before execution, the migration between them, where the claim is wired so no entry can skip it, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that decides a request is a repeat, when adding a claim to an entry or a step boundary, when choosing where the claim record is stored, when two copies of one request can be in flight at once, or when a conformance run reports more than one execution under a single key.
+name: "cap-idempotency-implement"
+description: "How to build the Idempotency capability on this stack: what the key on the wire already gives you and what it does not, a first enforcing adapter that folds the append-only log at entry, a second with a different execution model that takes a conditional-write lease before execution, the migration between them, where the claim is wired so no entry can skip it, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that decides a request is a repeat, when adding a claim to an entry or a step boundary, when choosing where the claim record is stored, when two copies of one request can be in flight at once, or when a conformance run reports more than one execution under a single key."
 ---
 
 # cap-idempotency-implement

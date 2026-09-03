@@ -1,6 +1,6 @@
 ---
-name: build-ceremony
-description: The discipline of closing a section with a ceremony: a review record of findings against what the section produced, then an improve record that marks every finding applied or declined with the files it touched, then continuing. Load it when a wave or section of skills is finished and the next one is about to start, when you are writing or checking a review or improve record under kb/ceremonies/, when you are deciding whether a finding should change a skill or the author brief, when carrying lessons from one pass into the next, or when a retrospective, post-mortem, or end-of-batch check is being run over work this repo produced. Also load it when someone proposes to skip the end-of-section check because the output looked fine, or when a review produced no findings at all.
+name: "build-ceremony"
+description: "The discipline of closing a section with a ceremony: a review record of findings against what the section produced, then an improve record that marks every finding applied or declined with the files it touched, then continuing. Load it when a wave or section of skills is finished and the next one is about to start, when you are writing or checking a review or improve record under kb/ceremonies/, when you are deciding whether a finding should change a skill or the author brief, when carrying lessons from one pass into the next, or when a retrospective, post-mortem, or end-of-batch check is being run over work this repo produced. Also load it when someone proposes to skip the end-of-section check because the output looked fine, or when a review produced no findings at all."
 ---
 
 # build-ceremony

@@ -1,6 +1,6 @@
 ---
-name: core-graph-implement
-description: How to build the Graph on this stack: a type checker that links no persistence code, one assertion path every producer maps into, node and edge assertions appended as records and folded into a graph value, the log those records sit in today and a second whose execution model differs, the migration off it, where the cross-cutting concerns are wired so no asserter can decline them, and the conformance run that decides whether either log may serve. Load it when writing or reviewing that code, when a fold is about to be cached or a walk pushed into the store, and when someone asks 'where do nodes and edges actually get written', 'can we change that without touching the core', or 'why did the same assertions produce two different verdicts'.
+name: "core-graph-implement"
+description: "How to build the Graph on this stack: a type checker that links no persistence code, one assertion path every producer maps into, node and edge assertions appended as records and folded into a graph value, the log those records sit in today and a second whose execution model differs, the migration off it, where the cross-cutting concerns are wired so no asserter can decline them, and the conformance run that decides whether either log may serve. Load it when writing or reviewing that code, when a fold is about to be cached or a walk pushed into the store, and when someone asks 'where do nodes and edges actually get written', 'can we change that without touching the core', or 'why did the same assertions produce two different verdicts'."
 ---
 
 # core-graph-implement

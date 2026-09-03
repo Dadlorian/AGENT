@@ -1,6 +1,6 @@
 ---
-name: core-judge
-description: The Judge: a pure function from a result and a criterion to a verdict, where the criterion is resolved out of band and never travels with the work, and where hiding it is treated as necessary but not sufficient - sampling the criterion set per grading and a periodic held-out audit are part of the contract, not an add-on. Load it before deciding what 'done' means for a unit of work, before a definition of done is handed to the thing that will be graded, when a grading step is added to a workflow or a loop's exit condition is written, and when someone asks 'who decides this is finished', 'why can the agent not see the rubric', 'why did the same result get two different verdicts', or 'how would we notice that the agents had learned to satisfy the checks without doing the work'.
+name: "core-judge"
+description: "The Judge: a pure function from a result and a criterion to a verdict, where the criterion is resolved out of band and never travels with the work, and where hiding it is treated as necessary but not sufficient - sampling the criterion set per grading and a periodic held-out audit are part of the contract, not an add-on. Load it before deciding what 'done' means for a unit of work, before a definition of done is handed to the thing that will be graded, when a grading step is added to a workflow or a loop's exit condition is written, and when someone asks 'who decides this is finished', 'why can the agent not see the rubric', 'why did the same result get two different verdicts', or 'how would we notice that the agents had learned to satisfy the checks without doing the work'."
 ---
 
 # core-judge

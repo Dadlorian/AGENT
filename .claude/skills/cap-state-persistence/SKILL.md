@@ -1,6 +1,6 @@
 ---
-name: cap-state-persistence
-description: The ideal state of the State persistence capability: put an opaque record somewhere durable, read it back at a pinned snapshot, and hand someone a proof that nothing was changed, without making them hold the whole log. Load it when designing or judging the store behind the graph and the ledger, when deciding what a record's identity is, when two writers could append at once, when a planner needs an answer that will not move underneath it, or when retention and redaction have to coexist with integrity. Also load it when someone proposes proving one record by rehashing the entire file, when a store is called tamper-proof, when a log's file format is being treated as the contract, or when a proposed second implementation is a different database of the same shape.
+name: "cap-state-persistence"
+description: "The ideal state of the State persistence capability: put an opaque record somewhere durable, read it back at a pinned snapshot, and hand someone a proof that nothing was changed, without making them hold the whole log. Load it when designing or judging the store behind the graph and the ledger, when deciding what a record's identity is, when two writers could append at once, when a planner needs an answer that will not move underneath it, or when retention and redaction have to coexist with integrity. Also load it when someone proposes proving one record by rehashing the entire file, when a store is called tamper-proof, when a log's file format is being treated as the contract, or when a proposed second implementation is a different database of the same shape."
 ---
 
 # cap-state-persistence

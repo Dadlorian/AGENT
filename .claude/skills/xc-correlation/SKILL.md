@@ -1,6 +1,6 @@
 ---
-name: xc-correlation
-description: The cross-cutting guarantee that every signal one run emits - every span, every log record, and every problem object - carries the run identifier and the root dispatch identifier the platform stamped at entry, so a run is reassembled by grouping on a field rather than by walking a trace tree. Load it when a run comes back as several unrelated trees, when a sub-agent's output cannot be tied to the work that started it, when someone proposes injecting a trace header across an agent boundary and trusting it, when a new emission point, entry point or process boundary is being added, when a failure body arrives with no way to tell which run produced it, when a caller asks to switch the identifiers off on a fast path, and when auditing that nothing a run emitted was left unstamped.
+name: "xc-correlation"
+description: "The cross-cutting guarantee that every signal one run emits - every span, every log record, and every problem object - carries the run identifier and the root dispatch identifier the platform stamped at entry, so a run is reassembled by grouping on a field rather than by walking a trace tree. Load it when a run comes back as several unrelated trees, when a sub-agent's output cannot be tied to the work that started it, when someone proposes injecting a trace header across an agent boundary and trusting it, when a new emission point, entry point or process boundary is being added, when a failure body arrives with no way to tell which run produced it, when a caller asks to switch the identifiers off on a fast path, and when auditing that nothing a run emitted was left unstamped."
 ---
 
 # xc-correlation

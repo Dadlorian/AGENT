@@ -1,6 +1,6 @@
 ---
-name: build-definition-of-done
-description: The discipline that gives every piece a machine-checkable criterion, a deliberate breakage that makes that criterion fail, and the recorded output of both runs. Load it when you are writing or reviewing a Definition of done section, deciding what a green check actually proved, wiring a gate or CI stage that reports pass or fail, choosing the breakage that shows the check can fail, or judging whether a passing run checked anything at all. Also load it when a pipeline reports success with every behavioural stage skipped, when an assertion rests on an exit code alone, or when configuration was written in the documented place and you need evidence that it took effect rather than the file that declared it.
+name: "build-definition-of-done"
+description: "The discipline that gives every piece a machine-checkable criterion, a deliberate breakage that makes that criterion fail, and the recorded output of both runs. Load it when you are writing or reviewing a Definition of done section, deciding what a green check actually proved, wiring a gate or CI stage that reports pass or fail, choosing the breakage that shows the check can fail, or judging whether a passing run checked anything at all. Also load it when a pipeline reports success with every behavioural stage skipped, when an assertion rests on an exit code alone, or when configuration was written in the documented place and you need evidence that it took effect rather than the file that declared it."
 ---
 
 # build-definition-of-done

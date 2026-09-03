@@ -1,6 +1,6 @@
 ---
-name: xc-policy-gate-implement
-description: How to make the policy gate real on this stack: a first placement that consults the decision service synchronously on the dispatch path, a second placement that authorizes at the boundary every metered call crosses, the adoption path from a decision capability that exists and gates nothing, where correlation, provenance, budget and typed failures attach to an admission, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that admits or refuses a dispatch, when a metered surface can be reached without an admission token, when a check is about to be added beside the call path rather than on it, when a warn-only rollout is proposed, when deciding what the second placement should be, or when an ordering assertion passes on one placement and inverts on the other.
+name: "xc-policy-gate-implement"
+description: "How to make the policy gate real on this stack: a first placement that consults the decision service synchronously on the dispatch path, a second placement that authorizes at the boundary every metered call crosses, the adoption path from a decision capability that exists and gates nothing, where correlation, provenance, budget and typed failures attach to an admission, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that admits or refuses a dispatch, when a metered surface can be reached without an admission token, when a check is about to be added beside the call path rather than on it, when a warn-only rollout is proposed, when deciding what the second placement should be, or when an ordering assertion passes on one placement and inverts on the other."
 ---
 
 # xc-policy-gate-implement

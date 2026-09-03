@@ -1,6 +1,6 @@
 ---
-name: seam-state
-description: The State seam: the graph and the ledger as two projections of one append-only, tamper-evident log, written by one writer per run and read at a pinned snapshot. Load it when deciding where a node, an edge, a ledger entry, a policy decision or an attestation is written; when a planner query has to give the same answer twice; when asking 'how would anyone know a record was edited', 'what can a third party check without holding the log', 'what happens when two writers race for the same run', or 'can a leaked field be removed without invalidating everything after it'; and whenever a component is about to open a second store for its own records, read the newest state instead of the head it was handed, or update a record in place.
+name: "seam-state"
+description: "The State seam: the graph and the ledger as two projections of one append-only, tamper-evident log, written by one writer per run and read at a pinned snapshot. Load it when deciding where a node, an edge, a ledger entry, a policy decision or an attestation is written; when a planner query has to give the same answer twice; when asking 'how would anyone know a record was edited', 'what can a third party check without holding the log', 'what happens when two writers race for the same run', or 'can a leaked field be removed without invalidating everything after it'; and whenever a component is about to open a second store for its own records, read the newest state instead of the head it was handed, or update a record in place."
 ---
 
 # seam-state

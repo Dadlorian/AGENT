@@ -1,6 +1,6 @@
 ---
-name: compose-agent
-description: An agent profile assembled from lower layers: what it is good at and not for, a model class that names a routing prefix and never a vendor, a declared tool surface, input and output shapes, a cost class and a max-concurrency ceiling, run as one isolated turn with the grading criterion absent from everything the unit can read. Load it when declaring a new agent profile or its good_at/not_for pair, when deciding which tools or packaged skills an agent unit may reach, when sequencing which profile handles which workflow step, when a running agent needs to delegate to a sub-agent with its own identity-chain hop and a budget slice cut from the parent, when checking whether a criterion could leak into an agent's context, or when reasoning about keeping well over a hundred concurrently running agents coherent.
+name: "compose-agent"
+description: "An agent profile assembled from lower layers: what it is good at and not for, a model class that names a routing prefix and never a vendor, a declared tool surface, input and output shapes, a cost class and a max-concurrency ceiling, run as one isolated turn with the grading criterion absent from everything the unit can read. Load it when declaring a new agent profile or its good_at/not_for pair, when deciding which tools or packaged skills an agent unit may reach, when sequencing which profile handles which workflow step, when a running agent needs to delegate to a sub-agent with its own identity-chain hop and a budget slice cut from the parent, when checking whether a criterion could leak into an agent's context, or when reasoning about keeping well over a hundred concurrently running agents coherent."
 ---
 
 # compose-agent

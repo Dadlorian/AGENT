@@ -1,6 +1,6 @@
 ---
-name: cap-durable-execution
-description: The ideal state of the Durable execution capability: a multi-step unit of work survives a crash and resumes at the first incomplete step, expressed as step, idempotency key, checkpoint and resume point and nothing more. Load it when deciding how a long piece of work is broken into steps that survive a restart, when asking 'what happens to this run if the machine dies at step 11', 'how do we not do that side effect twice', or 'can we run this without a workflow server at all', when a design starts to assume replayable deterministic code, worker registration or a task queue, and whenever a checkpointing contract is about to be written in the vocabulary of whichever engine happens to be installed.
+name: "cap-durable-execution"
+description: "The ideal state of the Durable execution capability: a multi-step unit of work survives a crash and resumes at the first incomplete step, expressed as step, idempotency key, checkpoint and resume point and nothing more. Load it when deciding how a long piece of work is broken into steps that survive a restart, when asking 'what happens to this run if the machine dies at step 11', 'how do we not do that side effect twice', or 'can we run this without a workflow server at all', when a design starts to assume replayable deterministic code, worker registration or a task queue, and whenever a checkpointing contract is about to be written in the vocabulary of whichever engine happens to be installed."
 ---
 
 # cap-durable-execution

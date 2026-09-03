@@ -1,6 +1,6 @@
 ---
-name: cap-model-access-implement
-description: How to build the Model access capability on this stack: a thin adapter over the model gateway that already runs on the host, a second adapter that answers hours later with a ticket instead of a result, how to bring the model classes that exist today in front of one interface, where budget, policy, identity, telemetry, provenance and idempotency attach to a submission and again to a claim hours later, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code behind a completion call, when wiring a gateway or a batch endpoint behind the class prefix, when deciding what the second adapter should be, when a routing change appears to have been applied and was not, or when a slow call's cost has to be reconciled long after the work was authorised.
+name: "cap-model-access-implement"
+description: "How to build the Model access capability on this stack: a thin adapter over the model gateway that already runs on the host, a second adapter that answers hours later with a ticket instead of a result, how to bring the model classes that exist today in front of one interface, where budget, policy, identity, telemetry, provenance and idempotency attach to a submission and again to a claim hours later, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code behind a completion call, when wiring a gateway or a batch endpoint behind the class prefix, when deciding what the second adapter should be, when a routing change appears to have been applied and was not, or when a slow call's cost has to be reconciled long after the work was authorised."
 ---
 
 # cap-model-access-implement

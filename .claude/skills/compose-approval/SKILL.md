@@ -1,6 +1,6 @@
 ---
-name: compose-approval
-description: How to assemble an approval gate as a composition rather than a screen: a step that stops before an irreversible action, parks on a durable record carrying a named view, a deadline, a stated decider and the wire a decision may arrive over, and resumes exactly once on the run's own correlation id with one of approve, edit, reject or return-with-notes. Load it when a workflow has to stop and ask a person before doing something it cannot undo, when designing a review step or a sign-off, when deciding what happens if nobody answers, when a decision may be delivered twice or arrive after the run ended, when someone proposes a second inbox or a bespoke approval page, or when a parked item has no owner, no deadline and no way to say change this and try again.
+name: "compose-approval"
+description: "How to assemble an approval gate as a composition rather than a screen: a step that stops before an irreversible action, parks on a durable record carrying a named view, a deadline, a stated decider and the wire a decision may arrive over, and resumes exactly once on the run's own correlation id with one of approve, edit, reject or return-with-notes. Load it when a workflow has to stop and ask a person before doing something it cannot undo, when designing a review step or a sign-off, when deciding what happens if nobody answers, when a decision may be delivered twice or arrive after the run ended, when someone proposes a second inbox or a bespoke approval page, or when a parked item has no owner, no deadline and no way to say change this and try again."
 ---
 
 # compose-approval

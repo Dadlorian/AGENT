@@ -1,6 +1,6 @@
 ---
-name: cap-work-intake
-description: The ideal state of the Work intake capability: whatever produced a job - a person, an alert, a clock, another agent - it becomes one canonical envelope before anything downstream sees it, governed by the CloudEvents event format and A2A messaging. Load it when deciding how work gets into the platform, when a new producer wants to submit jobs, when writing or reviewing the code that turns a request into a job, when routing or auditing needs fields the payload does not carry, or when judging whether an intake implementation really normalises. Also load it when a second submission path is being added beside the first, when someone proposes a special endpoint for one caller, when a producer wants to attach a field of its own to every job, or when two ways of asking for the same work behave differently once they are running.
+name: "cap-work-intake"
+description: "The ideal state of the Work intake capability: whatever produced a job - a person, an alert, a clock, another agent - it becomes one canonical envelope before anything downstream sees it, governed by the CloudEvents event format and A2A messaging. Load it when deciding how work gets into the platform, when a new producer wants to submit jobs, when writing or reviewing the code that turns a request into a job, when routing or auditing needs fields the payload does not carry, or when judging whether an intake implementation really normalises. Also load it when a second submission path is being added beside the first, when someone proposes a special endpoint for one caller, when a producer wants to attach a field of its own to every job, or when two ways of asking for the same work behave differently once they are running."
 ---
 
 # cap-work-intake

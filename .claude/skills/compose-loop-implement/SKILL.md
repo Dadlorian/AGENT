@@ -1,6 +1,6 @@
 ---
-name: compose-loop-implement
-description: How a bounded loop is actually built here: the section loop this repository ran as the first executor, a durable executor with no session as the second, the three ways today's loop is not yet conformant, where the ceiling, the correlation attributes, the lease and the typed refusals attach to an iteration, and a definition of done whose breakage is in the wiring rather than in the contract. Load it when writing or reviewing the code that advances iterations, when binding a loop declaration to an executor, when a loop has to survive the death of the process driving it, when deciding what the second executor should be, when a resumed run repeats work it already committed, or when asking where this repository's own loop terminates and whether that reason is one of the three.
+name: "compose-loop-implement"
+description: "How a bounded loop is actually built here: the section loop this repository ran as the first executor, a durable executor with no session as the second, the three ways today's loop is not yet conformant, where the ceiling, the correlation attributes, the lease and the typed refusals attach to an iteration, and a definition of done whose breakage is in the wiring rather than in the contract. Load it when writing or reviewing the code that advances iterations, when binding a loop declaration to an executor, when a loop has to survive the death of the process driving it, when deciding what the second executor should be, when a resumed run repeats work it already committed, or when asking where this repository's own loop terminates and whether that reason is one of the three."
 ---
 
 # compose-loop-implement

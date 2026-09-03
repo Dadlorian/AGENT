@@ -1,6 +1,6 @@
 ---
-name: xc-budget
-description: The budget guarantee as a placement, not a request: every unit of work carries a ceiling that the platform applies outside the unit, and exceeding it terminates that unit rather than the platform. Load it when a run, a workflow, a bounded loop or a delegated sub-agent needs a spend limit, when deciding where the limit is checked and who decrements it, when a request object is about to grow a field that skips or raises its own limit, when work fans out and nobody can say what the whole tree will cost, when a cap only records spend instead of stopping it, when someone asks what happens to half-finished outputs after the money runs out, or when a review asks how a human, an agent and an event all end up under the same ceiling.
+name: "xc-budget"
+description: "The budget guarantee as a placement, not a request: every unit of work carries a ceiling that the platform applies outside the unit, and exceeding it terminates that unit rather than the platform. Load it when a run, a workflow, a bounded loop or a delegated sub-agent needs a spend limit, when deciding where the limit is checked and who decrements it, when a request object is about to grow a field that skips or raises its own limit, when work fans out and nobody can say what the whole tree will cost, when a cap only records spend instead of stopping it, when someone asks what happens to half-finished outputs after the money runs out, or when a review asks how a human, an agent and an event all end up under the same ceiling."
 ---
 
 # xc-budget

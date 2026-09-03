@@ -1,6 +1,6 @@
 ---
-name: xc-budget-implement
-description: How to make the budget ceiling real on this stack: today's enforcement bound to the scoped keys the model gateway already carries, a second enforcement point the platform holds itself and draws from before every dispatch, how to migrate from one to both without a window where nothing stops spend, where the ceiling attaches to correlation, provenance, policy and typed failures, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that refuses a call for cost, when a cap only bounds what flows through the gateway, when delegated work outspends the run that authorised it, when a reservation is left held by a unit that crashed, or when deciding what the second enforcement point should be.
+name: "xc-budget-implement"
+description: "How to make the budget ceiling real on this stack: today's enforcement bound to the scoped keys the model gateway already carries, a second enforcement point the platform holds itself and draws from before every dispatch, how to migrate from one to both without a window where nothing stops spend, where the ceiling attaches to correlation, provenance, policy and typed failures, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that refuses a call for cost, when a cap only bounds what flows through the gateway, when delegated work outspends the run that authorised it, when a reservation is left held by a unit that crashed, or when deciding what the second enforcement point should be."
 ---
 
 # xc-budget-implement

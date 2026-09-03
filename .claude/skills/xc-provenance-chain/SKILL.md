@@ -1,6 +1,6 @@
 ---
-name: xc-provenance-chain
-description: The provenance chain as a closure guarantee: every artifact digest a result hands back has a signed statement over exactly that digest, recorded before the result is released, so the orphan count is zero. Load it when an output is about to leave the platform, when deciding where the statement is produced and what refuses a release without one, when a sweep reports nothing wrong over a corpus that contained nothing, when someone asks how an outsider could tell that this file came from that run, when a result names a document, a file or a model output nobody can account for, when a store's own rehash is being offered as proof, and when a review asks whether a human entry, an agent entry and an event entry all leave the same trail.
+name: "xc-provenance-chain"
+description: "The provenance chain as a closure guarantee: every artifact digest a result hands back has a signed statement over exactly that digest, recorded before the result is released, so the orphan count is zero. Load it when an output is about to leave the platform, when deciding where the statement is produced and what refuses a release without one, when a sweep reports nothing wrong over a corpus that contained nothing, when someone asks how an outsider could tell that this file came from that run, when a result names a document, a file or a model output nobody can account for, when a store's own rehash is being offered as proof, and when a review asks whether a human entry, an agent entry and an event entry all leave the same trail."
 ---
 
 # xc-provenance-chain

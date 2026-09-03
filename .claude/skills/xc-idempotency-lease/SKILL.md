@@ -1,6 +1,6 @@
 ---
-name: xc-idempotency-lease
-description: The replay guarantee as a placement rather than a convention: every externally-triggered action acquires a keyed lease with an owner and an expiry before any side effect, so a repeat produces one execution and one answer whichever way in it arrived. Load it when a request can arrive twice from a retry, a queue redelivery, a re-fire of a recurrence or a resumed workflow, when deciding where the claim is taken and who derives the key, when a protocol carries no key of its own and one has to be derived from the payload, when a second copy shows up while the first is still running, when a crashed owner has left a key held, when an approval or a resume path could fire more than once, or when a review asks how a human, an agent and an event all end up under the same claim.
+name: "xc-idempotency-lease"
+description: "The replay guarantee as a placement rather than a convention: every externally-triggered action acquires a keyed lease with an owner and an expiry before any side effect, so a repeat produces one execution and one answer whichever way in it arrived. Load it when a request can arrive twice from a retry, a queue redelivery, a re-fire of a recurrence or a resumed workflow, when deciding where the claim is taken and who derives the key, when a protocol carries no key of its own and one has to be derived from the payload, when a second copy shows up while the first is still running, when a crashed owner has left a key held, when an approval or a resume path could fire more than once, or when a review asks how a human, an agent and an event all end up under the same claim."
 ---
 
 # xc-idempotency-lease

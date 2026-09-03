@@ -1,6 +1,6 @@
 ---
-name: cap-capability-packaging
-description: The capability-packaging contract: one portable directory shape any conformant runtime can discover, two required resident fields, three load tiers, and the criteria that decide whether a candidate loader or registry may serve. Load it before you add a skill, workflow, loop or agent as a reusable unit, when deciding what belongs in frontmatter versus the body versus reference files, when someone asks 'how would another runtime find this', 'why does this only load sometimes', 'what does a conformant package have to contain', or 'can we serve these from a registry instead', and whenever a composable unit is about to be copied between repositories rather than published.
+name: "cap-capability-packaging"
+description: "The capability-packaging contract: one portable directory shape any conformant runtime can discover, two required resident fields, three load tiers, and the criteria that decide whether a candidate loader or registry may serve. Load it before you add a skill, workflow, loop or agent as a reusable unit, when deciding what belongs in frontmatter versus the body versus reference files, when someone asks 'how would another runtime find this', 'why does this only load sometimes', 'what does a conformant package have to contain', or 'can we serve these from a registry instead', and whenever a composable unit is about to be copied between repositories rather than published."
 ---
 
 # cap-capability-packaging

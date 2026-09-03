@@ -1,6 +1,6 @@
 ---
-name: core-planner
-description: The Planner: the pure function from a declared document to a priced plan, computed at one pinned state head and finished before anything is spent. Load it before a run is allowed to start, when a step needs a number attached to it, when a ceiling has to be compared against something, and when someone asks 'what will this cost before we commit', 'why may planning not ask a model to estimate', 'why did the same document produce two different plans', 'where does the cost table come from', or 'how do we not re-run work that was already done'. Also load it whenever an estimate is about to be improved by calling something, whenever a plan is about to carry a guessed number for a step nothing could price, and whenever a component downstream of the document proposes to fill a field in before the planner reads it.
+name: "core-planner"
+description: "The Planner: the pure function from a declared document to a priced plan, computed at one pinned state head and finished before anything is spent. Load it before a run is allowed to start, when a step needs a number attached to it, when a ceiling has to be compared against something, and when someone asks 'what will this cost before we commit', 'why may planning not ask a model to estimate', 'why did the same document produce two different plans', 'where does the cost table come from', or 'how do we not re-run work that was already done'. Also load it whenever an estimate is about to be improved by calling something, whenever a plan is about to carry a guessed number for a step nothing could price, and whenever a component downstream of the document proposes to fill a field in before the planner reads it."
 ---
 
 # core-planner

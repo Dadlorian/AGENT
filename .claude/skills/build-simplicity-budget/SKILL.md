@@ -1,6 +1,6 @@
 ---
-name: build-simplicity-budget
-description: Hold every element to a counted simplicity budget: one call or one declaration for the common case, options additive with defaults, and an escape hatch that hands full control back. Load it before adding a required field, a required handler, a new concept or a new knob to any envelope, schema, profile or interface; when a review says a surface is simple, clean or easy and offers no number; when someone asks why a first successful run takes so much setup, or how much a unit costs to keep resident; when a schema's required list grows; when deciding whether a new capability belongs in the default path, the options tier or the escape hatch; and when judging onboarding cost or the risk that a surface is too daunting for anyone to adopt.
+name: "build-simplicity-budget"
+description: "Hold every element to a counted simplicity budget: one call or one declaration for the common case, options additive with defaults, and an escape hatch that hands full control back. Load it before adding a required field, a required handler, a new concept or a new knob to any envelope, schema, profile or interface; when a review says a surface is simple, clean or easy and offers no number; when someone asks why a first successful run takes so much setup, or how much a unit costs to keep resident; when a schema's required list grows; when deciding whether a new capability belongs in the default path, the options tier or the escape hatch; and when judging onboarding cost or the risk that a surface is too daunting for anyone to adopt."
 ---
 
 # build-simplicity-budget

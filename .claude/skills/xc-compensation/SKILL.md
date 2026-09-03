@@ -1,6 +1,6 @@
 ---
-name: xc-compensation
-description: The unwind guarantee as a placement: before a unit of work commits a side effect, the platform has already recorded how reversible that effect is and, where the class allows one, the compensating action that undoes it, so a failed or cancelled run walks the record backwards instead of leaving half a transaction behind. Load it when a step is about to call something that cannot be taken back, when deciding what happens to the four effects already committed when the fifth fails, when a run is cancelled mid-flight, when someone asks how a workflow is rolled back, reversed, refunded or cleaned up, when a saga or an undo path is being designed, when an approval gate needs a field to fire on, or when a review asks which effects in a plan can never be reversed and what the platform does about them.
+name: "xc-compensation"
+description: "The unwind guarantee as a placement: before a unit of work commits a side effect, the platform has already recorded how reversible that effect is and, where the class allows one, the compensating action that undoes it, so a failed or cancelled run walks the record backwards instead of leaving half a transaction behind. Load it when a step is about to call something that cannot be taken back, when deciding what happens to the four effects already committed when the fifth fails, when a run is cancelled mid-flight, when someone asks how a workflow is rolled back, reversed, refunded or cleaned up, when a saga or an undo path is being designed, when an approval gate needs a field to fire on, or when a review asks which effects in a plan can never be reversed and what the platform does about them."
 ---
 
 # xc-compensation

@@ -1,0 +1,75 @@
+{
+  "harness": "compose-operators",
+  "owner_skill": "compose-operators-implement",
+  "co_skills": ["compose-operators", "compose-loop", "compose-approval", "compose-agent",
+                "compose-loop-implement", "compose-approval-implement", "compose-agent-implement"],
+  "blueprint_tool_entry": "the workflow runner in examples/end-to-end/run.py - the interpreted engine that executes a composition on this host today. docs/architecture/blueprint.json has no tool_entries row for composition operators; the nearest rows are 'Temporal (data directory present, server not listening)' for durable execution and 'approve.service' for human interaction, whose would_pin lines this harness is written against. The runner's own examples/end-to-end/provenance.json names T-t1-01, T-t1-02, T-t1-03, T-t2-01, T-t2-02, T-t2-03, T-t3-01, T-t3-02, T-t6-01, T-t6-02, T-t6-03, T-t6-04, T-t6-05 and F-a4-01..05, F-b1-04..08, F-b2-02..06, F-b4-01, F-b4-02, F-b4-03, F-b4-05, F-b4-06, F-b4-07, F-b4-08, F-b5-02..05, F-a7-02, F-a5-03",
+  "capability": "composition operators",
+  "standard": "none adopted; the closed operator set (sequence, parallel, loop, approval, agent, judge) is this repo's design recorded in kb/decisions.jsonl and examples/end-to-end/schemas/workflow.schema.json. The schema dialect it is written in is JSON Schema 2020-12 (F-b3-09, unverified: the specification was not fetched)",
+  "kb_ids": [
+    "T-t1-01", "T-t1-02", "T-t1-03", "T-t2-01", "T-t2-02", "T-t2-03", "T-t3-01", "T-t3-02",
+    "T-t6-01", "T-t6-02", "T-t6-03", "T-t6-04", "T-t6-05",
+    "T-t7-02", "T-t9-06", "T-t10-04", "T-t10-05", "T-t10-07",
+    "F-a4-01", "F-a4-02", "F-a4-03", "F-a4-04", "F-a4-05",
+    "F-b1-02", "F-b1-04", "F-b1-05", "F-b1-06", "F-b1-07", "F-b1-08",
+    "F-b2-02", "F-b2-03", "F-b2-04", "F-b2-05", "F-b2-06",
+    "F-b3-04", "F-b3-09",
+    "F-b4-01", "F-b4-02", "F-b4-03", "F-b4-05", "F-b4-06", "F-b4-07", "F-b4-08",
+    "F-b5-02", "F-b5-03", "F-b5-04", "F-b5-05",
+    "F-a5-03", "F-a6-02", "F-a7-02", "F-a7-03", "F-a7-04",
+    "F-part-c-04", "F-part-c-09", "REF-1-02"
+  ],
+  "research_ids": [
+    "X-end-to-end-014", "X-end-to-end-015", "X-end-to-end-016",
+    "X-end-to-end-066", "X-end-to-end-067",
+    "X-entry-composition-030", "X-entry-composition-052"
+  ],
+  "engines": {
+    "dryrun": {
+      "engine_marker": "interpreted-walk/0.1",
+      "tree_read_at": "during-walk",
+      "progress_unit": "call-stack-frame",
+      "durable_at": "gate-boundary",
+      "failure_locus": "tree-position"
+    },
+    "second": {
+      "engine_marker": "compiled-state-machine/0.1",
+      "tree_read_at": "before-run",
+      "progress_unit": "committed-transition-row",
+      "durable_at": "every-step",
+      "failure_locus": "state-and-transition",
+      "differs_in_execution_model": [
+        "tree_read_at: during the walk vs once before the run, after which there is no tree",
+        "progress_unit: a call stack frame vs a committed transition row",
+        "durable_at: the gate boundary vs every step",
+        "failure_locus: a position in the tree vs a state and a transition"
+      ]
+    },
+    "live": {
+      "engine_marker": "interpreted-walk-gateway/0.1",
+      "tree_read_at": "during-walk",
+      "progress_unit": "call-stack-frame",
+      "durable_at": "gate-boundary",
+      "failure_locus": "tree-position"
+    }
+  },
+  "measured": {
+    "dryrun": "bash harness/compose-operators/test.sh on 2026-09-03: passed 34, failed 0. conformance 39/39 against the interpreted engine: the six operator names read from the schema equal the six the running engine dispatches (drift=0); the document validates with 0 errors; one entry envelope drives triage-and-fix.json to a park at ship-approval and a resume to completed, exercising all six operators, spending 551800 of 1500000 micros; ten deliveries of one decision resume the run once and nine are ignored; every ledger record carries correlation, actor, delegation depth, the run key, its own step idempotency key, the remaining budget and the marker read from the running engine; every agent step selected the profile the document declares; verdicts fix-judge#1=fail, fix-judge#2=pass; the loop terminated verdict_pass, 2 iterations, unbounded=false; a never-passing criterion terminated iteration_ceiling/escalated at 3 iterations with a typed deadline-exceeded and criterion_leaks=0 over 7 agent turns; a 400000-micro ceiling terminated budget_ceiling/escalated with a typed budget-exhausted; approve, edit, reject and return_with_notes all decided the gate, reject stopped before the step after it, return re-entered brief exactly once and parked again; a seventh operator and a loop with no max_iterations were refused document-invalid before pricing and dispatch with no ledger file written; the graph of the document equals the graph of the chained-call form; the depth bound refused at resolve; every parent's estimate equals the sum of its children's and the root equals the imported planner's total; the caller region of call.py is 22 lines and names no engine storage; ADAPTER=live with no GATEWAY_URL exits 2 with urn:agentic:problem:adapter-unavailable",
+    "swap": "conformance 39/39 before with engine_marker interpreted-walk/0.1 and 39/39 after with engine_marker compiled-state-machine/0.1, both read from the running engine and from the records it wrote; engines_run=2, distinct_markers=2, step_orders_identical=true (20 ledger rows, kind/step/op for kind/step/op), terminal_outcomes_identical=true, differ_across_engines=[] over loop termination, ceiling termination, budget termination, verdicts, agent selection, parked step, the four gate decisions, spend and operators exercised; all four declared execution-model axes differ; sha256 of interface.py+call.py+conformance.py identical across both runs, so the swap was configuration; call.py's printed table is identical under both engines apart from the marker line; the document bytes were not touched between engines",
+    "breakage": "python3 conformance.py --engine dryrun --engine second --break-drift registers one operator arm ('branch') in the interpreted engine's dispatch and leaves the schema untouched. The run exits non-zero on the binding alone: the interpreted engine reports drift=[\"branch\"] with schema_ops=6 and executor_ops=7, the compiled engine reports drift=[] - so the fault localises to one engine's wiring rather than to the vocabulary. Every contract-level assertion still passes: step_orders_identical=true, terminal outcomes identical, operators_exercised=6, and the only failing check on either engine is A2. Removing the arm returns the same suite to 39/39 on both engines"
+  },
+  "claimed": [
+    "live mode until run on the host: GATEWAY_URL is unset here, so every operation in adapters/live.py below the reachability probe has never been executed against a running endpoint; the request shape, the cost figure and the correlation headers it inherits from the reference runner's gateway adapter are unverified",
+    "the compiled engine is this harness's own build, not a durable executor: it commits one state row per transition to its own log rather than to the state seam or to the durable-execution engine PASS.md A6 records as present and not listening, which is the default compose-operators-implement's open question states",
+    "the reconciliation leg of compose-operators' definition of done is measured only against the imported planner's fold, because no per-operator cost declaration exists in this repository yet (stage 4 of that skill's migration)",
+    "the standard row: no published standard governs the operator set, and the schema dialect it is written in is recorded unverified (F-b3-09). The declarative prior art the research records (X-end-to-end-066, X-end-to-end-067) was search-only and is cited as evidence that a portable definition is achievable, not as a standard adopted",
+    "tolerate_exceeded is admitted by the termination vocabulary and produced by no run here, because the example's parallel operator has no tolerate member - compose-operators' own open question",
+    "a crash mid-composition is not exercised: this harness parks and resumes at the gate boundary, and the kill -9 proof for a step belongs to harness/workflow"
+  ],
+  "definition_of_done": {
+    "criterion": "bash harness/compose-operators/test.sh exits 0 with conformance green on both engines, drift empty on both, distinct markers read from the running engines, identical step order and identical terminal outcome, and engines_run=2",
+    "breakage": "python3 conformance.py --engine dryrun --engine second --break-drift: one operator arm the schema does not admit is registered in the interpreted engine's dispatch and nothing else changes",
+    "expected_failure": "drift=[\"branch\"] engine=interpreted schema_ops=6 executor_ops=7, drift=0 on the compiled engine, exit non-zero, and every contract-level assertion still green",
+    "status": "measured"
+  }
+}

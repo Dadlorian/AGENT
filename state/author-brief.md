@@ -120,3 +120,4 @@ Every commit that changes a work item's state updates its STATUS.md row in the s
 Done rows are archived by python3 tools/status_archive.py in the same commit; row numbers never change.
 Read OWNER.md first: one line per owner correction; each line overrides anything here that contradicts it.
 Before launching an agent the orchestrator claims its file scope with python3 tools/scopes.py; an overlapping claim is refused.
+Every checkpoint runs python3 tools/status_check.py --freshness and fails on a stale row.

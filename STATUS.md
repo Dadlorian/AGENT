@@ -16,6 +16,5 @@
 | 37 | Live run access | Harness live mode runs against the host from a session | Blocked | Owner decision |
 | 41 | Planted-defect reviews | Every review catches both planted defects | In progress | plant.py ready |
 | 42 | Sourcing pass | Proposed rows are under 30 percent | In progress | Iteration 1 on 10 skills |
-| 44 | Freshness gate | A checkpoint fails on a stale status row | Not started | Queued |
 | 45 | Fetch allowlist | Standards sites are fetchable from the environment | Blocked | Owner decision |
 | 46 | Swap proof | Each harness section executes one adapter swap | Not started | Queued |

@@ -32,3 +32,4 @@
 | 43 | Agent scope registry | No two agents edit the same file in one round | Done | scopes.py, refusal measured | 2026-09-03 1c90af9 |
 | 23 | Containment harness | One turn runs in a microVM through the interface and cancels | Done | 23 checks dry run, live claimed | 2026-09-03 57819f9 |
 | 26 | Workflow harness | One durable flow survives a crash and resumes | Done | 28 checks pass and the swap holds | 2026-09-03 2b7c091 |
+| 44 | Freshness gate | A checkpoint fails on a stale status row | Done | status_check --freshness, breakage measured | 2026-09-03 a839efd |

@@ -82,6 +82,29 @@ def main(path: str) -> int:
     return 1 if errs else 0
 
 
+def freshness() -> int:
+    """Row 44 gate: no Done row left in the live table, and every row that says an agent is running has a live scope claim."""
+    import json as _json
+    errs = []
+    lines = [l for l in Path("STATUS.md").read_text().splitlines() if l.startswith("|")][2:]
+    claims = _json.loads(Path("state/agent-scopes.json").read_text()) if Path("state/agent-scopes.json").is_file() else {}
+    for raw in lines:
+        c = [x.strip() for x in raw.strip("|").split("|")]
+        n, item, status, result = c[0], c[1], c[3], c[4]
+        if status == "Done":
+            errs.append(f"row {n}: Done but not archived")
+        if "running" in result.lower():
+            words = [w.lower() for w in item.split() if len(w) > 3]
+            if not any(any(w in k.lower() for w in words) for k in claims):
+                errs.append(f"row {n}: says running but no live scope claim matches '{item}'")
+    for e in errs:
+        print("stale:", e)
+    print(f"freshness: {len(lines)} live rows, {len(claims)} claims, {len(errs)} stale")
+    return 1 if errs else 0
+
+
 if __name__ == "__main__":
+    if sys.argv[1:] == ["--freshness"]:
+        sys.exit(freshness())
     targets = sys.argv[1:] or [p for p in ("STATUS.md", "STATUS-ARCHIVE.md") if Path(p).is_file()]
     sys.exit(max(main(t) for t in targets))

@@ -1,0 +1,43 @@
+You are authoring skills for /home/user/AGENT. Skills here are DATA, not prose. Do not commit or push.
+
+Read fully, in order:
+1. /home/user/AGENT/.claude/skills/agentic-stack/SKILL.md   (root contract, rendered; read its skill.json too to see the format in use)
+2. /home/user/AGENT/schemas/skill.schema.json                (the schema you must conform to; read every field and $defs)
+3. /home/user/AGENT/docs/skill-manifest.json                 (your assigned skills' layer, wave, purpose, links, notes_for_author)
+4. /home/user/AGENT/docs/decomposition.md                    (build order, Dispatch/State designs, definitions of done with breakages, second adapters, open questions)
+5. /home/user/AGENT/PASS.md                                  (the source; you will cite it only through kb ids)
+6. skill.json of every skill your assigned skills build on (under /home/user/AGENT/.claude/skills/<name>/skill.json)
+
+The knowledge base is the only source of truth you may cite:
+  python3 tools/kb.py verify                  must pass before you start
+  python3 tools/kb.py tree                    all entities with their edges and source fact ids
+  python3 tools/kb.py show <id>               one record: exact text, line range, status
+  grep -n '"section": "B3"' kb/facts.jsonl    find facts by section; grep entity names in kb/entities.jsonl
+Read kb/meta.json and copy source.sha256 and heads into each skill's provenance.
+
+Your assigned skills: __ASSIGNED__
+
+For each, write /home/user/AGENT/.claude/skills/<name>/skill.json conforming to the schema, then render and validate:
+  python3 tools/render_skill.py .claude/skills/<name>
+  python3 tools/validate_skills.py
+
+Rules the validator enforces (fix every error naming your skills; ignore only "not written yet" warnings about other skills):
+- Every statement is either origin=sourced with sources (kb ids) AND a quote that is a verbatim substring of one cited record, or origin=proposed with the word "proposed" in its text. There is no third kind. If you cannot find a kb record for a claim, it is proposed, and you say so.
+- composes_with.builds_on / used_by must equal the manifest exactly.
+- Product names (LiteLLM, Firecracker, goose, Langfuse, Temporal, Postgres, Redis, gVisor, Restate, and so on) only in adapters[]. Everywhere else: capability and standard names. Adapter entities are E-adapter-* (today) and E-swap-candidate-* (second); find them with kb.py tree.
+- Standards: contract.standards[] entries reference E-standard-* entities; version_status is "unverified" unless you fetched the spec (WebFetch is likely blocked; do not guess versions). url may be null.
+- definition_of_done: concrete command/test, expected output, a concrete breakage, expected failure, status "claimed" (you cannot run the platform here). Take it from decomposition.md's row for your piece and make it precise.
+- SKILL.md must be the render; never edit it by hand.
+- description: 40..1024 chars, says what the skill covers and the situations that should load it, including phrasings that do not use the obvious keyword.
+
+Content expectations per layer:
+- core-: contract.operations (inputs/outputs, purity), contract.invariants (from B2 row and B1 rules), instructions for building and testing it, best_practices citing A7 findings where they bite.
+- cap-: contract.standards, contract.operations the core imports, contract.shapes (JSON Schema 2020-12 sketches, origin proposed unless PASS.md gives the shape), contract.not_exposed, adapters[] with role today and role second (from manifest), instructions, best_practices, open_questions from decomposition.md that touch it.
+- xc-: the guarantee as invariants, where the platform applies it, why a caller cannot decline it, instructions for wiring it, definition_of_done that proves it cannot be declined.
+- seam-: the decomposition.md design refined into operations, shapes, invariants; adapters[] for today's implementation and the second; open_questions.
+- compose-: instructions are the recipe for assembling lower layers; invariants are what a composition must preserve (rules 5, 6, 7); best_practices are the composer's judgment.
+- build-: instructions are the discipline as steps with the reason for each; the definition_of_done proves the discipline itself can fail.
+
+Keep each skill.json focused: 6 to 15 instructions, 3 to 10 invariants, 3 to 8 best practices. Long material goes in references/<file>.md in the skill dir with a proposed instruction that says when to read it.
+
+Reply in under 200 words: skills written, validator result for them, any manifest inconsistency found (report; do not edit the manifest), and any claim you wanted to make but could not source (list them as proposed items you added or omitted).

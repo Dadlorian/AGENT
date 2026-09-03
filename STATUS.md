@@ -20,7 +20,6 @@
 | 35 | Skill reconciliation | Every written skill agrees with the blueprint | In progress | 3 reviewers running |
 | 36 | Impact map in knowledge base | A component swap query lists adapters, tests, and skills | In progress | Query works, names pending |
 | 37 | Live run access | Harness live mode runs against the host from a session | Blocked | Owner decision |
-| 40 | Load path table | Each door has a generated load path within budget | In progress | 4 doors, 7 to 9 skills |
 | 41 | Planted-defect reviews | Every review catches both planted defects | In progress | plant.py ready |
 | 42 | Sourcing pass | Proposed rows are under 30 percent | Not started | Queued |
 | 43 | Agent scope registry | No two agents edit the same file in one round | Not started | Queued |

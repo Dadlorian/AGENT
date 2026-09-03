@@ -179,38 +179,23 @@
     },
     {
       "step": 3,
-      "action": "Proposed: choose the second adapter by asking whether it breaks a different assumption, scoring candidates on the seven execution-model axes the Shapes section enumerates - start and teardown cost, how many separate processes must run for work to progress, whether a call returns a result or a claim ticket, whether cancellation can be honoured promptly, where durability and verification live, what unit of resource is granted, and whether replay determinism is required. Reject any candidate scoring identically to the first on every axis.",
-      "why": "Proposed, from docs/decomposition.md section 4. A candidate with the same execution model can be swapped in while the interface stays shaped around that shared model, so the swap succeeds and demonstrates nothing.",
+      "action": "Proposed: choose the second adapter by asking whether it breaks a different assumption, scoring candidates on the seven execution-model axes the Shapes section enumerates - start and teardown cost, how many separate processes must run for work to progress, whether a call returns a result or a claim ticket, whether cancellation can be honoured promptly, where durability and verification live, what unit of resource is granted, and whether replay determinism is required. Reject any candidate scoring identically to the first on every axis. Record the answer in the machine-readable differs_in_execution_model field defined under Shapes, naming the axis and both values; an empty field rejects the pair, and the author must find a different second adapter rather than argue for the one in hand.",
+      "why": "Proposed, from docs/decomposition.md sections 4 and 3.5 row B2. A candidate with the same execution model can be swapped in while the interface stays shaped around that shared model, so the swap succeeds and demonstrates nothing; and a judgement that lives only in prose cannot be checked, where the check is what lets this discipline fail.",
       "origin": "proposed"
     },
     {
       "step": 4,
-      "action": "Proposed: record the answer in the machine-readable differs_in_execution_model field defined under Shapes, naming the axis and both values. An empty field rejects the pair, and the author must find a different second adapter rather than argue for the one in hand.",
-      "why": "Proposed, from docs/decomposition.md section 3.5 row B2. A judgement that lives only in prose cannot be checked, and the check is what lets this discipline fail.",
-      "origin": "proposed"
-    },
-    {
-      "step": 5,
-      "action": "Write one conformance suite against the interface and parameterise it over adapters: the suite imports the interface only, never an adapter type, and both adapters run the identical assertions with no per-adapter skips or per-adapter expected values.",
-      "why": "The core imports interfaces, never implementations, so the contract, not either implementation, is what both adapters must satisfy.",
+      "action": "Write one conformance suite against the interface and parameterise it over adapters: the suite imports the interface only, never an adapter type, and both adapters run the identical assertions with no per-adapter skips or per-adapter expected values. Then give that suite a deliberate breakage and run it: remove one interface guarantee from an adapter, or feed the suite a stub adapter that returns success for everything, and record which assertion fails.",
+      "why": "The core imports interfaces, never implementations, so the contract, not either implementation, is what both adapters must satisfy; and a criterion nothing can fail is not a criterion, so a suite that has never been seen to fail is not yet evidence that either adapter conforms.",
       "origin": "sourced",
       "sources": [
-        "F-b1-02"
+        "F-b1-02",
+        "F-part-c-04"
       ],
       "quote": "The core imports interfaces, never implementations"
     },
     {
-      "step": 6,
-      "action": "Give the conformance suite a deliberate breakage and run it: remove one interface guarantee from an adapter, or feed the suite a stub adapter that returns success for everything, and record which assertion fails.",
-      "why": "A criterion nothing can fail is not a criterion, so a suite that has never been seen to fail is not yet evidence that either adapter conforms.",
-      "origin": "sourced",
-      "sources": [
-        "F-part-c-04"
-      ],
-      "quote": "A criterion nothing can fail is not a criterion"
-    },
-    {
-      "step": 7,
+      "step": 5,
       "action": "Proposed: exercise the swap in CI rather than on paper. Run the full conformance suite once per adapter on every change, selecting the adapter by configuration alone with no code edit between runs, and fail the job if either run is skipped or reports zero behavioural assertions.",
       "why": "Proposed convention, for the reason the agentic-stack root contract records under F-a7-03: a swap job that runs but asserts nothing repeats a known failure in a new place.",
       "origin": "proposed",
@@ -219,27 +204,18 @@
       ]
     },
     {
-      "step": 8,
-      "action": "Proposed: audit the interface for shaping. List every field, operation and error in the contract and ask, for each, which adapter's vocabulary named it. Anything only the first adapter's model can honour is that adapter's detail leaking into the contract: express it in the capability's own terms, make it an optional negotiated capability, or delete it.",
-      "why": "Proposed procedure. If an implementation cannot be swapped without touching the core, the boundary is drawn wrong, and a field only one adapter can honour is how that happens quietly.",
+      "step": 6,
+      "action": "Proposed: audit the interface for shaping. List every field, operation and error in the contract and ask, for each, which adapter's vocabulary named it. Anything only the first adapter's model can honour is that adapter's detail leaking into the contract: express it in the capability's own terms, make it an optional negotiated capability, or delete it. In the same pass, check that integrating either adapter needs no client library we wrote, and fix the boundary before shipping the pair if it does.",
+      "why": "Proposed procedure. If an implementation cannot be swapped without touching the core, the boundary is drawn wrong, and a field only one adapter can honour is how that happens quietly; and if integration requires our SDK, a boundary is bespoke where a standard existed, so a pair behind it proves only that we can swap our own code.",
       "origin": "proposed",
       "sources": [
-        "F-meta-04"
+        "F-meta-04",
+        "F-b1-05"
       ],
       "quote": "If Part B cannot swap an implementation without touching the core, the boundary is drawn wrong"
     },
     {
-      "step": 9,
-      "action": "Check that integrating either adapter needs no client library we wrote, and fix the boundary before shipping the pair if it does.",
-      "why": "If integration requires our SDK, a boundary is bespoke where a standard existed, and a pair behind a bespoke boundary proves only that we can swap our own code.",
-      "origin": "sourced",
-      "sources": [
-        "F-b1-05"
-      ],
-      "quote": "If integration requires our SDK, a boundary is bespoke where a standard existed"
-    },
-    {
-      "step": 10,
+      "step": 7,
       "action": "Assert in the conformance suite that telemetry, policy, provenance and budget hold identically under both adapters, instead of being supplied by one adapter's implementation.",
       "why": "Those guarantees are applied by the platform and not requested by the caller, so they belong to the platform around the pair and must survive the swap unchanged.",
       "origin": "sourced",
@@ -250,7 +226,7 @@
       "quote": "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller"
     },
     {
-      "step": 11,
+      "step": 8,
       "action": "Proposed: label the pair claimed until the swap has actually been executed and its result recorded, and never upgrade the label by rewording the description.",
       "why": "Proposed convention. The standing constraint is to distinguish claimed from measured throughout, and a pair described as swappable is an intention until a run says otherwise.",
       "origin": "proposed",
@@ -260,7 +236,7 @@
       "quote": "Distinguish **claimed** from **measured** throughout"
     },
     {
-      "step": 12,
+      "step": 9,
       "action": "When no candidate differs on any axis, record it as an open question with the measurement that would decide it and a default, instead of shipping a same-shape pair that satisfies the count of two.",
       "why": "What could not be decided is a required output, not an apology.",
       "origin": "sourced",
@@ -270,7 +246,7 @@
       "quote": "A required output, not an apology."
     },
     {
-      "step": 13,
+      "step": 10,
       "action": "Proposed: read references/execution-model-axes.md before scoring a candidate when the second adapter feels different but you cannot name the axis, or when reviewing a pair whose difference field reads as a vendor name rather than a property.",
       "why": "Proposed reference material. It holds the axis catalogue, the three-part wrapper test, and a worked pair written by knowledge-base entity id, all of which are too long for this table.",
       "origin": "proposed"

@@ -28,6 +28,9 @@ Warnings:
     defect item 11): the rule has to be stated, not merely satisfied by the shape of the schema
   - an adapter row citing another capability's adapter or swap-candidate entity in its sources:
     a citation that exists but points at the wrong row of the capability table (defect item 12)
+  - an ideal facet the manifest gives the usability section, with no -use sibling to carry it, that
+    is missing a worked declaration for one of TARGET T1's three ways in or a worked rejection
+    (author-brief defect item 13)
 """
 from __future__ import annotations
 
@@ -60,6 +63,18 @@ KB_TEXT: dict[str, str] = {}
 # entity records, needed to tell whether a cited entity belongs to the capability row a skill is about
 ENTITIES: dict[str, dict] = {}
 GRADER_RULE = "F-b1-07"  # design rule 6: the grader is never visible to the graded
+
+# A skill whose manifest note says it "also carries the usability section (how a human, an agent, and an
+# event reach it; minimal inputs/outputs; failure shape)" has no -use sibling to carry that section, so it
+# is held to the same bar: a worked instance per producer, and a worked rejection. Producers are told apart
+# by the subject prefix the declared_by / actor grammar already fixes (user:, agent:, service: | schedule:).
+USABILITY_NOTE = "usability section"
+USABILITY_EVIDENCE = {
+    "a human producer (\"user:...\")": re.compile(r'"user:[a-z0-9]'),
+    "an agent producer (\"agent:...\")": re.compile(r'"agent:[a-z0-9]'),
+    "an event producer (\"service:...\" or \"schedule:...\")": re.compile(r'"(?:service|schedule):[a-z0-9]'),
+    "a worked rejection (urn:agentic:problem:...)": re.compile(r"urn:agentic:problem"),
+}
 
 
 def load_kb() -> tuple[set[str], dict]:
@@ -201,6 +216,11 @@ def main() -> int:
     errs: list[str] = []
     warns: list[str] = []
     skills: dict[str, dict] = {}
+    manifest_names: set[str] = set()
+    manifest: dict[str, dict] = {}
+    if args.manifest.is_file():
+        manifest = {s["name"]: s for s in json.loads(args.manifest.read_text())["skills"]}
+        manifest_names = set(manifest)
 
     for d in sorted(p for p in SKILLS.iterdir() if p.is_dir()):
         name = d.name
@@ -270,6 +290,17 @@ def main() -> int:
                 if not (set(e.get("sources") or []) & own):
                     warns.append(f"{name}: adapter row {a.get('entity')} cites {sid}, whose kb record is sourced from "
                                  f"{', '.join(e.get('sources') or []) or 'nothing'} -- another capability's row")
+        # an ideal facet the manifest tells to carry the usability section has no -use sibling to carry
+        # it, so it is held to the same completeness bar: a worked declaration for each of TARGET T1's
+        # three ways in, and a worked rejection rather than a prose rule (author-brief defect item 13).
+        note = (manifest.get(name) or {}).get("notes_for_author") or ""
+        if USABILITY_NOTE in note and f"{name}-use" not in manifest:
+            body = sj.read_text() + "".join(
+                f.read_text() for f in sorted((d / "references").glob("*.md")))
+            absent = [what for what, pat in USABILITY_EVIDENCE.items() if not pat.search(body)]
+            if absent:
+                warns.append(f"{name}: manifest gives it the usability section, but nothing in the skill "
+                             f"or its references shows {'; '.join(absent)}")
         for field, rows, lo, hi in (
             ("instructions", sk.get("instructions", []), 6, 10),
             ("invariants", sk.get("contract", {}).get("invariants", []), 3, 10),
@@ -313,11 +344,6 @@ def main() -> int:
                     if w not in warns:  # one line per skill and id, however many rows repeat it
                         warns.append(w)
 
-    manifest_names: set[str] = set()
-    manifest: dict[str, dict] = {}
-    if args.manifest.is_file():
-        manifest = {s["name"]: s for s in json.loads(args.manifest.read_text())["skills"]}
-        manifest_names = set(manifest)
     known = set(skills) | manifest_names | {ROOT_SKILL}
     for name, sk in skills.items():
         cw = sk.get("composes_with", {})

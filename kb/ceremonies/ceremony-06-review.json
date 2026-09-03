@@ -1,0 +1,41 @@
+{
+  "ceremony": 6,
+  "section": "wave-3c",
+  "reviewer": "sonnet",
+  "date": "2026-09-03",
+  "numbering_note": "Requested as ceremony 5, but ceremony 5 is closed for section wave-3b (kb/ceremonies/ceremony-05-review.json and -improve.json, state/loop.json ceremony=5). Per the repo-global numbering rule build-ceremony states and every prior ceremony has applied (ceremony-02-improve.json C2-001; ceremony-03-improve.json and ceremony-04-review.json numbering_notes; ceremony-05-improve.json numbering_note), and per state/loop-workflow.js's own instruction to derive N from `ls kb/ceremonies/ceremony-*-review.json` rather than trust the number handed in, this review and its improve record take the next unused number, 6, for section wave-3c.",
+  "findings": [
+    {
+      "id": "C6-001",
+      "skill": "core-document",
+      "location": "contract.shapes[0] (document shape note); references/document-shapes.md sections 4-5",
+      "severity": "fix",
+      "category": "usefulness",
+      "finding": "docs/skill-manifest.json's notes_for_author for core-document directs: 'The ideal facet also carries the usability section (how a human, an agent, and an event reach it; minimal inputs/outputs; failure shape) since this layer has no separate -use skill.' core-document is the only ideal-facet skill in this section with no -use sibling, so it alone carries this obligation. What it actually ships covers two of the three producers and none of the failure shape: references/document-shapes.md's worked examples are titled 'Worked example A: a human declares a fault fix' and 'Worked example B: an event declares the same work' -- no worked example shows an agent producing a document, and no worked example anywhere in the skill or its reference file shows a rejected declaration as the RFC 9457 problem object the skill's own text repeatedly promises ('a typed problem naming every field that failed'; 'Every rejection of a document is a typed problem, not prose'). Every sibling -use skill in this same wave (cap-state-persistence-use, cap-telemetry-use, cap-tool-access-use, cap-work-intake-use) carries an explicit JSON worked example of its failure shape; core-document, which was told to carry the equivalent section itself, has the prose rule but not the worked instance.",
+      "evidence": "core-document/skill.json line 79: \"the full schema, the step vocabulary and two worked examples are in references/document-shapes.md\" (two, not three). docs/skill-manifest.json core-document.notes_for_author: \"The ideal facet also carries the usability section (how a human, an agent, and an event reach it; minimal inputs/outputs; failure shape) since this layer has no separate -use skill.\" `grep -n \"Worked example\" .claude/skills/core-document/references/document-shapes.md` returns only lines 101 (\"Worked example A: a human declares a fault fix\") and 129 (\"Worked example B: an event declares the same work\"); `grep -c '\"kind\": \"agent\"'` and any search for a problem/typed-failure JSON block in either core-document/skill.json or references/document-shapes.md return zero matches, versus cap-work-intake-use/skill.json which carries a full worked '$ref: urn:agentic:problem:0.1' example under the title 'The failure you handle'.",
+      "suggested_change": "Add a third worked example to references/document-shapes.md showing an agent-kind producer declaring the same document (declared_by: \"agent:...\", per the delegation-chain pattern cap-work-intake-use's worked example 2 already uses), and add a worked failure-shape example -- a document instance rejected by cap-document-validation, rendered as the RFC 9457 problem object core-document's own invariants and instructions promise -- so the section the manifest asked core-document to carry in place of a -use skill is actually present rather than described in prose only."
+    }
+  ],
+  "metrics": {
+    "skills": 14,
+    "rows_total": 394,
+    "rows_sourced": 175,
+    "rows_proposed": 219,
+    "findings_block": 0,
+    "findings_fix": 1,
+    "findings_nit": 0,
+    "validator_errors": 0,
+    "validator_warnings_in_scope": 0,
+    "validator_warnings_repo": 109
+  },
+  "brief_improvements": [
+    "When a manifest note assigns an ideal facet the usability section a -use sibling would otherwise carry ('how a human, an agent, and an event reach it; minimal inputs/outputs; failure shape'), check it against the same completeness bar a real -use skill is held to: all three producer kinds get a worked example, and the failure shape gets one too, not only a prose rule citing cap-errors. core-document names the rule three times and shows two of three producers and zero failure examples."
+  ],
+  "what_worked": [
+    "All 230 origin=sourced quote rows across the 14 skills verified as true verbatim substrings of their cited kb records (checked programmatically against tools/kb.py show for every id, including the standards table entries and open_question rows); the one apparent miss (cap-tool-access's open_question citing X-cap-tool-access-002 for 'The 2026-07-28 MCP Specification Release Candidate') resolved once the record's title field was checked alongside its text/snippet/claim -- a false positive in the review tooling, not a defect in the skill.",
+    "All four 'measured' definition_of_done claims in this section were independently re-run and reproduced exactly: cap-state-persistence-use and cap-telemetry-use's chain/correlation assertions against examples/end-to-end both reproduced the recorded starting counts and the recorded post-breakage counts byte for byte (run.py sha256 e54d31b9... confirmed unchanged before and after); cap-work-intake-use's four-entry run reproduced 'passed 29, failed 0' then, after stamping a producer-specific field onto entries/event.json, 'passed 27, failed 2' with the exact RFC 9457 problem body recorded, and the repository was left clean afterward; cap-tool-access-use's product-purity breakage reproduced the exact validator error line and exit code on first attempt only after correctly scoping the edit to the worked-call shape rather than the definition_of_done's own breakage-description text, which is precisely the caveat the skill's own expected_failure field warns a careless edit would trip -- confirming the skill's warning is accurate, not merely cautious.",
+    "The wave-3b lesson about design rule 6 held: all four cap ideal skills in this section (cap-state-persistence, cap-telemetry, cap-tool-access, cap-work-intake) carry an explicit contract.not_exposed row citing F-b1-07 stating what the grader rule forbids on that interface specifically, checked programmatically; core-document, which is core- rather than cap-layer and so outside that validator rule's scope, carries the equivalent row anyway.",
+    "composes_with links for all 14 skills match docs/skill-manifest.json exactly in both directions (builds_on and used_by), checked programmatically; the only asymmetries found are the five expected ones where a skill builds_on agentic-stack, whose own used_by is deliberately empty by the root skill's documented exemption. Every SKILL.md in this wave is byte-identical to a fresh render of its skill.json (all 14 diffed after re-rendering, not spot-checked alone), and python3 tools/validate_skills.py reports 0 errors and 0 warnings scoped to any wave-3c skill (59 skills checked overall, 109 warnings, all pre-existing manifest-lists-unwritten-skill notices for future waves).",
+    "Honest claimed/measured discipline held under pressure again: every adapter, conformance tool and definition_of_done in cap-state-persistence(-implement), cap-telemetry(-implement), cap-tool-access(-implement) and cap-work-intake(-implement) is correctly labelled claimed with an explicit statement that no run has been performed, and core-document / core-document-implement's round-trip criterion is claimed for the same reason -- no proposed tool anywhere in this section was dressed up as already run. The adapter-entity cross-capability citation check ceremony 5 added to tools/validate_skills.py (an E-adapter/E-swap-candidate id's own kb sources must overlap the citing row's sources) passes clean on all four capabilities' adapter pairs, checked programmatically."
+  ]
+}

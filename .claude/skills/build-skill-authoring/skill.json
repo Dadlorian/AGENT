@@ -118,24 +118,18 @@
     },
     {
       "step": 4,
-      "action": "Write skill.json in the order schemas/skill.schema.json lists its properties: name, layer, wave, description, purpose, entities, contract, instructions, best_practices, adapters, definition_of_done, composes_with, open_questions, provenance. Omit an optional block rather than filling it with padding.",
-      "why": "Proposed: a fixed order makes two skills diffable against each other and makes a missing block visible at a glance, and the schema's additionalProperties:false rejects any field you invent.",
+      "action": "Write skill.json in the order schemas/skill.schema.json lists its properties: name, layer, wave, description, purpose, entities, contract, instructions, best_practices, adapters, definition_of_done, composes_with, open_questions, provenance. Omit an optional block rather than filling it with padding, and write the description to say both what the skill covers and the situations that must load it, in 40 to 1024 characters, naming the triggering artifacts (a file, a layer, a schema, an onboarding author) rather than a topic.",
+      "why": "Proposed: a fixed order makes two skills diffable against each other and makes a missing block visible at a glance, and the schema's additionalProperties:false rejects any field you invent. The description is the only part read before the skill is loaded, so a vague one means the skill is never opened at the moment it was needed.",
       "origin": "proposed"
     },
     {
       "step": 5,
-      "action": "Write the description to say both what the skill covers and the situations that must load it, in 40 to 1024 characters, naming the triggering artifacts (a file, a layer, a schema, an onboarding author) rather than a topic.",
-      "why": "Proposed: the description is the only part read before the skill is loaded, so a vague one means the skill is never opened at the moment it was needed.",
-      "origin": "proposed"
-    },
-    {
-      "step": 6,
       "action": "For each statement pick one origin and stop. origin=sourced: list the ids you actually read and set quote to a span you copied out of one of them character for character. origin=proposed: say proposed in the text and claim nothing about PASS.md.",
       "why": "Proposed: the quote is checked as a substring of a cited record, so a paraphrased quote fails; and a proposed row that omits the word reads as sourced to a human even though no id backs it.",
       "origin": "proposed"
     },
     {
-      "step": 7,
+      "step": 6,
       "action": "Name capabilities and standards in every field, and confine product, vendor and version names to adapters[]. If your skill has no adapters, it names no products at all.",
       "why": "A product name in a contract row means an adapter has leaked into the architecture, and the validator scans the rendered SKILL.md for a fixed product list outside the Adapters section.",
       "origin": "sourced",
@@ -146,7 +140,7 @@
       "quote": "name capabilities and standards, never products"
     },
     {
-      "step": 8,
+      "step": 7,
       "action": "Fill definition_of_done with a runnable command, the expected output, a concrete breakage a person could apply, and the exact failure it produces. Set status measured only if you ran both here and the expected_failure says in which session and on what date; otherwise claimed.",
       "why": "A criterion nothing can fail is not a criterion, and a status of measured with no run behind it is the fabrication the claimed-versus-measured rule exists to prevent.",
       "origin": "sourced",
@@ -157,33 +151,21 @@
       "quote": "A criterion nothing can fail is not a criterion"
     },
     {
-      "step": 9,
+      "step": 8,
       "action": "Set composes_with.builds_on and composes_with.used_by to the manifest entry's lists, unchanged. Choose builds_on narrowly: name only the skills whose contract you actually rely on, never the whole layer.",
       "why": "Proposed: these links are the architecture graph, the validator requires them symmetric and equal to the manifest, and a skill that builds on everything forces a reader to load everything, which defeats loading skills narrowly.",
       "origin": "proposed"
     },
     {
+      "step": 9,
+      "action": "To add a skill that is not in the manifest: add it to docs/decomposition.md first, then to docs/skill-manifest.json with name, layer, wave, purpose, builds_on, used_by, a definition_of_done row and notes_for_author, adding this skill's name to the used_by list of each skill it builds on; its wave must be strictly greater than the wave of everything in its builds_on. Add a new layer prefix only when none of the seven existing layers can hold it - root (reserved for the root contract alone, which the schema and the validator allow for no other skill), core, cap, xc, seam, compose, build - and then edit the schema's name pattern and layer enum, LAYERS in tools/validate_skills.py, and the layers block in docs/skill-manifest.json in the same change.",
+      "why": "Proposed: the manifest is generated from the decomposition and must not drift from it; a wave that does not exceed its dependencies claims a skill can be authored before the contract it quotes exists, and the validator rejects the asymmetric half of a one-sided link. The prefix set is the top-level partition of the repo, so an eighth layer re-partitions every existing skill's meaning: a skill that merely feels new almost always belongs to an existing layer, and root is not available, it is taken.",
+      "origin": "proposed"
+    },
+    {
       "step": 10,
-      "action": "To add a skill that is not in the manifest: add it to docs/decomposition.md first, then to docs/skill-manifest.json with name, layer, wave, purpose, builds_on, used_by, a definition_of_done row and notes_for_author, adding this skill's name to the used_by list of each skill it builds on. Its wave must be strictly greater than the wave of everything in its builds_on.",
-      "why": "Proposed: the manifest is generated from the decomposition and must not drift from it; a wave that does not exceed its dependencies claims a skill can be authored before the contract it quotes exists, and the validator rejects the asymmetric half of a one-sided link.",
-      "origin": "proposed"
-    },
-    {
-      "step": 11,
-      "action": "Add a new layer prefix only when none of the seven existing layers can hold the skill: root (reserved for the root contract alone, which the schema and the validator allow for no other skill), core, cap, xc, seam, compose, build. Adding one means editing the schema's name pattern and layer enum, LAYERS in tools/validate_skills.py, and the layers block in docs/skill-manifest.json in the same change.",
-      "why": "Proposed: the prefix set is the top-level partition of the repo, so an eighth layer re-partitions every existing skill's meaning. A skill that merely feels new almost always belongs to an existing layer, and root is not available: it is taken.",
-      "origin": "proposed"
-    },
-    {
-      "step": 12,
-      "action": "Keep the rendered SKILL.md inside the progressive-disclosure budget: hold to roughly 3 to 10 rows per table, and move long material (a full schema, a table of standards, worked examples) into references/ inside the skill directory, named from the row that points at it.",
-      "why": "Proposed: SKILL.md is loaded whole whenever the skill is loaded, so material a reader needs only sometimes should cost nothing until it is opened.",
-      "origin": "proposed"
-    },
-    {
-      "step": 13,
-      "action": "Render with `python3 tools/render_skill.py .claude/skills/<name>`, then run `python3 tools/validate_skills.py` and fix every error naming your skill; only warnings about skills not written yet may remain.",
-      "why": "Proposed: SKILL.md is a build artifact of skill.json, and the validator re-renders your data and compares, so a hand edit to SKILL.md is reported as stale rather than silently kept.",
+      "action": "Keep the rendered SKILL.md inside the progressive-disclosure budget: hold to roughly 3 to 10 rows per table, and move long material (a full schema, a table of standards, worked examples) into references/ inside the skill directory, named from the row that points at it. Then render with `python3 tools/render_skill.py .claude/skills/<name>` and run `python3 tools/validate_skills.py`, fixing every error and every warning naming your skill; only warnings about skills not written yet may remain.",
+      "why": "Proposed: SKILL.md is loaded whole whenever the skill is loaded, so material a reader needs only sometimes should cost nothing until it is opened - and it is a build artifact of skill.json, so the validator re-renders your data and compares, and a hand edit to SKILL.md is reported as stale rather than silently kept. The budget is a checked warning, not advice: this skill was itself over it at 13 instructions until ceremony 6.",
       "origin": "proposed"
     }
   ],

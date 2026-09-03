@@ -1,0 +1,343 @@
+{
+  "name": "cap-work-intake-use",
+  "layer": "cap",
+  "wave": 5,
+  "description": "How to submit work to the platform as a caller: fill one envelope, send it, get an identifier back. The same shape whether a person typed the request, an alert fired it, a clock reached it or another agent delegated it, so you write one submitter rather than one per producer. Load it when you need to get a job into the platform, when wiring a chat surface, an alert pipeline or a partner system to it, when deciding what to put in the body and what to put on the envelope, when a submission was refused and you need to know what to fix, or when you are about to build a second way in because the first did not fit.",
+  "purpose": {
+    "text": "cap-work-intake states the contract this rests on (F-b3-08); this facet reduces it to one thing a caller does: fill the envelope and send it. Normalising, validating, stamping identity and correlation, applying the ceiling and making the submission safe to repeat are the platform's work, not yours.",
+    "origin": "sourced",
+    "sources": [
+      "F-b3-08",
+      "T-t3-01"
+    ],
+    "quote": "A2A messaging · CloudEvents"
+  },
+  "entities": [
+    "E-capability-work-intake",
+    "E-standard-cloudevents",
+    "E-standard-a2a-messaging"
+  ],
+  "contract": {
+    "operations": [
+      {
+        "name": "submit (proposed)",
+        "input": "one envelope: which kind of producer you are, who is acting and on whose behalf, which workflow and why, a correlation identifier, a ceiling, a key that identifies this submission, and your body as payload",
+        "output": "an acknowledgement carrying the entry identifier, the correlation identifier and the job digest; the job runs after you have gone, and you follow it by correlation",
+        "origin": "proposed",
+        "sources": [
+          "F-b3-08",
+          "T-t6-02"
+        ]
+      },
+      {
+        "name": "submit again with the same key (proposed)",
+        "input": "the identical envelope, because your side retried, crashed mid-send, or fired twice",
+        "output": "the same acknowledgement and nothing new run; a repeated submission is a no-op rather than a second job, which is why the key is required rather than optional",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-08"
+        ]
+      },
+      {
+        "name": "read a refusal (proposed)",
+        "input": "an envelope the platform will not accept - a missing field, a field of your own, an unmapped format, or a key already used for a different job",
+        "output": "problem details naming the offending field, with retryable telling you whether sending it again could ever help; there is exactly one failure format and you parse no prose",
+        "origin": "proposed",
+        "sources": [
+          "F-b3-13",
+          "F-b4-07"
+        ]
+      }
+    ],
+    "shapes": [
+      {
+        "name": "Worked example 1 (proposed): a person types a fault report",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:intake:example:human",
+          "title": "A human entry, filled once",
+          "description": "Free text from a chat surface, one delegation hop, and nothing about how the work will be done. Reproduced in examples/end-to-end on 2026-09-03: `python3 run.py --entry entries/human.json` exits 0, prints `RESULT  entry=human  actor=user:corey  correlation=corr-human-0001`, and closes with `completed: 11 steps, spent 551800 of 1500000 micros, estimate was 750000`.",
+          "examples": [
+            {
+              "envelope_version": "0.1",
+              "kind": "human",
+              "entry_id": "human-checkout-500s",
+              "occurred_at": "2026-09-03T09:12:00Z",
+              "actor": {"subject": "user:corey", "delegation_chain": [{"actor": "user:corey", "obtained_via": "direct"}]},
+              "intent": {"workflow_ref": "workflows/triage-and-fix.json", "summary": "Checkout returns 500 on coupon apply since this morning; find it and fix it."},
+              "correlation": {"run_id": "run-human-0001", "correlation_id": "corr-human-0001", "depth": 0},
+              "budget": {"ceiling_micros": 1500000, "currency": "USD", "on_exceed": "terminate_unit"},
+              "idempotency_key": "human-checkout-500s-2026-09-03",
+              "payload": {"report_text": "POST /checkout/coupon returns 500. Traceback ends at pricing/coupon.py line 88, KeyError: 'tier'."}
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "T-t1-01",
+          "F-b3-08"
+        ]
+      },
+      {
+        "name": "Worked example 2 (proposed): another agent delegates the same kind of job",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:intake:example:external",
+          "title": "An agent entry, three hops, no human in the loop",
+          "description": "Same envelope, same workflow, same fields. What differs is the subject, the chain length and a parent correlation pointing back at the submitter's own run; the submitting agent is not present when the job ends. Reproduced in examples/end-to-end on 2026-09-03: `python3 run.py --entry entries/external.json` exits 0, prints `RESULT  entry=external  actor=agent:partner-sre-bot  correlation=corr-external-0001`, and closes with the same `completed: 11 steps, spent 551800 of 1500000 micros` line as the human entry.",
+          "examples": [
+            {
+              "envelope_version": "0.1",
+              "kind": "external",
+              "entry_id": "external-partner-agent-task",
+              "occurred_at": "2026-09-03T09:20:15Z",
+              "actor": {
+                "subject": "agent:partner-sre-bot",
+                "delegation_chain": [
+                  {"actor": "agent:partner-sre-bot", "obtained_via": "workload_attestation"},
+                  {"actor": "service:intake", "obtained_via": "token_exchange"},
+                  {"actor": "user:corey", "obtained_via": "direct"}
+                ]
+              },
+              "intent": {"workflow_ref": "workflows/triage-and-fix.json", "summary": "Partner agent submits a fault it found while running its own checks."},
+              "correlation": {"run_id": "run-external-0001", "correlation_id": "corr-external-0001", "parent_correlation_id": "corr-partner-77c1", "depth": 1},
+              "budget": {"ceiling_micros": 1500000, "currency": "USD", "on_exceed": "terminate_unit"},
+              "idempotency_key": "partner-sre-bot-task-77c1a9",
+              "payload": {"report_text": "Synthetic checkout probe failed 9/10 runs; response body cites pricing/coupon.py line 88 KeyError: 'tier'."}
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "T-t1-02",
+          "F-b3-08"
+        ]
+      },
+      {
+        "name": "The failure you handle (proposed): problem details, measured",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:intake:example:problem",
+          "title": "A refused submission",
+          "$ref": "urn:agentic:problem:0.1",
+          "description": "cap-errors owns this shape and its registry; intake adds no failure format of its own. Measured in examples/end-to-end on 2026-09-03 by adding a producer-specific field to the event entry: exit code 2, media type application/problem+json, nothing admitted and nothing written.",
+          "examples": [
+            {
+              "type": "urn:agentic:problem:document-invalid",
+              "title": "Envelope failed schema validation",
+              "status": 422,
+              "detail": "$: property 'priority' is not allowed",
+              "retryable": false,
+              "instance": "entries/event.json"
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b3-13"
+        ]
+      }
+    ],
+    "invariants": [
+      {
+        "text": "All three of TARGET T1's ways in fill the same envelope. A human must be able to enter the system, an agent must be able to enter the system, and an internal or external event must be able to enter the system - and here that means one shape, one validator and one submitter you write once. cap-work-intake cites TARGET T6.2's four entries for the envelope itself; this row is about the three ways a caller reaches it.",
+        "origin": "sourced",
+        "sources": [
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03"
+        ],
+        "quote": "3. An internal or external event must be able to enter the system."
+      },
+      {
+        "text": "Enhancing one aspect leaves the rest untouched: a new producer, a swapped mapper behind the interface, a changed routing table or an added entry kind changes nothing in code that already fills the envelope, because the envelope is the only thing it was ever asked for.",
+        "origin": "sourced",
+        "sources": [
+          "T-t2-02"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
+      },
+      {
+        "text": "The obligation is kept to one envelope and nothing else because a contract that is daunting or overly complex will not be used, and a team that finds submitting work expensive will call something internal directly, which is the second way in this capability exists to prevent.",
+        "origin": "sourced",
+        "sources": [
+          "T-t3-02"
+        ],
+        "quote": "It cannot be daunting or overly complex, or no one will use it."
+      },
+      {
+        "text": "Proposed: you fill ten fields and get one identifier back. There is no client library to hold, no registration call, no negotiation of a format, and no way to ask for or decline the identity, correlation, budget and replay handling the envelope carries; cap-work-intake fixes the contract and cap-work-intake-implement wires the builder.",
+        "origin": "proposed",
+        "sources": [
+          "F-b3-08",
+          "T-t3-01"
+        ]
+      },
+      {
+        "text": "A producer has no private path in, and this is checked rather than asserted. cap-work-intake states the one-shape rule from TARGET T6.2 (T-t6-02); what this facet adds is the measurement: a producer-specific field added to an otherwise valid entry is refused by the same validator that admits the other three, and the other three still pass. Measured in examples/end-to-end on 2026-09-03; the run is the definition of done below.",
+        "origin": "sourced",
+        "sources": [
+          "T-t6-02",
+          "F-b3-13"
+        ],
+        "quote": "All four enter through the same shape."
+      }
+    ],
+    "not_exposed": [
+      {
+        "text": "Proposed: you never see which mapper handled you, how the job was routed, or what the platform did with the payload on the way in. A submission looks the same from every producer, which is the point; if a caller could tell the mappers apart it would start writing code that depends on one of them.",
+        "origin": "proposed"
+      },
+      {
+        "text": "Proposed: there is no synchronous result. The acknowledgement tells you the submission was accepted and how to find it later, and no flag makes it wait, because the agent producer beside you may already have disconnected.",
+        "origin": "proposed"
+      },
+      {
+        "text": "Proposed: do not put the standard the work will be judged against into intent or payload. The graded unit reads the payload, so a definition of done pasted there hands it its own grader; pass a reference if you have one.",
+        "origin": "proposed",
+        "sources": [
+          "F-b1-07"
+        ]
+      }
+    ]
+  },
+  "instructions": [
+    {
+      "step": 1,
+      "action": "Fill the envelope: kind, who is acting and on whose behalf, which workflow and a one-line why, a correlation identifier, a ceiling, a key for this submission, and your body as payload. Send it. Keep the identifier you get back.",
+      "why": "Proposed usage of the contract cap-work-intake states (F-b3-08). This is the whole interface; anything else you were going to build - a queue of your own, a retry wrapper, a status poller - is either already here or belongs somewhere else.",
+      "origin": "proposed",
+      "sources": [
+        "F-b3-08",
+        "T-t3-01"
+      ]
+    },
+    {
+      "step": 2,
+      "action": "Make the idempotency key from something your own side already uses to identify this submission - the alert identifier, the message identifier, the delivery identifier - never a fresh random value per attempt.",
+      "why": "Every externally-triggered action is safe to replay, and the key is how the platform knows two arrivals are one act. A fresh value per attempt turns your retry into a second job, and you will find out when both of them finish.",
+      "origin": "sourced",
+      "sources": [
+        "F-b4-08"
+      ],
+      "quote": "Every externally-triggered action is safe to replay"
+    },
+    {
+      "step": 3,
+      "action": "Say what happened in the payload and what you want in intent. Do not describe how the work should be done, and do not add a field of your own to the envelope.",
+      "why": "Proposed. Routing, metering and audit read the envelope and treat the payload as opaque, so a field you add is a field nothing reads and the schema refuses; and instructions about method age faster than the request they were attached to.",
+      "origin": "proposed",
+      "sources": [
+        "F-b3-08"
+      ]
+    },
+    {
+      "step": 4,
+      "action": "Name every hop of the delegation chain when you are submitting for someone else, oldest last, rather than submitting as yourself.",
+      "why": "Every action names an actor, including delegated agent actors. Delegation chains are explicit - so an audit of what your submission caused should reach the person or system it was really for, and a one-hop chain from an agent quietly loses that.",
+      "origin": "sourced",
+      "sources": [
+        "F-b4-03"
+      ],
+      "quote": "Every action names an actor, including delegated agent actors. Delegation chains are explicit"
+    },
+    {
+      "step": 5,
+      "action": "Send the correlation identifier you already have as the parent correlation, and let the platform mint the run identifier. Do not reuse your own run identifier as the platform's.",
+      "why": "Proposed. This is what lets someone follow one incident across your system and this one; reusing your identifier as the platform's collides with someone else's the first time two systems submit at once, and the collision is silent.",
+      "origin": "proposed",
+      "sources": [
+        "F-b4-06"
+      ]
+    },
+    {
+      "step": 6,
+      "action": "Handle one failure: problem details with a type and a retryable flag. Fix the field it names when retryable is false; retry only when it is true. Do not parse the title or the detail text.",
+      "why": "cap-work-intake already routes every refusal through cap-errors' registry rather than defining a failure of its own (F-b3-13), so a caller that reads type and retryable needs no branch per producer. Typed and machine-readable. Never parsed from prose is the reason the detail string is for a person, not for your code.",
+      "origin": "sourced",
+      "sources": [
+        "F-b3-13",
+        "F-b4-07"
+      ],
+      "quote": "Typed and machine-readable. Never parsed from prose"
+    },
+    {
+      "step": 7,
+      "action": "Before building a second way in because the envelope did not fit, write down the field you wanted and ask for a mapper instead. A producer joins by mapping, not by getting its own path.",
+      "why": "Proposed. The second path is always cheaper on the day and is what the one-shape rule exists to prevent: it will not carry the actor, the ceiling or the replay key, and nothing that traces the platform will know it happened.",
+      "origin": "proposed",
+      "sources": [
+        "T-t6-02"
+      ]
+    }
+  ],
+  "best_practices": [
+    {
+      "text": "Name an entry for what happened, not for the fix you have in mind. cap-work-intake cites the same record for this (X-cap-work-intake-004): an event represents the fact that something has happened within the system, and for you the consequence is that a submission named after today's remedy is misleading in the audit trail the moment the remedy changes.",
+      "origin": "sourced",
+      "sources": [
+        "X-cap-work-intake-004"
+      ],
+      "quote": "An event represents the fact that something has happened within the system"
+    },
+    {
+      "text": "Proposed: set a ceiling you would actually be willing to spend, not the largest number that will be accepted. The ceiling is the only statement you make about how much this job is worth, and it is what stops a loop that is going nowhere.",
+      "origin": "proposed",
+      "sources": [
+        "F-b4-02"
+      ]
+    },
+    {
+      "text": "Proposed: submit once and follow by correlation rather than holding the submission open. A job that takes minutes outlives your request, and code written to wait for a result becomes the reason someone later asks for a synchronous path.",
+      "origin": "proposed",
+      "sources": [
+        "T-t6-03"
+      ]
+    },
+    {
+      "text": "Proposed: keep one submitter in your codebase, not one per source. The envelope is the same for a chat message, an alert and a partner agent, so a second submitter is duplicated validation and a second place to forget the delegation chain.",
+      "origin": "proposed",
+      "sources": [
+        "T-t2-02"
+      ]
+    }
+  ],
+  "definition_of_done": {
+    "criterion": "`cd examples/end-to-end && bash test.sh`. Section 1 runs all four entries - `entries/human.json`, `entries/event.json`, `entries/schedule.json`, `entries/external.json` - through the same envelope schema and the same workflow, and asserts exit code 0 and that each run reached completed.",
+    "expected": "exit 0 and a closing line `passed 29, failed 0`, with section 1 printing `ok   human exits 0 (0)`, `ok   event exits 0 (0)`, `ok   schedule exits 0 (0)` and `ok   external exits 0 (0)` and the matching `reached completed` lines; the standalone runs `python3 run.py --entry entries/human.json` and `--entry entries/external.json` print `RESULT  entry=human  actor=user:corey  correlation=corr-human-0001` and `RESULT  entry=external  actor=agent:partner-sre-bot  correlation=corr-external-0001`, both closing with `completed: 11 steps, spent 551800 of 1500000 micros, estimate was 750000`.",
+    "breakage": "In `examples/end-to-end/entries/event.json`, add a producer-specific field `\"priority\": \"high\"` at the top level of the envelope, the same stamp docs/decomposition.md row P7 uses as its breakage. Change nothing else, and re-run the same command.",
+    "expected_failure": "exit 1 and `passed 27, failed 2`: section 1 reports `FAIL event exits 0 (expected 0, got 2)` and `FAIL event did not complete`, and the entry's own output is problem details with media type application/problem+json, `\"type\": \"urn:agentic:problem:document-invalid\"`, `\"status\": 422`, `\"detail\": \"$: property 'priority' is not allowed\"` and `\"retryable\": false`, at exit code 2. The other three entries still pass, which is the useful part: the failure is exactly one producer stamping a field of its own onto the shared envelope. Measured in session cap-work-intake 2831cb4f on 2026-09-03; both runs were performed and entries/event.json was restored.",
+    "status": "measured",
+    "sources": [
+      "T-t6-02",
+      "F-b3-13"
+    ],
+    "quote": "All four enter through the same shape."
+  },
+  "composes_with": {
+    "builds_on": [
+      "cap-work-intake",
+      "cap-work-intake-implement"
+    ],
+    "used_by": []
+  },
+  "open_questions": [
+    {
+      "question": "What does a caller do when the same key comes back as a conflict rather than as a duplicate?",
+      "evidence": "Count, across real submitters, how often a key is reused with a changed body: if it is almost always a bug in the submitter, a hard refusal is right; if it is usually a legitimate correction, the platform owes callers a way to supersede a submission.",
+      "default": "Proposed: a hard refusal naming both digests, and a new key for a corrected job. A supersede that silently replaces an accepted submission is indistinguishable from a lost one when someone reads the audit trail later.",
+      "sources": [
+        "F-b4-08"
+      ]
+    }
+  ],
+  "provenance": {
+    "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+    "kb_heads": {
+      "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+      "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6"
+    },
+    "author": "session cap-work-intake 2831cb4f, 2026-09-03"
+  }
+}

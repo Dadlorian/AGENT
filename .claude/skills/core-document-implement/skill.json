@@ -1,0 +1,291 @@
+{
+  "name": "core-document-implement",
+  "layer": "core",
+  "wave": 4,
+  "description": "How to build the Document on this stack: one construction path every way in maps into, the schema resource shipped for the validation interface to check, a content digest that survives a store swap, the store that holds declared work today and a second whose execution model differs, the migration off it, where the cross-cutting concerns are wired so no declarer can decline them, and the round-trip run that decides whether either store may serve. Load it when writing or reviewing that code, when an intake path is about to normalise a document on write, and when someone asks 'where do declarations actually get persisted', 'can we change that without touching the core', or 'why did the same declaration come back with a different digest'.",
+  "purpose": {
+    "text": "Build what core-document specifies: one construction path, one schema resource, one digest, two stores selected by configuration, and a run that proves a declaration survives the swap byte for byte.",
+    "origin": "sourced",
+    "sources": ["F-b2-02", "F-b1-04"],
+    "quote": "nothing is declarable"
+  },
+  "entities": [
+    "E-core-component-document",
+    "E-capability-document-validation",
+    "E-capability-state-persistence",
+    "E-adapter-jsonl-hash-chain",
+    "E-swap-candidate-relational"
+  ],
+  "contract": {
+    "shapes": [
+      {
+        "name": "document-store-binding (proposed shape; the migration procedure and the wiring table are in references/implementation-notes.md)",
+        "origin": "proposed",
+        "sources": ["F-meta-04"],
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:core:document:store-binding:0.1",
+          "title": "Document store binding",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["role", "schema_store", "digest_algorithm", "differs_in_execution_model"],
+          "properties": {
+            "role": {"enum": ["today", "second"]},
+            "schema_store": {"type": "string", "minLength": 1},
+            "digest_algorithm": {"type": "string", "minLength": 1},
+            "normalises_on_write": {
+              "const": false,
+              "description": "A store that re-serialises a document cannot return the bytes it was given, and the digest stops being a property of the declaration."
+            },
+            "differs_in_execution_model": {
+              "type": "array",
+              "minItems": 1,
+              "description": "Proposed: the shape build-adapter-pair defines; carried here so the pair can be rejected when both roles are identical on every axis."
+            }
+          }
+        }
+      },
+      {
+        "name": "document-roundtrip-report (proposed shape; the fields the definition of done below asserts on)",
+        "origin": "proposed",
+        "sources": ["F-part-c-04"],
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:core:document:roundtrip-report:0.1",
+          "title": "Document round-trip report",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["adapters_run", "documents_round_tripped", "digest_mismatches", "byte_mismatches", "criterion_leaks"],
+          "properties": {
+            "adapters_run": {"type": "integer", "minimum": 0},
+            "documents_round_tripped": {"type": "integer", "minimum": 0},
+            "digest_mismatches": {"type": "integer", "minimum": 0},
+            "byte_mismatches": {"type": "integer", "minimum": 0},
+            "criterion_leaks": {"type": "integer", "minimum": 0}
+          }
+        }
+      }
+    ],
+    "invariants": [
+      {
+        "text": "core-document owns the contract - the fields, the immutability, the digest and the grader rule on this artifact (F-b2-02). This skill adds only how it is built: an implementation that adds a field, normalises a value or widens the step vocabulary has produced a defect, not an extension.",
+        "origin": "sourced",
+        "sources": ["F-b2-02"],
+        "quote": "data — declared intent, definition of done, steps"
+      },
+      {
+        "text": "agentic-stack and build-adapter-pair state the swap test (F-meta-04). The consequence here: both stores are selected by a binding record read as configuration, and if choosing one requires editing a file the core owns, the boundary is drawn wrong and the pair has found the defect it exists to find.",
+        "origin": "sourced",
+        "sources": ["F-meta-04"],
+        "quote": "If Part B cannot swap an implementation without touching the core, the boundary is drawn wrong"
+      },
+      {
+        "text": "Proposed: the store returns the bytes it was given. No re-serialisation, no key re-ordering, no defaulting on write or on read, so the digest stays a property of the declaration rather than of whichever store held it.",
+        "origin": "proposed",
+        "sources": ["F-a5-03"]
+      },
+      {
+        "text": "agentic-stack states design rule 7 (F-b1-08, F-b4-01). The consequence on this construction path is that correlation, policy consultation, provenance and the budget ceiling are attached where the document is built, and there is no flag, header or document field by which a declarer can ask to skip one.",
+        "origin": "sourced",
+        "sources": ["F-b1-08", "F-b4-01"],
+        "quote": "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller"
+      },
+      {
+        "text": "build-evidence-record states the labelling rule (F-part-c-08); the consequence here is that a round-trip result is claimed until a run is attached naming the code version and tree hash under test, and no amount of rewording upgrades it.",
+        "origin": "sourced",
+        "sources": ["F-part-c-08"],
+        "quote": "Distinguish **claimed** from **measured** throughout"
+      },
+      {
+        "text": "build-adapter-pair states design rule 4 (F-b1-05); the consequence here is that a document is a plain dialect JSON resource a third party reads and validates with their own tooling, so consuming a declaration of ours never requires importing code of ours.",
+        "origin": "sourced",
+        "sources": ["F-b1-05"],
+        "quote": "If integration requires our SDK, a boundary is bespoke where a standard existed"
+      },
+      {
+        "text": "Proposed: each store ships a binding record conforming to the shape above, and the two records differ on at least one axis of the differs_in_execution_model shape build-adapter-pair defines. Two bindings identical on every axis are one store written twice and fail the pair check.",
+        "origin": "proposed",
+        "sources": ["F-b1-04"]
+      }
+    ],
+    "not_exposed": [
+      {
+        "text": "Proposed: which store served a read, the store's file layout or table schema, its lease mechanism, and its retention policy. A caller sees a document and its digest; anything else it can see it will eventually depend on.",
+        "origin": "proposed",
+        "sources": ["F-meta-04"]
+      },
+      {
+        "text": "Proposed: criterion text, in anything this code builds from a document. core-document states the grader rule on this artifact (F-b1-07); the build consequence is that the dispatch request assembled from a step carries the check_id and never the criterion string, and the lint in step 7 is what keeps that true after the next refactor.",
+        "origin": "proposed",
+        "sources": ["F-b1-07"]
+      }
+    ]
+  },
+  "instructions": [
+    {
+      "step": 1,
+      "action": "Ship the document schema as a plain dialect resource in the schema store and validate through the cap-document-validation interface; import no checking library into core or seam modules.",
+      "why": "agentic-stack states design rule 1 as a test (F-b1-02) and core-document states that validation is imported rather than implemented here; a direct import of a checker is that rule failing in executable form.",
+      "origin": "sourced",
+      "sources": ["F-b1-02", "F-b3-09"],
+      "quote": "in place | any 2020-12 validator"
+    },
+    {
+      "step": 2,
+      "action": "Build one construction path and give each way in a thin mapper into it. TARGET T1's three ways in - a human, an agent, and an internal or external event - share the constructor; a mapper may translate its payload and may not add, default or reorder a field.",
+      "why": "core-document requires one shape from every way in; the only way that survives contact with a fourth intake path is to make the constructor the single writer of document fields, so a new mapper cannot quietly stamp a default.",
+      "origin": "sourced",
+      "sources": ["T-t1-01", "T-t1-03"],
+      "quote": "An internal or external event must be able to enter the system."
+    },
+    {
+      "step": 3,
+      "action": "Implement the digest over the canonical form of intent, definition_of_done and steps only, and record the algorithm in the binding record. Compute it in the constructor, never in a store adapter.",
+      "why": "core-document owns the field list this digest covers (F-b2-02). What this adds is where it is computed: a digest computed by the store is a property of the store, and computing it once at construction is what makes cross-store and cross-entry equality assertable at all, and it is the assertion the definition of done below rests on.",
+      "origin": "sourced",
+      "sources": ["F-b2-02"],
+      "quote": "declared intent, definition of done, steps"
+    },
+    {
+      "step": 4,
+      "action": "Put the store behind the binding record, implement the role today against the store that holds declared work now, and implement the role second on a different execution model rather than a different product. Fill in both binding records' execution-model axes before either is used.",
+      "why": "build-adapter-pair owns this discipline (F-b1-04). The consequence here is specific: a second file-backed appender would leave the interface free to keep every single-writer, local-path assumption, and a transactional multi-writer store is what forces documents to be addressed rather than located.",
+      "origin": "sourced",
+      "sources": ["F-b1-04"],
+      "quote": "the second exists to prove the first is not load-bearing"
+    },
+    {
+      "step": 5,
+      "action": "Migrate by dual-write and digest-compare: write every new declaration to both the store that runs today and the new one, compare digests and bytes on read back, and cut over only when mismatches are zero over the full corpus and the old path has been read-only for a full retention window.",
+      "why": "Proposed: the migration's risk is not new rejections but the old acceptances - work that was recorded today with no declared definition of done at all - so the compare must be run over the existing corpus before cut-over, not after.",
+      "origin": "proposed",
+      "sources": ["F-a5-03"]
+    },
+    {
+      "step": 6,
+      "action": "Wire the cross-cutting concerns into the construction path: stamp the correlation attribute at construction, consult policy before the first metered call, attest the document digest, and read the budget ceiling from the envelope as a constant the declarer cannot override.",
+      "why": "agentic-stack states design rule 7 (F-b1-08); the build consequence is placement - a concern attached after construction is a concern a second intake path can be written without.",
+      "origin": "sourced",
+      "sources": ["F-b1-08", "F-a7-02"],
+      "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+    },
+    {
+      "step": 7,
+      "action": "Add a lint over recorded dispatch requests that greps each declared criterion string against every request built from that document, and fail the build when the count is non-zero.",
+      "why": "core-document states the grader rule on this artifact (F-b1-07). A rule that is only stated is a rule the next refactor breaks silently; the grep is what turns it into something that fails.",
+      "origin": "sourced",
+      "sources": ["F-b1-07"],
+      "quote": "The grader is never visible to the graded"
+    },
+    {
+      "step": 8,
+      "action": "Record every round-trip run as an evidence record naming what was run, the code version and tree hash under test, whether the tree was dirty, and the output; label the result claimed until such a record exists.",
+      "why": "build-evidence-record owns the record's fields (F-a5-04); the consequence here is that a store swap is the kind of change that looks identical in review and differs in a run, so the run is the only thing that separates a claim from a measurement.",
+      "origin": "sourced",
+      "sources": ["F-a5-04"],
+      "quote": "tree hash under test, and whether the tree was dirty"
+    },
+    {
+      "step": 9,
+      "action": "Proposed: open references/implementation-notes.md when you are writing the construction path, the migration script or the wiring, or reviewing someone who did. The body of this skill is enough to review a design and to run the definition of done without it.",
+      "why": "Proposed: the wiring table and the migration procedure are longer than the progressive-disclosure budget allows in the body, and a reader judging the build does not need them.",
+      "origin": "proposed"
+    }
+  ],
+  "best_practices": [
+    {
+      "text": "agentic-stack and build-evidence-record already state the configuration finding (F-a7-04). What it adds here: assert the store binding that is actually in effect at run time and log it beside the round-trip counts, because a binding written in the documented place and overridden by a stored row produces a run that tested one store twice.",
+      "origin": "sourced",
+      "sources": ["F-a7-04"],
+      "quote": "had no runtime effect"
+    },
+    {
+      "text": "Proposed: version the fixture corpus with the schema and add a fixture for every defect found in review, so the corpus grows with the failures the platform actually had rather than with the ones its authors imagined.",
+      "origin": "proposed",
+      "sources": ["F-part-c-04"]
+    },
+    {
+      "text": "Proposed: run the round-trip over both stores on every change, not only when a store changes. The failures worth catching come from the constructor - a new optional field, a changed default - and they show up as a digest that moved while no store was touched.",
+      "origin": "proposed",
+      "sources": ["F-b1-04"]
+    },
+    {
+      "text": "build-evidence-record already states what the store that runs today buys (F-a5-03): a closing digest that opens the next run makes a manual edit between runs detectable. What this adds: keep that property through the migration, because a document store without it cannot show that a declaration was not amended after the work was priced.",
+      "origin": "sourced",
+      "sources": ["F-a5-03"],
+      "quote": "a manual edit between runs is detectable"
+    }
+  ],
+  "adapters": [
+    {
+      "entity": "E-adapter-jsonl-hash-chain",
+      "role": "today",
+      "maps_to": "The store declared work sits in today. PASS.md Part A records the task store as JSONL, hash-chained, with each run's closing digest opening the next. The Document itself is owned core surface with no adapter of its own, so what is adapted beneath it is the store its instances round-trip through - cap-state-persistence's row - and this skill tests the pair there.",
+      "cannot": "Proposed: cannot admit concurrent writers without an external lease, cannot be queried except by scanning, and cannot serve a reader in another process without sharing a filesystem path; it also holds no declared definition of done today, which is what the migration in step 5 has to reconcile.",
+      "swap_procedure": "Select the store by the binding record, point both roles at the same schema store and digest algorithm, and run the round-trip corpus through both. No core change is expected, because the constructor computes the digest and the store only puts and gets bytes.",
+      "status": "claimed",
+      "sources": ["F-a5-03", "F-b3-17"],
+      "quote": "JSONL, hash-chained"
+    },
+    {
+      "entity": "E-swap-candidate-relational",
+      "role": "second",
+      "maps_to": "The same put and get over document bytes, served by a transactional record store reached out of the caller's process. The row names the candidate class rather than a product, and the chain is kept as a computed column rather than as file order.",
+      "cannot": "Proposed: cannot rely on file order for the chain, cannot be reached without a running server, and cannot hand back a filesystem path - which is the point, since anything it cannot implement was store detail leaking into the Document's contract.",
+      "swap_procedure": "Proposed: the execution-model axes that must differ are processes_required_for_progress (zero for a local appended file, one for a separate server) and locus_of_durability_and_verification (file order and a linear chain versus a transaction log and a recomputed digest). Run one parameterised round-trip over both roles and require identical bytes and identical digests.",
+      "status": "claimed",
+      "sources": ["F-b3-17", "F-b1-04"],
+      "quote": "object store · relational · event log"
+    }
+  ],
+  "definition_of_done": {
+    "criterion": "Proposed tool, built with this component: `python3 tools/document_roundtrip.py --binding bindings/today.json --binding bindings/second.json --corpus fixtures/ --dispatch-log out/recorded-dispatch-requests.jsonl --report out/document-roundtrip.json`. It asserts, per binding, documents_round_tripped >= 21 with byte_mismatches == 0, and across bindings adapters_run >= 2, digest_mismatches == 0 and criterion_leaks == 0.",
+    "expected": "exit 0, one line per binding of the form `binding=<role> documents_round_tripped=21 byte_mismatches=0`, then `adapters_run=2 digest_mismatches=0 criterion_leaks=0`.",
+    "breakage": "Make the store in the role today re-serialise the document on write - sort its keys and drop insignificant whitespace - and change nothing else.",
+    "expected_failure": "The bytes returned by that store no longer equal the bytes it was given, byte_mismatches becomes non-zero for that binding, the two bindings return different digests for the same declaration so digest_mismatches becomes non-zero, and the run exits non-zero while the other binding still reports byte_mismatches=0 - so the report names which store broke rather than only that something did.",
+    "status": "claimed",
+    "sources": ["F-part-c-04", "F-b1-04"],
+    "quote": "the deliberate breakage that proves the check can fail"
+  },
+  "composes_with": {
+    "builds_on": [
+      "core-document",
+      "build-adapter-pair",
+      "build-definition-of-done",
+      "build-evidence-record"
+    ],
+    "used_by": []
+  },
+  "open_questions": [
+    {
+      "question": "PASS.md Part A records no adapter for the Document itself, so which pair does this skill's swap test actually exercise?",
+      "evidence": "The Part B table has no Document row: agentic-stack states (F-b2-07) that the Document is owned core surface and everything else is an adapter, so no adapter-today column exists to read. Applying TARGET T5's 1-3-1 to the gap, the three options were: declare no pair and record the gap; adapt the store the document round-trips through; or reuse the validation pair cap-document-validation-implement already owns. The third duplicates a sibling and the first leaves swappability untested, so the store pair is taken and recorded here.",
+      "default": "The store pair in the Adapters section, tested by the round-trip run above; if a Document adapter row is ever added to PASS.md, this question is reopened against it.",
+      "sources": ["F-b2-07", "T-t5-02"],
+      "quote": "This is the entire owned surface. Everything else is an adapter."
+    },
+    {
+      "question": "Does the content digest become the document_id, or travel beside it?",
+      "evidence": "Count, over the fixture corpus and the existing run history, how often a declaration is superseded. Frequent supersession argues for a human-readable id with the digest beside it; rare supersession argues for the digest as the id and no second field to keep consistent.",
+      "default": "Beside it, with core-document's document_id pattern unchanged. A readable id is what a person types into an approval and a log query, and a document that is superseded keeps a stable name across its versions.",
+      "sources": ["F-b2-02"],
+      "quote": "nothing is declarable"
+    },
+    {
+      "question": "Does the document store keep its own hash chain after the migration, or delegate integrity to the state seam?",
+      "evidence": "Measure full-verification wall time for the document corpus under both, and audit whether any consumer depends on strict linear order of documents rather than of records.",
+      "default": "Delegate to the state seam and keep the chain property. build-adapter-pair already states why (F-b5-05): the chain is the idea worth keeping and the file is not, so a document store that reimplements it has duplicated the seam it should be importing.",
+      "sources": ["F-b5-05"],
+      "quote": "The chain is the valuable idea and should survive; the file is not"
+    }
+  ],
+  "provenance": {
+    "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+    "kb_heads": {
+      "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+      "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6"
+    },
+    "author": "session claude/auto-skill-creation-i8javu"
+  }
+}

@@ -1,0 +1,190 @@
+{
+  "verifier": "opus",
+  "scans_read": ["kb/ceremonies/quality/scan-tools.json", "kb/ceremonies/quality/scan-example.json", "kb/ceremonies/quality/scan-skills.json", "kb/ceremonies/quality/scan-hygiene.json"],
+  "scans_note": "scan-hygiene.json did not exist when this verification started; the coordinator wrote it mid-run and it was read and verified before this file was written.",
+  "verdicts": [
+    {
+      "id": "QT-001",
+      "verdict": "downgraded",
+      "severity_after": "nit",
+      "evidence": "The mechanism is real: slug(None) raises AttributeError: 'NoneType' object has no attribute 'lower' (reproduced in isolation), and tools/gaps.py checks `if not key` only after the call. But it is unreachable on current data: of 49 gaps_vs_pass entries in the three dict-shaped research files, 0 lack both proposed_capability and gap. The line is 33 as cited. Latent, not a block."
+    },
+    {
+      "id": "QT-001b",
+      "verdict": "confirmed",
+      "severity_after": "block",
+      "evidence": "NEW, found while trying to reproduce QT-001: tools/gaps.py crashes today on the repo's own data, at line 32, not 33. `python3 tools/gaps.py` -> AttributeError: 'list' object has no attribute 'get' at `for g in d.get(\"gaps_vs_pass\", [])`, because docs/research/gap-resolution.json is a top-level JSON list (49 items), not a dict like the other three lenses. The tool cannot run at all. The scanner reported the hypothetical crash on the next line and missed the actual one."
+    },
+    {
+      "id": "QT-002",
+      "verdict": "downgraded",
+      "severity_after": "nit",
+      "evidence": "Line number is off by one: `dups = {i for i in ids if ids.count(i) > 1}` is tools/kb.py:475, not 474 (474 is the `ids = [...]` line). O(n^2) is real, the impact claim is not: measured on the actual 541 research ids the comprehension takes 0.0040 s; at 5410 ids it takes 0.234 s. The finding's own threshold ('will slow on 100+ items') is wrong by three orders of magnitude. Counter() is still the better line, as a cleanup."
+    },
+    {
+      "id": "QT-003",
+      "verdict": "confirmed",
+      "severity_after": "nit",
+      "evidence": "Lines 92-93 are as cited and there is no usage() path. But one clause of the evidence is wrong: invalid args are not 'ignored'. `python3 tools/render_skill.py --all --bogus` makes argv != ['--all'], so BOTH tokens become paths and the tool dies with FileNotFoundError: '--bogus/skill.json' plus a traceback. The defect is an unhandled crash with no usage message, not a silent no-op. Severity nit stands."
+    },
+    {
+      "id": "QT-004",
+      "verdict": "refuted",
+      "severity_after": "none",
+      "evidence": "Substring containment at tools/validate_skills.py:412 is deliberate and documented twice: the module docstring says the rule fires when an -implement breakage 'repeats its ideal facet's word for word, or is wholly contained in it', and the comment at lines 401-405 says 'Only an outright copy is reported, since a genuinely escalated breakage ... is a legitimate second failure mode.' The scanner's own example ('cache fails' inside 'cache fails permanently') is precisely the containment case the rule exists to catch. Reproduced over all 44 ideal/-implement pairs: 0 flagged, so no false positive exists today. It is also a warning, never an error."
+    },
+    {
+      "id": "QT-005",
+      "verdict": "downgraded",
+      "severity_after": "nit",
+      "evidence": "KeyError is real (reproduced: order['use'] -> KeyError 'use'; a missing 'facet' key -> KeyError 'facet') and line 128 is correct. But no writer can produce a bad facet: expand() sets only 'ideal'/'implement'/'discipline', gaps.py --apply sets 'ideal' explicitly (tools/gaps.py:65), and all 100 manifest entries are ideal(45)/implement(44)/discipline(11). check() does not validate facet, so the crash needs a hand-edited manifest. order.get(f['facet'], 999) is still worth one line; it is not a block."
+    },
+    {
+      "id": "QT-006",
+      "verdict": "downgraded",
+      "severity_after": "nit",
+      "evidence": "The substring match is at tools/manifest_facets.py:112, not 110. The mechanism is real but the evidence is fabricated: neither 'cap-re-core-memory' nor 'cap-bad-adapter-pair' exists in the manifest (checked against all 100 names). Only 10 entities have entity_type core-component/seam/concern (B5, Budget, Identity, Policy, Provenance, Telemetry, Errors, Idempotency, Dispatch, State). Ran the match over all 100 skills: 31 skills get an entity match and 0 of those matches is a non-segment match. Latent fragility, no current effect."
+    },
+    {
+      "id": "QT-007",
+      "verdict": "confirmed",
+      "severity_after": "nit",
+      "evidence": "tools/skill_graph.py:42 is `if b in skills:` and a builds_on target absent from the loaded set is dropped from the mermaid graph with no message. The validator does not close this: at validate_skills.py:452 `known = set(skills) | manifest_names`, so a builds_on naming a manifest skill not yet on disk is legal (it only warns 'manifest skill not written yet'). So a real silent drop is possible mid-authoring. Measured now: 101 skill.json files, 0 dangling builds_on edges, so the graph is complete today."
+    },
+    {
+      "id": "QT-008",
+      "verdict": "confirmed",
+      "severity_after": "nit",
+      "evidence": "tools/blueprint_check.py:58 is exactly as quoted and the logic is wrong as described: the guard compares only errs[-1:] against the error for srcs[-1], so an entry whose first of several sources is unknown, or whose unknown-source error is followed by a quote error, still increments `sourced`. Impact is bounded: it miscounts a printed statistic only, every error is still printed, and the tool returns 1 whenever errs is non-empty. Current run: '204 entries, 171 sourced, 40 gaps, 23 listed gaps, 0 errors' - with 0 errors the count is accurate today."
+    },
+    {
+      "id": "QE-001",
+      "verdict": "refuted",
+      "severity_after": "none",
+      "evidence": "The docstring is on `class OpenAICompatibleAdapter` (examples/end-to-end/run.py:164-168), i.e. inside an adapter, which is exactly where this repo's rule puts product names: validate_skills.py:315-325 flags PRODUCTS only outside a section whose heading starts 'Adapters', and F-part-c-09 says 'Products belong in the adapter column only.' The docstring itself de-pins the product: 'the product behind $GATEWAY_URL is replaceable without touching anything above. model = the profile's model_class, so the caller names a class, not a vendor.' Naming today's product in the adapter is the convention, not a leak."
+    },
+    {
+      "id": "QE-002",
+      "verdict": "confirmed",
+      "severity_after": "fix",
+      "evidence": "Path is examples/end-to-end/schemas/workflow.schema.json (not schemas/), approval step at lines 81-99. The description at line 85 states the rule in prose - 'return_to_step_id is required when return_with_notes is declared' - and the properties block declares return_to_step_id as a plain optional string with no if/then. So the constraint is written in the documented place and has no effect, which is the F-a7-04 failure mode this repo names. One clause of the finding is wrong: `grep -n return_to_step_id examples/end-to-end/run.py` returns nothing, so no code reads the field; the only consumer is workflows/triage-and-fix.json:87. Schema-only gap, no runtime consequence. Example still runs 29/29."
+    },
+    {
+      "id": "QH-001",
+      "verdict": "confirmed",
+      "severity_after": "fix",
+      "evidence": "Manifest layer counts: cap 43, xc 22, build 11, core 10, compose 10, seam 4. README.md line 36 says 'build | 10'; ls -d .claude/skills/build-* gives 11. run-summary.json by_layer.build is also 10."
+    },
+    {
+      "id": "QH-002",
+      "verdict": "confirmed",
+      "severity_after": "fix",
+      "evidence": "README.md line 59 says '22 append-only, hash-chained run records'. wc -l kb/ledger.jsonl = 26 at scan time and 27 now; `python3 tools/kb.py ledger-verify` reports 'ledger verified: 27 records, chain intact'. kb/ceremonies/run-summary.json ledger_records is also 22, so the same stale number appears twice."
+    },
+    {
+      "id": "QH-003",
+      "verdict": "confirmed",
+      "severity_after": "nit",
+      "evidence": "100 manifest entries, 101 skill directories; the extra is agentic-stack, which the manifest excludes by design (validate_skills treats ROOT_SKILL specially throughout). Not a defect; README line 8's '100 linked Claude Code skills' is the count that could say it excludes the root."
+    },
+    {
+      "id": "QH-004",
+      "verdict": "confirmed",
+      "severity_after": "none",
+      "evidence": "Verified as already fixed, as instructed: `python3 tools/validate_skills.py --only build-status-table` -> 'build-status-table: 0 errors, 0 warnings'. Full run: '101 skills checked, 0 errors, 37 warnings'. The provenance target_facts head now matches kb/meta.json; kb.py verify reports 'chains intact, source hash matches, every fact matches its lines, rebuild is identical'."
+    },
+    {
+      "id": "QH-005",
+      "verdict": "confirmed",
+      "severity_after": "fix",
+      "evidence": "kb/ceremonies/run-summary.json by_layer.build = 10 against 11 on disk and in the manifest. Two further stale numbers in the same file, not in the finding: skills_total = 100 (101 directories) and ledger_records = 22 (27). This file is the repo's own claimed-vs-measured summary, so a stale count here is the defect the repo most cares about."
+    }
+  ],
+  "quote_misfit_classes": {
+    "a": 17,
+    "b": 4,
+    "c": 1,
+    "method": "For each of the 22 rows the skill.json row was located, its quote resolved against every cited record via kb text, and the cited record printed in full. Class (a) = the quote (or the flagged co-cited record) does support the row's assertion and the scanner is wrong. Class (b) = the quote is a verbatim substring but the row's post-marker clause states a domain fact the record does not contain, so that clause should be split out and marked proposed. Class (c) = the cited record does not bear on any clause of the row.",
+    "rows": [
+      {"skill": "build-adapter-pair", "location": "best_practices / F-a4-01 / 'Callers request a class, never a vendor: ...'", "class": "a", "why": "quote 'Callers request a class, never a vendor' is verbatim in F-a4-01 and is the row's own first clause"},
+      {"skill": "build-adapter-pair", "location": "best_practices / F-part-c-09 / same row", "class": "a", "why": "quote is not in F-part-c-09, but F-part-c-09 ('Products belong in the adapter column only') supports the row's second clause; it is an unanchored co-citation, not an unsupported one"},
+      {"skill": "build-adapter-pair", "location": "best_practices / F-a4-08 / 'A route in the substrate that is widely adopted ...'", "class": "a", "why": "F-a4-08 states a route 'which branches only on openai/azure/vertex_ai and refuses Gemini'; the row is that fact de-productised (three provider names, a fourth in use)"},
+      {"skill": "core-document", "location": "best_practices / F-a7-03 / 'cap-document-validation already states the well-formedness finding ...'", "class": "a", "why": "quote 'Those establish well-formedness, not correctness' is verbatim in F-a7-03 and is exactly the row's point; scanner's 'no_support' is wrong"},
+      {"skill": "core-judge", "location": "best_practices / F-a7-03 / 'agentic-stack, build-definition-of-done and core-document already state ...'", "class": "a", "why": "F-a7-03's 'every behavioural stage skipped ... establish well-formedness, not correctness' is the row's claim transposed to a criterion set"},
+      {"skill": "core-judge", "location": "best_practices / F-b1-05 / 'Emit the verdict on the standard evaluation carrier ...'", "class": "a", "why": "quote comes from X-end-to-end-006, but F-b1-05 ('A caller needs no client library we wrote') supports the row's 'readable by tools nobody here wrote' clause; unanchored co-citation"},
+      {"skill": "cap-agent-runtime", "location": "best_practices / F-a7-04 / 'agentic-stack already states the configuration finding ...'", "class": "a", "why": "F-a7-04's 'Values written to YAML validated, reviewed correctly, and had no runtime effect' is the declined-capability analogy exactly"},
+      {"skill": "cap-agent-runtime", "location": "best_practices / F-a7-03 / 'end_turn means the loop stopped, not that the work is right ...'", "class": "b", "why": "the quote is verbatim, but F-a7-03 is about a CI gate and says nothing about stop reasons; 'end_turn means the loop stopped' is an ACP fact this record does not carry, and the clause is not marked proposed"},
+      {"skill": "cap-agent-runtime-implement", "location": "best_practices / F-a4-01 / 'the runtime adapter must not pin a model name of its own'", "class": "a", "why": "direct inference from 'Callers request a class, never a vendor'; the added clause names no new external fact"},
+      {"skill": "xc-audit-trail", "location": "best_practices / F-a7-04 / 'Give the monitor its own identity and its own schedule ...'", "class": "a", "why": "quote verbatim in F-a7-04; 'declared as independent in a file is not a monitor that ran independently' is the same declared-vs-took-effect finding"},
+      {"skill": "xc-audit-trail", "location": "best_practices / F-part-c-08 / 'Keep claimed and measured apart ...'", "class": "a", "why": "quote 'Distinguish **claimed** from **measured** throughout' is verbatim in F-part-c-08 and is the row's whole point; scanner's 'no_support' is wrong"},
+      {"skill": "xc-audit-trail", "location": "best_practices / F-a5-04 / same 'Keep claimed and measured apart ...' row", "class": "c", "why": "F-a5-04 is the evidence-store inventory row ('Append-only JSONL. Each record names the script SHA-256 ... ~2,445 records across 308 runs'). It states nothing about claimed versus measured and does not carry the quote; it bears on no clause of the row"},
+      {"skill": "xc-audit-trail", "location": "best_practices / F-a7-03 / 'Watch for the gap rather than the edit ...'", "class": "a", "why": "quote comes from X-xc-audit-trail-001, but F-a7-03's 'ran with every behavioural stage skipped' is precisely the row's 'a run that never wrote an entry at all'; unanchored but apt co-citation"},
+      {"skill": "xc-budget", "location": "best_practices / F-a4-07 / 'Judge a ceiling by whether it stops a call ...'", "class": "a", "why": "quote 'verified to terminate spend rather than merely record it' is verbatim in F-a4-07 and is the row's stated measured property"},
+      {"skill": "xc-budget", "location": "best_practices / F-a7-03 / 'a budget check that ran over a corpus containing no expensive dispatch ...'", "class": "a", "why": "an exact transposition of the skipped-stage finding to a budget corpus; no new external fact"},
+      {"skill": "xc-budget", "location": "best_practices / F-a7-04 / 'a cap that was written where the documentation says is not a cap that took effect'", "class": "a", "why": "restates F-a7-04's finding in its own domain; quote verbatim"},
+      {"skill": "xc-budget", "location": "best_practices / F-a6-04 / 'Keep the check in the enforcement path rather than beside it'", "class": "a", "why": "quote 'Conformance checks exist; not wired into the enforcement path' is verbatim in BOTH cited sources and is the row verbatim; clear scanner error"},
+      {"skill": "seam-dispatch", "location": "best_practices / F-a7-03 / 'a terminal state says the unit ended ... stop_reason end_turn must never be reported as a pass'", "class": "b", "why": "same over-extension as cap-agent-runtime: F-a7-03 carries no claim about terminal states or stop reasons"},
+      {"skill": "seam-dispatch", "location": "best_practices / F-a7-04 / 'read back the grace window, the isolation profile and the ceiling ...'", "class": "a", "why": "the declared-vs-applied analogy is exactly F-a7-04's finding; quote verbatim"},
+      {"skill": "seam-dispatch", "location": "best_practices / F-b2-06 / 'Never promote a partial into a complete result ...'", "class": "a", "why": "quote 'append-only across runs; the deduplication authority' is verbatim in F-b2-06 and is restated in the row word for word; clear scanner error"},
+      {"skill": "compose-agent", "location": "best_practices / F-a4-01 / 'model_class is a required field of the profile itself ...'", "class": "b", "why": "the row opens by attributing 'callers request a class, never a vendor' to F-a4-01, but the quote recorded is the record's other half, 'Prefix carries the contract.', which does not carry the row's claim; the required-field claim is about this repo's own profile schema, not about F-a4-01"},
+      {"skill": "compose-agent", "location": "best_practices / F-a7-03 / 'cap-agent-runtime already states that a stop reason is not a verdict (F-a7-03)'", "class": "b", "why": "the row attributes to F-a7-03 a claim F-a7-03 does not make; F-a7-03 is the structurally-green-gate finding. The attribution is internally consistent with cap-agent-runtime's own row, which is itself class (b), so the over-extension propagates by citation"}
+    ]
+  },
+  "mechanical_check": {
+    "proposal": "A two-limb rule in tools/validate_skills.py, applied to every origin=sourced row. Limb 1 (anchor-per-citation): today the validator accepts a row when the quote is a substring of ANY cited record (`any(q in KB_TEXT[x] for x in srcs)`, validate_skills.py:161). Change the schema so a row carries one quote per cited id and flag any cited id no recorded quote anchors. Limb 2 (restate-and-extend): flag a sourced row whose text matches /already states?|what it adds|what \\w[\\w-]* adds/i and does not contain the word 'proposed' - this repo's convention is 'X already states F-nnn. What it adds here: ...', and the clause after the marker is the author's own extension, which must carry either its own quote or origin=proposed. Neither limb judges meaning: limb 1 is substring containment, limb 2 is a regex plus a keyword.",
+    "hit_rate_on_misfits": "18/22",
+    "hit_rate_on_b_and_c": "5/5 (limb 2 catches 4/4 of class b; limb 1 catches 1/1 of class c)",
+    "false_positive_rate_on_correct": "8/22",
+    "limb_breakdown": {
+      "limb_1_anchor_per_citation": {"misfits": "7/22", "class_b": "0/4", "class_c": "1/1", "random_correct": "8/22", "repo_wide": "608/1413 sourced rows (43%)"},
+      "limb_2_restate_and_extend": {"misfits": "12/22", "class_b": "4/4", "class_c": "0/1", "random_correct": "2/22", "repo_wide": "204/1413 sourced rows (14%)"}
+    },
+    "rejected_alternative": "A lexical-novelty score (fraction of the row's content words absent from every cited record and from the quote) does not separate the classes: the 22 misfits score 0.53-1.00 while the repo-wide median over 1413 sourced rows is 0.80 and the quartiles are 0.67/0.88. The class (b) rows sit at 0.75-1.00, inside the bulk of correct rows. Measured and discarded.",
+    "recommendation": "adopt-with-review",
+    "recommendation_detail": "Adopt limb 2 now as a validator WARNING: it catches every class (b) row, fires on 2/22 random correct rows and on 204/1413 repo-wide, which is a reviewable backlog, and its remedy is mechanical (split the post-marker clause into its own row with origin=proposed, or give it its own quote). Adopt limb 1 as a SCHEMA change rather than a warning: as a check it fires on 43% of rows and 8/22 correct ones, which is unusable as a gate, but as an authoring requirement (one quote per id) it makes the 608 unanchored citations impossible to write in the first place and it is the only limb that catches class (c). Neither limb decides whether a supported row is truly supported: 17 of the 22 flagged rows were sound, so a sampled human or independent-model review of sourced rows remains the mitigation for semantics, and the two limbs only narrow what that review has to look at."
+  },
+  "direction": [
+    {
+      "criterion": "loose",
+      "verdict": "yes",
+      "evidence": "Product names are mechanically confined to adapters: tools/validate_skills.py:61-70 holds a 36-name PRODUCTS list and lines 315-325 raise an ERROR for any hit outside a section heading starting 'Adapters'; the full run over 101 skills reports 0 errors. 19 of 22 cap ideal skills carry an adapters[] pair and the remaining 3 are covered by the validator's open-question rule (0 such warnings). The one product name in the example (examples/end-to-end/run.py:165) is inside class OpenAICompatibleAdapter and the docstring de-pins it. TARGET T7.2 and T7.5 hold at the level the repo can currently check: the interfaces are declared and product-free, but no adapter swap has been executed - measured_vs_claimed is 9 measured definitions of done against 91 claimed, so 'the conformance run proves the interface held' is still mostly claimed."
+    },
+    {
+      "criterion": "composable",
+      "verdict": "yes",
+      "evidence": "The load path is data, not prose: every skill declares composes_with.builds_on/used_by, validate_skills.py:452-468 errors on an unknown target, on an asymmetric link in either direction, and on any divergence from docs/skill-manifest.json; manifest_facets.py check() additionally errors on a builds_on whose wave is not strictly lower. 101 skills, 0 errors. docs/skill-graph.md is generated from the skill.json files rather than hand-written, and 0 builds_on edges are dangling, so the published graph is complete. T2.2 is enforced concretely by the 'compose by name, not by copy' warning keyed on (kb id, verbatim quote) - the 35 open warnings are the residue of that rule, not a failure of it."
+    },
+    {
+      "criterion": "usable",
+      "verdict": "partly",
+      "evidence": "The consumption contract exists and runs: cap-consumption states one shape for all four entries, examples/end-to-end/entries/ holds human.json, event.json, schedule.json and external.json, and `bash examples/end-to-end/test.sh` gives 'passed 29, failed 0' including 'nothing written for an invalid envelope' and 'final chain verifies'. Both scanner breakages were caught with typed problem details. Against T3.2 ('cannot be daunting'), the surface is heavy: 101 skills, 2.45 MB of SKILL.md, and a README whose own counts are stale in three places (QH-001/002/005) - the first thing a newcomer reads currently misstates the layer count and the ledger size, which is the cheapest possible loss of trust."
+    },
+    {
+      "criterion": "sourced",
+      "verdict": "yes",
+      "evidence": "Sourcing is enforced, not asserted: 1507 sourced rows each carry a quote the validator proves is a verbatim substring of a cited record, and the knowledge base is hash-chained - `kb.py verify` reports 'chains intact, source hash matches, every fact matches its lines, rebuild is identical'. Gaps are listed rather than invented: blueprint_check reports '204 entries, 171 sourced, 40 gaps, 23 listed gaps, 0 errors' and errors on a status:gap entry missing from gaps[]. The honesty is load-bearing in both directions - run-summary's known_defects itself records that 49% of rows are proposed, that all 541 research records are search-only with no verified page fetch, and that every ceremony reviewer was 'sonnet'. My own audit of the 22 flagged rows found 5 real defects (4 over-extensions, 1 irrelevant citation), a ~2.3% defect rate on the 214 sampled sourced rows."
+    },
+    {
+      "criterion": "self-improving",
+      "verdict": "yes",
+      "evidence": "The loop closes into the checker, which is the test T4.4 actually implies. validate_skills.py's docstring lists rules that exist because a ceremony found the defect: 'ceremony 10, C10-001' (an -implement breakage that copies its ideal's), 'ceremony 9, C9-001' (a minted adapter entity id), and author-brief defect items 2, 9, 11, 12, 13, 14 - each a warning added after a review, not before. Findings per skill fall across the run: 1.00, 1.00, 0.38, 0.07, 0.07, 0.07, 0.14, 0.00, 0.12, 0.00 for ceremonies 1-10, over sections that grew from 4 to 15 skills. 26 ceremony records under kb/ceremonies/, 62 findings applied and 7 declined with reasons. The weakness is the grader: run-summary's known_defects admits every reviewer was the same model family, which is why this outside verification pass found 5 real quote defects and 1 tool that cannot run at all."
+    }
+  ],
+  "fix_order": [
+    {"id": "QT-001b", "why_first": "tools/gaps.py cannot run at all on this repo's own data - it dies on docs/research/gap-resolution.json being a top-level list. A tool that crashes is worse than a missing tool, and it hides QT-001 behind it. One line: skip or wrap a non-dict lens file, then fix line 33's slug(None) in the same edit."},
+    {"id": "QH-005", "why_first": "kb/ceremonies/run-summary.json is the repo's own claimed-versus-measured record and it now carries three stale counts (build 10 vs 11, skills_total 100 vs 101, ledger_records 22 vs 27). A summary that misstates the thing it summarises undermines every other number in it."},
+    {"id": "QH-001", "why_first": "README line 36 is the first table a reader sees and it undercounts the build layer. Same edit as QH-005."},
+    {"id": "QH-002", "why_first": "README line 59 says 22 ledger records against 27 verified. Same edit; these three are one commit."},
+    {"id": "QE-002", "why_first": "The approval schema states a required-field rule in prose and enforces nothing - the exact F-a7-04 failure mode this repo names. An if/then in examples/end-to-end/schemas/workflow.schema.json plus one negative test in test.sh turns a claim into a measurement."},
+    {"id": "MECH-2", "why_first": "Add limb 2 of the mechanical check (restate-and-extend must carry its own quote or say proposed) as a validator warning. It catches all four class (b) rows found here, fires on 204/1413 rows repo-wide, and stops the compose-agent/cap-agent-runtime propagation where one over-extended row is cited by the next."},
+    {"id": "MECH-1", "why_first": "Change the skill schema to one quote per cited id and make walk_sourced check all() rather than any(). It is the only mechanical catch for class (c) and it retires the 608 rows that cite a record nothing anchors. Schema change first, then migrate; do not land it as a gate."},
+    {"id": "QT-007", "why_first": "One warning line in tools/skill_graph.py for a builds_on target that was not loaded. Zero cost, and it closes the one place where the published graph could silently disagree with the skills."},
+    {"id": "QT-008", "why_first": "Track unknown sources in their own list in tools/blueprint_check.py so the sourced count stays true once errors exist. Cosmetic today (0 errors), wrong the first day it matters."},
+    {"id": "QT-005", "why_first": "order.get(f['facet'], 999) in tools/manifest_facets.py:128. One character class of edit, removes a hand-edit crash."},
+    {"id": "QT-002", "why_first": "Counter() at tools/kb.py:475. Cleanup only - measured at 4 ms on the real 541 ids."},
+    {"id": "QT-003", "why_first": "A usage() and an explicit arg parse in tools/render_skill.py so an unknown flag prints a message instead of a FileNotFoundError traceback."},
+    {"id": "QT-006", "why_first": "Segment-match instead of substring in tools/manifest_facets.py:112. No current false match; do it when the entity list next grows."},
+    {"id": "QT-001", "why_first": "Guard slug() against None. Folded into the QT-001b fix; listed separately only because the scanner raised it."}
+  ],
+  "summary": "Of 15 scanner findings I confirmed 9, downgraded 4 and refuted 2, and found one the scanners missed: tools/gaps.py crashes on the repo's own research data and cannot run at all, which is the only true block left. The 22 quote-misfit rows are mostly scanner error - 17 are properly supported, 4 over-extend a citation into a claim the record does not make (all four use the 'X already states F-nnn. What it adds here' pattern), and 1 cites a record that bears on nothing in the row - so the real defect rate on sampled sourced rows is about 2.3%, and a two-limb mechanical rule (one quote per cited id, plus a regex on the restate-and-extend marker) catches all 5 at 18/22 recall and 8/22 false positives, which is worth adopting as a warning and a schema change but not as a gate. On direction the framework is loose, composable and sourced on evidence I reproduced, self-improving in the way that matters most (four validator rules exist because a ceremony found the defect), and only partly usable: the code path works end to end at 29/29, but the README a newcomer reads first misstates three of its own counts."
+}

@@ -1,0 +1,229 @@
+{
+ "reviewer": "sonnet",
+ "findings": [
+  {
+   "id": "M-001",
+   "area": "state_types",
+   "severity": "fix",
+   "finding": "No state type covers a tool call and its result (which tool, which arguments, what came back, latency, error) despite MCP being a named capability with zero tools registered today.",
+   "evidence": "state_types has 'dispatch record' (one unit of agent work) and 'agent turn and its context' (one prompt turn) but neither is scoped to a single tool invocation inside a turn; tool_entries' MCP row proposes only bind() and call(tool, arguments) with no record of what call() returned.",
+   "proposed_change": "Add a tool-call record state type owned by tool access: tool name, arguments digest, result or typed error, latency, and the turn it belongs to.",
+   "sources": ["F-a6-03", "F-b3-06"]
+  },
+  {
+   "id": "M-002",
+   "area": "state_types",
+   "severity": "fix",
+   "finding": "No state type covers streaming partial output, though the agent-runtime capability negotiates streaming as an optional client capability.",
+   "evidence": "cap-agent-runtime's contract defines receive_updates as 'an ordered stream of in-turn frames' but blueprint.json's 'agent turn and its context' state type only names 'every compaction in between', never the in-flight frame buffer, its retry-on-reconnect semantics, or what a caller who disconnects mid-stream can recover.",
+   "proposed_change": "Add a streaming-frame-buffer state type under agent runtime, scoped to the turn, with a stated recovery behaviour on client disconnect.",
+   "sources": ["X-cap-agent-runtime-002", "F-a3-02"]
+  },
+  {
+   "id": "M-003",
+   "area": "state_types",
+   "severity": "fix",
+   "finding": "No state type covers a single dispatch-level retry attempt (a transient model-access or tool failure retried transparently), which is distinct from the already-recorded 'loop iteration' state that belongs to loop composition.",
+   "evidence": "'loop iteration' is explicitly scoped to 'the loop operator' and 'attempt N of M' for a composed loop; nothing records a plain retry of one dispatch call with its backoff and attempt count.",
+   "proposed_change": "Add a retry-attempt state type on the dispatch seam, distinct from loop iteration, so a transient-failure retry and a judged re-run are never conflated in the ledger.",
+   "sources": ["F-b5-02", "F-b5-03"]
+  },
+  {
+   "id": "M-004",
+   "area": "state_types",
+   "severity": "fix",
+   "finding": "No state type covers rotation of the real secret held by the host-side model/tool broker, only the short-lived scoped credential handed to a unit.",
+   "evidence": "'mandate / credential' state type covers 'a scope-limited, expiring authorization' but its written_by/read_by never mention the underlying long-lived secret's rotation schedule or what happens to in-flight leases when it rotates.",
+   "proposed_change": "Add a secret-rotation state type owned by the mandate broker, recording rotation version and the leases it invalidates.",
+   "sources": ["F-a3-05", "F-a3-07"]
+  },
+  {
+   "id": "M-005",
+   "area": "state_types",
+   "severity": "nit",
+   "finding": "No state type covers a feature flag or config-version rollout, distinct from the already-present per-run 'resolved manifest and effective configuration'.",
+   "evidence": "The resolved-manifest state type is per-run and written by 'each adapter, at resolution time'; a standing cross-run toggle with a rollout cohort has no home anywhere in the 39 rows.",
+   "proposed_change": "Add a feature-flag state type if progressive rollout is in scope for T4's self-improvement loop, or state explicitly that it is out of scope.",
+   "sources": ["F-a7-04"]
+  },
+  {
+   "id": "M-006",
+   "area": "state_types",
+   "severity": "fix",
+   "finding": "No state type covers the exact model version behind a resolved routing class, only the class asked for.",
+   "evidence": "'model routing selection and claim ticket' records 'which class was asked for, what it resolved to' but resolves to a member model name, not a pinned version; without a pin, an evaluation baseline (state_type 26) cannot be replayed against the same inference behaviour later.",
+   "proposed_change": "Add a model-version-pin state type, written at dispatch time, read by evaluation and provenance.",
+   "sources": ["F-a4-01", "F-a4-08"]
+  },
+  {
+   "id": "M-007",
+   "area": "state_types",
+   "severity": "nit",
+   "finding": "No state type covers a cache entry, although PASS.md A4 names context caching as active in production.",
+   "evidence": "PASS.md quote: 'Context caching stacks on top at batch pricing.' No row in state_types names a cache entry, its key, or its invalidation.",
+   "proposed_change": "Add a cache-entry state type under model access, or record explicitly that caching is left to the adapter and never a platform concern.",
+   "sources": ["F-a4-08"]
+  },
+  {
+   "id": "M-008",
+   "area": "state_types",
+   "severity": "fix",
+   "finding": "No state type covers a dead-letter record for a producer message that exhausted retries at intake or during a step.",
+   "evidence": "'idempotency claim and lease' and 'entry envelope' cover the happy path and duplicate detection; nothing records what happens to a message that can never be admitted or a step that can never complete.",
+   "proposed_change": "Add a dead-letter state type owned by work intake (and by durable execution for step-level exhaustion), read by an operator and by audit trail.",
+   "sources": ["F-b3-08", "F-b3-04"]
+  },
+  {
+   "id": "M-009",
+   "area": "state_types",
+   "severity": "fix",
+   "finding": "No state type covers a rate-limit window (sliding window or token bucket) per actor or tenant, distinct from both the idempotency lease and the dollar budget ceiling.",
+   "evidence": "'tenancy scope and quota' and 'budget reservation and spend' cover principal binding and money; neither records a request-rate window, which is a separate failure mode from overspend.",
+   "proposed_change": "Add a rate-limit-window state type under tenancy, enforced at the same choke points budget already names.",
+   "sources": ["F-a4-07", "X-end-to-end-033"]
+  },
+  {
+   "id": "M-010",
+   "area": "state_types",
+   "severity": "fix",
+   "finding": "No state type covers a human's standing consent or authorisation grant for an agent or partner to act on their behalf across multiple runs, distinct from the per-run 'parked approval' and the per-run 'mandate / credential'.",
+   "evidence": "Both existing records are scoped 'lifetime: workflow' or 'lifetime: run'; a durable grant (e.g. 'this partner may open PRs on my behalf until revoked') has no home, though the external entry's 'a pre-authorised ceiling per source' implies something like it already exists informally.",
+   "proposed_change": "Add a consent-grant state type owned by identity or mandate broker, lifetime forever until revoked, read by policy and identity at every admission.",
+   "sources": ["F-a3-05", "F-b4-03"]
+  },
+  {
+   "id": "M-011",
+   "area": "state_types",
+   "severity": "nit",
+   "finding": "Two gaps the blueprint itself names in prose (myopia_check) — GPU/fleet capacity and concurrency-admission/backpressure — are never promoted to actual state_types rows with the standard schema.",
+   "evidence": "myopia_check items 8 and 9 describe these gaps and name a proposed_owner, but neither appears among the 39 state_types entries, so they carry no owner_capability, written_by, read_by, lifetime or pinning_risk the rest of the table gives every other state.",
+   "proposed_change": "Promote both myopia_check items to full state_types rows so self-identified gaps get the same structural treatment as everything else, or explain why they are deliberately left as prose.",
+   "sources": ["T-t6-06", "F-a4-02"]
+  },
+  {
+   "id": "M-012",
+   "area": "entry_matrix",
+   "severity": "block",
+   "finding": "Six state types the platform writes on every run — artifact and its digest, work graph, provenance attestation, isolation admission and containment report, model routing selection, and resolved manifest — have no row under any of the four entries, although each is either a cross-cutting guarantee (B4) or the literal return shape every door produces.",
+   "evidence": "Counting entry_matrix rows: human, agent, schedule and external each touch exactly 15 of the 39 state_types; 'artifact and its digest' — what composable-plan section 3.5 says every door returns ('artifact: {name, sha256}') — appears in zero of the 60 entry-matrix rows, as does provenance attestation, which B4 says the platform applies without being asked, and isolation admission, which PASS.md A3 says wraps every unit of work.",
+   "proposed_change": "Add rows for these six state types to all four entries (or state explicitly why an entry is exempt), since a builder reading only entry_matrix currently has no way to learn that every run is isolated, graphed, and returns a digest-addressed artifact.",
+   "sources": ["T-t6-02", "F-b3-18", "F-b4-05"]
+  },
+  {
+   "id": "M-013",
+   "area": "entry_matrix",
+   "severity": "fix",
+   "finding": "The 'agent profile record' and 'mandate / credential' rows appear only under the agent entry, though a human-, schedule- or external-triggered plan can also name an agent by capability and dispatch it into a sandbox that needs a scoped credential.",
+   "evidence": "Only the 'agent' entry's 15 rows include 'agent profile record' and 'mandate / credential'; the other three entries' rows stop at policy/plan/dispatch without ever resolving which agent a step names or how it gets a credential to call a tool.",
+   "proposed_change": "Add these two rows to human, schedule and external wherever a step in the plan they produce can itself dispatch an agent — which T6.3 says all four can.",
+   "sources": ["T-t6-03", "T-t6-05"]
+  },
+  {
+   "id": "M-014",
+   "area": "entry_matrix",
+   "severity": "nit",
+   "finding": "No minimal_caller_action across all 60 entry_matrix rows names a product or component — this check passed.",
+   "evidence": "Scanned every minimal_caller_action string for LiteLLM, Langfuse, OPA, Firecracker, goose, Temporal, MCP, Tailscale, ClickHouse, MinIO, Postgres, Ansible, ACP, A2A and CloudEvents; zero matches.",
+   "proposed_change": "None — record as a passing check, not a gap.",
+   "sources": []
+  },
+  {
+   "id": "M-015",
+   "area": "tool_entries",
+   "severity": "nit",
+   "finding": "firecracker-cell-long@.service, a distinct A2 systemd unit with a larger runtime ceiling, has no tool_entries row of its own and is silently folded into firecracker-cell@.service.",
+   "evidence": "PASS.md A2 lists firecracker-cell@.service and firecracker-cell-long@.service as two separate units; tool_entries has one row, 'firecracker-cell@.service (Firecracker microVM per agent)', with no mention of the long-lived variant's different ceiling, which is exactly the kind of value a dispatch record's 'timeout and budget enforcement' member needs to distinguish.",
+   "proposed_change": "Either add a distinct row for the long-lived variant or state in the existing row that ceiling is a declared parameter of admission, not a property of which unit ran.",
+   "sources": ["F-a2-02"]
+  },
+  {
+   "id": "M-016",
+   "area": "tool_entries",
+   "severity": "fix",
+   "finding": "Five running or load-bearing A1/A2/A5 components — the trace storage bundle, gateway-db-1's spend ledger, approve.service, Ansible, and Tailscale — have 'second_adapter: gap', which means design rule 3 ('every interface ships with at least two adapters') is unmet for all five, not proven aspirational.",
+   "evidence": "tool_entries rows for these five all carry \"second_adapter\": \"gap\" and \"status\": \"gap\"; approve.service's gap is repeated in open_questions ('No swap candidate is recorded anywhere in the knowledge base for the approval surface') even though a second adapter for it is in fact recorded elsewhere — see M-019.",
+   "proposed_change": "Resolve approve.service's contradiction first (M-019), then close or explicitly defer the remaining four with a named research owner, since design rule 3 is stated as non-optional in B1.",
+   "sources": ["F-b3-11", "F-a5-01", "F-a5-06"]
+  },
+  {
+   "id": "M-017",
+   "area": "impact_map",
+   "severity": "fix",
+   "finding": "impact_map has zero entries for what happens when the human-interaction / approval surface changes, even though approve.service is a running A2 component whose upstream signal source (Temporal) is measured down and whose own second adapter is disputed (M-019).",
+   "evidence": "Scanned all 17 impact_map entries by if_changes text: telemetry (x3), durable executor, isolation, agent runtime, model gateway (x3), event envelope, tool-access protocol, idempotency-key draft, error registry, packaging/registry, identity root, schema dialect, policy engine, state store. None mentions human interaction, approval, AG-UI, or approve.service.",
+   "proposed_change": "Add an impact_map entry for 'the approval surface changes from a live phone ask to a queued or streamed surface', naming the affected adapters (human-interaction, parked-approval state), tests (the four-decision resume fixture cap-human-interaction already defines) and skills (cap-human-interaction, cap-human-interaction-implement, xc-correlation).",
+   "sources": ["F-a2-01", "X-entry-composition-023"]
+  },
+  {
+   "id": "M-018",
+   "area": "impact_map",
+   "severity": "fix",
+   "finding": "impact_map has no entry for the agent protocol (ACP) itself changing major version — as distinct from the already-covered scenario of swapping which runtime speaks it — and no entry for memory, the third design-ourselves seam the blueprint names, going from absent to designed and then changing store.",
+   "evidence": "The 'agent runtime is replaced' entry is scoped to swapping goose for another ACP-speaking runtime; standards_at_play records ACP's own version as literally 'gap' with a version_gap_ref, meaning the map cannot say what breaks if that undated protocol itself revises its turn or stop-reason shapes. Separately, no impact_map row exists for memory at all, though state_types marks all three memory scopes 'status: gap' and myopia_check calls memory 'a third design-ourselves seam beside the two PASS.md names'.",
+   "proposed_change": "Add two impact_map entries: one for an ACP major-version change (distinct from a runtime swap), one for memory's store or scope model changing once it is designed.",
+   "sources": ["F-a3-03", "X-end-to-end-003"]
+  },
+  {
+   "id": "M-019",
+   "area": "contradiction",
+   "severity": "block",
+   "finding": "The blueprint's tool_entries and open_questions both assert 'no second adapter is recorded anywhere for the human-interaction capability', but the cap-human-interaction skill it should be built from already records exactly that: a second adapter (AG-UI browser stream) with a stated swap procedure and a conformance criterion (adapters_run >= 2).",
+   "evidence": "blueprint.json tool_entries[9] (approve.service): 'second_adapter': 'gap', gap_ref 'approve-second-adapter'. open_questions: 'What is the second adapter for human interaction? No swap candidate is recorded anywhere in the knowledge base for the approval surface.' Contrast cap-human-interaction/skill.json contract.adapters, entity E-swap-candidate-ag-ui-browser-stream, role 'second', quote: 'a browser client speaking the AG-UI event protocol ... the same parked ask arrives as one event in a stream'.",
+   "proposed_change": "Correct the blueprint's tool_entries[9] and open_questions to cite the AG-UI browser-stream adapter already on file, and re-check whether any other 'gap' second_adapter claim in the table is similarly stale against the skills it names as owners.",
+   "sources": ["F-a2-01", "F-b1-04", "X-entry-composition-021"]
+  },
+  {
+   "id": "M-020",
+   "area": "contradiction",
+   "severity": "fix",
+   "finding": "The blueprint's entry_matrix invents a four-way split — human, agent, schedule, external — that matches neither of the two enumerations the blueprint itself says are in tension (TARGET T1's three: human, agent, event; T6.2's four: human, event, schedule, external system or agent), and directly contradicts cap-work-intake's own contract, which states the four doors as 'a human, an event, a schedule (time), and an external system or agent' — one category, not two, for external system or agent.",
+   "evidence": "cap-work-intake/skill.json contract.invariants: 'Intake is the one shape for TARGET T6.2's four entries - a human, an event, a schedule (time), and an external system or agent.' blueprint.json entry_matrix uses entry values 'human', 'agent', 'schedule', 'external', and separately defines a fifth category 'event subscription' as a state type owned by the 'external' entry — so the blueprint's own table cannot be read against the standard it cites without picking a mapping nobody states.",
+   "proposed_change": "Either rename entry_matrix's 'agent' and 'external' entries into one 'external system or agent' entry per cap-work-intake and T6.2, or add the explicit mapping the myopia_check item already calls for ('a skill must name which enumeration it is citing') directly onto the entry_matrix schema.",
+   "sources": ["T-t1-01", "T-t6-02"]
+  },
+  {
+   "id": "M-021",
+   "area": "contradiction",
+   "severity": "nit",
+   "finding": "standards_at_play records the Agent Client Protocol's version as flatly 'gap' ('no version is recorded'), but the cap-agent-runtime skill it should derive from already has a version_note quoting a search result that describes ACP as 'an open JSON-RPC standard at v1 stable'.",
+   "evidence": "blueprint.json standards_at_play, Agent Client Protocol: \"version\": \"gap\", version_gap_ref \"acp-version\". cap-agent-runtime/skill.json contract.standards[0].version_note: 'a search-only record describes the protocol as an open JSON-RPC standard at v1 stable with SDKs in five languages'.",
+   "proposed_change": "Change the standards_at_play status from 'gap' to 'unverified' with the same low-confidence note the skill already carries, since a search result exists even though the specification text was not fetched — 'gap' and 'unverified-with-a-lead' are different states and the research_query in gaps[] should reflect that a lead already exists.",
+   "sources": ["F-b3-05", "X-cap-agent-runtime-004"]
+  },
+  {
+   "id": "M-022",
+   "area": "usability",
+   "severity": "fix",
+   "finding": "For the simplest possible task on any of the four entries (submit one line of intent, get a result), a builder wiring the guarantees the platform is supposed to apply invisibly must read roughly 15 blueprint entry_matrix rows plus 13-16 distinct capability skills (each with a paired -implement skill), around 28-32 skill files, before the caller's one line is actually honoured end to end.",
+   "evidence": "Counted entry_matrix rows per entry (human/agent/schedule/external all = 15, see M-012's count). For the human entry alone the touched state types map to at least: core-document, core-planner, cap-work-intake, cap-identity, xc-identity-delegation, xc-correlation, xc-budget, cap-idempotency, cap-policy, seam-dispatch, core-ledger, cap-telemetry, cap-errors, xc-tenancy, cap-memory — 15 capability skills, each shipping a paired -implement skill per the repo's own layer convention.",
+   "proposed_change": "T3 states the platform 'has to be simple to use' but does not distinguish caller-simplicity (true — one line of intent, per composable-plan section 3) from builder-simplicity (not demonstrated). Add a stated builder-facing budget analogous to build-simplicity-budget's caller-facing one, or an explicit note that T3 is scoped to the caller only.",
+   "sources": ["T-t3-01", "T-t3-02"]
+  }
+ ],
+ "missing_state_types": [
+  "tool call and result record",
+  "streaming partial output / in-turn frame buffer",
+  "dispatch-level retry attempt (distinct from loop iteration)",
+  "secret rotation record at the mandate broker",
+  "feature flag / config-version rollout (distinct from per-run resolved manifest)",
+  "model version pin behind a resolved routing class",
+  "cache entry (context/prompt caching, active per PASS.md A4)",
+  "dead-letter record for exhausted retries at intake or mid-step",
+  "rate-limit window per actor or tenant (distinct from budget ceiling and idempotency lease)",
+  "consent / standing authorisation grant (distinct from per-run parked approval and per-run mandate credential)",
+  "GPU/fleet capacity as a routing input (named in myopia_check prose, never promoted to a state_types row)",
+  "concurrency admission / backpressure queue (named in myopia_check prose, never promoted to a state_types row)",
+  "artifact/output notification-delivery state (was a parked ask actually delivered to the surface)",
+  "GPU/fleet physical placement (which card or host a workload landed on, distinct from aggregate capacity)",
+  "multi-turn human conversation/thread state spanning several runs or gates"
+ ],
+ "coverage": {
+  "state_types_present": 39,
+  "state_types_missing": 15,
+  "entries_with_gaps": ["human", "agent", "schedule", "external"],
+  "components_without_entry": [
+   "firecracker-cell-long@.service (long-lived microVM variant, PASS.md A2, folded silently into firecracker-cell@.service's row with no distinct ceiling semantics)"
+  ]
+ },
+ "summary": "The blueprint is unusually self-aware — 39 state_types rows, an 11-item myopia_check, and 22 recorded gaps already cover most of what a reviewer would otherwise raise from scratch — but its self-checks stop at prose and are not always reconciled against the skills it names as owners: cap-human-interaction already records the second adapter the blueprint's own open_questions calls unrecorded, and cap-work-intake's stated four doors contradict the entry_matrix's own category labels. Structurally, six state types every run actually produces (artifact, work graph, provenance, isolation, model routing, resolved manifest) have no row under any of the four entries, and roughly fifteen state kinds a running agentic platform needs — tool-call records, model version pins, dead-letters, rate-limit windows, secret rotation and consent grants among them — have no row at all. Read end to end, wiring even the simplest one-line task requires a builder to absorb about fifteen entry_matrix rows and thirty skill files per entry, which is a builder-side complexity T3's usability claim never measures."
+ }

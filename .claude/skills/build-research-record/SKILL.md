@@ -1,0 +1,202 @@
+---
+name: build-research-record
+description: The discipline of keeping one record per search, source and quote, so a claim a skill makes can be traced back to text that was actually read. Load before citing an X- id in a skill, when a statement needs a source and none is on file, before searching for prior art for a capability or a seam, when deciding whether a page was read or only its search result seen, before writing down a URL, a title or a version string, when a reviewer asks where a sentence came from, and when a search found nothing and you have to say so anyway. Fixes the record's fields (lens, topic, query, url, title, verbatim snippet, read, status search-only versus fetched), the rule that a cited quote is a verbatim substring of the record it names, and the merge that makes an X- id resolve at all.
+---
+
+# build-research-record
+
+Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Source IDs resolve with `python3 tools/kb.py show <id>`.
+
+## Purpose
+
+| Statement | Origin | Evidence |
+|---|---|---|
+| Keep one record per search, source and quote, so a claim a skill makes can be traced back to what was actually read, and so a search that found nothing is still written down rather than lost. | sourced | `F-part-c-03`, `F-part-c-08` "If you searched for prior art and found none, say what you searched." |
+
+## Entities
+
+| Entity |
+|---|
+| `E-standard-json-schema-2020-12` |
+| `E-provisioning-concern-evidence-store` |
+
+## Contract
+
+### Standards
+
+| Standard | Version | Version status | URL | Sources |
+|---|---|---|---|---|
+| `E-standard-json-schema-2020-12` | 2020-12 | unverified | - | `F-b3-09`, `E-standard-json-schema-2020-12` |
+
+### Operations
+
+| Operation | Input | Output | Origin | Evidence |
+|---|---|---|---|---|
+| record (proposed) | one search result: lens, topic, query, url, title, and the result's text copied verbatim | one line appended to kb/research/<lens>.jsonl with status search-only and read null | proposed | - |
+| read (proposed) | a record whose page was actually fetched, plus a verbatim excerpt of the page body | the same record with status fetched and the excerpt in read | proposed | - |
+| merge (proposed) | every kb/research/<lens>.jsonl file | kb/research.jsonl, after which an X- id resolves for tools/kb.py show and for the validator's quote check | proposed | - |
+| cite (proposed) | a statement, the X- ids it rests on, and a quote copied out of one of those records | an origin=sourced row that survives the verbatim-substring check, or a rejection naming the quote | proposed | - |
+
+### Shapes (JSON Schema 2020-12)
+
+**research-record (proposed shape; the field-by-field rules, a worked example and the lens naming convention are in references/research-record-shape.md)** (proposed; sources: `F-b3-09`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "research-record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "type",
+    "lens",
+    "topic",
+    "query",
+    "url",
+    "title",
+    "snippet",
+    "status",
+    "agent",
+    "date"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^X-[a-z0-9]+(-[a-z0-9]+)*-[0-9]{3}$"
+    },
+    "type": {
+      "const": "research"
+    },
+    "lens": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "string"
+    },
+    "informs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[FERT]-"
+      }
+    },
+    "query": {
+      "type": "string"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "title": {
+      "type": "string"
+    },
+    "snippet": {
+      "type": "string"
+    },
+    "read": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "status": {
+      "enum": [
+        "search-only",
+        "fetched"
+      ]
+    },
+    "claim": {
+      "type": "string"
+    },
+    "agent": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    }
+  }
+}
+```
+
+### Invariants
+
+| Invariant | Origin | Evidence |
+|---|---|---|
+| A search that found nothing usable is still a record: the query and where it was run are written down either way. | sourced | `F-part-c-03` "If you searched for prior art and found none, say what you searched." |
+| Proposed: status is the claimed-versus-measured line for research. search-only means a title and a result snippet were seen; fetched means the page body was read into the record. | proposed | `F-part-c-08` "Distinguish **claimed** from **measured** throughout" |
+| Proposed: read is non-null exactly when status is fetched. A search-only record never carries page text, and a fetched record never carries an empty read. | proposed | - |
+| A citation must never imply a page was read when only its search result was seen, because citing sources without reading them is considered fraudulent. | sourced | `X-build-research-record-002` "Citing sources without reading them is considered fraudulent because you are lying about the work you have done." |
+| Proposed: a quote a skill cites is a verbatim substring of the cited record's snippet or read. A paraphrase, however faithful, is not a citation, because no tool can re-check it. | proposed | `X-build-research-record-005` "Sentence-level attribution systems can attribute each sentence in generated text to quotes from source documents" |
+| Proposed: nothing in a record is composed. The url, the title, the snippet, the date and any version string inside them are copied from what was in front of you or the record is not written. | proposed | `F-part-c-10` "Cite the standard and its version." |
+| Proposed: a version number counts as verified only when a record with status fetched carries it; otherwise the standard it governs stays version_status unverified. | proposed | `F-part-c-10` "Prefer an existing standard to an original design." |
+| Proposed: the store is append-only, on the model of the evidence store. A record is never edited to fit a later claim; a correction is a new record and the old one stays where it is. | proposed | `F-a5-04` "Append-only JSONL" |
+| Proposed: a record is citable only once it resolves in kb/research.jsonl. An X- id that resolves nowhere is a claim about a record, not a citation. | proposed | - |
+
+### Deliberately not exposed
+
+| Item | Origin | Evidence |
+|---|---|---|
+| Proposed: a record does not assert that its source is correct, only that the source says this. Judging the source - who wrote it, whether the platform is reliable - is the reader's work at citation time, not a field of the record. | proposed | `X-build-research-record-006` "you can check the author by researching their credentials to ensure they are qualified to discuss the topic" |
+| Proposed: this discipline does not record runs of our own code. A command, its exit status and the tree it ran against belong to the evidence-record discipline (build-evidence-record), kept separate so a page somebody else wrote is never filed as something we measured. | proposed | `F-a5-04` "Each record names the script SHA-256, git commit" |
+
+## Instructions
+
+| Step | Action | Why | Origin | Evidence |
+|---|---|---|---|---|
+| 1 | Before writing a claim into a skill, open the lens file for the item under kb/research/ and look for a record that already covers it. If none does, the claim is proposed until a record exists. | Proposed: our convention. There is no third kind of statement, so the search for a record has to happen before the sentence is written, not after a reviewer asks. | proposed | - |
+| 2 | Decide the fields before collecting: every record fills the required set in schemas/research.schema.json - id, type, lens, topic, query, url, title, snippet, status, agent, date - and nothing outside it. | The schema is the intellectual heart of a system that digests research: it encodes what was captured and so determines which comparisons across sources are possible later. | sourced | `X-build-research-record-004` "The database schema is the intellectual heart of systems that digest research information" |
+| 3 | Write one record per result you intend to rely on, at the moment you read it, with the query string exactly as it was run and the url and title copied from the result. | Proposed: our convention, following the scholarly practice of a store that collects and keeps source information as you go rather than reconstructing citations at writing time. | proposed | `X-build-research-record-001` "collect and store information about sources, organize and keep track of your references" |
+| 4 | Copy the snippet verbatim out of the result into the record. Do not retype it, tidy the punctuation, or trim it to the part that suits the claim. | The quote is the only thing a later tool can re-check, and citation hallucination is a measured failure of generated text, not a hypothetical one. | sourced | `X-build-research-record-005` "Citation hallucination rates range from 11% to 57% across commercially deployed models." |
+| 5 | Set status honestly: search-only with read null when you saw a title and a snippet, fetched with a verbatim excerpt in read only when the page body was actually retrieved. | Citing sources without reading them is fraudulent, so the record has to make the difference visible rather than let a snippet pass for a reading. | sourced | `X-build-research-record-002`, `F-part-c-08` "Citing sources without reading them is considered fraudulent" |
+| 6 | Record the searches that failed too: keep the query and the url of what you looked at even when nothing supported the claim, and say so in the skill. | A first-cut design has to say what was searched when prior art was not found, and a search nobody wrote down cannot be re-run or believed. | sourced | `F-part-c-03` "If you searched for prior art and found none, say what you searched." |
+| 7 | Run `python3 tools/kb.py merge-research` before citing anything, then resolve each id with `python3 tools/kb.py show X-<lens>-<nnn>` and copy the quote out of what it prints. | Proposed: our convention. X- ids only resolve in kb/research.jsonl after the merge, and a quote retyped from memory is how an unchecked sentence acquires the look of a checked one. | proposed | - |
+| 8 | Keep each row inside the scope of the record it cites: a record supports what its snippet says and nothing wider. If you need the generalisation, mark that row proposed and leave the record as its example. | Proposed: the validator checks that the quote is verbatim, not that the inference is sound, so scope is the author's job. Widening one result into a claim about a class of things is the defect ceremony 1 caught. | proposed | - |
+| 9 | Correct a record only by appending another and leaving the original in place; never edit a snippet, a url or a status after the fact. | Proposed: our convention, on the model of the append-only evidence store. An in-place edit destroys the only thing that showed what was actually in front of the author. | proposed | `F-a5-04` "Append-only JSONL" |
+| 10 | Proposed: open references/research-record-shape.md before building or checking the store itself - writing a lens file from scratch, writing a validator over kb/research.jsonl, adding a field, or reviewing a record whose fields are present but whose values look wrong. The skill body is enough to write and cite a record by hand. | Proposed reference material. It holds the full schema, the per-field failure each rule prevents, a worked record and the lens naming convention, which are too long for this table and needed only when the store is being built rather than used. | proposed | - |
+
+## Best practices
+
+| Practice | Origin | Evidence |
+|---|---|---|
+| Citation hallucination rates range from 11% to 57% across commercially deployed models, and sentence-level attribution systems can attribute each sentence in generated text to quotes from source documents, allowing for quick fact-checking. | sourced | `X-build-research-record-005` "Citation hallucination rates range from 11% to 57% across commercially deployed models." |
+| Verification has more than one axis: a widely-used framework checks provenance, source, date, location, and motivation, and asks whether the platform publishing the information is known for accuracy and reliability. | sourced | `X-build-research-record-006` "provenance, source, date, location, and motivation" |
+| Recording where a resource came from is ordinary schema practice rather than overhead: it is very common to have a resource that has a source that needs to be recorded to understand how information was obtained. | sourced | `X-build-research-record-008` "very common to have a resource that has a source that needs to be recorded to understand how information was obtained" |
+| Treat retrieval and verification as two steps, not one: fact-checking pipelines usually consist of evidence retrieval and verification, so finding a promising result is not yet having checked the claim against it. | sourced | `X-build-research-record-003` "The pipelines usually consist of evidence retrieval and verification." |
+| Ethical research and writing means giving proper attribution and credit to the work of others, which is why the record names the source rather than absorbing its wording into ours. | sourced | `X-build-research-record-002` "Ethical research and writing means giving proper attribution and credit to the work of others" |
+| Proposed: agentic-stack already carries the well-formedness finding (F-a7-03) as a best practice; cite it by name instead of re-deriving it. Its analogue here is that a record which validates against the schema is well-formed, not true. | proposed | - |
+
+## Definition of done
+
+| Field | Value |
+|---|---|
+| Criterion | Two checks, run from the repository root after `python3 tools/kb.py merge-research`. (1) Record validity and citation resolution: `python3 -c "import json,re,pathlib;S=json.load(open('schemas/research.schema.json'));R=[json.loads(l) for l in open('kb/research.jsonl') if l.strip()];ids={r['id'] for r in R};bad=sorted({r.get('id') for r in R if [k for k in S['required'] if k not in r] or not re.match(S['properties']['id']['pattern'],r.get('id','')) or r.get('status') not in S['properties']['status']['enum']});cited={i for p in pathlib.Path('.claude/skills').glob('*/skill.json') for i in re.findall(r'X-[a-z0-9-]+',p.read_text())};dangling=sorted(cited-ids);print('records',len(R),'invalid',bad,'dangling',dangling);assert not bad and not dangling"`. (2) Quote verbatimness: `python3 tools/validate_skills.py --only build-research-record`. |
+| Expected | Check 1 prints `records 224 invalid [] dangling []` and exits 0. Check 2 prints `build-research-record: 0 errors, 0 warnings` and exits 0. |
+| Deliberate breakage | Two, applied one at a time to kb/research/build-research-record.jsonl, re-merged with `python3 tools/kb.py merge-research`, and then restored: (a) invalid record - delete the `status` field from X-build-research-record-002; (b) altered snippet - change one character of X-build-research-record-002's snippet (`fraudulent` to `fraudulant`) so a quote this skill cites is no longer a verbatim substring of it. |
+| Expected failure | Measured in this session (https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96) on 2026-09-03 in /home/user/AGENT. Breakage (a): check 1 printed `records 224 invalid ['X-build-research-record-002'] dangling []`, raised AssertionError and exited 1. Breakage (b): check 2 printed `error:   build-research-record: .contract.invariants[3].quote is not a verbatim substring of any cited record: 'Citing sources without reading them is considered fraudulent'`, the same error for `.instructions[4].quote`, then `build-research-record: 2 errors, 0 warnings`, and exited 1 - while check 1 still printed `records 224 invalid [] dangling []` and exited 0, because a well-formed record can carry text that no longer matches the quote citing it, which is why both checks are required. After restoring the lens file and re-merging, both checks exited 0. |
+| Status | measured |
+| Evidence | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
+
+## Composes with
+
+Builds on: `agentic-stack`
+
+Used by: `build-entry-conformance`, `build-interface-versioning`, `build-simplicity-budget`, `cap-capability-registry`, `cap-evaluation`, `cap-human-interaction`, `cap-mandate-broker`, `cap-memory`, `compose-improvement-loop`, `compose-operators`, `seam-agent-ingress`, `seam-entry-envelope`, `xc-audit-trail`, `xc-compensation`, `xc-correlation-envelope`, `xc-enforcement-chain`, `xc-tenancy`
+
+## Open questions
+
+| Question | Deciding evidence | Default until then | Evidence |
+|---|---|---|---|
+| Can any record in this lens move from search-only to fetched from this environment, so that a version string in it could be treated as verified? | One successful fetch of a recorded url with the page text placed in read; the outbound proxy blocked documentation fetches for the wave-1 authors, so nothing here has been read beyond its search result. | Every record in this lens stays status search-only, and no standard's version is recorded as verified on the strength of one. | `F-part-c-10` "Cite the standard and its version." |
+| Should a fetched record be re-fetched before a later section cites it, given that a page can change under a stable url? | A second fetch of the same url on a later date, showing whether the recorded excerpt is still present verbatim; a divergence would decide whether re-fetching is required or the date field is enough. | Proposed: a record is cited as of its date, and the date is what a reader checks, the way the host inventory is cited as verified against the running host on 2026-09-03. | `F-meta-02` "verified against the running host on 2026-09-03" |
+
+## Provenance
+
+| Field | Value |
+|---|---|
+| PASS.md sha256 | cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96 |
+| kb facts head | 9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e |
+| kb entities head | 747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604 |
+| kb edges head | a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6 |
+| Author | session https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96 |

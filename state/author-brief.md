@@ -80,3 +80,6 @@ Reply in under 200 words: skills written, validator result for them, any manifes
 
 ## When something blocks you (TARGET T5, cite T-t5-02)
 Define the problem in one line. List the three best solutions that serve the goal. Pick the recommended one and proceed; record the choice as a proposed row or an open_question with the deciding evidence. If none is clearly best, drop the two weakest, find two more, repeat. Never stop and wait.
+
+## Consumption reference (TARGET T6)
+examples/end-to-end/ is the reference for how the platform is consumed: one entry envelope for human, event, schedule, and external entries; an agent registry keyed by what each agent is good at and its model class; workflows composed from operators; a runner. Skills in the seam-, compose-, and cap- layers must stay consistent with it or record the disagreement as an open_question with the change they propose.

@@ -31,3 +31,12 @@ Stated by the platform owner on 2026-09-03 as the baseline target. PASS.md Part 
 1. Do not stop at ceremonies; run them and continue.
 2. When a problem comes up, use 1-3-1: define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation.
 3. If no recommendation is found, drop the two lowest solutions, find two more, and repeat until solved.
+
+## T6. Consumption
+
+1. There is one way to consume the platform, shown as code end to end: what is called, with what, and what comes back.
+2. Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent. All four enter through the same shape.
+3. Any entry can call complex workflows, agents, and loops that run across the entire stack.
+4. Multiple models are used through one gateway, and a fleet of GPUs serves local models; callers request a model class, not a vendor.
+5. Each agent is defined up front by what it is good at, so callers know how to call it and how to sequence it.
+6. The target scale is well over a hundred agents running at a time, working together, managing state, breaking problems down, and self-improving where they can.

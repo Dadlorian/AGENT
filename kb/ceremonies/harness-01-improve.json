@@ -1,0 +1,130 @@
+{
+  "ceremony": "harness-01",
+  "section": "harness",
+  "improver": "opus-improver",
+  "date": "2026-09-03",
+  "review_record": "kb/ceremonies/harness-01-review.json",
+  "scope_note": "Files under harness/ only. The two findings against xc-correlation-implement's skill.json (H1-002, and H1-006's best_practices[5] row) are planted defects that have been removed from the skill; they are listed in skipped_plants and no skill.json was opened.",
+  "applied": [
+    {
+      "id": "H1-001",
+      "change": "The workflow harness's call.py now reaches the executor only through the DurableExecutor interface. Added a Receipt shape and a read_receipt(run_key) operation to harness/workflow/interface.py, implemented by all three adapters: the two in-process executors share one _receipt() builder over their own journal and effect table, and the live adapter refuses it as adapter-unavailable exactly like every other operation (its header's mapping now lists read_receipt too). call.py opens no journal.jsonl, queue.jsonl or effects.jsonl: it reads the gate-parked and gate-decided counts, the spend and the effect rows off the receipt, and it clears the run directory with rmtree instead of deleting three storage files by name. Journal now re-reads its file whenever the file has moved on (refresh() on of/verify/append), so a run that crashed in another process is visible through the handle a caller already holds and no caller has to rebind an executor to see durable state. The conformance run deliberately still counts effect rows from outside the executor - a receipt an executor writes about itself cannot show that executor double-counting - and test.sh now compares the receipt's effect count against the count from outside, so the new operation is checked for truth rather than trusted. The same rule was checked across the other four harnesses and holds: containment's call.py opens only binding.json (its own configuration), gateway, observability and linked open nothing; harness/caller_lines.py --interface-only now asserts it in all five gates.",
+      "files": [
+        "harness/workflow/interface.py",
+        "harness/workflow/adapters/dryrun.py",
+        "harness/workflow/adapters/second.py",
+        "harness/workflow/adapters/live.py",
+        "harness/workflow/adapters/journal.py",
+        "harness/workflow/call.py",
+        "harness/workflow/test.sh",
+        "harness/workflow/README.md",
+        "harness/workflow/provenance.json"
+      ]
+    },
+    {
+      "id": "H1-003",
+      "change": "One method for the caller-lines measurement, in one place: harness/caller_lines.py counts the non-blank, non-comment lines of a call.py below its single `>>> CALLER CODE` marker, up to the module entry guard, and refuses a file with no marker or two. All five call.py files were restructured to that one convention with presentation moved above the marker (containment: table() and main() moved above, minimal_call last; gateway: a show() function; observability: a report() function; linked and workflow: the marker moved to sit above main()), so the count is interface calls, the inputs handed to them, and reading one result or one problem in every harness. All five test.sh now assert their own number through the same script - containment and workflow had no assertion at all before - and all five also run `caller_lines.py <name> --interface-only`, which fails a call.py that names a file with an adapter-storage suffix. The suggested awk assertion was implemented as a script instead of five copies of an awk line, because five copies of a measurement is how the four spellings happened. Results are in harness/README.md as a table.",
+      "files": [
+        "harness/caller_lines.py",
+        "harness/containment/call.py",
+        "harness/gateway/call.py",
+        "harness/observability/call.py",
+        "harness/workflow/call.py",
+        "harness/linked/call.py",
+        "harness/containment/test.sh",
+        "harness/gateway/test.sh",
+        "harness/observability/test.sh",
+        "harness/workflow/test.sh",
+        "harness/linked/test.sh",
+        "harness/README.md",
+        "harness/containment/README.md",
+        "harness/gateway/README.md",
+        "harness/observability/README.md",
+        "harness/linked/README.md"
+      ]
+    },
+    {
+      "id": "H1-004",
+      "change": "call.py now makes two DurableExecutor calls of its own - resume_point(run_key) after the crash, printed as the `crash` row, and read_receipt(run_key) after the resume - so a newcomer sees one call through the interface inside the harness's own minimal-call file. The subprocess remains, because a crash has to be a process death rather than a raised exception, and workflow/README.md's Files table now says plainly that begin_run, checkpoint_step, park_gate, record_decision and read_run are called in flow.py and not in call.py, with the reason. The minimal-call table's step 5 was rewritten from 'reads outcome, effects.jsonl' to the two interface reads.",
+      "files": [
+        "harness/workflow/call.py",
+        "harness/workflow/README.md"
+      ]
+    },
+    {
+      "id": "H1-005",
+      "change": "One adapter-class naming rule instead of four: every adapter module in every harness now exports its entry point as module-level `Adapter` (containment and observability already did; gateway's DryRunAdapter/BatchClaimAdapter/LiveGatewayAdapter and workflow's JournalExecutor/QueueStateMachineExecutor/WorkflowEngineExecutor keep their descriptive class names, which binding() still reports, and gained an alias). harness/linked/components.py's COMPONENTS table lost its per-capability class-name column and now binds module.Adapter for all four capabilities, and harness/workflow/interface.py's new load_executor uses the same one rule, with flow.py's executor_for delegating to it rather than carrying its own three-branch table. The convention is recorded in harness/README.md as a row saying where it is enforced and what it prevents.",
+      "files": [
+        "harness/gateway/adapters/dryrun.py",
+        "harness/gateway/adapters/second.py",
+        "harness/gateway/adapters/live.py",
+        "harness/workflow/adapters/dryrun.py",
+        "harness/workflow/adapters/second.py",
+        "harness/workflow/adapters/live.py",
+        "harness/workflow/interface.py",
+        "harness/workflow/flow.py",
+        "harness/linked/components.py",
+        "harness/README.md"
+      ]
+    },
+    {
+      "id": "H1-000-honesty",
+      "change": "Not a review finding, but forced by the ones applied: every count the section claims was re-measured and rewritten. harness/README.md's last-line table, its measured-versus-claimed table and the trace-backend impact row, each harness README's check count and caller-line claim, workflow README's file line counts and output table, and each provenance.json's measured.dryrun string now carry the numbers this run produced (containment 23 to 25, gateway 24 to 25, observability 36 to 37, workflow 19 to 23, linked 31 to 32 - every added check is one of the new caller-lines, interface-only, receipt-truth or resume-point assertions).",
+      "files": [
+        "harness/README.md",
+        "harness/containment/README.md",
+        "harness/gateway/README.md",
+        "harness/observability/README.md",
+        "harness/workflow/README.md",
+        "harness/linked/README.md",
+        "harness/containment/provenance.json",
+        "harness/gateway/provenance.json",
+        "harness/observability/provenance.json",
+        "harness/workflow/provenance.json",
+        "harness/linked/provenance.json"
+      ]
+    }
+  ],
+  "declined": [],
+  "skipped_plants": [
+    "H1-002",
+    "H1-006"
+  ],
+  "skipped_plants_note": "H1-002 is the planted fabricated-retry claim in xc-correlation-implement's best_practices[4]. H1-006 names that skill's best_practices[5] row (F-part-c-04) alongside contract.invariants[2]; both planted rows have been removed from the skill, and this ceremony's scope is harness/ only, so no skill.json was opened. If the invariants[2] restatement warning survives the plant removal it belongs to a skills ceremony, not this one.",
+  "tests_after": {
+    "containment": "passed 25, failed 0",
+    "gateway": "passed 25, failed 0",
+    "observability": "passed 37, failed 0",
+    "workflow": "passed 23, failed 0 (dry-run: 23 checks pass, swap proven across 2 executors, breakage fails both)",
+    "linked": "passed 32, failed 0 (dry-run: 32 checks pass, 23 conformance checks, swap proof across 4 components, breakage fails both)"
+  },
+  "tests_before": {
+    "containment": "passed 23, failed 0",
+    "gateway": "passed 24, failed 0",
+    "observability": "passed 36, failed 0",
+    "workflow": "passed 19, failed 0",
+    "linked": "passed 31, failed 0"
+  },
+  "test_order": "containment, gateway, observability, workflow, then linked last; every run from a clean out/ directory, exit 0 each. `bash harness/workflow/test.sh --live` still skips cleanly with WORKFLOW_ADDR unset.",
+  "caller_lines": {
+    "containment": 17,
+    "gateway": 13,
+    "observability": 17,
+    "workflow": 21,
+    "linked": 18,
+    "method": "python3 harness/caller_lines.py - non-blank, non-comment lines of call.py below the single `>>> CALLER CODE` marker, up to the module entry guard; bound 40; the same script also fails a call.py that names a file in an adapter's own storage",
+    "before": {
+      "containment": 17,
+      "gateway": 17,
+      "observability": 32,
+      "workflow": "not marked, not measured",
+      "linked": 9,
+      "note": "The old numbers are not comparable with each other or with the new ones: two harnesses counted their presentation code, two excluded it, one had no marker, and two asserted nothing in their gate. containment's 17 and the new 17 coincide; linked's 9 became 18 and observability's 32 became 17 because presentation left the region and the inputs handed to the call entered it, not because a caller writes more or less than before."
+    }
+  },
+  "plan_json_statuses": "unchanged: all five harnesses remain 'dry-run measured, live claimed'. Nothing in this ceremony ran a live adapter.",
+  "not_done": [
+    "flow.py still reads and writes the executor's effect table directly (ex.effects.has/append/orphans, guarded by hasattr) for the keyed_effect commit mode. That is the durable driver, not the caller, and H1-001 names call.py; moving the effect table behind the interface would change what effect_commit_mode means for both executors and is a design change for the durable-execution skill rather than a ceremony fix.",
+    "live mode, every harness: still claimed, per each provenance.json."
+  ]
+}

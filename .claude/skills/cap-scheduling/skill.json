@@ -240,7 +240,7 @@
         "quote": "describes a repeating schedule as a single string"
       },
       {
-        "text": "Proposed: evaluating a rule is a pure function of rule, anchor, time zone and window. It reads no clock, holds no cursor and writes nothing, so an occurrence set is reproducible from its inputs alone and a test vector is a complete specification of a case. agentic-stack states design rule 5 for planning (F-b1-06); this is the same shape of claim applied to recurrence, and it is ours, not PASS.md's.",
+        "text": "Proposed: evaluating a rule is a pure function of rule, anchor, time zone and window. It reads no clock, holds no cursor and writes nothing, so an occurrence set is reproducible from its inputs alone and a test vector is a complete specification of a case. agentic-stack states design rule 5 for planning (F-b1-06); this is the same shape of claim applied to recurrence, and it is ours, not PASS.md's. Research query: has a pure occurrences() function actually been run against the vector corpus in step 4 on both the RFC 5545 adapter and a second, cron-based adapter, and shown to give the same answer, or is purity still an assumption?",
         "origin": "proposed",
         "sources": [
           "F-b1-06",
@@ -265,12 +265,13 @@
       },
       {
         "text": "Proposed, generalising that prior art into our rule: a schedule and a manual trigger are sibling entries declared on the same unit, the schedule as one recurrence string and the trigger as a typed input schema the surface renders, and both produce the same envelope. A re-run button that reaches the unit by another path is a second implementation of entry that will drift.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-entry-composition-044",
           "X-entry-composition-045",
           "T-t1-03"
-        ]
+        ],
+        "quote": "A widely-used system exposes git event, schedule and human trigger as sibling entries under one declaration key."
       },
       {
         "text": "The grammar is chosen for portability rather than expressiveness alone: RRULEs are understood by Google Calendar, Outlook, Apple Calendar and most scheduling software because they are part of the iCalendar standard RFC 5545, so a declared schedule can be read by tools the platform does not own.",
@@ -281,7 +282,7 @@
         "quote": "RRULEs are understood by Google Calendar, Outlook, Apple Calendar and most scheduling software because they are part of the iCalendar standard RFC 5545."
       },
       {
-        "text": "Proposed: the time zone is part of the rule's meaning, not deployment configuration. Two occurrence sets computed from the same rule in different zones legitimately differ, and at a daylight-saving transition a rule evaluated without a declared zone has no defined answer at all, which is exactly where a fixed-interval substitute looks correct and is not.",
+        "text": "Proposed: the time zone is part of the rule's meaning, not deployment configuration. Two occurrence sets computed from the same rule in different zones legitimately differ, and at a daylight-saving transition a rule evaluated without a declared zone has no defined answer at all, which is exactly where a fixed-interval substitute looks correct and is not. Research query: does RFC 5545 itself state that an RRULE without a paired time zone (a 'floating' time, in its terms) is legitimately ambiguous at a DST transition, which would source this row directly instead of by inference from the standard's existence?",
         "origin": "proposed",
         "sources": [
           "F-b3-15"
@@ -308,25 +309,27 @@
     ],
     "not_exposed": [
       {
-        "text": "Proposed: this interface never executes work. It answers when, and hands an envelope to the entry path; anything that runs, retries or checkpoints belongs to the capabilities that own those things. An interface that both decides and executes cannot be swapped for a library.",
+        "text": "Proposed: this interface never executes work. It answers when, and hands an envelope to the entry path; anything that runs, retries or checkpoints belongs to the capabilities that own those things. An interface that both decides and executes cannot be swapped for a library. Research query: does the F-b3-15 adapter-today row's own workflow orchestrator already separate the 'when' decision from execution in its API, which would confirm this split is an existing seam rather than one this skill is drawing fresh?",
         "origin": "proposed",
         "sources": [
           "F-b3-15"
         ]
       },
       {
-        "text": "Proposed: no adapter-shaped handle is exposed. No schedule identifier minted by an orchestrator, no cron string, no scheduler cursor and no paused or unpaused engine state appear in the contract; the declaration and the occurrence set are the whole surface.",
-        "origin": "proposed",
+        "text": "No adapter-shaped handle is exposed. No schedule identifier minted by an orchestrator, no cron string, no scheduler cursor and no paused or unpaused engine state appear in the contract; the declaration and the occurrence set are the whole surface. agentic-stack and cap-errors both state the rule this follows (F-part-c-09).",
+        "origin": "sourced",
         "sources": [
           "F-part-c-09"
-        ]
+        ],
+        "quote": "Products belong in the adapter column only."
       },
       {
-        "text": "Proposed: the criterion a result will be judged against never rides on a schedule declaration or on a fired envelope. agentic-stack states design rule 6 (F-b1-07); the consequence here is only that a recurring unit gets no privileged view of its own grading.",
-        "origin": "proposed",
+        "text": "The criterion a result will be judged against never rides on a schedule declaration or on a fired envelope. agentic-stack states design rule 6 (F-b1-07); the consequence here is only that a recurring unit gets no privileged view of its own grading.",
+        "origin": "sourced",
         "sources": [
           "F-b1-07"
-        ]
+        ],
+        "quote": "An agent sees its outcome, never the criterion it is judged against."
       }
     ]
   },
@@ -345,7 +348,7 @@
       "step": 2,
       "action": "Declare the manual trigger next to it as a typed input schema on the same unit, and let the surface render that schema rather than building a form.",
       "why": "Proposed, generalised from prior art on file where you can optionally specify inputs, which GitHub will present as form elements in the UI. A declared schema gives the human entry the same validation the envelope already gets, and keeps the clock and the person on one unit instead of two.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "X-entry-composition-045",
         "X-entry-composition-044"
@@ -355,7 +358,7 @@
     {
       "step": 3,
       "action": "Implement occurrences and next_after as pure functions and keep every clock read, cursor and store write outside them, in a thin ticker that asks the pure function what is due.",
-      "why": "Proposed separation. Deciding when is testable offline against fixed vectors; doing the work is not. Fusing the two is what makes recurrence untestable and ties it to whatever process happens to be running.",
+      "why": "Proposed separation. Deciding when is testable offline against fixed vectors; doing the work is not. Fusing the two is what makes recurrence untestable and ties it to whatever process happens to be running. Research query: has this repository's own reference adapter over F-b3-15's RFC 5545 parser actually been split into a pure occurrences() and a separate ticker, or does the current adapter still fuse deciding and doing?",
       "origin": "proposed",
       "sources": [
         "F-b3-15"
@@ -364,7 +367,7 @@
     {
       "step": 4,
       "action": "Build the vector corpus before choosing an evaluator, and require it to contain at least a spring-forward transition, a fall-back transition, 29 February in a leap year, and a rule using BYSETPOS.",
-      "why": "Proposed acceptance corpus, from docs/decomposition.md section 3.2 row P14. A fixed-interval substitute passes everything else: the four cases above are precisely the ones where counting seconds and evaluating the rule give different answers, so a corpus without them cannot tell the two apart.",
+      "why": "Proposed acceptance corpus, from docs/decomposition.md section 3.2 row P14. A fixed-interval substitute passes everything else: the four cases above are precisely the ones where counting seconds and evaluating the rule give different answers, so a corpus without them cannot tell the two apart. Research query: does the RFC 5545 conformance guidance name spring-forward, fall-back, 29 February and BYSETPOS as the standard's own recommended edge cases, or is this corpus assembled independently of any published test-vector set?",
       "origin": "proposed",
       "sources": [
         "F-b3-15"
@@ -373,7 +376,7 @@
     {
       "step": 5,
       "action": "Require an explicit time zone on every declaration and refuse a rule that arrives without one; treat UTC as a value someone chose, never as a fallback applied on their behalf.",
-      "why": "Proposed. A missing zone is not a small omission: it is the difference between an occurrence set that is defined at a clock change and one that is not, and a silent default hides the choice at exactly the moment the vectors in step 4 are designed to expose.",
+      "why": "Proposed. A missing zone is not a small omission: it is the difference between an occurrence set that is defined at a clock change and one that is not, and a silent default hides the choice at exactly the moment the vectors in step 4 are designed to expose. Research query: does RFC 5545 require a VTIMEZONE or TZID component on a recurring rule, which would make refusing an unzoned rule a spec-conformance check rather than a policy this skill adds?",
       "origin": "proposed",
       "sources": [
         "F-b3-15"
@@ -416,11 +419,12 @@
       "step": 9,
       "action": "Put one recurrence rule string on the unit, with the instant it counts from and an IANA time zone beside it. Write the zone even when it is UTC.",
       "why": "Proposed usage of the contract this skill states (F-b3-15, X-entry-composition-049): the rule is one string and the zone is part of its meaning. For you the consequence is small - two extra fields - and the job no longer drifts by an hour twice a year.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "F-b3-15",
         "X-entry-composition-049"
-      ]
+      ],
+      "quote": "RFC 5545 RRULE is a portable, single-string schedule declaration usable as a schedule entry point."
     },
     {
       "step": 10,
@@ -455,14 +459,14 @@
       "quote": "RRULEs are understood by Google Calendar, Outlook, Apple Calendar and most scheduling software"
     },
     {
-      "text": "Proposed: a schedule is not a trusted actor. The fired envelope names the schedule as its subject and carries the delegation chain back to the person or service that declared it, so an audit of what a recurring job did never dead-ends at the clock.",
+      "text": "Proposed: a schedule is not a trusted actor. The fired envelope names the schedule as its subject and carries the delegation chain back to the person or service that declared it, so an audit of what a recurring job did never dead-ends at the clock. Research query: does xc-audit-trail or xc-identity-delegation's own skill state this same non-actor rule for a schedule specifically, which this row could cite by name instead of restating the delegation-chain requirement?",
       "origin": "proposed",
       "sources": [
         "T-t2-03"
       ]
     },
     {
-      "text": "Proposed: make catch-up a declared field with three answers (skip, fire once, fire all) rather than a property of whichever evaluator is running. An outage is when the difference between those answers costs money, and that is the worst moment to discover which one an adapter chose.",
+      "text": "Proposed: make catch-up a declared field with three answers (skip, fire once, fire all) rather than a property of whichever evaluator is running. An outage is when the difference between those answers costs money, and that is the worst moment to discover which one an adapter chose. Research query: does the workflow-orchestrator adapter's own scheduling feature on file (X-cap-scheduling-005/006) document a catch-up policy with exactly these three answers, which would source the enum directly instead of this row inventing it?",
       "origin": "proposed",
       "sources": [
         "F-b3-15"

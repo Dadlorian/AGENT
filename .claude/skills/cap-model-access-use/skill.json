@@ -1,0 +1,282 @@
+{
+  "name": "cap-model-access-use",
+  "layer": "cap",
+  "wave": 5,
+  "description": "How to get an answer out of a model: the two things you send, the one thing you read, two worked calls, what a failure looks like, and why you never name a provider. Load it when a human, an agent or an event needs something written, summarised, classified or judged by a model, when you are about to pick a specific model or paste an endpoint into a request, when a job is big enough that overnight and cheap would do, when you want a fallback or a retry loop around a call, or when you are deciding what to do with an answer that came back saying the class you asked for has nowhere to go.",
+  "purpose": {
+    "text": "Make a completion callable with a class and your messages, and readable as one answer: ask for the kind of model the work needs, not for a vendor, and let the platform decide where the call goes and whether it comes back now or overnight.",
+    "origin": "sourced",
+    "sources": ["T-t2-01", "T-t3-01", "T-t6-04", "E-capability-model-access"],
+    "quote": "Composability hides the complexity."
+  },
+  "entities": ["E-capability-model-access"],
+  "contract": {
+    "operations": [
+      {
+        "name": "ask (proposed)",
+        "input": "the model class the work needs and your messages; a deadline and a ceiling if you have them, and nothing else",
+        "output": "one ticket. It normally comes back already redeemed, with the answer and what it cost attached; if you gave a deadline far enough out, it comes back pending and cheap and you collect it later (proposed)",
+        "origin": "proposed",
+        "sources": ["T-t3-01", "T-t6-04"]
+      },
+      {
+        "name": "collect (proposed)",
+        "input": "a ticket",
+        "output": "the same ticket, redeemed, with the answer and the reconciled cost - or not-yet with the earliest time to ask again, or a typed problem. There is no other call, and no separate interface for the slow path (proposed)",
+        "origin": "proposed",
+        "sources": ["T-t2-01"]
+      }
+    ],
+    "shapes": [
+      {
+        "name": "Worked call 1 (proposed): a human's step needs an answer now",
+        "origin": "proposed",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:cap:model-access:example:interactive",
+          "title": "Ask an interactive class, read the answer",
+          "description": "Sent: a class and messages. Returned: a redeemed ticket. You did not name a provider, choose an endpoint, set a temperature or write a retry.",
+          "examples": [
+            {
+              "sent": {
+                "model_class": "i-fast",
+                "messages": [
+                  {"role": "user", "content": "Name the failing component and the fault family in this trace."}
+                ],
+                "idempotency_key": "human-checkout-500s-2026-09-03"
+              },
+              "returned": {
+                "ticket_id": "tkt-8f31c0",
+                "state": "redeemed",
+                "model_class": "i-fast",
+                "cancellable": true,
+                "result": {
+                  "text": "checkout-service; upstream timeout family; repro: pytest tests/test_coupon.py::test_500",
+                  "cost_micros": 15300,
+                  "cost_status": "reconciled",
+                  "model_class": "i-fast"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "Worked call 2 (proposed): a nightly event has ten thousand of them and can wait",
+        "origin": "proposed",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:cap:model-access:example:batch",
+          "title": "The same call, with a deadline",
+          "description": "The only field that changed is the deadline, and the class. The ticket comes back pending and is collected later; cancellable is false because work already submitted may not be stoppable. Nothing else about the call differs.",
+          "examples": [
+            {
+              "sent": {
+                "model_class": "b-deep",
+                "messages": [
+                  {"role": "user", "content": "Count occurrences of this fault family in the retained window."}
+                ],
+                "idempotency_key": "nightly-fault-sweep-2026-09-03",
+                "deadline": "2026-09-04T06:00:00Z"
+              },
+              "returned_from_ask": {
+                "ticket_id": "tkt-2b7d41",
+                "state": "pending",
+                "model_class": "b-deep",
+                "cancellable": false,
+                "earliest_retry": "2026-09-03T23:30:00Z"
+              },
+              "returned_from_collect": {
+                "ticket_id": "tkt-2b7d41",
+                "state": "redeemed",
+                "model_class": "b-deep",
+                "cancellable": false,
+                "result": {
+                  "text": "412 occurrences; 9 distinct services; peak 02:10-02:40Z",
+                  "cost_micros": 15200,
+                  "cost_status": "reconciled",
+                  "model_class": "b-deep"
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "What a failure looks like (proposed): problem details, not prose",
+        "origin": "proposed",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:cap:model-access:example:no-endpoint",
+          "title": "The class you asked for has nowhere to go",
+          "$ref": "urn:agentic:problem:0.1",
+          "description": "A class that cannot be routed is a failure with a type. It is never quietly answered by a different class. Branch on type; read detail only to report it.",
+          "examples": [
+            {
+              "type": "urn:agentic:problem:no-endpoint-for-class",
+              "title": "No endpoint serves this model class",
+              "status": 503,
+              "detail": "no adapter binding declares class b-deep; the request was not sent and no spend was incurred",
+              "retryable": true,
+              "retry_after_s": 120,
+              "correlation_id": "corr-schedule-0001"
+            }
+          ]
+        }
+      }
+    ],
+    "invariants": [
+      {
+        "text": "The three ways in that TARGET T1 lists - a human, an agent, an internal or external event - reach a model through the same call with the same two fields. Which one asked is not a field of the request, so the answer, the cost and the record are the same shape whichever way the work arrived.",
+        "origin": "sourced",
+        "sources": ["T-t1-01", "T-t1-02", "T-t1-03"],
+        "quote": "An internal or external event must be able to enter the system."
+      },
+      {
+        "text": "cap-model-access states that the class prefix is the caller's whole routing vocabulary (T-t6-04). What that means at the call site: you name the kind of model the work needs and never a vendor, a model name, an endpoint or a key - there is no field for any of them, and their absence is what lets the platform move the work without telling you.",
+        "origin": "sourced",
+        "sources": ["T-t6-04"],
+        "quote": "callers request a model class, not a vendor"
+      },
+      {
+        "text": "Proposed: two fields go in and one ticket comes back. There is no separate batch call, no polling loop you write, no fallback list you maintain, and no way to ask which endpoint answered; a deadline, not an adapter name, is how you say the work can wait and be cheap.",
+        "origin": "proposed",
+        "sources": ["T-t3-01", "T-t2-01"]
+      },
+      {
+        "text": "Enhancing one aspect leaves the rest untouched: swapping the gateway, adding a model to a class, changing where a class is routed, or moving a class from the fast path to the cheap one changes nothing in a caller that sends a class and reads a ticket.",
+        "origin": "sourced",
+        "sources": ["T-t2-02"],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
+      },
+      {
+        "text": "Budget, policy, identity, telemetry and provenance are applied around every call and again around every collection, whichever entry point started the work, and there is no field for asking for them or declining them. A call that a ceiling or a policy refuses is refused before any spend, not after.",
+        "origin": "sourced",
+        "sources": ["T-t2-03", "F-b4-01"],
+        "quote": "State, telemetry, and every cross-cutting concern are managed across the entire structure, whichever entry point was used."
+      },
+      {
+        "text": "A failure arrives as a typed problem object, governed by the problem-details standard cap-errors adopts, and never as prose to interpret. Branch on its type: a class with nowhere to go, a ceiling exhausted and a cancel that could not be honoured are three different outcomes, and only one of them is worth retrying.",
+        "origin": "sourced",
+        "sources": ["F-b4-07", "F-b3-13"],
+        "quote": "RFC 9457 problem details"
+      },
+      {
+        "text": "Proposed: the idempotency key is yours and it is the whole of your replay safety. The same key means the same call; a different key means a second call that will be answered, and paid for, again.",
+        "origin": "proposed",
+        "sources": ["F-b4-08"]
+      }
+    ]
+  },
+  "instructions": [
+    {
+      "step": 1,
+      "action": "Send the class the work needs and your messages, plus an idempotency key you can reproduce. Take every default. Do not send a model name, a provider, an endpoint, a temperature or an adapter.",
+      "why": "It has to be simple to use, and every field you fill in is a decision you now own; which endpoint can serve a class is a fact the platform has and you do not.",
+      "origin": "sourced",
+      "sources": ["T-t3-01"],
+      "quote": "It has to be simple to use."
+    },
+    {
+      "step": 2,
+      "action": "Pick the class by what the work is worth, not by what you have heard is good: a free local class for bulk and smoke checks, an interactive class when someone is waiting, a batch class when nothing is, a coding-CLI class when the job is to change a repository.",
+      "why": "cap-model-access states that the prefix carries the contract (T-t6-04). What this adds for a caller: the class is the only lever you have, so it is the lever that should carry your cost-versus-latency decision rather than a model name that will be stale next month.",
+      "origin": "sourced",
+      "sources": ["T-t6-04", "F-a4-01"],
+      "quote": "Prefix carries the contract."
+    },
+    {
+      "step": 3,
+      "action": "If the answer is not needed now, say so with a deadline and let the ticket come back pending. Do not write your own overnight queue, and do not send a batch of one to a fast class because waiting felt complicated.",
+      "why": "Proposed. The deadline is the whole of the cheap path's interface; a queue you build yourself has to solve claim, expiry, cost reconciliation and restart, which is the work this boundary already did.",
+      "origin": "proposed",
+      "sources": ["T-t2-01"]
+    },
+    {
+      "step": 4,
+      "action": "Read the answer and the cost off the ticket. Do not branch on which endpoint answered, how long it took, or whether the ticket came back redeemed or pending - collect handles both.",
+      "why": "Proposed. Those are the fields that will break on the next routing change; the class you asked for and the answer you got are the ones that will not.",
+      "origin": "proposed",
+      "sources": ["T-t2-02"]
+    },
+    {
+      "step": 5,
+      "action": "Read a failure as a problem object: branch on type, use retryable and retry_after_s as given, and never parse the words. Treat a class with no endpoint as a stop, not as an invitation to ask a different class.",
+      "why": "cap-model-access requires this boundary to return the typed problem object cap-errors defines (F-b4-07); what this adds for a caller is that silently retrying a cheap class on an expensive one is the one recovery that both works and quietly multiplies the bill.",
+      "origin": "sourced",
+      "sources": ["F-b4-07"],
+      "quote": "Typed and machine-readable. Never parsed from prose"
+    },
+    {
+      "step": 6,
+      "action": "Compose upward, not inward: one completion is a step of something larger. Several calls in sequence, a loop that retries with a better class, a judge over the answer and a whole workflow are built above this call rather than by adding fields to it.",
+      "why": "Any entry can call complex workflows, agents and loops that run across the entire stack, so the complexity belongs to the composition and this call stays the same size however large the thing above it gets.",
+      "origin": "sourced",
+      "sources": ["T-t6-03"],
+      "quote": "Any entry can call complex workflows, agents, and loops that run across the entire stack."
+    },
+    {
+      "step": 7,
+      "action": "If this page starts to feel like something you must study before calling, stop and cut it rather than adding to it: the caller-facing surface is a class, some messages, a key, and a ticket.",
+      "why": "It cannot be daunting or overly complex, or no one will use it - which makes size a property of the interface to defend, not a documentation problem to solve later.",
+      "origin": "sourced",
+      "sources": ["T-t3-02"],
+      "quote": "It cannot be daunting or overly complex, or no one will use it."
+    }
+  ],
+  "best_practices": [
+    {
+      "text": "Reuse one correlation id across the ask and the collect, including a collection that happens hours later, so a submission and its answer are one thing in the record rather than two unrelated calls.",
+      "origin": "sourced",
+      "sources": ["T-t2-03"],
+      "quote": "managed across the entire structure, whichever entry point was used"
+    },
+    {
+      "text": "Proposed: give the ceiling you actually mean, per call, rather than leaving it to a default. The ceiling is the only thing standing between a loop with a bad exit condition and a bill, and it is one integer.",
+      "origin": "proposed",
+      "sources": ["F-b4-02"]
+    },
+    {
+      "text": "Proposed: keep a pending ticket. It is the receipt for work already paid for at submission, and discarding it because the process restarted means asking for the same answer twice and paying twice.",
+      "origin": "proposed",
+      "sources": ["F-b4-08"]
+    },
+    {
+      "text": "cap-model-access already states that model selection is a decision layer of its own. What it adds for a caller: when a class keeps giving answers that are too weak or too expensive, the fix is a routing change behind the interface, not a special case in your code that names a better model.",
+      "origin": "sourced",
+      "sources": ["X-end-to-end-056"],
+      "quote": "selecting which model should handle a given query"
+    }
+  ],
+  "definition_of_done": {
+    "criterion": "`python3 tools/render_skill.py .claude/skills/cap-model-access-use && python3 tools/validate_skills.py --only cap-model-access-use`. This skill has no Adapters section, so the validator's product-purity check covers the whole page: it proves that nothing a caller reads here - the two operations, the two worked calls, the failure - names the gateway or the provider that actually answers, which is the promise this facet makes.",
+    "expected": "`rendered cap-model-access-use/SKILL.md` then `cap-model-access-use: 0 errors, 0 warnings`, exit 0.",
+    "breakage": "In the second worked call, replace the value of the returned answer text with the name of the model gateway PASS.md B3 names in the Model access adapter column, re-render, and re-run the validator.",
+    "expected_failure": "exit 1 with `cap-model-access-use: product name(s) ['<the B3 gateway name>'] outside Adapters, in section 'Contract'` and a closing `cap-model-access-use: 1 errors, 0 warnings`. Measured in session cap-model-access 2831cb4f on 2026-09-03: the breakage produced exactly that line with the gateway's name in the list, and exit 1; restoring the file returned 0 errors, 0 warnings and exit 0.",
+    "status": "measured",
+    "sources": ["F-part-c-09", "T-t2-01"],
+    "quote": "Products belong in the adapter column only"
+  },
+  "composes_with": {
+    "builds_on": ["cap-model-access", "cap-model-access-implement"],
+    "used_by": []
+  },
+  "open_questions": [
+    {
+      "question": "Should a caller ever be able to pin a specific model inside a class, for a reproduction or a comparison?",
+      "evidence": "Count the cases where someone genuinely needs the same member twice rather than the same class twice. If they are all evaluations and regressions, they belong to a comparison harness that names members deliberately, not to the call every step makes.",
+      "default": "No pinning field. The class is the whole vocabulary, and a comparison harness can hold its own binding; adding the field would let every caller pin, and the interface would be a vendor list again within a quarter.",
+      "sources": ["T-t3-02", "T-t6-04"],
+      "quote": "It cannot be daunting or overly complex"
+    }
+  ],
+  "provenance": {
+    "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+    "kb_heads": {
+      "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+      "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6"
+    },
+    "author": "session cap-model-access 2831cb4f, 2026-09-03"
+  }
+}

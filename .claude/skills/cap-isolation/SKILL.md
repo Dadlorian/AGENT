@@ -1,0 +1,234 @@
+---
+name: cap-isolation
+description: The ideal state of the Isolation capability: one unit of work runs with declared resources and declared egress, governed by the OCI Runtime Spec, with the operations the core imports, the declaration and containment-report shapes, what the boundary refuses to expose, and the criteria that decide whether a containment technology may serve the interface. Load it when deciding how a unit of work is contained, when a request field describes a machine instead of a resource declaration, when asking 'can this run somewhere we do not own hardware', 'what stops this unit reaching the network', or 'where does the real credential live', when a sandbox is about to be coupled to whatever runs inside it, and whenever containment is about to be trusted because the unit reported it rather than because something outside the unit asserted it.
+---
+
+# cap-isolation
+
+Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Source IDs resolve with `python3 tools/kb.py show <id>`.
+
+## Purpose
+
+| Statement | Origin | Evidence |
+|---|---|---|
+| Fix one contract for running a unit of work under declared resources and declared egress, so that what runs inside is opaque to how it is contained and the containment technology is an adapter rather than the architecture. | sourced | `F-b3-02`, `F-b3-18`, `E-capability-isolation` "a unit of work runs isolated, per the OCI Runtime Spec" |
+
+## Entities
+
+| Entity |
+|---|
+| `E-capability-isolation` |
+| `E-standard-oci-runtime-spec` |
+| `E-sandbox-property-isolation` |
+| `E-swap-candidate-hosted-sandbox-services` |
+
+## Contract
+
+### Standards
+
+| Standard | Version | Version status | URL | Sources |
+|---|---|---|---|---|
+| `E-standard-oci-runtime-spec` | v1.2 or later; version unverified. Two search-only records describe the standard as the configuration interface for low-level container runtimes and report a v1.3.0 release, but the specification itself was not fetched from this environment. | unverified | - | `F-b3-02`, `X-cap-isolation-001`, `X-cap-isolation-002` |
+
+### Operations
+
+| Operation | Input | Output | Origin | Evidence |
+|---|---|---|---|---|
+| admit (proposed operation set; PASS.md names the standard for this capability, not the calls) | one isolation declaration: a named resource profile, an egress policy that is none unless an allowlist is given, and a credential mode of broker-only | an admission handle, or the typed problem isolation-unavailable when no adapter can honour the declaration. Admission is where a declaration a given adapter cannot meet is refused, rather than being silently downgraded (proposed) | proposed | `F-a3-04` |
+| run (proposed) | an admission handle and a handle to the input document; never a filesystem path, an image reference the caller resolved, or a machine description | one unit result: exit status, output digests, resource usage and egress counters. Nothing in it identifies the containment technology (proposed) | proposed | `F-b3-18` |
+| terminate (proposed) | an admission handle and a grace window | the unit destroyed, with the same result shape whether the stop was requested or forced. This is the operation every ceiling above the unit depends on (proposed) | proposed | `F-b4-02` |
+| inspect_containment (proposed) | an admission handle | a containment report asserted from outside the unit: the jail directory's mode, whether the owning identity exists in the host account database, and egress attempts made against attempts blocked. The unit never reports on its own containment (proposed) | proposed | `F-a3-06` |
+
+### Shapes (JSON Schema 2020-12)
+
+**isolation-declaration (proposed summary shape; the full schema, the profile rules and the containment-report fields are in references/isolation-shapes.md)** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:isolation:declaration:0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "profile",
+    "egress"
+  ],
+  "description": "Proposed. Everything a caller may say about containment. There is no field here that only a hardware-virtualised adapter could honour, which is the property that makes the declaration portable.",
+  "properties": {
+    "profile": {
+      "type": "string",
+      "minLength": 1,
+      "description": "A named resource envelope resolved by the adapter. A name, never a set of numbers: megabytes and vCPU counts are a machine description."
+    },
+    "egress": {
+      "enum": [
+        "none",
+        "allowlist"
+      ],
+      "default": "none",
+      "description": "Off unless the caller asks for it, and then only to named destinations."
+    },
+    "egress_allowlist": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Required when egress is allowlist. An empty or absent list with egress=allowlist is a malformed declaration, not an open unit."
+    },
+    "credentials": {
+      "const": "broker_only",
+      "default": "broker_only",
+      "description": "A const, not an enum. No real secret enters the unit; it reaches a broker that holds the key."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "egress": {
+            "const": "allowlist"
+          }
+        },
+        "required": [
+          "egress"
+        ]
+      },
+      "then": {
+        "required": [
+          "egress_allowlist"
+        ]
+      }
+    }
+  ]
+}
+```
+
+**containment-report (proposed summary shape; asserted from outside the unit)** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:isolation:containment-report:0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "jail_mode",
+    "owner_in_host_passwd",
+    "egress_attempts_made",
+    "egress_attempts_blocked"
+  ],
+  "description": "Proposed. Every field is observed by the host about the unit. Nothing here is taken from anything the unit said about itself.",
+  "properties": {
+    "jail_mode": {
+      "type": "string",
+      "pattern": "^0[0-7]{3}$",
+      "description": "Octal mode of the unit's own directory on the host."
+    },
+    "owner_in_host_passwd": {
+      "type": "boolean",
+      "description": "False is the passing value: the owning identity has no entry in the host account database."
+    },
+    "egress_attempts_made": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "egress_attempts_blocked": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Equal to egress_attempts_made when the declaration named no destinations. A suite where attempts_made is 0 asserted nothing."
+    },
+    "secrets_seen_inside": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 0
+    }
+  }
+}
+```
+
+### Invariants
+
+| Invariant | Origin | Evidence |
+|---|---|---|
+| The capability is the contract and the containment technology is the adapter: what the core imports is that a unit of work runs isolated, per the OCI Runtime Spec, and what satisfies it today is one adapter among several. | sourced | `F-b3-18`, `F-b3-02`, `E-capability-isolation` "a unit of work runs isolated, per the OCI Runtime Spec" |
+| Proposed: a unit is expressed as declared resources and declared egress, never as a machine configuration. A field that only a hardware-virtualised adapter could honour - boot arguments, a block-device layout, a guest kernel - is an adapter detail that has leaked into the contract, and its presence is what design rule 3 (F-b1-04, stated by build-adapter-pair) exists to expose. | proposed | `F-b1-04`, `F-b3-18` |
+| Proposed: what runs inside the unit is opaque to how the unit is contained. The interface takes a document handle and a declaration, never an agent, a runtime or a tool surface, because a containment boundary coupled to one kind of payload is a sandbox that can only ever run that payload. | proposed | `F-b3-18` |
+| Egress is off by default and named when it is on. The substrate already carries this instinct: the guest has no network and egress is a flag, default off (recorded claimed). | sourced | `F-a3-04` "Egress is a flag, default off" |
+| No real secret enters the unit. On the substrate the guest holds a dummy key and model egress leaves through a host broker that holds the real key and picks the endpoint (both recorded claimed); the interface keeps that as the credential mode rather than as a property of one sandbox. | sourced | `F-a3-05`, `F-a3-07` "No real secret inside the VM" |
+| Containment is asserted from outside the unit. The one containment property the substrate records as verified live is the jail directory's mode and the fact that its owning identity has no entry in the host account database - an observation the host makes about the unit, not a statement the unit makes about itself. | sourced | `F-a3-06` "owned by a per-VM uid with no passwd entry — verified live" |
+| The boundary must be able to destroy a unit on request, because that is what makes every ceiling above it enforceable: exceeding a budget terminates the unit, not the platform. An adapter that cannot be made to stop cannot serve this interface at any profile. | sourced | `F-b4-02` "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform" |
+| Proposed: every statement in this skill about how a unit behaves under containment is claimed except the jail row, which the knowledge base records as verified live. Nothing in this capability has been run in this repository. | proposed | `F-a3-06` |
+
+### Deliberately not exposed
+
+| Item | Origin | Evidence |
+|---|---|---|
+| Proposed: machine configuration in every form - guest kernel and its boot arguments, block-device or root-filesystem layout, host paths, hypervisor control sockets, vCPU and megabyte counts. A caller able to set one of these has bound the platform to hardware virtualisation and made the second adapter unbuildable. | proposed | `F-b3-18` |
+| Which containment technology serves the unit, and at what version. agentic-stack already states that products belong in the adapter column only (F-part-c-09); the consequence here is that neither the declaration nor the unit result carries anything a caller could branch on to learn what contained it. | sourced | `F-part-c-09` "Products belong in the adapter column only" |
+| The real credential. The unit is given a broker to reach, and the broker holds the real key and picks the endpoint; the key itself is never a field of anything that crosses into the unit. | sourced | `F-a3-07`, `F-a3-05` "which holds the real key and picks the endpoint" |
+
+## Instructions
+
+| Step | Action | Why | Origin | Evidence |
+|---|---|---|---|---|
+| 1 | State the boundary as a capability plus its standard before any containment technology is named: 'a unit of work runs isolated, per the OCI Runtime Spec, version unverified'. Read this row as the table's own template row. | PASS.md names this row the template for the whole table: the architecture is the sentence about the capability, and what satisfies it today is an adapter. Getting that split wrong here gets it wrong everywhere else, because every other capability row is read against this one. | sourced | `F-b3-18`, `F-b3-02` "Read the Isolation row as the template for the whole table" |
+| 2 | Express the unit as declared resources and declared egress. Before adding any field, ask whether an adapter with no kernel, no filesystem unless one is granted and no network stack could honour it; if it could not, the field is adapter detail and does not go in. | Proposed. This is the one test that keeps the contract portable: a declaration is something several execution models can satisfy, while a machine description is something only one can, and the difference is invisible until the second adapter is attempted. | proposed | `F-b1-04`, `F-b3-18` |
+| 3 | Set the two safe defaults at the boundary rather than in a profile: egress is none unless an allowlist is supplied, and the credential mode is broker-only. Make egress=allowlist with no allowlist a malformed declaration. | Both defaults already hold on the substrate - the guest network is none with egress a flag defaulting off, and the guest credential is a dummy key - and both translate to any adapter unchanged, which is why they belong to the interface rather than to one sandbox. | sourced | `F-a3-04`, `F-a3-05` "**None.** Egress is a flag, default off" |
+| 4 | Assert containment from outside the unit: the jail directory's mode, whether its owning identity exists in the host account database, and the egress attempts made against the attempts blocked. Never accept a containment claim the unit made about itself. | The only containment property recorded as verified live is exactly of this kind, an observation the host makes about the unit; a self-report is a statement by the thing whose containment is in question. | sourced | `F-a3-06` "owned by a per-VM uid with no passwd entry" |
+| 5 | Record the standard's version as unverified until the published specification has been read in an environment that can fetch it. The records naming a released version are search-only. | A version number nobody read is a fabrication with a decimal point in it, and every record on file for this standard is a search result rather than the specification text. | sourced | `X-cap-isolation-002`, `F-part-c-10` "The OCI Runtime Spec v1.3.0 was released on November 4, 2025" |
+| 6 | Choose the second adapter on execution model, not on brand: one whose unit of resource granted is a set of capabilities rather than a machine, and whose start and teardown cost differs by orders of magnitude. Record the pair on those axes. | build-adapter-pair already states that swappability is a tested property and that the second adapter exists to prove the first is not load-bearing (F-b1-04). What this adds here is which axes count for containment: a second technology that still boots a kernel and exposes a filesystem leaves every machine-shaped field in the contract untested. | sourced | `F-b1-04`, `F-b3-18` "needs to run somewhere we do not own hardware" |
+| 7 | Return failures as the typed problem object cap-errors defines. When no adapter can admit a declaration, return the isolation-unavailable type as retryable rather than downgrading the declaration to one that fits. | cap-errors already owns the failure shape (F-b4-07). What this adds is the specific temptation at this boundary: a silent downgrade turns a refusal into a unit that ran with weaker containment than was asked for, and nothing in the result would say so. | sourced | `F-b4-07` "Typed and machine-readable. Never parsed from prose" |
+| 8 | Judge a candidate containment technology by the criterion in this skill's definition of done, run from one suite over both adapters, before deciding it may serve the interface. | agentic-stack and build-definition-of-done already state that a criterion nothing can fail is not a criterion (F-part-c-04). What this adds: for containment the criterion has to count blocked egress attempts against attempted ones, because a suite that never tries to leave the unit passes identically against a sandbox with no containment at all. | sourced | `F-part-c-04`, `F-b1-04` "A criterion nothing can fail is not a criterion" |
+| 9 | Proposed: open references/isolation-shapes.md when implementing or reviewing the full declaration schema, the profile resolution rules or the containment-report fields. The body of this skill is enough to judge a candidate technology and to call the capability without it. | Proposed: the full schemas exceed the progressive-disclosure budget for a skill body, and a reader deciding whether a boundary is drawn correctly does not need them. | proposed | - |
+
+## Best practices
+
+| Practice | Origin | Evidence |
+|---|---|---|
+| agentic-stack already states the configuration finding (F-a7-04), and build-adapter-pair applies it to adapter selection. What it adds here: read the containment actually in effect out of the running unit's report, never out of the profile that was requested, because a profile that was silently widened validates and reviews exactly like one that took effect. | sourced | `F-a7-04` "Values written to YAML validated, reviewed correctly, and had no runtime effect" |
+| agentic-stack already states the green-gate finding (F-a7-03). What it adds here: a unit that exits 0 proves the unit ran, not that it was contained, so containment needs assertions of its own that fail when containment is absent. | sourced | `F-a7-03` "Those establish well-formedness, not correctness" |
+| Proposed: keep the resource profile a name that the adapter resolves, not a set of numbers the caller chose. The moment a caller writes megabytes and vCPU counts it has described a machine, and the profile stops being something a capability-granting adapter can interpret at all. | proposed | `F-b3-18` |
+| Proposed: keep the claimed and the verified apart in this capability specifically. One containment row on the substrate is recorded as verified live and the rest of that sandbox is recorded claimed, so a conformance suite that only re-asserts the verified row adds nothing and a design that treats the claimed rows as measured is overstating what is known. | proposed | `F-a3-06`, `F-a3-04` |
+
+## Adapters
+
+| Adapter | Role | Maps to | Cannot | Swap procedure | Status | Evidence |
+|---|---|---|---|---|---|---|
+| `E-adapter-firecracker-microvm` | today | admit, run, terminate and inspect_containment served by a Firecracker microVM: hardware virtualisation rather than a container, with a jail directory at mode 0700 owned by a per-VM uid that has no passwd entry, no guest network unless egress is switched on, and a dummy key inside the guest while a host broker holds the real one. | Proposed: cannot start without booting a guest kernel from a block-device root, so its start and teardown cost is a floor no profile can lower, and its unit of resource granted is a machine rather than a capability set. Anything expressed as kernel or device configuration is unavailable to any adapter that is not a virtual machine. | Select the adapter by configuration, submit the same isolation declaration, and run the containment conformance suite over both adapters. No core change is expected, because the core imports the declaration and not the machine. | claimed | `F-b3-02`, `F-a3-01`, `F-a3-06` "OCI Runtime Spec \| Firecracker microVM" |
+| `E-swap-candidate-hosted-sandbox-services` | second | the same declaration served by a WebAssembly component sandbox run through an OCI-conformant shim: no guest kernel, no filesystem unless one is granted, no network stack at all, and a syscall surface that is capability-granted rather than filtered. | Proposed: cannot honour anything shaped like a machine - no boot arguments, no block device, no guest network interface to give or withhold - and cannot claim hardware-level isolation the way a virtual machine does. Its declared gap is that it refuses machine-shaped fields rather than emulating them. | Proposed: the axes that must differ are unit_of_resource_granted (a virtual machine with a kernel and a root filesystem, versus a set of granted capabilities with neither) and start_and_teardown_cost (a guest boot, versus a module instantiation). Select by configuration with no code edit between runs and compare both containment reports against the same declaration. The entity recorded here is the class-shaped swap candidate on PASS.md's Isolation row, because the knowledge base carries no entity for a component sandbox; the open question below records that choice. | claimed | `F-b3-02`, `F-b1-04`, `X-cap-isolation-004` "hosted sandbox services" |
+
+## Definition of done
+
+| Field | Value |
+|---|---|
+| Criterion | Proposed tool, built with the first implementation of this interface: `python3 tools/conformance_isolation.py --adapter today --adapter second --fixture fixtures/unit-egress-probe --report out/isolation-conformance.json`. It runs one fixture unit under both adapters from the same declaration (profile `small`, `egress: "none"`) and asserts: exit codes equal across adapters, output digests equal, `jail_mode == "0700"` with `owner_in_host_passwd == false`, a connect attempt from inside to an address outside the declared allowlist fails, `egress_attempts_blocked == egress_attempts_made`, `egress_attempts_made > 0`, and `adapters_run >= 2`. |
+| Expected | exit 0 and one line per adapter of the form `adapter=<entity> exit=0 digest=<equal across adapters> jail_mode=0700 owner_in_host_passwd=false egress_attempts_made=<above 0> egress_attempts_blocked=<equal to made>`, followed by `adapters_run=2`. |
+| Deliberate breakage | Add `0.0.0.0/0` to the default `egress_allowlist` and change nothing else, then re-run both adapters. |
+| Expected failure | The probe's connect attempts now succeed, so `egress_attempts_blocked` drops below `egress_attempts_made` under both adapters, the equality assertion fails for each, and the run exits non-zero naming both adapters. The jail and digest assertions still pass, which is the point: a green run on those alone would have said nothing about egress. |
+| Status | claimed |
+| Evidence | `F-part-c-04`, `F-a3-04`, `F-a3-06` "Egress is a flag, default off" |
+
+## Composes with
+
+Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `cap-errors`
+
+Used by: `cap-isolation-implement`, `cap-isolation-use`, `compose-agent`, `seam-dispatch`, `xc-tenancy`
+
+## Open questions
+
+| Question | Deciding evidence | Default until then | Evidence |
+|---|---|---|---|
+| Can a component-sandbox adapter honestly claim OCI Runtime Spec conformance, or only a documented subset of it? | Run the standard's own runtime validation suite against both adapters and record which assertions the shim cannot satisfy. If the failing set is small and unrelated to what the platform actually uses, a documented subset is the honest answer. | Declare the interface OCI-shaped with a written conformance subset, and label every conformance claim claimed until that suite has run. Overclaiming conformance is worse than documenting a subset. | `F-b3-02`, `X-cap-isolation-001` "The OCI Runtime Spec defines the behavior and the configuration interface of low-level container runtimes" |
+| The knowledge base has no entity for a component sandbox, so which entity should the second adapter be recorded against? | 1-3-1 applied (TARGET T5): the three options were to mint a new entity, to record it against the class-shaped swap candidate already on the Isolation row, or to name one of the three product swap candidates on that row. Minting would be inventing a record; each of the three products still boots or emulates a kernel and exposes a filesystem, so a pair built on one of them differs on no execution-model axis that matters here. Recommendation taken: record it against the class and describe the execution model in the adapter row. | The second adapter is entered as the class-shaped swap candidate with a row saying it grants capabilities rather than a machine. Revisit if an entity for a component sandbox is ever derived from a source. | `T-t5-02`, `F-b3-02` "identify the three best possible solutions that align to the goal" |
+| Who resolves the isolation declaration when the caller never writes one? The end-to-end consumption example's entry envelope carries no isolation field at all, while the first-cut dispatch request in docs/decomposition.md requires one. | Trace one entry of each kind through to a unit and record where the declaration is filled in. If every path fills it from the agent profile and the policy in force, the caller-facing field is dead weight and should not exist. | The declaration is resolved below the entry envelope, from the agent's profile and the policy in force, and no entry kind carries an isolation field. This is the reading that keeps the caller-facing surface small; it is recorded here as a disagreement with the dispatch request shape rather than settled. | `T-t3-02` "daunting or overly complex, or no one will use it" |
+
+## Provenance
+
+| Field | Value |
+|---|---|
+| PASS.md sha256 | cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96 |
+| kb facts head | 9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e |
+| kb entities head | 747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604 |
+| kb edges head | a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6 |
+| Author | session cap-isolation 2831cb4f, 2026-09-03 |

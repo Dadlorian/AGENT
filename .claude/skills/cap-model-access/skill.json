@@ -1,0 +1,367 @@
+{
+  "name": "cap-model-access",
+  "layer": "cap",
+  "wave": 3,
+  "description": "The ideal state of the Model access capability: one contract for obtaining a completion from a class of model, with no vendor named by the caller and no way to tell whether the answer came back in a second or overnight. Load it when deciding how a step reaches a language model, when a request object is about to grow a vendor name, an endpoint, a member model or a sampling knob, when someone asks which model a step should use, how to run work cheaply overnight, or whether the gateway can be replaced, when routing rules or fallbacks are being written, and whenever an inference boundary is being shaped around whichever gateway happens to be installed.",
+  "purpose": {
+    "text": "Fix one contract for obtaining a completion from a class of model rather than from a named vendor, so what the core imports is the completions interface and the standard that governs it, while the gateway serving it stays an adapter that can be replaced.",
+    "origin": "sourced",
+    "sources": ["F-b3-03", "F-a4-01", "F-b3-01", "E-capability-model-access"],
+    "quote": "Prefix carries the contract."
+  },
+  "entities": [
+    "E-capability-model-access",
+    "E-standard-openai-compatible-completions",
+    "E-adapter-litellm",
+    "E-swap-candidate-direct-provider-sdks"
+  ],
+  "contract": {
+    "standards": [
+      {
+        "entity": "E-standard-openai-compatible-completions",
+        "version": "unverified",
+        "version_status": "unverified",
+        "url": null,
+        "sources": ["F-b3-03", "X-cap-model-access-001", "X-cap-model-access-002"]
+      }
+    ],
+    "operations": [
+      {
+        "name": "route (proposed operation set; PASS.md gives this capability a row and a standard, not a list of calls)",
+        "input": "the requested model class, the unit of work, the budget remaining for that unit, and the policy verdict already reached for it",
+        "output": "one endpoint selection and the reason for it. Proposed: it is a pure function evaluated before any adapter is called, so a routing rule can be tested with no model running and no spend (proposed)",
+        "origin": "proposed",
+        "sources": ["X-end-to-end-056", "X-end-to-end-058", "F-b4-02"]
+      },
+      {
+        "name": "submit (proposed)",
+        "input": "a completion request naming a model class, the messages, the caller's idempotency key, and the ceiling for the call",
+        "output": "a claim ticket. Proposed: a synchronous adapter returns one already redeemed with the result attached and a batch adapter returns one to be claimed later, so 'get me a completion' and 'get me a completion eventually and cheaply' are the same call (proposed)",
+        "origin": "proposed",
+        "sources": ["F-a4-01", "F-b4-08"]
+      },
+      {
+        "name": "claim (proposed)",
+        "input": "a claim ticket",
+        "output": "the completion result, or not-yet with the earliest time to ask again, or a typed problem. Proposed: the result validates against one result schema whichever adapter answered, and carries the cost actually incurred so a spend committed at submission can be reconciled here (proposed)",
+        "origin": "proposed",
+        "sources": ["F-b4-07", "F-b4-02"]
+      },
+      {
+        "name": "cancel (proposed)",
+        "input": "a claim ticket",
+        "output": "an acknowledgement that says which of two things happened: the work stopped, or the request to stop was merely recorded. Proposed: submitted work may not be stoppable and its cost may still be owed, so the caller is told which, rather than being promised a stop the adapter cannot make (proposed)",
+        "origin": "proposed",
+        "sources": ["F-b4-02"]
+      }
+    ],
+    "shapes": [
+      {
+        "name": "completion-request (proposed summary shape; the full schemas and the worked routing table are in references/model-access-shapes.md)",
+        "origin": "proposed",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:cap:model-access:completion-request:0.1",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["model_class", "messages", "idempotency_key", "ceiling_micros"],
+          "description": "Proposed. The whole caller vocabulary. There is no vendor, no member model, no endpoint and no field naming which adapter should answer.",
+          "properties": {
+            "model_class": {
+              "type": "string",
+              "pattern": "^(f|i|b|cli)-[a-z0-9-]*$",
+              "description": "Routing class by prefix, matching the agent profile shape in examples/end-to-end. A bare prefix pins the class and leaves the member to routing."
+            },
+            "messages": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": ["role", "content"],
+                "properties": {
+                  "role": {"enum": ["system", "user", "assistant", "tool"]},
+                  "content": {"type": "string"}
+                }
+              }
+            },
+            "idempotency_key": {"type": "string", "minLength": 1},
+            "ceiling_micros": {"type": "integer", "minimum": 0},
+            "max_output_tokens": {"type": "integer", "minimum": 1},
+            "deadline": {
+              "type": "string",
+              "format": "date-time",
+              "description": "How much lateness the caller will accept. This, and not an adapter name, is what makes a request eligible for the cheap slow path."
+            }
+          }
+        }
+      },
+      {
+        "name": "claim-ticket (proposed summary shape)",
+        "origin": "proposed",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:cap:model-access:claim-ticket:0.1",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ticket_id", "state", "model_class"],
+          "description": "Proposed. What submit always returns. state is redeemed on the synchronous path and pending on the batch path; the caller reads the same two fields either way.",
+          "properties": {
+            "ticket_id": {"type": "string", "minLength": 1},
+            "state": {"enum": ["pending", "redeemed", "failed", "cancelled"]},
+            "model_class": {"type": "string"},
+            "result": {
+              "type": "object",
+              "description": "Present when state is redeemed. One result schema for every adapter.",
+              "required": ["text", "cost_micros"],
+              "properties": {
+                "text": {"type": "string"},
+                "cost_micros": {"type": "integer", "minimum": 0},
+                "tokens_in": {"type": "integer", "minimum": 0},
+                "tokens_out": {"type": "integer", "minimum": 0},
+                "cost_status": {"enum": ["committed", "reconciled"]}
+              }
+            },
+            "earliest_retry": {"type": "string", "format": "date-time"},
+            "cancellable": {
+              "type": "boolean",
+              "description": "Whether a cancel on this ticket can stop the work, or can only record that a stop was asked for."
+            },
+            "problem": {"$ref": "urn:agentic:problem:0.1"}
+          }
+        }
+      }
+    ],
+    "invariants": [
+      {
+        "text": "agentic-stack already states that a caller requests a class and never a vendor (F-a4-01). Its consequence for this interface: the class prefix is the entire routing vocabulary a caller has, so a request field that names a vendor, a member model or an endpoint is not an extension of the contract but a hole in it.",
+        "origin": "sourced",
+        "sources": ["F-a4-01", "T-t6-04"],
+        "quote": "Prefix carries the contract."
+      },
+      {
+        "text": "The governing standard is the de facto completions shape named in this capability's row, adopted whole rather than remodelled. Every record on file for it is a search result rather than a page that was read, so its version is recorded as unverified and no version string is asserted.",
+        "origin": "sourced",
+        "sources": ["F-b3-03", "F-b1-03", "X-cap-model-access-002", "E-standard-openai-compatible-completions"],
+        "quote": "adopt it whole rather than modelling our own shape"
+      },
+      {
+        "text": "Proposed: every completion is a future with a claim ticket. Submit always returns a ticket; a synchronous adapter returns one already redeemed. Two calls, one for fast answers and one for cheap ones, would be two interfaces wearing one name and would let the caller learn which adapter answered.",
+        "origin": "proposed",
+        "sources": ["F-b3-03"]
+      },
+      {
+        "text": "Proposed: routing is a pure function from class, unit of work, budget remaining and policy verdict to an endpoint selection, evaluated before the adapter is called. Routing inside the adapter can only be tested by spending money on a live model; routing in front of it can be tested from a table.",
+        "origin": "proposed",
+        "sources": ["X-end-to-end-056", "X-end-to-end-058"]
+      },
+      {
+        "text": "Proposed: nothing in this interface branches on a vendor's name. The failure this rule exists to prevent has already happened on this substrate, where the standard's own batch route branches on three provider names and refuses a fourth, so batch work runs past that route instead of through it (claimed, per PASS.md A4).",
+        "origin": "proposed",
+        "sources": ["F-a4-08"]
+      },
+      {
+        "text": "Every unit of work carries a ceiling, and this is the boundary where the ceiling is spent. Proposed consequence for a slow path: spend is committed when work is submitted and the true figure arrives when the ticket is claimed, so the interface carries both a committed and a reconciled cost rather than assuming the two coincide.",
+        "origin": "sourced",
+        "sources": ["F-b4-02"],
+        "quote": "Every unit of work carries a ceiling"
+      },
+      {
+        "text": "cap-errors owns the failure shape (F-b4-07). What this boundary adds: three of its failures are peculiar to it and each needs a type rather than a status string, namely a class with no endpoint routing can reach, a ceiling exhausted before or during a call, and a cancel the adapter cannot honour.",
+        "origin": "sourced",
+        "sources": ["F-b4-07"],
+        "quote": "Never parsed from prose"
+      },
+      {
+        "text": "agentic-stack and build-adapter-pair state design rule 3 (F-b1-04). Its consequence here: the second adapter must differ from today's on how a result arrives and whether a call in flight can be stopped, because another gateway of the same shape would agree with the first on both and the swap would test configuration rather than the contract.",
+        "origin": "sourced",
+        "sources": ["F-b1-04"],
+        "quote": "the second exists to prove the first is not load-bearing"
+      }
+    ],
+    "not_exposed": [
+      {
+        "text": "Proposed: vendor names, member model identifiers, endpoint hostnames, credentials, and which adapter answered. A caller that can read any of these can branch on them, and a caller that branches on them has made the adapter part of the contract.",
+        "origin": "proposed",
+        "sources": ["F-a4-01"]
+      },
+      {
+        "text": "Sampling and decoding parameters that only some backends accept are not part of the contract; the records on file note that support for the common ones varies by provider and by self-hosted backend. They belong to an adapter's defaults, where a backend that ignores one is a declared gap rather than a silently dropped field.",
+        "origin": "sourced",
+        "sources": ["X-cap-model-access-006"],
+        "quote": "support varies across providers and self-hosted backends"
+      },
+      {
+        "text": "agentic-stack states design rule 6 (F-b1-07). What it forbids here specifically: the criterion a result will be judged against never travels in a completion request, because a request body is the one place where the graded work and the grading rule would otherwise meet.",
+        "origin": "sourced",
+        "sources": ["F-b1-07"],
+        "quote": "The grader is never visible to the graded."
+      }
+    ]
+  },
+  "instructions": [
+    {
+      "step": 1,
+      "action": "Name the de facto completions shape as this interface's standard, adopt its request and result vocabulary whole, and record its version as unverified until a published specification has actually been fetched and read.",
+      "why": "Where a standard exists the rule is to adopt it rather than model our own shape, and the only records on file for this one are search results, so a version string here would be invented rather than cited.",
+      "origin": "sourced",
+      "sources": ["F-b1-03", "F-b3-03", "X-cap-model-access-002"],
+      "quote": "standard that other providers implement"
+    },
+    {
+      "step": 2,
+      "action": "Define submit to return a claim ticket in every case, and define claim as the only way to read a result. Give the synchronous path a ticket that is already redeemed rather than a second, shorter call.",
+      "why": "Proposed. Latency between the two paths differs by orders of magnitude and one returns a result while the other returns a ticket; one interface that always returns a ticket is the only shape both can satisfy without the caller learning which one it got.",
+      "origin": "proposed",
+      "sources": ["F-b3-03"]
+    },
+    {
+      "step": 3,
+      "action": "Put routing in front of the adapter as a pure function of class, unit of work, budget remaining and policy verdict, and give it a table of test vectors that runs with no model reachable.",
+      "why": "Proposed. Selecting which model handles a query is a decision layer with its own literature rather than a detail of a gateway's configuration; in front of the adapter it is testable, inside it is only observable by spending.",
+      "origin": "proposed",
+      "sources": ["X-end-to-end-056", "X-end-to-end-058"]
+    },
+    {
+      "step": 4,
+      "action": "Reject every proposed request field that names a vendor, a member model, an endpoint or an adapter, and reject any code path that branches on such a name. Where a caller wants the cheap slow path, take a deadline instead.",
+      "why": "agentic-stack states that the prefix carries the contract (F-a4-01). What this adds: a deadline expresses what the caller actually knows, while an adapter name expresses a guess about how the platform is configured today.",
+      "origin": "sourced",
+      "sources": ["F-a4-01", "F-a4-08"],
+      "quote": "Callers request a class"
+    },
+    {
+      "step": 5,
+      "action": "Keep parameters that only some backends honour out of the contract and put them in adapter defaults, with any backend that ignores one recorded as a declared gap.",
+      "why": "The records on file say support for the common inference parameters varies by provider and by self-hosted backend, so a contract field that some adapters drop silently is worse than no field: the caller believes it took effect.",
+      "origin": "sourced",
+      "sources": ["X-cap-model-access-006"],
+      "quote": "verify the exact fields your server accepts"
+    },
+    {
+      "step": 6,
+      "action": "Make the budget concern handle a spend committed at submission and reconciled when the ticket is claimed, and carry both figures on the result rather than overwriting one with the other.",
+      "why": "Every unit of work carries a ceiling, and a slow path spends hours before the true cost is known; a design that assumes commitment and reconciliation coincide has no answer for a unit that ends between them.",
+      "origin": "sourced",
+      "sources": ["F-b4-02"],
+      "quote": "Exceeding it terminates the unit, not the platform"
+    },
+    {
+      "step": 7,
+      "action": "Choose the second adapter on execution-model axes as build-adapter-pair defines them: result_or_claim_ticket, prompt_cancellation and start_and_teardown_cost must all differ from today's adapter.",
+      "why": "agentic-stack and build-adapter-pair state design rule 3 (F-b1-04). What this adds: a hosted gateway of the same shape as the installed one agrees with it on all three axes, so it would prove the interface can change vendors and nothing about whether it can change execution models.",
+      "origin": "sourced",
+      "sources": ["F-b1-04", "F-part-c-05"],
+      "quote": "chosen to prove the interface is not shaped around its current implementation"
+    },
+    {
+      "step": 8,
+      "action": "Return every failure as the typed problem object cap-errors defines, including no-endpoint-for-class, budget-exhausted and cancel-not-honoured, and never let an unroutable class fall back silently to another one.",
+      "why": "cap-errors owns the failure shape (F-b4-07); what this adds is that a silent fallback to a different class is this capability's most expensive failure, because the work completes, the bill arrives, and nothing in the result says the class asked for was not the class used.",
+      "origin": "sourced",
+      "sources": ["F-b4-07", "F-a4-01"],
+      "quote": "Typed and machine-readable"
+    },
+    {
+      "step": 9,
+      "action": "Proposed: open references/model-access-shapes.md when writing or reviewing the full request, ticket and routing-table schemas. The body of this skill is enough to judge a candidate adapter and to write the contract without it.",
+      "why": "Proposed: the full schemas exceed the progressive-disclosure budget for a skill body, and a reader deciding whether a gateway may serve this interface does not need them.",
+      "origin": "proposed"
+    }
+  ],
+  "best_practices": [
+    {
+      "text": "agentic-stack already states the silently-discarded-configuration finding (F-a7-04), and it was measured on this very boundary: a stored row overlaid the routing settings written in the documented file. So assert routing behaviour by observing which endpoint answered, never by reading the file that declares it.",
+      "origin": "sourced",
+      "sources": ["F-a7-04"],
+      "quote": "Configuration written in the documented place was silently discarded."
+    },
+    {
+      "text": "Keep the property this substrate already has: a scoped key with a hard budget cap that was verified to stop spend rather than merely record it. A design where the ceiling is a number in a report is a ceiling only in the sense that a speed limit sign is a governor.",
+      "origin": "sourced",
+      "sources": ["F-a4-07", "F-b4-02"],
+      "quote": "verified to terminate spend rather than merely record it"
+    },
+    {
+      "text": "Treat model selection as its own decision layer rather than as a prefix convention living inside a gateway's configuration: the records on file describe choosing which model handles a query as a cost-quality trade-off across a pool. Those records are search results rather than pages that were read, so take them as the shape of the problem and not as a measurement.",
+      "origin": "sourced",
+      "sources": ["X-end-to-end-056"],
+      "quote": "optimising cost–quality trade-offs across a pool of LLMs"
+    },
+    {
+      "text": "agentic-stack already states the structurally-green-gate finding (F-a7-03). What it adds here: a conformance run that exercised only the fast adapter reports the same green as one that exercised both, so assert the number of adapters actually run and the number of tickets actually redeemed, not the exit code of the suite.",
+      "origin": "sourced",
+      "sources": ["F-a7-03"],
+      "quote": "Those establish well-formedness, not correctness"
+    }
+  ],
+  "adapters": [
+    {
+      "entity": "E-adapter-litellm",
+      "role": "today",
+      "maps_to": "route, submit, claim and cancel served by a synchronous request/response gateway that speaks one OpenAI-compatible API over every provider. PASS.md B3 names LiteLLM in this row's adapter column. submit holds the connection and returns a ticket already redeemed; cancel is closing the connection; routing is the gateway's own group and fallback configuration.",
+      "cannot": "Proposed: cannot return an answer hours later at batch pricing, cannot survive the caller going away mid-call, and holds one connection per call in flight. Its routing configuration is also the boundary where PASS.md A7 finding 3 was measured - a LiteLLM_Config row in Postgres overlays and replaces router_settings on every gateway load - so a routing change here is not in effect merely because it was written where the documentation says.",
+      "swap_procedure": "Select the adapter by configuration, send the same request object through both, and assert that both results validate against the one result schema and that the endpoint which answered was read from the response rather than from the binding that selected it.",
+      "status": "claimed",
+      "sources": ["F-b3-03", "F-a1-02", "F-a7-04"],
+      "quote": "OpenAI-compatible completions | LiteLLM"
+    },
+    {
+      "entity": "E-swap-candidate-direct-provider-sdks",
+      "role": "second",
+      "maps_to": "the same four operations served by provider-native asynchronous batch submission with claim-and-poll: submit hands the work to a provider's own batch endpoint and returns a pending ticket, claim polls it, and the result arrives hours later at batch pricing. This is grounded rather than hypothetical - batch on this substrate already runs through Gemini's native :batchGenerateContent via LiteLLM passthrough, deliberately not through the OpenAI-shaped /v1/batches route, which branches only on openai/azure/vertex_ai and refuses Gemini (claimed, per PASS.md A4).",
+      "cannot": "Proposed: cannot answer interactively, and cannot promise a stop - cancelling a submitted batch is a separate call whose effect may be a partial refund rather than a halt, so its tickets carry cancellable false. It also commits spend at submission and reconciles it on claim, which is the case a synchronous-only design never has to represent.",
+      "swap_procedure": "Proposed: the axes that differ are result_or_claim_ticket (a result versus a ticket to redeem), prompt_cancellation (close the connection versus a separate call that may not stop the work) and start_and_teardown_cost (a call in seconds versus a submission answered in hours at batch pricing). Select by configuration with no code edit between runs, then compare both reports against the same declared gaps.",
+      "status": "claimed",
+      "sources": ["F-b3-03", "F-a4-08", "F-b1-04"],
+      "quote": "not the OpenAI-shaped `/v1/batches` route, which branches only on"
+    }
+  ],
+  "definition_of_done": {
+    "criterion": "Proposed tool, built with the first implementation of this interface: `python3 tools/conformance_model_access.py --adapter today --adapter second --request fixtures/model-access/request.json --report out/model-access-conformance.json`. It dispatches the same request object through the synchronous adapter and the asynchronous batch adapter and asserts, per adapter, that submit returned a claim ticket, that claim redeemed it, and that the result validates against the one result schema; across adapters it asserts `adapters_run >= 2` and `results_validated == adapters_run`. It then runs `grep -rIl -E '(litellm|openrouter|gemini|sglang)' src/core/ src/seam/` and asserts `product_hits == 0`.",
+    "expected": "exit 0, one line per adapter of the form `adapter=<entity> ticket_state=redeemed result_schema=valid endpoint_read_from=response`, followed by `adapters_run=2 results_validated=2 product_hits=0`.",
+    "breakage": "Add a branch on the adapter name inside the caller so that the batch path takes a different code path, change nothing else, and re-run the same command.",
+    "expected_failure": "The grep over `src/core/` and `src/seam/` now lists the caller's file, `product_hits` becomes non-zero, and the run exits non-zero naming that file: the 'no product names in core' assertion is design rule 1 made checkable, and it fails the moment the two adapters stop being one interface. `adapters_run` stays 2, which is what shows the failure is the branch rather than an adapter that never ran.",
+    "status": "claimed",
+    "sources": ["F-part-c-04", "F-b1-02", "F-b3-03"],
+    "quote": "A criterion nothing can fail is not a criterion"
+  },
+  "composes_with": {
+    "builds_on": [
+      "agentic-stack",
+      "build-definition-of-done",
+      "build-adapter-pair",
+      "build-skill-authoring",
+      "cap-errors"
+    ],
+    "used_by": [
+      "cap-model-access-implement",
+      "cap-model-access-use",
+      "xc-budget"
+    ]
+  },
+  "open_questions": [
+    {
+      "question": "Is routing policy a capability of its own with its own two adapters, or an operation of this one?",
+      "evidence": "A second routing implementation that is not part of a gateway exists in the records on file, described as a programmable routing layer that composes routing, policy and reasoning budget rather than reading a caller's prefix. If a routing table can be swapped for it without touching this interface, routing is an operation here; if the swap needs new request fields, routing is its own boundary and deserves its own skill.",
+      "default": "Keep route as an operation of this capability, pure and in front of the adapter, and record the contrast as unproven: the record is a search result, not a page that was read.",
+      "sources": ["X-end-to-end-057", "X-end-to-end-058"],
+      "quote": "composes routing, policies, reasoning budgets and workflow signals into a unified inference layer"
+    },
+    {
+      "question": "The end-to-end consumption reference returns a completion result directly and has no ticket to claim, so the claim ticket defined here has no counterpart in it. Which shape wins?",
+      "evidence": "Add one batch-class step to the reference workflow and see whether the runner needs a new field to hold a pending call, or whether a ticket that is already redeemed on the synchronous path is indistinguishable from what it returns today.",
+      "default": "Keep the ticket in the interface and treat the reference's direct result as the redeemed case, since the alternative is two interfaces and the reference already routes by model class.",
+      "sources": ["T-t6-01", "T-t6-04"],
+      "quote": "callers request a model class, not a vendor"
+    }
+  ],
+  "provenance": {
+    "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+    "kb_heads": {
+      "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+      "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6"
+    },
+    "author": "session cap-model-access 2831cb4f, 2026-09-03"
+  }
+}

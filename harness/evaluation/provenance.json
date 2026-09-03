@@ -1,0 +1,71 @@
+{
+  "owner_skill": "cap-evaluation-implement",
+  "co_skills": [
+    "cap-evaluation",
+    "compose-improvement-loop-implement"
+  ],
+  "blueprint_tool_entry": "observe-langfuse-web-1 (F-a1-05, PASS.md A1) - the trace backend every run already lands in; PASS.md has no Evaluation row in any section, so the store is what this capability binds to today",
+  "capability": "evaluation",
+  "standard": "none adopted; the case-set, replay and verdict shapes are this repository's design (the research records cap-evaluation names are listed under research_ids). The GenAI semantic conventions are named by cap-evaluation only as the carrier a verdict travels on, version unverified, and are used here in adapters/live.py alone",
+  "kb_ids": [
+    "F-a1-05",
+    "F-a5-04",
+    "F-a7-03",
+    "F-b1-02",
+    "F-b1-04",
+    "F-b1-07",
+    "F-b1-08",
+    "F-b2-05",
+    "F-b3-10",
+    "F-part-c-04",
+    "F-part-c-08",
+    "E-finding-a7-1",
+    "E-standard-genai-semantic-conventions",
+    "E-core-component-judge",
+    "E-capability-telemetry",
+    "E-capability-errors",
+    "E-standard-rfc-9457-problem-details",
+    "E-standard-json-schema-2020-12",
+    "T-t4-03",
+    "T-t4-04",
+    "T-t7-02",
+    "T-t9-06",
+    "T-t10-04",
+    "T-t10-05",
+    "T-t10-07"
+  ],
+  "research_ids": [
+    "X-cap-evaluation-001",
+    "X-cap-evaluation-002",
+    "X-cap-evaluation-003",
+    "X-cap-evaluation-005",
+    "X-cap-evaluation-006",
+    "X-cap-evaluation-007",
+    "X-end-to-end-006",
+    "X-end-to-end-009",
+    "X-end-to-end-010",
+    "X-end-to-end-011",
+    "X-end-to-end-039",
+    "X-end-to-end-040"
+  ],
+  "design_notes": [
+    "Three dimensions are scored (trajectory, tool_use, task_completion). X-cap-evaluation-003 names four; the fourth, multi-turn quality, needs more than one turn and is out of this harness's scope - dropped on purpose and recorded here rather than silently.",
+    "cap-evaluation and cap-evaluation-implement both mint E-adapter-otel-trace-scoring-harness and E-swap-candidate-local-fixture-replay-harness as proposed entity ids; neither resolves in kb/entities.jsonl (checked with tools/kb.py show), so neither is cited above as a kb id. The adapter roles they name are what adapters/live.py and adapters/second.py implement.",
+    "Extensions to the owner skill's shapes, so a reader can tell them from the skill: the conformance report adds regressed_outcome, regressed_transitions, transitions_named, served_effects, executed_effects, rubric_markers_seen_by_unit, baseline_retained and gate_blocks_zero_case; GateStageResult is implemented exactly as cap-evaluation-implement states it, with evidence_record_id derived from the report id here rather than from an appended evidence store this harness does not own.",
+    "The unit under test (unit_under_test.py) is a fixture, not part of the capability: the interface reaches it only inside EvaluationAdapterBase._run_unit, and no adapter imports it."
+  ],
+  "measured": {
+    "dryrun": "bash harness/evaluation/test.sh -> passed 55, failed 0. Conformance against dryrun exits 0 with 22/22 cases: cases_executed 6 (three recorded, three synthetic), outcome passed and transitions 0 at agent:release-reviewer@1.4.0, regressed_outcome failed with regressed_transitions 1 naming cs-r2 at @1.4.1-rc (tool_use pass->fail while task_completion still passes), served_effects 2, executed_effects 0, unrecorded_effects 1 refused with urn:agentic:problem:unrecorded-effect (422), gate_status_zero_case inconclusive, rubric_markers_seen_by_unit 0, corpus digest sha256:9e798f5ab4584013f4a45beca2d22d03. The minimal call is 23 lines of caller code, under 40, naming no adapter storage.",
+    "swap": "conformance before with dryrun and after with second, selected by ADAPTER= with no code edit (the sha256 of interface.py, call.py and conformance.py is identical before and after); both exit 0 at 22/22 and the merged report shows adapters_run 2, verdict_divergence 0, selected_by configuration. The pair differs on all three declared axes: execution_model in-process vs no-server, trajectory_source in-memory-record vs fixture-file, emit_evaluation_result true vs false - so it is not one adapter run twice. call.py prints identical tables and identical PROOF lines on both.",
+    "breakage": "conformance --break-gate makes the gate stage derive status from the exit code instead of the report's counters, changing nothing else. Both adapters exit 1 identically with the same single failing check, C6, reading 'stage=evaluation status=passed cases_executed=0'; outcome passed, regressed_outcome failed and transitions_named cs-r2 are unmoved on both, which locates the fault in the gate rather than in either harness. This is the structurally-green pipeline of F-a7-03 reproduced on purpose."
+  },
+  "claimed": [
+    "live mode until run on the host: no run of test.sh --live against observe-langfuse-web-1 has been performed, and EVAL_TRACE_URL, EVAL_TRACE_QUERY_URL and EVAL_TRACE_KEY are unset here",
+    "the live adapter's urllib transport, read-back and verdict-export paths were exercised against a throwaway local HTTP stub during authoring and passed the same 22/22 conformance run with 5 verdict payloads posted; that stub is not the host backend and is not recorded as a measurement of live mode",
+    "the gen_ai.evaluation.result payload shape in adapters/live.py is proposed: no specification was fetched from this environment and the GenAI semantic conventions stay unverified per E-standard-genai-semantic-conventions",
+    "the endpoint paths the live adapter posts to (/case-sets, /reports, /baselines, /evaluation-results) and the query parameters it reads back are a read-and-write contract this harness defines for an operator to point at; they are not a claim about any product's API",
+    "the corpus is a fixture written for this harness, not a harvested corpus: the three recorded runs are recorded-shaped records committed under corpus/recorded, and no trace was harvested from the host",
+    "the second adapter needs no server and none was run: its fixture root is a directory, which is the whole of its execution model, so its swap procedure is real rather than stubbed",
+    "the working tree carried unrelated in-flight edits from parallel agents (skill files under .claude/skills) when test.sh was run, per F-a5-04. Every file the run exercised is inside harness/evaluation/; the sha256 over its .py files, test.sh and corpus/ at the time of the run is 31832283c82d505b8422395d65c3e2c2988d6f1b98ffbdec5b10a7a3b8c15aae, at commit b781385"
+  ]
+}

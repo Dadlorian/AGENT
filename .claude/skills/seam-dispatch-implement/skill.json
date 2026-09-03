@@ -57,10 +57,12 @@
       },
       {
         "text": "Proposed: the durability record is written by the dispatcher, not by each executor - the step id and the idempotency key are allocated before execution and the checkpoint reference is written at the first durable output. seam-dispatch states the resume and replay rules (X-cross-structure-042, X-cross-structure-043); putting the record in the dispatcher is what lets an executor with no journal of its own satisfy them unchanged.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
-          "X-cross-structure-043"
-        ]
+          "X-cross-structure-043",
+          "X-cross-structure-042"
+        ],
+        "quote": "duplicate requests will return the same result as the original request"
       },
       {
         "text": "The two adapters differ in execution model, not in brand: one holds a session open on hardware we own for the life of the unit and can be stopped mid-call; the other is one request-response into someone else's sandbox and cannot be stopped once started. build-adapter-pair states that swappability is a tested property (F-b1-04); here the test is that one parameterised suite runs over both with no code edit between runs.",
@@ -74,10 +76,11 @@
     "not_exposed": [
       {
         "text": "Proposed: which shim answered a dispatch, and anything the shim needed to talk to its executor - socket paths, unit names, endpoint hostnames, session handles. These live in the adapter configuration and in the adapter rows below; they never reach a result, a problem object or a recorded step, because a caller that could read them would break on the swap this facet exists to make possible.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-part-c-09"
-        ]
+        ],
+        "quote": "Products belong in the adapter column only."
       }
     ]
   },
@@ -141,11 +144,12 @@
       "step": 6,
       "action": "Allocate the step id and the idempotency key in the dispatcher before execution, write the checkpoint reference at the first durable output, and make the resume path read the step records to find the first step whose reference is null. Keep all of this out of the executors.",
       "why": "Proposed: this is what makes the durability obligation seam-dispatch states satisfiable by an executor that has no journal of its own. If each executor kept its own resume state, the seam's replay guarantee would be as strong as the weakest executor and the swap would change behaviour rather than only implementation.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "X-cross-structure-043",
         "F-b3-04"
-      ]
+      ],
+      "quote": "re-executed in a new process and each step of the execution is compared to its log"
     },
     {
       "step": 7,

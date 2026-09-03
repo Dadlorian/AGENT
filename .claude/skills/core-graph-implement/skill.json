@@ -141,7 +141,7 @@
         "quote": "If Part B cannot swap an implementation without touching the core, the boundary is drawn wrong"
       },
       {
-        "text": "Proposed: the store holds opaque records and never interprets one. Node and edge assertions are appended as records, the graph value is a fold over them, and the fold lives above the store; a binding that knows an edge from a ledger entry has taken seam-state's job into the persistence boundary.",
+        "text": "Proposed: the store holds opaque records and never interprets one. Node and edge assertions are appended as records, the graph value is a fold over them, and the fold lives above the store; a binding that knows an edge from a ledger entry has taken seam-state's job into the persistence boundary. Research query: is there a fetched source distinguishing an opaque record store from one that interprets an edge, beyond F-b5-04's and F-b3-17's one-line state-persistence table entries?",
         "origin": "proposed",
         "sources": [
           "F-b5-04",
@@ -149,7 +149,7 @@
         ]
       },
       {
-        "text": "Proposed: the fold is deterministic. The same records produce the same graph value and the same validity verdict under either binding, whatever order the store returns them in, because the fold sorts by the assertion's own identity rather than by arrival. A verdict that depends on which store answered is the defect the conformance run below exists to find.",
+        "text": "Proposed: the fold is deterministic. The same records produce the same graph value and the same validity verdict under either binding, whatever order the store returns them in, because the fold sorts by the assertion's own identity rather than by arrival. A verdict that depends on which store answered is the defect the conformance run below exists to find. Research query: is there a source on deterministic folds independent of store arrival order, beyond F-b1-06's planner-purity claim this row borrows its determinism language from?",
         "origin": "proposed",
         "sources": [
           "F-b1-06"
@@ -184,17 +184,19 @@
     "not_exposed": [
       {
         "text": "Proposed: which binding served a fold, the store's file layout or stream topology, its lease mechanism, and its retention class. A caller sees a graph value and a validity report; anything else it can see it will eventually depend on, and the swap stops being possible.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-meta-04"
-        ]
+        ],
+        "quote": "Part A names products. Part B names capabilities and the standard that governs each."
       },
       {
         "text": "Proposed: criterion text, in any node attribute or edge label this code writes. core-graph states the grader rule on this structure (F-b1-07); the build consequence is that an assertion derived from a document step carries the check_id and never the criterion string, and the lint in step 7 is what keeps that true after the next refactor.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-b1-07"
-        ]
+        ],
+        "quote": "The grader is never visible to the graded"
       }
     ]
   },
@@ -243,7 +245,7 @@
     },
     {
       "step": 5,
-      "action": "Migrate by backfill, dual-write and verdict-compare: assign kinds to the structures already recorded, write every new assertion to both bindings, fold and type-check both over the whole corpus, and cut over only when verdict_mismatches is zero and the old path has been read-only for a full retention window.",
+      "action": "Migrate by backfill, dual-write and verdict-compare: assign kinds to the structures already recorded, write every new assertion to both bindings, fold and type-check both over the whole corpus, and cut over only when verdict_mismatches is zero and the old path has been read-only for a full retention window. Research query: has this backfill-then-compare migration actually been run over a corpus of unkinded records, or is the procedure reasoned from the digest-chain migration pattern with no measured run behind it?",
       "why": "Proposed: the migration's risk is not new rejections but the old records, which carry no kind at all because the typed graph does not exist yet; the backfill is where a wrong kind becomes permanent, so the compare must run over the backfilled corpus before cut-over rather than over new assertions only.",
       "origin": "proposed",
       "sources": [
@@ -288,7 +290,7 @@
       "quote": "had no runtime effect"
     },
     {
-      "text": "Proposed: run the conformance over both bindings on every change, not only when a binding changes. The failures worth catching come from the fold and the mappers - a new optional attribute, a changed sort key - and they show as a verdict that moved while no store was touched.",
+      "text": "Proposed: run the conformance over both bindings on every change, not only when a binding changes. The failures worth catching come from the fold and the mappers - a new optional attribute, a changed sort key - and they show as a verdict that moved while no store was touched. Research query: has running the conformance suite on every change (not only binding changes) actually caught a fold or mapper regression in this repo, or is the practice argued from the adapter-pair discipline alone?",
       "origin": "proposed",
       "sources": [
         "F-b1-04"

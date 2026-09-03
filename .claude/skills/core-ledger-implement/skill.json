@@ -146,7 +146,7 @@
         "quote": "If Part B cannot swap an implementation without touching the core, the boundary is drawn wrong"
       },
       {
-        "text": "Proposed: the entry's identity is computed above the store. The canonical body is hashed and chained on the previous entry's hash before any binding is called, so two stores that order or encode differently still produce the same head; a store that assigns identity has made the receipt depend on which store happened to answer.",
+        "text": "Proposed: the entry's identity is computed above the store. The canonical body is hashed and chained on the previous entry's hash before any binding is called, so two stores that order or encode differently still produce the same head; a store that assigns identity has made the receipt depend on which store happened to answer. Research query: is there a fetched source on computing content-addressed identity above the storage binding rather than inside it, beyond F-a5-03's description of the current task store's own chaining?",
         "origin": "proposed",
         "sources": [
           "F-a5-03",
@@ -154,7 +154,7 @@
         ]
       },
       {
-        "text": "Proposed: key uniqueness is enforced above the binding, never delegated to a store feature. One role can refuse a duplicate terminal key at commit and the other cannot, so a design that leans on that refusal is a design that only works on one store - the binding records enforces_key_uniqueness and the append path checks regardless.",
+        "text": "Proposed: key uniqueness is enforced above the binding, never delegated to a store feature. One role can refuse a duplicate terminal key at commit and the other cannot, so a design that leans on that refusal is a design that only works on one store - the binding records enforces_key_uniqueness and the append path checks regardless. Research query: is there a fetched source distinguishing a store-level unique-key refusal from an above-the-binding uniqueness check, beyond F-b4-08's general idempotency-replay requirement?",
         "origin": "proposed",
         "sources": [
           "F-b1-04",
@@ -162,7 +162,7 @@
         ]
       },
       {
-        "text": "Proposed: the store holds opaque entries and never interprets one. Entries go in, entries come back in fold order, and every projection - the head, the deduplication table, the open-work list - is computed above the binding; a store that knows a terminal entry from an approval has taken the ledger's job into the persistence boundary.",
+        "text": "Proposed: the store holds opaque entries and never interprets one. Entries go in, entries come back in fold order, and every projection - the head, the deduplication table, the open-work list - is computed above the binding; a store that knows a terminal entry from an approval has taken the ledger's job into the persistence boundary. Research query: is there a fetched source on an opaque-entry store versus one that interprets an entry kind, beyond F-b5-04's and F-b3-17's one-line state-persistence table entries?",
         "origin": "proposed",
         "sources": [
           "F-b5-04",
@@ -198,17 +198,19 @@
     "not_exposed": [
       {
         "text": "Proposed: which binding served a read, the store's layout or connection topology, its lease mechanism, its transaction boundaries and its retention class. A caller sees entries, a head and a replay answer; anything else it can see it will eventually depend on, and the swap stops being possible.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-meta-04"
-        ]
+        ],
+        "quote": "Part A names products. Part B names capabilities and the standard that governs each."
       },
       {
         "text": "Proposed: criterion text, in any entry field this code writes. core-ledger states the grader rule for this component (F-b1-07); the build consequence is that a judged entry is constructed from the criterion handle and the verdict alone, and the lint in step 8 is what keeps that true after the next refactor of the judge's caller.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-b1-07"
-        ]
+        ],
+        "quote": "never the criterion it is judged against"
       }
     ]
   },
@@ -270,7 +272,7 @@
     },
     {
       "step": 6,
-      "action": "Migrate by backfill, dual-write and answer-compare: derive an idempotency key and an envelope digest for the runs already recorded, write every new entry to both bindings, fold both over the whole corpus, and cut over only when replay_answer_mismatches and head mismatches are zero and the old path has been read-only for a full retention window.",
+      "action": "Migrate by backfill, dual-write and answer-compare: derive an idempotency key and an envelope digest for the runs already recorded, write every new entry to both bindings, fold both over the whole corpus, and cut over only when replay_answer_mismatches and head mismatches are zero and the old path has been read-only for a full retention window. Research query: has this backfill-then-compare migration actually been run over the existing ledger corpus to derive keys and digests, or is the procedure reasoned from the digest-chain pattern with no measured run behind it?",
       "why": "Proposed: the risk is not new entries but the old ones, which carry no key and no envelope digest because the deduplication authority does not exist yet; the backfill is where a wrong key becomes permanent, so the compare must run over the backfilled corpus rather than over new entries only.",
       "origin": "proposed",
       "sources": [
@@ -331,7 +333,7 @@
       "quote": "Compaction prunes old records and automatically rebuilds the hash chain so it stays consistent and verifiable"
     },
     {
-      "text": "Proposed: run the conformance over both bindings on every change, not only when a binding changes. The failures worth catching come from the constructor, the mappers and the projection - a new optional field, a changed canonicalisation - and they show as a head that moved while no store was touched.",
+      "text": "Proposed: run the conformance over both bindings on every change, not only when a binding changes. The failures worth catching come from the constructor, the mappers and the projection - a new optional field, a changed canonicalisation - and they show as a head that moved while no store was touched. Research query: has running the conformance suite on every change caught a constructor or projection regression in this repo, or is the practice argued from the adapter-pair discipline alone?",
       "origin": "proposed",
       "sources": [
         "F-b1-04"

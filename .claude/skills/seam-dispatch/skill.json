@@ -555,19 +555,21 @@
       },
       {
         "text": "Proposed: an output is durable before the dispatch is terminal, or it does not exist. Every output is written through the state seam and carries the head digest at which it became durable before the result is assembled, so a result never names an output a later reader cannot find, and partial is true whenever the state is not completed and outputs is non-empty.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-cross-structure-045"
-        ]
+        ],
+        "quote": "human-in-the-loop workflows, time travel, and fault tolerance"
       },
       {
         "text": "Proposed: every dispatch is a recorded step carrying a run id, a stable step id, an idempotency key derived from the two, and a checkpoint reference that is null until the first output is durable. A restart resumes at the first step whose checkpoint reference is null, and a repeat under a claimed key returns the recorded result rather than re-executing the effect. Both are satisfiable by a durable engine and by a queue plus a state machine, which is why the obligation is written as a record and not as an engine.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-cross-structure-042",
           "X-cross-structure-043",
           "F-b3-04"
-        ]
+        ],
+        "quote": "maintain a dedicated and sequenced log of steps per workflow invocation"
       },
       {
         "text": "Two ceilings, spend and wall clock, are independent, both enforced outside the unit, and both terminate the unit rather than the platform - xc-budget owns that rule (F-b4-02). What this seam adds: the on_exceed member is a const rather than an enum, so there is no request that opts out, and a unit that enforced its own ceiling could decline to.",
@@ -587,11 +589,12 @@
       },
       {
         "text": "Proposed: context is declared, not assumed. The request says what context the unit receives and under what token ceiling, the result says what summary is folded back to the parent, and every compaction is a recorded transition naming its strategy, its timestamp and the tokens before and after. A context that shrinks invisibly makes a result irreproducible and gives a reader no way to tell a short answer from a truncated one.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-end-to-end-004",
           "X-end-to-end-005"
-        ]
+        ],
+        "quote": "summarizing its contents, and reinitiating a new context window with the summary"
       },
       {
         "text": "A failure returns a typed, machine-readable problem object whose type is a member of the closed registry cap-errors owns (F-b4-07), never prose and never an adapter's native error. A failure an adapter cannot type is itself a conformance failure of that adapter: it is reported against the registered adapter-unavailable type with the untyped payload in the detail member, and it is counted, and a non-zero count means the adapter is not conformant.",
@@ -639,7 +642,7 @@
         "quote": "Products belong in the adapter column only"
       },
       {
-        "text": "Proposed: the unit's raw transcript, its tool-call loop and the prompts it built. The result exposes digests, usage, the recorded steps and the folded summary; a caller that reads a transcript has bound itself to one executor's internals and will break on the second adapter.",
+        "text": "Proposed: the unit's raw transcript, its tool-call loop and the prompts it built. The result exposes digests, usage, the recorded steps and the folded summary; a caller that reads a transcript has bound itself to one executor's internals and will break on the second adapter. Research query: is there a fetched source distinguishing a result's recorded steps and folded summary from a raw transcript a caller must not read, or is this entirely this skill's own extension with no record cited at all?",
         "origin": "proposed"
       },
       {
@@ -679,11 +682,12 @@
       "step": 3,
       "action": "Write durability into the contract rather than leaving it to whichever executor is installed: every output goes through the state seam and carries the head digest at which it became durable before the result is assembled, the partial flag is derived from the state and the outputs rather than set by the executor, and a partial is resumed with a new dispatch id naming the previous one instead of being promoted in place.",
       "why": "Proposed. A result that claims an output a later reader cannot find is a lie no caller can detect; and mutating a prior result would make the append-only ledger's history disagree with the answer, which core-ledger's write model does not allow even as a mistake.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "X-cross-structure-045",
         "F-b2-06"
-      ]
+      ],
+      "quote": "Checkpointers persist a thread's graph state as checkpoints"
     },
     {
       "step": 4,
@@ -712,10 +716,11 @@
       "step": 6,
       "action": "Bound cancellation: accept it asynchronously and idempotently, keep taking frames until the terminal one, take the grace window from the request, and when the window elapses destroy the unit and report a failure carrying cancel_timeout - never a clean cancellation. Keep the durable outputs and mark the result partial.",
       "why": "Proposed: cap-agent-runtime owns the observed cancel behaviour on the substrate (F-a3-09), which is where the ten-second default comes from. Reporting a hard kill as a clean cancel would hide an adapter that cannot cancel, which is exactly the adapter the conformance suite exists to find.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "F-a3-09"
-      ]
+      ],
+      "quote": "zero trailing frames"
     },
     {
       "step": 7,
@@ -731,11 +736,12 @@
       "step": 8,
       "action": "Return every failure as a problem object whose type is a row of the closed registry cap-errors owns, set retryable as a field rather than leaving it inferred from the status, and count per adapter the failures that could not be typed.",
       "why": "Proposed: cap-errors and xc-typed-errors own the failure shape; what this adds is the counter. A registry is only closed if something checks it, so an adapter's untyped-failure count is the number that decides conformance rather than the intention to be typed.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "F-b4-07",
         "F-b5-03"
-      ]
+      ],
+      "quote": "It must specify: the request shape, the result shape, cancellation semantics, timeout and budget enforcement, partial-result handling, and what a failure returns."
     },
     {
       "step": 9,
@@ -765,7 +771,7 @@
       "quote": "Those establish well-formedness, not correctness"
     },
     {
-      "text": "Proposed - no record in this knowledge base carries the stop-reason vocabulary, so this is our reading, not a sourced fact: state completed with stop_reason end_turn says the unit ended, not that its output is acceptable; ask core-judge and never substitute the stop reason for a verdict.",
+      "text": "Proposed - no record in this knowledge base carries the stop-reason vocabulary, so this is our reading, not a sourced fact: state completed with stop_reason end_turn says the unit ended, not that its output is acceptable; ask core-judge and never substitute the stop reason for a verdict. Research query: has any adapter actually been caught reporting stop_reason end_turn as a substitute for a judge verdict, or is this a preventive rule with no observed incident behind it?",
       "origin": "proposed"
     },
     {
@@ -778,10 +784,11 @@
     },
     {
       "text": "Proposed: derive the idempotency key from the run id and the step id rather than minting one per attempt. A key that changes on retry deduplicates nothing, and a key reused across two logical steps merges two answers into one.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "X-seam-dispatch-007"
-      ]
+      ],
+      "quote": "derived, for example, from the run identifier and step identifier"
     },
     {
       "text": "Never promote a partial into a complete result. Resume with a new dispatch id naming the previous one, because the ledger is append-only across runs and is the deduplication authority; rewriting a prior result would put the answer and the history in disagreement with no way to tell which is right.",
@@ -793,10 +800,11 @@
     },
     {
       "text": "Proposed: set each adapter's grace default from its own measured cancel floor and store it beside the adapter, rather than shipping one platform-wide constant. Ten seconds is generous for a dispatcher that stops in about eight and impossible for a hosted single-shot executor that cannot stop at all, and one constant would make the honest adapter look broken.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "F-a3-09"
-      ]
+      ],
+      "quote": "ends the turn in ~8s against a 45s operation"
     }
   ],
   "adapters": [

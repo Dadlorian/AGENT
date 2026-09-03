@@ -130,7 +130,7 @@
         "quote": "the graph and the ledger persist"
       },
       {
-        "text": "Proposed: each migration stage ships alone and is revertible by not reading the field the previous stage added, and no record already written is ever rewritten. That is what makes it safe to run the platform half-migrated, and it is only possible because the tree's leaves are the record ids the chain already commits to.",
+        "text": "Proposed: each migration stage ships alone and is revertible by not reading the field the previous stage added, and no record already written is ever rewritten. That is what makes it safe to run the platform half-migrated, and it is only possible because the tree's leaves are the record ids the chain already commits to. Research query: is there a fetched source on revertible single-field migration stages for a hash-chained log, beyond F-a5-03's and F-b5-05's general chain descriptions this row borrows its revertibility claim from?",
         "origin": "proposed",
         "sources": [
           "F-a5-03",
@@ -139,27 +139,30 @@
       },
       {
         "text": "Proposed: both adapters implement the identical operation set seam-state fixes, and the running one is chosen by configuration with no code edit between runs. build-adapter-pair states design rule 3 (F-b1-04); what this facet adds is that the selection is reported in the shape above, because a swap nobody can observe in the output is indistinguishable from running one adapter twice.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-b1-04",
           "F-b3-17"
-        ]
+        ],
+        "quote": "at least two adapters, and the second exists to prove the first is not load-bearing"
       },
       {
         "text": "Proposed: no component reaches the store except through append, and the platform stamps the actor, the correlation attributes, the policy decision and the attestation reference on that one path. agentic-stack states design rule 7 (F-b1-08); the build consequence is that the append function is the single place a cross-cutting guarantee can be made undeclinable, and it is also the only place a fork could appear, so the two audits are the same audit.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-b1-08",
           "T-t2-03"
-        ]
+        ],
+        "quote": "State, telemetry, and every cross-cutting concern are managed across the entire structure, whichever entry point was used."
       },
       {
         "text": "Proposed: an adapter that cannot yet serve a property declares it unsupported rather than reporting a zero. In the report shape above consistency_proof_verified is null before the tree lands and false once it tries and fails; merging those two into one falsy value is exactly how a stage that never ran comes to read as a stage that passed, which agentic-stack records as a measured failure mode (F-a7-03).",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-a7-03",
           "F-b1-04"
-        ]
+        ],
+        "quote": "static analysis, tests, type checking, security scanning, coverage"
       },
       {
         "text": "Proposed: identity is added at the append path or it is added nowhere, because there is currently no identity field anywhere in the system. Until the delegation chain is real, declared_by is written with the process identity and marked as such rather than left empty, so the migration never produces a backlog of records whose author cannot be recovered.",
@@ -194,7 +197,7 @@
     },
     {
       "step": 2,
-      "action": "Stage 1, inside the existing file: compute each record's id from the canonical bytes of its body, write the id and the kind tag from seam-state's closed list into the record, and keep the line position as a hint rather than as identity. Backfill the existing records read-only, into a new file, and compare the two chains before cutting over.",
+      "action": "Stage 1, inside the existing file: compute each record's id from the canonical bytes of its body, write the id and the kind tag from seam-state's closed list into the record, and keep the line position as a hint rather than as identity. Backfill the existing records read-only, into a new file, and compare the two chains before cutting over. Research query: is there a fetched source on canonical-bytes content addressing distinct from F-a5-03's digest-chain description of the current task store, to ground the 'canonical bytes of the body' requirement specifically?",
       "why": "Proposed. Identity is what every later stage depends on: the tree's leaves are record ids, a tombstone preserves one, and the two adapters can only be compared at all if they agree on what each record is called. Doing it first means the object-store adapter is written against a settled identity instead of inventing one.",
       "origin": "proposed",
       "sources": [
@@ -204,7 +207,7 @@
     },
     {
       "step": 3,
-      "action": "Stage 2, the migration proper: put core-graph's and core-ledger's writes behind one append call partitioned by run, and delete their private write paths in the same change that adds the shared one. Keep their read paths working by serving them as projections.",
+      "action": "Stage 2, the migration proper: put core-graph's and core-ledger's writes behind one append call partitioned by run, and delete their private write paths in the same change that adds the shared one. Keep their read paths working by serving them as projections. Research query: has this one-append-call migration actually been run against core-graph's and core-ledger's existing private write paths, or is the sequencing reasoned from the one-log rule with no measured cutover behind it?",
       "why": "Proposed sequencing. seam-state states the one-log rule (F-b5-04); the build reason for doing it in one change is that a period with two write paths is a period where the two projections can disagree and no proof covers the gap. A read-side shim keeps the change reviewable, because only the writer moves.",
       "origin": "proposed",
       "sources": [
@@ -227,21 +230,23 @@
       "step": 5,
       "action": "Stage 4: build the append-only Merkle tree over the record ids, write a head-sealed record at run close, and put an external verifier into the pipeline as a subprocess that is handed the stored records and the two sealed heads and nothing else.",
       "why": "Proposed. seam-state requires proofs an outsider can take rather than a self-report (X-cross-structure-053); the build consequence is that the verifier must be a separate program from the start, because a verifier sharing our reader would pass on a store our reader cannot see is broken. The sealed head is also the only object the signing path needs, so provenance over state costs one signature per run.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "X-cross-structure-052",
         "F-b4-05"
-      ]
+      ],
+      "quote": "a valid log can be cryptographically verified by any third-party"
     },
     {
       "step": 6,
       "action": "Stage 5: implement the eight projections with a required at_head, add per-projection snapshots labelled with the head they were taken at, and grep the tree for any read that resolves the head itself. Every hit is either converted or is the deliberate breakage.",
       "why": "Proposed. seam-state makes design rule 5 checkable by pinning every read (F-b1-06); at build time the failure is always the same shape - one convenience call that resolves the head internally - and it is invisible until a writer is running concurrently, which is exactly what the definition of done arranges.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "F-b1-06",
         "F-b5-05"
-      ]
+      ],
+      "quote": "Planning is a pure function and completes before execution begins."
     },
     {
       "step": 7,
@@ -258,11 +263,12 @@
       "step": 8,
       "action": "Wire the cross-cutting guarantees into append and seal rather than into callers: correlation attributes and the actor on every record, the policy decision as a policy-decided record written before the first metered call, spend as ledger-entry records, the attestation reference as attestation-recorded, and the idempotency claim read back through the prior_result projection.",
       "why": "Proposed wiring. seam-state states that the platform stamps these on the one write path (F-b1-08). The build detail worth stating is the ordering guarantee each cross-cutting check asserts on - policy before spend, attestation before release - which is only assertable because all of them are records in one totally ordered partition.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "F-b1-08",
         "F-b4-08"
-      ]
+      ],
+      "quote": "Cross-cutting guarantees are not optional."
     },
     {
       "step": 9,
@@ -287,10 +293,11 @@
     },
     {
       "text": "Proposed: run the deliberate breakage against a copy of a real store, not a fixture of ten records. A fixture cannot show whether the verifier stops at the right index or merely reports that something is wrong, and the index is the part a person acts on when a store is found to have been edited.",
-      "origin": "proposed",
+      "origin": "sourced",
       "sources": [
         "F-part-c-04"
-      ]
+      ],
+      "quote": "the deliberate breakage that proves the check can fail"
     },
     {
       "text": "Proposed: keep the evidence store out of the migration. It is append-only JSONL with its own record shape and its own owner in build-evidence-record, and folding it into the state log would put measurements about the platform inside the thing being measured. Two logs with different jobs is not the two-stores problem seam-state forbids, which is about one fact split across two writers.",
@@ -302,7 +309,7 @@
       "quote": "Append-only JSONL"
     },
     {
-      "text": "Proposed: treat the first sealed head as the migration's cut line and keep the pre-migration file readable, unchanged, beside it. A rollback is then stopping the tree and reading the old file, not restoring a backup, and the report's records_migrated count is checkable against a file nobody has rewritten.",
+      "text": "Proposed: treat the first sealed head as the migration's cut line and keep the pre-migration file readable, unchanged, beside it. A rollback is then stopping the tree and reading the old file, not restoring a backup, and the report's records_migrated count is checkable against a file nobody has rewritten. Research query: has treating the first sealed head as a migration cut line actually been exercised as a rollback in this repo, or is the practice reasoned from the append-only chain property alone?",
       "origin": "proposed",
       "sources": [
         "F-a5-03"

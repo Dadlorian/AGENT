@@ -31,19 +31,20 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 HARNESS = os.path.dirname(HERE)
 REPO = os.path.dirname(HARNESS)
 
-# capability -> (directory, environment variable, adapter class per adapter name)
+# capability -> (directory, environment variable). There is no third column:
+# every adapter module in every harness exports its entry point as `Adapter`
+# (the descriptive class name stays, and `binding()` still reports it), so one
+# rule - `module.Adapter` - binds all four capabilities. The per-capability
+# class-name table this file used to carry was the only place that divergence
+# was visible, which is exactly why it had to go.
 COMPONENTS = {
-    "containment": ("containment", "ADAPTER_CONTAINMENT",
-                    {"dryrun": "Adapter", "second": "Adapter", "live": "Adapter"}),
-    "gateway": ("gateway", "ADAPTER_GATEWAY",
-                {"dryrun": "DryRunAdapter", "second": "BatchClaimAdapter",
-                 "live": "LiveGatewayAdapter"}),
-    "trace": ("observability", "ADAPTER_TRACE",
-              {"dryrun": "Adapter", "second": "Adapter", "live": "Adapter"}),
-    "workflow": ("workflow", "ADAPTER_WORKFLOW",
-                 {"dryrun": "JournalExecutor", "second": "QueueStateMachineExecutor",
-                  "live": "WorkflowEngineExecutor"}),
+    "containment": ("containment", "ADAPTER_CONTAINMENT"),
+    "gateway": ("gateway", "ADAPTER_GATEWAY"),
+    "trace": ("observability", "ADAPTER_TRACE"),
+    "workflow": ("workflow", "ADAPTER_WORKFLOW"),
 }
+ADAPTER_NAMES = ("dryrun", "second", "live")
+ENTRY_POINT = "Adapter"
 SHARED_NAMES = ("interface", "adapters", "flow", "call", "conformance", "run")
 
 
@@ -56,14 +57,13 @@ class Component:
     """One component harness, imported once and callable many times."""
 
     def __init__(self, capability: str) -> None:
-        directory, env_var, classes = COMPONENTS[capability]
+        directory, env_var = COMPONENTS[capability]
         self.capability = capability
         self.dir = os.path.join(HARNESS, directory)
         self.env_var = env_var
         self.adapter_name = os.environ.get(env_var, "dryrun")
-        if self.adapter_name not in classes:
+        if self.adapter_name not in ADAPTER_NAMES:
             raise SystemExit(f"{env_var}={self.adapter_name!r}: choose dryrun, second or live")
-        self.class_name = classes[self.adapter_name]
         self.modules: dict[str, Any] = {}
         self.import_errors: dict[str, str] = {}
         with self._window():
@@ -104,7 +104,7 @@ class Component:
         """The adapter instance, wrapped so every later call re-enters the window."""
         with self.active():
             module = sys.modules[f"adapters.{self.adapter_name}"]
-            return Bound(self, getattr(module, self.class_name)(*args, **kwargs))
+            return Bound(self, getattr(module, ENTRY_POINT)(*args, **kwargs))
 
 
 class Bound:

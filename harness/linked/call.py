@@ -6,8 +6,8 @@
     ADAPTER_CONTAINMENT=second ADAPTER_GATEWAY=second \
     ADAPTER_TRACE=second ADAPTER_WORKFLOW=second python3 harness/linked/call.py
 
-Everything between the CALLER CODE markers is what a caller writes: pick a
-door, hand it the document, read one result or one problem. Everything else is
+Everything below the CALLER CODE marker is what a caller writes: pick a door,
+hand it the document, read one result or one problem. Everything else is
 the platform - it stamps correlation, identity, the ceiling and the idempotency
 key, prices the plan before anything runs, dispatches one contained agent turn
 that makes one completion by model class, traces every level, checkpoints every
@@ -55,6 +55,10 @@ def report(place, answers: list[Result]) -> int:
     return 0
 
 
+# --------------------------------------------------------------------------
+# >>> CALLER CODE : everything below this line is what a caller writes.
+# Counted by harness/caller_lines.py, the one method all five harnesses use.
+# --------------------------------------------------------------------------
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", default=os.path.join(HERE, "out", "call"))
@@ -64,7 +68,6 @@ def main() -> int:
     if args.ceiling_micros is not None:
         subject["budget"] = {**subject["budget"], "ceiling_micros": args.ceiling_micros}
 
-    # >>> CALLER CODE BEGINS
     place = platform(args.out)                       # the four capabilities, bound by configuration
     answers = []
     for door in doors.DOORS:                         # human, event, schedule, external
@@ -74,8 +77,6 @@ def main() -> int:
             print(json.dumps(answer.body, indent=2))
             return 2
         answers.append(answer)                       # one result per door, same shape
-    # <<< CALLER CODE ENDS
-
     return report(place, answers)
 
 

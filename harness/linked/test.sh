@@ -52,13 +52,12 @@ grep -q "subjects 1   plans 1   actors 4   runs 4" out/call.log \
 grep -q "one trace per run: groups \[1\]   levels \[3\]   distinct trace ids \[3\]" out/call.log \
   && ok "each run reassembled as one trace out of 3 unrelated trace ids" \
   || bad "a run did not reassemble"
-CALLER=$(python3 -c "
-lines=open('call.py').read().splitlines()
-a=[i for i,l in enumerate(lines) if 'CALLER CODE BEGINS' in l][0]
-b=[i for i,l in enumerate(lines) if 'CALLER CODE ENDS' in l][0]
-print(len([l for l in lines[a+1:b] if l.strip()]))")
+CALLER=$(python3 ../caller_lines.py linked --count)   # the one method, harness/caller_lines.py
 [ "$CALLER" -lt 40 ] && ok "the caller writes $CALLER lines, under 40" \
   || bad "the caller writes $CALLER lines"
+python3 ../caller_lines.py linked --interface-only \
+  && ok "the caller names no file in any component's own storage" \
+  || bad "call.py reads a component's storage by path"
 CALLSUM=$(python3 -c "import hashlib;print(hashlib.sha256(open('call.py','rb').read()).hexdigest()[:16])")
 
 echo "2. conformance against the first adapter of every component"

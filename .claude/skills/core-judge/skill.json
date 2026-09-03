@@ -278,11 +278,12 @@
       },
       {
         "text": "Proposed: purity here is total, not partial: the function takes no clock, no random source, no store handle and no network call. A judge that reads anything not passed to it cannot be replayed, and a verdict that cannot be replayed is the opinion this component replaces.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-b2-05",
           "F-b1-06"
-        ]
+        ],
+        "quote": "pure function `(result, criterion) → verdict`"
       },
       {
         "text": "agentic-stack states design rule 6 as a test (F-b1-07): the grader is never visible to the graded. The consequence owned here is a division of one object into two - a request carries criterion_ref and nothing else, and the criterion set is fetched by the Judge through resolve_criterion; a criterion that arrives with the work has become a target for the work.",
@@ -294,14 +295,15 @@
       },
       {
         "text": "Proposed: hiding the criterion is necessary and not sufficient. Published work on rubric-based reinforcement learning records that a policy trained against a fixed rubric long enough will learn to exploit the difference, and the published mitigation is rubric dropout with a full-rubric evaluation; this contract adopts both as sample_criterion and audit rather than treating rule 6 as the whole defence.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-end-to-end-012",
           "X-end-to-end-013"
-        ]
+        ],
+        "quote": "rubric dropout, which randomly drops criteria before computing reward so the policy never optimizes the same rubric twice, while evaluation always uses the full rubric"
       },
       {
-        "text": "Proposed: the sample is deterministic for one grading and unpredictable across gradings. The seed is derived from the result digest, the criterion-set digest and the dispatch id, so a grading replays to the identical verdict while no two gradings apply the same subset; a sample drawn from a live random source would make the determinism invariant above unprovable.",
+        "text": "Proposed: the sample is deterministic for one grading and unpredictable across gradings. The seed is derived from the result digest, the criterion-set digest and the dispatch id, so a grading replays to the identical verdict while no two gradings apply the same subset; a sample drawn from a live random source would make the determinism invariant above unprovable. Research query: is there a fetched source on deriving a sampling seed from a result digest, a criterion-set digest and a dispatch id, beyond the rubric-dropout research (X-end-to-end-013) this row borrows its determinism requirement from?",
         "origin": "proposed",
         "sources": [
           "X-end-to-end-013",
@@ -310,19 +312,21 @@
       },
       {
         "text": "Proposed: the audit is an alarm, not a score. Divergence between the routine judge and the held-out set opens an investigation into the criterion set and the units graded by it; it never revises a verdict already returned, because a verdict that can be revised after the fact is not a decision the loop could have terminated on.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "X-end-to-end-013",
           "X-core-judge-004"
-        ]
+        ],
+        "quote": "This methodology enables systematic bias detection by comparing automated evaluations against human consensus."
       },
       {
         "text": "Proposed: a grading in which no check applied is reported inconclusive, never pass. build-definition-of-done owns the measured finding behind this (F-a7-03); the consequence on this contract is a counted field, checks_applied, in the grading record, so a criterion set that matched nothing cannot close work by silence.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-a7-03",
           "F-part-c-04"
-        ]
+        ],
+        "quote": "Only diff, syntax and format ran."
       },
       {
         "text": "core-document owns the definition of done and the check ids this contract grades against (F-b2-02); the consequence here is directional: the Judge reads check ids declared in the document and adds none of its own, so a criterion that grades something the document never declared is a defect in the criterion set rather than a stricter judge.",
@@ -362,14 +366,14 @@
         "quote": "An agent sees its outcome, never the criterion it is judged against"
       },
       {
-        "text": "Proposed: the sampled subset and the criterion-set digest. Both are recorded in the grading record and neither is returned: a unit that learns which checks ran this time, or that two gradings used the same set, can infer the set across a handful of attempts, and the sampling would have bought nothing.",
+        "text": "Proposed: the sampled subset and the criterion-set digest. Both are recorded in the grading record and neither is returned: a unit that learns which checks ran this time, or that two gradings used the same set, can infer the set across a handful of attempts, and the sampling would have bought nothing. Research query: does the rubric-dropout literature (X-end-to-end-012/013) say anything about hiding which subset was sampled, or is withholding the subset this skill's own extension of rubric dropout?",
         "origin": "proposed",
         "sources": [
           "X-end-to-end-012"
         ]
       },
       {
-        "text": "Proposed: the held-out criteria and the audit schedule, to everything outside the audit itself - including the routine judge. A held-out check that appears in a routine grading is no longer held out, and an audit that runs on a predictable schedule is one a unit can be optimised around.",
+        "text": "Proposed: the held-out criteria and the audit schedule, to everything outside the audit itself - including the routine judge. A held-out check that appears in a routine grading is no longer held out, and an audit that runs on a predictable schedule is one a unit can be optimised around. Research query: does the rubric-dropout or gold-judge literature specify that the audit schedule itself must be unpredictable, or is that this skill's own extension?",
         "origin": "proposed",
         "sources": [
           "X-end-to-end-013"
@@ -377,10 +381,11 @@
       },
       {
         "text": "Proposed: which grading engine produced the verdict, and the model class or check runner behind it. A verdict is a verdict; a caller that can see how it was reached will branch on it, and the pair of adapters core-judge-implement builds stops being swappable.",
-        "origin": "proposed",
+        "origin": "sourced",
         "sources": [
           "F-meta-04"
-        ]
+        ],
+        "quote": "Part A names products. Part B names capabilities and the standard that governs each."
       }
     ]
   },

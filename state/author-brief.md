@@ -124,3 +124,6 @@ Every checkpoint runs python3 tools/status_check.py --freshness and fails on a s
 
 ## Naming (owner rule, 2026-09-03)
 Every task, agent label, scope claim and ceremony record starts with the STATUS.md row id it serves: 42-sourcing-3a, 28-harness-1-review. scopes.py refuses any other label. Records carry "status_row".
+
+## Lesson 59 (build layer acceptance, 2026-09-03)
+A definition_of_done.criterion is one shell command chain, nothing else; prose goes in expected. The breakage text names exactly the command measure.py runs. Only measure.py sets status measured.

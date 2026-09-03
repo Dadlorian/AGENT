@@ -4,7 +4,7 @@
   "wave": 1,
   "description": "The discipline of shipping two adapters behind one capability interface, where the second is chosen because it breaks a different assumption than the first. Load it when picking a second implementation for a boundary, when writing the conformance suite both implementations must pass, when wiring the swap into CI, or when auditing whether a contract has been quietly shaped around whatever runs today. Also load it when a boundary has only one implementation, when someone says the thing behind it can be changed later, when a review asks whether a field belongs to the capability or to the thing behind it, or when a proposed alternative is a different product of the same shape.",
   "purpose": {
-    "text": "Make swappability a tested property rather than an intention: every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing and that the interface is not shaped around its current implementation.",
+    "text": "Make swappability a tested property rather than an intention, per design rule 3 as agentic-stack states it (F-b1-04): every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing and that the interface is not shaped around its current implementation.",
     "origin": "sourced",
     "sources": [
       "F-b1-04",
@@ -79,7 +79,7 @@
     ],
     "invariants": [
       {
-        "text": "The pair exists at all: an interface ships with at least two adapters. One adapter is an implementation, not a boundary.",
+        "text": "The pair exists at all, per design rule 3 as agentic-stack states it (F-b1-04): an interface ships with at least two adapters. One adapter is an implementation, not a boundary.",
         "origin": "sourced",
         "sources": [
           "F-b1-04"
@@ -96,7 +96,7 @@
         "quote": "chosen to prove the interface is not shaped around its current implementation"
       },
       {
-        "text": "Both adapters satisfy the same named standard, and what the core imports is the interface, never either implementation.",
+        "text": "Per design rule 1 as agentic-stack states it (F-b1-02), what the core imports is the interface, never either implementation; the consequence for a pair is that both adapters satisfy the same named standard.",
         "origin": "sourced",
         "sources": [
           "F-b1-02",
@@ -105,7 +105,7 @@
         "quote": "The core imports interfaces, never implementations"
       },
       {
-        "text": "The swap touches configuration and adapters only. If swapping the implementation requires touching the core, the boundary is drawn wrong and the pair has found the defect it exists to find.",
+        "text": "The swap touches configuration and adapters only. agentic-stack carries the boundary-drawn-wrong finding (F-meta-04); the consequence for a pair is that a swap which requires touching the core has found the defect the pair exists to find, rather than merely failing.",
         "origin": "sourced",
         "sources": [
           "F-meta-04"
@@ -122,7 +122,7 @@
         "quote": "the adapter changes and the core does not"
       },
       {
-        "text": "Neither adapter obliges a caller to take a client library we wrote; if integration requires our SDK, the boundary is bespoke and the pair is proving the wrong thing.",
+        "text": "Neither adapter obliges a caller to take a client library we wrote. agentic-stack carries the bespoke-boundary finding (F-b1-05); the consequence for a pair is that if integration requires our SDK the pair is proving the wrong thing, because both adapters sit behind our code rather than behind a standard.",
         "origin": "sourced",
         "sources": [
           "F-b1-05"
@@ -141,7 +141,7 @@
     ],
     "not_exposed": [
       {
-        "text": "Product names, versions and hostnames stay in the adapter rows. The interface, its invariants and its conformance suite name capabilities and standards only.",
+        "text": "Product names, versions and hostnames stay in the adapter rows, per the product rule agentic-stack states (F-part-c-09). The interface, its invariants and its conformance suite name capabilities and standards only.",
         "origin": "sourced",
         "sources": [
           "F-part-c-09"
@@ -182,7 +182,7 @@
     {
       "step": 4,
       "action": "Write one conformance suite against the interface and parameterise it over adapters: the suite imports the interface only, never an adapter type, and both adapters run the identical assertions with no per-adapter skips or per-adapter expected values. Then give that suite a deliberate breakage and run it: remove one interface guarantee from an adapter, or feed the suite a stub adapter that returns success for everything, and record which assertion fails.",
-      "why": "The core imports interfaces, never implementations, so the contract, not either implementation, is what both adapters must satisfy; and a criterion nothing can fail is not a criterion, so a suite that has never been seen to fail is not yet evidence that either adapter conforms.",
+      "why": "Per design rule 1 as agentic-stack states it (F-b1-02), the core imports interfaces, never implementations, so the contract, not either implementation, is what both adapters must satisfy; and a criterion nothing can fail is not a criterion, so a suite that has never been seen to fail is not yet evidence that either adapter conforms.",
       "origin": "sourced",
       "sources": [
         "F-b1-02",
@@ -204,7 +204,7 @@
     {
       "step": 6,
       "action": "Proposed: audit the interface for shaping. List every field, operation and error in the contract and ask, for each, which adapter's vocabulary named it. Anything only the first adapter's model can honour is that adapter's detail leaking into the contract: express it in the capability's own terms, make it an optional negotiated capability, or delete it. In the same pass, check that integrating either adapter needs no client library we wrote, and fix the boundary before shipping the pair if it does. Research query: no prior-art search has been run for a leaky-abstraction audit method for adapter/plugin interfaces (detecting which contract fields trace back to one implementation's vocabulary rather than the capability's own).",
-      "why": "Proposed procedure. If an implementation cannot be swapped without touching the core, the boundary is drawn wrong, and a field only one adapter can honour is how that happens quietly; and if integration requires our SDK, a boundary is bespoke where a standard existed, so a pair behind it proves only that we can swap our own code.",
+      "why": "Proposed procedure over a finding agentic-stack carries (F-meta-04): if an implementation cannot be swapped without touching the core, the boundary is drawn wrong, and a field only one adapter can honour is how that happens quietly; and if integration requires our SDK, a boundary is bespoke where a standard existed, so a pair behind it proves only that we can swap our own code.",
       "origin": "proposed",
       "sources": [
         "F-meta-04",
@@ -215,7 +215,7 @@
     {
       "step": 7,
       "action": "Assert in the conformance suite that telemetry, policy, provenance and budget hold identically under both adapters, instead of being supplied by one adapter's implementation.",
-      "why": "Those guarantees are applied by the platform and not requested by the caller, so they belong to the platform around the pair and must survive the swap unchanged.",
+      "why": "Per design rule 7 as agentic-stack states it (F-b1-08, F-b4-01), those guarantees are applied by the platform and not requested by the caller; the consequence for a pair is that they belong to the platform around it and must survive the swap unchanged under both adapters.",
       "origin": "sourced",
       "sources": [
         "F-b1-08",
@@ -249,7 +249,7 @@
       ]
     },
     {
-      "text": "Verify which adapter actually served the call at runtime rather than trusting the configuration that selected it: values written in the documented place have validated, reviewed correctly, and had no runtime effect.",
+      "text": "Verify which adapter actually served the call at runtime rather than trusting the configuration that selected it: agentic-stack records the runtime-effect finding A7.3 (F-a7-04), where values written in the documented place validated, reviewed correctly, and had no runtime effect.",
       "origin": "sourced",
       "sources": [
         "F-a7-04",
@@ -258,7 +258,7 @@
       "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
     },
     {
-      "text": "Correlation must ride on an explicit resource attribute set at dispatch, so the telemetry assertions in a conformance suite still hold under an adapter that mints its own root trace instead of inheriting one.",
+      "text": "agentic-stack records the correlation-boundary finding A7.2 (F-a7-02): correlation must ride on an explicit resource attribute set at dispatch. The consequence for a pair is that the telemetry assertions in a conformance suite still hold under an adapter that mints its own root trace instead of inheriting one.",
       "origin": "sourced",
       "sources": [
         "F-a7-02"
@@ -266,7 +266,7 @@
       "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
     },
     {
-      "text": "Callers request a class, never a vendor: if selecting between the pair leaks a vendor name into caller code, the choice has escaped the adapter row and the swap is no longer a configuration change.",
+      "text": "Callers request a class, never a vendor, as agentic-stack states (F-a4-01): if selecting between the pair leaks a vendor name into caller code, the choice has escaped the adapter row and the swap is no longer a configuration change.",
       "origin": "sourced",
       "sources": [
         "F-a4-01",
@@ -293,9 +293,9 @@
   ],
   "definition_of_done": {
     "criterion": "python3 tools/check_adapter_pairs.py --skills .claude/skills",
-    "expected": "Run via tools/check_adapter_pairs.py, built in the STATUS row 59 measure ceremony (originally proposed alongside the first cap- skill in wave 3). For every cap- and seam- skill it asserts: exactly one adapter with role today, at least one with role second, a non-empty differs_in_execution_model naming an axis and both adapters' values, and at least one axis whose two values differ. exit 0 with `pairs_checked > 0`, `single_adapter == 0`, `empty_axis == 0`, `same_model_pairs == 0`",
-    "breakage": "Add a `cap-` skill whose second adapter is a thin wrapper of the first: copy the today adapter's row, change only the entity id, and leave differs_in_execution_model empty. Then run it a second time with that field filled in by hand but carrying the same axis values as the first adapter.",
-    "expected_failure": "First run exits 1 with `empty_axis == 1`, naming the skill and the adapter entity. Second run still exits 1 with `same_model_pairs == 1`, because no axis value differs - the case that counting two adapters cannot catch. Claimed: no `cap-` skill exists in wave 1 and the tool is not written, so neither run has been performed here.",
+    "expected": "Run via tools/check_adapter_pairs.py, built in the STATUS row 59 measure ceremony (originally proposed alongside the first cap- skill in wave 3). For every cap- and seam- skill it asserts: exactly one adapter with role today, at least one with role second, a non-empty differs_in_execution_model naming an axis and both adapters' values, and at least one axis whose two values differ. The pass condition is exit 0 with `pairs_checked > 0`, `single_adapter == 0`, `empty_axis == 0`, `same_model_pairs == 0`. That condition is not met in this repository today and is not expected to be until the differs_in_execution_model field ships: the field is proposed in this skill's Shapes section and no cap- or seam- adapter row carries it yet, so the clean run exits 1 with `empty_axis` and `same_model_pairs` equal to `pairs_checked` (44 of 44 in the run recorded below, none of them a deliberate breakage). The criterion is recorded as claimed on that basis: it has been run here and it fails for a stated, unshipped-shape reason, and it becomes a pass when the adapter shape ships rather than when the tool is written.",
+    "breakage": "Add a `cap-` skill whose second adapter is a thin wrapper of the first: copy the today adapter's row, change only the entity id, and leave differs_in_execution_model empty. Then run it a second time with that field filled in by hand but carrying the same axis values as the first adapter. Both runs are meaningful only once the clean run passes.",
+    "expected_failure": "Not performed here, and not claimed to have been. While the clean run already fails with `empty_axis == 44`, a planted same-shape pair is indistinguishable from the 44 pairs failing for that same reason, and applying the breakage means editing cap-/seam- skills held by other agents in this ceremony. Once every adapter row carries differs_in_execution_model and the clean run exits 0, the first breakage run must exit 1 with `empty_axis == 1` naming the skill and the adapter entity, and the second - the field filled in but carrying the first adapter's axis values - must still exit 1 with `same_model_pairs == 1`, which is the case that counting two adapters cannot catch.",
     "status": "claimed",
     "sources": [
       "F-part-c-04",
@@ -304,7 +304,7 @@
     "quote": "A criterion nothing can fail is not a criterion",
     "measured_run": {
       "by": "tools/measure.py",
-      "commit": "710e7b4",
+      "commit": "02659a2",
       "clean_exit": 1,
       "clean_output": "', 'cap-isolation', 'cap-isolation-implement', 'cap-mandate-broker', 'cap-mandate-broker-implement', 'cap-memory', 'cap-memory-implement', 'cap-model-access', 'cap-model-access-implement', 'cap-policy', 'cap-policy-implement', 'cap-provenance', 'cap-provenance-implement', 'cap-scheduling', 'cap-scheduling-implement', 'cap-state-persistence', 'cap-state-persistence-implement', 'cap-telemetry', 'cap-telemetry-implement', 'cap-tool-access', 'cap-tool-access-implement', 'cap-work-intake', 'cap-work-intake-implement', 'seam-dispatch', 'seam-dispatch-implement', 'seam-state', 'seam-state-implement']"
     }

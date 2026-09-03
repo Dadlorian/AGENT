@@ -61,6 +61,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import re
 import sys
 from pathlib import Path
 
@@ -281,6 +282,9 @@ def check_structure(sk: dict, name: str, errs: list[str]):
             errs.append(f"{name}: definition_of_done missing {k}")
     if dod.get("status") not in ("claimed", "measured", None):
         errs.append(f"{name}: definition_of_done.status must be claimed or measured")
+    crit = str(dod.get("criterion") or "")
+    if crit and ("`" in crit or re.match(r"^(Run|Two|Proposed|From|Execute|In )", crit)):
+        warns.append(f"{name}: definition_of_done.criterion is not a pure shell command (backticks or leading prose); tools/measure.py cannot run it (lesson 59)")
     if dod.get("status") == "measured" and "measured_run" not in dod and name not in GRANDFATHERED:
         errs.append(f"{name}: definition_of_done is measured without a tools/measure.py run (T-t9-01 rule)")
     for a in sk.get("adapters", []):

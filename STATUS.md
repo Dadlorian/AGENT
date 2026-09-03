@@ -32,4 +32,4 @@
 | 28 | Impact map | A component swap lists every affected adapter, test, and skill | Open | Not started |
 | 29 | Solution architecture | Every state type has an owner, a home, and a caller path | In progress | Blueprint passes, 23 gaps |
 | 30 | Source-of-truth gaps | Every blueprint gap is researched or decided by the owner | Open | 23 triaged, 0 closed |
-| 31 | Quality assessment | Every confirmed finding is fixed or declined with a reason | In progress | 4 scanners running |
+| 31 | Quality assessment | Every confirmed finding is fixed or declined with a reason | In progress | 4 scans done, verifier running |

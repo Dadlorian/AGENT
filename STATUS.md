@@ -8,5 +8,4 @@
 | 45 | Fetch allowlist | Standards sites are fetchable from the environment | Blocked | Owner decision |
 | 64 | Skill structure review | An independent review against the Agent Skills guidance proposes the organisation | Blocked | Owner decision on option C |
 | 67 | Litmus assessment | Every question answered with evidence and scored | In progress | Four assessors running in a worktree |
-| 68 | Conformance questionnaire | Every question answered in isolation, checker at zero failures | In progress | Four answerers running in a worktree |
 | 69 | Combined reading | Both answer sets joined per PASS.md row, neither reads the other | Not started | Awaiting rows 67 and 68 |

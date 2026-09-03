@@ -67,14 +67,6 @@
     ],
     "invariants": [
       {
-        "text": "Proposed: the pair differs on one named axis build-adapter-pair requires filled in rather than asserted - who or what holds promotion authority. Today's executor makes a session reviewer's read of a diff the authority; the second makes cap-evaluation's passed outcome the only authority, with no reviewer and no session in the promotion path at all.",
-        "origin": "proposed",
-        "sources": [
-          "F-b1-04",
-          "F-part-c-05"
-        ]
-      },
-      {
         "text": "compose-improvement-loop already states that promote_revision writes only to cap-capability-registry, never to a target's checked-out file. Today's executor is non-conformant on exactly this point: build-ceremony's improve record applies a finding by editing the target skill.json and its render directly and committing, which is the in-place edit the ideal facet's invariant on X-cap-capability-registry-007 forbids.",
         "origin": "sourced",
         "sources": [
@@ -91,33 +83,12 @@
         "quote": "improves the skills that produced it, and the loop continues"
       },
       {
-        "text": "Proposed: both executors emit the same CandidateOutcome record - compose-improvement-loop's own shape, unchanged - so nothing downstream can tell which one ran. On today's executor evaluation_report_id and registry_record are always null; the conformance suite asserts the shape holds regardless, rather than special-casing either executor's nulls.",
-        "origin": "proposed",
-        "sources": [
-          "F-b1-04"
-        ]
-      },
-      {
         "text": "build-evidence-record already states that a result produced from a dirty tree may never carry the label measured, because nobody else can reproduce the tree it ran against (F-a5-04). The consequence owned here: the baseline and breakage runs of tools/ceremony_check.py recorded in this skill's definition of done ran against a working tree where kb/ledger.jsonl and state/lessons.jsonl - two of the three files that command reads - carried unrelated uncommitted changes from a concurrent session, so both runs are labelled claimed despite being real, observed output.",
         "origin": "sourced",
         "sources": [
           "F-a5-04"
         ],
         "quote": "whether the tree was dirty"
-      },
-      {
-        "text": "Proposed: today's diagnostic never refuses anything. tools/ceremony_check.py prints a numbering PROBLEM line when ceremony numbers collide or a section repeats, and still exits 0 - it is evidence for a human to read, not a gate a pipeline can depend on. This is the same non-conformance as the missing cap-evaluation call, stated at the level of the one tool this repository actually runs today.",
-        "origin": "proposed",
-        "sources": [
-          "F-part-c-04"
-        ]
-      },
-      {
-        "text": "Proposed: this repository's own reviewer bias gap, which compose-improvement-loop's invariants name as unresolved, is a property of the session executor specifically - a session reviewer is a single model or person with no held-out audit - and is not inherited by the second executor, whose sole authority is cap-evaluation's evaluate and which core-judge already requires to run against a held-out criterion set on an unpredictable cadence.",
-        "origin": "proposed",
-        "sources": [
-          "F-b1-07"
-        ]
       }
     ],
     "not_exposed": [
@@ -134,15 +105,6 @@
   "instructions": [
     {
       "step": 1,
-      "action": "Bind to today's executor first: map a closed build-ceremony's applied finding directly onto a CandidateOutcome with decision=promoted, evaluation_report_id null and registry_record null, and write that binding as configuration conforming to the executor-binding shape above.",
-      "why": "Proposed: an adapter is a binding a conformance suite can run, not a claim that an existing script is close enough; writing it down is what exposes the two gaps step 2 names rather than leaving them implicit.",
-      "origin": "proposed",
-      "sources": [
-        "F-b1-04"
-      ]
-    },
-    {
-      "step": 2,
       "action": "Name today's two non-conformances precisely before building anything: no gate_revision call exists, so a reviewer's judgment is the only authority a finding is applied on; and promote_revision writes the target skill.json in place through a git commit, so there is no rollback_to and no prior version to resolve back to if the applied change regresses.",
       "why": "compose-improvement-loop already states both as invariants of its own contract, under this same quote (T-t4-04); migration begins by naming the gap the thing being wrapped actually has, not by assuming it is close enough to conform.",
       "origin": "sourced",
@@ -152,7 +114,7 @@
       "quote": "improves the skills that produced it, and the loop continues"
     },
     {
-      "step": 3,
+      "step": 2,
       "action": "Proposed: close the missing-gate stage first. Wire gate_revision to a real cap-evaluation adapter and require outcome=passed - never a reviewer's approval alone - before a candidate's finding may be marked applied in the section's improve record.",
       "why": "cap-evaluation already states that a self-improvement loop should make its gate a precondition for applying its own change, not a report written afterwards; today's ceremony applies first and reviews as a separate pass, which is that ordering reversed.",
       "origin": "proposed",
@@ -161,7 +123,7 @@
       ]
     },
     {
-      "step": 4,
+      "step": 3,
       "action": "Proposed: close the edited-in-place stage. Wire promote_revision to cap-capability-registry's publish with rollback_to set, and stop writing to a target's checked-out skill.json from anywhere except a later session that checks out the newly published version on purpose.",
       "why": "cap-capability-registry already states that a change is a new version record, never an edit to the one that is there; a promotion that still writes the checked-out file directly has not closed this stage, whatever the gate reports.",
       "origin": "proposed",
@@ -170,7 +132,7 @@
       ]
     },
     {
-      "step": 5,
+      "step": 4,
       "action": "Build the second executor on both stages closed at once: seed_candidate and author_revision may still run inside a session or an event handler, but promotion authority moves entirely to cap-evaluation's outcome and cap-capability-registry's publish. Kill the authoring session mid-candidate and resume promotion from the passed EvaluationReport alone, with no session attached.",
       "why": "build-adapter-pair requires the second adapter to break a real assumption of the first; the assumption today's executor rests on is that a live session both authors and approves a candidate in one unbroken run, and the second breaks exactly that.",
       "origin": "sourced",
@@ -180,16 +142,7 @@
       "quote": "the second exists to prove the first is not load-bearing"
     },
     {
-      "step": 6,
-      "action": "Proposed: write one conformance suite against compose-improvement-loop's CandidateOutcome shape, parameterised over both executors: assert the same required fields hold on both, edited_in_place is false on both, and registry_record is non-null only on the second.",
-      "why": "Two suites drift into two contracts, and the suite is the only thing that can report adapters_run == 2 rather than one executor and one intention.",
-      "origin": "proposed",
-      "sources": [
-        "F-b1-02"
-      ]
-    },
-    {
-      "step": 7,
+      "step": 5,
       "action": "Wire the cross-cutting concerns to the candidate iteration, not to the section: re-stamp correlation attributes on every candidate's spans and CandidateOutcome, take an idempotency lease on promote_revision so a re-delivered passed EvaluationReport cannot publish a second registry record for the same candidate_id, and record provenance per artifact a promotion produces.",
       "why": "Correlation must ride on an explicit resource attribute set at dispatch, which agentic-stack records as the measured A7 finding; a candidate iteration is a dispatch boundary, and promote_revision is exactly the step whose retry could otherwise double-publish.",
       "origin": "sourced",
@@ -199,16 +152,7 @@
       "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
     },
     {
-      "step": 8,
-      "action": "Proposed: migrate in shadow. Replay this repository's own ten closed ceremonies' applied and declined findings through the executor binding's candidate, gate and promote shape, and compare the resulting promoted and declined counts against the real applied and declined lists on file in kb/ceremonies/ceremony-01-improve.json through ceremony-10-improve.json. Cut over only when they agree.",
-      "why": "The recorded ceremonies are the only population of real findings available, and a shadow comparison is what turns a claim that the binding preserves behaviour into a check that can fail.",
-      "origin": "proposed",
-      "sources": [
-        "F-part-c-08"
-      ]
-    },
-    {
-      "step": 9,
+      "step": 6,
       "action": "Run the definition of done below, record it as an evidence record naming the command, the git commit, the tree hash and whether the tree was dirty, and keep both adapter rows claimed until a clean-tree run exists for both.",
       "why": "build-evidence-record already refuses the measured label on a dirty tree; swappability is a tested property and not an intention, so the pair stays claimed until the swap and the gate have both actually been run on a tree nobody else has to take on faith.",
       "origin": "sourced",
@@ -232,13 +176,6 @@
       "origin": "proposed",
       "sources": [
         "F-a7-04"
-      ]
-    },
-    {
-      "text": "Proposed: do not let the registry's vocabulary - version, digest, signature, rollback_to - name a field inside a candidate's rationale or an ImprovementCandidate's seed. Audit the binding for concepts that only mean something under one executor and push each back into the adapter row, the shaping audit build-adapter-pair prescribes.",
-      "origin": "proposed",
-      "sources": [
-        "F-meta-04"
       ]
     },
     {

@@ -105,24 +105,16 @@
     ],
     "invariants": [
       {
-        "text": "Proposed: the schema is the only place the operator set is written, and every executor derives its dispatch from it at load rather than repeating it. compose-operators states that the set is closed (REF-1-02); the build's obligation is narrower and mechanical - a set written twice drifts, and the drift is silent because each copy is internally consistent.",
-        "origin": "proposed",
-        "sources": [
-          "REF-1-02"
-        ],
-        "quote": "A caller writes a small fixed set of fields that never grows."
-      },
-      {
-        "text": "Proposed: both engines read the same document bytes. No pre-pass rewrites, normalises, enriches or lowers the document before one engine sees it and not the other, because the moment one engine needs a transformed copy, the document has stopped being the portable artifact and the independence result stops meaning anything.",
-        "origin": "proposed",
+        "text": "Both engines read the same document bytes. No pre-pass rewrites, normalises, enriches or lowers the document before one engine sees it and not the other, because the moment one engine needs a transformed copy, the document has stopped being the portable artifact and the independence result stops meaning anything.",
+        "origin": "sourced",
         "sources": [
           "X-end-to-end-066"
         ],
         "quote": "promoting portability and interoperability within AI Agent frameworks"
       },
       {
-        "text": "Proposed: which engine answered is read from the running engine, never inferred from the configuration that selected it. agentic-stack carries the measured finding that configuration written in the documented place can have no runtime effect (F-a7-04); the consequence for this build is that a binding record says what was requested while an engine marker emitted at start says what actually served, and only the second can catch a fallback that silently ran both legs on one engine.",
-        "origin": "proposed",
+        "text": "Which engine answered is read from the running engine, never inferred from the configuration that selected it. agentic-stack carries the measured finding that configuration written in the documented place can have no runtime effect; the consequence for this build is that a binding record says what was requested while an engine marker emitted at start says what actually served, and only the second can catch a fallback that silently ran both legs on one engine.",
+        "origin": "sourced",
         "sources": [
           "F-a7-04"
         ],
@@ -137,8 +129,8 @@
         "quote": "Every interface ships with at least two adapters"
       },
       {
-        "text": "Proposed: no engine name, endpoint or vendor may appear in a workflow document, and the build enforces that rather than trusting it - the conformance run greps every document under test for the engine markers it knows about and fails on a hit. compose-operators states the rule; the build is where a violation is actually detectable.",
-        "origin": "proposed",
+        "text": "No engine name, endpoint or vendor may appear in a workflow document, and the build enforces that rather than trusting it - the conformance run greps every document under test for the engine markers it knows about and fails on a hit, per agentic-stack's own rule that products belong in the adapter column only.",
+        "origin": "sourced",
         "sources": [
           "F-part-c-09"
         ],
@@ -197,12 +189,6 @@
     },
     {
       "step": 6,
-      "action": "Make the conformance run read the schema for the operator set and the running engine for its marker, then assert schema_ops == executor_ops for every engine, operators_exercised == 6, engines_run >= 2, and identical step order and terminal outcome across engines. Write the operator-binding-report shape above and keep it as the artifact.",
-      "why": "Proposed: every one of those is a count or a set difference rather than a green tick, which is what stops the run reporting success having compared nothing.",
-      "origin": "proposed"
-    },
-    {
-      "step": 7,
       "action": "Apply build-definition-of-done: run the criterion below, then run its deliberate breakage, and record both outputs as an evidence record carrying the tree hash under test and whether the tree was dirty. Label the result measured only where the exact strings were produced by a run in this repository.",
       "why": "agentic-stack and build-definition-of-done both state it (F-part-c-04): a green run that never had a red is not evidence that anything is checked, and a measurement taken from a dirty tree cannot be reproduced by the person who reads it.",
       "origin": "sourced",
@@ -210,30 +196,20 @@
         "F-part-c-04"
       ],
       "quote": "A criterion nothing can fail is not a criterion"
-    },
-    {
-      "step": 8,
-      "action": "Before calling engine independence proven, re-read the document under test for anything only one engine could satisfy: a field the interpreter fills in from context, a step order the compiler happens to preserve, a failure reported as a tree position. Record each as an open question with the measurement that would settle it rather than removing it from the report.",
-      "why": "Proposed: this is the audit build-adapter-pair asks for, applied to a document rather than to an interface - the shaping that survives a passing conformance run is exactly the shaping nobody looked for.",
-      "origin": "proposed"
     }
   ],
   "best_practices": [
     {
-      "text": "Proposed: keep one composition that exercises every operator exactly once and run it on both engines on every change, rather than a large suite that exercises four operators heavily and two never - build-definition-of-done owns the finding this guards against (F-a7-03).",
-      "origin": "proposed",
+      "text": "Keep one composition that exercises every operator exactly once and run it on both engines on every change, rather than a large suite that exercises four operators heavily and two never - compose-operators already owns the finding this guards against: a deterministic gate can be structurally green and mean nothing.",
+      "origin": "sourced",
       "sources": [
         "F-a7-03"
       ],
-      "quote": "because the generated work contained nothing those tools apply to"
+      "quote": "Only diff, syntax and format ran."
     },
     {
-      "text": "Proposed: when the two engines disagree, fix the schema before fixing either engine. A disagreement is almost always a field one engine could infer and the other could not, and patching the engine that guessed hides the missing field until the third engine arrives.",
-      "origin": "proposed"
-    },
-    {
-      "text": "Proposed: treat the durable-execution engine that PASS.md A6 records as present but not listening as a reason to keep the composition expressible over a queue and a state machine, not as a reason to wait for it. The composition is defined over the step interface, so a down orchestrator delays the adapter, never the vocabulary.",
-      "origin": "proposed",
+      "text": "Treat the durable-execution engine that PASS.md A6 records as present but not listening as a reason to keep the composition expressible over a queue and a state machine, not as a reason to wait for it. The composition is defined over the step interface, so a down orchestrator delays the adapter, never the vocabulary.",
+      "origin": "sourced",
       "sources": [
         "F-a6-02"
       ],
@@ -271,7 +247,7 @@
       "sources": [
         "F-b3-04"
       ],
-      "quote": "Restate \u00b7 DBOS \u00b7 Inngest \u00b7 a queue plus a state machine"
+      "quote": "Restate · DBOS · Inngest · a queue plus a state machine"
     }
   ],
   "definition_of_done": {

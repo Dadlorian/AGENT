@@ -208,7 +208,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-ceremony`, `build-definition-of-done`, `build-research-record`, `build-skill-authoring`
 
-Used by: -
+Used by: `build-worked-example`
 
 ## Open questions
 

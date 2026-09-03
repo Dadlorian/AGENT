@@ -1,0 +1,92 @@
+{
+  "harness": "dispatch",
+  "owner_skill": "seam-dispatch-implement",
+  "co_skills": [
+    "seam-dispatch",
+    "core-planner-implement",
+    "core-judge-implement",
+    "core-planner",
+    "core-judge"
+  ],
+  "blueprint_tool_entry": "the three dispatch paths PASS.md records today (F-b5-02 states the unit, F-b5-03 records three implementations and no contract between them; F-b5-01 names Dispatch as one of the two boundaries with no standard to adopt). The blueprint's own tool entry for the execution path is firecracker-cell@.service, which adapters/live.py targets",
+  "capability": "dispatch seam with planner and judge",
+  "standard": "none to adopt (F-b5-01, F-b5-02, F-b5-03: one unit executes and returns one result; today three implementations share no contract). The vocabularies the seam adopts are named by other skills and are unverified here: the task lifecycle for `state` (A2A), the stop-reason set for `stop_reason` (Agent Client Protocol), RFC 9457 for the failure body, JSON Schema 2020-12 for the published request schema, and the Idempotency-Key convention for the key",
+  "kb_ids": [
+    "F-b5-01", "F-b5-02", "F-b5-03",
+    "F-b1-02", "F-b1-04", "F-b1-06", "F-b1-07",
+    "F-b2-03", "F-b2-05", "F-b2-06",
+    "F-b3-02", "F-b3-05", "F-b3-08", "F-b3-09", "F-b3-13", "F-b3-16", "F-b3-17", "F-b3-18",
+    "F-b4-01", "F-b4-03", "F-b4-04", "F-b4-07",
+    "F-a2-02", "F-a3-03", "F-a4-07", "F-a5-03",
+    "F-a6-02", "F-a6-04", "F-a6-05", "F-a6-06", "F-a7-02",
+    "F-part-c-04", "F-part-c-09", "F-part-c-11",
+    "T-t3-01", "T-t6-02", "T-t7-02", "T-t9-06", "T-t10-04", "T-t10-05", "T-t10-07",
+    "E-seam-dispatch", "E-adapter-firecracker-microvm",
+    "E-swap-candidate-hosted-sandbox-services", "E-host-unit-firecracker-cell-service"
+  ],
+  "research_ids": [
+    "X-seam-dispatch-001",
+    "X-seam-dispatch-002",
+    "X-seam-dispatch-003",
+    "X-seam-dispatch-007",
+    "X-cross-structure-042",
+    "X-cross-structure-043",
+    "X-cross-structure-045",
+    "X-core-planner-004",
+    "X-core-planner-005",
+    "X-core-judge-004",
+    "X-end-to-end-013"
+  ],
+  "reuses": {
+    "examples/end-to-end/run.py": "the JSON Schema 2020-12 validator, the criterion store, and the deterministic unit that produces a step's text and cost - imported, not restated, so this harness and the worked example price and grade the same document the same way",
+    "examples/end-to-end/workflows/triage-and-fix.json": "the step tree the planner prices and the unit executes",
+    "examples/end-to-end/agents.json": "the agent registry the model class of each step comes from",
+    "examples/end-to-end/entries/human.json": "the entry envelope the dispatch request is built from"
+  },
+  "adapters": {
+    "dryrun": {
+      "dispatcher_marker": "session-held-inprocess/0.1",
+      "unit_lifetime": "session_held",
+      "cancellation_reach": "mid_call",
+      "keeps_own_journal": false,
+      "cost_read_mode": "scan-and-fold"
+    },
+    "second": {
+      "dispatcher_marker": "queue-and-poll-oneshot/0.1",
+      "unit_lifetime": "request_response",
+      "cancellation_reach": "none",
+      "keeps_own_journal": false,
+      "cost_read_mode": "snapshot-by-digest",
+      "differs_in_execution_model": [
+        "unit_lifetime: a session held open for the life of the unit vs one submit-and-poll into a separate process",
+        "cancellation_reach: stoppable at the next checkpoint vs not stoppable once started, so its honest terminal is cancel_timeout",
+        "cost read_mode: scan the records and fold vs fetch a materialised snapshot by digest"
+      ]
+    },
+    "live": {
+      "dispatcher_marker": "contained-unit-over-acp/unverified",
+      "unit_lifetime": "session_held",
+      "cancellation_reach": "mid_call",
+      "keeps_own_journal": false,
+      "reached_over": "a vsock control channel to a per-agent microVM, with model egress through the host broker"
+    }
+  },
+  "measured": {
+    "dryrun": "bash harness/dispatch/test.sh -> passed 39, failed 0. Conformance 33/33 against the session-held dispatcher: a malformed request refused with document-invalid and no step recorded; a cancel accepted and terminal inside cancel_grace_s with stop_reason cancelled; an interrupted run partial with 1 output whose recorded_at_head is non-null; a ceiling of 600000 micros terminating the unit with budget_exhausted and a recorded spend of 0 < spend <= ceiling; resume replaying 7 committed steps and carrying the earlier spend; a replay returning the recorded result byte for byte with the step log not growing; the same key with a different body refused as idempotency-conflict; a widening delegation hop refused as policy-denied; the policy decision recorded before the first metered call; the step chain verifying; untyped=0 over 5 provoked refusals; two plans of one document at one head byte-identical at sha256:4bce5f723c26... with connects_inet=0 and steps_priced=9; an earlier head refusing to price step fix#1 rather than defaulting it; 100 gradings giving verdicts_distinct=1 and checks_applied_min=2; requests_scanned=50 with criterion_hits=0; migrated_paths=3",
+    "swap": "conformance 33/33 before with dispatcher_marker session-held-inprocess/0.1 and 33/33 after with queue-and-poll-oneshot/0.1, read from the running dispatcher; adapters_run=2, distinct markers 2, distinct unit_lifetime 2, distinct cancellation terminals 2 (cancelled vs cancel_timeout); plan_digest_mismatches=0 and verdict_mismatches=0 - the same plan digest sha256:4bce5f723c26..., the same 551800 micros of spend and the same pass verdict under both - and call.py unchanged across the swap",
+    "breakage": "three, one per definition of done, each exiting non-zero. (a) --break durability: the result is assembled before the state-seam write returns in the session-held shim only; that dispatcher reports partial_outputs_without_head=1 and fails S4 while the second dispatcher still reports failures=[]. (b) --break criterion: the criterion text inlined into the document's definition of done; criterion_hits=100 over 50 recorded requests under both engines while verdicts_distinct stays 1 for each, so the report names what dispatch carried rather than the engine. (c) --break head: one binding resolves the head itself while one cost observation lands under it; plan_digest_mismatches=1 while every per-binding assertion stays green and connects_inet stays 0 under both, which isolates the fault to one loader's wiring"
+  },
+  "claimed": [
+    "live mode until run on the host: no contained unit is reachable here, the control channel does not exist, and every operation below the reachability probe in adapters/live.py has never been executed",
+    "the mapping of dispatch, cancel, resume, replay and read_step onto the agent control protocol and the per-agent virtualisation unit, stated in the header of adapters/live.py",
+    "the standard row: no standard governs this seam, and the vocabularies it adopts (task lifecycle, stop reasons, problem details, the idempotency-key convention) are recorded unverified by the skills that own those rows",
+    "migrated_paths=3 counts the three shims that answer the seam's shapes, because PASS.md states that three implementations exist without naming them (F-b5-03); which three execution paths they are is an open question of seam-dispatch-implement",
+    "the identity and typed-error assertions pass in this harness and are red against the substrate, where PASS.md records no identity field anywhere in the system (F-a6-05) and typed errors as absent (F-a6-06)"
+  ],
+  "definition_of_done": {
+    "criterion": "bash harness/dispatch/test.sh exits 0 with conformance green against both dispatchers, distinct markers read from the running dispatcher, adapters_run=2, migrated_paths=3, plan_digest_mismatches=0 and verdict_mismatches=0",
+    "breakage": "python3 conformance.py --adapter dryrun --adapter second --break durability|criterion|head",
+    "expected_failure": "durability fails one dispatcher only and names the output with no head; criterion fails both engines identically while determinism holds; head moves only the cross-binding plan digest while every per-binding assertion stays green",
+    "status": "measured"
+  }
+}

@@ -10,7 +10,7 @@
 | 21 | Continuous improvement loop | One iteration per fire moves a metric and checkpoints | Not started | Awaiting go |
 | 37 | Live run access | Harness live mode runs against the host from a session | Blocked | Owner decision |
 | 45 | Fetch allowlist | Standards sites are fetchable from the environment | Blocked | Owner decision |
-| 60 | Capabilities acceptance | Each element has a guide, a measured run and a sourced skill | In progress | 10 of 10 harnesses accepted, sourcing runs |
+| 60 | Capabilities acceptance | Each element has a guide, a measured run and a sourced skill | In progress | 3 of 16 elements accepted, 4 more harnesses building |
 | 61 | Core, seams and cross-cutting acceptance | Ceremony closes with every stick met or recorded absent | Not started | 36 skills |
 | 62 | Composition acceptance | Ceremony closes and the end-to-end example runs | Not started | 10 skills |
 | 63 | Final acceptance | Scorecard and acceptance matrix hold at one commit | Not started | None yet |

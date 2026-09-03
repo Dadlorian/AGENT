@@ -1,0 +1,155 @@
+{
+  "status_row": 60,
+  "reviewer": "60-cap-review-a",
+  "skills": [
+    "cap-agent-runtime",
+    "cap-agent-runtime-implement",
+    "cap-capability-packaging",
+    "cap-capability-packaging-implement",
+    "cap-capability-registry",
+    "cap-capability-registry-implement",
+    "cap-consumption",
+    "cap-document-validation",
+    "cap-document-validation-implement",
+    "cap-durable-execution",
+    "cap-durable-execution-implement",
+    "cap-errors",
+    "cap-errors-implement"
+  ],
+  "findings": [
+    {
+      "id": "R60A-001",
+      "skill": "cap-errors-implement",
+      "location": "definition_of_done",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "The record's own measured_run.breakage_output does not match its expected_failure text, and re-running the documented breakage confirms this independently. expected_failure claims: \"The edge adapter, with no guard before assuming the wire body is a well-formed dict, crashes with a traceback (AttributeError)... the in-process adapter is unaffected and still passes.\" Following the breakage field exactly (edit harness/errors/adapters/second.py to remove the media-type/registered-type guard in classify(), then run `bash harness/errors/test.sh && python3 harness/errors/conformance.py --adapter dryrun --adapter second`) instead produces: section 1 (dry-run adapter) FAILs, section 2 (swap proof) FAILs, and section 4 ends with `AssertionError: the breakage pattern was not found; test.sh is out of sync with second.py` -- not an AttributeError, and the in-process (dryrun) adapter does NOT still pass. I reproduced this exactly: `passed 17, failed 6` with the identical traceback, matching the record's own stored breakage_output verbatim. The cause: test.sh's own section 4 applies the identical patch internally (to a copy under out/breakage/); once a caller has already hand-edited second.py per the breakage instructions, test.sh's internal string-replace no longer finds its target and the harness's self-check throws, corrupting the very run the criterion asks the reader to perform.",
+      "fix": "Rewrite the breakage/expected_failure text to instruct running only `python3 conformance.py --adapter second` on a hand-edited copy (as test.sh's own section 4 already does internally), or change the DoD criterion so the documented manual breakage does not collide with test.sh's built-in auto-breakage step."
+    },
+    {
+      "id": "R60A-002",
+      "skill": "cap-consumption",
+      "location": "definition_of_done",
+      "severity": "low",
+      "kind": "dod",
+      "evidence": "expected reads \"`passed 29, failed 0` and exit 0.\" Running `bash examples/end-to-end/test.sh` now reports `passed 30, failed 0`, exit 0 (still a pass; I also reproduced the breakage exactly as documented -- deleting idempotency_key and re-running -- and got the recorded problem object and exit 2 verbatim). The clean-run assertion text has drifted from what the suite now checks and no longer matches; the criterion command itself still passes.",
+      "fix": "Update expected to `passed 30, failed 0` (or assert a count relationship such as `passed >= 29` rather than an exact stale number) and re-record measured_run."
+    },
+    {
+      "id": "R60A-003",
+      "skill": "cap-agent-runtime",
+      "location": "instructions[0], instructions[5], instructions[6], instructions[7], best_practices[0], best_practices[1]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "python3 tools/validate_skills.py --only cap-agent-runtime: 6 'sourced row restates and extends (...) without saying proposed' warnings. Each row is written in the \"X already states F-nnn. What it adds here: ...\" shape (e.g. best_practices[0] 'agentic-stack already states the configuration finding (F-a7-04). What it adds here: read back the capability set...') but the whole row, including the added consequence after the marker, is marked origin=sourced with no 'proposed' text and no separate citation for the extension clause.",
+      "fix": "Split each row: keep the restatement of the named fact as sourced under its existing quote, and move the 'what it adds here' consequence into its own origin=proposed row (or give the extension its own citation)."
+    },
+    {
+      "id": "R60A-004",
+      "skill": "cap-agent-runtime-implement",
+      "location": "instructions[0], instructions[2], instructions[5], instructions[7], best_practices[2]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "python3 tools/validate_skills.py --only cap-agent-runtime-implement: 5 restate-and-extend warnings of the same 'already states.../what this adds' shape with no origin=proposed marker on the added clause (e.g. best_practices[2]: 'agentic-stack already states that callers request a class of model, never a vendor (F-a4-01). What it adds here: the runtime adapter must not pin a model name of its own...').",
+      "fix": "Split each row into the sourced restatement plus a separate origin=proposed row (or its own citation) for the extension clause."
+    },
+    {
+      "id": "R60A-005",
+      "skill": "cap-capability-packaging",
+      "location": "contract.invariants[4], contract.invariants[5], best_practices[0]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "python3 tools/validate_skills.py --only cap-capability-packaging: 3 restate-and-extend warnings (e.g. invariants[4]: 'build-skill-authoring already states the swap class for this row (F-b3-07). The consequence here is a separation of checks...' -- the whole sentence, extension included, is origin=sourced with no proposed marker).",
+      "fix": "Split each row: sourced restatement plus its own origin=proposed (or separately cited) extension clause."
+    },
+    {
+      "id": "R60A-006",
+      "skill": "cap-capability-packaging-implement",
+      "location": "best_practices[0]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "python3 tools/validate_skills.py --only cap-capability-packaging-implement: 'build-definition-of-done already states the green-gate finding (F-a7-03). What this skill adds: make packages_checked an assertion and not a log line...' is origin=sourced with the extension unmarked.",
+      "fix": "Split the row: sourced restatement of F-a7-03, and a separate origin=proposed row for the packages_checked-specific consequence."
+    },
+    {
+      "id": "R60A-007",
+      "skill": "cap-capability-registry",
+      "location": "contract.invariants[0], best_practices[0]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "python3 tools/validate_skills.py --only cap-capability-registry: two restate-and-extend warnings, plus 'restates F-a7-03 under the same quote as build-ceremony, without naming it (compose by name, not by copy)'. best_practices[0] ('agentic-stack already states the structurally-green finding (F-a7-03). What it adds here: assert records_checked and adapters_run as numbers...') is flagged by both checks: it restates-and-extends without a proposed marker, and it repeats the identical F-a7-03 quote build-ceremony already carries, without naming build-ceremony.",
+      "fix": "Split best_practices[0] into the sourced restatement (naming both agentic-stack and build-ceremony as prior holders of F-a7-03) and a separate proposed row for the registry-specific consequence; likewise split invariants[0]."
+    },
+    {
+      "id": "R60A-008",
+      "skill": "cap-capability-registry-implement",
+      "location": "instructions[2], best_practices[0]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "python3 tools/validate_skills.py --only cap-capability-registry-implement: 2 restate-and-extend warnings, e.g. best_practices[0]: 'build-definition-of-done already states the structurally-green finding (F-a7-03). What this skill adds: make records_checked and adapters_run assertions rather than log lines...' -- origin=sourced, extension unmarked.",
+      "fix": "Split each row into the sourced restatement and a separately-marked proposed extension."
+    },
+    {
+      "id": "R60A-009",
+      "skill": "cap-document-validation",
+      "location": "instructions[0], best_practices[0], best_practices[1]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "python3 tools/validate_skills.py --only cap-document-validation: 2 restate-and-extend warnings (best_practices[0], best_practices[1]) plus 'restates F-b3-18 under the same quote as build-adapter-pair, without naming it'. instructions[0] quotes 'the adapter changes and the core does not' from F-b3-18 -- the identical quote build-adapter-pair already carries for the same fact -- without naming build-adapter-pair.",
+      "fix": "Name build-adapter-pair where F-b3-18 is cited in instructions[0]; split best_practices[0]/[1] into sourced restatement plus separately-marked proposed extensions."
+    },
+    {
+      "id": "R60A-010",
+      "skill": "cap-document-validation-implement",
+      "location": "instructions[1], instructions[5], instructions[6], contract.invariants[1], contract.invariants[3], best_practices[0], best_practices[3], adapters[1]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "python3 tools/validate_skills.py --only cap-document-validation-implement: 9 warnings -- 3 restate-and-extend (instructions[6], invariants[3], best_practices[0], all in the '...already states.../what this adds' shape with no proposed marker) and 6 restate-under-same-quote-without-naming (instructions[1] restates F-b3-09 as cap-document-validation; instructions[5] restates X-cap-document-validation-004 as cap-document-validation; invariants[1] restates F-meta-04 as agentic-stack/build-adapter-pair; best_practices[0] restates F-a7-04 as build-evidence-record; best_practices[3] restates X-cap-document-validation-006 as cap-document-validation; adapters[1] restates both F-b3-09 and F-b1-04 as cap-document-validation).",
+      "fix": "Name the owning skill in each row's text before restating its fact, and split the restate-and-extend rows into a sourced restatement plus a separately-marked proposed extension."
+    },
+    {
+      "id": "R60A-011",
+      "skill": "cap-durable-execution",
+      "location": "instructions[3], instructions[4], instructions[5], best_practices[0]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "python3 tools/validate_skills.py --only cap-durable-execution: 4 restate-and-extend warnings, e.g. instructions[4]: 'agentic-stack and build-definition-of-done already state that a criterion nothing can fail is not a criterion (F-part-c-04). What this adds: the property worth gating on here is exactly-once effect under a real kill...' -- origin=sourced, extension unmarked.",
+      "fix": "Split each row into the sourced restatement and a separately-marked proposed extension."
+    },
+    {
+      "id": "R60A-012",
+      "skill": "cap-durable-execution-implement",
+      "location": "instructions[0], instructions[2], instructions[5], instructions[6], contract.invariants[3], contract.invariants[5], best_practices[2]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "python3 tools/validate_skills.py --only cap-durable-execution-implement: 7 restate-and-extend warnings, e.g. invariants[5]: 'build-evidence-record owns the append-only chained record (F-a5-03). What this adds: the step log is the same idea applied per run...' -- origin=sourced, extension unmarked.",
+      "fix": "Split each row into the sourced restatement and a separately-marked proposed extension."
+    },
+    {
+      "id": "R60A-013",
+      "skill": "cap-errors",
+      "location": "open_questions[1]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "python3 tools/validate_skills.py --only cap-errors: 'restates T-t5-02 under the same quote as build-definition-of-done, without naming it (compose by name, not by copy)'. open_questions[1] quotes 'define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation' from T-t5-02 -- the identical quote build-definition-of-done already carries -- without naming it.",
+      "fix": "Name build-definition-of-done (or agentic-stack, whichever states the 1-3-1 rule under this quote) in open_questions[1]'s evidence field."
+    },
+    {
+      "id": "R60A-014",
+      "skill": "cap-errors-implement",
+      "location": "instructions[1], instructions[6], instructions[7], open_questions[0], open_questions[1]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "python3 tools/validate_skills.py --only cap-errors-implement: 6 warnings -- 1 restate-and-extend (instructions[7]: 'agentic-stack already states the configuration finding (F-a7-04)... What this step adds: assert the report's adapter field against a marker...', unmarked proposed) and 5 restate-under-same-quote-without-naming (instructions[1] restates both F-a6-06 and E-not-running-typed-errors as cap-errors; instructions[6] restates F-b1-02 as agentic-stack/build-adapter-pair; open_questions[0] restates F-b3-13 as cap-errors; open_questions[1] restates F-part-c-08 as agentic-stack/build-definition-of-done/build-evidence-record).",
+      "fix": "Name the owning skill in each row before restating its fact, and split instructions[7] into a sourced restatement plus a separately-marked proposed extension."
+    }
+  ],
+  "metrics": {
+    "rows_checked": 379,
+    "sourced": 273,
+    "proposed": 106,
+    "quotes_verified": 273,
+    "harness_runs": 13
+  },
+  "summary": "Read OWNER.md, docs/acceptance/ceremony.json, .claude/skills/build-ceremony/SKILL.md and kb/ceremonies/59-build-review-a.json for shape and depth, then reviewed all 13 STATUS-row-60 skills row by row against their skill.json data, without reading any kb/ceremonies/60-* file. Ran python3 tools/validate_skills.py --only <name> for each of the 13 skills (all report 0 errors; warning counts ranged 1-9, mostly the restate-and-extend and restate-under-same-quote checks) and used those runs, plus python3 tools/kb.py show on every distinct cited id I spot-checked (all sourced quotes I checked, including every numeric/specific claim in cap-agent-runtime, cap-capability-packaging, cap-capability-registry and cap-durable-execution, verified as verbatim substrings that do support the row's claim), to find findings. Ran every 'measured' definition_of_done once: harness/containment (cap-agent-runtime-implement), harness/capability-packaging, harness/capability-registry (clean and breakage both run twice due to a sandboxed retry), harness/document-validation, harness/workflow (cap-durable-execution-implement, breakage exercised internally by test.sh), harness/errors, and examples/end-to-end/test.sh (cap-consumption) -- 13 runs total, tree left clean after each (git status confirmed empty). Six of the seven reproduced their recorded clean and breakage output exactly. Two did not: cap-errors-implement's documented breakage recipe, followed exactly as written, does not produce its documented expected_failure -- it instead reproduces an internal harness self-check error already sitting (unnoticed) in the record's own measured_run.breakage_output (R60A-001, high). cap-consumption's clean-run expected text ('passed 29, failed 0') is stale against the suite's current count of 30 (R60A-002, low; the criterion itself still passes and the breakage half reproduced exactly). No fabricated quotes were found (no case where a quote was a verbatim substring of a cited record but the record did not support the row's claim, in the style of the ceremony-59 example) among the rows checked; validate_skills.py's own verbatim-substring check reported 0 errors on all 13 skills, meaning no cited quote failed that check outright. No uncited non-proposed claims (0 errors on that check either). No adapters[] row named a product outside the designated adapters section, and every second adapter differs from its 'today' adapter on a genuine execution-model axis I could verify from its binding schema and swap_procedure text (agent-runtime: session vs single-shot; capability-packaging: directory vs registry; capability-registry: signed local index vs network fetch; document-validation: in-process walk-per-doc vs out-of-process compile-once; durable-execution: external replay orchestrator vs in-process transactional step log; errors: in-process factory vs edge wire-filter) -- cap-durable-execution and cap-durable-execution-implement name real products (Temporal, DBOS) but only inside adapters[], which is where agentic-stack's own rule says products belong. No description trigger clause across the 13 skills failed to fire on its own stated scope. No proposed row read as padding or as a reword of a sibling row in the same skill. The remaining findings (R60A-003 through R60A-014, all low severity) are the restatement pattern already named in build-ceremony's own author-brief lesson: a sourced row in 12 of the 13 skills restates a fact agentic-stack, build-adapter-pair, build-definition-of-done, build-evidence-record, build-ceremony, or a sibling cap- skill already states under the identical quote, either without naming that owner or by extending the restatement with an unmarked, uncited consequence clause after an 'already states / what it adds' marker. cap-consumption was the one skill in this batch with no restatement finding."
+}

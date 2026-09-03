@@ -11,6 +11,9 @@ Usage:
   python3 tools/kb.py show <id>        print one record (F-, E-, S-, R- ids)
   python3 tools/kb.py tree             print the knowledge tree (entities grouped, with edges)
   python3 tools/kb.py stats            counts by status and type
+  python3 tools/kb.py merge-research   merge kb/research/*.jsonl into kb/research.jsonl (chained, sorted by id)
+  python3 tools/kb.py ledger '<json>'  append one run record to kb/ledger.jsonl (chained; adds git commit, tree hash, dirty flag, time)
+  python3 tools/kb.py ledger-verify    check the ledger chain
 
 Files:
   kb/facts.jsonl      one record per fact (table row, list item, or paragraph) in PASS.md
@@ -418,8 +421,64 @@ def stats() -> int:
     return 0
 
 
+LEDGER = KB / "ledger.jsonl"
+RESEARCH = KB / "research.jsonl"
+
+
+def merge_research() -> int:
+    recs = []
+    for p in sorted((KB / "research").glob("*.jsonl")):
+        recs += read_jsonl(p)
+    recs.sort(key=lambda r: r["id"])
+    ids = [r["id"] for r in recs]
+    dups = {i for i in ids if ids.count(i) > 1}
+    if dups:
+        print(f"FAIL: duplicate research ids {sorted(dups)[:5]}")
+        return 1
+    for r in recs:
+        r.pop("prev", None)
+        r.pop("hash", None)
+    write_jsonl(RESEARCH, chain(recs))
+    print(f"merged {len(recs)} research records into kb/research.jsonl")
+    return 0
+
+
+def git(*args) -> str:
+    import subprocess
+    return subprocess.run(["git", *args], cwd=ROOT, capture_output=True, text=True).stdout.strip()
+
+
+def ledger_append(payload: dict) -> int:
+    import datetime
+    recs = read_jsonl(LEDGER) if LEDGER.is_file() else []
+    prev = recs[-1]["hash"] if recs else "genesis"
+    rec = {"id": f"L-{len(recs) + 1:05d}", "type": "ledger", "time": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
+           "git_commit": git("rev-parse", "HEAD"), "tree": git("rev-parse", "HEAD^{tree}"), "dirty": bool(git("status", "--porcelain")),
+           "kb_heads": json.loads(META.read_text())["heads"], **payload}
+    rec["prev"] = prev
+    rec["hash"] = sha256(canonical(rec).encode())
+    with LEDGER.open("a") as fh:
+        fh.write(json.dumps(rec, ensure_ascii=False, sort_keys=True) + "\n")
+    print(rec["id"], rec["hash"][:12])
+    return 0
+
+
+def ledger_verify() -> int:
+    prev = "genesis"
+    n = 0
+    for r in (read_jsonl(LEDGER) if LEDGER.is_file() else []):
+        if r["prev"] != prev or r["hash"] != sha256(canonical(r).encode()):
+            print(f"FAIL: ledger chain broken at {r['id']}")
+            return 1
+        prev, n = r["hash"], n + 1
+    print(f"ledger verified: {n} records, chain intact")
+    return 0
+
+
 if __name__ == "__main__":
-    cmds = {"build": build, "verify": verify, "tree": tree, "stats": stats}
+    cmds = {"build": build, "verify": verify, "tree": tree, "stats": stats, "merge-research": merge_research, "ledger-verify": ledger_verify}
+    if len(sys.argv) >= 3 and sys.argv[1] == "ledger":
+        sys.exit(ledger_append(json.loads(sys.argv[2])))
     if len(sys.argv) >= 3 and sys.argv[1] == "show":
         sys.exit(show(sys.argv[2]))
     if len(sys.argv) == 2 and sys.argv[1] in cmds:

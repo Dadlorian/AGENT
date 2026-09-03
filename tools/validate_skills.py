@@ -162,6 +162,7 @@ def check_structure(sk: dict, name: str, errs: list[str]):
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--manifest", type=Path, default=ROOT / "docs" / "skill-manifest.json")
+    ap.add_argument("--only", action="append", default=[], help="report only errors/warnings naming these skills (links to others are still loaded)")
     args = ap.parse_args()
     kb_ids, meta = load_kb()
     errs: list[str] = []
@@ -241,11 +242,15 @@ def main() -> int:
         for extra in sorted(set(skills) - manifest_names - {ROOT_SKILL}):
             errs.append(f"{extra} is not in docs/skill-manifest.json")
 
+    if args.only:
+        errs = [e for e in errs if any(e.startswith(o + ":") or e.startswith(o + " ") for o in args.only)]
+        warns = [w for w in warns if any(w.startswith(o + ":") or w.startswith(o + " ") for w in args.only)]
     for w in warns:
         print(f"warning: {w}")
     for e in errs:
         print(f"error:   {e}")
-    print(f"{len(skills)} skills checked, {len(errs)} errors, {len(warns)} warnings")
+    scope = f"{', '.join(args.only)}: " if args.only else f"{len(skills)} skills checked, "
+    print(f"{scope}{len(errs)} errors, {len(warns)} warnings")
     return 1 if errs else 0
 
 

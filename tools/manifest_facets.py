@@ -9,7 +9,8 @@ Usage:
 Facet rules (proposed convention):
   <item>            the ideal definition; keeps the original entry's links
   <item>-implement  builds_on: <item>, build-adapter-pair, build-definition-of-done (+ build-evidence-record)
-  <item>-use        builds_on: <item>, <item>-implement
+  <item>-use        builds_on: <item>, <item>-implement   (cap- layer only; other layers fold usability into the ideal facet)
+  sections are capped at 5 items; a larger wave is split into wave-Na, wave-Nb, ...
   build- skills and agentic-stack are not expanded (they are disciplines, not areas).
 """
 from __future__ import annotations
@@ -74,8 +75,13 @@ def expand() -> int:
             if k in s:
                 impl[k] = s[k]
         s["facet"] = "ideal"
-        s["used_by"] = sorted(set(s["used_by"]) | {impl["name"], use["name"]})
-        new += [impl, use]
+        s["used_by"] = sorted(set(s["used_by"]) | ({impl["name"], use["name"]} if s["layer"] == "cap" else {impl["name"]}))
+        if s["layer"] == "cap":
+            new += [impl, use]
+        else:
+            impl["used_by"] = []
+            s["notes_for_author"] = (s.get("notes_for_author", "") + " The ideal facet also carries the usability section (how a human, an agent, and an event reach it; minimal inputs/outputs; failure shape) since this layer has no separate -use skill.").strip()
+            new += [impl]
         for d in IMPL_DEPS:
             if d in by:
                 by[d]["used_by"] = sorted(set(by[d]["used_by"]) | {impl["name"]})
@@ -121,7 +127,15 @@ def sections() -> int:
     for it in items.values():
         it["facets"].sort(key=lambda f: order[f["facet"]])
         secs.setdefault(it["wave"], []).append(it)
-    out = {"sections": [{"name": f"wave-{w}", "items": sorted(secs[w], key=lambda i: i["name"])} for w in sorted(secs)],
+    MAX_ITEMS = 5
+    sections_out = []
+    for w in sorted(secs):
+        items_w = sorted(secs[w], key=lambda i: i["name"])
+        chunks = [items_w[i:i + MAX_ITEMS] for i in range(0, len(items_w), MAX_ITEMS)]
+        for ci, chunk in enumerate(chunks):
+            name = f"wave-{w}" if len(chunks) == 1 else f"wave-{w}{'abcdefgh'[ci]}"
+            sections_out.append({"name": name, "items": chunk})
+    out = {"sections": sections_out,
            "brief": "/home/user/AGENT/state/author-brief.md", "date": "2026-09-03", "startAt": 0}
     ARGS.parent.mkdir(exist_ok=True)
     ARGS.write_text(json.dumps(out, indent=2) + "\n")

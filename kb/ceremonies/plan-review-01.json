@@ -1,0 +1,156 @@
+{
+  "reviewer": "sonnet",
+  "date": "2026-09-03",
+  "findings": [
+    {
+      "id": "P-001",
+      "area": "self-improvement",
+      "severity": "fix",
+      "finding": "The loop's self-improvement is one-sided: authors and reviewers read the state that ceremonies update (the brief, prior lessons), but research agents never do, so the cheapest, most repeated stage (34 of 84 agents) never gets smarter across sections even though authoring does.",
+      "evidence": "state/loop-workflow.js lines 15-21 (researchPrompt): reads TARGET.md, schemas/research.schema.json, kb records, docs/research/*.json only. Compare authorPrompt line 26 which reads `${args.brief}` and reviewPrompt line 35 which reads `kb/ceremonies/ceremony-${n-1}-improve.json` for lessons_for_next_section — researchPrompt has no equivalent line.",
+      "change": "Add one line to researchPrompt: read kb/ceremonies/ceremony-<n-1>-improve.json's lessons_for_next_section and any research-methodology note in the brief, so query strategy (not just skill content) compounds across sections.",
+      "token_effect": "costs ~1-2k tokens per research agent (one more small read), required for the loop to actually be self-improving across all three agent roles, not two of three"
+    },
+    {
+      "id": "P-002",
+      "area": "self-improvement",
+      "severity": "fix",
+      "finding": "state/author-brief.md is capped at 120 lines while every one of 8 ceremonies is told to fold new brief_improvements into it in place; after ceremony 1 alone (4 improvements) the brief is already 79 lines, so most of the learning from sections 2-8 will be lost to compression or silently overwrite earlier lessons rather than accumulate.",
+      "evidence": "state/loop-workflow.js line 44: \"Fold brief_improvements into the brief file in place (keep it under 120 lines).\" state/author-brief.md is currently 79 lines after only ceremony-01 (which alone produced 4 brief_improvements, kb/ceremonies/ceremony-01-review.json lines 87-91).",
+      "change": "Keep the brief short as a pointer, but append full brief_improvements to an ever-growing state/lessons.jsonl (one row per ceremony, never trimmed) that later researchers/authors can grep, instead of compressing all 8 rounds of learning into one length-capped prose file.",
+      "token_effect": "saves in the long run — a short brief stays cheap to read every time, and no information is destroyed by repeated summarization"
+    },
+    {
+      "id": "P-003",
+      "area": "tokens",
+      "severity": "fix",
+      "finding": "Every author agent in a section independently reruns tools/validate_skills.py over the entire, ever-growing repo-wide skill tree at the end of its own turn, so a section with N items produces N redundant full-tree validator runs (and N copies of the growing error/warning output) instead of one.",
+      "evidence": "state/loop-workflow.js line 29 (authorPrompt): \"At the end: python3 tools/validate_skills.py and fix every error naming your skills\" — this line is inside authorPrompt, which runs once per item (line 59), not once per section.",
+      "change": "Move the full-tree validate_skills.py run to a single shared step (the review or improve agent already reads it) and have per-item authors validate only their own skill's render instead of the whole tree.",
+      "token_effect": "saves — validator output scales with total skills authored so far (grows from ~4 to 100+ over the run), multiplied by items-per-section redundant invocations, worst in the 15- and 10-item sections"
+    },
+    {
+      "id": "P-004",
+      "area": "tokens",
+      "severity": "fix",
+      "finding": "Splitting each item into ideal/implement/use triples the provenance block, kb-citation boilerplate, and often the same underlying fact across three files per item; ceremony-01 already caught this exact pattern across four wave-1 skills (C1-006) restating one fact independently instead of citing it by name, and the facet split structurally invites the same duplication at 3x the surface area for the remaining 34 items.",
+      "evidence": "kb/ceremonies/ceremony-01-review.json C1-006: \"All four wave-1 skills independently restate the same underlying fact ... instead of one skill stating it and the others citing it by name.\" The facet split (tools/manifest_facets.py lines 9-14) creates exactly this shape for every one of the 34 items: three sibling files sharing most of their PASS.md/TARGET.md citations.",
+      "change": "Add an explicit authorPrompt rule: a fact already established in the ideal facet is referenced by name from implement/use, never re-quoted with fresh wording, mirroring the fix already proposed for build-* skills in ceremony 1.",
+      "token_effect": "saves — cuts repeated citation/provenance rows across three files per item, compounding over 34 items"
+    },
+    {
+      "id": "P-005",
+      "area": "failure",
+      "severity": "block",
+      "finding": "improvePrompt explicitly permits pushing to the shared branch while a skill.json is known to still be invalid, with the only record of that being free text in an 80-word commit summary that nothing downstream parses; a later section's author is told to read \"the skill.json of every skill in the manifest entries' builds_on\" with no way to know one of them is broken.",
+      "evidence": "state/loop-workflow.js line 46: \"Commit even if some other item's skill still has errors, but say so in the summary.\" Compare authorPrompt line 26: \"the skill.json of every skill in the manifest entries' builds_on\" — no status field or broken-skill registry is ever consulted.",
+      "change": "Before commit, if validate_skills.py still errors on any skill, write a machine-readable kb/ceremonies/section-NN-known-issues.json listing the broken skill names, and add a line to authorPrompt/researchPrompt telling later agents to check it before citing or building on a listed skill.",
+      "token_effect": "costs a small write/read per section; prevents invalid citations from silently compounding across sections, which is far more expensive to unwind later"
+    },
+    {
+      "id": "P-006",
+      "area": "failure",
+      "severity": "fix",
+      "finding": "The workflow computes which items failed author validation but discards the information before the reviewer ever sees it, forcing the reviewer to rediscover broken items from scratch by reading every skill in the section instead of being told directly.",
+      "evidence": "state/loop-workflow.js line 63: `const failed = authored.filter(a => a && !a.ok).map(a => a.item)`, logged at line 64, but the call at line 65 is `reviewPrompt(section, n, skills)` — `failed` is never passed, and reviewPrompt's template (lines 33-38) never mentions it.",
+      "change": "Pass `failed` into reviewPrompt and add a line: \"These items already failed the author's own validator: ${failed.join(', ')} — start there.\"",
+      "token_effect": "saves — reviewer converges on real defects instead of scanning uniformly across all skills in the section"
+    },
+    {
+      "id": "P-007",
+      "area": "failure",
+      "severity": "fix",
+      "finding": "There is no minimum-yield check on research output. A research agent can return ok:true with zero or near-zero jsonl records (nothing in the schema or the loop checks numbers.records), silently starving the author of citable material; the item then degrades to \"proposed\" everywhere with no signal that research actually failed rather than the topic genuinely lacking sources.",
+      "evidence": "state/loop-workflow.js line 58 assigns the research stage's result to `r`, but only `r.summary` is used downstream (line 60) — `r.numbers.records` is never inspected. schemas/research.schema.json has no minimum-count constraint on the jsonl file it describes.",
+      "change": "After the research stage, add a script-level check: if numbers.records < 3, log a warning and either retry research once with different queries or flag the item for the reviewer explicitly.",
+      "token_effect": "costs a small check; avoids an item quietly losing most of its sourcing with no trace"
+    },
+    {
+      "id": "P-008",
+      "area": "failure",
+      "severity": "fix",
+      "finding": "The checkpoint sequence mixes `&&` and `;` ambiguously: the three verification commands are `&&`-chained (so they do stop each other on failure), but the subsequent state-write and git commit/push are `;`-separated from that chain, so the instruction can be read as \"write state and commit regardless of whether verify/ledger-verify/skill_graph passed.\"",
+      "evidence": "state/loop-workflow.js line 46: \"python3 tools/kb.py verify && python3 tools/kb.py ledger-verify && python3 tools/skill_graph.py; write state/loop.json ...; git add -A && git commit ... ; git push\" — note the `;` before \"write state/loop.json\".",
+      "change": "Replace the `;` after `tools/skill_graph.py` with `&&`, or add an explicit sentence: \"abort the commit if any of the three checks failed.\"",
+      "token_effect": "neutral wording fix; closes a path to committing on top of a broken kb chain or ledger"
+    },
+    {
+      "id": "P-009",
+      "area": "scale",
+      "severity": "block",
+      "finding": "\"Roughly 8 sections\" hides an extreme imbalance: wave 3 alone has 15 items (30 research+author agents) and wave 4 has 10 (20 agents) — together 50 of the 84 agents and 6 of the 15 ceremonies' worth of item-work sit in just 2 of 8 sections. One improve+checkpoint agent is then the single push point for all 15 (or 10) items at once, so a push failure or a validator error on any one item blocks/risks the whole batch, and the run will visibly stall for a long stretch on wave-3 while flying through 1-item waves 6 and 8.",
+      "evidence": "Computed from docs/skill-manifest.json (pre-facet-expansion, non-build items only): wave 2 = 2 items, wave 3 = 15 items (cap-isolation, cap-model-access, cap-durable-execution, cap-agent-runtime, cap-tool-access, cap-capability-packaging, cap-work-intake, cap-telemetry, cap-policy, cap-provenance, cap-identity, cap-scheduling, cap-idempotency, cap-state-persistence, core-document), wave 4 = 10 items, wave 5 = 3, wave 6 = 1, wave 7 = 2, wave 8 = 1.",
+      "change": "Cap section size (e.g. 5 items) and split wave 3 into 3 sub-sections and wave 4 into 2, instead of one section per wave; this shrinks per-checkpoint blast radius and gives more frequent, smaller ceremonies.",
+      "token_effect": "neutral to saves overall — same total author work, but failure recovery after a bad push redoes at most 5 items instead of 15"
+    },
+    {
+      "id": "P-010",
+      "area": "scale",
+      "severity": "fix",
+      "finding": "Research is the most mergeable of the three roles: it is one Haiku agent per item doing shallow web search with no cross-item dependency, unlike author (which must stay per-item for quality) or ceremony (which is inherently per-section by design intent, TARGET.md T4.4).",
+      "evidence": "state/loop-workflow.js lines 15-21 (researchPrompt) has no per-item state that couldn't be handled in one agent doing N sub-searches; author (lines 23-30) genuinely needs per-item focus to write three cited skills correctly.",
+      "change": "Batch research to one Haiku agent per (sub-)section, given a numbered list of that section's items, each producing kb/research/<item>.jsonl in the same turn.",
+      "token_effect": "saves — cuts research agent count roughly 3-4x with low quality cost since search depth per item is unchanged, only the wrapping agent shell is shared"
+    },
+    {
+      "id": "P-011",
+      "area": "facets",
+      "severity": "fix",
+      "finding": "The three-facet split genuinely serves TARGET T2.2 (\"enhancing particular aspects... without touching the rest\") for cap- layer items, where implement (adapter swap) is exactly the aspect meant to change independently of ideal (contract) — but the same split is applied uniformly to xc-, core-, and seam- items too, where \"use\" often has little distinct content (a cross-cutting guarantee mostly has one entry point: the platform applying it), inflating file count for T3 cost without a matching T2 benefit; the split itself is labeled a self-declared convention, not derived from PASS.md/TARGET.md text.",
+      "evidence": "tools/manifest_facets.py line 9: \"Facet rules (proposed convention)\" — line 13: \"<item>-use builds_on: <item>, <item>-implement\" applied to every non-build item alike, including 7 xc- items and 5 core- items where PASS.md B4 describes placement, not a distinct usage recipe.",
+      "change": "Keep the full ideal/implement/use split for cap- (16 items, where adapter-swap composability is the point); for xc-/core-/seam- items, fold \"use\" into \"ideal\" as a section rather than a separate file, unless a reviewer finds real distinct content.",
+      "token_effect": "saves — removes up to 12 near-empty skill files (7 xc + 5 core \"use\" facets) without weakening the composability story where it actually matters"
+    },
+    {
+      "id": "P-012",
+      "area": "usability",
+      "severity": "fix",
+      "finding": "A completed run leaves ~106 skill.json/SKILL.md pairs (34 items x 3 facets + 4 build), 16 ceremony JSON files, and 34 research jsonl files, with no final synthesis step that rolls the 8 rounds of findings/applied/declined into one short digest — the owner opening the repo has to read 16 ceremony files themselves to understand what happened across the whole run.",
+      "evidence": "docs/skill-manifest.json: 34 non-build items x 3 facets = 102, + 4 build skills = 106 skill dirs at completion; loop-workflow.js produces one ceremony-NN-review.json and one ceremony-NN-improve.json per section (16 files for 8 sections) with no rollup step after the final section.",
+      "change": "Add a ninth, lightweight step after the last section: one agent (or script) that reads all 8 improve.json files and writes kb/ceremonies/run-summary.json — total applied/declined, recurring lesson themes, open questions carried to the end.",
+      "token_effect": "costs one small agent at the very end; saves the owner from manually reconstructing the run's history from 16 files"
+    },
+    {
+      "id": "P-013",
+      "area": "usability",
+      "severity": "nit",
+      "finding": "Section sizes range from 1 item (waves 6, 8) to 15 items (wave 3) with no section-size annotation surfaced anywhere the owner would see mid-run; watching the loop, a 1-item section finishing in minutes right before a 15-item section that takes much longer will read as a stall rather than expected variance.",
+      "evidence": "Same wave counts as P-009 (2, 15, 10, 3, 1, 2, 1); state/loop-workflow.js line 55 logs only `Section ${n}/${args.sections.length}: ${section.name} (${section.items.length} items)` once at section start, with no further progress signal until the section fully completes.",
+      "change": "Log periodic progress within a large section (e.g. after each item's author agent completes) rather than only at section boundaries.",
+      "token_effect": "neutral — log() calls are cheap; mainly a wait-clarity fix"
+    },
+    {
+      "id": "P-014",
+      "area": "failure",
+      "severity": "nit",
+      "finding": "If the session dies mid-section, recovery depends entirely on the Workflow tool's resumeFromRunId/journal caching, a platform mechanism not documented anywhere in this repo; state/loop.json only records section-level completion (\"last_completed_section\"), so someone restarting the run without knowing about resumeFromRunId would re-run the whole in-flight section from scratch, or worse, pass a wrong startAt.",
+      "evidence": "state/loop-workflow.js line 46 writes state/loop.json with only `{last_completed_section, ceremony}`; no README, comment, or skill in this repo mentions resumeFromRunId as the mid-section recovery path.",
+      "change": "Add one comment at the top of state/loop-workflow.js: \"to resume after a mid-section death, relaunch with the same scriptPath and resumeFromRunId from the prior run, not a new startAt.\"",
+      "token_effect": "neutral — a comment; avoids an expensive full section re-run by whoever restarts this without that context"
+    },
+    {
+      "id": "P-015",
+      "area": "tokens",
+      "severity": "fix",
+      "finding": "The reviewer is told to read both skill.json and SKILL.md for every skill in the section, but SKILL.md is a mechanical, lossless render of skill.json (per agentic-stack's own rule: \"SKILL.md must be the render; never edit it by hand\"), so the reviewer pays for the same content twice per skill.",
+      "evidence": "state/loop-workflow.js line 35: \"the skill.json plus SKILL.md of: ${skills.join(', ')}\"; .claude/skills/agentic-stack/SKILL.md instructions row 3: \"render SKILL.md with python3 tools/render_skill.py <dir>; never edit SKILL.md by hand.\"",
+      "change": "Have the reviewer read skill.json only (the data) plus a spot-check of one SKILL.md to confirm the render matches, rather than both files for every skill.",
+      "token_effect": "saves — roughly halves the per-skill read cost in the review stage, which already reads every skill in a section (up to 15 x 3 files in wave 3)"
+    }
+  ],
+  "agent_count_recommendation": {
+    "research": 10,
+    "author": 34,
+    "ceremony": 20,
+    "total": 64,
+    "rationale": "Author stays per-item (34): each opus agent already writes all three facets in one turn with shared context, which is the efficient shape and where quality genuinely depends on per-item focus. Research is batched into one Haiku agent per (sub-)section instead of per item (34 -> ~10), the single largest low-risk cut, since research has no cross-item dependency and is already a shallow, cheap-tier task. Ceremony count rises slightly (16 -> 20) by capping section size at ~5 items and splitting the 15-item and 10-item waves into smaller sections, which shrinks blast radius per checkpoint (P-009), gives more frequent brief updates that mitigate the 120-line compression problem (P-002), and keeps research batching's context small enough per agent to stay accurate. Net: 84 -> 64 agents, a ~24% cut, concentrated on the role with the lowest quality cost per agent removed."
+  },
+  "keep": [
+    "One Opus agent authors all three facets (ideal, implement, use) for an item in a single turn, so cross-facet references stay consistent without relying on multiple agents sharing context.",
+    "The research schema's fetched vs search-only status is honestly tracked, and the research prompt already anticipates WebFetch being blocked for most domains rather than treating it as a surprise failure.",
+    "tools/manifest_facets.py's check() forbids a skill from building on another skill in the same or a later wave, which removes any same-section race condition between items whose facets depend on each other.",
+    "The section loop stops immediately if the improve+checkpoint agent does not report a push (state/loop-workflow.js line 70), rather than silently starting the next section on top of an uncommitted one.",
+    "The reviewer explicitly reads the previous ceremony's lessons_for_next_section, giving real cross-section continuity for the author+reviewer half of the loop.",
+    "Every agent prompt forces a small structured return (ok, summary under 80 words, numbers) via schema, keeping orchestration-level overhead low regardless of how large a section's item count grows."
+  ]
+}

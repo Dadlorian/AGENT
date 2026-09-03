@@ -1,0 +1,101 @@
+{
+  "status_row": 60,
+  "reviewer": "60-cap-review-c",
+  "skills": [
+    "cap-policy-implement",
+    "cap-provenance",
+    "cap-provenance-implement",
+    "cap-scheduling",
+    "cap-scheduling-implement",
+    "cap-state-persistence",
+    "cap-state-persistence-implement",
+    "cap-telemetry",
+    "cap-telemetry-implement",
+    "cap-tool-access",
+    "cap-tool-access-implement",
+    "cap-work-intake",
+    "cap-work-intake-implement"
+  ],
+  "findings": [
+    {
+      "id": "R60C-001",
+      "skill": "cap-scheduling-implement",
+      "location": "definition_of_done",
+      "severity": "high",
+      "kind": "dod",
+      "evidence": "The record's status is 'measured' with a measured_run block (tools/measure.py, commit 372cdc1, clean_exit 0). But the criterion is `bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second` -- harness/workflow is the durable-execution/workflow harness (its own README: 'Workflow harness -- durable execution, a parked approval, a bounded loop'), not a scheduling harness. Its breakage text is 'makes Attempt.key() in harness/workflow/flow.py always return None instead of the step idempotency key', and its expected_failure talks about 'steps committed', 'the human asked twice' and 'the keyed-effect executor repeats the side effect' -- durable-execution vocabulary, not RRULE/cron recurrence. I ran `bash harness/workflow/test.sh` myself: it passes 23/23 and its output ('steps_committed=8 steps_replayed=6 ... executor_marker=in-process-journal/0.1') exactly matches the recorded clean_output. The row's own 'expected' field, by contrast, describes a completely different, never-built tool: `tools/conformance/recurrence_vectors.py --adapter standalone-evaluator --vectors tests/vectors/rfc5545/` asserting `mismatches==0`, `vectors_run>40` and `corpus_covers` containing dst_forward/dst_back/leap_day/bysetpos -- none of which the actually-run criterion tests. The 'measured' status therefore certifies durable-execution behaviour under cap-scheduling-implement's name; no RRULE, DST, leap-day or BYSETPOS vector has ever been run.",
+      "fix": "Either build tools/conformance/recurrence_vectors.py (or an equivalent harness/scheduling/test.sh) and re-measure against it, or revert the criterion/measured_run/status to claimed until a scheduling-specific harness exists; do not leave a workflow-harness measured_run standing under a scheduling DoD."
+    },
+    {
+      "id": "R60C-002",
+      "skill": "cap-scheduling",
+      "location": "contract.operations[3]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "python3 tools/validate_skills.py --only cap-scheduling: 'restates T-t6-02 under the same quote as cap-errors, without naming it'. The 'fire' operation row cites T-t6-02 with quote 'All four enter through the same shape.' -- the identical id and identical verbatim quote cap-errors' own contract already carries (grep confirms cap-errors/skill.json line 247 quotes the same string for T-t6-02). cap-errors is in cap-scheduling's builds_on list, but this row's name/input/output text never names cap-errors (other rows in the same skill citing the same fact, e.g. contract.invariants[3] and instructions[6], do name it).",
+      "fix": "Add 'cap-errors states the same record (T-t6-02) for its own boundary' to the fire operation's output text, matching the phrasing already used in invariants[3] and instructions[6] of this skill."
+    },
+    {
+      "id": "R60C-003",
+      "skill": "cap-work-intake",
+      "location": "contract.operations[1]",
+      "severity": "low",
+      "kind": "restatement",
+      "evidence": "python3 tools/validate_skills.py --only cap-work-intake: 'restates T-t6-02 under the same quote as cap-errors, without naming it'. The 'normalise' operation row cites T-t6-02 with quote 'All four enter through the same shape.' -- the same id and same verbatim quote cap-errors carries in its own contract. cap-errors is in cap-work-intake's builds_on list; this row's name/input/output text does not name cap-errors, unlike contract.invariants[5] in the same skill, which does ('cap-errors states the same record (T-t6-02) for its own boundary').",
+      "fix": "Add the same 'cap-errors states the same record (T-t6-02)' pointer used in invariants[5] to the normalise operation's output text."
+    },
+    {
+      "id": "R60C-004",
+      "skill": "cap-provenance",
+      "location": "contract.invariants[0]",
+      "severity": "low",
+      "kind": "uncited",
+      "evidence": "python3 tools/validate_skills.py --only cap-provenance: \"sourced row restates and extends ('already states') without saying proposed\". Row text: 'The contract this capability must deliver is one sentence: ... build-evidence-record already states the same record as the boundary of its own discipline (F-b4-05); what this skill adds is the interface that discharges the second half.' The whole row is origin=sourced under F-b4-05, but the clause after 'what this skill adds' (that cap-provenance is the interface discharging the verification half) is a new claim with no citation of its own and is not marked proposed.",
+      "fix": "Split the row: keep the F-b4-05 restatement as sourced, and move 'what this skill adds is the interface that discharges the second half' into its own origin=proposed clause."
+    },
+    {
+      "id": "R60C-005",
+      "skill": "cap-state-persistence",
+      "location": "contract.invariants[2]",
+      "severity": "low",
+      "kind": "uncited",
+      "evidence": "python3 tools/validate_skills.py --only cap-state-persistence: \"sourced row restates and extends ('already states') without saying proposed\". Row text: 'agentic-stack already states that two boundaries have no standard to adopt (F-b5-01); the consequence for this row is that original design is the deliverable rather than an indulgence, because these two are ours.' Origin is sourced under F-b5-06/F-b5-01, but the added interpretive clause ('original design is the deliverable rather than an indulgence') carries no citation of its own and is not marked proposed.",
+      "fix": "Split the row into the sourced F-b5-01/F-b5-06 restatement plus a separate origin=proposed clause for the 'deliverable rather than an indulgence' consequence."
+    },
+    {
+      "id": "R60C-006",
+      "skill": "cap-tool-access",
+      "location": "instructions[0], instructions[2], instructions[5], instructions[6], instructions[7], best_practices[0]",
+      "severity": "low",
+      "kind": "uncited",
+      "evidence": "python3 tools/validate_skills.py --only cap-tool-access reports six instances of the same pattern: a row marked origin=sourced whose text reads '<fact, cited> ... What this adds (proposed language expected but absent): <new claim, uncited>'. E.g. instructions[2]: 'cap-document-validation owns the dialect and its validator (F-b3-09). What this adds here: the schema arrives from a server we may not control, so it is untrusted input that must itself be checked against the meta-schema before anything is validated with it.' -- the 'what this adds' clause is a new, uncited claim inside a row whose origin is sourced, not proposed. Same shape in instructions[0], [5], [6], [7] and best_practices[0].",
+      "fix": "For each of the six rows, keep the cited restatement as sourced and move its 'what this/it adds' clause into a separate origin=proposed sentence or row."
+    },
+    {
+      "id": "R60C-007",
+      "skill": "cap-tool-access-implement",
+      "location": "instructions[0], instructions[1], instructions[2], instructions[3], instructions[6], instructions[7], contract.invariants[2], best_practices[2]",
+      "severity": "low",
+      "kind": "uncited",
+      "evidence": "python3 tools/validate_skills.py --only cap-tool-access-implement reports eight instances of the same pattern. E.g. contract.invariants[2]: 'cap-tool-access states the endpoint's recorded state (F-a6-03). What this adds: it is the starting point of the migration, so the work here is registering real tools and counting them rather than standing an endpoint up, and every count below starts at zero.' -- origin=sourced for the whole row, but the 'what this adds' migration-framing clause has no citation and is not marked proposed. Same shape in instructions[0], [1], [2], [3], [6], [7] and best_practices[2].",
+      "fix": "For each of the eight rows, split the cited restatement (sourced) from its uncited 'what this/it adds' extension (mark that clause origin=proposed or give it its own citation)."
+    },
+    {
+      "id": "R60C-008",
+      "skill": "cap-work-intake-implement",
+      "location": "instructions[4]",
+      "severity": "low",
+      "kind": "uncited",
+      "evidence": "python3 tools/validate_skills.py --only cap-work-intake-implement: \"sourced row restates and extends ('already states') without saying proposed\". Row text: 'cap-work-intake already states the rule that the platform applies each; a caller cannot decline them (F-b4-01). What this facet adds is where: a single builder no producer can route around.' Origin is sourced under F-b4-01, but the 'what this facet adds' placement claim (single builder, no bypass) has no citation of its own and is not marked proposed.",
+      "fix": "Split the row: keep the F-b4-01 restatement sourced, and mark the 'single builder no producer can route around' placement claim as its own origin=proposed clause."
+    }
+  ],
+  "metrics": {
+    "rows_checked": 384,
+    "sourced": 244,
+    "proposed": 140,
+    "quotes_verified": 313,
+    "harness_runs": 10
+  },
+  "summary": "Reviewed all 13 skills (skill.json plus rendered SKILL.md) against python3 tools/kb.py show for every distinct cited id (all 313 quoted rows verified as verbatim substrings of at least one cited source, none unsupported by its cite), python3 tools/validate_skills.py --only <name> for each, and live re-execution of every definition_of_done whose status is measured: harness/policy, harness/provenance, harness/state-persistence, harness/observability and harness/tool-access, harness/work-intake all reproduced their recorded clean output, and the policy, provenance and observability breakages reproduced their recorded breakage output exactly (files restored via git checkout, tree left clean). The one high-severity finding is cap-scheduling-implement's definition_of_done: its 'measured' status and measured_run come from harness/workflow/test.sh, the durable-execution harness (steps, idempotency keys, executor markers), not from any RRULE/recurrence check -- the DoD's own 'expected' field describes a never-built recurrence_vectors.py tool that was never run. Every other measured DoD in this set correctly tests its own capability, and every claimed DoD (cap-provenance, cap-scheduling, cap-state-persistence, cap-telemetry, cap-tool-access, cap-work-intake, the six interface-layer skills with no harness yet) honestly discloses 'neither run has been performed here' rather than overclaiming, so that pattern is not a violation. Seven low-severity findings: two are compose-by-name restatement gaps where an operation row (cap-scheduling's fire, cap-work-intake's normalise) restates T-t6-02 under the identical quote cap-errors already carries without naming cap-errors, even though sibling rows in the same skill do name it. Five are the 'X already states F-nnn (sourced) ... what this adds: <uncited new claim>' pattern flagged by validate_skills.py across cap-provenance, cap-state-persistence, cap-tool-access (6 rows), cap-tool-access-implement (8 rows) and cap-work-intake-implement, where the restated fact is sourced but the row's own added consequence carries no citation and is not marked proposed. No fabricated quotes, no bare uncited claims outside that pattern, no definition of done that cannot fail, no adapter pair sharing an execution model or naming a product outside the adapters section, no padding rows, and no description whose trigger clauses fail to fire on the skill's actual scope were found beyond the one DoD mismatch above."
+}

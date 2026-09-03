@@ -1,0 +1,38 @@
+{
+  "owner_skill": "cap-work-intake-implement",
+  "co_skills": ["cap-work-intake", "cap-consumption", "build-entry-conformance"],
+  "blueprint_tool_entry": "the four producers PASS.md B3 names today: CLI, git event, HTTP, schedule (F-b3-08)",
+  "capability": "work intake",
+  "standard": "A2A messaging and CloudEvents (versions on file unverified)",
+  "kb_ids": [
+    "F-a5-01", "F-a6-05", "F-a6-06", "F-a7-02",
+    "F-b1-02", "F-b1-04", "F-b1-07", "F-b3-08", "F-b3-16",
+    "F-b4-01", "F-b4-02", "F-b4-03", "F-b4-06", "F-b4-07", "F-b4-08",
+    "T-t1-01", "T-t1-02", "T-t1-03", "T-t2-02", "T-t3-01",
+    "T-t6-02", "T-t6-03", "T-t7-02", "T-t7-05", "T-t9-04", "T-t9-06", "T-t10-07",
+    "REF-3-4-15"
+  ],
+  "research_ids": [
+    "X-cap-work-intake-001", "X-cap-work-intake-002", "X-cap-work-intake-003",
+    "X-cap-work-intake-005", "X-cross-structure-041", "X-end-to-end-065"
+  ],
+  "fixtures": [
+    "examples/end-to-end/schemas/entry.schema.json (the published envelope schema every case validates against)",
+    "examples/end-to-end/entries/human.json, event.json, schedule.json, external.json (the four door identities; the one logical job is the human entry's intent, budget and payload)",
+    "examples/end-to-end/run.py (its JSON Schema validator is imported by path, so this harness does not ship a second one)"
+  ],
+  "measured": {
+    "dryrun": "bash harness/work-intake/test.sh on 2026-09-03: passed 28, failed 0. conformance PASSED 15/15 against the dry-run request-pushed binding with producers_run=4, distinct_job_digests=1, distinct_entry_ids=4, invalid=0, untyped_refusals=0, records=4, work_started=0; the minimal call is 17 lines of caller code counted by harness/caller_lines.py with this row appended in-process, and names no adapter storage; call.py prints one job digest, one resolved manifest and four submissions across the human, event, schedule and external doors; a malformed task (a task with no summary) returns urn:agentic:problem:document-invalid 422 with 0 entries written; a replay under the same idempotency key returns duplicate_of and writes nothing; INTAKE_FAIL=1 exits 2 with adapter-unavailable 503 and 'nothing was admitted'.",
+    "swap": "conformance PASSED 15/15 before (dryrun, request-pushed-event) and 15/15 after (second, agent-message) on the same 15 cases and the same corpus; sha256 of interface.py+call.py+conformance.py+producers.py identical across both runs (801c68fffd896385c09eb4f028bcc6c024651d1fc00ec544628a11c0fd7baf03), so the swap was configuration; 4 execution-model axes differ (submission synchronous-request-pushed vs detached-message-submitted, acknowledgement in-request vs recorded-for-later-collection, key source the producer's message identity vs the submitting agent's message identifier, marker entry-recorded-in-request vs task-message-accepted); the job digest (sha256:462dd6645fd1...) and the resolved manifest digest (sha256:8bde95dd2497...) are identical on both bindings, so the swap test and the normalisation test are one run; the merged run reports adapters_run=2 and selected_by=configuration in both; the same caller code ran unchanged on both.",
+    "breakage": "the definition of done's own breakage, run here: a copy of the tree under out/breakage/ with the request-pushed mapper stamping a default priority field onto the intent it builds ('intent={**job[\"intent\"], \"priority\": \"high\"}'), nothing else changed. That run exits 1 with invalid 0 -> 4, verdict fail, and names the case that broke it; the agent-message run over the same copy still exits 0 with invalid 0 and the unchanged job digest. Singling out one adapter is the point: a run that failed both, or neither, would not have tested the swap."
+  },
+  "claimed": [
+    "live mode until run on the host: adapters/live.py has never reached an intake endpoint from here, so the request shape, the acknowledgement body and the headers are unverified. PASS.md records only an Ansible role named git_events (F-a5-01) and the four producers (F-b3-08); no path, port or payload profile is on file, so INTAKE_URL is supplied whole by the operator",
+    "the second adapter's networked form until INTAKE_A2A_URL and INTAKE_A2A_METHOD point at a real route; the method name is an operator input rather than an asserted fact, because both records on file for the messaging protocol (X-cap-work-intake-002) are search results and the domain was egress-blocked",
+    "both standard versions are unverified: every record on file for the event format (X-cap-work-intake-001, -003, -005) and for the messaging protocol (X-cap-work-intake-002) is a search result, not a fetched specification (STATUS row 45)",
+    "the delegation chain on every envelope is new construction: no identity field exists anywhere in the system (F-a6-05), so the chain comes from the producer fixtures and is attested by nobody here",
+    "the typed refusals are produced by this harness's own closed registry, copied from docs/decomposition.md 2.1.6; typed errors are recorded as absent on this host (F-a6-06), so untyped_refusals=0 is measured for these bindings only",
+    "the four producer message shapes, the priority attribute and the transport members are proposed test fixtures: no producer payload profile for this host is on file",
+    "the resolved manifest's step list and prices in interface.WORKFLOWS are proposed fixtures; what is measured is that the manifest is identical across four doors and both bindings and cannot see a door field"
+  ]
+}

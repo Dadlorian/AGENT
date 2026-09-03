@@ -18,7 +18,7 @@
 | 27 | Linked harness | One document runs through all four harnesses | Open | Not started |
 | 28 | Impact map | A component swap lists every affected adapter, test, and skill | Open | Not started |
 | 29 | Solution architecture | Every state type has an owner, a home, and a caller path | In progress | Revised, skill pending |
-| 32 | Quality fixes | Every confirmed finding is fixed or declined with a reason | In progress | Fixer running |
+| 32 | Quality fixes | Every confirmed finding is fixed or declined with a reason | Done | 17 fixed, 2 declined |
 | 34 | Architecture skill | The lens is a build skill every section applies | In progress | Author running |
 | 35 | Skill reconciliation | Every written skill agrees with the blueprint | Not started | Queued |
 | 36 | Impact map in knowledge base | A component swap query lists adapters, tests, and skills | Not started | Queued |

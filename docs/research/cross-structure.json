@@ -1,0 +1,299 @@
+{
+  "lens": "cross-structure",
+  "concerns": [
+    {
+      "concern": "state",
+      "mechanism": "Append-only, per-run journal plus deterministic replay: durable execution engines keep a sequenced log per invocation (Temporal Event History, Restate Journal) and re-execute against it on recovery; agent graph runtimes snapshot full state after every super-step keyed by (thread_id, checkpoint_id), which supports pause, resume, rewind and fork. Event sourcing supplies the same shape at the storage layer with snapshots for replay cost and expectedVersion/UNIQUE(stream_id, version) optimistic concurrency in place of a single-writer lock.",
+      "applied_where": "Beneath the orchestrator, not inside the unit of work: the engine or checkpointer writes the journal on every step boundary, so a caller cannot decline persistence. Adapters (in-memory, SQLite, Postgres) sit behind one checkpointer interface.",
+      "standard": "none found for durable execution itself (no cross-vendor spec); the storage-side patterns are event sourcing / CQRS with expectedVersion append, which are patterns rather than versioned standards",
+      "known_failure_modes": "Replay imposes a determinism constraint on orchestration code, so nondeterministic agent calls must be pushed into activity-shaped steps or replay diverges. Replay cost grows with journal length unless snapshots are taken. A hash chain or transparency log is tamper-evident but not tamper-proof: without an independent monitor scanning it, the guarantee is unexercised.",
+      "sources": ["X-cross-structure-043", "X-cross-structure-044", "X-cross-structure-045", "X-cross-structure-046", "X-cross-structure-047", "X-cross-structure-048", "X-cross-structure-049", "X-cross-structure-053"]
+    },
+    {
+      "concern": "telemetry",
+      "mechanism": "Two layers that must be kept separate. (1) Transport and shape: OTLP 1.11.0 is stable for traces, metrics and logs; the GenAI semantic conventions define the invoke_agent / chat / execute_tool span tree and gen_ai.conversation.id as the correlation attribute. (2) Carriage: W3C Trace Context traceparent/tracestate for in-band parentage, W3C Baggage (a MUST-level propagator in the OTel API, bounded to 64 entries / 8192 bytes) for explicit key-value correlation that rides alongside parentage, CloudEvents Distributed Tracing extension for event-carried context, and a durable engine's own header channel (Temporal interceptors) where transport headers do not reach. Resource attributes are a frozen part of the OTel spec, which makes them a safe carrier for a dispatch-set run id.",
+      "applied_where": "Injected by the platform at three points that a caller cannot bypass: the intake normaliser (stamps the correlation attributes on the envelope), the dispatch seam (sets resource attributes and baggage on the child process/VM), and the interceptor/middleware chain around every model and tool call.",
+      "standard": "W3C Trace Context (Recommendation); W3C Baggage; OTLP 1.11.0 (stable); OpenTelemetry GenAI semantic conventions (experimental as of 2026); CloudEvents Distributed Tracing extension (v1.0.x)",
+      "known_failure_modes": "Trace parentage does not survive an agent, async, subprocess or organisational boundary: disconnected root spans are the standard symptom, framework-native tracing cannot span heterogeneous agent stacks, and even in-process decorator instrumentation can mint a separate trace. The Trace Context spec itself expects vendors to restart traceparent at trust boundaries, and continuing an inbound sampled trace from a public API is an abuse vector. GenAI semconv has no standard attribute for grouping several conversations into one multi-agent session. Baggage crosses boundaries indiscriminately, so it must never carry secrets or PII.",
+      "sources": ["X-cross-structure-001", "X-cross-structure-002", "X-cross-structure-003", "X-cross-structure-004", "X-cross-structure-005", "X-cross-structure-006", "X-cross-structure-007", "X-cross-structure-008", "X-cross-structure-009", "X-cross-structure-010", "X-cross-structure-011", "X-cross-structure-012", "X-cross-structure-013", "X-cross-structure-014", "X-cross-structure-015", "X-cross-structure-016", "X-cross-structure-028"]
+    },
+    {
+      "concern": "identity",
+      "mechanism": "Workload identity issued out of band (SPIFFE X.509/JWT SVIDs, issued by SPIRE; the Delegated Identity API issues SVIDs for workloads the agent cannot attest in place, which is the shape needed for microVM guests) plus RFC 8693 OAuth 2.0 Token Exchange for delegation: sending actor_token alongside subject_token distinguishes delegation from impersonation, and the nestable act claim records the full chain of who acted on whose behalf.",
+      "applied_where": "At the isolation boundary (SVID handed to the cell, not a shared credential) and at the model/tool broker, which exchanges the caller's token for a scoped delegated token before any egress. The mesh sidecar can enforce mTLS identity on every call without the callee opting in.",
+      "standard": "SPIFFE (SVID) with SPIRE as reference implementation; RFC 8693 OAuth 2.0 Token Exchange",
+      "known_failure_modes": "A delegation chain is an audit artifact, not an authorisation input: the consumer of a token MUST only consider top-level claims and the current actor, and prior nested actors are informational only. Treating the chain as permission grants is the misuse. Identity placed in baggage is a non-secret reference at best, never a credential.",
+      "sources": ["X-cross-structure-034", "X-cross-structure-035", "X-cross-structure-036", "X-cross-structure-037", "X-cross-structure-038", "X-cross-structure-021", "X-cross-structure-006"]
+    },
+    {
+      "concern": "budget",
+      "mechanism": "A governance layer interposed between agent code and the provider API, holding a ceiling expressed as policy (max tokens or max cost per request, session, tenant or pipeline run) and evaluated before each call; when the cumulative spend crosses the ceiling the layer blocks the call and terminates the session at the execution layer.",
+      "applied_where": "In the broker/gateway on the egress path, and again in the middleware chain around each model call, so both a direct call and a nested agent call hit the same check.",
+      "standard": "none found (no cross-vendor budget or cost-ceiling specification; the closest reusable shape is a policy-engine decision API)",
+      "known_failure_modes": "Cost monitoring is asynchronous: by the time an alert fires the spend has already occurred. A budget that is only recorded is not a ceiling. Enforcement must precede the provider call, not follow it.",
+      "sources": ["X-cross-structure-055", "X-cross-structure-056", "X-cross-structure-031"]
+    },
+    {
+      "concern": "policy",
+      "mechanism": "Policy Enforcement Point / Policy Decision Point split over a JSON-in / JSON-out decision API. The PEP is placed immediately before the side effect: before tool execution in the agent loop, as an ext_authz filter in the proxy, or as a PreToolUse-style lifecycle hook that receives the full tool call on stdin and returns allow / block / modify. Kubernetes' mutate-then-validate admission chain is the pattern for making the check unavoidable rather than remembered.",
+      "applied_where": "At every point where a decision precedes a side effect: admission of a work item, dispatch of a unit, and each tool or model call. Automatic injection (webhook-installed sidecar) is what converts the engine from an opt-in library into an applied guarantee.",
+      "standard": "Rego / OPA decision API; Cedar as an equivalent-shape second engine (no single vendor-neutral PDP wire standard was found)",
+      "known_failure_modes": "A conformance check that exists but is not wired into the enforcement path decides nothing (PASS.md A6). Enforcement that runs after spend violates the 'refusal before spend' contract. A prompt-level guardrail is probabilistic; only a deterministic hook or filter blocks regardless of how the conversation was steered.",
+      "sources": ["X-cross-structure-031", "X-cross-structure-032", "X-cross-structure-033", "X-cross-structure-022", "X-cross-structure-023", "X-cross-structure-024", "X-cross-structure-030"]
+    },
+    {
+      "concern": "provenance",
+      "mechanism": "Three-layer in-toto attestation: a DSSE envelope as transport, an in-toto Statement v1 header binding subject artifacts, and a predicate as payload; SLSA provenance is the predicate that binds builder, recipe, materials and subject. A transparency log (Rekor) makes the record append-only, Merkle-signed and verifiable by any third party via inclusion proofs. Research prior art extends this from build artifacts to per-action signed receipts for agent tool calls and API writes.",
+      "applied_where": "Emitted by the platform at each unit boundary (not by the unit): dispatch records inputs and code version, completion records the artifact digest, and the ledger append is the anchor point.",
+      "standard": "in-toto Attestation Framework (Statement v1) + DSSE + SLSA Provenance",
+      "known_failure_modes": "Tamper-evident is not tamper-proof: an append-only log only delivers its guarantee if an independent monitor scans it for evidence of tampering. A chain checked only by the process that writes it proves less than it appears to. Build-time provenance says nothing about runtime agent actions unless per-action attestations are also emitted.",
+      "sources": ["X-cross-structure-050", "X-cross-structure-051", "X-cross-structure-052", "X-cross-structure-053", "X-cross-structure-054"]
+    },
+    {
+      "concern": "errors",
+      "mechanism": "RFC 9457 problem details: a machine-readable JSON object with type (a URI identifying the problem type), title, status, detail and instance, served as application/problem+json, with typed extension members so a machine can act on the error programmatically. All standard members are optional and problem-specific extensions are permitted.",
+      "applied_where": "At every boundary that can refuse or fail: intake validation, policy refusal, budget termination, dispatch failure and partial result. The type URI is the stable identifier a caller branches on instead of parsing prose.",
+      "standard": "RFC 9457 (published July 2023, obsoletes RFC 7807)",
+      "known_failure_modes": "None found in the research beyond the obvious: because every member is optional, an implementation can emit a conformant-but-useless problem document. The type URI must be minted and versioned deliberately or callers end up branching on title strings.",
+      "sources": ["X-cross-structure-039", "X-cross-structure-040"]
+    },
+    {
+      "concern": "idempotency",
+      "mechanism": "A client-generated key carried on the wire (Idempotency-Key, an Item Structured Header; the key MUST be unique and MUST NOT be reused with a different payload) plus a server-side keyed lease/dedup store. Durable execution engines supply that store directly: given an idempotency key, Restate deduplicates and returns the original result for a duplicate request; replay of already-completed steps returns recorded results rather than re-executing side effects.",
+      "applied_where": "At every externally-triggered entry point (HTTP, git event, schedule, A2A message) and at each step boundary inside a durable run.",
+      "standard": "draft-ietf-httpapi-idempotency-key-header-07 (IETF HTTPAPI WG, Standards Track intent — a draft, not yet an RFC)",
+      "known_failure_modes": "A key on the wire with no lease store is a convention, not a guarantee (PASS.md B3 records exactly this state). Replay-based exactly-once holds only for steps the engine records; anything performed outside a recorded step is re-executed on replay.",
+      "sources": ["X-cross-structure-041", "X-cross-structure-042", "X-cross-structure-043"]
+    }
+  ],
+  "enhancement_points": [
+    {
+      "name": "Interceptor / middleware chain around dispatch and every model or tool call",
+      "how_it_avoids_modification": "Each middleware wraps the entire inner call — code runs before, invokes next, then runs after — so telemetry, safety filtering, caching, policy and budget are composed once and inherited by every agent without editing agent logic. In a durable engine the same idea appears as SDK interceptors registered on client and worker.",
+      "prior_art": "Microsoft Agent Framework agent middleware; LangChain custom middleware; Temporal interceptors; aspect-oriented programming, where advice adds behaviour to existing code without modifying it and a pointcut selects where it applies.",
+      "sources": ["X-cross-structure-025", "X-cross-structure-026", "X-cross-structure-027", "X-cross-structure-029"]
+    },
+    {
+      "name": "Out-of-process interception (sidecar / proxy filter)",
+      "how_it_avoids_modification": "A helper process alongside the workload intercepts all inbound and outbound traffic and enforces mTLS, authn/authz, telemetry, retries and timeouts language-agnostically; the workload binary is never touched. Envoy's filter and extension model (ext_authz) lets authorization be swapped or added without modifying the core proxy.",
+      "prior_art": "Istio/Envoy sidecar mesh; Envoy ext_authz external authorization filter.",
+      "sources": ["X-cross-structure-020", "X-cross-structure-021", "X-cross-structure-022"]
+    },
+    {
+      "name": "Admission-time mutation (mutate then validate)",
+      "how_it_avoids_modification": "A mutating webhook patches the resource before persistence to inject the cross-cutting machinery (sidecar, labels, defaults), then a validating webhook can only allow or deny. Because injection happens at deploy time, no engineer has to remember a config step — the guarantee becomes structural rather than requested.",
+      "prior_art": "Kubernetes mutating and validating admission webhooks; OPA sidecar injection at deploy time.",
+      "sources": ["X-cross-structure-023", "X-cross-structure-024"]
+    },
+    {
+      "name": "Lifecycle hooks with deterministic verdicts",
+      "how_it_avoids_modification": "A hook fires after the model has chosen a tool and arguments but before the tool runs, receives the call as JSON on stdin, and returns allow / block / modify; a blocking exit blocks the call regardless of model intent or prompt steering. New enforcement is a new executable, not a change to the agent.",
+      "prior_art": "Claude Code PreToolUse and related lifecycle hooks.",
+      "sources": ["X-cross-structure-030"]
+    },
+    {
+      "name": "Typed pipeline components + curated distributions",
+      "how_it_avoids_modification": "Receivers, processors, exporters, connectors and extensions are separate typed slots; enhancing one aspect (redaction, sampling, enrichment) means adding a processor, leaving receivers and exporters untouched. A distribution is a binary composed of a chosen component set, so a deployment is tailored by selection rather than by forking.",
+      "prior_art": "OpenTelemetry Collector architecture and distributions.",
+      "sources": ["X-cross-structure-057", "X-cross-structure-058"]
+    },
+    {
+      "name": "Plugin host with a registry and stable contracts",
+      "how_it_avoids_modification": "The core exposes extension points through hooks; a plugin manager handles discovery, loading, registration and lifecycle; each plugin implements a declared interface. This is the Open/Closed Principle made operational — open for extension, closed for modification. The cost is that the interface is a public API and changing it breaks every plugin built against it.",
+      "prior_art": "General plugin-extension architecture pattern; contract/registration/resolution discipline.",
+      "sources": ["X-cross-structure-059", "X-cross-structure-060"]
+    },
+    {
+      "name": "Versioned interface with per-request version declaration and a deprecation window",
+      "how_it_avoids_modification": "MCP 2026-07-28 moved from once-per-session negotiation to declaring the protocol version on every request (io.modelcontextprotocol/protocolVersion in _meta, MCP-Protocol-Version header on Streamable HTTP), with each request accepted or rejected independently and deprecated features kept for at least twelve months. Callers upgrade one call site at a time rather than in lockstep.",
+      "prior_art": "Model Context Protocol versioning policy; OpenTelemetry versioning-and-stability rules that freeze certain resource attributes permanently.",
+      "sources": ["X-cross-structure-061", "X-cross-structure-012"]
+    },
+    {
+      "name": "Portable capability packages loaded by description (progressive disclosure)",
+      "how_it_avoids_modification": "A capability is a folder with a declared name and description; only the descriptor is loaded until the task matches, then the body loads. New capability is a new directory, not a change to the runtime.",
+      "prior_art": "Agent Skills open standard (SKILL.md plus optional scripts/, references/, assets/).",
+      "sources": ["X-cross-structure-062"]
+    }
+  ],
+  "coherence_across_boundaries": [
+    {
+      "boundary": "entry-point",
+      "mechanism": "Normalise every intake — human, agent, event — into one envelope carrying stable identity and correlation fields before anything else runs. CloudEvents v1.0.2 already supplies (id, source, subject) as a uniform identity for any producer, and its Distributed Tracing extension carries trace context inside the event rather than relying on transport headers. A2A supplies contextId/taskId for the agent entry point. An externally-triggered entry additionally carries an Idempotency-Key so replay is safe whichever door it came through.",
+      "sources": ["X-cross-structure-017", "X-cross-structure-016", "X-cross-structure-018", "X-cross-structure-041"]
+    },
+    {
+      "boundary": "process",
+      "mechanism": "Trace parentage is not reliable across an async or subprocess hop — disconnected root spans are the usual symptom, and even in-process decorators can mint a separate trace. Coherence therefore rides on explicit attributes: a platform-minted run id set as an OTel resource attribute (a frozen, stability-guaranteed surface) and echoed in baggage, plus gen_ai.conversation.id for message-level grouping. Interceptor chains carry the same values through an engine's internal header mechanism so spans from different workers connect.",
+      "sources": ["X-cross-structure-013", "X-cross-structure-015", "X-cross-structure-012", "X-cross-structure-007", "X-cross-structure-004", "X-cross-structure-028"]
+    },
+    {
+      "boundary": "vm",
+      "mechanism": "A microVM guest cannot be attested in place by a host agent and holds no real secret, so identity must be delegated inward (SPIRE's Delegated Identity API issues SVIDs on behalf of workloads it cannot attest directly) and cross-cutting enforcement must sit on the host side of the boundary — a broker on the egress path applying budget ceilings before the provider call and policy decisions before the side effect. Correlation must be injected as data at dispatch, since a runtime inside the VM may ignore an inherited traceparent and mint its own root trace.",
+      "sources": ["X-cross-structure-035", "X-cross-structure-055", "X-cross-structure-032", "X-cross-structure-014"]
+    },
+    {
+      "boundary": "org",
+      "mechanism": "Parentage deliberately does not cross: the Trace Context spec expects vendors to restart traceparent at trust boundaries, and naively continuing an inbound sampled trace from a public API invites forged trace ids and cost amplification. What crosses instead is verifiable evidence — in-toto Statement v1 in a DSSE envelope with a SLSA provenance predicate, anchored in an append-only transparency log any third party can verify by inclusion proof — plus an identity chain expressed as RFC 8693 nested act claims, which is auditable but explicitly informational for access control. Confidential values must not be placed in tracestate or baggage that leaves the boundary.",
+      "sources": ["X-cross-structure-002", "X-cross-structure-003", "X-cross-structure-050", "X-cross-structure-052", "X-cross-structure-037", "X-cross-structure-038", "X-cross-structure-006"]
+    }
+  ],
+  "gaps_vs_pass": [
+    {
+      "gap": "PASS.md B4 states the correlation rule ('correlation rides on explicit attributes, not trace parentage') but names no carrier, no field, and no point of injection. The research shows there are three distinct carriers with different reach — OTel resource attributes (frozen, stable, per-process), W3C Baggage (in-flight, bounded to 64 entries / 8192 bytes, leaks across boundaries), and event-body fields (CloudEvents tracing extension) — and that GenAI semconv has no session attribute for grouping a multi-agent tree. Without a named carrier and field set, A7 finding 1 stays unfixed at every new boundary.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B4",
+      "proposed_capability": "Correlation envelope: a named, versioned set of fields (run id, parent unit id, entry-point kind, conversation id, idempotency key, budget ceiling id, actor chain ref) with a specified carrier per boundary — resource attribute in-process, baggage in-flight, CloudEvents extension attribute over events, and a dispatch request field over the VM boundary — plus a conformance test that a depth-3 task tree yields one run id in all three subtrees.",
+      "proposed_layer": "xc",
+      "governing_standard": "OpenTelemetry resource attributes + W3C Baggage + CloudEvents Distributed Tracing extension; gen_ai.conversation.id where a conversation exists (no standard exists for a multi-agent session id — semantic-conventions-genai issue #51 is open)",
+      "sources": ["X-cross-structure-004", "X-cross-structure-005", "X-cross-structure-007", "X-cross-structure-008", "X-cross-structure-012", "X-cross-structure-016", "X-cross-structure-013"]
+    },
+    {
+      "gap": "PASS.md B4 lists seven cross-cutting concerns as contracts but names no mechanism by which the platform applies them, and A6 records the concrete consequence: policy conformance checks exist but are not wired into the enforcement path. Prior art is unanimous that 'applied, not requested' requires a structural interception point — middleware chain, sidecar, admission-time injection, or lifecycle hook — not a documented obligation.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B4",
+      "proposed_capability": "A single cross-cutting interception chain that every unit of work passes through regardless of entry point, with typed slots (identity resolve, policy decide, budget reserve, telemetry open, idempotency claim, provenance open ... inverse on exit) and a test proving a unit dispatched by each of the three entry points hits all slots.",
+      "proposed_layer": "xc",
+      "governing_standard": "none as a standard; the pattern is aspect-oriented advice/pointcut, realised as agent middleware, Envoy-style filters, or Temporal-style interceptors",
+      "sources": ["X-cross-structure-025", "X-cross-structure-026", "X-cross-structure-027", "X-cross-structure-029", "X-cross-structure-020", "X-cross-structure-024", "X-cross-structure-030"]
+    },
+    {
+      "gap": "PASS.md B4 requires 'refusal is deterministic and happens before execution, not after spend', and B4 separately requires a budget ceiling, but neither names the enforcement point. The research distinguishes a check that blocks before the provider call from monitoring that reports after the tokens are gone, and places the PEP immediately before tool execution. PASS.md A6 confirms policy is not in the gate path today.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B4",
+      "proposed_capability": "Named enforcement points, at least: admission PEP (before a work item is accepted), dispatch PEP (before a unit runs), and call PEP (before each model/tool call), each calling a policy decision API and a budget reservation API and each capable of returning a typed refusal. Deliberate-breakage test: a policy that denies everything must turn every stage red.",
+      "proposed_layer": "seam",
+      "governing_standard": "Rego/OPA decision API, with Cedar as the second adapter; no standard for budget reservation",
+      "sources": ["X-cross-structure-031", "X-cross-structure-032", "X-cross-structure-033", "X-cross-structure-055", "X-cross-structure-056", "X-cross-structure-030"]
+    },
+    {
+      "gap": "PASS.md B3 lists Identity as absent and B4 requires explicit delegation chains, but no shape is specified. RFC 8693 already defines the distinction (delegation requires actor_token; the nestable act claim records the chain) and the critical constraint (only top-level claims and the current actor are authoritative; prior actors are informational). Separately, a microVM guest that holds only a dummy key cannot be attested in place — SPIRE's Delegated Identity API is the existing answer.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B4",
+      "proposed_capability": "An identity capability with two operations: attest (issue an SVID to a unit, including via a delegated path for workloads the platform cannot attest in place) and delegate (exchange a subject token plus actor token for a scoped token whose act claim names the acting agent). The chain is recorded in provenance; authorisation reads only the current actor.",
+      "proposed_layer": "cap",
+      "governing_standard": "SPIFFE (SVID) and RFC 8693 OAuth 2.0 Token Exchange",
+      "sources": ["X-cross-structure-034", "X-cross-structure-035", "X-cross-structure-036", "X-cross-structure-037", "X-cross-structure-038"]
+    },
+    {
+      "gap": "PASS.md B3 records idempotency as 'key on the wire, no lease' and B4 requires every externally-triggered action to be safe to replay. A key without a keyed lease store is a convention, not a guarantee; the wire format itself is still an IETF draft (draft-07), not an RFC, and durable execution engines are the readiest source of the missing lease/dedup store.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B4",
+      "proposed_capability": "Idempotency capability: claim(key, payload_digest) -> {fresh | duplicate(result_ref) | conflict}, backed by the ledger or a durable engine, applied at every entry point and at each recorded step boundary. Conflict (same key, different payload) must return a typed error, per the draft's MUST.",
+      "proposed_layer": "cap",
+      "governing_standard": "draft-ietf-httpapi-idempotency-key-header-07 (draft, not an RFC) for the wire; no standard for the lease store",
+      "sources": ["X-cross-structure-041", "X-cross-structure-042", "X-cross-structure-043"]
+    },
+    {
+      "gap": "PASS.md B5 says the State seam must specify the write model, concurrency and single-writer guarantees, integrity, retention and query surface, and that a hash-chained JSONL file is today's implementation. The research supplies portable answers for four of the five that PASS.md does not yet name: expectedVersion / UNIQUE(stream_id, version) optimistic concurrency instead of a single-writer requirement, snapshots for replay cost and retention, projections for the query surface, and a transparency log for integrity verifiable by a third party.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B5",
+      "proposed_capability": "State seam specified as an event-sourced append log: append(stream_id, expectedVersion, events) with a uniqueness constraint for conflict detection, periodic snapshots, named projections as the planner's query surface, and a Merkle/inclusion-proof integrity mode alongside the existing hash chain. Two adapters: file+chain and a relational or object-store event log.",
+      "proposed_layer": "seam",
+      "governing_standard": "none for durable execution / state persistence; event sourcing with expectedVersion append is a pattern, and Merkle transparency-log integrity is the standardised part",
+      "sources": ["X-cross-structure-047", "X-cross-structure-048", "X-cross-structure-049", "X-cross-structure-052", "X-cross-structure-043"]
+    },
+    {
+      "gap": "PASS.md A5 describes the evidence store as append-only JSONL and A5 describes the task store's hash chain as detecting a manual edit between runs, but nothing independently monitors either. Transparency-log practice is explicit that tamper-evidence is not tamper-proofness: a log only delivers its guarantee if something scans it for evidence of tampering, and verification by a party other than the writer is the point of the design.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B4",
+      "proposed_capability": "A ledger monitor: a scheduled, independently-run verifier that checks chain continuity and (in transparency-log mode) inclusion and consistency proofs, emits a typed problem document on divergence, and whose own runs are themselves evidenced. Deliberate breakage: flip one byte in a historical record and the monitor must fail.",
+      "proposed_layer": "xc",
+      "governing_standard": "Merkle transparency-log inclusion/consistency proofs (Rekor as reference); in-toto/DSSE for the attestation format",
+      "sources": ["X-cross-structure-052", "X-cross-structure-053", "X-cross-structure-050"]
+    },
+    {
+      "gap": "PASS.md B4 requires provenance for 'every artifact' attributable to code version, inputs and actor. The research shows build-time provenance (SLSA predicate: builder, recipe, materials, subject) says nothing about what an agent did at runtime; per-action signed receipts for tool calls and external writes are a separate, currently-research-stage layer. The evidence store today records script SHA, git commit and tree hash — build-time facts — with no per-action attestation.",
+      "target_requirement": "T-t2-02",
+      "pass_section": "B4",
+      "proposed_capability": "Two provenance predicates behind one attestation capability: a build-shaped predicate for artifacts (SLSA provenance) and a run-shaped predicate for agent actions (actor, tool, argument digest, result digest, decision refs), both emitted as in-toto Statements in DSSE envelopes so one verifier tool handles both.",
+      "proposed_layer": "cap",
+      "governing_standard": "in-toto Attestation Framework (Statement v1) + DSSE; SLSA Provenance for the build predicate; no standard predicate for agent actions",
+      "sources": ["X-cross-structure-050", "X-cross-structure-051", "X-cross-structure-054"]
+    },
+    {
+      "gap": "PASS.md B3 lists Errors as absent and B4 requires typed, machine-readable errors, but no error taxonomy exists for the platform's own failure kinds. RFC 9457 supplies the container and extension mechanism; what is missing is the set of type URIs and the rule that every seam returns one. B5 explicitly asks what a Dispatch failure returns and PASS.md does not answer it.",
+      "target_requirement": "T-t2-02",
+      "pass_section": "B5",
+      "proposed_capability": "A registered problem-type namespace with a minimum set (policy-denied, budget-exceeded, idempotency-conflict, cancelled, timeout, partial-result, adapter-unavailable, schema-invalid), each with typed extension members, and a conformance test that every seam returns application/problem+json on failure.",
+      "proposed_layer": "core",
+      "governing_standard": "RFC 9457 Problem Details for HTTP APIs",
+      "sources": ["X-cross-structure-039", "X-cross-structure-040"]
+    },
+    {
+      "gap": "PASS.md B5 says Dispatch must specify cancellation, timeout, budget enforcement and partial results, but does not address what durability model the seam assumes. Durable execution imposes a determinism constraint on the orchestrating code, which means agent calls must be shaped as recorded steps; agent runtimes independently converged on (thread_id, checkpoint_id) snapshots supporting pause, resume, rewind and fork. Whether Dispatch is a step inside a durable workflow or a standalone call changes its contract materially, and PASS.md A6 records that the durable engine is currently down.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B5",
+      "proposed_capability": "Dispatch contract that is explicit about durability: every dispatch is a recorded step with a step id, an idempotency key, a resumable checkpoint reference, and a defined replay semantic (recorded result returned, not re-executed); the seam must be satisfiable both by a durable engine and by a queue plus a state machine.",
+      "proposed_layer": "seam",
+      "governing_standard": "none found (no cross-vendor durable execution standard)",
+      "sources": ["X-cross-structure-043", "X-cross-structure-044", "X-cross-structure-045", "X-cross-structure-046", "X-cross-structure-042"]
+    },
+    {
+      "gap": "PASS.md B1 rule 7 ('cross-cutting guarantees are not optional') and T2.2 ('enhance one aspect without touching the rest') pull against each other unless extension points are versioned. The research is explicit that an extension point is a public API and changing it breaks every plugin built against it; MCP's answer is per-request version declaration with a twelve-month deprecation window, and OpenTelemetry's is a set of attributes that MUST NOT ever change.",
+      "target_requirement": "T-t2-02",
+      "pass_section": "A7",
+      "proposed_capability": "An interface-version discipline applied to every capability interface and to the cross-cutting chain: each call declares the interface version it speaks, unsupported versions are rejected per call rather than per session, deprecated members survive a stated window, and a frozen core field set is documented as never-changing. Deliberate breakage: an adapter declaring an unsupported version must be rejected, not silently accepted.",
+      "proposed_layer": "build",
+      "governing_standard": "MCP versioning policy (2026-07-28) as the pattern; OpenTelemetry versioning-and-stability for the frozen-attribute rule",
+      "sources": ["X-cross-structure-060", "X-cross-structure-061", "X-cross-structure-012"]
+    },
+    {
+      "gap": "PASS.md A7 finding 3 records configuration written in the documented place being silently discarded, and A7 finding 2 records a gate that was structurally green and meant nothing. Neither is covered by any B4 concern: there is no cross-cutting guarantee that a declared configuration or a declared check actually took effect. The research offers the analogous discipline from transparency logs (verify, do not assume) and from admission control (mutate-then-validate makes the effect structural).",
+      "target_requirement": "T-t2-03",
+      "pass_section": "A7",
+      "proposed_capability": "Effective-configuration attestation: at start-up each adapter emits the configuration it actually resolved (not the file it was given) as an attested record, and a validator compares declared against effective; a gate additionally reports which stages were applicable, so a run with zero applicable behavioural stages is reported as inconclusive rather than green.",
+      "proposed_layer": "xc",
+      "governing_standard": "in-toto/DSSE for the attestation; the mutate-then-validate admission pattern for the structural half",
+      "sources": ["X-cross-structure-023", "X-cross-structure-053", "X-cross-structure-050"]
+    },
+    {
+      "gap": "PASS.md B3 lists Work intake as 'A2A messaging · CloudEvents' with CLI, git event, HTTP and schedule as today's adapters, but nothing states that the four intakes produce the same envelope. T1 requires human, agent and event entry, and T2.3 requires the cross-cutting concerns to apply whichever entry point was used. The research shows the standards already carry the needed identity fields but that they are not the same fields (CloudEvents id/source/subject vs A2A contextId/taskId, which are minted per broker in a multi-broker network).",
+      "target_requirement": "T-t2-03",
+      "pass_section": "none",
+      "proposed_capability": "An intake normaliser: one required mapping from every entry-point adapter (CLI, HTTP, git event, schedule, A2A message) onto a single work envelope carrying platform-minted run id plus the source protocol's own ids preserved as attributes, so a downstream component never branches on entry-point kind. Conformance test: identical work submitted through all adapters produces byte-identical envelopes apart from the source-specific fields.",
+      "proposed_layer": "compose",
+      "governing_standard": "CloudEvents v1.0.2 for the envelope shape; A2A for the agent entry point",
+      "sources": ["X-cross-structure-017", "X-cross-structure-018", "X-cross-structure-019", "X-cross-structure-016"]
+    },
+    {
+      "gap": "PASS.md B3 pins Telemetry to 'OTLP · GenAI semantic conventions' without noting their differing maturity. OTLP is stable for traces, metrics and logs at 1.11.0, while most GenAI semantic conventions were still experimental in 2026. Adopting them at the same confidence level puts churn in the core.",
+      "target_requirement": "T-t2-02",
+      "pass_section": "B4",
+      "proposed_capability": "Split the telemetry interface: a stable transport/shape contract pinned to OTLP, and a separately versioned attribute mapping for GenAI conventions that can be revised without touching emitters — plus a recorded pin of the semconv version each run emitted against.",
+      "proposed_layer": "cap",
+      "governing_standard": "OTLP 1.11.0 (stable) and OpenTelemetry GenAI semantic conventions (experimental)",
+      "sources": ["X-cross-structure-010", "X-cross-structure-011", "X-cross-structure-009"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Should the platform's run id be minted at intake and treated as immutable for the life of the tree, or re-minted per unit with an explicit parent pointer? The first gives a single grouping key but leaks across an org boundary; the second matches the Trace Context guidance to restart at trust boundaries but requires a join to reconstruct the tree.",
+      "deciding_evidence": "Run both shapes through a depth-3 task tree that crosses a VM boundary and a simulated external-org hop, and measure how many queries are needed to reconstruct the full tree and whether any identifier reaches the external hop that should not."
+    },
+    {
+      "question": "Is the durable execution engine the right home for the idempotency lease store and the state journal, or should the ledger own both and the engine be a pure scheduler? PASS.md A6 records the engine as designed-in but currently down, which makes the dependency load-bearing.",
+      "deciding_evidence": "Attempt the two-adapter test from design rule 3: implement the State seam once over the durable engine and once over a queue plus a state machine, and see which parts of the interface only one can satisfy."
+    },
+    {
+      "question": "Can a single interception chain apply all seven cross-cutting concerns, or do budget and policy need to be enforced out of process (broker/proxy) because an in-process chain runs inside the code being governed?",
+      "deciding_evidence": "A red-team test: an agent that deliberately attempts to bypass the in-process chain (direct provider call, direct tool invocation). If the in-process chain can be bypassed and the broker cannot, the concerns split by location."
+    },
+    {
+      "question": "What predicate should a per-action agent attestation carry, given no standard predicate exists? Over-recording makes provenance a second telemetry pipeline; under-recording makes it unverifiable.",
+      "deciding_evidence": "Pick a set of past incidents (A7 findings 2 and 3 are candidates) and check, record by record, whether a proposed predicate would have made the failure detectable after the fact."
+    },
+    {
+      "question": "Does a hash chain checked only at build time need to become a full Merkle transparency log with inclusion proofs, or is an independently-scheduled chain monitor sufficient for a single-operator platform?",
+      "deciding_evidence": "Define the adversary explicitly. If the threat model includes the operator or the writing process, third-party-verifiable proofs are required; if it does not, monitoring suffices. The decision is a stated threat model, not a measurement."
+    },
+    {
+      "question": "How should a budget ceiling be expressed so that it composes across a task tree — per unit, per tree, or a reservation drawn down by children?",
+      "deciding_evidence": "Run a depth-3 tree where the leaves collectively exceed the root ceiling and observe, under each scheme, whether the unit terminates or the platform does — the distinction PASS.md B4 draws."
+    },
+    {
+      "question": "Does the Agent Client Protocol carry any field capable of transporting the correlation envelope into an agent runtime that ignores TRACEPARENT, or must correlation ride in the work document itself?",
+      "deciding_evidence": "Read the ACP schema for an extensible metadata field and test whether goose round-trips it; no research record in this pass covers ACP's metadata surface."
+    }
+  ]
+}

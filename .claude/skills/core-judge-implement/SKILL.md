@@ -182,10 +182,10 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Practice | Origin | Evidence |
 |---|---|---|
-| agentic-stack and build-evidence-record already state the configuration finding (F-a7-04). What it adds here: assert the engine actually in effect at run time and log it beside the counts, because an engine selected in the documented place and overridden by a stored row produces a conformance run that graded everything twice with one engine and reported adapters_run=2. | sourced | `F-a7-04` "had no runtime effect" |
+| See agentic-stack and build-evidence-record for this configuration finding (F-a7-04). | sourced | `F-a7-04` "had no runtime effect" |
 | Split the criterion set by what each check can decide rather than by which engine is convenient: the production pattern is metric-based for what is measurable, a model judge for what requires reasoning, and human review for the small fraction either flags. | sourced | `X-core-judge-006`, `X-core-judge-005` "hybrid: metric-based for what is measurable, LLM-judge for what requires reasoning, human review for the failing 1-5% of samples flagged by either" |
 | Treat verification as layered rather than as one engine's job, so a check that a solver or a typed rule can settle is never routed to a sampler; the field is converging on that split, and it is also what keeps the deterministic engine's share of the criterion set large enough to matter. | sourced | `X-core-judge-007` "The field has shifted toward a layered approach rather than relying on a single evaluation method." |
-| agentic-stack states that callers request a class, never a vendor (F-a4-01). What it adds here: the model-graded engine's determinism pins name a class and a decoding configuration, so re-pointing the class is a configuration change and never a code change in the Judge. | sourced | `F-a4-01` "Callers request a class, never a vendor" |
+| See agentic-stack for the class-not-vendor rule (F-a4-01). | sourced | `F-a4-01` "Callers request a class, never a vendor" |
 | Proposed: run the conformance over both engines on every change, not only when an engine changes. The failures worth catching come from the sampler and the criterion sets - a new check kind, a changed sort order in the sample - and they show as a verdict that moved while no engine was touched. Research query: has running the conformance suite on every change caught a sampler or criterion-set regression in this repo, or is the practice argued from the adapter-pair discipline alone? | proposed | `F-b1-04` |
 
 ## Adapters

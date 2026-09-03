@@ -489,12 +489,12 @@
       "quote": "cannot interpret, validate, or enforce their governance semantics"
     },
     {
-      "text": "Apply the decision once for everything rather than per caller: compose cross-cutting behaviors\u2014telemetry, safety filters, caching, policy enforcement\u2014once and apply them to every agent consistently. Policy written into each agent is policy that a new agent silently lacks.",
+      "text": "Apply the decision once for everything rather than per caller: compose cross-cutting behaviors—telemetry, safety filters, caching, policy enforcement—once and apply them to every agent consistently. Policy written into each agent is policy that a new agent silently lacks.",
       "origin": "sourced",
       "sources": [
         "X-cross-structure-026"
       ],
-      "quote": "policy enforcement\u2014once and apply them to every agent consistently"
+      "quote": "policy enforcement—once and apply them to every agent consistently"
     },
     {
       "text": "Make consultation automatic rather than remembered, so that there's no need for engineers to remember extra config steps. Any design where a new call site has to opt in produces coverage that decays with every addition, and the gap is invisible until it is exploited.",
@@ -543,12 +543,12 @@
         "X-cap-policy-005",
         "E-swap-candidate-cedar"
       ],
-      "quote": "Cedar \u00b7 any policy engine with a decision API"
+      "quote": "Cedar · any policy engine with a decision API"
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.2 row P10, made precise and run over the adapter pair above: `python3 tools/conformance/policy_decision.py --adapter today --adapter second --entry examples/end-to-end/entries/human.json --deny-rule deny-external-tool-without-mandate --report out/policy.json` (proposed tool, built with the first enforcing adapter), the engine selected by configuration with no code edit between runs. Per adapter it submits a dispatch that a policy rule denies and asserts `spend_delta_micros == 0` for that dispatch, that a `policy-decided` record exists carrying a non-empty `rule_id`, and that the result is `state: \"rejected\"` with problem type `urn:agentic:problem:policy-denied`. Across adapters it asserts `adapters_run >= 2` and `decisions_agree == true`, meaning both returned the same effect and the same rule_id for the byte-identical DecisionRequest.",
-    "expected": "exit 0 with, per adapter, `spend_delta_micros=0`, `rule_id` non-empty, `state=rejected`, `problem_type=urn:agentic:problem:policy-denied`, followed by `adapters_run=2` and `decisions_agree=true`.",
+    "criterion": "bash harness/policy/test.sh",
+    "expected": "docs/decomposition.md section 3.2 row P10, made precise and run over the adapter pair above: `python3 tools/conformance/policy_decision.py --adapter today --adapter second --entry examples/end-to-end/entries/human.json --deny-rule deny-external-tool-without-mandate --report out/policy.json` (proposed tool, built with the first enforcing adapter), the engine selected by configuration with no code edit between runs. Per adapter it submits a dispatch that a policy rule denies and asserts `spend_delta_micros == 0` for that dispatch, that a `policy-decided` record exists carrying a non-empty `rule_id`, and that the result is `state: \"rejected\"` with problem type `urn:agentic:problem:policy-denied`. Across adapters it asserts `adapters_run >= 2` and `decisions_agree == true`, meaning both returned the same effect and the same rule_id for the byte-identical DecisionRequest. exit 0 with, per adapter, `spend_delta_micros=0`, `rule_id` non-empty, `state=rejected`, `problem_type=urn:agentic:problem:policy-denied`, followed by `adapters_run=2` and `decisions_agree=true`. Until that proposed tool exists, `bash harness/policy/test.sh` (owned by cap-policy-implement) is the running gate: every check line reads ok and the script exits 0.",
     "breakage": "Move the policy consultation to after the first metered call, changing nothing else, and re-run the same command.",
     "expected_failure": "exit 1 with `spend_delta_micros > 0` for both engines and the `policy-decided` record timestamped after the first metered call, while `state=rejected` and the problem type still pass, which is the useful part: the refusal still looks correct and the money is already gone. This is the check that would have caught policy being defined and not wired into the enforcement path. Claimed: nothing consults a decision on the enforcement path today and the conformance tool is not written, so neither the criterion nor the breakage has been run here.",
     "status": "claimed",

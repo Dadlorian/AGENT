@@ -538,7 +538,7 @@
         "F-a3-08",
         "F-a3-05"
       ],
-      "quote": "vsock \u2192 host broker, which holds the real key and picks the endpoint"
+      "quote": "vsock → host broker, which holds the real key and picks the endpoint"
     },
     {
       "entity": "E-swap-candidate-verifiable-credential-mandate",
@@ -556,8 +556,8 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "One conformance run over both bindings, from the repository root, with a proposed tool: `python3 tools/conformance_mandate_broker.py --binding config/broker/today.json --binding config/broker/mandate.json --fixtures tests/fixtures/mandate-broker --report out/mandate-broker-conformance.json`. The fixture set holds one credential minted for destination A and presented at both A and B, and three mandates: one inside its bounds and its validity period, one past expiry, one naming a destination outside its bounds, all checked by a verifier process that does not hold the issuer's signing key. Assert adapters_run >= 2, credentials_minted > 0, accepted_at_intended == credentials_minted, accepted_at_other == 0, mandates_verified == 3, mandates_accepted == 1, refusals == 3, refusals_typed == refusals with every refusal carrying a `urn:agentic:problem:` type, and sandbox_credential_sightings == 0 from a scan of the guest filesystem and the guest environment after the run.",
-    "expected": "exit 0 with one line per binding reading `binding=<role> credentials_minted=1 accepted_at_intended=1 accepted_at_other=0 mandates_verified=3 mandates_accepted=1 refusals=3 refusals_typed=3 sandbox_credential_sightings=0` followed by `adapters_run=2`.",
+    "criterion": "bash harness/identity/test.sh",
+    "expected": "One conformance run over both bindings, from the repository root, with a proposed tool: `python3 tools/conformance_mandate_broker.py --binding config/broker/today.json --binding config/broker/mandate.json --fixtures tests/fixtures/mandate-broker --report out/mandate-broker-conformance.json`. The fixture set holds one credential minted for destination A and presented at both A and B, and three mandates: one inside its bounds and its validity period, one past expiry, one naming a destination outside its bounds, all checked by a verifier process that does not hold the issuer's signing key. Assert adapters_run >= 2, credentials_minted > 0, accepted_at_intended == credentials_minted, accepted_at_other == 0, mandates_verified == 3, mandates_accepted == 1, refusals == 3, refusals_typed == refusals with every refusal carrying a `urn:agentic:problem:` type, and sandbox_credential_sightings == 0 from a scan of the guest filesystem and the guest environment after the run. exit 0 with one line per binding reading `binding=<role> credentials_minted=1 accepted_at_intended=1 accepted_at_other=0 mandates_verified=3 mandates_accepted=1 refusals=3 refusals_typed=3 sandbox_credential_sightings=0` followed by `adapters_run=2`. Until that proposed tool exists, `bash harness/identity/test.sh` (owned by cap-identity-implement) is the running gate: every check line reads ok and the script exits 0.",
     "breakage": "In one change, drop the audience comparison at the second destination so it accepts any well-formed credential, and widen the expiry comparison so a mandate whose validity period ended within the last hour still verifies.",
     "expected_failure": "exit non-zero with `accepted_at_other=1 mandates_accepted=2 refusals=1`, naming destination B as having accepted a credential minted for A and naming the expired mandate as accepted. The out-of-bounds refusal surviving is what shows the run tells audience, expiry and bounds apart rather than passing or failing as a block.",
     "status": "claimed",

@@ -188,7 +188,7 @@
           "E-standard-oauth-2-0-token-exchange",
           "E-standard-workload-identity"
         ],
-        "quote": "OAuth 2.0 Token Exchange \u00b7 workload identity"
+        "quote": "OAuth 2.0 Token Exchange · workload identity"
       },
       {
         "text": "An issued token that carries a subject and no actor is impersonation, not delegation, and cannot satisfy the explicit-chain contract: delegation is impossible with only a subject_token and no actor_token.",
@@ -292,7 +292,7 @@
         "F-b3-14",
         "F-b1-03"
       ],
-      "quote": "OAuth 2.0 Token Exchange \u00b7 workload identity"
+      "quote": "OAuth 2.0 Token Exchange · workload identity"
     },
     {
       "step": 2,
@@ -415,8 +415,8 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.2 row P13, made precise: `python3 tools/conformance/identity_chain.py --corpus <ledger> --min-actions 50 --report out/identity.json` (proposed tool, built with the first Identity adapter). Over a corpus of at least 50 recorded actions it asserts that every action carries a non-empty `actor.subject`, that every action whose current actor differs from its subject carries a `delegation_chain` of at least two hops, that every chain is acyclic and ordered current actor first, and that the hop naming the current actor matches the workload identity of the unit that executed the action. P13 words that last assertion as the final hop, under the opposite chain ordering; see the open question below.",
-    "expected": "exit 0 with `actions_checked >= 50`, `missing_subject == 0`, `short_chains == 0`, `cyclic == 0`, `executing_unit_mismatch == 0`",
+    "criterion": "bash harness/identity/test.sh",
+    "expected": "docs/decomposition.md section 3.2 row P13, made precise: `python3 tools/conformance/identity_chain.py --corpus <ledger> --min-actions 50 --report out/identity.json` (proposed tool, built with the first Identity adapter). Over a corpus of at least 50 recorded actions it asserts that every action carries a non-empty `actor.subject`, that every action whose current actor differs from its subject carries a `delegation_chain` of at least two hops, that every chain is acyclic and ordered current actor first, and that the hop naming the current actor matches the workload identity of the unit that executed the action. P13 words that last assertion as the final hop, under the opposite chain ordering; see the open question below. exit 0 with `actions_checked >= 50`, `missing_subject == 0`, `short_chains == 0`, `cyclic == 0`, `executing_unit_mismatch == 0` Until that proposed tool exists, `bash harness/identity/test.sh` (owned by cap-identity-implement) is the running gate: every check line reads ok and the script exits 0.",
     "breakage": "Dispatch one agent action without performing the token exchange for the agent actor, so that action reaches the ledger with the human subject and a one-hop chain. Change nothing else.",
     "expected_failure": "exit 1 with `short_chains == 1` and `executing_unit_mismatch == 1`, the report naming that action's identifier, while every other action still passes. Claimed: PASS.md A6 records no identity field anywhere in the system, so neither the field, the exchange nor the tool exists here and this check starts red by construction, which is the correct starting state rather than a defect to hide.",
     "status": "claimed",

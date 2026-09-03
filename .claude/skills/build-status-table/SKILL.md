@@ -55,9 +55,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | python3 tools/status_check.py |
-| Expected | N rows, 0 errors |
-| Deliberate breakage | Change one Result cell to a run-on with a dependency word: 'Verified; depends on the loop (see row 5)' |
-| Expected failure | exit 1 with: error: row 1: Result contains 'depends'; error: row 1: Result contains ';'; error: row 1: Result contains '('; error: row 1: Result contains ')'; 22 rows, 4 errors. Measured 2026-09-03 in session claude/auto-skill-creation-i8javu; restored file passes with 22 rows, 0 errors. An earlier attempt edited the wrong line and passed; that run was not a measurement and is recorded in the ledger. |
+| Expected | `STATUS.md: <count> rows, 0 errors` then `STATUS-ARCHIVE.md: <count> rows, 0 errors`, exit 0. The row counts move as rows are added and archived and are not the criterion; zero errors on both files is. |
+| Deliberate breakage | Replace the Result cell of the row numbered 13 in STATUS.md with a run-on carrying a dependency word and a parenthetical, then run the criterion and restore the file byte for byte from the copy taken in the same command: `cp STATUS.md <backup> && sed -i '/^\| 13 \|/s/[^\|]*\|$/ Verified; depends on the loop (see row 5) \|/' STATUS.md`. The checker reads STATUS.md at a fixed path, so the mutation is applied to that file and undone, not to a copy the criterion would never open. |
+| Expected failure | exit 1 with the four lines `error: row 13: Result contains 'depends'`, `error: row 13: Result contains ';'`, `error: row 13: Result contains '('`, `error: row 13: Result contains ')'`, then `STATUS.md: <count> rows, 4 errors` and `STATUS-ARCHIVE.md: <count> rows, 0 errors`. One run-on cell raises one error per banned token, which is why the count is four and not one. The row number is the row the breakage names, and the exact output is in measured_run below; STATUS.md was restored byte for byte afterwards. |
 | Status | measured |
 | Evidence | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
 

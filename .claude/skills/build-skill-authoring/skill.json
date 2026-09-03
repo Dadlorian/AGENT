@@ -41,7 +41,7 @@
         "origin": "proposed"
       },
       {
-        "text": "Claimed and measured are kept apart per row: a definition of done is status claimed until someone ran it and said where and when, and rewording never upgrades it.",
+        "text": "Claimed and measured are kept apart per row, as agentic-stack requires of every statement in this repository: a definition of done is status claimed until someone ran it and said where and when, and rewording never upgrades it.",
         "origin": "sourced",
         "sources": [
           "F-part-c-08"
@@ -49,7 +49,7 @@
         "quote": "Distinguish **claimed** from **measured** throughout"
       },
       {
-        "text": "Every skill carries a definition of done with a machine-checkable criterion and the deliberate breakage that proves the criterion can fail.",
+        "text": "Every skill carries a definition of done with a machine-checkable criterion and the deliberate breakage that proves the criterion can fail, the bar agentic-stack sets for a check anywhere on this platform.",
         "origin": "sourced",
         "sources": [
           "F-part-c-04"
@@ -57,7 +57,7 @@
         "quote": "A criterion nothing can fail is not a criterion"
       },
       {
-        "text": "No product, vendor or hostname appears in any field except adapters[]; a skill with no adapters names none anywhere.",
+        "text": "No product, vendor or hostname appears in any field except adapters[], the adapter-column rule agentic-stack holds; a skill with no adapters names none anywhere.",
         "origin": "sourced",
         "sources": [
           "F-part-c-09"
@@ -65,7 +65,7 @@
         "quote": "Products belong in the adapter column only"
       },
       {
-        "text": "Every standard a skill cites is named together with its version, and an existing standard is preferred to an original design; each interface names the standard that governs it.",
+        "text": "Every standard a skill cites is named together with its version, as agentic-stack requires, and an existing standard is preferred to an original design; each interface names the standard that governs it.",
         "origin": "sourced",
         "sources": [
           "F-part-c-10",
@@ -99,7 +99,7 @@
     {
       "step": 2,
       "action": "Run `python3 tools/kb.py verify`, then copy source.sha256 and the three heads from kb/meta.json into provenance.kb_source_sha256 and provenance.kb_heads.",
-      "why": "A skill built against a stale knowledge base cites text that no longer matches PASS.md. The chained digests make an edit between runs detectable, and the validator refuses a skill whose provenance does not match the current chain.",
+      "why": "A skill built against a stale knowledge base cites text that no longer matches PASS.md. agentic-stack owns the chained-digest rule this relies on: the chained digests make an edit between runs detectable, and the validator refuses a skill whose provenance does not match the current chain.",
       "origin": "sourced",
       "sources": [
         "F-a5-03"
@@ -109,7 +109,7 @@
     {
       "step": 3,
       "action": "Find the records before writing the claim: `python3 tools/kb.py tree` for the entity graph, `grep -n '\"section\": \"B3\"' kb/facts.jsonl` to reach a section, then `python3 tools/kb.py show <id>` to read one record's exact text, line range and status.",
-      "why": "The record carries the status PASS.md gave it. Restating from memory is how a target becomes a fact and a claim becomes a measurement.",
+      "why": "The record carries the status PASS.md gave it. Restating from memory is how a target becomes a fact and a claim becomes a measurement, against the claimed-versus-measured rule agentic-stack holds for the whole platform.",
       "origin": "sourced",
       "sources": [
         "F-part-c-08"
@@ -131,7 +131,7 @@
     {
       "step": 6,
       "action": "Name capabilities and standards in every field, and confine product, vendor and version names to adapters[]. If your skill has no adapters, it names no products at all.",
-      "why": "A product name in a contract row means an adapter has leaked into the architecture, and the validator scans the rendered SKILL.md for a fixed product list outside the Adapters section.",
+      "why": "A product name in a contract row means an adapter has leaked into the architecture, which is the naming rule agentic-stack holds; the validator scans the rendered SKILL.md for a fixed product list outside the Adapters section.",
       "origin": "sourced",
       "sources": [
         "F-part-c-09",
@@ -142,7 +142,7 @@
     {
       "step": 7,
       "action": "Fill definition_of_done with a runnable command, the expected output, a concrete breakage a person could apply, and the exact failure it produces. Set status measured only if you ran both here and the expected_failure says in which session and on what date; otherwise claimed.",
-      "why": "A criterion nothing can fail is not a criterion, and a status of measured with no run behind it is the fabrication the claimed-versus-measured rule exists to prevent.",
+      "why": "A criterion nothing can fail is not a criterion, and a status of measured with no run behind it is the fabrication the claimed-versus-measured rule exists to prevent. Both rules are agentic-stack's; this row says only where they land in a skill file.",
       "origin": "sourced",
       "sources": [
         "F-part-c-04",
@@ -179,7 +179,7 @@
       "origin": "proposed"
     },
     {
-      "text": "Keep products out of every field but adapters[]: a product name in a purpose, invariant or instruction is the signal that the skill has been written around today's implementation instead of the contract.",
+      "text": "Keep products out of every field but adapters[], per agentic-stack: a product name in a purpose, invariant or instruction is the signal that the skill has been written around today's implementation instead of the contract.",
       "origin": "sourced",
       "sources": [
         "F-part-c-09"
@@ -209,9 +209,9 @@
   ],
   "definition_of_done": {
     "criterion": "python3 tools/render_skill.py .claude/skills/build-skill-authoring && python3 tools/validate_skills.py",
-    "expected": "rendered build-skill-authoring/SKILL.md, then 'N skills checked, 0 errors' with no error line naming build-skill-authoring; the only warnings are manifest skills not written yet",
-    "breakage": "In a copy of .claude/skills/build-skill-authoring/skill.json, apply three mutations one at a time and re-run the validator: (a) delete the sources array from contract.invariants[2] while leaving origin=sourced; (b) change one character of that invariant's quote; (c) delete one name from composes_with.used_by so the link no longer matches the manifest.",
-    "expected_failure": "(a) '.contract.invariants[2] is origin=sourced but has no sources' together with '.contract.invariants[2].quote is not a verbatim substring of any cited record'; (b) \".contract.invariants[2].quote is not a verbatim substring of any cited record: 'Distinguish **claimed** from **measured** throughOut'\"; (c) 'composes_with differs from docs/skill-manifest.json'. Every mutated run also reports 'SKILL.md is not the render of skill.json' and exits 1. Measured in session claude/auto-skill-creation-i8javu on 2026-09-03: the three mutations exited 1 with 4, 3 and 3 errors and those exact strings; the restored file re-rendered and exited 0 with no error naming this skill.",
+    "expected": "rendered build-skill-authoring/SKILL.md, then `<count> skills checked, 0 errors, <count> warnings` and exit 0, with no error line naming build-skill-authoring. The validator is repo-wide, so warnings from other skills remain: the bulk are restate-and-extend (MECH-2) and compose-by-name-not-by-copy warnings, plus one per manifest skill not written yet. Zero errors is the pass condition; the warning count is not.",
+    "breakage": "Delete the sources array from contract.invariants[2] of .claude/skills/build-skill-authoring/skill.json in place, leaving origin=sourced and the quote behind, then re-run the criterion and restore the file from a copy taken before the mutation: python3 -c \"import json;p='.claude/skills/build-skill-authoring/skill.json';d=json.load(open(p));d['contract']['invariants'][2].pop('sources');json.dump(d,open(p,'w'),indent=2,ensure_ascii=False)\". The criterion re-renders before it validates, so SKILL.md still matches skill.json and the only failures are the ones the mutation causes.",
+    "expected_failure": "exit 1 with both of `error:   build-skill-authoring: .contract.invariants[2].quote is not a verbatim substring of any cited record: 'Distinguish **claimed** from **measured** throughout'` and `error:   build-skill-authoring: .contract.invariants[2] is origin=sourced but has no sources`, then `<count> skills checked, 2 errors, <count> warnings`. One deleted array raises both errors, because a quote is checked against the records the row cites and a row that cites nothing can anchor nothing. The exact run is in measured_run below; measure.py keeps only the last 600 characters of the output, so both records begin mid-line in another skill's warning.",
     "status": "measured",
     "sources": [
       "F-part-c-04"
@@ -219,11 +219,11 @@
     "quote": "A criterion nothing can fail is not a criterion",
     "measured_run": {
       "by": "tools/measure.py",
-      "commit": "fd2fa05",
+      "commit": "9b3f40c",
       "clean_exit": 0,
-      "clean_output": "r the same quote as xc-identity-delegation, without naming it (compose by name, not by copy)\nwarning: xc-audit-trail: restates F-b1-07 under the same quote as cap-provenance, cap-scheduling, without naming it (compose by name, not by copy)\nwarning: xc-idempotency-lease: restates F-b4-07 under the same quote as cap-idempotency, without naming it (compose by name, not by copy)\nwarning: xc-idempotency-lease: restates T-t2-03 under the same quote as cap-idempotency, without naming it (compose by name, not by copy)\n102 skills checked, 0 errors, 249 warnings\nof which restate-and-extend (MECH-2): 204",
+      "clean_output": "r the same quote as xc-identity-delegation, without naming it (compose by name, not by copy)\nwarning: xc-audit-trail: restates F-b1-07 under the same quote as cap-provenance, cap-scheduling, without naming it (compose by name, not by copy)\nwarning: xc-idempotency-lease: restates F-b4-07 under the same quote as cap-idempotency, without naming it (compose by name, not by copy)\nwarning: xc-idempotency-lease: restates T-t2-03 under the same quote as cap-idempotency, without naming it (compose by name, not by copy)\n102 skills checked, 0 errors, 242 warnings\nof which restate-and-extend (MECH-2): 204",
       "breakage_exit": 1,
-      "breakage_output": "name, not by copy)\nwarning: xc-idempotency-lease: restates T-t2-03 under the same quote as cap-idempotency, without naming it (compose by name, not by copy)\nerror:   build-status-table: .contract.invariants[0].quote is not a verbatim substring of any cited record: 'It cannot be daunting or overly complex, or no one will use '\nerror:   build-status-table: .contract.invariants[0] is origin=sourced but has no sources\nerror:   build-status-table: SKILL.md is not the render of skill.json (run tools/render_skill.py)\n102 skills checked, 3 errors, 249 warnings\nof which restate-and-extend (MECH-2): 204"
+      "breakage_output": "ency-lease: restates F-b4-07 under the same quote as cap-idempotency, without naming it (compose by name, not by copy)\nwarning: xc-idempotency-lease: restates T-t2-03 under the same quote as cap-idempotency, without naming it (compose by name, not by copy)\nerror:   build-skill-authoring: .contract.invariants[2].quote is not a verbatim substring of any cited record: 'Distinguish **claimed** from **measured** throughout'\nerror:   build-skill-authoring: .contract.invariants[2] is origin=sourced but has no sources\n102 skills checked, 2 errors, 242 warnings\nof which restate-and-extend (MECH-2): 204"
     }
   },
   "composes_with": {
@@ -284,7 +284,7 @@
     {
       "question": "What version of the packaging spec that governs a skill file should this repo cite?",
       "evidence": "A fetch of the spec's canonical URL recording its version string and publication date; documentation fetches were blocked from this environment, so no version was read.",
-      "default": "The standard is recorded with version_status unverified and the literal phrase version unverified, and no number is written.",
+      "default": "The standard is recorded with version_status unverified and the literal phrase version unverified, and no number is written, since agentic-stack's cite-the-version rule cannot be met by inventing one.",
       "sources": [
         "F-b3-07",
         "F-part-c-10"

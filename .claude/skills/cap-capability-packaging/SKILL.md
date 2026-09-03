@@ -164,6 +164,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | cap-document-validation already states the contract for checking a declared shape (F-b3-09). The consequence here is that frontmatter conformance is decided by that capability against a published schema, never by a parser written inside the loader, because a loader that decides its own conformance cannot be swapped without renegotiating what conformance means. | sourced | `F-b3-09` "Document validation" |
 | Proposed: one packaging shape covers every composable unit this platform ships - a skill, a workflow, a bounded loop, an agent profile - rather than one shape per kind, because a second shape doubles what a runtime must implement to load anything at all. | proposed | - |
 | Proposed: which runtime loaded a package, and how it accounted for the cost of doing so, never crosses this interface. Two conformant runtimes must be indistinguishable to a package. | proposed | - |
+| cap-errors owns the failure shape for the whole platform (F-b3-13, adopted directly rather than redesigned). The consequence here is that this interface adds no failure vocabulary of its own: a package that cannot be found, cannot be read, or fails frontmatter conformance comes back as a problem details object on the resolution outcome, never as a runtime exception or a bare string. | sourced | `F-b3-13` "— adopt the RFC directly" |
 
 ### Deliberately not exposed
 

@@ -226,6 +226,29 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**The failure shape (proposed): a recall at a scope the caller does not hold [caller's view, folded from cap-memory-use]** (proposed; sources: `F-b3-13`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:memory:example:scope-denied",
+  "title": "The scope is not yours",
+  "$ref": "urn:agentic:problem:0.1",
+  "description": "Media type application/problem+json. A recall at a scope the actor does not hold is a deterministic pre-execution refusal, which is exactly the registered `policy-denied` row in docs/decomposition.md section 2.1.6, so this example carries that type and its rule_id member rather than a memory-specific suffix cap-errors' closed registry has no row for. This is not the same as an empty result: empty means nothing was learned at a scope you hold, denied means you asked at a scope you do not.",
+  "examples": [
+    {
+      "type": "urn:agentic:problem:policy-denied",
+      "title": "The scope is not yours",
+      "status": 403,
+      "detail": "recall named principal user:dana; the run's actor is user:corey and holds principal user:corey, agent agent:release-reviewer and org org:platform.",
+      "retryable": false,
+      "correlation_id": "corr-b-0003",
+      "rule_id": "memory.scope.not-held"
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -238,6 +261,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: ranking is not in the contract. A caller names a scope and a need or an explicit key, never an embedding, a similarity threshold, a k or an index name; how candidates are ordered belongs to the adapter, which is what lets an approximate ranker and an exact key lookup satisfy the same interface. | proposed | `X-cap-memory-001` "rank candidate memories by cosine similarity" |
 | Proposed: no ratified standard governs this interface. The records on file say that no prior protocol provides verified memory portability, and the one protocol proposal found is a 2026 preprint, so unlike the rest of the capability table this shape is designed here rather than adopted - PASS.md's position is that everything else in B3 is a decision someone else already published, and this is the exception the manifest records as none found. | proposed | `X-end-to-end-003`, `F-b5-06` "no prior protocol provides verified memory portability" |
 | A refusal is typed. cap-errors owns the closed registry of RFC 9457 problem details; on this interface the refusals a caller meets are an out-of-scope recall, a write with no staleness policy, and a supersede naming an item that is already gone. An empty recall is not a refusal - it is a result with zero items and the applied scope. | sourced | `F-b3-13` "RFC 9457 problem details" |
+| The three ways in are the same two calls. TARGET T1 names a human, an agent, and an internal or external event as the ways into the system; here all three write and recall the same shapes, differing only in the produced_by subject - user:, agent:, service: or schedule: - and the platform records which one it was. This is the one enumeration of ways in used in this skill. | sourced | `T-t1-03`, `T-t1-02` "An internal or external event must be able to enter the system." |
+| Enhancing one aspect leaves the rest untouched: composability allows enhancing particular aspects of any element without touching the rest. Swap the store cap-memory-implement binds, add decay to ranking, tighten the retention defaults, and no step that remembers or recalls is edited - a scope, a claim, an expiry and a need are the only things any of them named. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -259,7 +284,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | Make correction a supersede, not an update, and keep the superseded item readable to provenance while removing it from recall. | Active supersession on every write so contradictions never accumulate is the mechanism; keeping the old item readable is what lets a wrong answer later be traced to the item that caused it rather than to the item that replaced it. | sourced | `X-cap-memory-008` "active supersession on every write so contradictions never accumulate" |
 | 7 | Type every refusal against the registry cap-errors owns, and keep an empty recall out of that path: zero items plus the applied scope is a result. | cap-errors adopts RFC 9457 problem details whole, so a caller branches on a type rather than parsing a message. Treating 'nothing to recall' as an error would make the common case of a first run look like a fault. | sourced | `F-b3-13` "RFC 9457 problem details" |
 | 8 | Judge an implementation by the conformance run in the definition of done, over both adapters in the pair below, not by whether one store works. | build-adapter-pair states the rule (F-b1-04): swappability is a tested property, not an intention. Here the axis that must differ is how a candidate is found - approximate ranking over an index versus exact lookup on a scope key - because an interface shaped around ranking cannot be served by a key lookup at all. | sourced | `F-b1-04` "Swappability is a tested property, not an intention." |
-| 9 | Proposed: open references/memory-item.md when writing the item schema, the scope grammar or the retention table. The body of this skill is enough to draw and review the interface without it. | Proposed: the full schema, the scope grammar and the retention defaults are longer than the interface they serve, and inlining them would bury the four operations a reader came for. | proposed | - |
+| 9 | Write one claim per item, in a sentence a later run can act on, at the narrowest scope that will need it. Do not paste the conversation it came from. | This skill cites the prior art that memory exists so work can carry across turns, sessions, and tasks; the caller-side consequence is that a pasted transcript pushes the summarising onto every future reader and expires as one block instead of per fact. Narrow first also means an item can be promoted to a wider scope later, while a wide one cannot be un-shared. | sourced | `X-cap-memory-003` "remember information across turns, sessions, and tasks" |
+| 10 | Proposed: open references/memory-item.md when writing the item schema, the scope grammar or the retention table. The body of this skill is enough to draw and review the interface without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed: the full schema, the scope grammar and the retention defaults are longer than the interface they serve, and inlining them would bury the four operations a reader came for. | proposed | - |
 
 ## Best practices
 
@@ -292,7 +318,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `build-research-record`, `build-ceremony`, `cap-errors`, `cap-identity`, `cap-state-persistence`
 
-Used by: `cap-memory-implement`, `cap-memory-use`
+Used by: `cap-memory-implement`
 
 ## Open questions
 

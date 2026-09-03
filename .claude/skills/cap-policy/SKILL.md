@@ -175,6 +175,29 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**Worked example 2 (proposed): a refused request, returned as RFC 9457 problem details [caller's view, folded from cap-policy-use]** (proposed; sources: `F-b4-07`, `F-b4-04`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:policy:example:deny",
+  "title": "A deny costs nothing",
+  "$ref": "urn:agentic:problem:0.1",
+  "description": "Send examples/end-to-end/entries/event.json for an action a rule denies. The body arrives with media type application/problem+json, the ledger spend delta for that dispatch is 0, and no metered call was made. Proposed: the shape a refusal would take, not a recorded run.",
+  "examples": [
+    {
+      "type": "urn:agentic:problem:policy-denied",
+      "title": "Refused before execution",
+      "status": 403,
+      "detail": "external tool invocation requires a mandate; none present on this entry",
+      "rule_id": "deny-external-tool-without-mandate",
+      "retryable": false,
+      "spend_delta_micros": 0
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -188,6 +211,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: every Decision carries a non-empty rule_id, for allow as well as deny, and every decision is recorded as a policy-decided record naming it. docs/decomposition.md row P10 asserts on exactly that record; an unattributed allow makes the question why was this permitted unanswerable while leaving the refusal path looking healthy. | proposed | `F-b4-04`, `F-a6-04` |
 | Proposed: the resource and context of a request are validated against the decision point's declared schema before evaluation. cap-document-validation owns that contract and the dialect that governs it (F-b3-09); the consequence here is that an unregistered or unvalidated input is refused rather than evaluated against a shape the rule author only assumed. | proposed | `F-b3-09` |
 | Proposed: a deny leaves this interface as the registered policy-denied problem produced by cap-errors, which owns the typed failure shape and its closed registry (F-b4-07). This capability mints no failure object of its own, so a caller that already reads typed failures needs no new parser for a refusal. | proposed | `F-b4-07` |
+| All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: a rule edit, a new decision point, or a swap of the engine behind the decision changes nothing in a caller that sends an envelope and reads a typed failure, because neither the rule text nor the engine ever appeared in what it reads. cap-document-validation states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -210,7 +234,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | Return a denial as the registered policy-denied problem with the rule_id on it, and define no failure object here. | Proposed composition. cap-errors already fixes the typed failure shape and holds the closed registry (F-b4-07); a second refusal format would be one more thing every caller has to learn for the case that matters most. | proposed | `F-b4-07` |
 | 7 | Judge a candidate engine on two properties before any feature comparison: that its decisions are deterministic, and that it can be consulted before resource consumption begins. | The requirement in the prior art is that policy decisions must be deterministic and evaluated before resource consumption begins. An engine that is expressive but consulted after the first metered call fails the contract however good its language is. | sourced | `X-cap-policy-006`, `F-b4-04` "Policy decisions must be deterministic and evaluated before resource consumption begins" |
 | 8 | Stop at the decision. Where it is consulted, and the rule that it must precede the first metered call, belong to xc-policy-gate; do not fold placement into this interface. | Merging the two is what produced the recorded state where conformance checks exist; not wired into the enforcement path. Defining a decision and placing it are separately checkable, and only one of them was ever done here. | sourced | `F-a6-04`, `E-not-running-policy-in-the-gate-path` "Conformance checks exist; not wired into the enforcement path" |
-| 9 | Proposed: open references/policy-decision.md when you need the full request and decision schemas, the decision-point registry format, or the engine-selection criteria table. This skill body is enough to judge an implementation without it. | Proposed, progressive disclosure. The registry format and the criteria table are long material, and inlining them would make the contract longer than the decision it governs. | proposed | - |
+| 9 | Send what you already send. Add no policy field, carry no approval flag, and delete any you inherited from another system. | Proposed usage of the contract this skill states (F-b4-04). The decision is taken on the platform's own path, so a field claiming a check already happened is at best ignored and at worst a habit that survives into a system where it is trusted. | proposed | `F-b4-04` |
+| 10 | Proposed: open references/policy-decision.md when you need the full request and decision schemas, the decision-point registry format, or the engine-selection criteria table. This skill body is enough to judge an implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed, progressive disclosure. The registry format and the criteria table are long material, and inlining them would make the contract longer than the decision it governs. | proposed | - |
 
 ## Best practices
 
@@ -244,7 +269,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `cap-errors`, `cap-document-validation`
 
-Used by: `cap-mandate-broker`, `cap-policy-implement`, `cap-policy-use`, `xc-enforcement-chain`, `xc-policy-gate`
+Used by: `cap-mandate-broker`, `cap-policy-implement`, `xc-enforcement-chain`, `xc-policy-gate`
 
 ## Open questions
 

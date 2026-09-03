@@ -257,6 +257,31 @@
           "X-cap-memory-002",
           "X-cap-memory-001"
         ]
+      },
+      {
+        "name": "The failure shape (proposed): a recall at a scope the caller does not hold [caller's view, folded from cap-memory-use]",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:cap:memory:example:scope-denied",
+          "title": "The scope is not yours",
+          "$ref": "urn:agentic:problem:0.1",
+          "description": "Media type application/problem+json. A recall at a scope the actor does not hold is a deterministic pre-execution refusal, which is exactly the registered `policy-denied` row in docs/decomposition.md section 2.1.6, so this example carries that type and its rule_id member rather than a memory-specific suffix cap-errors' closed registry has no row for. This is not the same as an empty result: empty means nothing was learned at a scope you hold, denied means you asked at a scope you do not.",
+          "examples": [
+            {
+              "type": "urn:agentic:problem:policy-denied",
+              "title": "The scope is not yours",
+              "status": 403,
+              "detail": "recall named principal user:dana; the run's actor is user:corey and holds principal user:corey, agent agent:release-reviewer and org org:platform.",
+              "retryable": false,
+              "correlation_id": "corr-b-0003",
+              "rule_id": "memory.scope.not-held"
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b3-13"
+        ]
       }
     ],
     "invariants": [
@@ -327,6 +352,23 @@
           "F-b3-13"
         ],
         "quote": "RFC 9457 problem details"
+      },
+      {
+        "text": "The three ways in are the same two calls. TARGET T1 names a human, an agent, and an internal or external event as the ways into the system; here all three write and recall the same shapes, differing only in the produced_by subject - user:, agent:, service: or schedule: - and the platform records which one it was. This is the one enumeration of ways in used in this skill.",
+        "origin": "sourced",
+        "sources": [
+          "T-t1-03",
+          "T-t1-02"
+        ],
+        "quote": "An internal or external event must be able to enter the system."
+      },
+      {
+        "text": "Enhancing one aspect leaves the rest untouched: composability allows enhancing particular aspects of any element without touching the rest. Swap the store cap-memory-implement binds, add decay to ranking, tighten the retention defaults, and no step that remembers or recalls is edited - a scope, a claim, an expiry and a need are the only things any of them named. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here.",
+        "origin": "sourced",
+        "sources": [
+          "T-t2-02"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
       }
     ],
     "not_exposed": [
@@ -441,7 +483,17 @@
     },
     {
       "step": 9,
-      "action": "Proposed: open references/memory-item.md when writing the item schema, the scope grammar or the retention table. The body of this skill is enough to draw and review the interface without it.",
+      "action": "Write one claim per item, in a sentence a later run can act on, at the narrowest scope that will need it. Do not paste the conversation it came from.",
+      "why": "This skill cites the prior art that memory exists so work can carry across turns, sessions, and tasks; the caller-side consequence is that a pasted transcript pushes the summarising onto every future reader and expires as one block instead of per fact. Narrow first also means an item can be promoted to a wider scope later, while a wide one cannot be un-shared.",
+      "origin": "sourced",
+      "sources": [
+        "X-cap-memory-003"
+      ],
+      "quote": "remember information across turns, sessions, and tasks"
+    },
+    {
+      "step": 10,
+      "action": "Proposed: open references/memory-item.md when writing the item schema, the scope grammar or the retention table. The body of this skill is enough to draw and review the interface without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
       "why": "Proposed: the full schema, the scope grammar and the retention defaults are longer than the interface they serve, and inlining them would bury the four operations a reader came for.",
       "origin": "proposed"
     }
@@ -533,8 +585,7 @@
       "cap-state-persistence"
     ],
     "used_by": [
-      "cap-memory-implement",
-      "cap-memory-use"
+      "cap-memory-implement"
     ]
   },
   "open_questions": [

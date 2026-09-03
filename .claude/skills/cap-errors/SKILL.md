@@ -102,6 +102,29 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**Worked example 2 (proposed): an agent's next step would cross the ceiling [caller's view, folded from cap-errors-use]** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:problem:example:budget-exhausted",
+  "title": "A step would cross the budget ceiling",
+  "$ref": "urn:agentic:problem:0.1",
+  "description": "Exit code 2, refused before the step ran, so the ledger shows no dispatch for it.",
+  "examples": [
+    {
+      "type": "urn:agentic:problem:budget-exhausted",
+      "title": "A step would cross the budget ceiling",
+      "status": 402,
+      "detail": "step fix#2 estimated 120000 micros, 41000 remain of a 400000 ceiling",
+      "retryable": false,
+      "step_id": "fix#2",
+      "correlation_id": "run-2026-09-03-0008"
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -114,6 +137,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: retryable is a member, never an inference from the status code, so a 503 that must not be retried says so. The base problem schema keeps all standard members optional, which is why the platform profile is what requires it on emission rather than the standard. | proposed | `X-cross-structure-040` |
 | Proposed: a failure that cannot be typed is itself a conformance failure of the adapter that raised it. It is returned as adapter-unavailable with the untyped payload in detail and it is counted; an adapter whose untyped count is non-zero is not conformant, however green its own tests are. | proposed | - |
 | Proposed consequence of design rule 6, which agentic-stack states under F-b1-07: a problem body is caller-visible, so the criterion a result is judged against must never appear in detail, in causes, or in any extension member. | proposed | `F-b1-07` |
+| A human, an event, a schedule and an external system or agent get the same object. All four entry kinds enter through the same shape, and the failure half is not specialised per entry, so one handler covers every way work arrived. | sourced | `T-t6-02`, `T-t1-01`, `T-t1-02`, `T-t1-03` "All four enter through the same shape." |
+| Enhancing one aspect leaves the rest untouched: adding a registry row, changing a title, or swapping which adapter produces the body changes nothing in a caller that reads type and retryable, because those are the only members it was ever asked to branch on. | sourced | `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -136,7 +161,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 7 | Proposed: treat an untyped failure as a defect of the adapter that raised it. Map it to adapter-unavailable, carry the untyped payload in detail, count it, and judge an implementation conformant only when that count is zero. | Proposed, from docs/decomposition.md section 2.1.6. Without the counter, the adapters that never learned to type their failures are exactly the ones a conformance run cannot see, because they answer with something rather than nothing. | proposed | - |
 | 8 | Proposed: keep the object bound to its media type and not to HTTP, so a stdio, message or in-process seam returns the identical body and a caller writes one branch for all of them. | Proposed, from docs/decomposition.md section 1. The standard defines a media type and a member set; nothing forces the transport to be HTTP for the shape to be adopted, and binding it to one transport would make the failure path the only part of a seam that cannot be swapped. | proposed | `X-cap-errors-002` |
 | 9 | Proposed: before declaring an implementation done, grep every problem body it can emit for the text of the criterion the result is judged against, and treat a hit as a rule-6 breach rather than a wording problem. | Proposed check. agentic-stack states design rule 6 under F-b1-07; the consequence specific to this capability is that the failure path is the path most tempted to explain why something did not pass. | proposed | `F-b1-07` |
-| 10 | Proposed: open references/problem-registry.md when you need the full JSON Schema, the closed type registry with its statuses and retryability, or the declared extension members per type. This skill body is enough to judge an implementation without it. | Proposed, progressive disclosure. The full schema and a ten-row registry are long material; inlining them would make the contract harder to read than the thing it governs. | proposed | - |
+| 10 | Branch on the type member and nothing else. Do not match on title, detail, exit codes or log lines. | Errors are typed and machine-readable, never parsed from prose; title and detail are written for people and may be reworded without notice. | sourced | `F-b4-07` "Typed and machine-readable. Never parsed from prose" |
+| 11 | Proposed: open references/problem-registry.md when you need the full JSON Schema, the closed type registry with its statuses and retryability, or the declared extension members per type. This skill body is enough to judge an implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed, progressive disclosure. The full schema and a ten-row registry are long material; inlining them would make the contract harder to read than the thing it governs. | proposed | - |
 
 ## Best practices
 
@@ -163,7 +189,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`
 
-Used by: `cap-agent-runtime`, `cap-capability-packaging`, `cap-capability-registry`, `cap-durable-execution`, `cap-errors-implement`, `cap-errors-use`, `cap-evaluation`, `cap-human-interaction`, `cap-idempotency`, `cap-identity`, `cap-isolation`, `cap-mandate-broker`, `cap-memory`, `cap-model-access`, `cap-policy`, `cap-provenance`, `cap-scheduling`, `cap-state-persistence`, `cap-telemetry`, `cap-tool-access`, `cap-work-intake`, `core-document`, `core-graph`, `core-judge`, `core-ledger`, `seam-agent-ingress`, `seam-dispatch`, `seam-entry-envelope`, `seam-state`, `xc-budget`, `xc-policy-gate`, `xc-typed-errors`
+Used by: `cap-agent-runtime`, `cap-capability-packaging`, `cap-capability-registry`, `cap-durable-execution`, `cap-errors-implement`, `cap-evaluation`, `cap-human-interaction`, `cap-idempotency`, `cap-identity`, `cap-isolation`, `cap-mandate-broker`, `cap-memory`, `cap-model-access`, `cap-policy`, `cap-provenance`, `cap-scheduling`, `cap-state-persistence`, `cap-telemetry`, `cap-tool-access`, `cap-work-intake`, `core-document`, `core-graph`, `core-judge`, `core-ledger`, `seam-dispatch`, `seam-state`, `xc-budget`, `xc-policy-gate`, `xc-typed-errors`
 
 ## Open questions
 

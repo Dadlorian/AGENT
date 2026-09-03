@@ -152,6 +152,33 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**Worked example 2 (proposed): an agent names an identity that is not published [caller's view, folded from cap-capability-packaging-use]** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:capability-packaging:example:unresolved",
+  "title": "An unresolved identity comes back as a problem, not an exception",
+  "description": "The agent asked for `incident-triarge`. The outcome carries resolved false and an RFC 9457 problem details body. The caller branches on type, shows detail to a person, and does not retry. `urn:agentic:problem:package-unresolved` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `document-invalid` with the unresolved identity in detail rather than minting a suffix at the call site.",
+  "examples": [
+    {
+      "identity": "incident-triarge",
+      "resolved": false,
+      "source": "directory",
+      "tiers_loaded": [],
+      "problem": {
+        "type": "urn:agentic:problem:package-unresolved",
+        "title": "No package carries that identity",
+        "status": 404,
+        "detail": "no package named 'incident-triarge' under the configured source; the nearest published identity is 'incident-triage'",
+        "retryable": false,
+        "correlation_id": "run-2026-09-03-0011"
+      }
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -165,6 +192,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: one packaging shape covers every composable unit this platform ships - a skill, a workflow, a bounded loop, an agent profile - rather than one shape per kind, because a second shape doubles what a runtime must implement to load anything at all. | proposed | - |
 | Proposed: which runtime loaded a package, and how it accounted for the cost of doing so, never crosses this interface. Two conformant runtimes must be indistinguishable to a package. | proposed | - |
 | cap-errors owns the failure shape for the whole platform (F-b3-13, adopted directly rather than redesigned). The consequence here is that this interface adds no failure vocabulary of its own: a package that cannot be found, cannot be read, or fails frontmatter conformance comes back as a problem details object on the resolution outcome, never as a runtime exception or a bare string. | sourced | `F-b3-13` "— adopt the RFC directly" |
+| All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: rewriting a body, adding a reference file, versioning a package or moving it from a directory to a registry changes nothing in a caller that named an identity, because the identity is the only thing it was ever asked to write down. cap-document-validation states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -187,7 +215,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | Record the standard's version as unverified and write no version string that was not read: the format is published as an open standard but not as an explicitly versioned artifact, so name the specification and its URL instead. | build-skill-authoring requires a standard's version to be cited rather than guessed (F-part-c-10); where no version exists to cite, the honest record is the specification's identity plus unverified. | sourced | `X-end-to-end-025`, `X-cap-capability-packaging-002` "Anthropic does not currently publish the skill format as an explicitly versioned artifact." |
 | 7 | Choose the second adapter on a different distribution model, not a second directory: an entry format with namespace-scoped identity, served from a registry over a network, with distribution as an addressable artifact. | build-adapter-pair owns this discipline (F-b1-04). The consequence here is specific: two filesystem layouts would leave the interface free to keep assuming a local path, and only a fetched package forces identity, integrity and versioning to become contractual rather than incidental. | sourced | `X-cap-capability-packaging-004`, `F-b1-04` "uses namespace/name identity with reverse-DNS and supports both git and OCI distribution" |
 | 8 | Package every composable unit this platform ships in the same shape, and publish packages to a registry rather than copying directories between repositories. | Proposed on the first half: one shape for skills, workflows, loops and agent profiles keeps a runtime's loader singular. The second half is what makes reuse survive the second repository, the way a public registry of reusable modules does for composable build logic. | sourced | `X-entry-composition-056` "a public registry of reusable Dagger modules" |
-| 9 | Proposed: open references/packaging-shapes.md when you are implementing the package shape, assigning content to tiers, or reviewing someone who did. The body of this skill is enough to judge and to call the capability without it. | Proposed: the full shape and the tier assignment table are longer than the body's budget allows, and a reader deciding whether to package something does not need them. | proposed | - |
+| 9 | To publish: make a directory named after the capability, put a package file in it whose frontmatter carries a name equal to the directory and a description saying when to load it, and write the working text in the body. Stop there. | This skill states that the two resident fields are the whole requirement; anything more you add is optional, and anything you add because it felt incomplete becomes a cost every future package pays. | sourced | `X-entry-composition-035` "YAML frontmatter that includes required metadata" |
+| 10 | Proposed: open references/packaging-shapes.md when you are implementing the package shape, assigning content to tiers, or reviewing someone who did. The body of this skill is enough to judge and to call the capability without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed: the full shape and the tier assignment table are longer than the body's budget allows, and a reader deciding whether to package something does not need them. | proposed | - |
 
 ## Best practices
 
@@ -220,7 +249,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `cap-errors`, `cap-document-validation`
 
-Used by: `cap-capability-packaging-implement`, `cap-capability-packaging-use`, `cap-capability-registry`, `compose-agent`
+Used by: `cap-capability-packaging-implement`, `cap-capability-registry`, `compose-agent`
 
 ## Open questions
 

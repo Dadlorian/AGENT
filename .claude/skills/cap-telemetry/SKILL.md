@@ -142,6 +142,28 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**Worked example 2 (proposed): the failure shape, when a run cannot be shown [caller's view, folded from cap-telemetry-use]** (proposed; sources: `F-b4-07`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:telemetry:example:unavailable",
+  "title": "A run with nothing to show",
+  "$ref": "urn:agentic:problem:0.1",
+  "description": "Proposed. Ask for a run whose retention window has passed, or one whose identifier never existed. The answer is RFC 9457 problem details with media type application/problem+json, the shape cap-errors owns. The type below is proposed and needs a row added to that registry before anything may raise it. Note what is not here: a failure to export is never raised at you, because a caller who could see one would start deciding whether telemetry mattered. The type is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns: until `urn:agentic:problem:telemetry-unavailable` has a row, an implementation returns the registered `adapter-unavailable` with the run id and the retention window in detail, accepting that it is 503 and retryable where a passed retention window is neither, which is itself the argument for the row.",
+  "examples": [
+    {
+      "type": "urn:agentic:problem:telemetry-unavailable",
+      "title": "No telemetry is retained for that run",
+      "status": 404,
+      "detail": "run.id run-human-0001 has no retained telemetry; the retention window for this deployment is 30 days",
+      "retryable": false,
+      "correlation_id": "corr-human-0001"
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -155,7 +177,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | The attribute vocabulary is adopted as pre-stable and cited as such: as of mid-July 2026 the registry marks every relevant attribute Development, and not one is marked Stable. Every emission therefore records the mapping version it was produced against, so a later revision is a readable change rather than a silent one. | sourced | `X-entry-composition-051`, `X-cross-structure-010` "and not one is marked Stable" |
 | Proposed: the platform's own correlation fields are independent of the attribute mapping. A revision of the vocabulary changes the mapping adapter and nothing in the entry envelope, which is what keeps a pre-stable dependency from reaching the one shape every caller fills in. | proposed | `T-t2-02`, `X-entry-composition-051` |
 | One vocabulary covers agent, workflow and tool work rather than one per kind of step, because the mapping's own operation attribute already spans them; a platform-invented name per step kind would make a run unreadable to any collector that knows the conventions. | sourced | `X-entry-composition-050`, `X-cross-structure-009` "The gen_ai.operation.name attribute covers the full agent lifecycle" |
-| Telemetry is applied by the platform and cannot be requested or declined. agentic-stack states design rule 7 (F-b1-08, F-b4-01); the consequence for this interface is that there is no emit flag on any request shape and no sampling decision a caller can make, so a step that produced no telemetry is a defect rather than a caller's choice. | sourced | `F-b1-08`, `T-t2-03` "State, telemetry, and every cross-cutting concern are managed across the entire structure, whichever entry point was used." |
+| Telemetry is applied by the platform and cannot be requested or declined. agentic-stack states design rule 7 (F-b1-08, F-b4-01); the consequence for this interface is that there is no emit flag on any request shape and no sampling decision a caller can make, so a step that produced no telemetry is a defect rather than a caller's choice. All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach it the same way, and there is no caller-side difference between them; what enhancing one aspect leaves untouched is stated by this table's row on the platform's own correlation fields being independent of the attribute mapping, and the caller's view is in references/usage.md. | sourced | `F-b1-08`, `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t2-03` "State, telemetry, and every cross-cutting concern are managed across the entire structure, whichever entry point was used." |
 
 ### Deliberately not exposed
 
@@ -176,7 +198,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 5 | Record the attribute-mapping version with the run, next to the telemetry rather than in a release note, and treat a body of telemetry with no recorded mapping version as unreadable. | The vocabulary is pre-stable, so a mapping version is what tells a later reader whether an attribute is missing or merely renamed. Without it, the only way to date a body of telemetry is to guess from the attribute names. | sourced | `X-cross-structure-010`, `X-entry-composition-051` "As of March 2026, most GenAI semantic conventions are in experimental status" |
 | 6 | Judge a candidate implementation on four questions: can a collector nobody here wrote ingest the output unchanged; does a group-by on the run attribute return one group across a depth-3 tree; is the mapping version present on every run; and can the backend be replaced by editing configuration only. | These are the criteria the definition of done below mechanises. agentic-stack states design rule 4 (F-b1-05), that if integration requires our SDK, a boundary is bespoke where a standard existed; the consequence for this boundary is the first question, because a backend nobody else can feed is exactly that bespoke boundary wearing a standard's name. | sourced | `F-b1-05`, `F-b1-04` "If integration requires our SDK, a boundary is bespoke where a standard existed" |
 | 7 | Put the pipeline between the emitters and the backends, and add filtering, redaction or aggregation as a stage in it rather than as a change to what an emitter sends. | The pipeline model is receivers, processors and exporters as separate building blocks, which is a working example of enhancing one aspect without touching the rest: a redaction rule becomes a processor, and no emitter and no backend is edited to get it. | sourced | `X-cross-structure-057`, `T-t2-02` "Processors (components that modify, enhance, filter, or aggregate telemetry data)" |
-| 8 | Proposed: open references/telemetry-attribute-mapping.md when you need the per-operation attribute table, the instrument list, or the record of what each cited research snippet does and does not establish. This skill body is enough to judge an implementation without it. | Proposed, progressive disclosure. The mapping table is long material that moves on its own cadence, which is precisely why it does not belong in the part of the contract that is meant to stay still. | proposed | - |
+| 8 | Send what you were already sending. Do not add a tracing call, a span of your own, or a request to be observed; there is nothing to opt into. | Proposed usage of the placement this skill fixes. The platform applies this concern rather than offering it, so a caller-side switch would be a hole rather than a feature, and a span you mint yourself is the one thing in the run with no correlation attributes on it. | proposed | `F-b1-08` |
+| 9 | Proposed: open references/telemetry-attribute-mapping.md when you need the per-operation attribute table, the instrument list, or the record of what each cited research snippet does and does not establish. This skill body is enough to judge an implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed, progressive disclosure. The mapping table is long material that moves on its own cadence, which is precisely why it does not belong in the part of the contract that is meant to stay still. | proposed | - |
 
 ## Best practices
 
@@ -210,7 +233,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `cap-errors`
 
-Used by: `cap-evaluation`, `cap-telemetry-implement`, `cap-telemetry-use`, `xc-correlation`, `xc-correlation-envelope`
+Used by: `cap-evaluation`, `cap-telemetry-implement`, `xc-correlation`
 
 ## Open questions
 

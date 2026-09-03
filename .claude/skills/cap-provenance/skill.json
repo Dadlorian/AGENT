@@ -212,6 +212,29 @@
           "X-cross-structure-054",
           "F-b4-05"
         ]
+      },
+      {
+        "name": "Worked example 2 (proposed): the failure shape, when a statement does not check out [caller's view, folded from cap-provenance-use]",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:provenance:example:unverifiable",
+          "title": "An envelope that does not verify",
+          "$ref": "urn:agentic:problem:0.1",
+          "description": "Proposed. Ask for a statement whose subject digest no longer matches the artifact you hold, or whose signer your policy does not accept. The answer is RFC 9457 problem details with media type application/problem+json, the shape cap-errors owns. The type below is proposed and needs a row added to that registry before anything may raise it. The type is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns: until `urn:agentic:problem:attestation-unverifiable` has a row, an implementation returns the registered `document-invalid`, which is also 422 and not retryable, with the statement id and the digest that did not match in detail.",
+          "examples": [
+            {
+              "type": "urn:agentic:problem:attestation-unverifiable",
+              "title": "The statement does not check out against the artifact",
+              "status": 422,
+              "detail": "subject digest sha256:0c7ac15... in urn:agentic:attestation:run-human-0001:fix#2 does not match the artifact supplied",
+              "retryable": false
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b4-07"
+        ]
       }
     ],
     "invariants": [
@@ -291,6 +314,17 @@
           "F-b4-01"
         ],
         "quote": "Cross-cutting guarantees are not optional"
+      },
+      {
+        "text": "All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: moving from a held signing key to an expiring identity, changing where envelopes are stored, or adding a new predicate changes nothing in a caller that keeps the envelope it was handed, because the envelope is the only thing it was ever given. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here.",
+        "origin": "sourced",
+        "sources": [
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03",
+          "T-t2-02"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
       }
     ],
     "not_exposed": [
@@ -393,7 +427,16 @@
     },
     {
       "step": 8,
-      "action": "Proposed: open references/attestation-shapes.md when you need the full statement and predicate schemas, the field-by-field mapping from the build-shaped predicate to what the platform records, or the trust-policy fields. This skill body is enough to judge an implementation without it.",
+      "action": "Send what you were already sending. Do not add a provenance field, a signing option or a request to attest; there is nothing to opt into.",
+      "why": "Proposed usage of the placement this skill fixes. The platform applies this concern rather than offering it, so a caller-side switch would be a hole rather than a feature.",
+      "origin": "proposed",
+      "sources": [
+        "F-b1-08"
+      ]
+    },
+    {
+      "step": 9,
+      "action": "Proposed: open references/attestation-shapes.md when you need the full statement and predicate schemas, the field-by-field mapping from the build-shaped predicate to what the platform records, or the trust-policy fields. This skill body is enough to judge an implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
       "why": "Proposed, progressive disclosure. The two schemas run past the length at which a contract stops being readable, and a reader deciding whether an implementation is acceptable does not need the field tables to do it.",
       "origin": "proposed"
     }
@@ -489,7 +532,6 @@
       "cap-capability-registry",
       "cap-mandate-broker",
       "cap-provenance-implement",
-      "cap-provenance-use",
       "xc-audit-trail",
       "xc-provenance-chain"
     ]

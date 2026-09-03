@@ -153,6 +153,54 @@
             }
           }
         }
+      },
+      {
+        "name": "worked example 1 (proposed): a person submits a malformed entry and gets everything wrong with it, at once [caller's view, folded from cap-document-validation-use]",
+        "origin": "proposed",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:cap:document-validation:example:rejected:0.1",
+          "title": "Rejected submission, end to end (proposed)",
+          "type": "object",
+          "examples": [
+            {
+              "sent": {
+                "schema_uri": "urn:agentic:seam:entry:0.1",
+                "instance": {
+                  "kind": "human",
+                  "intent": "restart the ingest job",
+                  "budget": {
+                    "ceiling_micros": "50000"
+                  }
+                }
+              },
+              "outcome": {
+                "valid": false,
+                "errors": [
+                  {
+                    "instance_location": "/actor",
+                    "keyword_location": "/required",
+                    "message": "required property 'actor' is missing"
+                  },
+                  {
+                    "instance_location": "/budget/ceiling_micros",
+                    "keyword_location": "/properties/budget/properties/ceiling_micros/type",
+                    "message": "expected integer, got string"
+                  }
+                ]
+              },
+              "received_on_the_wire": {
+                "media_type": "application/problem+json",
+                "type": "urn:agentic:problem:document-invalid",
+                "title": "Document failed schema validation",
+                "status": 422,
+                "detail": "2 violations; see errors",
+                "errors": "the list above, unchanged"
+              },
+              "what_the_caller_does": "fixes both violations in one edit and resubmits; there is no second round of discovery"
+            }
+          ]
+        }
       }
     ],
     "invariants": [
@@ -205,6 +253,25 @@
       {
         "text": "Proposed: what crosses the interface is the outcome shape defined here, never an adapter's own exception type, error class or message string; two conformant adapters must be indistinguishable to a caller that reads only the outcome.",
         "origin": "proposed"
+      },
+      {
+        "text": "All three ways in reach the same check: a person, an agent, and an internal or external event submit through one envelope, against one shape identifier, and read one outcome shape back.",
+        "origin": "sourced",
+        "sources": [
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03",
+          "T-t6-02"
+        ],
+        "quote": "All four enter through the same shape"
+      },
+      {
+        "text": "Tightening a schema, replacing the validator behind the interface, and changing how a rejection is rendered are three independent changes; none of them alters what a caller sends or the outcome shape they read.",
+        "origin": "sourced",
+        "sources": [
+          "T-t2-02"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
       }
     ],
     "not_exposed": [
@@ -317,7 +384,19 @@
     },
     {
       "step": 9,
-      "action": "Proposed: open references/document-validation-shapes.md when you are implementing the outcome shape, the error unit, or the conformance report, or reviewing someone who did. The body of this skill is enough to judge and to call the capability without it.",
+      "action": "Send the document together with the identifier of the shape it claims to be, through the same envelope whether you are a person typing it, an agent submitting it, or an event carrying it.",
+      "why": "All three must be able to enter, and one entry shape is what lets the same check, the same outcome and the same record apply to all of them.",
+      "origin": "sourced",
+      "sources": [
+        "T-t1-01",
+        "T-t1-02",
+        "T-t1-03"
+      ],
+      "quote": "An internal or external event must be able to enter the system."
+    },
+    {
+      "step": 10,
+      "action": "Proposed: open references/document-validation-shapes.md when you are implementing the outcome shape, the error unit, or the conformance report, or reviewing someone who did. The body of this skill is enough to judge and to call the capability without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
       "why": "Proposed: the full shapes are longer than the progressive-disclosure budget allows in the body, and a reader deciding whether to use the capability does not need them.",
       "origin": "proposed"
     }
@@ -403,14 +482,12 @@
       "cap-capability-packaging",
       "cap-capability-registry",
       "cap-document-validation-implement",
-      "cap-document-validation-use",
       "cap-human-interaction",
       "cap-policy",
       "cap-tool-access",
       "cap-work-intake",
       "compose-operators",
-      "core-document",
-      "seam-entry-envelope"
+      "core-document"
     ]
   },
   "open_questions": [

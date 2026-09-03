@@ -196,6 +196,30 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**What a failure looks like (proposed): problem details, not prose [caller's view, folded from cap-agent-runtime-use]** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:agent-runtime:example:cancel-timeout",
+  "title": "The grace window expired and the unit was hard-stopped",
+  "$ref": "urn:agentic:problem:0.1",
+  "description": "A hard stop is a failure, never a clean cancellation. Branch on type; read detail only to report it.",
+  "examples": [
+    {
+      "type": "urn:agentic:problem:cancel-timeout",
+      "title": "Turn did not reach a terminal frame inside the grace window",
+      "status": 504,
+      "detail": "cancel issued at t=5s, grace 10s, no terminal frame by t=15s; the unit was destroyed",
+      "retryable": true,
+      "retry_after_s": 30,
+      "stop_reason": "cancel_timeout",
+      "correlation_id": "evt-2026-09-03-0042"
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -208,6 +232,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: the transport is adapter detail. The local binding of this protocol launches the agent as a subprocess and speaks JSON-RPC over its standard streams, but what the core imports is the turn, so a runtime reached another way serves the same interface unchanged. | proposed | `F-a3-03`, `X-cap-agent-runtime-006` |
 | Proposed consequence of design rule 6, which agentic-stack states under F-b1-07: the prompt crossing this boundary carries the task and never the criterion, so a stop reason tells a caller why the loop stopped and never whether the work was acceptable. | proposed | `F-b1-07` |
 | The swap candidates for this row are a class rather than a list of products, so a caller integrates with any conformant agent; agentic-stack states design rule 4 (F-b1-05) and this row is its consequence here. | sourced | `F-b3-05`, `F-b1-05` "any ACP-speaking agent" |
+| The three ways in that TARGET T1 lists - a human, an agent, an internal or external event - reach a turn through the same call. How the work arrived is not a field of the turn, so one caller-side handler covers all three. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03` "An internal or external event must be able to enter the system." |
+| Enhancing one aspect leaves the rest untouched: replacing the runtime, adding a stop reason, turning streaming on, or moving where the turn executes changes nothing in a caller that reads stop_reason, outputs and usage. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -230,7 +256,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 7 | Carry correlation into and out of every turn as an explicit member of the turn shapes, and never rely on trace parentage surviving the agent boundary. | agentic-stack already states the trace-context finding (F-a7-02). What this adds: this capability is that boundary, so the correlation member belongs in the turn-request and turn-result shapes here rather than being left to whatever the runtime propagates. | sourced | `F-a7-02`, `F-b4-06` "Correlation must ride on an explicit resource attribute set at dispatch" |
 | 8 | Return failures as the typed problem object cap-errors defines, and put the stop reason on that object rather than inventing a runtime-specific error shape or handing back the agent's own message text. | cap-errors already owns the failure shape (F-b4-07); what this adds is that a turn can fail in ways the protocol has no vocabulary for, and those must land on a registered type rather than in a stop reason invented on the spot. | sourced | `F-b4-07` "Typed and machine-readable. Never parsed from prose" |
 | 9 | Judge a candidate runtime by the cancellation criterion in this skill's definition of done, run against both adapters from the same suite, before deciding it may serve the interface. | agentic-stack and build-definition-of-done already state that a criterion nothing can fail is not a criterion (F-part-c-04). What this adds: every other property of a runtime degrades gracefully, but one that cannot reach a terminal frame on request cannot be bounded by any ceiling above it, so cancellation is the property worth gating on here. | sourced | `F-part-c-04`, `F-b1-04` "A criterion nothing can fail is not a criterion" |
-| 10 | Proposed: open references/agent-runtime-shapes.md when implementing or reviewing the full turn shapes, the negotiated capability set or the stop-reason table. The body of this skill is enough to judge a candidate runtime and to call the capability without it. | Proposed: the full shapes exceed the progressive-disclosure budget for a skill body, and a reader deciding whether to use the capability does not need them. | proposed | - |
+| 10 | Send the prompt, a correlation id you chose, and nothing else unless you have a reason. Take the default grace window; take the default capability set. | It has to be simple to use, and every field you fill in is a decision you now own. The defaults are the ones the platform can change under you without breaking your call. | sourced | `T-t3-01` "It has to be simple to use." |
+| 11 | Proposed: open references/agent-runtime-shapes.md when implementing or reviewing the full turn shapes, the negotiated capability set or the stop-reason table. The body of this skill is enough to judge a candidate runtime and to call the capability without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed: the full shapes exceed the progressive-disclosure budget for a skill body, and a reader deciding whether to use the capability does not need them. | proposed | - |
 
 ## Best practices
 
@@ -263,7 +290,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `cap-errors`
 
-Used by: `cap-agent-runtime-implement`, `cap-agent-runtime-use`, `compose-agent`, `seam-dispatch`
+Used by: `cap-agent-runtime-implement`, `compose-agent`, `seam-dispatch`
 
 ## Open questions
 

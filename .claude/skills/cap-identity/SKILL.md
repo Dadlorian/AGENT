@@ -94,6 +94,27 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**The one failure (proposed): identity-untrusted, in the problem-details shape cap-errors fixes [caller's view, folded from cap-identity-use]** (proposed; sources: `F-b4-07`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:identity:example:untrusted",
+  "title": "The chain did not verify",
+  "$ref": "urn:agentic:problem:0.1",
+  "description": "Returned with media type application/problem+json when a presented credential or a hop of the chain does not verify. Not retryable: re-sending the same thing produces the same answer. The fix is a fresh credential or a fresh attestation, not a retry.",
+  "examples": [
+    {
+      "type": "urn:agentic:problem:identity-untrusted",
+      "title": "The delegation chain does not verify",
+      "status": 401,
+      "detail": "hop 2 of 3 (service:intake) presented a credential that expired at 2026-09-03T09:18:00Z",
+      "retryable": false
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -107,6 +128,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: a chain names the current actor first and the least recent actor last, is acyclic, and ends at a root that was attested from platform facts rather than asserted by a caller. A cycle or a chain that terminates at a self-asserted name is a verification failure, not a formatting problem. | proposed | `F-b4-03` |
 | Proposed: this capability is defined without reference to the policy engine. Policy consumes identity and identity does not consume policy, so an actor model built alongside today's rules would encode those rules into the shape of the actor. | proposed | `F-b4-04` |
 | Proposed: credentials are short-lived and issued per unit. A shared, long-lived secret cannot name an actor, because every holder of it produces the same subject and the chain behind that subject cannot be distinguished. | proposed | `X-end-to-end-029` |
+| All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: changing how credentials are issued, shortening their lifetime, or adding a hop between you and the work changes nothing in a caller that named itself once, because the name is the only thing it was ever asked for. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -128,7 +150,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 5 | Attest a unit from facts about where it runs rather than from a secret handed to it, and for a unit the platform cannot observe in place, issue through a delegated path in which an attested party vouches for it. | Attestation ties identities to real, verifiable conditions at runtime, and a delegated workload can obtain identity documents and trust material on behalf of workloads that cannot be attested directly, which is the alternative to planting a long-lived secret inside a sandbox. | sourced | `X-cap-identity-007`, `X-cross-structure-035` "can obtain SVIDs and bundles on behalf of workloads that cannot be attested" |
 | 6 | Verify a presented credential against distributed trust material at the point of use, and do not require a call to an authority for every action. | Trust material distributed to the workloads themselves enables trusted, peer-to-peer authentication without the need to contact a central authority for every transaction, which keeps verification available when the issuer is not and keeps its cost off the per-action path. | sourced | `X-cap-identity-008` "enabling trusted, peer-to-peer authentication without the need to contact a central authority for every transaction" |
 | 7 | Judge an implementation by the P13 criterion below rather than by whether an actor field exists: a corpus of recorded actions, every one with a subject, every delegated one with a chain of at least two hops, and the final hop matching the identity of the unit that actually executed the action. | Proposed judging rule, applying the discipline build-definition-of-done states. A field that is present but populated by whatever the caller sent is indistinguishable, on inspection, from an identity model; only the corpus assertion tells them apart. | proposed | `F-a6-05` |
-| 8 | Open references/identity-shapes.md when you need the attest and delegate request and response schemas, a worked act-claim chain, or the mapping from each recorded standard to the operations it governs. This skill body is enough to judge an implementation without it. | Proposed, progressive disclosure. The full schemas and a nested claim example are long material that a reader deciding whether an actor model is conformant does not need in front of them. | proposed | - |
+| 8 | Put one actor object on the envelope: a subject of the form scheme:identifier, where the scheme is user, service, agent or schedule, and a one-hop delegation_chain saying how you were established (direct, token_exchange or workload_attestation). | Proposed. It is the shape the runnable reference already validates in examples/end-to-end/schemas/entry.schema.json, and this skill carries it as ActorIdentity; writing it by hand once is the entire caller-side obligation. | proposed | `F-b4-03` |
+| 9 | Open references/identity-shapes.md when you need the attest and delegate request and response schemas, a worked act-claim chain, or the mapping from each recorded standard to the operations it governs. This skill body is enough to judge an implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed, progressive disclosure. The full schemas and a nested claim example are long material that a reader deciding whether an actor model is conformant does not need in front of them. | proposed | - |
 
 ## Best practices
 
@@ -155,7 +178,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `cap-errors`
 
-Used by: `cap-human-interaction`, `cap-identity-implement`, `cap-identity-use`, `cap-mandate-broker`, `cap-memory`, `xc-identity-delegation`, `xc-tenancy`
+Used by: `cap-human-interaction`, `cap-identity-implement`, `cap-mandate-broker`, `cap-memory`, `xc-identity-delegation`, `xc-tenancy`
 
 ## Open questions
 

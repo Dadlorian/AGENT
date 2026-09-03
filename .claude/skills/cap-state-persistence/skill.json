@@ -254,6 +254,36 @@
         "sources": [
           "X-cross-structure-052"
         ]
+      },
+      {
+        "name": "The failure shape (proposed): what a refused write or an unverifiable record looks like [caller's view, folded from cap-state-persistence-use]",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:state:example:problem",
+          "title": "Problem details from this capability",
+          "$ref": "urn:agentic:problem:0.1",
+          "description": "Proposed. Failures arrive as RFC 9457 problem details with media type application/problem+json, the shape cap-errors owns; nothing here returns a bare status or a message to be parsed. Both types below are proposed and need rows in that registry before anything may raise them. The distinction that matters to a caller is retryable: a lost race is retried after re-reading the head, a broken chain never is. Both are proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns: until the rows land an implementation returns `idempotency-conflict` for `urn:agentic:problem:head-moved` and `document-invalid` for `urn:agentic:problem:record-unverifiable`, accepting that `idempotency-conflict` is not retryable while a lost race is, which is itself the argument for the head-moved row.",
+          "examples": [
+            {
+              "type": "urn:agentic:problem:head-moved",
+              "title": "Another writer advanced the head first",
+              "status": 409,
+              "detail": "expected head sha256:d09619... but the current head is sha256:50873a...",
+              "retryable": true
+            },
+            {
+              "type": "urn:agentic:problem:record-unverifiable",
+              "title": "The proof does not check out against the head you supplied",
+              "status": 422,
+              "detail": "inclusion proof for sha256:0c7ac1... does not reconstruct root sha256:...",
+              "retryable": false
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b4-07"
+        ]
       }
     ],
     "invariants": [
@@ -334,6 +364,17 @@
           "F-b5-05"
         ],
         "quote": "a valid log can be cryptographically verified by any third-party"
+      },
+      {
+        "text": "All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: the store can move from a local file to content-addressed objects, gain proofs, gain a lease and change its retention classes, and a caller holding a head and a proof changes nothing, because a head and a proof are the only things it was ever given. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here.",
+        "origin": "sourced",
+        "sources": [
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03",
+          "T-t2-02"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
       }
     ],
     "not_exposed": [
@@ -436,7 +477,16 @@
     },
     {
       "step": 8,
-      "action": "Proposed: open references/state-shapes.md when you need the full record schema, the planner query table with signatures, or the retention class table with its defaults. This skill body is enough to judge an implementation without opening it.",
+      "action": "Send what you were already sending. There is no durability option, no consistency level and no store to name; nothing about persistence is something you opt into.",
+      "why": "Proposed usage of the placement this skill fixes. The platform applies this rather than offering it, so a caller-side switch would be a hole rather than a feature, and a caller that could turn it off would eventually be the reason a run cannot be reconstructed.",
+      "origin": "proposed",
+      "sources": [
+        "F-b1-08"
+      ]
+    },
+    {
+      "step": 9,
+      "action": "Proposed: open references/state-shapes.md when you need the full record schema, the planner query table with signatures, or the retention class table with its defaults. This skill body is enough to judge an implementation without opening it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
       "why": "Proposed, progressive disclosure. The query table alone runs to eight signatures and the record schema past the length at which a contract stops being read; a reader deciding whether a store is acceptable does not need either to decide.",
       "origin": "proposed"
     }
@@ -536,7 +586,6 @@
     "used_by": [
       "cap-memory",
       "cap-state-persistence-implement",
-      "cap-state-persistence-use",
       "seam-state",
       "xc-idempotency-lease",
       "xc-tenancy"

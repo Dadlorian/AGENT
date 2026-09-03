@@ -149,6 +149,29 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**What a refusal looks like (proposed): problem details, not prose [caller's view, folded from cap-isolation-use]** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:isolation:example:isolation-unavailable",
+  "title": "Nothing could contain this work as asked",
+  "$ref": "urn:agentic:problem:0.1",
+  "description": "The work was refused before it ran, rather than run with weaker containment. Branch on type; read detail only to report it.",
+  "examples": [
+    {
+      "type": "urn:agentic:problem:isolation-unavailable",
+      "title": "No isolation adapter could admit the unit",
+      "status": 503,
+      "detail": "profile 'large-gpu' is not resolvable by any configured adapter on this host",
+      "retryable": true,
+      "retry_after_s": 60,
+      "correlation_id": "evt-2026-09-03-0104"
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -161,6 +184,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Containment is asserted from outside the unit. The one containment property the substrate records as verified live is the jail directory's mode and the fact that its owning identity has no entry in the host account database - an observation the host makes about the unit, not a statement the unit makes about itself. | sourced | `F-a3-06` "owned by a per-VM uid with no passwd entry — verified live" |
 | The boundary must be able to destroy a unit on request, because that is what makes every ceiling above it enforceable: exceeding a budget terminates the unit, not the platform. An adapter that cannot be made to stop cannot serve this interface at any profile. | sourced | `F-b4-02` "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform" |
 | Proposed: every statement in this skill about how a unit behaves under containment is claimed except the jail row, which the knowledge base records as verified live. Nothing in this capability has been run in this repository. | proposed | `F-a3-06` |
+| The three ways in that TARGET T1 lists - a human, an agent, an internal or external event - reach a contained unit through the same call. How the work arrived is not a field of it, so one caller-side handler covers all three. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03` "An internal or external event must be able to enter the system." |
+| Enhancing one aspect leaves the rest untouched: replacing what contains the work, adding a resource profile, tightening an egress rule or moving where the unit runs changes nothing in a caller that reads exit status, outputs and usage. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -183,7 +208,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | Choose the second adapter on execution model, not on brand: one whose unit of resource granted is a set of capabilities rather than a machine, and whose start and teardown cost differs by orders of magnitude. Record the pair on those axes. | build-adapter-pair already states that swappability is a tested property and that the second adapter exists to prove the first is not load-bearing (F-b1-04). What this adds here is which axes count for containment: a second technology that still boots a kernel and exposes a filesystem leaves every machine-shaped field in the contract untested. | sourced | `F-b1-04`, `F-b3-18` "needs to run somewhere we do not own hardware" |
 | 7 | Return failures as the typed problem object cap-errors defines. When no adapter can admit a declaration, return the isolation-unavailable type as retryable rather than downgrading the declaration to one that fits. | cap-errors already owns the failure shape (F-b4-07). What this adds is the specific temptation at this boundary: a silent downgrade turns a refusal into a unit that ran with weaker containment than was asked for, and nothing in the result would say so. | sourced | `F-b4-07` "Typed and machine-readable. Never parsed from prose" |
 | 8 | Judge a candidate containment technology by the criterion in this skill's definition of done, run from one suite over both adapters, before deciding it may serve the interface. | agentic-stack and build-definition-of-done already state that a criterion nothing can fail is not a criterion (F-part-c-04). What this adds: for containment the criterion has to count blocked egress attempts against attempted ones, because a suite that never tries to leave the unit passes identically against a sandbox with no containment at all. | sourced | `F-part-c-04`, `F-b1-04` "A criterion nothing can fail is not a criterion" |
-| 9 | Proposed: open references/isolation-shapes.md when implementing or reviewing the full declaration schema, the profile resolution rules or the containment-report fields. The body of this skill is enough to judge a candidate technology and to call the capability without it. | Proposed: the full schemas exceed the progressive-disclosure budget for a skill body, and a reader deciding whether a boundary is drawn correctly does not need them. | proposed | - |
+| 9 | Send the work, the document it runs on, and a correlation id you chose. Write no profile, no egress rule and no credential unless you have a reason. | It has to be simple to use, and every field you fill in is a decision you now own. The fields you leave alone are the ones the platform can change under you without breaking your call. | sourced | `T-t3-01` "It has to be simple to use." |
+| 10 | Proposed: open references/isolation-shapes.md when implementing or reviewing the full declaration schema, the profile resolution rules or the containment-report fields. The body of this skill is enough to judge a candidate technology and to call the capability without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed: the full schemas exceed the progressive-disclosure budget for a skill body, and a reader deciding whether a boundary is drawn correctly does not need them. | proposed | - |
 
 ## Best practices
 
@@ -216,7 +242,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `cap-errors`
 
-Used by: `cap-isolation-implement`, `cap-isolation-use`, `compose-agent`, `seam-dispatch`, `xc-tenancy`
+Used by: `cap-isolation-implement`, `compose-agent`, `seam-dispatch`, `xc-tenancy`
 
 ## Open questions
 

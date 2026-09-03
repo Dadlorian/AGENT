@@ -152,6 +152,27 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**Worked example 2 (proposed): the failure shape, when a statement does not check out [caller's view, folded from cap-provenance-use]** (proposed; sources: `F-b4-07`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:provenance:example:unverifiable",
+  "title": "An envelope that does not verify",
+  "$ref": "urn:agentic:problem:0.1",
+  "description": "Proposed. Ask for a statement whose subject digest no longer matches the artifact you hold, or whose signer your policy does not accept. The answer is RFC 9457 problem details with media type application/problem+json, the shape cap-errors owns. The type below is proposed and needs a row added to that registry before anything may raise it. The type is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns: until `urn:agentic:problem:attestation-unverifiable` has a row, an implementation returns the registered `document-invalid`, which is also 422 and not retryable, with the statement id and the digest that did not match in detail.",
+  "examples": [
+    {
+      "type": "urn:agentic:problem:attestation-unverifiable",
+      "title": "The statement does not check out against the artifact",
+      "status": 422,
+      "detail": "subject digest sha256:0c7ac15... in urn:agentic:attestation:run-human-0001:fix#2 does not match the artifact supplied",
+      "retryable": false
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -165,6 +186,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: both predicates travel as in-toto Statements inside the same envelope format and through the same attest call, so one verifier and one trust policy cover an artifact and an agent action. Two envelope formats would mean the outside check works for builds and not for the thing this platform actually does. | proposed | `X-cross-structure-050`, `X-cross-structure-054` |
 | Verification is judged by what an outside verifier does: it checks cryptographic signatures and matches expected values such as builder ID and source repository. A check that reads our store, our chain or our reader has not met this concern's contract whatever it reports. | sourced | `X-cap-provenance-005`, `F-b4-05` "checking cryptographic signatures and matching expected values such as builder ID and source repository" |
 | This capability is applied by the platform and cannot be requested or declined, because cross-cutting guarantees are not optional. agentic-stack states design rule 7 (F-b1-08); the consequence here is that there is no attest flag on any request shape, and an output with no statement over its digest is a defect rather than a caller's choice. | sourced | `F-b1-08`, `F-b4-01` "Cross-cutting guarantees are not optional" |
+| All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: moving from a held signing key to an expiring identity, changing where envelopes are stored, or adding a new predicate changes nothing in a caller that keeps the envelope it was handed, because the envelope is the only thing it was ever given. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -185,7 +207,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 5 | Judge every candidate implementation by running a verifier nobody here wrote, against the envelope alone, with our store unreachable. | The concern's contract is verification by a tool we did not write, and the only way to establish that our store is not secretly required is to take it away during the check. A verifier that succeeds with the store mounted proves nothing about the case that matters. | sourced | `F-b4-05`, `X-cap-provenance-005` "attributable to the code version, inputs and actor that produced it, verifiable with a tool we did not write" |
 | 6 | Publish each envelope where a third party can fetch it, and treat the choice of store as configuration: attestations can be stored in a transparency log, or in a plain attestation store, and the interface must not care which. | The recorded swap candidates are a keyless-signing service or any attestation store, so the store is exactly the axis the second adapter moves along. An interface that assumes a log cannot host the local case, and one that assumes a file cannot host the public case. | sourced | `X-cap-provenance-006`, `F-b3-12` "Attestations can be stored in a transparency log" |
 | 7 | Where the store is an append-only log, monitor it rather than trusting it, and record the monitoring as part of the capability instead of as an operational extra. | build-definition-of-done already cites this record for gates (X-cross-structure-053); the consequence for this capability is that transparency logs are tamper-evident but not tamper-proof, so a log nobody watches gives a third party the ability to detect tampering that nobody is exercising. | sourced | `X-cross-structure-053`, `X-cross-structure-052` "tamper-evident but not tamper-proof" |
-| 8 | Proposed: open references/attestation-shapes.md when you need the full statement and predicate schemas, the field-by-field mapping from the build-shaped predicate to what the platform records, or the trust-policy fields. This skill body is enough to judge an implementation without it. | Proposed, progressive disclosure. The two schemas run past the length at which a contract stops being readable, and a reader deciding whether an implementation is acceptable does not need the field tables to do it. | proposed | - |
+| 8 | Send what you were already sending. Do not add a provenance field, a signing option or a request to attest; there is nothing to opt into. | Proposed usage of the placement this skill fixes. The platform applies this concern rather than offering it, so a caller-side switch would be a hole rather than a feature. | proposed | `F-b1-08` |
+| 9 | Proposed: open references/attestation-shapes.md when you need the full statement and predicate schemas, the field-by-field mapping from the build-shaped predicate to what the platform records, or the trust-policy fields. This skill body is enough to judge an implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed, progressive disclosure. The two schemas run past the length at which a contract stops being readable, and a reader deciding whether an implementation is acceptable does not need the field tables to do it. | proposed | - |
 
 ## Best practices
 
@@ -218,7 +241,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `cap-errors`, `build-evidence-record`
 
-Used by: `cap-capability-registry`, `cap-mandate-broker`, `cap-provenance-implement`, `cap-provenance-use`, `xc-audit-trail`, `xc-provenance-chain`
+Used by: `cap-capability-registry`, `cap-mandate-broker`, `cap-provenance-implement`, `xc-audit-trail`, `xc-provenance-chain`
 
 ## Open questions
 

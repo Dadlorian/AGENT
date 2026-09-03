@@ -138,6 +138,28 @@
           "X-cap-errors-002",
           "X-cross-structure-040"
         ]
+      },
+      {
+        "name": "Worked example 2 (proposed): an agent's next step would cross the ceiling [caller's view, folded from cap-errors-use]",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:problem:example:budget-exhausted",
+          "title": "A step would cross the budget ceiling",
+          "$ref": "urn:agentic:problem:0.1",
+          "description": "Exit code 2, refused before the step ran, so the ledger shows no dispatch for it.",
+          "examples": [
+            {
+              "type": "urn:agentic:problem:budget-exhausted",
+              "title": "A step would cross the budget ceiling",
+              "status": 402,
+              "detail": "step fix#2 estimated 120000 micros, 41000 remain of a 400000 ceiling",
+              "retryable": false,
+              "step_id": "fix#2",
+              "correlation_id": "run-2026-09-03-0008"
+            }
+          ]
+        },
+        "origin": "proposed"
       }
     ],
     "invariants": [
@@ -201,6 +223,25 @@
         "sources": [
           "F-b1-07"
         ]
+      },
+      {
+        "text": "A human, an event, a schedule and an external system or agent get the same object. All four entry kinds enter through the same shape, and the failure half is not specialised per entry, so one handler covers every way work arrived.",
+        "origin": "sourced",
+        "sources": [
+          "T-t6-02",
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03"
+        ],
+        "quote": "All four enter through the same shape."
+      },
+      {
+        "text": "Enhancing one aspect leaves the rest untouched: adding a registry row, changing a title, or swapping which adapter produces the body changes nothing in a caller that reads type and retryable, because those are the only members it was ever asked to branch on.",
+        "origin": "sourced",
+        "sources": [
+          "T-t2-02"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
       }
     ],
     "not_exposed": [
@@ -314,7 +355,17 @@
     },
     {
       "step": 10,
-      "action": "Proposed: open references/problem-registry.md when you need the full JSON Schema, the closed type registry with its statuses and retryability, or the declared extension members per type. This skill body is enough to judge an implementation without it.",
+      "action": "Branch on the type member and nothing else. Do not match on title, detail, exit codes or log lines.",
+      "why": "Errors are typed and machine-readable, never parsed from prose; title and detail are written for people and may be reworded without notice.",
+      "origin": "sourced",
+      "sources": [
+        "F-b4-07"
+      ],
+      "quote": "Typed and machine-readable. Never parsed from prose"
+    },
+    {
+      "step": 11,
+      "action": "Proposed: open references/problem-registry.md when you need the full JSON Schema, the closed type registry with its statuses and retryability, or the declared extension members per type. This skill body is enough to judge an implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
       "why": "Proposed, progressive disclosure. The full schema and a ten-row registry are long material; inlining them would make the contract harder to read than the thing it governs.",
       "origin": "proposed"
     }
@@ -387,7 +438,6 @@
       "cap-capability-registry",
       "cap-durable-execution",
       "cap-errors-implement",
-      "cap-errors-use",
       "cap-evaluation",
       "cap-human-interaction",
       "cap-idempotency",
@@ -407,9 +457,7 @@
       "core-graph",
       "core-judge",
       "core-ledger",
-      "seam-agent-ingress",
       "seam-dispatch",
-      "seam-entry-envelope",
       "seam-state",
       "xc-budget",
       "xc-policy-gate",

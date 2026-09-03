@@ -188,6 +188,32 @@
             }
           }
         }
+      },
+      {
+        "name": "Worked example 2 (proposed): an agent names an identity that is not published [caller's view, folded from cap-capability-packaging-use]",
+        "origin": "proposed",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:cap:capability-packaging:example:unresolved",
+          "title": "An unresolved identity comes back as a problem, not an exception",
+          "description": "The agent asked for `incident-triarge`. The outcome carries resolved false and an RFC 9457 problem details body. The caller branches on type, shows detail to a person, and does not retry. `urn:agentic:problem:package-unresolved` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `document-invalid` with the unresolved identity in detail rather than minting a suffix at the call site.",
+          "examples": [
+            {
+              "identity": "incident-triarge",
+              "resolved": false,
+              "source": "directory",
+              "tiers_loaded": [],
+              "problem": {
+                "type": "urn:agentic:problem:package-unresolved",
+                "title": "No package carries that identity",
+                "status": 404,
+                "detail": "no package named 'incident-triarge' under the configured source; the nearest published identity is 'incident-triage'",
+                "retryable": false,
+                "correlation_id": "run-2026-09-03-0011"
+              }
+            }
+          ]
+        }
       }
     ],
     "invariants": [
@@ -255,6 +281,17 @@
           "F-b3-13"
         ],
         "quote": "— adopt the RFC directly"
+      },
+      {
+        "text": "All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: rewriting a body, adding a reference file, versioning a package or moving it from a directory to a registry changes nothing in a caller that named an identity, because the identity is the only thing it was ever asked to write down. cap-document-validation states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here.",
+        "origin": "sourced",
+        "sources": [
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03",
+          "T-t2-02"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
       }
     ],
     "not_exposed": [
@@ -362,7 +399,17 @@
     },
     {
       "step": 9,
-      "action": "Proposed: open references/packaging-shapes.md when you are implementing the package shape, assigning content to tiers, or reviewing someone who did. The body of this skill is enough to judge and to call the capability without it.",
+      "action": "To publish: make a directory named after the capability, put a package file in it whose frontmatter carries a name equal to the directory and a description saying when to load it, and write the working text in the body. Stop there.",
+      "why": "This skill states that the two resident fields are the whole requirement; anything more you add is optional, and anything you add because it felt incomplete becomes a cost every future package pays.",
+      "origin": "sourced",
+      "sources": [
+        "X-entry-composition-035"
+      ],
+      "quote": "YAML frontmatter that includes required metadata"
+    },
+    {
+      "step": 10,
+      "action": "Proposed: open references/packaging-shapes.md when you are implementing the package shape, assigning content to tiers, or reviewing someone who did. The body of this skill is enough to judge and to call the capability without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
       "why": "Proposed: the full shape and the tier assignment table are longer than the body's budget allows, and a reader deciding whether to package something does not need them.",
       "origin": "proposed"
     }
@@ -447,7 +494,6 @@
     ],
     "used_by": [
       "cap-capability-packaging-implement",
-      "cap-capability-packaging-use",
       "cap-capability-registry",
       "compose-agent"
     ]

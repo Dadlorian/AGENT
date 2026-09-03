@@ -155,6 +155,28 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**The failure you handle (proposed): problem details, measured [caller's view, folded from cap-scheduling-use]** (proposed; sources: `F-b3-13`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:schedule:example:problem",
+  "title": "A rejected schedule entry",
+  "$ref": "urn:agentic:problem:0.1",
+  "description": "cap-errors owns this shape and its registry; scheduling adds no failure format of its own. Measured in examples/end-to-end on 2026-09-03 by changing the schedule entry's kind to a private one: exit code 2, media type application/problem+json, nothing executed and nothing written.",
+  "examples": [
+    {
+      "type": "urn:agentic:problem:document-invalid",
+      "title": "Envelope failed schema validation",
+      "status": 422,
+      "detail": "$.kind: must be one of ['human', 'event', 'schedule', 'external']",
+      "retryable": false,
+      "instance": "entries/schedule.json"
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -162,11 +184,13 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | The recorded row for this capability names RFC 5545 recurrence rules as the standard, an orchestrator's own schedules as the adapter today, and cron or any RFC 5545 parser as the swap candidates. | sourced | `F-b3-15`, `E-capability-scheduling`, `E-swap-candidate-cron`, `E-swap-candidate-any-rfc-5545-parser` "cron · any RFC 5545 parser" |
 | A schedule is declared as one string and nothing more: the recurrence rule grammar defined in RFC 5545 describes a repeating schedule as a single string, so the declaration is portable between adapters, diffable in review, and small enough to sit on the unit it belongs to. | sourced | `X-entry-composition-049`, `X-cap-scheduling-002` "describes a repeating schedule as a single string" |
 | Proposed: evaluating a rule is a pure function of rule, anchor, time zone and window. It reads no clock, holds no cursor and writes nothing, so an occurrence set is reproducible from its inputs alone and a test vector is a complete specification of a case. agentic-stack states design rule 5 for planning (F-b1-06); this is the same shape of claim applied to recurrence, and it is ours, not PASS.md's. | proposed | `F-b1-06`, `F-b3-15` |
-| A firing schedule is one of TARGET T6.2's four entries, not a fifth privileged way in: a human, an event, a schedule (time), and an external system or agent all enter through the same shape, so an occurrence produces the standard entry envelope and inherits identity, correlation, budget and idempotency from it. | sourced | `T-t6-02` "All four enter through the same shape." |
+| A firing schedule is one of TARGET T6.2's four entries, not a fifth privileged way in: a human, an event, a schedule (time), and an external system or agent all enter through the same shape, so an occurrence produces the standard entry envelope and inherits identity, correlation, budget and idempotency from it. cap-errors states the same record (T-t6-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t6-02` "All four enter through the same shape." |
 | Prior art on file shows one widely used system declaring the clock and the person as siblings under a single trigger key: push triggers the workflow on code pushes to the repository, while schedule triggers the workflow at specific times or intervals, and workflow_dispatch triggers the workflow manually. | sourced | `X-entry-composition-044` "schedule triggers the workflow at specific times or intervals, and workflow_dispatch triggers the workflow manually" |
 | Proposed, generalising that prior art into our rule: a schedule and a manual trigger are sibling entries declared on the same unit, the schedule as one recurrence string and the trigger as a typed input schema the surface renders, and both produce the same envelope. A re-run button that reaches the unit by another path is a second implementation of entry that will drift. | proposed | `X-entry-composition-044`, `X-entry-composition-045`, `T-t1-03` |
 | The grammar is chosen for portability rather than expressiveness alone: RRULEs are understood by Google Calendar, Outlook, Apple Calendar and most scheduling software because they are part of the iCalendar standard RFC 5545, so a declared schedule can be read by tools the platform does not own. | sourced | `X-cap-scheduling-004` "RRULEs are understood by Google Calendar, Outlook, Apple Calendar and most scheduling software because they are part of the iCalendar standard RFC 5545." |
 | Proposed: the time zone is part of the rule's meaning, not deployment configuration. Two occurrence sets computed from the same rule in different zones legitimately differ, and at a daylight-saving transition a rule evaluated without a declared zone has no defined answer at all, which is exactly where a fixed-interval substitute looks correct and is not. | proposed | `F-b3-15` |
+| All three of TARGET T1's ways in reach a scheduled unit the same way. A human reaches it through the sibling manual trigger, an agent or external system reaches it by submitting the same envelope, and an internal or external event must be able to enter the system on the same shape; the clock is a fourth producer of that one envelope, not a fourth door. this skill cites TARGET T6.2's four entries for the envelope itself; this row is about the three ways a caller reaches an already-scheduled unit. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03` "3. An internal or external event must be able to enter the system." |
+| Enhancing one aspect leaves the rest untouched: swapping the evaluator behind the interface, changing a catch-up policy, or adding a new entry kind changes nothing in a unit that declared one recurrence string, because the string is the only thing it was ever asked for. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -186,9 +210,10 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 4 | Build the vector corpus before choosing an evaluator, and require it to contain at least a spring-forward transition, a fall-back transition, 29 February in a leap year, and a rule using BYSETPOS. | Proposed acceptance corpus, from docs/decomposition.md section 3.2 row P14. A fixed-interval substitute passes everything else: the four cases above are precisely the ones where counting seconds and evaluating the rule give different answers, so a corpus without them cannot tell the two apart. | proposed | `F-b3-15` |
 | 5 | Require an explicit time zone on every declaration and refuse a rule that arrives without one; treat UTC as a value someone chose, never as a fallback applied on their behalf. | Proposed. A missing zone is not a small omission: it is the difference between an occurrence set that is defined at a clock change and one that is not, and a silent default hides the choice at exactly the moment the vectors in step 4 are designed to expose. | proposed | `F-b3-15` |
 | 6 | Ship the pair recorded for this capability and make the axis explicit: an in-engine schedule owned by an execution engine, and a standalone evaluator that computes occurrences and enqueues them. Record how their execution models differ, not merely that there are two. | build-adapter-pair and agentic-stack state design rule 3: every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing. What is new here is the axis: whether firing is coupled to the engine that executes, or is a separate process that only decides. | sourced | `F-b1-04`, `F-b3-15` "Every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing" |
-| 7 | On firing, build the standard entry envelope: kind schedule, the occurrence instant as the time it occurred, the declaring actor and delegation chain, correlation, a budget ceiling, and an idempotency key derived from unit plus occurrence instant. Then hand it to the ordinary entry path. | All four enter through the same shape, so a schedule that opens its own path would be a fourth entry the cross-cutting concerns are not applied to. Deriving the key from the occurrence instant also makes a double fire and a catch-up replay the same request rather than two. | sourced | `T-t6-02`, `F-b3-08` "All four enter through the same shape." |
+| 7 | On firing, build the standard entry envelope: kind schedule, the occurrence instant as the time it occurred, the declaring actor and delegation chain, correlation, a budget ceiling, and an idempotency key derived from unit plus occurrence instant. Then hand it to the ordinary entry path. | All four enter through the same shape, so a schedule that opens its own path would be a fourth entry the cross-cutting concerns are not applied to. Deriving the key from the occurrence instant also makes a double fire and a catch-up replay the same request rather than two. cap-errors states the same record (T-t6-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t6-02`, `F-b3-08` "All four enter through the same shape." |
 | 8 | Return an unparseable rule, an unsupported rule part or a rule with no occurrences in the requested window as a typed problem from cap-errors' registry, and never as a log line or an empty result that reads like success. | cap-errors owns the failure shape and the closed registry for this platform (F-b3-13); the consequence here is that the three ways a declaration can be wrong must be distinguishable by a caller, because an empty occurrence set is a legitimate answer and a rejected rule is not. | sourced | `F-b3-13`, `F-b4-07` "RFC 9457 problem details" |
-| 9 | Open references/recurrence-vectors.md when you need the full declaration schema, the vector corpus with its expected occurrence sets, or the rule-part subset each adapter must support. This skill body is enough to judge an implementation without it. | Proposed, progressive disclosure. The vector table is long material and a reader deciding where recurrence lives does not need it yet. | proposed | - |
+| 9 | Put one recurrence rule string on the unit, with the instant it counts from and an IANA time zone beside it. Write the zone even when it is UTC. | Proposed usage of the contract this skill states (F-b3-15, X-entry-composition-049): the rule is one string and the zone is part of its meaning. For you the consequence is small - two extra fields - and the job no longer drifts by an hour twice a year. | proposed | `F-b3-15`, `X-entry-composition-049` |
+| 10 | Open references/recurrence-vectors.md when you need the full declaration schema, the vector corpus with its expected occurrence sets, or the rule-part subset each adapter must support. This skill body is enough to judge an implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed, progressive disclosure. The vector table is long material and a reader deciding where recurrence lives does not need it yet. | proposed | - |
 
 ## Best practices
 
@@ -222,7 +247,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `cap-errors`
 
-Used by: `cap-scheduling-implement`, `cap-scheduling-use`, `compose-approval`, `xc-audit-trail`
+Used by: `cap-scheduling-implement`, `compose-approval`, `xc-audit-trail`
 
 ## Open questions
 

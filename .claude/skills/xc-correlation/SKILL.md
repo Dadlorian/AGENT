@@ -250,7 +250,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `cap-telemetry`, `build-evidence-record`
 
-Used by: `seam-dispatch`, `xc-correlation-envelope`, `xc-correlation-implement`
+Used by: `seam-dispatch`, `xc-correlation-implement`, `xc-enforcement-chain`
 
 ## Open questions
 

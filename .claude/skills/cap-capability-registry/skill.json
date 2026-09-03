@@ -244,6 +244,38 @@
             }
           }
         }
+      },
+      {
+        "name": "Worked example 2 (proposed): an agent resolves a name and is refused [caller's view, folded from cap-capability-registry-use]",
+        "origin": "proposed",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:cap:capability-registry:example:refused",
+          "title": "An unsigned record comes back as a problem, not a warning",
+          "description": "The agent asked for the newest version satisfying its constraint. The one record that satisfies it carries no signature, so the outcome carries resolved false and a problem details body. The caller branches on type, shows detail to a person, and does not retry. `urn:agentic:problem:record-unsigned` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `identity-untrusted`, which is also 401 and not retryable, with the unsigned version named in detail, as the open question below records.",
+          "examples": [
+            {
+              "actor": "agent:triage-router",
+              "query": {
+                "name": "partner-co/log-summariser",
+                "constraint": ">=2.1.0"
+              },
+              "resolved": false,
+              "verification": {
+                "signature_verified": false,
+                "digest_matched": false
+              },
+              "problem": {
+                "type": "urn:agentic:problem:record-unsigned",
+                "title": "The record that satisfies this constraint is not signed",
+                "status": 401,
+                "detail": "partner-co/log-summariser 2.4.0 carries no signature; 2.0.6 is signed but does not satisfy '>=2.1.0'",
+                "retryable": false,
+                "correlation_id": "run-2026-09-03-0042"
+              }
+            }
+          ]
+        }
       }
     ],
     "invariants": [
@@ -313,6 +345,24 @@
           "T-t4-04"
         ],
         "quote": "evaluate locally, gate in CI, canary in production, then expand or roll back based on quality metrics"
+      },
+      {
+        "text": "Three ways in, one query. TARGET T1's three ways in are a human, an agent and an event - a different enumeration from T6.2's four entries - and all three write down the same two strings, a name and a constraint, and get the same record back.",
+        "origin": "sourced",
+        "sources": [
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03"
+        ],
+        "quote": "A human must be able to enter the system."
+      },
+      {
+        "text": "Enhancing one aspect leaves the rest untouched: publishing a new version, moving every record to a different store, adding a rollback target or signing with a new key changes nothing in a caller that named a name and a constraint, because those two strings are all it was ever asked to write down. cap-capability-packaging states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here.",
+        "origin": "sourced",
+        "sources": [
+          "T-t2-02"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
       }
     ],
     "not_exposed": [
@@ -422,7 +472,17 @@
     },
     {
       "step": 9,
-      "action": "Proposed: open references/registry-shapes.md when you are implementing the record schema, wiring the rollout members, or reviewing a record someone published. The body of this skill is enough to judge this interface and to call it without opening that file.",
+      "action": "To use a capability or an agent: write down its namespace-scoped name and a version constraint, call resolve, and read what comes back. Do not join a path, open an index, pick a store or pin a digest yourself.",
+      "why": "The store, the index format and the transport are the capability's business, and a caller that reaches around them has bound itself to today's store and will break the first time it changes.",
+      "origin": "sourced",
+      "sources": [
+        "T-t2-01"
+      ],
+      "quote": "Composability hides the complexity."
+    },
+    {
+      "step": 10,
+      "action": "Proposed: open references/registry-shapes.md when you are implementing the record schema, wiring the rollout members, or reviewing a record someone published. The body of this skill is enough to judge this interface and to call it without opening that file. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
       "why": "Proposed: the full record schema, the rollout members and the standards table are longer than the body's budget allows, and a reader deciding whether to resolve or publish does not need them.",
       "origin": "proposed"
     }
@@ -521,10 +581,9 @@
       "cap-provenance"
     ],
     "used_by": [
+      "build-entry-conformance",
       "cap-capability-registry-implement",
-      "cap-capability-registry-use",
-      "compose-improvement-loop",
-      "seam-agent-ingress"
+      "compose-improvement-loop"
     ]
   },
   "open_questions": [

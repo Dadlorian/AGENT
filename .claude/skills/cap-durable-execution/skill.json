@@ -148,6 +148,27 @@
             }
           }
         }
+      },
+      {
+        "name": "What a failure looks like (proposed): problem details, not prose [caller's view, folded from cap-durable-execution-use]",
+        "origin": "proposed",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:cap:durable-execution:example:unresumable",
+          "title": "The run exists and cannot be continued",
+          "$ref": "urn:agentic:problem:0.1",
+          "description": "A run that cannot be resumed is a failure with a type. It is never quietly restarted from the first step. Branch on type; read detail only to report it. `urn:agentic:problem:durable-run-unresumable` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `idempotency-conflict`, which is also 409 and not retryable, with the run key and the last committed step in detail.",
+          "examples": [
+            {
+              "type": "urn:agentic:problem:durable-run-unresumable",
+              "title": "Run cannot be resumed",
+              "status": 409,
+              "detail": "step records for run_key human-checkout-500s-2026-09-03 end at step 11 with no committed effect record; continuing would repeat a side effect",
+              "retryable": false,
+              "correlation_id": "corr-human-0001"
+            }
+          ]
+        }
       }
     ],
     "invariants": [
@@ -213,6 +234,24 @@
           "F-b4-07"
         ],
         "quote": "Typed and machine-readable. Never parsed from prose"
+      },
+      {
+        "text": "The three ways in that TARGET T1 lists - a human, an agent, an internal or external event - reach a run through the same call with the same two fields. Which one started it is not a field of the run, so a crash and a restart are handled identically whichever way the work arrived.",
+        "origin": "sourced",
+        "sources": [
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03"
+        ],
+        "quote": "An internal or external event must be able to enter the system."
+      },
+      {
+        "text": "Enhancing one aspect leaves the rest untouched: changing the executor, moving where checkpoints are stored, or adding steps to the sequence changes nothing in a caller that sends a key and reads an outcome. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here.",
+        "origin": "sourced",
+        "sources": [
+          "T-t2-02"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
       }
     ],
     "not_exposed": [
@@ -322,7 +361,17 @@
     },
     {
       "step": 9,
-      "action": "Proposed: open references/durable-execution-shapes.md when implementing or reviewing the full step-record and run-state schemas or the exactly-once argument behind them. The body of this skill is enough to judge an engine and to write the contract without it.",
+      "action": "Send a run key you can reproduce and the steps in order. Take every default. Do not send a resume flag, an attempt number or a starting index - there is no field for them and you would not want to own the decision.",
+      "why": "It has to be simple to use, and every field you fill in is a decision you now own; the resume point is derived from what is already committed, which is a fact the platform has and you do not.",
+      "origin": "sourced",
+      "sources": [
+        "T-t3-01"
+      ],
+      "quote": "It has to be simple to use."
+    },
+    {
+      "step": 10,
+      "action": "Proposed: open references/durable-execution-shapes.md when implementing or reviewing the full step-record and run-state schemas or the exactly-once argument behind them. The body of this skill is enough to judge an engine and to write the contract without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
       "why": "Proposed: the full schemas exceed the progressive-disclosure budget for a skill body, and a reader deciding whether an engine may serve this interface does not need them.",
       "origin": "proposed"
     }
@@ -411,9 +460,7 @@
     ],
     "used_by": [
       "cap-durable-execution-implement",
-      "cap-durable-execution-use",
       "compose-operators",
-      "compose-workflow",
       "seam-dispatch",
       "xc-compensation"
     ]

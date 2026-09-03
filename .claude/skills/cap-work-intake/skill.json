@@ -223,6 +223,30 @@
         "sources": [
           "F-b3-08"
         ]
+      },
+      {
+        "name": "The failure you handle (proposed): problem details, measured [caller's view, folded from cap-work-intake-use]",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:intake:example:problem",
+          "title": "A refused submission",
+          "$ref": "urn:agentic:problem:0.1",
+          "description": "cap-errors owns this shape and its registry; intake adds no failure format of its own. Measured in examples/end-to-end on 2026-09-03 by adding a producer-specific field to the event entry: exit code 2, media type application/problem+json, nothing admitted and nothing written.",
+          "examples": [
+            {
+              "type": "urn:agentic:problem:document-invalid",
+              "title": "Envelope failed schema validation",
+              "status": 422,
+              "detail": "$: property 'priority' is not allowed",
+              "retryable": false,
+              "instance": "entries/event.json"
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b3-13"
+        ]
       }
     ],
     "invariants": [
@@ -270,7 +294,7 @@
         "quote": "independent of the payload, which is invaluable for routing, filtering, auditing, and debugging"
       },
       {
-        "text": "Intake is the one shape for TARGET T6.2's four entries - a human, an event, a schedule (time), and an external system or agent - so no producer gets a door of its own, and the cross-cutting fields on the envelope are the reason a fifth producer costs a mapper rather than a new path.",
+        "text": "Intake is the one shape for TARGET T6.2's four entries - a human, an event, a schedule (time), and an external system or agent - so no producer gets a door of its own, and the cross-cutting fields on the envelope are the reason a fifth producer costs a mapper rather than a new path. cap-errors states the same record (T-t6-02) for its own boundary; this row is that rule's consequence here.",
         "origin": "sourced",
         "sources": [
           "T-t6-02"
@@ -298,6 +322,17 @@
         "sources": [
           "T-t6-03"
         ]
+      },
+      {
+        "text": "All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: a new producer, a swapped mapper behind the interface, a changed routing table or an added entry kind changes nothing in code that already fills the envelope, because the envelope is the only thing it was ever asked for. cap-document-validation states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here.",
+        "origin": "sourced",
+        "sources": [
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03",
+          "T-t2-02"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
       }
     ],
     "not_exposed": [
@@ -399,7 +434,17 @@
     },
     {
       "step": 8,
-      "action": "Open references/intake-envelope.md when you need the full envelope schema, the per-producer mapping table or the equivalence fixture corpus. This skill body is enough to judge an intake implementation without it.",
+      "action": "Fill the envelope: kind, who is acting and on whose behalf, which workflow and a one-line why, a correlation identifier, a ceiling, a key for this submission, and your body as payload. Send it. Keep the identifier you get back.",
+      "why": "Proposed usage of the contract this skill states (F-b3-08). This is the whole interface; anything else you were going to build - a queue of your own, a retry wrapper, a status poller - is either already here or belongs somewhere else.",
+      "origin": "proposed",
+      "sources": [
+        "F-b3-08",
+        "T-t3-01"
+      ]
+    },
+    {
+      "step": 9,
+      "action": "Open references/intake-envelope.md when you need the full envelope schema, the per-producer mapping table or the equivalence fixture corpus. This skill body is enough to judge an intake implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
       "why": "Proposed, progressive disclosure. The mapping table and the fixture corpus are long material, and a reader deciding whether a producer needs a new path does not need them yet.",
       "origin": "proposed"
     }
@@ -503,11 +548,8 @@
       "build-entry-conformance",
       "cap-human-interaction",
       "cap-work-intake-implement",
-      "cap-work-intake-use",
       "compose-approval",
-      "compose-workflow",
-      "seam-agent-ingress",
-      "seam-entry-envelope"
+      "xc-enforcement-chain"
     ]
   },
   "open_questions": [

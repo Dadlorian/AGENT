@@ -192,6 +192,30 @@
         "sources": [
           "F-b3-15"
         ]
+      },
+      {
+        "name": "The failure you handle (proposed): problem details, measured [caller's view, folded from cap-scheduling-use]",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:schedule:example:problem",
+          "title": "A rejected schedule entry",
+          "$ref": "urn:agentic:problem:0.1",
+          "description": "cap-errors owns this shape and its registry; scheduling adds no failure format of its own. Measured in examples/end-to-end on 2026-09-03 by changing the schedule entry's kind to a private one: exit code 2, media type application/problem+json, nothing executed and nothing written.",
+          "examples": [
+            {
+              "type": "urn:agentic:problem:document-invalid",
+              "title": "Envelope failed schema validation",
+              "status": 422,
+              "detail": "$.kind: must be one of ['human', 'event', 'schedule', 'external']",
+              "retryable": false,
+              "instance": "entries/schedule.json"
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b3-13"
+        ]
       }
     ],
     "invariants": [
@@ -224,7 +248,7 @@
         ]
       },
       {
-        "text": "A firing schedule is one of TARGET T6.2's four entries, not a fifth privileged way in: a human, an event, a schedule (time), and an external system or agent all enter through the same shape, so an occurrence produces the standard entry envelope and inherits identity, correlation, budget and idempotency from it.",
+        "text": "A firing schedule is one of TARGET T6.2's four entries, not a fifth privileged way in: a human, an event, a schedule (time), and an external system or agent all enter through the same shape, so an occurrence produces the standard entry envelope and inherits identity, correlation, budget and idempotency from it. cap-errors states the same record (T-t6-02) for its own boundary; this row is that rule's consequence here.",
         "origin": "sourced",
         "sources": [
           "T-t6-02"
@@ -262,6 +286,24 @@
         "sources": [
           "F-b3-15"
         ]
+      },
+      {
+        "text": "All three of TARGET T1's ways in reach a scheduled unit the same way. A human reaches it through the sibling manual trigger, an agent or external system reaches it by submitting the same envelope, and an internal or external event must be able to enter the system on the same shape; the clock is a fourth producer of that one envelope, not a fourth door. this skill cites TARGET T6.2's four entries for the envelope itself; this row is about the three ways a caller reaches an already-scheduled unit.",
+        "origin": "sourced",
+        "sources": [
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03"
+        ],
+        "quote": "3. An internal or external event must be able to enter the system."
+      },
+      {
+        "text": "Enhancing one aspect leaves the rest untouched: swapping the evaluator behind the interface, changing a catch-up policy, or adding a new entry kind changes nothing in a unit that declared one recurrence string, because the string is the only thing it was ever asked for. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here.",
+        "origin": "sourced",
+        "sources": [
+          "T-t2-02"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
       }
     ],
     "not_exposed": [
@@ -351,7 +393,7 @@
     {
       "step": 7,
       "action": "On firing, build the standard entry envelope: kind schedule, the occurrence instant as the time it occurred, the declaring actor and delegation chain, correlation, a budget ceiling, and an idempotency key derived from unit plus occurrence instant. Then hand it to the ordinary entry path.",
-      "why": "All four enter through the same shape, so a schedule that opens its own path would be a fourth entry the cross-cutting concerns are not applied to. Deriving the key from the occurrence instant also makes a double fire and a catch-up replay the same request rather than two.",
+      "why": "All four enter through the same shape, so a schedule that opens its own path would be a fourth entry the cross-cutting concerns are not applied to. Deriving the key from the occurrence instant also makes a double fire and a catch-up replay the same request rather than two. cap-errors states the same record (T-t6-02) for its own boundary; this row is that rule's consequence here.",
       "origin": "sourced",
       "sources": [
         "T-t6-02",
@@ -372,7 +414,17 @@
     },
     {
       "step": 9,
-      "action": "Open references/recurrence-vectors.md when you need the full declaration schema, the vector corpus with its expected occurrence sets, or the rule-part subset each adapter must support. This skill body is enough to judge an implementation without it.",
+      "action": "Put one recurrence rule string on the unit, with the instant it counts from and an IANA time zone beside it. Write the zone even when it is UTC.",
+      "why": "Proposed usage of the contract this skill states (F-b3-15, X-entry-composition-049): the rule is one string and the zone is part of its meaning. For you the consequence is small - two extra fields - and the job no longer drifts by an hour twice a year.",
+      "origin": "proposed",
+      "sources": [
+        "F-b3-15",
+        "X-entry-composition-049"
+      ]
+    },
+    {
+      "step": 10,
+      "action": "Open references/recurrence-vectors.md when you need the full declaration schema, the vector corpus with its expected occurrence sets, or the rule-part subset each adapter must support. This skill body is enough to judge an implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
       "why": "Proposed, progressive disclosure. The vector table is long material and a reader deciding where recurrence lives does not need it yet.",
       "origin": "proposed"
     }
@@ -470,7 +522,6 @@
     ],
     "used_by": [
       "cap-scheduling-implement",
-      "cap-scheduling-use",
       "compose-approval",
       "xc-audit-trail"
     ]

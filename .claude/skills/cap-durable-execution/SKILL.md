@@ -127,6 +127,28 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**What a failure looks like (proposed): problem details, not prose [caller's view, folded from cap-durable-execution-use]** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:durable-execution:example:unresumable",
+  "title": "The run exists and cannot be continued",
+  "$ref": "urn:agentic:problem:0.1",
+  "description": "A run that cannot be resumed is a failure with a type. It is never quietly restarted from the first step. Branch on type; read detail only to report it. `urn:agentic:problem:durable-run-unresumable` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `idempotency-conflict`, which is also 409 and not retryable, with the run key and the last committed step in detail.",
+  "examples": [
+    {
+      "type": "urn:agentic:problem:durable-run-unresumable",
+      "title": "Run cannot be resumed",
+      "status": 409,
+      "detail": "step records for run_key human-checkout-500s-2026-09-03 end at step 11 with no committed effect record; continuing would repeat a side effect",
+      "retryable": false,
+      "correlation_id": "corr-human-0001"
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -139,6 +161,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: how durability is achieved is invisible at the interface. One engine journals every step and replays history onto fresh code; another commits a row beside the effect and replays nothing. A caller that can tell which one answered is reading a field that should not exist. | proposed | `X-cap-durable-execution-001`, `X-cap-durable-execution-006` |
 | agentic-stack states design rule 3 (F-b1-04). Its consequence here is that the second adapter must break the assumption the first one rests on - a separate server holding history - rather than being another engine of the same shape, or the pair proves nothing about this interface. | sourced | `F-b1-04` "the second exists to prove the first is not load-bearing" |
 | cap-errors owns the failure shape (F-b4-07). What this boundary adds: a lost or unreadable checkpoint is a failure with a type, never a silent restart from step one, because a run that quietly begins again is indistinguishable from one that resumed correctly. | sourced | `F-b4-07` "Typed and machine-readable. Never parsed from prose" |
+| The three ways in that TARGET T1 lists - a human, an agent, an internal or external event - reach a run through the same call with the same two fields. Which one started it is not a field of the run, so a crash and a restart are handled identically whichever way the work arrived. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03` "An internal or external event must be able to enter the system." |
+| Enhancing one aspect leaves the rest untouched: changing the executor, moving where checkpoints are stored, or adding steps to the sequence changes nothing in a caller that sends a key and reads an outcome. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -161,7 +185,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | Pick the second adapter on execution-model axes, as build-adapter-pair defines them: locus_of_durability_and_verification, processes_required_for_progress and replay_determinism_required must all differ from today's adapter. | agentic-stack states design rule 3 (F-b1-04). What this adds: another engine that also journals history onto a separate server would agree with today's adapter on all three axes, so the swap would test configuration rather than the contract. | sourced | `F-b1-04`, `F-part-c-05` "chosen to prove the interface is not shaped around its current implementation" |
 | 7 | Judge a candidate engine by the crash criterion in this skill's definition of done, run from one suite over both adapters, before it is allowed to serve the interface. | agentic-stack and build-definition-of-done already state that a criterion nothing can fail is not a criterion (F-part-c-04). What this adds: the property worth gating on here is exactly-once effect under a real kill, because every other property of an executor is visible without crashing it. | sourced | `F-part-c-04`, `F-b1-04` "A criterion nothing can fail is not a criterion" |
 | 8 | Return every failure as the typed problem object cap-errors defines, including 'this run cannot be resumed', and never let an unreadable checkpoint fall back to starting again. | cap-errors owns the failure shape (F-b4-07); what this adds is that the most expensive failure of this capability is silent, so it has to be given a name and a type before it can be observed at all. | sourced | `F-b4-07` "Never parsed from prose" |
-| 9 | Proposed: open references/durable-execution-shapes.md when implementing or reviewing the full step-record and run-state schemas or the exactly-once argument behind them. The body of this skill is enough to judge an engine and to write the contract without it. | Proposed: the full schemas exceed the progressive-disclosure budget for a skill body, and a reader deciding whether an engine may serve this interface does not need them. | proposed | - |
+| 9 | Send a run key you can reproduce and the steps in order. Take every default. Do not send a resume flag, an attempt number or a starting index - there is no field for them and you would not want to own the decision. | It has to be simple to use, and every field you fill in is a decision you now own; the resume point is derived from what is already committed, which is a fact the platform has and you do not. | sourced | `T-t3-01` "It has to be simple to use." |
+| 10 | Proposed: open references/durable-execution-shapes.md when implementing or reviewing the full step-record and run-state schemas or the exactly-once argument behind them. The body of this skill is enough to judge an engine and to write the contract without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed: the full schemas exceed the progressive-disclosure budget for a skill body, and a reader deciding whether an engine may serve this interface does not need them. | proposed | - |
 
 ## Best practices
 
@@ -194,7 +219,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `cap-errors`
 
-Used by: `cap-durable-execution-implement`, `cap-durable-execution-use`, `compose-operators`, `compose-workflow`, `seam-dispatch`, `xc-compensation`
+Used by: `cap-durable-execution-implement`, `compose-operators`, `seam-dispatch`, `xc-compensation`
 
 ## Open questions
 

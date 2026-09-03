@@ -239,6 +239,44 @@
             }
           }
         }
+      },
+      {
+        "name": "Worked example 2 (proposed): an event triggers work, and a handle presented at the wrong destination is refused [caller's view, folded from cap-mandate-broker-use]",
+        "origin": "proposed",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:cap:mandate-broker:example:audience-refused",
+          "title": "A credential minted for one destination is worth nothing at another",
+          "description": "An alert enters as an event and the work it triggers reaches a metrics service. A later step tries to reuse the same authority against a deploy endpoint. The second destination refuses it on its own audience check, and the refusal is a problem details object with a type the caller branches on. No retry is attempted, because the answer will not change. `urn:agentic:problem:credential-audience-mismatch` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `identity-untrusted`, which is also 401 and not retryable, naming both destinations in detail, as the open question below records.",
+          "examples": [
+            {
+              "entry": {
+                "kind": "event",
+                "actor": "service:alerting",
+                "correlation_id": "corr-event-0001"
+              },
+              "first_call": {
+                "audience": "metrics.internal",
+                "handle_id": "hdl-2b8d0f61ac33",
+                "accepted": true
+              },
+              "second_call": {
+                "audience_presented_at": "deploy.internal",
+                "handle_id": "hdl-2b8d0f61ac33",
+                "accepted": false,
+                "problem": {
+                  "type": "urn:agentic:problem:credential-audience-mismatch",
+                  "title": "This authority was not issued for this destination",
+                  "status": 401,
+                  "detail": "hdl-2b8d0f61ac33 was minted for metrics.internal and was presented at deploy.internal",
+                  "retryable": false,
+                  "correlation_id": "corr-event-0001"
+                }
+              },
+              "what_the_caller_does": "mint a new handle for deploy.internal, which requires a mandate because a deploy is irreversible"
+            }
+          ]
+        }
       }
     ],
     "invariants": [
@@ -317,6 +355,17 @@
           "F-b3-13"
         ],
         "quote": "RFC 9457 problem details"
+      },
+      {
+        "text": "All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: shortening lifetimes, adding a destination, moving to an offline-verifiable mandate, or re-signing with a new key changes nothing in a caller that named a destination and an action class, because those are the only two things it was ever asked to write down. cap-identity states the same record (T-t1-01) for its own boundary; this row is that rule's consequence here.",
+        "origin": "sourced",
+        "sources": [
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03",
+          "T-t2-02"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
       }
     ],
     "not_exposed": [
@@ -415,7 +464,17 @@
     },
     {
       "step": 8,
-      "action": "Proposed: open references/mandate-broker-shapes.md when you are implementing the mint request, the mandate record or the verification outcome. The body of this skill is enough to judge this interface and to call it without opening that file.",
+      "action": "To reach something outside the sandbox: name the one destination you are calling and use the handle you get back. Do not look for a key, an environment variable, a config file or a secret in your prompt - there is not one, and there is not meant to be.",
+      "why": "The credential is added outside the sandbox after you have made an ordinary call, so a caller that goes looking for one is trying to rebuild a thing the platform removed on purpose.",
+      "origin": "sourced",
+      "sources": [
+        "T-t2-01"
+      ],
+      "quote": "Composability hides the complexity."
+    },
+    {
+      "step": 9,
+      "action": "Proposed: open references/mandate-broker-shapes.md when you are implementing the mint request, the mandate record or the verification outcome. The body of this skill is enough to judge this interface and to call it without opening that file. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
       "why": "Proposed: the full shapes and the bounds vocabulary are longer than the body's budget allows, and a reader deciding whether an authority is correctly scoped does not need them.",
       "origin": "proposed"
     }
@@ -509,8 +568,7 @@
       "cap-provenance"
     ],
     "used_by": [
-      "cap-mandate-broker-implement",
-      "cap-mandate-broker-use"
+      "cap-mandate-broker-implement"
     ]
   },
   "open_questions": [

@@ -332,7 +332,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `cap-idempotency`, `cap-state-persistence`
 
-Used by: `compose-approval`, `seam-dispatch`, `seam-entry-envelope`, `xc-compensation`, `xc-idempotency-lease-implement`
+Used by: `compose-approval`, `seam-dispatch`, `xc-compensation`, `xc-idempotency-lease-implement`
 
 ## Open questions
 

@@ -187,6 +187,28 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**The failure shape (proposed): a decision that arrives after its ask closed [caller's view, folded from cap-human-interaction-use]** (proposed; sources: `F-b3-13`, `X-cap-human-interaction-008`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:problem:example:human-ask-expired",
+  "title": "The ask is no longer open",
+  "$ref": "urn:agentic:problem:0.1",
+  "description": "Media type application/problem+json. The ask was closed by its own deadline before any decision arrived, and the run terminated at that point with the registered `deadline-exceeded`; a decision presented afterwards is refused rather than applied, so a new run is the remedy and this problem is not retryable. `urn:agentic:problem:human-ask-expired` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `deadline-exceeded` with the ask id in detail, as the open question below records.",
+  "examples": [
+    {
+      "type": "urn:agentic:problem:human-ask-expired",
+      "title": "The ask is no longer open",
+      "status": 409,
+      "detail": "ask-deploy-0001 closed at 2026-09-03T18:00:00Z after 8h open and the run terminated with deadline-exceeded; the decision presented at 2026-09-03T18:04:11Z was not applied.",
+      "retryable": false,
+      "correlation_id": "corr-human-0001"
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -200,6 +222,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Every ask has a deadline: you should design explicit timeouts for human steps rather than letting approvals sit indefinitely, and an expiry is a typed problem on the run rather than a run that is quietly still parked. | sourced | `X-cap-human-interaction-008`, `F-b3-13` "you should design explicit timeouts for human steps rather than letting approvals sit indefinitely" |
 | Watching is part of the interface, not a separate product: AG-UI transmits a continuous sequence of JSON-formatted events through standard web protocols like HTTP, SSE, or WebSockets. Each event carries a type field that identifies the action taking place, so a person can follow a run they have not been asked anything about. | sourced | `X-entry-composition-021`, `X-end-to-end-016` "AG-UI transmits a continuous sequence of JSON-formatted events through standard web protocols like HTTP, SSE, or WebSockets. Each event carries a type field that identifies the action taking place" |
 | Proposed, and the reason this interface is drawn at all: PASS.md A6 records that human-in-the-loop signals are designed around it and it is currently down, so the pause and resume primitives are defined here as capability operations and an orchestrator that provides them is an adapter underneath, never the definition. | proposed | `F-a6-02`, `E-not-running-temporal`, `F-b1-02` |
+| All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: change the surface people decide on, tighten a response schema, or add a deadline sweeper, and no workflow that parks is edited - the ask and the decision are the only things any of them named. cap-identity states the same record (T-t1-01) for its own boundary; this row is that rule's consequence here. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -221,7 +244,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | Make resume idempotent on the decision's key: the same decision delivered many times resumes the run once, and a decision arriving after the deadline is refused as a typed problem rather than applied. | Every externally-triggered action is safe to replay, and a decision is the most externally triggered thing in the platform - it arrives from a phone, a browser or a retrying webhook, and a resume applied twice runs an irreversible action twice. | sourced | `F-b4-08`, `X-end-to-end-042` "Every externally-triggered action is safe to replay" |
 | 7 | Emit the run as an ordered typed event stream that a person can watch without having been asked anything, and give every event a type field and the run's correlation id. | Events reflecting everything that happens during a live agent session, from token-level message updates to tool invocations and UI state patches, are what makes a long run reviewable at all; an interface that only speaks when it needs an answer gives a reviewer no basis for the answer. | sourced | `X-end-to-end-016`, `X-entry-composition-021` "with events reflecting everything that happens during a live agent session, from token-level message updates to tool invocations and UI state patches" |
 | 8 | Return every refusal - a body that fails the response schema, a decision on an expired or unknown ask, a decider the policy does not allow - as a typed problem from the platform's registry, never as a status code alone or a message only the screen shows. | cap-errors owns the failure shape and the closed registry (F-b3-13); the consequence here is that the caller is a person mid-decision, so a refusal that does not name what to change turns an approval queue into a support conversation. | sourced | `F-b3-13`, `F-b4-07` "Typed and machine-readable. Never parsed from prose" |
-| 9 | Open references/human-interaction-shapes.md when you need the full ask and decision schemas, the event-type table or the four worked decision instances. This skill body is enough to judge a pause-and-resume implementation without it. | Proposed, progressive disclosure. The full schemas and the event table are long material, and a reader deciding whether a run should stop and ask does not need them yet. | proposed | - |
+| 9 | Write the ask on the step that is about to do something hard to undo: prompt, response schema, the proposed action with its diff and irreversibility class, and a deadline. Then return; the platform suspends the run. | This skill states this as a best practice from the prior art on file - approval gates on irreversible actions are the typical defenses - so the gate belongs where something becomes hard to undo rather than at a fixed step number. What is yours as a caller is only the four fields; storing, notifying, timing out and resuming are the platform's. | sourced | `X-end-to-end-063` "approval gates on irreversible actions are the typical defenses" |
+| 10 | Open references/human-interaction-shapes.md when you need the full ask and decision schemas, the event-type table or the four worked decision instances. This skill body is enough to judge a pause-and-resume implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed, progressive disclosure. The full schemas and the event table are long material, and a reader deciding whether a run should stop and ask does not need them yet. | proposed | - |
 
 ## Best practices
 
@@ -255,7 +279,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `build-research-record`, `build-ceremony`, `cap-errors`, `cap-document-validation`, `cap-identity`, `cap-work-intake`
 
-Used by: `build-entry-conformance`, `cap-human-interaction-implement`, `cap-human-interaction-use`
+Used by: `build-entry-conformance`, `cap-human-interaction-implement`
 
 ## Open questions
 

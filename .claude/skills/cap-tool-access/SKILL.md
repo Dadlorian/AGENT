@@ -130,6 +130,28 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**What a failure looks like (proposed): problem details, not prose [caller's view, folded from cap-tool-access-use]** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:tool-access:example:not-declared",
+  "title": "A tool the unit did not declare",
+  "$ref": "urn:agentic:problem:0.1",
+  "description": "Refused before anything was dispatched. Branch on type; read detail only to report it. `urn:agentic:problem:tool-not-declared` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `policy-denied`, which is also 403 and not retryable, with the called name and the declared surface in detail and a rule_id naming the declaration rule.",
+  "examples": [
+    {
+      "type": "urn:agentic:problem:tool-not-declared",
+      "title": "Tool is not in this unit's declared surface",
+      "status": 403,
+      "detail": "called 'delete_branch'; declared surface is read_file, list_dir",
+      "retryable": false,
+      "correlation_id": "run-2026-09-03-0011"
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -142,6 +164,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: the three building blocks stay distinct at the boundary - a tool is called and may change something, a resource is read and changes nothing, a prompt is a template. Collapsing a read into a tool call is what makes policy, budget and idempotency above unable to tell the two apart. | proposed | `X-cap-tool-access-001`, `X-cap-tool-access-004` |
 | Proposed: session affinity is not a requirement this interface imposes. The revision the manifest names is described as having a stateless core that scales on ordinary infrastructure, so a binding is addressable rather than pinned, and any adapter that needs a sticky session declares that as its own gap. | proposed | `X-cap-tool-access-002` |
 | A failed tool call returns the typed problem object cap-errors owns (F-b4-07), never the server's own error text and never a success envelope with a failure written inside it, because a caller that has to read the words to know what happened is parsing prose. | sourced | `F-b4-07` "Typed and machine-readable. Never parsed from prose" |
+| The three ways in that TARGET T1 lists - a human, an agent, an internal or external event - reach a tool through the same call. How the work arrived is not a field of the call, so one caller-side handler covers all three. cap-document-validation states the same record (T-t1-01) for its own boundary; this row is that rule's consequence here. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03` "An internal or external event must be able to enter the system." |
+| Enhancing one aspect leaves the rest untouched: moving a tool to another server, adding a tool to the catalogue, tightening its input schema or changing how it is authorized changes nothing in a caller that declares names and reads ok, content and problem. cap-document-validation states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -163,7 +187,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | Record the protocol revision as unverified until the published specification has been read in an environment that can fetch it, and keep the revision the manifest names as a claim rather than a fact. | build-skill-authoring already requires a standard to carry a version or the unverified marker (F-part-c-10). What this adds: both records on file for this standard are search results, one of them an announcement of a release candidate, which is the weakest kind of version evidence there is. | sourced | `F-part-c-10`, `X-cap-tool-access-002` "The 2026-07-28 release is the largest revision of the protocol since launch" |
 | 7 | Choose the second adapter on execution model, not on brand: a catalogue we register into and run ourselves against a catalogue published by someone else, changing without us, reached over the same client. | build-adapter-pair owns the test (F-b1-04, F-part-c-05). What this adds here: a second endpoint of our own would leave the assumption that we know the tool list in advance completely untested, and that assumption is the one that decides whether this interface is real. | sourced | `F-b1-04`, `F-part-c-05` "chosen to prove the interface is not shaped around its current implementation" |
 | 8 | Map every failure onto the typed problem object before it leaves the adapter, including a tool that reports its own failure inside an otherwise successful envelope. | cap-errors owns the failure shape (F-b4-07); what this adds is that this boundary has two failure channels - the transport and the tool's own result - and only one of them looks like a failure, so the second is where untyped errors survive. | sourced | `F-b4-07` "Typed and machine-readable. Never parsed from prose" |
-| 9 | Proposed: open references/tool-access-shapes.md when implementing or reviewing the full descriptor, the resource-template shape, or the call and result shapes. The body of this skill is enough to judge a candidate server and to decide what the core imports without it. | Proposed: the full shapes exceed the progressive-disclosure budget for a skill body, and a reader deciding whether a server may serve this interface does not need them. | proposed | - |
+| 9 | Declare the tool names this unit needs, then call one by name with its arguments. Do not fetch the catalogue, do not read schemas, and do not pass a server address. | It has to be simple to use, and every field you fill in is a decision you now own. The declared list is the one decision worth making, because it is what anyone reading later uses to know what this unit could do. | sourced | `T-t3-01` "It has to be simple to use." |
+| 10 | Proposed: open references/tool-access-shapes.md when implementing or reviewing the full descriptor, the resource-template shape, or the call and result shapes. The body of this skill is enough to judge a candidate server and to decide what the core imports without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed: the full shapes exceed the progressive-disclosure budget for a skill body, and a reader deciding whether a server may serve this interface does not need them. | proposed | - |
 
 ## Best practices
 
@@ -196,7 +221,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `cap-errors`, `cap-document-validation`
 
-Used by: `cap-tool-access-implement`, `cap-tool-access-use`, `compose-agent`, `seam-agent-ingress`
+Used by: `cap-tool-access-implement`, `compose-agent`
 
 ## Open questions
 

@@ -178,6 +178,28 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**The failure you handle (proposed): problem details, measured [caller's view, folded from cap-work-intake-use]** (proposed; sources: `F-b3-13`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:intake:example:problem",
+  "title": "A refused submission",
+  "$ref": "urn:agentic:problem:0.1",
+  "description": "cap-errors owns this shape and its registry; intake adds no failure format of its own. Measured in examples/end-to-end on 2026-09-03 by adding a producer-specific field to the event entry: exit code 2, media type application/problem+json, nothing admitted and nothing written.",
+  "examples": [
+    {
+      "type": "urn:agentic:problem:document-invalid",
+      "title": "Envelope failed schema validation",
+      "status": 422,
+      "detail": "$: property 'priority' is not allowed",
+      "retryable": false,
+      "instance": "entries/event.json"
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -187,10 +209,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Uniqueness is the producer's obligation, not intake's guess: producers MUST ensure that source + id is unique for each distinct event. | sourced | `X-cap-work-intake-005` "Producers MUST ensure that source + id is unique for each distinct event." |
 | Proposed, as our consequence of that obligation: the idempotency key is derived from the producer's own unique identity for the message and never minted at intake. A key minted on arrival is new on every retry, so the same submission arriving twice becomes two jobs, and the replay guarantee applied above intake has nothing stable to key on. | proposed | `X-cap-work-intake-005`, `F-b4-08` |
 | Routing and audit read the envelope, never the body: the standard attributes type, source, subject and time provide essential metadata about the event itself, independent of the payload, which is invaluable for routing, filtering, auditing, and debugging event streams. | sourced | `X-cap-work-intake-003` "independent of the payload, which is invaluable for routing, filtering, auditing, and debugging" |
-| Intake is the one shape for TARGET T6.2's four entries - a human, an event, a schedule (time), and an external system or agent - so no producer gets a door of its own, and the cross-cutting fields on the envelope are the reason a fifth producer costs a mapper rather than a new path. | sourced | `T-t6-02` "All four enter through the same shape." |
+| Intake is the one shape for TARGET T6.2's four entries - a human, an event, a schedule (time), and an external system or agent - so no producer gets a door of its own, and the cross-cutting fields on the envelope are the reason a fifth producer costs a mapper rather than a new path. cap-errors states the same record (T-t6-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t6-02` "All four enter through the same shape." |
 | The agent producer is first-class rather than an integration: the protocol on file exists to enable agents to communicate, collaborate, and delegate tasks securely without human intervention or ad-hoc integration code, and ad-hoc integration code written per producer is precisely the failure this interface is drawn to prevent. | sourced | `X-cap-work-intake-002` "without human intervention or ad-hoc integration code" |
 | Proposed: one logical job has one job digest whichever producer submitted it, and each submission has its own entry identifier. Those two facts together are the definition of normalised, and they are what the definition of done below measures; an intake that satisfies only the second has renamed the producers rather than normalised them. | proposed | `F-b3-08` |
 | Proposed: intake admits, it does not execute. Its output is an envelope and an acknowledgement; planning, dispatch, retry and checkpointing belong to the capabilities that own them. An intake that also runs work cannot be swapped for a mapper, and a producer that gets a result back synchronously has been given a promise the platform cannot keep for a long job. | proposed | `T-t6-03` |
+| All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: a new producer, a swapped mapper behind the interface, a changed routing table or an added entry kind changes nothing in code that already fills the envelope, because the envelope is the only thing it was ever asked for. cap-document-validation states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -211,7 +234,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 5 | Route, meter, log and audit on envelope fields only, and treat the payload as opaque from the moment it is accepted. If routing needs something, map it onto an envelope field in the adapter. | The standard attributes are metadata about the event itself, independent of the payload, which is invaluable for routing, filtering, auditing, and debugging event streams. A router that reaches into the payload has to know each producer's body format, which is the coupling normalisation was supposed to remove. | sourced | `X-cap-work-intake-003` "independent of the payload, which is invaluable for routing, filtering, auditing, and debugging" |
 | 6 | Return every refusal as a typed problem from the platform's registry, with the offending field named, and never as a transport status alone or a log line the producer cannot see. | cap-errors owns the failure shape and the closed registry (F-b3-13); the consequence here is that intake is the boundary where most producer mistakes surface, so a refusal that does not name the field turns every new producer into an exchange of screenshots. | sourced | `F-b3-13`, `F-b4-07` "— adopt the RFC directly" |
 | 7 | Ship the pair recorded for this capability and state the axis: a producer that pushes a formatted event over a request and waits for the acknowledgement, and an autonomous agent that submits a task and is not present for the outcome. Record how the two execution models differ, not merely that there are two. | build-adapter-pair and agentic-stack state design rule 3, that every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing. What is new here is the axis: whether the producer is still there when the job finishes, which is what decides whether the acknowledgement may carry a result. | sourced | `F-b1-04`, `F-b3-08` "Every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing" |
-| 8 | Open references/intake-envelope.md when you need the full envelope schema, the per-producer mapping table or the equivalence fixture corpus. This skill body is enough to judge an intake implementation without it. | Proposed, progressive disclosure. The mapping table and the fixture corpus are long material, and a reader deciding whether a producer needs a new path does not need them yet. | proposed | - |
+| 8 | Fill the envelope: kind, who is acting and on whose behalf, which workflow and a one-line why, a correlation identifier, a ceiling, a key for this submission, and your body as payload. Send it. Keep the identifier you get back. | Proposed usage of the contract this skill states (F-b3-08). This is the whole interface; anything else you were going to build - a queue of your own, a retry wrapper, a status poller - is either already here or belongs somewhere else. | proposed | `F-b3-08`, `T-t3-01` |
+| 9 | Open references/intake-envelope.md when you need the full envelope schema, the per-producer mapping table or the equivalence fixture corpus. This skill body is enough to judge an intake implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed, progressive disclosure. The mapping table and the fixture corpus are long material, and a reader deciding whether a producer needs a new path does not need them yet. | proposed | - |
 
 ## Best practices
 
@@ -245,7 +269,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `cap-errors`, `cap-document-validation`
 
-Used by: `build-entry-conformance`, `cap-human-interaction`, `cap-work-intake-implement`, `cap-work-intake-use`, `compose-approval`, `compose-workflow`, `seam-agent-ingress`, `seam-entry-envelope`
+Used by: `build-entry-conformance`, `cap-human-interaction`, `cap-work-intake-implement`, `compose-approval`, `xc-enforcement-chain`
 
 ## Open questions
 

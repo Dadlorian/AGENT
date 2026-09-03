@@ -176,6 +176,28 @@
             }
           }
         }
+      },
+      {
+        "name": "What a refusal looks like (proposed): problem details, not prose [caller's view, folded from cap-isolation-use]",
+        "origin": "proposed",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:cap:isolation:example:isolation-unavailable",
+          "title": "Nothing could contain this work as asked",
+          "$ref": "urn:agentic:problem:0.1",
+          "description": "The work was refused before it ran, rather than run with weaker containment. Branch on type; read detail only to report it.",
+          "examples": [
+            {
+              "type": "urn:agentic:problem:isolation-unavailable",
+              "title": "No isolation adapter could admit the unit",
+              "status": 503,
+              "detail": "profile 'large-gpu' is not resolvable by any configured adapter on this host",
+              "retryable": true,
+              "retry_after_s": 60,
+              "correlation_id": "evt-2026-09-03-0104"
+            }
+          ]
+        }
       }
     ],
     "invariants": [
@@ -243,6 +265,24 @@
         "sources": [
           "F-a3-06"
         ]
+      },
+      {
+        "text": "The three ways in that TARGET T1 lists - a human, an agent, an internal or external event - reach a contained unit through the same call. How the work arrived is not a field of it, so one caller-side handler covers all three.",
+        "origin": "sourced",
+        "sources": [
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03"
+        ],
+        "quote": "An internal or external event must be able to enter the system."
+      },
+      {
+        "text": "Enhancing one aspect leaves the rest untouched: replacing what contains the work, adding a resource profile, tightening an egress rule or moving where the unit runs changes nothing in a caller that reads exit status, outputs and usage. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here.",
+        "origin": "sourced",
+        "sources": [
+          "T-t2-02"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
       }
     ],
     "not_exposed": [
@@ -367,7 +407,17 @@
     },
     {
       "step": 9,
-      "action": "Proposed: open references/isolation-shapes.md when implementing or reviewing the full declaration schema, the profile resolution rules or the containment-report fields. The body of this skill is enough to judge a candidate technology and to call the capability without it.",
+      "action": "Send the work, the document it runs on, and a correlation id you chose. Write no profile, no egress rule and no credential unless you have a reason.",
+      "why": "It has to be simple to use, and every field you fill in is a decision you now own. The fields you leave alone are the ones the platform can change under you without breaking your call.",
+      "origin": "sourced",
+      "sources": [
+        "T-t3-01"
+      ],
+      "quote": "It has to be simple to use."
+    },
+    {
+      "step": 10,
+      "action": "Proposed: open references/isolation-shapes.md when implementing or reviewing the full declaration schema, the profile resolution rules or the containment-report fields. The body of this skill is enough to judge a candidate technology and to call the capability without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
       "why": "Proposed: the full schemas exceed the progressive-disclosure budget for a skill body, and a reader deciding whether a boundary is drawn correctly does not need them.",
       "origin": "proposed"
     }
@@ -458,7 +508,6 @@
     ],
     "used_by": [
       "cap-isolation-implement",
-      "cap-isolation-use",
       "compose-agent",
       "seam-dispatch",
       "xc-tenancy"

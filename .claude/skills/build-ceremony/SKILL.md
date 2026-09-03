@@ -209,7 +209,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`
 
-Used by: `build-entry-conformance`, `build-interface-versioning`, `build-simplicity-budget`, `cap-capability-registry`, `cap-evaluation`, `cap-human-interaction`, `cap-mandate-broker`, `cap-memory`, `compose-improvement-loop`, `compose-operators`, `seam-agent-ingress`, `seam-entry-envelope`, `xc-audit-trail`, `xc-compensation`, `xc-correlation-envelope`, `xc-enforcement-chain`, `xc-tenancy`
+Used by: `build-entry-conformance`, `build-interface-versioning`, `build-simplicity-budget`, `cap-capability-registry`, `cap-evaluation`, `cap-human-interaction`, `cap-mandate-broker`, `cap-memory`, `compose-improvement-loop`, `compose-operators`, `xc-audit-trail`, `xc-compensation`, `xc-enforcement-chain`, `xc-tenancy`
 
 ## Open questions
 

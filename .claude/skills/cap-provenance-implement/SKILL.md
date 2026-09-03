@@ -111,7 +111,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed: what the platform records today is a chain our own reader recomputes: JSONL, hash-chained, where each run's closing digest is the next run's opening digest, so a manual edit between runs is detectable. That is integrity for us and evidence for nobody else, so the signed envelope is added on top of it and the chain is not removed. | proposed | `F-a5-03`, `F-b5-05` |
 | Proposed: attest is wired into the platform's result emitter and its run-seal path, not into each caller, and there is no flag that skips it. cap-provenance states design rule 7 as the reason for that placement; what this adds is the wiring rule that a new step kind inherits attestation by construction because it reaches emission through the same path. | proposed | `F-b1-08`, `T-t2-03` |
 | Proposed: a failure to attest, sign or publish is returned as problem details from the registry cap-errors owns, and this capability mints no failure object of its own; a new registry row is required before any new type is raised. | proposed | `F-b4-07` |
-| Proposed: the conformance run and its breakage are written to the evidence store in the form build-evidence-record fixes, naming the code version and the tree under test, and stay labelled claimed until they have been run here. | proposed | `F-a5-04` |
+| Apply build-evidence-record: the conformance run and its breakage are written to the evidence store naming the code version and the tree hash under test, and stay claimed until they have actually been run here; proposed pointer, see that skill. | proposed | `F-a5-04` "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty" |
 
 ## Instructions
 

@@ -193,6 +193,30 @@
           "X-entry-composition-050",
           "X-cross-structure-009"
         ]
+      },
+      {
+        "name": "Worked example 2 (proposed): the failure shape, when a run cannot be shown [caller's view, folded from cap-telemetry-use]",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:telemetry:example:unavailable",
+          "title": "A run with nothing to show",
+          "$ref": "urn:agentic:problem:0.1",
+          "description": "Proposed. Ask for a run whose retention window has passed, or one whose identifier never existed. The answer is RFC 9457 problem details with media type application/problem+json, the shape cap-errors owns. The type below is proposed and needs a row added to that registry before anything may raise it. Note what is not here: a failure to export is never raised at you, because a caller who could see one would start deciding whether telemetry mattered. The type is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns: until `urn:agentic:problem:telemetry-unavailable` has a row, an implementation returns the registered `adapter-unavailable` with the run id and the retention window in detail, accepting that it is 503 and retryable where a passed retention window is neither, which is itself the argument for the row.",
+          "examples": [
+            {
+              "type": "urn:agentic:problem:telemetry-unavailable",
+              "title": "No telemetry is retained for that run",
+              "status": 404,
+              "detail": "run.id run-human-0001 has no retained telemetry; the retention window for this deployment is 30 days",
+              "retryable": false,
+              "correlation_id": "corr-human-0001"
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b4-07"
+        ]
       }
     ],
     "invariants": [
@@ -275,10 +299,13 @@
         "quote": "The gen_ai.operation.name attribute covers the full agent lifecycle"
       },
       {
-        "text": "Telemetry is applied by the platform and cannot be requested or declined. agentic-stack states design rule 7 (F-b1-08, F-b4-01); the consequence for this interface is that there is no emit flag on any request shape and no sampling decision a caller can make, so a step that produced no telemetry is a defect rather than a caller's choice.",
+        "text": "Telemetry is applied by the platform and cannot be requested or declined. agentic-stack states design rule 7 (F-b1-08, F-b4-01); the consequence for this interface is that there is no emit flag on any request shape and no sampling decision a caller can make, so a step that produced no telemetry is a defect rather than a caller's choice. All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach it the same way, and there is no caller-side difference between them; what enhancing one aspect leaves untouched is stated by this table's row on the platform's own correlation fields being independent of the attribute mapping, and the caller's view is in references/usage.md.",
         "origin": "sourced",
         "sources": [
           "F-b1-08",
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03",
           "T-t2-03"
         ],
         "quote": "State, telemetry, and every cross-cutting concern are managed across the entire structure, whichever entry point was used."
@@ -388,7 +415,16 @@
     },
     {
       "step": 8,
-      "action": "Proposed: open references/telemetry-attribute-mapping.md when you need the per-operation attribute table, the instrument list, or the record of what each cited research snippet does and does not establish. This skill body is enough to judge an implementation without it.",
+      "action": "Send what you were already sending. Do not add a tracing call, a span of your own, or a request to be observed; there is nothing to opt into.",
+      "why": "Proposed usage of the placement this skill fixes. The platform applies this concern rather than offering it, so a caller-side switch would be a hole rather than a feature, and a span you mint yourself is the one thing in the run with no correlation attributes on it.",
+      "origin": "proposed",
+      "sources": [
+        "F-b1-08"
+      ]
+    },
+    {
+      "step": 9,
+      "action": "Proposed: open references/telemetry-attribute-mapping.md when you need the per-operation attribute table, the instrument list, or the record of what each cited research snippet does and does not establish. This skill body is enough to judge an implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
       "why": "Proposed, progressive disclosure. The mapping table is long material that moves on its own cadence, which is precisely why it does not belong in the part of the contract that is meant to stay still.",
       "origin": "proposed"
     }
@@ -491,9 +527,7 @@
     "used_by": [
       "cap-evaluation",
       "cap-telemetry-implement",
-      "cap-telemetry-use",
-      "xc-correlation",
-      "xc-correlation-envelope"
+      "xc-correlation"
     ]
   },
   "open_questions": [

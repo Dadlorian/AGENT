@@ -183,6 +183,29 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**What a failure looks like (proposed): problem details, not prose [caller's view, folded from cap-model-access-use]** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:model-access:example:no-endpoint",
+  "title": "The class you asked for has nowhere to go",
+  "$ref": "urn:agentic:problem:0.1",
+  "description": "A class that cannot be routed is a failure with a type. It is never quietly answered by a different class. Branch on type; read detail only to report it. `urn:agentic:problem:no-endpoint-for-class` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `adapter-unavailable`, which is also 503 and retryable, with the unserved class in detail.",
+  "examples": [
+    {
+      "type": "urn:agentic:problem:no-endpoint-for-class",
+      "title": "No endpoint serves this model class",
+      "status": 503,
+      "detail": "no adapter binding declares class b-deep; the request was not sent and no spend was incurred",
+      "retryable": true,
+      "retry_after_s": 120,
+      "correlation_id": "corr-schedule-0001"
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -195,6 +218,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Every unit of work carries a ceiling, and this is the boundary where the ceiling is spent. Proposed consequence for a slow path: spend is committed when work is submitted and the true figure arrives when the ticket is claimed, so the interface carries both a committed and a reconciled cost rather than assuming the two coincide. | sourced | `F-b4-02` "Every unit of work carries a ceiling" |
 | cap-errors owns the failure shape (F-b4-07). What this boundary adds: three of its failures are peculiar to it and each needs a type rather than a status string, namely a class with no endpoint routing can reach, a ceiling exhausted before or during a call, and a cancel the adapter cannot honour. | sourced | `F-b4-07` "Never parsed from prose" |
 | agentic-stack and build-adapter-pair state design rule 3 (F-b1-04). Its consequence here: the second adapter must differ from today's on how a result arrives and whether a call in flight can be stopped, because another gateway of the same shape would agree with the first on both and the swap would test configuration rather than the contract. | sourced | `F-b1-04` "the second exists to prove the first is not load-bearing" |
+| The three ways in that TARGET T1 lists - a human, an agent, an internal or external event - reach a model through the same call with the same two fields. Which one asked is not a field of the request, so the answer, the cost and the record are the same shape whichever way the work arrived. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03` "An internal or external event must be able to enter the system." |
+| Enhancing one aspect leaves the rest untouched: swapping the gateway, adding a model to a class, changing where a class is routed, or moving a class from the fast path to the cheap one changes nothing in a caller that sends a class and reads a ticket. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -216,7 +241,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | Make the budget concern handle a spend committed at submission and reconciled when the ticket is claimed, and carry both figures on the result rather than overwriting one with the other. | Every unit of work carries a ceiling, and a slow path spends hours before the true cost is known; a design that assumes commitment and reconciliation coincide has no answer for a unit that ends between them. | sourced | `F-b4-02` "Exceeding it terminates the unit, not the platform" |
 | 7 | Choose the second adapter on execution-model axes as build-adapter-pair defines them: result_or_claim_ticket, prompt_cancellation and start_and_teardown_cost must all differ from today's adapter. | agentic-stack and build-adapter-pair state design rule 3 (F-b1-04). What this adds: a hosted gateway of the same shape as the installed one agrees with it on all three axes, so it would prove the interface can change vendors and nothing about whether it can change execution models. | sourced | `F-b1-04`, `F-part-c-05` "chosen to prove the interface is not shaped around its current implementation" |
 | 8 | Return every failure as the typed problem object cap-errors defines, including no-endpoint-for-class, budget-exhausted and cancel-not-honoured, and never let an unroutable class fall back silently to another one. | cap-errors owns the failure shape (F-b4-07); what this adds is that a silent fallback to a different class is this capability's most expensive failure, because the work completes, the bill arrives, and nothing in the result says the class asked for was not the class used. | sourced | `F-b4-07`, `F-a4-01` "Typed and machine-readable" |
-| 9 | Proposed: open references/model-access-shapes.md when writing or reviewing the full request, ticket and routing-table schemas. The body of this skill is enough to judge a candidate adapter and to write the contract without it. | Proposed: the full schemas exceed the progressive-disclosure budget for a skill body, and a reader deciding whether a gateway may serve this interface does not need them. | proposed | - |
+| 9 | Send the class the work needs and your messages, plus an idempotency key you can reproduce. Take every default. Do not send a model name, a provider, an endpoint, a temperature or an adapter. | It has to be simple to use, and every field you fill in is a decision you now own; which endpoint can serve a class is a fact the platform has and you do not. | sourced | `T-t3-01` "It has to be simple to use." |
+| 10 | Proposed: open references/model-access-shapes.md when writing or reviewing the full request, ticket and routing-table schemas. The body of this skill is enough to judge a candidate adapter and to write the contract without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed: the full schemas exceed the progressive-disclosure budget for a skill body, and a reader deciding whether a gateway may serve this interface does not need them. | proposed | - |
 
 ## Best practices
 
@@ -249,7 +275,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `cap-errors`
 
-Used by: `cap-model-access-implement`, `cap-model-access-use`, `xc-budget`
+Used by: `cap-model-access-implement`, `xc-budget`
 
 ## Open questions
 

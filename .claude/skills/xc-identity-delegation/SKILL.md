@@ -271,7 +271,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `cap-identity`
 
-Used by: `seam-dispatch`, `seam-entry-envelope`, `xc-identity-delegation-implement`, `xc-tenancy`
+Used by: `seam-dispatch`, `xc-identity-delegation-implement`, `xc-tenancy`
 
 ## Open questions
 

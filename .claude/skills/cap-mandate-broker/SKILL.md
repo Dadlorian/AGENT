@@ -180,6 +180,45 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**Worked example 2 (proposed): an event triggers work, and a handle presented at the wrong destination is refused [caller's view, folded from cap-mandate-broker-use]** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:mandate-broker:example:audience-refused",
+  "title": "A credential minted for one destination is worth nothing at another",
+  "description": "An alert enters as an event and the work it triggers reaches a metrics service. A later step tries to reuse the same authority against a deploy endpoint. The second destination refuses it on its own audience check, and the refusal is a problem details object with a type the caller branches on. No retry is attempted, because the answer will not change. `urn:agentic:problem:credential-audience-mismatch` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `identity-untrusted`, which is also 401 and not retryable, naming both destinations in detail, as the open question below records.",
+  "examples": [
+    {
+      "entry": {
+        "kind": "event",
+        "actor": "service:alerting",
+        "correlation_id": "corr-event-0001"
+      },
+      "first_call": {
+        "audience": "metrics.internal",
+        "handle_id": "hdl-2b8d0f61ac33",
+        "accepted": true
+      },
+      "second_call": {
+        "audience_presented_at": "deploy.internal",
+        "handle_id": "hdl-2b8d0f61ac33",
+        "accepted": false,
+        "problem": {
+          "type": "urn:agentic:problem:credential-audience-mismatch",
+          "title": "This authority was not issued for this destination",
+          "status": 401,
+          "detail": "hdl-2b8d0f61ac33 was minted for metrics.internal and was presented at deploy.internal",
+          "retryable": false,
+          "correlation_id": "corr-event-0001"
+        }
+      },
+      "what_the_caller_does": "mint a new handle for deploy.internal, which requires a mandate because a deploy is irreversible"
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -193,6 +232,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Minting is a decision point, not a service call. cap-policy owns deterministic refusal before spend (F-b4-04); the consequence on this interface is that the broker holds no allow list of its own - it asks, and a mint that policy refuses never produces a handle, so nothing downstream has to be undone. | sourced | `F-b4-04` "Refusal is deterministic and happens before execution, not after spend" |
 | Every mint, every exchange and every mandate verification is an attributable statement. cap-provenance owns attribution (F-b4-05); the consequence here is that 'who approved this spend, under what bounds, and who acted on it' is answerable from records rather than from the memory of whoever was on call. | sourced | `F-b4-05` "Every artifact is attributable to the code version, inputs and actor that produced it" |
 | This interface adds no failure vocabulary. cap-errors owns the platform's failure shape (F-b3-13); an audience mismatch, an expired mandate, an out-of-bounds action and a refused mint all arrive as problem details, never as a destination's own exception text. | sourced | `F-b3-13` "RFC 9457 problem details" |
+| All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: shortening lifetimes, adding a destination, moving to an offline-verifiable mandate, or re-signing with a new key changes nothing in a caller that named a destination and an action class, because those are the only two things it was ever asked to write down. cap-identity states the same record (T-t1-01) for its own boundary; this row is that rule's consequence here. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -213,7 +253,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 5 | Derive the lifetime from the task and make the authority non-refreshable. Do not build a refresh path, a renewal endpoint, or a long-lived fallback for the case where a task runs longer than expected. | A refresh path turns a short-lived credential back into a long-lived one held by whoever can call it, and the task boundary is the only expiry nobody has to remember to configure. | sourced | `X-cap-mandate-broker-006` "non-refreshable by design" |
 | 6 | For anything irreversible - spend, deploy, send - require a mandate signed by the approving actor, stating the ceiling, the destinations and the validity period, and verify it at the point of action rather than at the point of planning. | Two approval modes have to work: a person approving one action now, and a person approving bounds up front for an agent that acts later on its own. A mandate covers both, and verifying at the point of action is what stops an approval from outliving the bounds it was given. | sourced | `X-end-to-end-071`, `X-end-to-end-070` "real-time purchases where the human approves a Cart Mandate with a cryptographic signature, and delegated tasks where the human signs an Intent Mandate upfront and the agent acts autonomously later" |
 | 7 | Choose the second adapter on a different verification model, not a second token service: one authority validated by its issuer, one credential a party that did not issue it can verify offline. Name that axis before writing either. | build-adapter-pair owns why there is a second adapter (F-b1-04). The consequence here is specific: two issuer-validated token services would leave the interface free to keep assuming the issuer is reachable at verification time, and only an offline-verifiable mandate forces the bounds and the signature to become part of the object rather than of the service. | sourced | `F-b1-04`, `X-cap-mandate-broker-005` "Every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing" |
-| 8 | Proposed: open references/mandate-broker-shapes.md when you are implementing the mint request, the mandate record or the verification outcome. The body of this skill is enough to judge this interface and to call it without opening that file. | Proposed: the full shapes and the bounds vocabulary are longer than the body's budget allows, and a reader deciding whether an authority is correctly scoped does not need them. | proposed | - |
+| 8 | To reach something outside the sandbox: name the one destination you are calling and use the handle you get back. Do not look for a key, an environment variable, a config file or a secret in your prompt - there is not one, and there is not meant to be. | The credential is added outside the sandbox after you have made an ordinary call, so a caller that goes looking for one is trying to rebuild a thing the platform removed on purpose. | sourced | `T-t2-01` "Composability hides the complexity." |
+| 9 | Proposed: open references/mandate-broker-shapes.md when you are implementing the mint request, the mandate record or the verification outcome. The body of this skill is enough to judge this interface and to call it without opening that file. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed: the full shapes and the bounds vocabulary are longer than the body's budget allows, and a reader deciding whether an authority is correctly scoped does not need them. | proposed | - |
 
 ## Best practices
 
@@ -247,7 +288,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `build-research-record`, `build-ceremony`, `cap-errors`, `cap-identity`, `cap-policy`, `cap-provenance`
 
-Used by: `cap-mandate-broker-implement`, `cap-mandate-broker-use`
+Used by: `cap-mandate-broker-implement`
 
 ## Open questions
 

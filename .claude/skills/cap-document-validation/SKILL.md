@@ -131,6 +131,55 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**worked example 1 (proposed): a person submits a malformed entry and gets everything wrong with it, at once [caller's view, folded from cap-document-validation-use]** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:document-validation:example:rejected:0.1",
+  "title": "Rejected submission, end to end (proposed)",
+  "type": "object",
+  "examples": [
+    {
+      "sent": {
+        "schema_uri": "urn:agentic:seam:entry:0.1",
+        "instance": {
+          "kind": "human",
+          "intent": "restart the ingest job",
+          "budget": {
+            "ceiling_micros": "50000"
+          }
+        }
+      },
+      "outcome": {
+        "valid": false,
+        "errors": [
+          {
+            "instance_location": "/actor",
+            "keyword_location": "/required",
+            "message": "required property 'actor' is missing"
+          },
+          {
+            "instance_location": "/budget/ceiling_micros",
+            "keyword_location": "/properties/budget/properties/ceiling_micros/type",
+            "message": "expected integer, got string"
+          }
+        ]
+      },
+      "received_on_the_wire": {
+        "media_type": "application/problem+json",
+        "type": "urn:agentic:problem:document-invalid",
+        "title": "Document failed schema validation",
+        "status": 422,
+        "detail": "2 violations; see errors",
+        "errors": "the list above, unchanged"
+      },
+      "what_the_caller_does": "fixes both violations in one edit and resubmits; there is no second round of discovery"
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -142,6 +191,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | agentic-stack states design rule 3 as a test (F-b1-04); the consequence here is that the swap candidate is a class, not a product - any 2020-12 validator - so an adapter that needs a schema written outside the declared dialect, or a schema keyword of its own, has failed the interface rather than extended it. | sourced | `F-b3-09`, `F-b1-04` "any 2020-12 validator" |
 | Proposed: validation is a pure offline function of instance, schema and dialect. Remote references are resolved into the supplied schema store before the call, no fetch happens while validating, and the same three inputs always produce the same outcome. | proposed | - |
 | Proposed: what crosses the interface is the outcome shape defined here, never an adapter's own exception type, error class or message string; two conformant adapters must be indistinguishable to a caller that reads only the outcome. | proposed | - |
+| All three ways in reach the same check: a person, an agent, and an internal or external event submit through one envelope, against one shape identifier, and read one outcome shape back. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t6-02` "All four enter through the same shape" |
+| Tightening a schema, replacing the validator behind the interface, and changing how a rejection is rendered are three independent changes; none of them alters what a caller sends or the outcome shape they read. | sourced | `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -164,7 +215,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | Choose the second adapter on a different execution model, not a different vendor: build-adapter-pair owns that discipline (F-b1-04), and for this capability the choice is unusually cheap because conformant implementations exist across language runtimes. | A second tree-walking validator in the same runtime proves nothing about the interface; a validator that compiles the schema in another runtime exercises the parts of the contract that leak. | sourced | `X-cap-document-validation-006`, `F-b1-04` "implementations in all major languages can validate against the same dialect" |
 | 7 | Prepare each schema once and reuse the handle across instances, and report how many instances a handle served. | Repeated validation against the same schema is the normal case at an entry boundary, and paying schema-reading cost per instance is the difference between a check that is always on and one that gets switched off. | sourced | `X-cap-document-validation-003` "Caching the compiled validation function is recommended for repeated validation against the same schema" |
 | 8 | Record the dialect version as unverified until the published specification has been read in an environment that can fetch it, as build-skill-authoring requires; the record naming 2020-12 here is search-only. | A version number nobody read is a fabrication with a decimal point in it. | sourced | `F-part-c-10`, `X-cap-document-validation-001` "Cite the standard and its version" |
-| 9 | Proposed: open references/document-validation-shapes.md when you are implementing the outcome shape, the error unit, or the conformance report, or reviewing someone who did. The body of this skill is enough to judge and to call the capability without it. | Proposed: the full shapes are longer than the progressive-disclosure budget allows in the body, and a reader deciding whether to use the capability does not need them. | proposed | - |
+| 9 | Send the document together with the identifier of the shape it claims to be, through the same envelope whether you are a person typing it, an agent submitting it, or an event carrying it. | All three must be able to enter, and one entry shape is what lets the same check, the same outcome and the same record apply to all of them. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03` "An internal or external event must be able to enter the system." |
+| 10 | Proposed: open references/document-validation-shapes.md when you are implementing the outcome shape, the error unit, or the conformance report, or reviewing someone who did. The body of this skill is enough to judge and to call the capability without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed: the full shapes are longer than the progressive-disclosure budget allows in the body, and a reader deciding whether to use the capability does not need them. | proposed | - |
 
 ## Best practices
 
@@ -197,7 +249,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`
 
-Used by: `cap-capability-packaging`, `cap-capability-registry`, `cap-document-validation-implement`, `cap-document-validation-use`, `cap-human-interaction`, `cap-policy`, `cap-tool-access`, `cap-work-intake`, `compose-operators`, `core-document`, `seam-entry-envelope`
+Used by: `cap-capability-packaging`, `cap-capability-registry`, `cap-document-validation-implement`, `cap-human-interaction`, `cap-policy`, `cap-tool-access`, `cap-work-intake`, `compose-operators`, `core-document`
 
 ## Open questions
 

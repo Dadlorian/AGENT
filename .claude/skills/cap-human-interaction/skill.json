@@ -247,6 +247,31 @@
           "X-entry-composition-023",
           "F-b4-08"
         ]
+      },
+      {
+        "name": "The failure shape (proposed): a decision that arrives after its ask closed [caller's view, folded from cap-human-interaction-use]",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:problem:example:human-ask-expired",
+          "title": "The ask is no longer open",
+          "$ref": "urn:agentic:problem:0.1",
+          "description": "Media type application/problem+json. The ask was closed by its own deadline before any decision arrived, and the run terminated at that point with the registered `deadline-exceeded`; a decision presented afterwards is refused rather than applied, so a new run is the remedy and this problem is not retryable. `urn:agentic:problem:human-ask-expired` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `deadline-exceeded` with the ask id in detail, as the open question below records.",
+          "examples": [
+            {
+              "type": "urn:agentic:problem:human-ask-expired",
+              "title": "The ask is no longer open",
+              "status": 409,
+              "detail": "ask-deploy-0001 closed at 2026-09-03T18:00:00Z after 8h open and the run terminated with deadline-exceeded; the decision presented at 2026-09-03T18:04:11Z was not applied.",
+              "retryable": false,
+              "correlation_id": "corr-human-0001"
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b3-13",
+          "X-cap-human-interaction-008"
+        ]
       }
     ],
     "invariants": [
@@ -330,6 +355,17 @@
           "E-not-running-temporal",
           "F-b1-02"
         ]
+      },
+      {
+        "text": "All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: change the surface people decide on, tighten a response schema, or add a deadline sweeper, and no workflow that parks is edited - the ask and the decision are the only things any of them named. cap-identity states the same record (T-t1-01) for its own boundary; this row is that rule's consequence here.",
+        "origin": "sourced",
+        "sources": [
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03",
+          "T-t2-02"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
       }
     ],
     "not_exposed": [
@@ -448,7 +484,17 @@
     },
     {
       "step": 9,
-      "action": "Open references/human-interaction-shapes.md when you need the full ask and decision schemas, the event-type table or the four worked decision instances. This skill body is enough to judge a pause-and-resume implementation without it.",
+      "action": "Write the ask on the step that is about to do something hard to undo: prompt, response schema, the proposed action with its diff and irreversibility class, and a deadline. Then return; the platform suspends the run.",
+      "why": "This skill states this as a best practice from the prior art on file - approval gates on irreversible actions are the typical defenses - so the gate belongs where something becomes hard to undo rather than at a fixed step number. What is yours as a caller is only the four fields; storing, notifying, timing out and resuming are the platform's.",
+      "origin": "sourced",
+      "sources": [
+        "X-end-to-end-063"
+      ],
+      "quote": "approval gates on irreversible actions are the typical defenses"
+    },
+    {
+      "step": 10,
+      "action": "Open references/human-interaction-shapes.md when you need the full ask and decision schemas, the event-type table or the four worked decision instances. This skill body is enough to judge a pause-and-resume implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
       "why": "Proposed, progressive disclosure. The full schemas and the event table are long material, and a reader deciding whether a run should stop and ask does not need them yet.",
       "origin": "proposed"
     }
@@ -551,8 +597,7 @@
     ],
     "used_by": [
       "build-entry-conformance",
-      "cap-human-interaction-implement",
-      "cap-human-interaction-use"
+      "cap-human-interaction-implement"
     ]
   },
   "open_questions": [

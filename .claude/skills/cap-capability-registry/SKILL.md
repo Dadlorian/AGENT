@@ -195,6 +195,39 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**Worked example 2 (proposed): an agent resolves a name and is refused [caller's view, folded from cap-capability-registry-use]** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:capability-registry:example:refused",
+  "title": "An unsigned record comes back as a problem, not a warning",
+  "description": "The agent asked for the newest version satisfying its constraint. The one record that satisfies it carries no signature, so the outcome carries resolved false and a problem details body. The caller branches on type, shows detail to a person, and does not retry. `urn:agentic:problem:record-unsigned` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `identity-untrusted`, which is also 401 and not retryable, with the unsigned version named in detail, as the open question below records.",
+  "examples": [
+    {
+      "actor": "agent:triage-router",
+      "query": {
+        "name": "partner-co/log-summariser",
+        "constraint": ">=2.1.0"
+      },
+      "resolved": false,
+      "verification": {
+        "signature_verified": false,
+        "digest_matched": false
+      },
+      "problem": {
+        "type": "urn:agentic:problem:record-unsigned",
+        "title": "The record that satisfies this constraint is not signed",
+        "status": 401,
+        "detail": "partner-co/log-summariser 2.4.0 carries no signature; 2.0.6 is signed but does not satisfy '>=2.1.0'",
+        "retryable": false,
+        "correlation_id": "run-2026-09-03-0042"
+      }
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -207,6 +240,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | cap-errors owns the failure shape for the whole platform (F-b3-13). The consequence here is that this interface adds no failure vocabulary of its own: an unknown name, an unsatisfiable constraint, a bad signature and a digest mismatch all come back as problem details on the resolution outcome, never as a store's own exception. | sourced | `F-b3-13` "— adopt the RFC directly" |
 | cap-document-validation owns deciding whether a declared shape conforms (F-b3-09). The consequence here is that a record's conformance to the record schema is decided by that capability against a published schema, so a store cannot define conformance as whatever it happens to accept. | sourced | `F-b3-09` "any 2020-12 validator" |
 | Publication is staged rather than instantaneous: a candidate is evaluated, gated, put in front of a fraction of traffic, and expanded or rolled back on what that showed. Proposed consequence for this interface: the rollback target is a member of the record, so taking a version back is a resolution that changes and never an edit to a capability that is running. | sourced | `X-end-to-end-026`, `T-t4-04` "evaluate locally, gate in CI, canary in production, then expand or roll back based on quality metrics" |
+| Three ways in, one query. TARGET T1's three ways in are a human, an agent and an event - a different enumeration from T6.2's four entries - and all three write down the same two strings, a name and a constraint, and get the same record back. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03` "A human must be able to enter the system." |
+| Enhancing one aspect leaves the rest untouched: publishing a new version, moving every record to a different store, adding a rollback target or signing with a new key changes nothing in a caller that named a name and a constraint, because those two strings are all it was ever asked to write down. cap-capability-packaging states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -228,7 +263,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | Register another party's agent as a record of the same shape, carrying what it is good at, its modalities and its authentication schemes, and resolve it with the same operations used for our own capabilities. | An agent must be able to enter the system, and it can only do so without a bespoke integration if being found and being described are the same two operations for an outside agent as for one of ours. | sourced | `T-t1-02`, `X-cap-capability-registry-006` "The client discovers the server's required authentication schemes via the securitySchemes field in the AgentCard." |
 | 7 | Choose the second adapter on a different distribution model: content-addressed records fetched from a network registry, not a second index file on the same host. Name the axis the two execution models differ on before writing either. | build-adapter-pair owns why there is a second adapter (F-b1-04). The consequence here is specific: two host-local indexes would leave the interface free to keep assuming the records and the packages share a filesystem, and only a fetched, digest-verified record forces identity and integrity to become contractual. | sourced | `F-b1-04`, `X-end-to-end-069` "Every interface ships with at least two adapters" |
 | 8 | Expose the interface as a specification other people implement rather than as an API of ours, and require no client library of ours to publish or resolve. | agentic-stack states rule 4 as a test (F-b1-05): a boundary that needs our client is bespoke where a standard existed, and a registry interface that downstream aggregators can implement is exactly the case where one existed. | sourced | `F-b1-05`, `X-cap-capability-registry-002` "The MCP Registry defines an OpenAPI spec that other MCP registries can implement" |
-| 9 | Proposed: open references/registry-shapes.md when you are implementing the record schema, wiring the rollout members, or reviewing a record someone published. The body of this skill is enough to judge this interface and to call it without opening that file. | Proposed: the full record schema, the rollout members and the standards table are longer than the body's budget allows, and a reader deciding whether to resolve or publish does not need them. | proposed | - |
+| 9 | To use a capability or an agent: write down its namespace-scoped name and a version constraint, call resolve, and read what comes back. Do not join a path, open an index, pick a store or pin a digest yourself. | The store, the index format and the transport are the capability's business, and a caller that reaches around them has bound itself to today's store and will break the first time it changes. | sourced | `T-t2-01` "Composability hides the complexity." |
+| 10 | Proposed: open references/registry-shapes.md when you are implementing the record schema, wiring the rollout members, or reviewing a record someone published. The body of this skill is enough to judge this interface and to call it without opening that file. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed: the full record schema, the rollout members and the standards table are longer than the body's budget allows, and a reader deciding whether to resolve or publish does not need them. | proposed | - |
 
 ## Best practices
 
@@ -262,7 +298,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `build-research-record`, `build-ceremony`, `cap-errors`, `cap-document-validation`, `cap-capability-packaging`, `cap-provenance`
 
-Used by: `cap-capability-registry-implement`, `cap-capability-registry-use`, `compose-improvement-loop`, `seam-agent-ingress`
+Used by: `build-entry-conformance`, `cap-capability-registry-implement`, `compose-improvement-loop`
 
 ## Open questions
 

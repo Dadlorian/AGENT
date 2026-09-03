@@ -202,6 +202,34 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**The failure shape (proposed): what a refused write or an unverifiable record looks like [caller's view, folded from cap-state-persistence-use]** (proposed; sources: `F-b4-07`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:state:example:problem",
+  "title": "Problem details from this capability",
+  "$ref": "urn:agentic:problem:0.1",
+  "description": "Proposed. Failures arrive as RFC 9457 problem details with media type application/problem+json, the shape cap-errors owns; nothing here returns a bare status or a message to be parsed. Both types below are proposed and need rows in that registry before anything may raise them. The distinction that matters to a caller is retryable: a lost race is retried after re-reading the head, a broken chain never is. Both are proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns: until the rows land an implementation returns `idempotency-conflict` for `urn:agentic:problem:head-moved` and `document-invalid` for `urn:agentic:problem:record-unverifiable`, accepting that `idempotency-conflict` is not retryable while a lost race is, which is itself the argument for the head-moved row.",
+  "examples": [
+    {
+      "type": "urn:agentic:problem:head-moved",
+      "title": "Another writer advanced the head first",
+      "status": 409,
+      "detail": "expected head sha256:d09619... but the current head is sha256:50873a...",
+      "retryable": true
+    },
+    {
+      "type": "urn:agentic:problem:record-unverifiable",
+      "title": "The proof does not check out against the head you supplied",
+      "status": 422,
+      "detail": "inclusion proof for sha256:0c7ac1... does not reconstruct root sha256:...",
+      "retryable": false
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -215,6 +243,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Concurrency is settled by making every append conditional rather than by trusting that only one process is running: two concurrent writers trying to append at the same version will fail, and one will need to retry. An append names the head it expects and is accepted only if that is still the head, which turns a silently forked log into a rejected write. | sourced | `X-cross-structure-048`, `X-cross-structure-049` "two concurrent writers trying to append at the same version will fail, and one will need to retry" |
 | Proposed: every read takes a head and is deterministic at it, and there is no default head. This is not ergonomics: design rule 5 (F-b1-06) requires cost to be knowable before commitment, and a pure planning function cannot be pure over a store that moves underneath it. A read without a head is the single change that would make rule 5 unprovable for this platform. | proposed | `F-b1-06`, `F-b5-05` |
 | Integrity is judged by what an outsider can do, not by what our own reader reports: the target is a log of which a valid log can be cryptographically verified by any third-party. A check only our code can run is an internal consistency check, and confusing the two is the specific failure this capability exists to prevent. | sourced | `X-cross-structure-052`, `F-b5-05` "a valid log can be cryptographically verified by any third-party" |
+| All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: the store can move from a local file to content-addressed objects, gain proofs, gain a lease and change its retention classes, and a caller holding a head and a proof changes nothing, because a head and a proof are the only things it was ever given. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -235,7 +264,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 5 | Keep the chain and add proofs on top of it: an inclusion proof for one record at a head, and a consistency proof between two heads. Do not replace the chain to get them. | agentic-stack already cites the chain property this platform relies on (F-a5-03), where a JSONL, hash-chained store makes an edit between runs detectable. What proofs add is the thing a chain cannot give cheaply: a valid log can be cryptographically verified by any third-party, one record at a time, without that party ever holding the log. | sourced | `X-cross-structure-052`, `F-a5-03` "a valid log can be cryptographically verified by any third-party" |
 | 6 | Split retention into classes with different lifetimes, and make removal a tombstone that preserves the record id and the chain position while dropping the body. | Proposed, and it is what keeps compliance and integrity from becoming a choice between two. The chain and every proof commit to the digest of the body, never to the body, so a body can be replaced by a tombstone and every earlier proof still verifies; a store without that will eventually be asked to delete something and will have to break itself to do it. | proposed | `F-b5-05` |
 | 7 | Judge a candidate implementation on four things and nothing softer: more than a thousand records written through the interface with no fork, an independent verifier recomputing the same head from the records alone, an inclusion proof for a randomly chosen record verifying without the rest of the log, and a body edited in place reported as a break at that index. | build-definition-of-done owns the discipline (F-part-c-04) that a criterion nothing can fail is not a criterion; the consequence for this capability is that the fourth item is not an extra, it is the only one of the four that can fail on a store which happens to be empty, and the first exists so that a green run over three records cannot be mistaken for a result. | sourced | `F-part-c-04`, `F-b5-05` "the deliberate breakage that proves the check can fail" |
-| 8 | Proposed: open references/state-shapes.md when you need the full record schema, the planner query table with signatures, or the retention class table with its defaults. This skill body is enough to judge an implementation without opening it. | Proposed, progressive disclosure. The query table alone runs to eight signatures and the record schema past the length at which a contract stops being read; a reader deciding whether a store is acceptable does not need either to decide. | proposed | - |
+| 8 | Send what you were already sending. There is no durability option, no consistency level and no store to name; nothing about persistence is something you opt into. | Proposed usage of the placement this skill fixes. The platform applies this rather than offering it, so a caller-side switch would be a hole rather than a feature, and a caller that could turn it off would eventually be the reason a run cannot be reconstructed. | proposed | `F-b1-08` |
+| 9 | Proposed: open references/state-shapes.md when you need the full record schema, the planner query table with signatures, or the retention class table with its defaults. This skill body is enough to judge an implementation without opening it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed, progressive disclosure. The query table alone runs to eight signatures and the record schema past the length at which a contract stops being read; a reader deciding whether a store is acceptable does not need either to decide. | proposed | - |
 
 ## Best practices
 
@@ -269,7 +299,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `cap-errors`
 
-Used by: `cap-memory`, `cap-state-persistence-implement`, `cap-state-persistence-use`, `seam-state`, `xc-idempotency-lease`, `xc-tenancy`
+Used by: `cap-memory`, `cap-state-persistence-implement`, `seam-state`, `xc-idempotency-lease`, `xc-tenancy`
 
 ## Open questions
 

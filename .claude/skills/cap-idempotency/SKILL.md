@@ -169,6 +169,27 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
+**Worked example 2 (proposed): the same key with a different body [caller's view, folded from cap-idempotency-use]** (proposed; sources: `F-b4-07`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:idempotency:example:conflict",
+  "title": "Same key, different envelope",
+  "$ref": "urn:agentic:problem:0.1",
+  "description": "Change one field of the payload and re-send under the same key. Reproduced in examples/end-to-end on 2026-09-03: exit code 2, body on stdout with media type application/problem+json, nothing executed.",
+  "examples": [
+    {
+      "type": "urn:agentic:problem:idempotency-conflict",
+      "title": "Same idempotency key, different envelope",
+      "status": 409,
+      "detail": "key human-checkout-500s-2026-09-03 was completed at seq 13 with a different body",
+      "retryable": false
+    }
+  ]
+}
+```
+
 ### Invariants
 
 | Invariant | Origin | Evidence |
@@ -182,6 +203,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | The core already owns a deduplication authority: the Ledger is append-only across runs and is the deduplication authority, and removing it means nothing survives the run. | sourced | `F-b2-06`, `E-core-component-ledger` "append-only across runs; the deduplication authority" |
 | Proposed: this interface is nonetheless not defined in terms of the Ledger. A claim needs a keyed conditional write, a payload digest and a retention window, and any store offering those provides one; build-adapter-pair states design rule 3 (F-b1-04), and binding the claim to one projection of the log would leave the pair with nothing to swap. | proposed | `F-b1-04`, `E-swap-candidate-any-keyed-lease-store` |
 | Proposed: the retention window is a declared field of the claim rather than an implementation detail, because the header name is consistent across the industry while retention windows, parameter-mismatch behaviour, and concurrency handling all differ between providers, so an undeclared window means an unknown contract. | proposed | `X-cap-idempotency-007` "retention windows, parameter-mismatch behaviour, and concurrency handling all differ between providers" |
+| All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: changing the retention window, moving the claim from a log fold to a lease store, or adding a new entry kind changes nothing in a caller that sends one key per intent, because the key is the only thing it was ever asked for. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
 
 ### Deliberately not exposed
 
@@ -203,7 +225,8 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | Layer the defence rather than resting on the entry check alone: start with idempotency keys at your API boundary to catch client-side retries, add message deduplication in your consumers to handle queue redeliveries, and use database constraints as your final safety net for critical operations. | Each layer catches a different duplicate. The boundary key catches a client that retried; consumer deduplication catches a redelivered message the client never re-sent; a uniqueness constraint catches the case where both of those were bypassed, which is the case that costs money. | sourced | `X-cap-idempotency-006` "Start with idempotency keys at your API boundary to catch client-side retries, add message deduplication in your consumers to handle queue redeliveries, and use database constraints as your final safety net for critical operations." |
 | 7 | Proposed: return a conflict through the platform's failure shape as the registered idempotency-conflict type, and take the shape, the media type and the registry from cap-errors rather than defining a failure here. | Proposed composition. cap-errors already fixes what a failure looks like and holds the closed type registry; a second failure object minted at this boundary would be one more format every client has to learn, for a case that is not special. | proposed | `F-b4-07` |
 | 8 | Proposed: judge an implementation by the concurrent case, not the sequential one. Fire the same key many times at once and require exactly one execution, with at least one duplicate answered while the first execution is still in flight. | Proposed criterion. Concurrency handling is precisely what differs between providers of this convention, and a sequential replay passes on any implementation that records the key at all, including one with no lease. If the test never overlaps two requests, it has not tested the lease. | proposed | `X-cap-idempotency-007`, `F-b3-16` |
-| 9 | Proposed: open references/idempotency-claim.md when you need the full claim and outcome schemas, the outcome state machine, or the table of published retention windows. This skill body is enough to judge an implementation without it. | Proposed, progressive disclosure. The state machine and the window table are long material, and inlining them would make the contract longer than the thing it governs. | proposed | - |
+| 9 | Generate one random identifier per intent, at the moment you decide to do the thing, and store it with the intent rather than minting it at the moment of sending. | It is RECOMMENDED that a UUID or a similar random identifier be used as an idempotency key. A key generated at send time is new on every retry, so the retry looks like a new intent, which is the failure this field exists to prevent. | sourced | `X-cap-idempotency-005` "It is RECOMMENDED that a UUID or a similar random identifier be used as an idempotency key." |
+| 10 | Proposed: open references/idempotency-claim.md when you need the full claim and outcome schemas, the outcome state machine, or the table of published retention windows. This skill body is enough to judge an implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed, progressive disclosure. The state machine and the window table are long material, and inlining them would make the contract longer than the thing it governs. | proposed | - |
 
 ## Best practices
 
@@ -236,7 +259,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-skill-authoring`, `cap-errors`
 
-Used by: `cap-idempotency-implement`, `cap-idempotency-use`, `xc-compensation`, `xc-idempotency-lease`
+Used by: `cap-idempotency-implement`, `xc-compensation`, `xc-idempotency-lease`
 
 ## Open questions
 

@@ -21,7 +21,7 @@
 | 36 | Impact map in knowledge base | A component swap query lists adapters, tests, and skills | In progress | Query works, names pending |
 | 37 | Live run access | Harness live mode runs against the host from a session | Blocked | Owner decision |
 | 40 | Load path table | Each door has a generated load path within budget | Not started | Queued |
-| 41 | Planted-defect reviews | Every review catches both planted defects | Not started | Queued |
+| 41 | Planted-defect reviews | Every review catches both planted defects | In progress | plant.py ready |
 | 42 | Sourcing pass | Proposed rows are under 30 percent | Not started | Queued |
 | 43 | Agent scope registry | No two agents edit the same file in one round | Not started | Queued |
 | 44 | Freshness gate | A checkpoint fails on a stale status row | Not started | Queued |

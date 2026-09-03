@@ -48,7 +48,7 @@ axes a vendor swap never touches.
 
 - Today: `E-adapter-jsonl-hash-chain`. Verification cost: rehash from the beginning, whole artifact
   present, one reader-writer locality. Durability: an append to one file.
-- Second: `E-swap_candidate-object-store`. Verification cost: a proof about one record against a head,
+- Second: `E-swap-candidate-object-store`. Verification cost: a proof about one record against a head,
   checkable by a party that does not hold the log. Durability: an immutable object write with no
   in-place append.
 

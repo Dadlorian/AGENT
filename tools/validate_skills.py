@@ -7,7 +7,7 @@ Errors (exit 1):
   - skill dir without skill.json, or skill.json violating schemas/skill.schema.json (checked by the
     rules below, since no JSON Schema library is available here; the schema file is the contract)
   - name != directory; layer prefix mismatch; description length out of range
-  - any cited id (F-, E-, R-) that does not exist in kb/
+  - any cited id (F-, E-, R-) that does not exist in kb/, including the entities list
   - any item with origin=sourced and no sources or no quote; a quote that is not a verbatim substring
     of a cited record; any item with origin=proposed whose text does not say "proposed"
   - provenance kb heads or PASS.md hash that do not match kb/meta.json (skill built on a stale kb)
@@ -180,6 +180,9 @@ def main() -> int:
         skills[name] = sk
         check_structure(sk, name, errs)
         walk_sourced(sk, "", errs, kb_ids, name)
+        for e in sk.get("entities", []):
+            if e not in kb_ids:
+                errs.append(f"{name}: entities lists unknown id {e}")
         p = sk.get("provenance", {})
         if p.get("kb_source_sha256") != meta["source"]["sha256"]:
             errs.append(f"{name}: provenance PASS.md hash does not match kb/meta.json (rebuild the skill against the current kb)")

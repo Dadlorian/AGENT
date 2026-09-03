@@ -181,7 +181,7 @@ def build_entities_edges(facts: list[dict]) -> tuple[list[dict], list[dict]]:
     edges: list[dict] = []
 
     def ent(etype: str, name: str, fid: str, **attrs) -> str:
-        eid = f"E-{etype}-{slug(name)}"
+        eid = f"E-{etype.replace(chr(95), chr(45))}-{slug(name)}"
         if eid not in ents:
             ents[eid] = {"id": eid, "type": "entity", "entity_type": etype, "name": name, "sources": [fid], **attrs}
         else:

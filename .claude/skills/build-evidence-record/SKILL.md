@@ -17,9 +17,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Entity |
 |---|
-| `E-provisioning_concern-evidence-store` |
-| `E-provisioning_concern-task-store` |
-| `E-provisioning_concern-deployment-phases` |
+| `E-provisioning-concern-evidence-store` |
+| `E-provisioning-concern-task-store` |
+| `E-provisioning-concern-deployment-phases` |
 | `E-finding-a7-1` |
 | `E-finding-a7-2` |
 | `E-finding-a7-3` |
@@ -254,6 +254,6 @@ Used by: `cap-provenance`, `compose-loop`, `seam-dispatch`, `seam-state`, `xc-co
 |---|---|
 | PASS.md sha256 | cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96 |
 | kb facts head | 9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e |
-| kb entities head | 7cca7f9fb186c6c0527b8fdf909db9f0bd4facb97564a61cf3413e9a5abcdbdf |
-| kb edges head | 53a86af888fe464b4fb87d747ea0f22e85ced7e132320b0ca046da5492a46536 |
+| kb entities head | 747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604 |
+| kb edges head | a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6 |
 | Author | session https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96 |

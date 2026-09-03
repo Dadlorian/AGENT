@@ -51,5 +51,5 @@
 | 55 | Layer acceptance: composition and build | Ceremony closes with every stick met or recorded absent | Done | Folded into rows 59 to 62 | 2026-09-03 873cb2b |
 | 56 | Element guides | Each stack element has an integration guide whose example runs | Done | Folded into rows 59 to 62 | 2026-09-03 873cb2b |
 | 57 | Final acceptance | Scorecard and acceptance matrix hold at one commit | Done | Folded into row 63 | 2026-09-03 873cb2b |
-| 58 | Owner decisions | Sticks the environment blocks are recorded absent | Done | Standard stick absent on 16 elements | 2026-09-03 873cb2b |
-| 59 | Build disciplines acceptance | Ceremony closes with every stick met or recorded absent | Done | 12 skills at zero warnings, 10 measured | 2026-09-03 16d354c |
+| 58 | Phase 0: owner decisions | Sticks the environment blocks are recorded absent | Done | Standard stick absent on 16 elements | 2026-09-03 873cb2b |
+| 59 | Phase 1: build disciplines | Ceremony closes with every stick met or recorded absent | Done | 12 skills at zero warnings, 10 measured | 2026-09-03 16d354c |

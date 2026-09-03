@@ -189,12 +189,19 @@
         "quote": "Do not propose replacing what runs."
       },
       {
-        "text": "agentic-stack states that the cross-cutting guarantees are applied by the platform and cannot be declined (F-b4-01). What this adds: on a slow path they attach twice, once around the submission and once around the claim hours later, so an adapter offering its own retries, its own spend cap or its own audit trail has offered a second, declinable copy that must not be wired.",
+        "text": "agentic-stack states that the cross-cutting guarantees are applied by the platform and that a caller cannot decline them (F-b4-01), so an adapter offering its own retries, its own spend cap or its own audit trail has offered a second, declinable copy that must not be wired.",
         "origin": "sourced",
         "sources": [
           "F-b4-01"
         ],
         "quote": "The platform applies each; a caller cannot decline them"
+      },
+      {
+        "text": "Proposed: on the slow path the cross-cutting guarantees attach twice, once around the submission and once around the claim hours later, so both attachment points are named in the binding and the conformance run asserts both. Research query: unresearched; no prior-art search has been run for where cross-cutting guarantees attach on a deferred-result (batch) call as opposed to a synchronous one.",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-01"
+        ]
       },
       {
         "text": "cap-model-access already states the measured hard-cap property (F-a4-07). What this adds is a proposed mechanism for the gap between submission and claim: the ceiling is reserved at submit and reconciled at claim, and a reservation that is never reconciled expires, so that a stop-spend cap still stops spend when the true figure arrives hours late and a crashed unit does not consume its ceiling forever.",
@@ -206,15 +213,15 @@
         "quote": "verified to terminate spend rather than merely record it"
       },
       {
-        "text": "cap-model-access states that routing configuration on this boundary was measured to have no runtime effect (F-a7-04). What this adds at the code level: the adapter asserts the endpoint that answered from a marker on the response, so the conformance run cannot pass by exercising the same endpoint twice under two names.",
-        "origin": "sourced",
+        "text": "Proposed: the adapter asserts the endpoint that answered from a marker on the response, so a conformance run cannot pass by exercising the same endpoint twice under two names. cap-model-access records that routing configuration on this boundary was measured to have been silently discarded (F-a7-04). Research query: unresearched; no prior-art search has been run for response-side markers that identify the endpoint that served a model call.",
+        "origin": "proposed",
         "sources": [
           "F-a7-04"
         ],
         "quote": "silently discarded"
       },
       {
-        "text": "build-evidence-record owns the append-only chained record (F-a5-03). What this adds: a cost reconciled hours after it was committed is a second record about the same call, so it is appended and chained rather than written over the first, and the difference between the two figures stays readable.",
+        "text": "A cost reconciled hours after it was committed is appended and chained as a second record about the same call rather than written over the first, so the difference between the two figures stays readable: build-evidence-record owns the append-only chained record, where a manual edit between runs is detectable (F-a5-03).",
         "origin": "sourced",
         "sources": [
           "F-a5-03"
@@ -256,7 +263,7 @@
     {
       "step": 3,
       "action": "Record differs_in_execution_model with those three axes, and write each adapter's gaps down as gaps: the synchronous gateway cannot answer hours later at batch pricing; the batch adapter cannot answer interactively and cannot promise a stop.",
-      "why": "build-adapter-pair already states that a swap needing a core change means the boundary is drawn wrong (F-meta-04). What this adds: widening the request shape until both adapters satisfy every field is the quiet version of that failure, so each gap is declared on the binding and the conformance run asserts the adapter honoured it.",
+      "why": "build-adapter-pair carries the swap test (F-meta-04): if Part B cannot swap an implementation without touching the core, the boundary is drawn wrong, and widening the request shape until both adapters satisfy every field is the quiet version of that failure (F-b1-04).",
       "origin": "sourced",
       "sources": [
         "F-meta-04",
@@ -291,7 +298,7 @@
     {
       "step": 6,
       "action": "Carry the correlation identifier explicitly on the request, on the ticket and on the reconciliation record, and re-attach it when the ticket is claimed; never expect trace parentage to reconnect a claim to the submission that created it.",
-      "why": "agentic-stack already states the trace-context finding (F-a7-02). What this adds: hours can pass between submit and claim, and no trace context survives that gap at all, so the identifier has to be a field on the ticket the claim reads.",
+      "why": "agentic-stack records the trace-context finding (F-a7-02): correlation must ride on an explicit resource attribute set at dispatch, and on this boundary hours can pass between submit and claim, so the identifier is a field on the ticket the claim reads (F-b4-06).",
       "origin": "sourced",
       "sources": [
         "F-a7-02",
@@ -302,7 +309,7 @@
     {
       "step": 7,
       "action": "Assert which endpoint actually answered from a marker on the response, not from the binding that selected the adapter, and make the routing test vectors run against that marker.",
-      "why": "cap-model-access states the silently-discarded-configuration finding for this boundary (F-a7-04). What this adds: here the same failure mode produces two green conformance runs against the same endpoint, which reads as a proven swap and is not one.",
+      "why": "cap-model-access records the silently-discarded-configuration finding for this boundary (F-a7-04), where the stored routing settings were re-applied on every gateway load; the same failure mode here produces two green conformance runs against one endpoint, which reads as a proven swap and is not one.",
       "origin": "sourced",
       "sources": [
         "F-a7-04"
@@ -336,7 +343,7 @@
       ]
     },
     {
-      "text": "cap-model-access already states the structurally-green-gate trap (F-a7-03). What it adds for an implementer: assert adapters_run and results_validated on the report rather than in a log line, because a suite whose batch adapter was skipped for being slow will otherwise pass every other assertion it makes.",
+      "text": "Assert adapters_run and results_validated on the report rather than in a log line: cap-model-access records the structurally-green-gate trap (F-a7-03), where those stages establish well-formedness, not correctness, and a suite whose batch adapter was skipped for being slow otherwise passes every other assertion it makes.",
       "origin": "sourced",
       "sources": [
         "F-a7-03"

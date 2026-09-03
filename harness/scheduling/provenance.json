@@ -1,0 +1,29 @@
+{
+  "owner_skill": "cap-scheduling-implement",
+  "co_skills": ["cap-scheduling", "cap-work-intake"],
+  "blueprint_tool_entry": "the engine-owned schedules PASS.md B3 names today (F-b3-15, Temporal schedules)",
+  "capability": "scheduling",
+  "standard": "RFC 5545 recurrence rules (on file unverified; A-standard-rfc-5545-recurrence-rules)",
+  "kb_ids": [
+    "F-b3-15", "F-a6-02", "F-b1-04", "F-part-c-08", "F-part-c-09",
+    "T-t2-03", "T-t6-02", "T-t9-06", "T-t7-02"
+  ],
+  "research_ids": [
+    "X-cap-scheduling-001", "X-cap-scheduling-002", "X-cap-scheduling-004",
+    "X-cap-scheduling-005", "X-cap-scheduling-006",
+    "X-entry-composition-044", "X-entry-composition-045", "X-entry-composition-049"
+  ],
+  "measured": {
+    "dryrun": "bash harness/scheduling/test.sh on 2026-09-03: passed 35, failed 0. conformance PASSED 7/7 against the dry-run adapter (declare/fire/replay, a malformed rule refused before any state change, catch_up outside its three-value vocabulary refused, firing an undeclared unit refused, a rule part outside RFC 5545 refused with unsupported_parts). The vector run: vectors_run=43, mismatches=0, corpus_covers=['bysetpos','dst_back','dst_forward','leap_day']. The minimal call is 19 lines of caller code. Sample vectors printed directly: a daily 02:30 America/New_York rule whose UTC gap shrinks from 24h to 23h across the 2026-03-08 spring-forward, a daily 01:30 America/New_York rule whose UTC gap widens to 25h across the 2026-11-01 fall-back, a Feb-29 rule firing only on 2020/2024/2028/2032, and a last-working-day-of-the-month BYSETPOS rule.",
+    "swap": "conformance PASSED 7/7 before (dryrun, synchronous fire) and 7/7 after (second, ticker-plus-queue) with the same 7 cases; sha256 of interface.py+call.py+conformance.py identical across both runs (79a8d815c6300df074cb1cccaab1fa0fcfa3d1ccaaadc07bf6f85436c29810d4), so the swap was configuration. All 43 vectors were read directly off both DryRunAdapter and TickerQueueAdapter and produced byte-identical occurrence lists (identical_occurrence_sets=43/43). enqueue()/drain() were run apart to show a non-empty queue mid-flight (enqueued=3 mid_queue=3 drained=3 post_queue=0), the execution-model difference a single synchronous call cannot exhibit. The same caller code (call.py) ran unchanged on both. ADAPTER=live's own 7-case suite also passed (declared stayed 0, since every registration attempt fails closed on an unset endpoint before being counted).",
+    "breakage": "idempotency_key() in a copy of interface.py under out/breakage/ was changed to mint a new key from time.time_ns() on every call instead of deriving one from unit_ref+occurrence_instant (cap-scheduling-implement step 6, inverted). The case suite fails at 'a replay with the same key is free' (two fires of one occurrence now produce two different envelopes) and the run exits 1. The vector corpus run against the same broken tree still reports mismatches=0 -- the RFC 5545 math is untouched, only firing is broken, and the two are independently testable. Restored by discarding out/breakage/."
+  },
+  "claimed": [
+    "live mode until run on the host: adapters/live.py has never reached an engine frontend from here; PASS.md A6 records its data directory present and its server not listening on 7233/8233 (F-a6-02)",
+    "the standard's version is unverified: every record on file for it (X-cap-scheduling-001, X-cap-scheduling-004, X-cap-scheduling-005, X-cap-scheduling-006) is a search result, not a fetched page",
+    "the DST-gap and fall-back-repeat resolution (fold=0, Python zoneinfo's own default) is a documented design choice, not something RFC 5545 itself settles; cap-scheduling's own invariant flags this as an open research question rather than a fact on file",
+    "43 of the corpus's expected occurrences were computed by the shipped evaluator itself, not an independent authority; 8 non-DST vectors were cross-checked against python-dateutil's rrule on the authoring host (not a shipped dependency) and matched byte for byte -- the remaining 35, including all dst_forward/dst_back/leap_day/bysetpos vectors, rest on the evaluator's own self-consistency plus that 8-vector spot check of its core RFC 5545 machinery (BYDAY, BYMONTHDAY, BYSETPOS, INTERVAL, COUNT, leap-year BYMONTHDAY=29)",
+    "adapters/live.py's declare/fire mapping onto the engine's own Schedule API (create-or-update, trigger) is claimed, transcribed from this module's own header comment, not measured against a listening frontend",
+    "SCHEDULING_QUEUE_PATH's JSONL persistence in adapters/second.py is exercised by test.sh only through the in-memory path; a second process draining a first process's crash-abandoned queue file has not been measured here"
+  ]
+}

@@ -104,7 +104,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**Decision (shape governed by the recorded standard; what crosses the interface, whichever engine served it)** (sourced; sources: `F-b4-04`, `F-b4-07`)
+**Decision (shape governed by the recorded standard; what crosses the interface, whichever engine served it; its problem member is the failure shape cap-errors owns, F-b4-07)** (sourced; sources: `F-b4-04`, `F-b4-07`)
 
 ```json
 {

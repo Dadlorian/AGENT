@@ -173,9 +173,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | python3 tools/blueprint_check.py docs/architecture/blueprint.json |
-| Expected | `<count> entries, <count> sourced, <count> gaps, <count> listed gaps, 0 errors` and exit 0. The counts grow as the blueprint does and are not the criterion; zero errors is. The run recorded in measured_run below printed 288 entries, 276 sourced, 31 gaps, 41 listed gaps, 0 errors. |
+| Expected | Measured by tools/measure.py at 9b3f40c: exit 0; last lines: 288 entries, 276 sourced, 31 gaps, 41 listed gaps, 0 errors |
 | Deliberate breakage | Append a knowledge-base id that does not exist to the first entry-matrix row's sources in docs/architecture/blueprint.json itself, run the criterion against the mutated file, then restore it byte for byte from a copy taken before the mutation: python3 -c "import json;p='docs/architecture/blueprint.json';d=json.load(open(p));d['entry_matrix'][0]['sources'].append('F-none-99');json.dump(d,open(p,'w'),indent=2,ensure_ascii=False)". The checker reads the path the criterion names, so the mutation has to be applied to that file and undone, not to a copy the criterion would never open. |
-| Expected failure | exit 1 with `error: entry_matrix[0]: unknown source F-none-99` followed by `<count> entries, <count-1> sourced, <count> gaps, <count> listed gaps, 1 errors`. The sourced count falls by exactly one against the clean run because a row counts as sourced only when every id it cites resolves. The run recorded in measured_run below printed 288 entries, 275 sourced, 31 gaps, 41 listed gaps, 1 errors; the checked-in blueprint was restored byte for byte afterwards. |
+| Expected failure | Measured by tools/measure.py at 9b3f40c: exit 1; last lines: error: entry_matrix[0]: unknown source F-none-99 \| 288 entries, 275 sourced, 31 gaps, 41 listed gaps, 1 errors |
 | Status | measured |
 | Evidence | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
 

@@ -124,9 +124,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash examples/end-to-end/test.sh && python3 -c "import sys,pathlib;d=pathlib.Path('examples/end-to-end/out');L={k:(d/(k+'.log')).read_text().splitlines() for k in ('human','event','schedule','external') if (d/(k+'.log')).is_file()};P={k:chr(10).join(v[:v.index('')]) for k,v in L.items()};A={k:[x for x in v if x.startswith('RESULT')][0].split('actor=')[1].split()[0] for k,v in L.items()};print('doors_checked',len(L),'distinct_plans',len(set(P.values())),'distinct_actors',len(set(A.values())));sys.exit(0 if (len(L)==4 and len(set(P.values()))==1 and len(set(A.values()))==4) else 1)" |
-| Expected | The command chain runs the measured partial instance, then a cross-door check that instance does not contain (that no test.sh check yet compares one door's output against another). test.sh prints 'passed <count>, failed 0' and exits 0; the cross-door check prints 'doors_checked 4 distinct_plans 1 distinct_actors 4' and exits 0 - one resolved manifest across four doors, four distinct actors. |
+| Expected | Measured by tools/measure.py at 1ff81e1: exit 0; last lines: passed 30, failed 0 \| doors_checked 4 distinct_plans 1 distinct_actors 4 |
 | Deliberate breakage | In examples/end-to-end/entries/event.json change `"ceiling_micros": 1500000` to `"ceiling_micros": 2000000` - one door's budget only - and re-run both commands, then restore the file. |
-| Expected failure | test.sh still prints 'passed <count>, failed 0' and exits 0, because it checks each door alone; the cross-door check prints 'doors_checked 4 distinct_plans 2 distinct_actors 4' and exits 1. Measured in session claude/auto-skill-creation on 2026-09-03 at commit c594335 with examples/ clean; restoring the file returned 'doors_checked 4 distinct_plans 1 distinct_actors 4' and exit 0. The <count>-green half of that run is the recorded evidence that the instance does not yet compare one door against another. |
+| Expected failure | Measured by tools/measure.py at 1ff81e1: exit 1; last lines: passed 30, failed 0 \| doors_checked 4 distinct_plans 2 distinct_actors 4 |
 | Status | measured |
 | Evidence | `F-part-c-04`, `F-a7-03` "A criterion nothing can fail is not a criterion" |
 

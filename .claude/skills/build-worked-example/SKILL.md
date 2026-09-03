@@ -56,9 +56,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | f=${EXAMPLE:-docs/reference/composable-plan.md}; grep -q 'What the caller writes' "$f" && grep -q 'What resolves' "$f" && grep -q 'What comes back' "$f" && grep -q '^\| \| Human \| Time (schedule) \| External (system or agent) \| Internal (event) \|' "$f" && [ "$(grep -c '^\| R-[1-6] \|' "$f")" -eq 6 ] && echo PASS \|\| { echo FAIL; exit 1; } |
-| Expected | PASS: the six-question headings, the exact four-door header row, and six rubric rows are all present in the example named by EXAMPLE (default: the reference page). |
+| Expected | Measured by tools/measure.py at fd2fa05: exit 0; last lines: PASS |
 | Deliberate breakage | Copy docs/reference/composable-plan.md to the scratchpad, delete the `\| Internal (event) \|` cell from the four-door header row, and run the criterion with EXAMPLE pointing at the copy. |
-| Expected failure | FAIL: the four-door header grep no longer matches, so the example is missing a door and the check says so. |
+| Expected failure | Measured by tools/measure.py at fd2fa05: exit 1; last lines: FAIL |
 | Status | measured |
 | Evidence | `F-part-c-04` "the deliberate breakage that proves the check can fail" |
 

@@ -366,9 +366,9 @@
   ],
   "definition_of_done": {
     "criterion": "python3 tools/kb.py merge-research && python3 -c \"import json,re,pathlib;S=json.load(open('schemas/research.schema.json'));R=[json.loads(l) for l in open('kb/research.jsonl') if l.strip()];ids={r['id'] for r in R};bad=sorted({r.get('id') for r in R if [k for k in S['required'] if k not in r] or not re.match(S['properties']['id']['pattern'],r.get('id','')) or r.get('status') not in S['properties']['status']['enum']});cited={i for p in pathlib.Path('.claude/skills').glob('*/skill.json') for i in re.findall(r'X-[a-z0-9-]+',p.read_text())};dangling=sorted(cited-ids);print('records',len(R),'invalid',bad,'dangling',dangling);assert not bad and not dangling\" && python3 tools/validate_skills.py --only build-research-record",
-    "expected": "Check 1 prints `records <count> invalid [] dangling []` and exits 0. Check 2 prints `build-research-record: 0 errors` and exits 0.",
+    "expected": "Measured by tools/measure.py at fd2fa05: exit 0; last lines: warning: build-research-record: restates F-part-c-08 under the same quote as agentic-stack, without naming it (compose by name, not by copy) | build-research-record: 0 errors, 1 warnings",
     "breakage": "Two, applied one at a time to kb/research/build-research-record.jsonl, re-merged with `python3 tools/kb.py merge-research`, and then restored: (a) invalid record - delete the `status` field from X-build-research-record-002; (b) altered snippet - change one character of X-build-research-record-002's snippet (`fraudulent` to `fraudulant`) so a quote this skill cites is no longer a verbatim substring of it.",
-    "expected_failure": "Measured in this session (https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96) on 2026-09-03 in /home/user/AGENT. Breakage (a): check 1 printed `records 224 invalid ['X-build-research-record-002'] dangling []`, raised AssertionError and exited 1. Breakage (b): check 2 printed `error:   build-research-record: .contract.invariants[3].quote is not a verbatim substring of any cited record: 'Citing sources without reading them is considered fraudulent'`, the same error for `.instructions[4].quote`, then `build-research-record: 2 errors, 0 warnings`, and exited 1 - while check 1 still printed `records 224 invalid [] dangling []` and exited 0, because a well-formed record can carry text that no longer matches the quote citing it, which is why both checks are required. After restoring the lens file and re-merging, both checks exited 0.",
+    "expected_failure": "Measured by tools/measure.py at fd2fa05: exit 1; last lines:   File \"<string>\", line 1, in <module> | AssertionError",
     "status": "measured",
     "sources": [
       "F-part-c-04"
@@ -381,7 +381,9 @@
       "clean_output": "merged 555 research records into kb/research.jsonl\nrecords 555 invalid [] dangling []\nwarning: build-research-record: restates F-part-c-08 under the same quote as agentic-stack, without naming it (compose by name, not by copy)\nbuild-research-record: 0 errors, 1 warnings",
       "breakage_exit": 1,
       "breakage_output": "merged 555 research records into kb/research.jsonl\nrecords 555 invalid ['X-build-research-record-002'] dangling []\nTraceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nAssertionError"
-    }
+    },
+    "expected_design": "Check 1 prints `records <count> invalid [] dangling []` and exits 0. Check 2 prints `build-research-record: 0 errors` and exits 0.",
+    "expected_failure_design": "Measured in this session (https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96) on 2026-09-03 in /home/user/AGENT. Breakage (a): check 1 printed `records 224 invalid ['X-build-research-record-002'] dangling []`, raised AssertionError and exited 1. Breakage (b): check 2 printed `error:   build-research-record: .contract.invariants[3].quote is not a verbatim substring of any cited record: 'Citing sources without reading them is considered fraudulent'`, the same error for `.instructions[4].quote`, then `build-research-record: 2 errors, 0 warnings`, and exited 1 - while check 1 still printed `records 224 invalid [] dangling []` and exited 0, because a well-formed record can carry text that no longer matches the quote citing it, which is why both checks are required. After restoring the lens file and re-merging, both checks exited 0."
   },
   "composes_with": {
     "builds_on": [

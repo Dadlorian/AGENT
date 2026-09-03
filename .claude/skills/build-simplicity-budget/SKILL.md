@@ -198,9 +198,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | python3 -c 'import json,sys; e=json.load(open(sys.argv[1])); a=json.load(open(sys.argv[2])); c=[len(e["required"]), len([f for f in e["required"] if f!="payload"]), len(a["$defs"]["profile"]["required"])]; ok=c[0]<=10 and c[1]<=9 and c[2]<=9; print("first_run_concepts",c[0],"resident_metadata",c[1],"minimum_implementation",c[2],"verdict","within" if ok else "exceeded"); sys.exit(0 if ok else 1)' examples/end-to-end/schemas/entry.schema.json examples/end-to-end/schemas/agent-profile.schema.json |
-| Expected | first_run_concepts 10 resident_metadata 9 minimum_implementation 9 verdict within, exit 0 |
+| Expected | Measured by tools/measure.py at fd2fa05: exit 0; last lines: first_run_concepts 10 resident_metadata 9 minimum_implementation 9 verdict within |
 | Deliberate breakage | D=$(mktemp -d); python3 -c 'import json,sys; s=json.load(open("examples/end-to-end/schemas/entry.schema.json")); s["required"].append("priority"); s["properties"]["priority"]={"type":"string"}; json.dump(s,open(sys.argv[1],"w"))' "$D/entry.schema.json"; then run the criterion with "$D/entry.schema.json" as its first argument (the repository tree is left untouched) |
-| Expected failure | first_run_concepts 11 resident_metadata 10 minimum_implementation 9 verdict exceeded, exit 1 |
+| Expected failure | Measured by tools/measure.py at fd2fa05: exit 1; last lines: first_run_concepts 11 resident_metadata 10 minimum_implementation 9 verdict exceeded |
 | Status | measured |
 | Evidence | `F-part-c-04` "A criterion nothing can fail is not a criterion." |
 

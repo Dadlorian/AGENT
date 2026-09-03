@@ -313,9 +313,9 @@
   ],
   "definition_of_done": {
     "criterion": "python3 tools/kb.py verify && python3 -c \"import json;rs=[json.loads(l) for l in open('kb/facts.jsonl')];assert rs and all(r.get('status') for r in rs);print('labels ok',len(rs))\"",
-    "expected": "Two checks over the record store: (1) integrity via tools/kb.py verify; (2) labelling, which asserts records_checked > 0 and unlabelled == 0. Check 1 prints 'kb verified: chains intact, source hash matches, every fact matches its lines, rebuild is identical' and exits 0. Check 2 prints 'labels ok 109' and exits 0.",
+    "expected": "Measured by tools/measure.py at 710e7b4: exit 0; last lines: kb verified: chains intact, source hash matches, every fact matches its lines, rebuild is identical | labels ok 109",
     "breakage": "Two, applied one at a time to kb/facts.jsonl and then restored: (a) mismatched hash — change one character of record F-a5-04's text ('Append-only' to 'Append-Only') so the record no longer hashes to its stored digest; (b) missing status — delete the status field from record F-a5-04.",
-    "expected_failure": "Measured in this session (https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96) on 2026-09-03 in /home/user/AGENT. Breakage (a): check 1 printed 'FAIL: chain broken at facts F-a5-04', 'FAIL: F-a5-04 text does not match PASS.md lines 77-77', 'kb verification FAILED' and exited 1. Breakage (b): check 2 printed 'records 109 unlabelled 1 [F-a5-04]', raised AssertionError and exited 1, and check 1 printed 'FAIL: chain broken at facts F-a5-04' and exited 1, because the label is inside the hashed record. After restoring kb/facts.jsonl (sha256 a95803f63e274d768144ef05825a27c0646b0fe3ffbe7b49c28fcac52fc27950, git tree clean) both checks exited 0.",
+    "expected_failure": "Measured by tools/measure.py at 710e7b4: exit 1; last lines: FAIL: chain broken at facts F-a5-04 | kb verification FAILED",
     "status": "measured",
     "sources": [
       "F-part-c-04"
@@ -328,7 +328,9 @@
       "clean_output": "kb verified: chains intact, source hash matches, every fact matches its lines, rebuild is identical\nlabels ok 109",
       "breakage_exit": 1,
       "breakage_output": "FAIL: chain broken at facts F-a5-04\nkb verification FAILED"
-    }
+    },
+    "expected_design": "Two checks over the record store: (1) integrity via tools/kb.py verify; (2) labelling, which asserts records_checked > 0 and unlabelled == 0. Check 1 prints 'kb verified: chains intact, source hash matches, every fact matches its lines, rebuild is identical' and exits 0. Check 2 prints 'labels ok 109' and exits 0.",
+    "expected_failure_design": "Measured in this session (https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96) on 2026-09-03 in /home/user/AGENT. Breakage (a): check 1 printed 'FAIL: chain broken at facts F-a5-04', 'FAIL: F-a5-04 text does not match PASS.md lines 77-77', 'kb verification FAILED' and exited 1. Breakage (b): check 2 printed 'records 109 unlabelled 1 [F-a5-04]', raised AssertionError and exited 1, and check 1 printed 'FAIL: chain broken at facts F-a5-04' and exited 1, because the label is inside the hashed record. After restoring kb/facts.jsonl (sha256 a95803f63e274d768144ef05825a27c0646b0fe3ffbe7b49c28fcac52fc27950, git tree clean) both checks exited 0."
   },
   "composes_with": {
     "builds_on": [

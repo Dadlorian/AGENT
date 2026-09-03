@@ -549,9 +549,9 @@
   ],
   "definition_of_done": {
     "criterion": "python3 -c \"import json,pathlib,sys; root=pathlib.Path(sys.argv[1]); dirs=sorted(p for p in root.iterdir() if p.is_dir()); req=('criterion','expected','breakage','expected_failure','status'); dod=lambda p: (json.loads((p/'skill.json').read_text()).get('definition_of_done') or {}) if (p/'skill.json').is_file() else {}; missing=[p.name for p in dirs if not all(str(dod(p).get(k) or '').strip() for k in req)]; print('skills_total',len(dirs),'skills_checked',len(dirs),'missing',len(missing),missing); sys.exit(1 if missing or not dirs else 0)\" .claude/skills .",
-    "expected": "It asserts skills_checked == skills_total (every directory under .claude/skills is opened), missing == 0 (every skill.json carries a non-empty criterion, expected, breakage, expected_failure and status), and skills_checked > 0 (an empty tree exits 1 rather than passing vacuously). Prints 'skills_total N skills_checked N missing 0 []' with N greater than 0, and exits 0.",
+    "expected": "Measured by tools/measure.py at 1ff81e1: exit 0; last lines: skills_total 102 skills_checked 102 missing 0 []",
     "breakage": "Two, each applied to a copy of .claude/skills and the command re-run against that copy. (a) Add a skill directory build-no-breakage whose skill.json has a criterion and an expected result but an empty breakage and empty expected_failure. (b) Point the command at an empty skills directory, so nothing is checked.",
-    "expected_failure": "Measured in session https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96 on 2026-09-03 in /home/user/AGENT. Baseline against .claude/skills printed: skills_total 4 skills_checked 4 missing 0 [] , exit 0; re-run after this skill landed printed skills_total 6 skills_checked 6 missing 0 [] , exit 0. N moves as skills land, so the assertions are on missing and on skills_checked > 0, never on N. Breakage (a), a copy of .claude/skills with an extra build-no-breakage directory whose definition_of_done had an empty breakage and empty expected_failure, printed: skills_total 5 skills_checked 5 missing 1 [build-no-breakage] , exit 1. Breakage (b), the same command pointed at an empty skills directory, printed: skills_total 0 skills_checked 0 missing 0 [] , exit 1 - the vacuous-pass guard fires because skills_checked is 0, so an empty tree cannot report green. Both breakages were applied to copies under the session scratchpad; no repository file was edited, so no restore was needed and the tree stayed clean.",
+    "expected_failure": "Measured by tools/measure.py at 1ff81e1: exit 1; last lines: skills_total 103 skills_checked 103 missing 1 ['build-no-breakage']",
     "status": "measured",
     "sources": [
       "F-part-c-04",
@@ -565,7 +565,9 @@
       "clean_output": "skills_total 102 skills_checked 102 missing 0 []",
       "breakage_exit": 1,
       "breakage_output": "skills_total 103 skills_checked 103 missing 1 ['build-no-breakage']"
-    }
+    },
+    "expected_design": "It asserts skills_checked == skills_total (every directory under .claude/skills is opened), missing == 0 (every skill.json carries a non-empty criterion, expected, breakage, expected_failure and status), and skills_checked > 0 (an empty tree exits 1 rather than passing vacuously). Prints 'skills_total N skills_checked N missing 0 []' with N greater than 0, and exits 0.",
+    "expected_failure_design": "Measured in session https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96 on 2026-09-03 in /home/user/AGENT. Baseline against .claude/skills printed: skills_total 4 skills_checked 4 missing 0 [] , exit 0; re-run after this skill landed printed skills_total 6 skills_checked 6 missing 0 [] , exit 0. N moves as skills land, so the assertions are on missing and on skills_checked > 0, never on N. Breakage (a), a copy of .claude/skills with an extra build-no-breakage directory whose definition_of_done had an empty breakage and empty expected_failure, printed: skills_total 5 skills_checked 5 missing 1 [build-no-breakage] , exit 1. Breakage (b), the same command pointed at an empty skills directory, printed: skills_total 0 skills_checked 0 missing 0 [] , exit 1 - the vacuous-pass guard fires because skills_checked is 0, so an empty tree cannot report green. Both breakages were applied to copies under the session scratchpad; no repository file was edited, so no restore was needed and the tree stayed clean."
   },
   "composes_with": {
     "builds_on": [

@@ -13,5 +13,5 @@
 | 21 | Continuous improvement loop | One iteration per fire moves a metric and checkpoints | Not started | Awaiting go |
 | 37 | Live run access | Harness live mode runs against the host from a session | Blocked | Owner decision |
 | 42 | Sourcing pass | Proposed rows are under 30 percent | Open | Iteration 3 stopped by owner |
-| 48 | Effect table interface | Workflow flow.py reaches the executor effect table only through the interface | Open | Read directly today |
 | 45 | Fetch allowlist | Standards sites are fetchable from the environment | Blocked | Owner decision |
+| 48 | Effect table interface | Workflow flow.py reaches the executor effect table only through the interface | Open | Read directly today |

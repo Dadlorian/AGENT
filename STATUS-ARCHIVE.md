@@ -21,3 +21,6 @@
 | 32 | Quality fixes | Every confirmed finding is fixed or declined with a reason | Done | 17 fixed, 2 declined | 2026-09-03 c33e533 |
 | 34 | Architecture skill | The lens is a build skill every section applies | Done | Skill validates | 2026-09-03 11b1795 |
 | 29 | Solution architecture | Every state type has an owner, a home, and a caller path | Done | 54 states, 91 entry rows | 2026-09-03 11b1795 |
+| 38 | Measured by script | A measured result is written by a script with its ledger entry | Done | measure.py, rule in validator | 2026-09-03 fc4f8fc |
+| 39 | Restatement as error | New skills fail on a restated fact | Done | 102 grandfathered | 2026-09-03 fc4f8fc |
+| 47 | Owner feedback file | Owner corrections are read by every agent | Done | OWNER.md, 4 lines | 2026-09-03 fc4f8fc |

@@ -84,6 +84,8 @@ MINTED_ENTITY_RE = re.compile(r"proposed[^.]{0,80}entity id", re.I)
 PRODUCT_RE = re.compile(r"\b(" + "|".join(re.escape(p) for p in PRODUCTS) + r")\b")
 ID_RE = re.compile(r"^(F|E|R|T|X|REF)-[a-z0-9-]+$")
 NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+_gf = ROOT / "state" / "grandfathered.json"
+GRANDFATHERED = set(json.loads(_gf.read_text())) if _gf.is_file() else set()
 
 
 KB_TEXT: dict[str, str] = {}
@@ -279,6 +281,8 @@ def check_structure(sk: dict, name: str, errs: list[str]):
             errs.append(f"{name}: definition_of_done missing {k}")
     if dod.get("status") not in ("claimed", "measured", None):
         errs.append(f"{name}: definition_of_done.status must be claimed or measured")
+    if dod.get("status") == "measured" and "measured_run" not in dod and name not in GRANDFATHERED:
+        errs.append(f"{name}: definition_of_done is measured without a tools/measure.py run (T-t9-01 rule)")
     for a in sk.get("adapters", []):
         for k in ("entity", "role", "maps_to", "cannot", "swap_procedure", "status", "sources", "quote"):
             if k not in a:
@@ -417,7 +421,12 @@ def main() -> int:
                          f"docs/decomposition.md section 2.1.6 and is not marked '{PENDING}' where it is stated")
         # restate-and-extend: a sourced row in the "X already states F-nnn. What it adds here: ..."
         # shape whose extension rides in on the restatement's quote (quality ceremony 01, MECH-2).
+        before = len(warns)
         restate_warned += restate_and_extend(sk, name, warns)
+        if name not in GRANDFATHERED:
+            moved = [w for w in warns[before:]] + [w for w in warns[:before] if w.startswith(name + ":") and "compose by name" in w]
+            for w in moved:
+                warns.remove(w); errs.append(w + " [error for skills authored after T-t9-03]")
         # a standards row's `version` is a value a reader scans, not the paragraph explaining it:
         # anything longer than VERSION_MAX belongs in version_note, which renders as a footnote
         # under the Standards table (ceremony 8, C8-001).

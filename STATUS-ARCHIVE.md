@@ -45,3 +45,10 @@
 | 48 | Effect table interface | Workflow flow.py reaches the executor effect table only through the interface | Done | Folded into row 53 | 2026-09-03 8efde22 |
 | 50 | Direction | TARGET.md T10 states the acceptance measuring sticks | Done | Nine items added | 2026-09-03 8efde22 |
 | 51 | Acceptance matrix | Every stack element has a derived row with five sticks | Done | 16 elements, 0 accepted | 2026-09-03 8efde22 |
+| 52 | Layer acceptance: core and seams | Ceremony closes with every stick met or recorded absent | Done | Folded into rows 59 to 62 | 2026-09-03 873cb2b |
+| 53 | Layer acceptance: capabilities | Ceremony closes with every stick met or recorded absent | Done | Folded into rows 59 to 62 | 2026-09-03 873cb2b |
+| 54 | Layer acceptance: cross-cutting | Ceremony closes with every stick met or recorded absent | Done | Folded into rows 59 to 62 | 2026-09-03 873cb2b |
+| 55 | Layer acceptance: composition and build | Ceremony closes with every stick met or recorded absent | Done | Folded into rows 59 to 62 | 2026-09-03 873cb2b |
+| 56 | Element guides | Each stack element has an integration guide whose example runs | Done | Folded into rows 59 to 62 | 2026-09-03 873cb2b |
+| 57 | Final acceptance | Scorecard and acceptance matrix hold at one commit | Done | Folded into row 63 | 2026-09-03 873cb2b |
+| 58 | Owner decisions | Sticks the environment blocks are recorded absent | Done | Standard stick absent on 16 elements | 2026-09-03 873cb2b |

@@ -129,6 +129,24 @@
       "impact_test": "the document-validation conformance run",
       "status": "dry-run measured, live measured (DOCVALID_SCHEMA_STORE_DIR set on this host)",
       "test": "bash harness/document-validation/test.sh"
+    },
+    {
+      "name": "idempotency",
+      "dir": "harness/idempotency",
+      "owner_skill": "cap-idempotency-implement",
+      "co_skills": [
+        "cap-idempotency",
+        "xc-idempotency-lease-implement"
+      ],
+      "blueprint_tool_entry": "key on the wire, no lease (PASS.md B3, F-b3-16)",
+      "capability": "idempotency",
+      "standard": "Idempotency-Key header convention (draft-ietf-httpapi-idempotency-key-header-07 on file, unverified)",
+      "adapter_today": "Exposes: a fold over an append-only log at entry, so a completed key answers duplicate with its stored result. Hides: nothing takes the key before execution starts, so it cannot answer a duplicate while the first copy is still running, and cannot stop two concurrent copies from both executing.",
+      "second_adapter": "any keyed lease store (F-b3-16)",
+      "minimal_call": "submit one unit of work with a key, replay it and get the stored result with no second side effect, race two submissions with the same key and show one wins the lease and the other waits or is refused with a typed problem, and show a key reused with a different payload is refused",
+      "impact_test": "the idempotency conformance run",
+      "status": "dry-run measured, live measured against an on-disk ledger",
+      "test": "bash harness/idempotency/test.sh"
     }
   ]
 }

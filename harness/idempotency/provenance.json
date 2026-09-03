@@ -1,0 +1,29 @@
+{
+  "owner_skill": "cap-idempotency-implement",
+  "co_skills": ["cap-idempotency", "xc-idempotency-lease-implement"],
+  "blueprint_tool_entry": "key on the wire, no lease (PASS.md B3, F-b3-16)",
+  "capability": "idempotency",
+  "standard": "Idempotency-Key header convention (draft-ietf-httpapi-idempotency-key-header-07 on file, unverified)",
+  "kb_ids": [
+    "F-b3-16", "F-b4-08", "F-b4-07", "F-b2-06", "F-b1-04", "F-b1-07", "F-a7-02",
+    "F-a7-04", "T-t1-01", "T-t1-02", "T-t1-03", "T-t2-02", "T-t2-03",
+    "T-t9-02", "T-t9-04", "T-t9-06", "T-t10-07"
+  ],
+  "research_ids": [
+    "X-cap-idempotency-001", "X-cap-idempotency-002", "X-cap-idempotency-004",
+    "X-cap-idempotency-005", "X-cap-idempotency-006", "X-cap-idempotency-007",
+    "X-cap-idempotency-008", "X-cross-structure-041"
+  ],
+  "measured": {
+    "dryrun": "bash harness/idempotency/test.sh on 2026-09-03: passed 16, failed 0. conformance PASSED 8/8 against the dry-run (log-fold-at-entry) adapter: claim/complete/resolve round trip, resolve-before-claim is null, replay is a duplicate with the stored result and no second execution, a different payload under the same key is a typed idempotency-conflict (409) before any second effect, 20 sequential claims yield executions=1 duplicates=19, 20 concurrent claims against the fold declare supports_in_flight=False and assert nothing it cannot prove, retention expiry releases the key after its window and not before, and the outcome carries only a payload digest, never the payload. The minimal call (submit, replay, race of 10, reuse-under-a-different-payload) is 28 lines of caller code, under 40.",
+    "swap": "conformance PASSED 8/8 before (dryrun, log-row fold-at-entry, supports_in_flight=False) and 8/8 after (second, keyed compare-and-set, supports_in_flight=True) against the same 8 cases; sha256 of interface.py+call.py+conformance.py identical across both runs, so the swap was configuration; 3 execution-model axes differ (unit_of_conditionality, supports_in_flight, overlapped: 0 on the fold vs 19 on the lease out of 20 concurrent claims); the same call.py ran unchanged on both, with the lease adapter's race resolving to exactly one winner (fresh=1) and the fold's race not asserted (declared gap).",
+    "breakage": "removing the `with self._lock:` guard from a copy of adapters/second.py, leaving the key on the wire, and re-running its own concurrency case: 20 concurrent claims all answer fresh (executions=20, overlapped=0), the conformance run exits 1, and 7/8 cases still pass (only the race case fails). Reproduces cap-idempotency-implement's own definition_of_done breakage: 'Remove the lease acquisition from the conditional-write adapter while leaving the key on the wire ... executions > 1 and overlapped == 0.' --live measured separately on 2026-09-03 (20 checks, 0 failures) against a copy of examples/end-to-end/out/ledger.jsonl: conformance against the on-disk fold passed 8/8, and the unlocked, file-appending call.py race was observed timing-dependent under real I/O (this run: multiple winners), matching the row PASS.md B3 records for today's adapter rather than a harness defect."
+  },
+  "claimed": [
+    "live mode is measured only against a copy of examples/end-to-end's own ledger; it has never been pointed at a ledger this harness did not itself seed with the earlier three test claims, so its behaviour against a much larger or actively-written ledger is unverified",
+    "adapters/second.py's threading.Lock and in-process dict stand in for 'any keyed lease store' (F-b3-16); the shape and swap procedure are real but no networked store (Redis, Postgres, or similar) has been reached from here",
+    "the operation names claim/complete/resolve/expire and the ClaimOutcome three-way shape are cap-idempotency's proposed design over the recorded standard, which is a field convention and not a set of calls (contract.operations, origin: proposed)",
+    "the standard's version is unverified: draft-ietf-httpapi-idempotency-key-header-07 is recorded from search-only research (X-cap-idempotency-001/002); the draft text was not fetched from this environment, and PASS.md's own note on the standard row records the same absence (absent_by_owner, STATUS row 45: page fetch is blocked here)",
+    "the 24-hour default retention_s used in call.py's envelope and conformance.py's fixtures is cap-idempotency's proposed default (open_questions), not a value this platform has declared at a real entry boundary"
+  ]
+}

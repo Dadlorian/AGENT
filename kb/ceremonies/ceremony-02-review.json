@@ -1,0 +1,68 @@
+{
+  "ceremony": 2,
+  "section": "wave-1a",
+  "reviewer": "sonnet",
+  "date": "2026-09-03",
+  "findings": [
+    {
+      "id": "C2-001",
+      "skill": "build-ceremony",
+      "location": "instructions; contract.shapes[0..1] (worked-example naming); definition_of_done.criterion",
+      "severity": "fix",
+      "category": "usefulness",
+      "finding": "Nowhere does build-ceremony state how the ceremony number N is assigned (e.g. \"N = 1 + the highest existing kb/ceremonies/ceremony-NN-review.json\", global and monotonic across sections, never reset or reused per-section). This is not hypothetical: this exact review task was framed as 'ceremony 1 for section wave-1a, write kb/ceremonies/ceremony-01-review.json', but ceremony 1 already exists, is closed and applied, for section wave-1 (kb/ceremonies/ceremony-01-review.json / ceremony-01-improve.json, kb/ledger.jsonl L-00002, state/lessons.jsonl row {\"ceremony\":1,\"section\":\"wave-1\"}). Following the literal instruction would have overwritten a completed ceremony's record. Per TARGET.md T5, the conflict was resolved by writing this record as ceremony-02-review.json instead (three options considered: (a) overwrite ceremony-01-review.json as literally told - rejected, destroys history and breaks tools/ceremony_check.py's per-N pairing; (b) stop and ask - rejected, T5.1 says never stop and wait; (c) use the next unused sequential number found on disk - taken, matches build-ceremony's own worked examples being ceremony-01-*, and requires no destructive action).",
+      "evidence": "grep over .claude/skills/build-ceremony/skill.json and references/ceremony-records.md for \"number\", \"sequential\", \"next\", \"increment\", \"global\" returns nothing except the schema's `\"ceremony\": {\"type\": \"integer\"}` field and the two worked-example filenames kb/ceremonies/ceremony-01-review.json / ceremony-01-improve.json - no rule for choosing N. kb/ceremonies/ceremony-01-review.json (section: \"wave-1\") and kb/ceremonies/ceremony-01-improve.json (applied 7, declined 0) already exist and are referenced by kb/ledger.jsonl (L-00002) and state/lessons.jsonl.",
+      "suggested_change": "Add an instruction step: 'N is a single counter global to the repository, never per-section: before writing a review record, list kb/ceremonies/ceremony-*-review.json and use one more than the highest N found; a ceremony number is never reused even if an earlier section's ceremony is done.' Reference the rule from the invariant that already says 'the ceremony is never a gate that waits' so the numbering rule sits next to the continuation rule."
+    },
+    {
+      "id": "C2-002",
+      "skill": "build-definition-of-done",
+      "location": "contract.invariants[3], instructions[3] (step 3)",
+      "severity": "fix",
+      "category": "honesty",
+      "finding": "invariants[3] ('Structural stages settle well-formedness only; a verdict of pass may not rest on them alone', quote 'Those establish well-formedness, not correctness.') and instructions step 3 ('Structural stages establish well-formedness, not correctness, so a run carried by them alone must not be reported as passing') restate agentic-stack's own best-practice row on F-a7-03 ('Well-formedness checks (diff, syntax, format) are not correctness checks; a gate whose behavioural stages all skipped proves nothing', same quote) in new wording, without citing agentic-stack by name - the exact pattern state/author-brief.md's ceremony-1 defect list forbids ('Do not restate a fact that a skill under your builds_on already states. Cite the owning skill by name and the kb id... The rule: compose by name, not by copy'). Unlike this skill's own not_exposed row on F-b1-07 ('Per the rule agentic-stack states as design rule 6...') and build-ceremony's and build-research-record's F-a7-03 rows (both name agentic-stack explicitly), build-definition-of-done never names agentic-stack next to its two F-a7-03 restatements.",
+      "evidence": "agentic-stack/skill.json best_practices: \"Well-formedness checks (diff, syntax, format) are not correctness checks; a gate whose behavioural stages all skipped proves nothing.\" (F-a7-03, quote \"Those establish well-formedness, not correctness.\") vs build-definition-of-done/skill.json contract.invariants[3]: same quote, same claim, no mention of \"agentic-stack\" anywhere in the file except two unrelated rows (F-b1-07 and F-part-c-08 citations).",
+      "suggested_change": "Reword invariants[3] and instructions step 3 to open with 'agentic-stack already states this (F-a7-03): ...' and keep only the new consequence this skill adds (that the gate-outcome's applicable/ran/checked stage fields are what make the applicability visible), matching how build-ceremony's F-a7-03 row and this skill's own F-b1-07 row already cite the owning skill by name."
+    },
+    {
+      "id": "C2-003",
+      "skill": "build-research-record",
+      "location": "purpose, contract.invariants[0], instructions[6] (step 6)",
+      "severity": "fix",
+      "category": "honesty",
+      "finding": "purpose, invariants[0] and instructions step 6 cite F-part-c-03 as origin=sourced support for a repo-wide research-recording discipline ('Keep one record per search, source and quote...', 'Record the searches that failed too... even when nothing supported the claim'), but F-part-c-03's full text is scoped to exactly one ask item: 'A first-cut design for Dispatch and State (B5). If you searched for prior art and found none, say what you searched.' PASS.md never generalizes this instruction beyond the Dispatch/State design item (checked: 'prior art' appears nowhere else in PASS.md). Marking the wider claim origin=sourced overstates what the record supports, matching the exact rule state/author-brief.md's ceremony-1 defect list states: 'origin=sourced means every claim in the row is backed by the cited record, including its scope. Do not widen one concrete fact into a claim about a class of things... and leave it marked sourced.'",
+      "evidence": "PASS.md line 195 (F-part-c-03): \"2. A first-cut design for Dispatch and State (B5). If you searched for prior art and found none, say what you searched.\" - `grep -n \"prior art\" PASS.md` returns only this one line, for one ask item, yet build-research-record/skill.json's purpose text applies the rule to citing 'an X- id in a skill' and 'searching for prior art for a capability or a seam' generally.",
+      "suggested_change": "Either narrow purpose/invariants[0]/instructions[6] to what F-part-c-03 actually licenses (searches for Dispatch/State prior art specifically) and mark the generalization to all capabilities/seams as proposed (our convention, extending a single ask-item instruction into a repo-wide discipline), or find a second, less scoped source (e.g. F-part-c-08's 'Distinguish claimed from measured throughout') to carry the general claim instead."
+    },
+    {
+      "id": "C2-004",
+      "skill": "build-ceremony",
+      "location": "instructions (12 entries)",
+      "severity": "nit",
+      "category": "size",
+      "finding": "build-ceremony carries 12 instruction rows, one more than the 4-skill wave-1's largest table and outside state/author-brief.md's stated checked budget of '6 to 10 instructions... treat these as checked budgets, not aspirations'.",
+      "evidence": "state/author-brief.md: \"6 to 10 instructions, 3 to 10 invariants, 3 to 8 best practices\"; .claude/skills/build-ceremony/skill.json has 12 objects under \"instructions\" (steps 1-12).",
+      "suggested_change": "Fold step 9 (re-render/re-validate touched skills) into step 6 (write the improve record) or step 12 (open references/), since both are mechanical follow-ons to writing the improve record, bringing the table to 10 or 11."
+    }
+  ],
+  "metrics": {
+    "skills": 3,
+    "rows_total": 103,
+    "rows_sourced": 44,
+    "rows_proposed": 59,
+    "findings_block": 0,
+    "findings_fix": 3,
+    "findings_nit": 1
+  },
+  "brief_improvements": [
+    "Add a ceremony-numbering rule to build-ceremony: N is a single repo-global counter (one more than the highest ceremony-*-review.json on disk), never per-section and never reused, so an agent handed a section name and told 'ceremony 1' does not overwrite a closed prior ceremony (this review hit exactly that collision and resolved it under TARGET.md T5 by using ceremony-02).",
+    "Extend the ceremony-1 'compose by name, not by copy' rule (already in state/author-brief.md item 2) to say explicitly that it applies per-fact even when only one fact is being restated, not just when the same fact recurs across several skills - build-definition-of-done independently re-derived F-a7-03's well-formedness claim without naming agentic-stack even though the sibling wave-1a skills got it right.",
+    "Extend the ceremony-1 'origin=sourced must match scope' rule (author-brief item 4) with a concrete check: before marking a row sourced, re-read the full sentence the citation comes from and confirm the claim being made is no broader than that sentence's own subject - F-part-c-03's prior-art instruction is scoped to one ask item (Dispatch/State) and was generalized into a repo-wide discipline."
+  ],
+  "what_worked": [
+    "python3 tools/validate_skills.py reports 0 errors across all 7 skills (120 warnings, all 'manifest lists X but it is not written yet' for future waves) - every origin=sourced quote in build-ceremony, build-definition-of-done and build-research-record is a verified verbatim substring of its cited record, and every composes_with link matches docs/skill-manifest.json symmetrically.",
+      "Two of the three skills' definitions of done are genuinely measured, not just labelled so: build-definition-of-done's skills_total/skills_checked/missing check and both its breakages, and build-research-record's record-validity/dangling-citation check plus its quote-verbatimness check via validate_skills.py --only, were independently re-run in this review and reproduced the exact output and exit codes recorded in the skill.json (7 skills, missing 0, exit 0; then missing 1 and exit 1 with the breakage applied; 224 records, 0 invalid, 0 dangling; and the exact validator error string after mutating a cited quote).",
+    "Progressive disclosure is followed correctly by all three skills: each has exactly one references/*.md file (128, 193 and 98 lines) holding the full JSON Schema and worked examples, cited from a proposed instruction step, keeping the skill body itself inside budget for invariants and best_practices.",
+    "build-ceremony and build-research-record both correctly apply the ceremony-1 lesson to cite agentic-stack by name when reusing its F-a7-03 and F-b1-02 findings, rather than re-deriving them - only build-definition-of-done missed this (C2-002)."
+  ]
+}

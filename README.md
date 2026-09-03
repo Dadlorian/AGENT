@@ -1,47 +1,33 @@
 # AGENT
 
-A home for reusable Claude Code skills. Anything committed under `.claude/skills/` is available in every Claude Code session on this repo, both as a `/slash-command` and as something Claude reaches for on its own when a request matches the skill's description.
+The target architecture in `PASS.md` Part B, built as a set of linked Claude Code skills.
 
-## Using a skill
+`PASS.md` is the source of truth. Part A is what runs today, verified. Part B is the greenfield target: a five-piece core, sixteen capability interfaces each governed by a published standard, seven cross-cutting guarantees the platform applies, and two seams (Dispatch and State) that have to be designed rather than adopted. Part C is the ask: a decomposition strategy.
 
-Type `/` in Claude Code to see the menu, or ask in plain words. To see what is here:
+## What is here
 
-```
-/list-skills
-```
+| Path | What it is |
+|---|---|
+| `PASS.md` | Current state and target architecture |
+| `docs/decomposition.md` | The Part C decomposition strategy: build order, Dispatch and State designs, definitions of done with their breakages, second adapters, open questions |
+| `docs/skill-manifest.json` | Every skill, its layer, wave, links, and definition of done. The contract the skills are built from |
+| `docs/skill-graph.md` | Generated map of how the skills compose |
+| `.claude/skills/agentic-stack/` | The root contract: vocabulary, the seven rules as tests, claimed versus measured, definition of done, layering |
+| `.claude/skills/core-*` | One skill per core component: Document, Planner, Graph, Judge, Ledger |
+| `.claude/skills/cap-*` | One skill per capability interface, naming its standard, today's adapter, and a second adapter |
+| `.claude/skills/xc-*` | Cross-cutting guarantees: budget, identity, policy, provenance, telemetry, errors, idempotency |
+| `.claude/skills/seam-*` | Dispatch and State |
+| `.claude/skills/compose-*` | Assembling workflows, loops, and agents from the layers below |
+| `.claude/skills/build-*` | Disciplines every author uses: definition of done with breakage, adapter pairs, evidence recording |
+| `tools/` | Validator and graph generator |
 
-## Making a new skill
+## Using it
 
-Describe what you want and let Claude build it:
+Open Claude Code in this repo. Skills load on demand: `agentic-stack` first, then the layer skill for the piece you are working on, then the neighbors it names under Composes with. Ask for a workflow, a loop, an adapter, or a component and the matching skills bring the platform's rules with them.
 
-```
-/make-skill a skill that drafts release notes from the commits since the last tag
-```
-
-That runs the `make-skill` workflow: pin down what the skill does and when it should trigger, scaffold `.claude/skills/<name>/`, write the instructions, validate the result, add a couple of test prompts, and try it once. You can also point it at an existing skill to improve it:
-
-```
-/make-skill tighten up list-skills, it is too chatty
-```
-
-## Layout
-
-```
-.claude/skills/
-├── make-skill/           create or improve skills
-│   ├── SKILL.md
-│   ├── scripts/scaffold_skill.py    creates the directory + template
-│   ├── scripts/validate_skill.py    checks frontmatter, paths, evals
-│   └── references/skill-format.md   frontmatter fields, substitutions, precedence
-└── list-skills/          inventory of what is here
-    ├── SKILL.md
-    └── scripts/list_skills.py
-```
-
-Each skill folder holds a `SKILL.md` (required) plus optional `scripts/`, `references/`, `assets/`, and `evals/evals.json` with test prompts.
-
-## Checking everything is well-formed
+## Checking it
 
 ```bash
-python3 .claude/skills/make-skill/scripts/validate_skill.py --all
+python3 tools/validate_skills.py     # links symmetric, no products outside adapter sections, manifest matches
+python3 tools/skill_graph.py         # regenerate docs/skill-graph.md
 ```

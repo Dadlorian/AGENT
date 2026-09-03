@@ -50,7 +50,7 @@ A criterion nothing can fail is not a criterion (PASS.md C3). Recording only the
 
 ## Products belong in one place
 
-Products, versions, and hostnames appear only in adapter skills and in Part A quotations. Core skills, interface skills, and composition skills speak of capabilities and standards. When you catch yourself writing "LiteLLM" in a core skill, you have written the adapter into the core.
+Products, versions, and hostnames appear only in adapter skills and in Part A quotations. Core skills, interface skills, and composition skills speak of capabilities and standards. When you catch yourself writing a vendor or product name in a core skill, you have written the adapter into the core.
 
 ## How skills in this repo link
 

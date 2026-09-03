@@ -1,0 +1,98 @@
+{
+  "scanner": "haiku",
+  "area": "tools",
+  "findings": [
+    {
+      "id": "QT-001",
+      "file": "tools/gaps.py",
+      "line": 33,
+      "severity": "block",
+      "category": "bug",
+      "finding": "slug(None) crashes with AttributeError when both proposed_capability and gap fields are missing",
+      "evidence": "Line 33: key = slug(g.get('proposed_capability') or g.get('gap')). If both are None, slug(None) calls None.lower() -> AttributeError: 'NoneType' object has no attribute 'lower'",
+      "fix": "Check if g.get(...) or g.get(...) is None before calling slug(), or wrap slug in try-except and skip the gap entry"
+    },
+    {
+      "id": "QT-002",
+      "file": "tools/kb.py",
+      "line": 474,
+      "severity": "fix",
+      "category": "perf",
+      "finding": "O(n²) duplicate detection using ids.count() in a set comprehension will slow on 100+ items",
+      "evidence": "dups = {i for i in ids if ids.count(i) > 1} calls count() for each id in ids; with 100 items = 100 count() calls × 100 iterations each",
+      "fix": "Use a Counter: from collections import Counter; dups = {i for i, c in Counter(ids).items() if c > 1}"
+    },
+    {
+      "id": "QT-003",
+      "file": "tools/render_skill.py",
+      "line": 92,
+      "severity": "nit",
+      "category": "fragile",
+      "finding": "Argument parsing modifies argv in-place before checking it, and silently treats invalid args as paths",
+      "evidence": "Line 92 removes --check, then line 93 checks if argv == ['--all']. Invalid args passed alongside --all won't error; they'll be ignored. No usage() call if args are invalid.",
+      "fix": "Parse args explicitly before modifying argv; call sys.exit with usage if unrecognized arguments remain"
+    },
+    {
+      "id": "QT-004",
+      "file": "tools/validate_skills.py",
+      "line": 412,
+      "severity": "fix",
+      "category": "fragile",
+      "finding": "Breakage comparison uses substring matching (a in b) which can produce false positives",
+      "evidence": "if a and b and (a == b or a in b or b in a): 'cache fails' matches 'cache fails permanently'. Intended to find copies; substring match finds false similarities.",
+      "fix": "Use word-boundary-aware comparison or exact match after normalization, not substring containment"
+    },
+    {
+      "id": "QT-005",
+      "file": "tools/manifest_facets.py",
+      "line": 128,
+      "severity": "block",
+      "category": "validation",
+      "finding": "KeyError if a skill's facet field is not in the order dict",
+      "evidence": "Line 128: it['facets'].sort(key=lambda f: order[f['facet']]). If s['facet'] is not 'ideal', 'implement', or 'discipline', sort() crashes.",
+      "fix": "Validate that all facets in loaded skills are keys in order dict, or use order.get(..., 999) to provide a default"
+    },
+    {
+      "id": "QT-006",
+      "file": "tools/manifest_facets.py",
+      "line": 110,
+      "severity": "fix",
+      "category": "fragile",
+      "finding": "Entity name matching uses substring search (e['name'].lower() in s['name']) causing false matches",
+      "evidence": "e['name'] = 'core' matches skill s['name'] = 'cap-re-core-memory'; 'adapter' matches 'cap-bad-adapter-pair'. Substring matching is too loose.",
+      "fix": "Match on hyphenated segments: split by '-' and check if entity name is a complete segment, not a substring"
+    },
+    {
+      "id": "QT-007",
+      "file": "tools/skill_graph.py",
+      "line": 42,
+      "severity": "fix",
+      "category": "hides-failure",
+      "finding": "Silent failure when a skill builds_on something not in the loaded skills dict; the edge does not appear in the graph",
+      "evidence": "Line 42: for b in sorted(builds_on): ... if b in skills: — if b is missing, the edge is silently omitted from the mermaid graph",
+      "fix": "Warn or error if a skill builds_on a skill that was not loaded from the file system"
+    },
+    {
+      "id": "QT-008",
+      "file": "tools/blueprint_check.py",
+      "line": 58,
+      "severity": "fix",
+      "category": "hides-failure",
+      "finding": "Unknown source detection only checks the last appended error, missing earlier unknown sources in the same entry",
+      "evidence": "Line 58: if srcs and not errs[-1:] == [...]: sourced += 1. If an entry has three sources and two are unknown, only the last error matters.",
+      "fix": "Track unknown sources separately from other errors before incrementing sourced counter"
+    }
+  ],
+  "checked": [
+    "tools/kb.py",
+    "tools/validate_skills.py",
+    "tools/render_skill.py",
+    "tools/skill_graph.py",
+    "tools/manifest_facets.py",
+    "tools/gaps.py",
+    "tools/ceremony_check.py",
+    "tools/status_check.py",
+    "tools/blueprint_check.py"
+  ],
+  "summary": "Two critical bugs cause crashes (gaps.py slug with None, manifest_facets.py sort on missing facet). Fragile parsing and silent failures in graph generation and sourcing detection should be tightened."
+}

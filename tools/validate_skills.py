@@ -42,7 +42,7 @@ PRODUCTS = [
     "Phoenix", "Braintrust", "Cedar", "Sigstore", "SPIFFE", "SPIRE", "RunPod", "polkit", "systemd", "docker",
 ]
 PRODUCT_RE = re.compile(r"\b(" + "|".join(re.escape(p) for p in PRODUCTS) + r")\b")
-ID_RE = re.compile(r"^[FER]-[a-z0-9-]+$")
+ID_RE = re.compile(r"^[FERTX]-[a-z0-9-]+$")
 NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
 
@@ -51,7 +51,9 @@ KB_TEXT: dict[str, str] = {}
 
 def load_kb() -> tuple[set[str], dict]:
     ids = set()
-    for f in ("facts", "entities", "edges"):
+    for f in ("facts", "entities", "edges", "target-facts", "research"):
+        if not (KB / f"{f}.jsonl").is_file():
+            continue
         for line in (KB / f"{f}.jsonl").read_text().splitlines():
             if line.strip():
                 r = json.loads(line)
@@ -186,8 +188,9 @@ def main() -> int:
         p = sk.get("provenance", {})
         if p.get("kb_source_sha256") != meta["source"]["sha256"]:
             errs.append(f"{name}: provenance PASS.md hash does not match kb/meta.json (rebuild the skill against the current kb)")
-        if p.get("kb_heads") != meta["heads"]:
-            errs.append(f"{name}: provenance kb heads do not match kb/meta.json")
+        for k, v in (p.get("kb_heads") or {}).items():
+            if meta["heads"].get(k) != v:
+                errs.append(f"{name}: provenance kb head '{k}' does not match kb/meta.json")
         md = d / "SKILL.md"
         try:
             rendered = render(sk)

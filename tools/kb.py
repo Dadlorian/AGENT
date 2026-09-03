@@ -14,6 +14,8 @@ Usage:
 
 Files:
   kb/facts.jsonl      one record per fact (table row, list item, or paragraph) in PASS.md
+  kb/target-facts.jsonl  one record per numbered requirement in TARGET.md (T- ids, status target-owner)
+  kb/research.jsonl   research records (X- ids) merged from kb/research/*.jsonl by `merge-research`
   kb/entities.jsonl   named things the facts are about, each citing the facts it comes from
   kb/edges.jsonl      typed links between entities, each citing the fact that states the link
   kb/meta.json        source file hash, record counts, head hashes of each chain
@@ -36,8 +38,10 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "PASS.md"
+TARGET_SRC = ROOT / "TARGET.md"
 KB = ROOT / "kb"
 FACTS, ENTITIES, EDGES, META = KB / "facts.jsonl", KB / "entities.jsonl", KB / "edges.jsonl", KB / "meta.json"
+TARGET_FACTS = KB / "target-facts.jsonl"
 
 
 def sha256(data: bytes) -> str:
@@ -278,8 +282,28 @@ def read_jsonl(path: Path) -> list[dict]:
     return [json.loads(l) for l in path.read_text().splitlines() if l.strip()]
 
 
+def build_target(src_hash: str, lines: list[str]) -> list[dict]:
+    """TARGET.md: every numbered item under a ## T<n> heading is one requirement, status 'target-owner'."""
+    out, section = [], ""
+    for i, raw in enumerate(lines):
+        t = raw.strip()
+        m = re.match(r"^## (T\d+)\.", t)
+        if m:
+            section = m.group(1)
+            continue
+        m = re.match(r"^(\d+)\.\s+(.*)$", t)
+        if m and section:
+            out.append({"id": f"T-{section.lower()}-{int(m.group(1)):02d}", "type": "fact", "kind": "item", "part": "T", "section": section,
+                        "status": "target-owner", "source": {"file": "TARGET.md", "sha256": src_hash, "line_start": i + 1, "line_end": i + 1},
+                        "text": t, "index": int(m.group(1))})
+    return out
+
+
 def build() -> int:
     KB.mkdir(exist_ok=True)
+    tdata = TARGET_SRC.read_bytes()
+    tfacts = chain(build_target(sha256(tdata), tdata.decode().split("\n")))
+    write_jsonl(TARGET_FACTS, tfacts)
     data = SRC.read_bytes()
     src_hash = sha256(data)
     lines = data.decode().split("\n")
@@ -292,11 +316,12 @@ def build() -> int:
     write_jsonl(EDGES, edges)
     META.write_text(json.dumps({
         "source": {"file": "PASS.md", "sha256": src_hash, "lines": len(lines)},
-        "counts": {"facts": len(facts), "entities": len(ents), "edges": len(edges)},
-        "heads": {"facts": facts[-1]["hash"], "entities": ents[-1]["hash"], "edges": edges[-1]["hash"]},
+        "sources": {"PASS.md": src_hash, "TARGET.md": sha256(tdata)},
+        "counts": {"facts": len(facts), "entities": len(ents), "edges": len(edges), "target_facts": len(tfacts)},
+        "heads": {"facts": facts[-1]["hash"], "entities": ents[-1]["hash"], "edges": edges[-1]["hash"], "target_facts": tfacts[-1]["hash"]},
         "builder": "tools/kb.py",
     }, indent=2) + "\n")
-    print(f"built {len(facts)} facts, {len(ents)} entities, {len(edges)} edges from PASS.md {src_hash[:12]}")
+    print(f"built {len(facts)} facts, {len(ents)} entities, {len(edges)} edges from PASS.md {src_hash[:12]}; {len(tfacts)} target facts from TARGET.md")
     return 0
 
 
@@ -308,7 +333,15 @@ def verify() -> int:
         print(f"FAIL: PASS.md hash {sha256(data)[:12]} != recorded {meta['source']['sha256'][:12]}")
         ok = False
     lines = data.decode().split("\n")
-    for name, path in (("facts", FACTS), ("entities", ENTITIES), ("edges", EDGES)):
+    tlines = TARGET_SRC.read_bytes().decode().split("\n")
+    if sha256(TARGET_SRC.read_bytes()) != meta["sources"]["TARGET.md"]:
+        print("FAIL: TARGET.md hash changed since build")
+        ok = False
+    for f in read_jsonl(TARGET_FACTS):
+        if f["text"] != tlines[f["source"]["line_start"] - 1].strip():
+            print(f"FAIL: {f['id']} text does not match TARGET.md line {f['source']['line_start']}")
+            ok = False
+    for name, path in (("facts", FACTS), ("entities", ENTITIES), ("edges", EDGES), ("target_facts", TARGET_FACTS)):
         recs = read_jsonl(path)
         prev = "genesis"
         for r in recs:
@@ -339,7 +372,9 @@ def verify() -> int:
 
 def load_all() -> dict[str, dict]:
     idx = {}
-    for p in (FACTS, ENTITIES, EDGES):
+    for p in (FACTS, ENTITIES, EDGES, TARGET_FACTS, KB / "research.jsonl"):
+        if not p.is_file():
+            continue
         for r in read_jsonl(p):
             idx[r["id"]] = r
     return idx

@@ -81,7 +81,8 @@ def check(rows: list[dict], q: dict, errs: list, full: bool, rerun: bool = True)
             elif "command" in e:
                 if rerun:
                     code, last = run(e["command"])
-                    if last != (e.get("last_line") or "").strip():
+                    norm = lambda t: re.sub(r"/home/user/AGENT[\w-]*", "<root>", t.strip())   # a worktree prints its own absolute path
+                    if norm(last) != norm(e.get("last_line") or ""):
                         errs.append(f"{qid}: evidence[{i}] command re-run printed {last[:70]!r}, answer recorded {(e.get('last_line') or '')[:70]!r}")
             else:
                 errs.append(f"{qid}: evidence[{i}] has neither path nor command")

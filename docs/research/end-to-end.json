@@ -1,0 +1,504 @@
+{
+  "lens": "end-to-end",
+  "areas": [
+    {
+      "area": "Memory and context management across runs",
+      "matters_because": "Every current framework treats persistent, scoped memory as a first-class component with its own benchmarks and its own scoping model (user / agent / session / org). PASS's Ledger is an append-only dedup authority for the platform, not a retrievable working/episodic/semantic memory an agent reads before acting, and nothing in B2-B5 says how context is carried from one run to the next.",
+      "governing_standard": "none found (no ratified standard; 'Portable Agent Memory' is a 2026 proposal, and MCP memory servers are a convention not a spec)",
+      "pass_coverage": "absent",
+      "pass_ids": ["F-b2-06", "F-b3-17"],
+      "target_requirement": "T-t4-03",
+      "sources": ["X-end-to-end-001", "X-end-to-end-002", "X-end-to-end-003"]
+    },
+    {
+      "area": "Context window management inside a run (compaction, branching, folding)",
+      "matters_because": "Long-horizon agent work exceeds the context window; compaction and sub-task context folding are the published mechanisms, and they determine what a sub-agent returns to its parent. PASS's Graph has typed edges for existence/interface/implementation but no notion of a delegated context branch that folds back a result.",
+      "governing_standard": "none found",
+      "pass_coverage": "absent",
+      "pass_ids": ["F-b2-04"],
+      "target_requirement": "T-t2-02",
+      "sources": ["X-end-to-end-004", "X-end-to-end-005"]
+    },
+    {
+      "area": "Evaluation and grading loops separate from execution",
+      "matters_because": "An eval harness is explicitly offline/dev-time and distinct from runtime guardrails; modern evaluation grades the whole trajectory, not only the final result. PASS has a runtime Judge (result, criterion) -> verdict but no dataset store, no trajectory grading, no offline regression suite, and no place for the grading history that a self-improvement loop needs.",
+      "governing_standard": "OpenTelemetry GenAI semantic conventions v1.37+ (gen_ai.evaluation.result carries evaluator scores; OTel represents but does not perform evaluation)",
+      "pass_coverage": "partial",
+      "pass_ids": ["F-b2-05", "F-b3-10", "F-b1-07"],
+      "target_requirement": "T-t4-04",
+      "sources": ["X-end-to-end-006", "X-end-to-end-009", "X-end-to-end-010", "X-end-to-end-011"]
+    },
+    {
+      "area": "Grader isolation and rubric integrity",
+      "matters_because": "PASS rule 6 hides the criterion from the graded agent, which is necessary but demonstrably not sufficient: a policy trained against a fixed rubric long enough learns to exploit the gap between the training judge and a stronger gold judge. Published mitigations are rubric dropout plus a held-out gold judge, neither of which rule 6 specifies.",
+      "governing_standard": "none found",
+      "pass_coverage": "partial",
+      "pass_ids": ["F-b1-07", "F-b2-05"],
+      "target_requirement": "T-t4-04",
+      "sources": ["X-end-to-end-012", "X-end-to-end-013"]
+    },
+    {
+      "area": "Human-in-the-loop UX beyond approve/reject",
+      "matters_because": "PASS A2 offers approve / reject / return from a phone. Current practice is approve / edit-in-place / reject over a queue, draft-then-promote, and mid-execution state modification with resume. A2A already models the pause as a task state (input-required) resumed on the same taskId/contextId, and AG-UI standardises the human<->agent event stream. PASS B3 has no human-interaction capability row at all.",
+      "governing_standard": "A2A Protocol v0.3.0 (task state input-required) and AG-UI (Agent-User Interaction Protocol, 16 standardized event types)",
+      "pass_coverage": "partial",
+      "pass_ids": ["F-a2-01", "F-b3-08"],
+      "target_requirement": "T-t1-01",
+      "sources": ["X-end-to-end-014", "X-end-to-end-016", "X-end-to-end-017", "X-end-to-end-018", "X-end-to-end-019", "X-end-to-end-020"]
+    },
+    {
+      "area": "Task lifecycle state model for a unit of work",
+      "matters_because": "The Dispatch seam (B5) must specify request shape, result shape, cancellation, timeout, partial results and failure. A published state machine already covers most of that: submitted, working, input-required, completed, failed, canceled. Adopting it satisfies rule 2 and shrinks the original design effort B5 claims is needed.",
+      "governing_standard": "A2A Protocol v0.3.0 task lifecycle states",
+      "pass_coverage": "partial",
+      "pass_ids": ["F-b5-02", "F-b5-03"],
+      "target_requirement": "T-t4-03",
+      "sources": ["X-end-to-end-015", "X-end-to-end-014"]
+    },
+    {
+      "area": "Skill and capability registries with versioning, discovery and rollout",
+      "matters_because": "PASS names the Agent Skills spec as the standard for capability packaging, but that format is not published as an explicitly versioned artifact, so rule 2 ('name the standard and its version') cannot be satisfied for that row. Meanwhile a registry standard with semver ordering exists for tool servers, and prompt/skill rollout has an established evaluate-gate-canary-rollback pattern that the T4.4 self-improvement ceremony needs in order to ship a revised skill safely.",
+      "governing_standard": "Agent Skills spec (unversioned; authoritative spec at agentskills.io) plus the Official MCP Registry API (OpenAPI-based, semver ordering)",
+      "pass_coverage": "partial",
+      "pass_ids": ["F-b3-07", "F-b3-06", "F-a6-03"],
+      "target_requirement": "T-t4-04",
+      "sources": ["X-end-to-end-022", "X-end-to-end-023", "X-end-to-end-024", "X-end-to-end-025", "X-end-to-end-026", "X-end-to-end-027"]
+    },
+    {
+      "area": "Secrets and credential brokering",
+      "matters_because": "PASS A3 already brokers the model key at the host, but B3 has no credential-brokering capability: identity and secrets are two different problems, and SPIFFE/SPIRE explicitly has no mechanism for managing, injecting or rotating OAuth tokens, cloud credentials, API keys or database passwords. As soon as MCP tools are registered, the platform must mint audience-bound tokens per tool per actor, which MCP revision 2025-11-25 requires.",
+      "governing_standard": "MCP Authorization (revision 2025-11-25, OAuth 2.1 + RFC 8707 Resource Indicators) for tool tokens; SPIFFE/SPIRE for workload identity",
+      "pass_coverage": "partial",
+      "pass_ids": ["F-b3-14", "F-b3-06", "F-a3-07", "F-a3-05"],
+      "target_requirement": "T-t2-03",
+      "sources": ["X-end-to-end-028", "X-end-to-end-029", "X-end-to-end-030"]
+    },
+    {
+      "area": "Delegation chains and actor identity",
+      "matters_because": "B4 requires that every action names an actor including delegated agent actors, with explicit delegation chains. RFC 8693's nested act claim is the published mechanism, but it records only who delegated, not the authorization constraints applied at each hop, and it is constructed unilaterally by the authorization server. So budget and policy attenuation per hop must be carried by the platform, not inferred from the token.",
+      "governing_standard": "RFC 8693 OAuth 2.0 Token Exchange (act claim, nested for delegation chains)",
+      "pass_coverage": "partial",
+      "pass_ids": ["F-b3-14", "F-b4-03"],
+      "target_requirement": "T-t2-03",
+      "sources": ["X-end-to-end-031", "X-end-to-end-032"]
+    },
+    {
+      "area": "Multi-tenancy and isolation between principals",
+      "matters_because": "PASS has no identity field anywhere and no tenant concept, yet its shared resources (the model gateway, the sandbox pool, the trace store, the ledger) are exactly the choke points where tenant isolation and noisy-neighbour protection have to be enforced. The structural form of the guarantee is a tenant context that every model or tool call must accept and verify.",
+      "governing_standard": "none found (AWS prescriptive guidance and vendor patterns, not a spec)",
+      "pass_coverage": "absent",
+      "pass_ids": ["F-a6-05", "F-b4-03", "F-b3-02"],
+      "target_requirement": "T-t2-03",
+      "sources": ["X-end-to-end-033", "X-end-to-end-034"]
+    },
+    {
+      "area": "Developer experience without a bespoke SDK",
+      "matters_because": "Rule 4 states the requirement but PASS gives no test for it. OpenAPI and AsyncAPI are the machine-readable description standards that make it checkable, and the fragmentation evidence shows no single agent standard covers the whole surface, so the platform must state which standard governs each entry point rather than assume one does.",
+      "governing_standard": "OpenAPI (REST) and AsyncAPI (event-driven) as description standards; MCP / A2A / AG-UI per entry point",
+      "pass_coverage": "partial",
+      "pass_ids": ["F-b1-05", "F-b3-08"],
+      "target_requirement": "T-t3-01",
+      "sources": ["X-end-to-end-035", "X-end-to-end-036"]
+    },
+    {
+      "area": "Simulation, replay and testing of agent behaviour",
+      "matters_because": "Durable execution correctness is established by replaying recorded history and comparing commands, and replay testing in CI is the standard guard against non-determinism. On the agent side, simulation with synthetic personas plus a regression suite is how prompt/model/integration changes are gated. PASS's build sequence has definitions of done but no simulation or replay capability, so a revised skill cannot be proven non-regressive before rollout.",
+      "governing_standard": "none found for agent simulation; Temporal replay testing is a product mechanism, not a spec",
+      "pass_coverage": "absent",
+      "pass_ids": ["F-b3-04", "F-b5-04"],
+      "target_requirement": "T-t4-04",
+      "sources": ["X-end-to-end-037", "X-end-to-end-038", "X-end-to-end-039", "X-end-to-end-040", "X-end-to-end-021"]
+    },
+    {
+      "area": "Failure recovery, compensation and retries with idempotency",
+      "matters_because": "PASS B4 requires that every externally-triggered action is safe to replay, and B3 admits 'key on the wire, no lease'. That is exactly the failure the literature names: a tool call that succeeds before the crash gets retried on resume. Beyond retries, agent work needs compensation — a backward-facing node per forward-facing node, executed in reverse — and a declared irreversibility class, because some effects cannot be undone by any mechanism.",
+      "governing_standard": "draft-ietf-httpapi-idempotency-key-header-07 (IETF Internet-Draft, Standards Track, 15 October 2025); saga/compensation has no spec",
+      "pass_coverage": "partial",
+      "pass_ids": ["F-b3-16", "F-b4-08", "F-b2-04"],
+      "target_requirement": "T-t2-03",
+      "sources": ["X-end-to-end-041", "X-end-to-end-042", "X-end-to-end-043", "X-end-to-end-044"]
+    },
+    {
+      "area": "Cost model and budget across nested delegation",
+      "matters_because": "PASS caps spend per model-group virtual key and states that every unit of work carries a ceiling. Neither aggregates across a delegation tree: a run that fans out to sub-agents needs one shared run-scoped budget enforced mid-run, plus depth and fan-out caps, which shipping agent products now enforce explicitly. FOCUS 1.3 is a ratified schema for the resulting cost records.",
+      "governing_standard": "FOCUS v1.3 (ratified 5 December 2025, split cost allocation)",
+      "pass_coverage": "partial",
+      "pass_ids": ["F-b4-02", "F-a4-07", "F-b1-06"],
+      "target_requirement": "T-t2-03",
+      "sources": ["X-end-to-end-045", "X-end-to-end-046", "X-end-to-end-047", "X-end-to-end-048"]
+    },
+    {
+      "area": "Governance, audit and attestation",
+      "matters_because": "PASS covers provenance well (in-toto, SLSA, DSSE, hash-chained evidence) but names no version and no retention policy. High-risk obligations bite on 2 August 2026 with automatic logging over the system lifetime and a minimum six-month deployer retention, and ISO/IEC 42001 is the management-system standard that maps to Articles 9-17.",
+      "governing_standard": "SLSA v1.1 and the in-toto Attestation Framework; ISO/IEC 42001; EU AI Act Articles 9-17 (high-risk obligations from 2 August 2026)",
+      "pass_coverage": "partial",
+      "pass_ids": ["F-b3-12", "F-b4-05", "F-a5-04"],
+      "target_requirement": "T-t2-03",
+      "sources": ["X-end-to-end-049", "X-end-to-end-050", "X-end-to-end-051", "X-end-to-end-052"]
+    },
+    {
+      "area": "Self-improvement loop that revises the producing skills",
+      "matters_because": "TARGET T4.4 requires a ceremony that re-reviews output and improves the skills that produced it. Published mechanisms exist: GEPA collects execution traces and applies natural-language reflection to propose prompt updates under a genetic-Pareto frontier, and ACE splits the loop into Generator, Reflector and Curator over an evolving playbook. PASS Part B contains no such loop, no trace-to-revision path, and no place to store the frontier.",
+      "governing_standard": "none found (GEPA and ACE are published methods, not standards)",
+      "pass_coverage": "absent",
+      "pass_ids": ["F-b3-07", "F-b2-05"],
+      "target_requirement": "T-t4-04",
+      "sources": ["X-end-to-end-053", "X-end-to-end-054", "X-end-to-end-055"]
+    },
+    {
+      "area": "Model routing by class not vendor",
+      "matters_because": "PASS A4's class-prefix contract is genuinely ahead of the field and matches the research framing of routing as a cost-quality decision over a pool. But routing lives inside the model-access adapter, so the routing policy is not separately swappable and the vLLM semantic router (which composes routing with policies and reasoning budgets) cannot be substituted without touching the gateway.",
+      "governing_standard": "none found",
+      "pass_coverage": "partial",
+      "pass_ids": ["F-a4-01", "F-b3-03"],
+      "target_requirement": "T-t2-02",
+      "sources": ["X-end-to-end-056", "X-end-to-end-057", "X-end-to-end-058"]
+    },
+    {
+      "area": "Observability UX",
+      "matters_because": "PASS covers the telemetry wire (OTLP, GenAI semconv) and correctly identifies that trace parentage does not survive the agent boundary. What it does not specify is the reading surface: run-as-tree, time replay, and context propagation across services, queues and async workers. Multi-agent failures cascade silently across handoffs, so the UX is what makes the explicit correlation attributes useful.",
+      "governing_standard": "OpenTelemetry GenAI semantic conventions v1.37+ (agent spans still provisional)",
+      "pass_coverage": "partial",
+      "pass_ids": ["F-b3-10", "F-b4-06", "F-a7-02"],
+      "target_requirement": "T-t3-01",
+      "sources": ["X-end-to-end-007", "X-end-to-end-008", "X-end-to-end-059", "X-end-to-end-060"]
+    },
+    {
+      "area": "Runtime containment and guardrails in the tool-call path",
+      "matters_because": "B4 says refusal is deterministic and happens before execution. That is necessary but insufficient once tools are selected at runtime: dynamic tool-switching defeats static policy, and the standard containment set is hard caps on autonomous loops, plan-validation checkpoints and approval gates on irreversible actions. PASS's policy is also not wired into the enforcement path today.",
+      "governing_standard": "OWASP Top 10 for Agentic Applications 2026 (ASI01-ASI10) as the risk taxonomy; Rego/OPA as the decision engine",
+      "pass_coverage": "partial",
+      "pass_ids": ["F-b4-04", "F-b3-11", "F-a6-04"],
+      "target_requirement": "T-t2-03",
+      "sources": ["X-end-to-end-061", "X-end-to-end-062", "X-end-to-end-063"]
+    },
+    {
+      "area": "Agent and capability discovery",
+      "matters_because": "TARGET T1.2 requires an agent to be able to enter the system, which implies the reverse: an agent must be able to find out what this platform offers and vice versa. AGNTCY under the Linux Foundation covers discovery, identity, messaging and observability across vendors, and its Agent Directory Service is capability-centric, content-addressed and signed over OCI registry infrastructure — a directly usable shape for a capability-packaging registry.",
+      "governing_standard": "Open Agentic Schema Framework (OASF) / AGNTCY Agent Directory Service; A2A Agent Card",
+      "pass_coverage": "absent",
+      "pass_ids": ["F-b3-07", "F-b3-08"],
+      "target_requirement": "T-t1-02",
+      "sources": ["X-end-to-end-068", "X-end-to-end-069"]
+    },
+    {
+      "area": "Durable execution and workflow portability",
+      "matters_because": "PASS B5 asserts durable execution has no standard to adopt and is therefore one of only two places original design is warranted. That is now contestable: Open Agent Specification is a declarative, JSON-Schema-typed language for agents and workflows with portability across compatible runtimes and adapters for the frameworks in the swap-candidate column.",
+      "governing_standard": "Open Agent Specification (Agent Spec)",
+      "pass_coverage": "partial",
+      "pass_ids": ["F-b3-04", "F-b5-01", "F-b5-06"],
+      "target_requirement": "T-t4-03",
+      "sources": ["X-end-to-end-066", "X-end-to-end-067"]
+    },
+    {
+      "area": "Machine-checkable definition of done",
+      "matters_because": "PASS Part C asks for a machine-checkable definition of done per piece, and A7 finding 2 shows why: a nine-stage gate ran structurally green with every behavioural stage skipped. The corrective in current practice is executable acceptance criteria carried with the work item plus risk-tiered evidence, so acceptance depends on evidence appropriate to risk rather than on plausibility.",
+      "governing_standard": "none found",
+      "pass_coverage": "partial",
+      "pass_ids": ["F-b2-02", "F-b2-05", "F-a7-03", "F-part-c-04"],
+      "target_requirement": "T-t4-03",
+      "sources": ["X-end-to-end-076", "X-end-to-end-077", "X-end-to-end-078"]
+    },
+    {
+      "area": "Delegated authorization for spend and irreversible action",
+      "matters_because": "AP2 mandates are W3C Verifiable Credentials that pre-authorize an agent with spending limits, allowed counterparties and validity periods, in two modes: real-time human signature, or a pre-signed intent mandate under which the agent acts autonomously later. That is a signed, verifiable form of PASS's budget ceiling plus scope and expiry, and the same shape works for non-payment irreversible actions.",
+      "governing_standard": "Agent Payments Protocol (AP2) mandates over W3C Verifiable Credentials; A2A x402 extension",
+      "pass_coverage": "absent",
+      "pass_ids": ["F-b4-02", "F-b4-03"],
+      "target_requirement": "T-t1-01",
+      "sources": ["X-end-to-end-070", "X-end-to-end-071"]
+    },
+    {
+      "area": "Typed errors and event intake standards",
+      "matters_because": "These are the two rows PASS already resolves correctly to a named standard; what is missing is the version pin. RFC 9457 is Standards Track, published July 2023, obsoleting RFC 7807; CloudEvents v1.0.2 dates from 5 February 2022 and the project graduated in the CNCF.",
+      "governing_standard": "RFC 9457 (July 2023) and CloudEvents v1.0.2 (5 February 2022)",
+      "pass_coverage": "covered",
+      "pass_ids": ["F-b3-13", "F-b4-07", "F-b3-08"],
+      "target_requirement": "T-t1-03",
+      "sources": ["X-end-to-end-064", "X-end-to-end-065"]
+    }
+  ],
+  "gaps_vs_pass": [
+    {
+      "gap": "No memory capability. The Ledger persists platform facts across runs but nothing gives an agent scoped, retrievable working / episodic / semantic memory, and nothing states how memory is scoped to a principal, agent, session or org.",
+      "target_requirement": "T-t4-03",
+      "pass_section": "B2",
+      "proposed_capability": "Memory — write, retrieve and expire scoped memory items; scopes are identity-derived (principal / agent / run / org) and every item carries provenance and a staleness policy.",
+      "proposed_layer": "cap",
+      "governing_standard": "none found — this is a third design-ourselves seam alongside Dispatch and State",
+      "second_adapter_candidates": "a hosted memory service against a file-backed markdown/SQLite store; or an MCP memory server against a direct vector/relational store — the second must break the assumption that retrieval is embedding-ranked.",
+      "sources": ["X-end-to-end-001", "X-end-to-end-002", "X-end-to-end-003"]
+    },
+    {
+      "gap": "No evaluation capability distinct from the Judge. There is no dataset store, no trajectory grading, no offline regression harness, and no record of grading history — so nothing can prove a change did not regress before it ships.",
+      "target_requirement": "T-t4-04",
+      "pass_section": "B3",
+      "proposed_capability": "Evaluation — run a versioned dataset of cases against a versioned unit of work, emit per-case scores as OTel gen_ai.evaluation.result, and return a pass/fail against a stored baseline.",
+      "proposed_layer": "cap",
+      "governing_standard": "OpenTelemetry GenAI semantic conventions v1.37+ for the result carrier",
+      "second_adapter_candidates": "an OTel-native trace-scoring harness versus a pytest-style local harness with no server — the second breaks the assumption that evaluation requires a running collector.",
+      "sources": ["X-end-to-end-006", "X-end-to-end-009", "X-end-to-end-010", "X-end-to-end-011"]
+    },
+    {
+      "gap": "Rule 6 hides the criterion but does not rotate it. A fixed criterion leaks through outcomes over repeated runs, and the divergence between a training judge and a stronger gold judge is measurable.",
+      "target_requirement": "T-t4-04",
+      "pass_section": "B2",
+      "proposed_capability": "Judge extension — criterion sampling (drop a random subset per grading) plus a periodic held-out gold-judge audit whose divergence from the routine judge is an alarm, not a score.",
+      "proposed_layer": "core",
+      "governing_standard": "none found",
+      "second_adapter_candidates": "a model-graded judge versus a purely deterministic verifier over the same criterion set — the second breaks the assumption that grading needs a model at all.",
+      "sources": ["X-end-to-end-012", "X-end-to-end-013"]
+    },
+    {
+      "gap": "Human interaction is not a capability. Approve / reject / return exists as a host service in Part A, but B3 lists no human-interaction row, so steering, edit-in-place, partial acceptance and draft-then-promote have no contract and no second adapter.",
+      "target_requirement": "T-t1-01",
+      "pass_section": "B3",
+      "proposed_capability": "Human interaction — a work item can enter a waiting-for-human state carrying the proposed action, its diff and its irreversibility class; the human returns approve, edit (with the edited artifact), reject-with-notes, or partial acceptance, and the run resumes on the same correlation id.",
+      "proposed_layer": "cap",
+      "governing_standard": "A2A Protocol v0.3.0 (input-required task state) for the state machine; AG-UI for the event stream",
+      "second_adapter_candidates": "the existing phone approval service versus an AG-UI event stream to a browser client — the second breaks the assumption that the human channel is request/response rather than streaming.",
+      "sources": ["X-end-to-end-014", "X-end-to-end-016", "X-end-to-end-018", "X-end-to-end-019", "X-end-to-end-020"]
+    },
+    {
+      "gap": "No capability registry. Skills are files; there is no versioned, discoverable, signed catalogue, no rollout/rollback path, and the Agent Skills spec PASS names is not published as a versioned artifact, so rule 2 cannot be satisfied for that row.",
+      "target_requirement": "T-t4-04",
+      "pass_section": "B3",
+      "proposed_capability": "Capability registry — resolve a capability by name and version constraint, return a signed, content-addressed package plus its acceptance criteria and rollback state; publishing goes through evaluate-gate-canary.",
+      "proposed_layer": "cap",
+      "governing_standard": "Official MCP Registry API (OpenAPI-based, semver ordering) and OASF / AGNTCY Agent Directory Service (content-addressed over OCI registry, signed)",
+      "second_adapter_candidates": "a filesystem registry with a signed index versus an OCI registry holding OASF records — the second breaks the assumption that a capability is a directory of files on the same host.",
+      "sources": ["X-end-to-end-022", "X-end-to-end-023", "X-end-to-end-024", "X-end-to-end-025", "X-end-to-end-026", "X-end-to-end-069"]
+    },
+    {
+      "gap": "No credential brokering capability. Identity is listed as absent, but even once identity exists, workload identity does not mint the per-tool, audience-bound tokens MCP requires; today the model key is brokered by a bespoke host component with no interface.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B3",
+      "proposed_capability": "Credential brokering — exchange an actor's identity for a short-lived credential scoped to one destination, audience-bound, never handed to the sandbox; the broker filters destination and model overrides by name.",
+      "proposed_layer": "cap",
+      "governing_standard": "MCP Authorization revision 2025-11-25 (OAuth 2.1 + RFC 8707 Resource Indicators); RFC 8693 for the exchange",
+      "second_adapter_candidates": "the existing vsock host broker versus a SPIFFE/SPIRE-attested sidecar issuing SVIDs then exchanging them — the second breaks the assumption that the broker knows the workload by its VM id.",
+      "sources": ["X-end-to-end-028", "X-end-to-end-029", "X-end-to-end-030"]
+    },
+    {
+      "gap": "No tenancy. With no identity field anywhere, the shared model gateway, sandbox pool, trace store and ledger have no principal to isolate on and no per-principal quota, so noisy-neighbour and cross-principal leakage are unaddressed by construction.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B4",
+      "proposed_capability": "Tenancy — every unit of work carries a mandatory principal context that the platform verifies at each shared choke point; quotas (spend, concurrency, sandbox slots) are per principal, and storage keys are principal-prefixed.",
+      "proposed_layer": "xc",
+      "governing_standard": "none found",
+      "second_adapter_candidates": "namespace isolation on shared infrastructure versus a dedicated sandbox pool per principal — the second breaks the assumption that isolation is a query filter.",
+      "sources": ["X-end-to-end-033", "X-end-to-end-034"]
+    },
+    {
+      "gap": "Rule 4 (no bespoke SDK) has no test. Nothing in Part C's definitions of done checks that a caller can integrate using only a published description document.",
+      "target_requirement": "T-t3-01",
+      "pass_section": "B5",
+      "proposed_capability": "Conformance check — every entry point ships an OpenAPI or AsyncAPI document, and CI drives a full task from intake to result using only a generated client, with no repository code on the caller side.",
+      "proposed_layer": "build",
+      "governing_standard": "OpenAPI for REST entry points; AsyncAPI for event entry points",
+      "second_adapter_candidates": "a generated client in one language versus a raw curl/JSON-RPC script — the second breaks the assumption that generation tooling exists for the caller's stack.",
+      "sources": ["X-end-to-end-035", "X-end-to-end-036"]
+    },
+    {
+      "gap": "No simulation or replay capability. Neither the Dispatch seam nor the build sequence provides a way to re-run recorded work deterministically or to exercise an agent against synthetic users, so a revised skill cannot be shown non-regressive before rollout.",
+      "target_requirement": "T-t4-04",
+      "pass_section": "B5",
+      "proposed_capability": "Replay and simulation — a recorded run can be replayed against a changed unit of work with external effects stubbed, and a scenario suite of synthetic personas runs in CI producing a pass/fail against a stored baseline.",
+      "proposed_layer": "cap",
+      "governing_standard": "none found",
+      "second_adapter_candidates": "history-replay against a durable-execution engine versus a recorded-fixture harness with no engine — the second breaks the assumption that replay requires the workflow runtime.",
+      "sources": ["X-end-to-end-037", "X-end-to-end-038", "X-end-to-end-039", "X-end-to-end-040"]
+    },
+    {
+      "gap": "Idempotency has a key but no lease, and there is no compensation model at all. A tool call that succeeds before a crash is retried on resume, and no node in the Graph declares how its effect is undone or whether it can be.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B4",
+      "proposed_capability": "Compensation and idempotency — every side-effecting node declares an irreversibility class and, where compensable, a compensating node; the platform holds a keyed lease for the duration of the effect and replays the recorded response rather than the effect.",
+      "proposed_layer": "xc",
+      "governing_standard": "draft-ietf-httpapi-idempotency-key-header-07 (Standards Track Internet-Draft, 15 October 2025)",
+      "second_adapter_candidates": "a keyed lease in the durable-execution engine versus a lease in the append-only state store — the second breaks the assumption that the workflow engine is running.",
+      "sources": ["X-end-to-end-041", "X-end-to-end-042", "X-end-to-end-043", "X-end-to-end-044"]
+    },
+    {
+      "gap": "Budget does not aggregate across a delegation tree. Per-key caps and per-unit ceilings do not bound what a run costs once it fans out, and no depth or fan-out limit is stated.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B4",
+      "proposed_capability": "Run-scoped budget — one ceiling per root unit of work, decremented by every descendant, enforced mid-run with continue / narrow / require-approval / stop outcomes, plus explicit delegation depth and fan-out caps.",
+      "proposed_layer": "xc",
+      "governing_standard": "FOCUS v1.3 for the cost record schema (split cost allocation)",
+      "second_adapter_candidates": "gateway virtual-key caps versus a platform-held budget lease decremented before each dispatch — the second breaks the assumption that the model gateway is the only place spend occurs.",
+      "sources": ["X-end-to-end-045", "X-end-to-end-046", "X-end-to-end-047", "X-end-to-end-048"]
+    },
+    {
+      "gap": "The self-improvement loop TARGET T4.4 requires is absent from Part B entirely: no trace-to-revision path, no store for candidate skill revisions, no frontier, and no gate that promotes a revision.",
+      "target_requirement": "T-t4-04",
+      "pass_section": "none",
+      "proposed_capability": "Improvement loop — collect execution traces and judge verdicts for a unit of work, produce a candidate revision of the skill that produced it, evaluate the candidate against the stored dataset, and promote through canary only if it beats the baseline; the loop writes to the capability registry, never to a live skill in place.",
+      "proposed_layer": "compose",
+      "governing_standard": "none found (GEPA and ACE are published methods)",
+      "second_adapter_candidates": "reflective prompt evolution over traces versus a curated-playbook Generator/Reflector/Curator loop — the second breaks the assumption that the artifact being improved is a prompt rather than a context document.",
+      "sources": ["X-end-to-end-053", "X-end-to-end-054", "X-end-to-end-055"]
+    },
+    {
+      "gap": "Routing policy is buried inside the model-access adapter, so the class contract that PASS gets right is not independently swappable and cannot be tested against a second implementation.",
+      "target_requirement": "T-t2-02",
+      "pass_section": "B3",
+      "proposed_capability": "Routing policy — a pure function from (class, unit of work, budget remaining, policy verdict) to an endpoint selection, evaluated before the model-access adapter is called.",
+      "proposed_layer": "cap",
+      "governing_standard": "none found",
+      "second_adapter_candidates": "gateway-side group routing versus a semantic router that composes routing with policy and reasoning budget — the second breaks the assumption that class is decided by the caller's prefix.",
+      "sources": ["X-end-to-end-056", "X-end-to-end-057", "X-end-to-end-058"]
+    },
+    {
+      "gap": "Policy is pre-execution only and is not in the enforcement path; dynamic tool selection at runtime therefore escapes it, and there are no loop caps or irreversible-action gates.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B4",
+      "proposed_capability": "In-path enforcement — every tool call and every model call passes a decision point that can refuse; hard caps on autonomous iterations; an approval gate that fires on declared-irreversible actions regardless of prior approval.",
+      "proposed_layer": "xc",
+      "governing_standard": "OWASP Top 10 for Agentic Applications 2026 as the risk taxonomy the checks must cover",
+      "second_adapter_candidates": "Rego/OPA in the tool proxy versus a capability-scoped credential that simply cannot reach the forbidden destination — the second breaks the assumption that refusal is a decision rather than an absence.",
+      "sources": ["X-end-to-end-061", "X-end-to-end-062", "X-end-to-end-063"]
+    },
+    {
+      "gap": "No discovery surface. TARGET T1.2 requires an agent to enter the system, but nothing publishes what the platform can do or lets it read another agent's capabilities.",
+      "target_requirement": "T-t1-02",
+      "pass_section": "B3",
+      "proposed_capability": "Discovery — publish a signed capability record describing entry points, capabilities and their versions; resolve another party's record by name.",
+      "proposed_layer": "cap",
+      "governing_standard": "OASF / AGNTCY Agent Directory Service; A2A Agent Card",
+      "second_adapter_candidates": "a static signed document served over HTTP versus a content-addressed OCI-backed directory — the second breaks the assumption that there is one authoritative publisher.",
+      "sources": ["X-end-to-end-068", "X-end-to-end-069"]
+    },
+    {
+      "gap": "B5 claims durable execution has no standard to adopt. A declarative, runtime-portable agent/workflow specification with adapters for the named swap candidates now exists, so that claim needs re-testing before original design effort is spent there.",
+      "target_requirement": "T-t4-03",
+      "pass_section": "B5",
+      "proposed_capability": "Workflow definition — express a plan as a declarative, JSON-Schema-typed graph independent of the executing runtime; the durable-execution adapter compiles it.",
+      "proposed_layer": "seam",
+      "governing_standard": "Open Agent Specification (Agent Spec)",
+      "second_adapter_candidates": "a durable-execution engine versus a queue plus a state machine both consuming the same declarative definition — that pairing is the test of whether the definition is engine-independent.",
+      "sources": ["X-end-to-end-066", "X-end-to-end-067"]
+    },
+    {
+      "gap": "The Document carries a definition of done but nothing requires it to be executable or risk-tiered, which is precisely how the A7-2 gate ran structurally green with every behavioural stage skipped.",
+      "target_requirement": "T-t4-03",
+      "pass_section": "B2",
+      "proposed_capability": "Executable acceptance criteria — the Document's definition of done is a list of runnable checks with declared risk tiers; a run in which no behavioural check executed is reported as inconclusive, never as passed.",
+      "proposed_layer": "core",
+      "governing_standard": "none found",
+      "second_adapter_candidates": "not an adapter boundary — it is a Document schema constraint plus a Judge rule.",
+      "sources": ["X-end-to-end-076", "X-end-to-end-077", "X-end-to-end-078"]
+    },
+    {
+      "gap": "Approvals are unsigned and unscoped. A budget ceiling is a number the platform holds; there is no verifiable record of what a human authorized, for how long, or against which counterparties.",
+      "target_requirement": "T-t1-01",
+      "pass_section": "B4",
+      "proposed_capability": "Mandate — a signed, expiring, scope-limited authorization for an agent to act (spend, deploy, send) within stated bounds, verifiable independently of the platform that issued it.",
+      "proposed_layer": "xc",
+      "governing_standard": "Agent Payments Protocol (AP2) mandates over W3C Verifiable Credentials",
+      "second_adapter_candidates": "verifiable-credential mandates versus RFC 8693 token exchange with attenuated scopes — the second breaks the assumption that the authorization is a document rather than a token.",
+      "sources": ["X-end-to-end-070", "X-end-to-end-071", "X-end-to-end-032"]
+    },
+    {
+      "gap": "No context-management contract for long-horizon or nested work. Nothing says what a sub-unit receives, what it returns, or how a run that outgrows its window continues.",
+      "target_requirement": "T-t2-02",
+      "pass_section": "B5",
+      "proposed_capability": "Context contract in Dispatch — the request declares what context a unit receives; the result declares the folded summary returned to the parent; a compaction event is a first-class, recorded transition.",
+      "proposed_layer": "seam",
+      "governing_standard": "none found",
+      "second_adapter_candidates": "summarise-and-restart versus branch-and-fold into a fresh sub-agent context — the second breaks the assumption that continuation happens in one linear thread.",
+      "sources": ["X-end-to-end-004", "X-end-to-end-005"]
+    },
+    {
+      "gap": "Evidence has no retention or attestation-format policy, and no governance standard is named, despite high-risk obligations activating 2 August 2026 with a minimum six-month deployer retention.",
+      "target_requirement": "T-t2-03",
+      "pass_section": "B4",
+      "proposed_capability": "Retention and attestation policy — evidence records are emitted as in-toto attestations in DSSE envelopes, retained for a stated minimum, and verifiable with a tool the platform did not write.",
+      "proposed_layer": "xc",
+      "governing_standard": "SLSA v1.1 and the in-toto Attestation Framework; ISO/IEC 42001; EU AI Act Articles 9-17",
+      "second_adapter_candidates": "hash-chained JSONL versus a transparency-log-backed attestation store — the second breaks the assumption that the platform holds the only copy of its own chain.",
+      "sources": ["X-end-to-end-049", "X-end-to-end-050", "X-end-to-end-051", "X-end-to-end-052"]
+    }
+  ],
+  "already_covered_well": [
+    {
+      "area": "Typed errors — the named standard is exactly the right one and is Standards Track (RFC 9457, July 2023, obsoleting RFC 7807); only the adapter is missing.",
+      "pass_ids": ["F-b3-13", "F-b4-07", "F-a6-06"],
+      "sources": ["X-end-to-end-064"]
+    },
+    {
+      "area": "Event intake — CloudEvents v1.0.2 is a graduated CNCF specification and is the right governing standard for the event entry point.",
+      "pass_ids": ["F-b3-08"],
+      "sources": ["X-end-to-end-065"]
+    },
+    {
+      "area": "Tool access and agent-to-agent messaging — MCP and A2A are table stakes in a 1.0 framework, so PASS's choice of both is confirmed rather than speculative.",
+      "pass_ids": ["F-b3-06", "F-b3-08"],
+      "sources": ["X-end-to-end-075"]
+    },
+    {
+      "area": "Isolation — the capability is stated as a contract with swap candidates that differ on a measurable axis (kernel-level isolation versus cold start), so the interface can be conformance-tested rather than asserted.",
+      "pass_ids": ["F-b3-02", "F-b3-18", "F-a3-01"],
+      "sources": ["X-end-to-end-072"]
+    },
+    {
+      "area": "Model routing by class not vendor — PASS's class-prefix contract matches the research framing of routing as a cost-quality decision over a pool, and is ahead of framework defaults.",
+      "pass_ids": ["F-a4-01", "F-a4-02", "F-a4-03"],
+      "sources": ["X-end-to-end-056"]
+    },
+    {
+      "area": "Cross-cutting concerns applied rather than requested — the market definition of a complete platform is development capability plus access, observability, cost and compliance controls applied uniformly, which is what B4 states.",
+      "pass_ids": ["F-b1-08", "F-b4-01"],
+      "sources": ["X-end-to-end-073"]
+    },
+    {
+      "area": "Telemetry wire format and the correlation finding — OTLP plus GenAI semantic conventions is the right choice, and the A7-1 conclusion that correlation must ride on explicit attributes is consistent with agent spans still being provisional in the conventions.",
+      "pass_ids": ["F-b3-10", "F-b4-06", "F-a7-02"],
+      "sources": ["X-end-to-end-007", "X-end-to-end-008"]
+    },
+    {
+      "area": "Provenance — in-toto, SLSA and DSSE are the correct standards for artifact attestation, and SLSA v1.1 supplies the version PASS omits.",
+      "pass_ids": ["F-b3-12", "F-b4-05"],
+      "sources": ["X-end-to-end-051", "X-end-to-end-052"]
+    },
+    {
+      "area": "State persistence as a design-ourselves seam — checkpointing, crash recovery and time travel are the differentiating production features, which supports treating State as load-bearing rather than incidental.",
+      "pass_ids": ["F-b5-04", "F-b5-05"],
+      "sources": ["X-end-to-end-074"]
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Should Memory be a sixth core component or a capability behind an interface? It has no ratified standard, which by PASS's own B5 logic argues for owning it; but two credible external implementations exist, which argues for an adapter boundary.",
+      "deciding_evidence": "Write the conformance suite first and try to satisfy it with two implementations that differ in retrieval model (embedding-ranked versus keyword/structured). If both pass unchanged, it is a capability; if the suite has to be rewritten per implementation, it is core."
+    },
+    {
+      "question": "Is Open Agent Specification mature enough to replace original design effort on the Dispatch seam, or only on the workflow-definition half of it?",
+      "deciding_evidence": "Express one real multi-step unit of work in Agent Spec and execute it unchanged on two of the named durable-execution candidates. If cancellation, timeout, budget enforcement and partial-result handling all survive the move, adopt it; if only control flow survives, keep Dispatch original and adopt Agent Spec for plan shape only."
+    },
+    {
+      "question": "Does the A2A task-state machine cover the platform's cancellation semantics, given the measured ~8s cancel against a 45s operation, or does it need an extension for in-flight tool-call cancellation?",
+      "deciding_evidence": "Map the measured cancellation sequence onto the A2A state transitions and check whether a canceled task can report a partial result. If it cannot, the Dispatch seam needs a partial-result state the standard does not provide."
+    },
+    {
+      "question": "Which governing standard should the Budget concern cite: FOCUS v1.3 for the record schema, AP2 mandates for the authorization, or both at different layers?",
+      "deciding_evidence": "Attempt to express one delegated run's spend as FOCUS rows with split cost allocation across the delegation tree. If the tree structure survives the schema, FOCUS governs reporting and AP2 governs authorization; if it does not, the platform needs its own delegation-tree cost record."
+    },
+    {
+      "question": "Is the correct second adapter for policy a different engine (Cedar) or a different enforcement mechanism (capability-scoped credentials that make the forbidden call unreachable)? The two prove different things about the interface.",
+      "deciding_evidence": "Write one refusal case that a decision-API engine can express and check whether a credential-scoping implementation can satisfy the same conformance test. If it cannot, the interface has been shaped around decision APIs and needs widening."
+    },
+    {
+      "question": "How much of the self-improvement loop can run unattended? GEPA and ACE both revise artifacts automatically, but the platform's own rule 6 and the rubric-hacking evidence mean an automatically revised skill graded by the same judge that trained it is unsafe.",
+      "deciding_evidence": "Run the loop with a held-out gold judge that never participates in optimization and measure the divergence between routine-judge score and gold-judge score over successive revisions. A widening gap sets the ceiling on unattended promotion."
+    },
+    {
+      "question": "Does PASS need a tenancy concept at all, or is single-principal operation a deliberate scope boundary? Every gap in tenancy assumes more than one principal will eventually exist.",
+      "deciding_evidence": "A statement from the platform owner on whether external or delegated principals will ever run work here. If yes, tenancy must be designed in before identity is implemented, because retrofitting a principal context into already-written cross-cutting code is the expensive path."
+    },
+    {
+      "question": "Which capability should carry the human-interaction contract: a new B3 row, or an extension of Work intake, since a human returning notes is arguably another intake event?",
+      "deciding_evidence": "Check whether resuming an existing unit of work on the same correlation id can be expressed as a CloudEvent against the intake interface without adding fields. If it can, extend intake; if it needs new state semantics, it is a separate capability."
+    }
+  ]
+}

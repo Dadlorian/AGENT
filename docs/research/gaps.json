@@ -1,0 +1,1361 @@
+{
+  "gaps": [
+    {
+      "key": "a-ledger-monitor-a-scheduled-independent",
+      "proposed_capability": "A ledger monitor: a scheduled, independently-run verifier that checks chain continuity and (in transparency-log mode) inclusion and consistency proofs, emits a typed problem document on divergence, and whose own runs are themselves evidenced. Deliberate breakage: flip one byte in a historical record and the monitor must fail.",
+      "layers": [
+        "xc"
+      ],
+      "gaps": [
+        "PASS.md A5 describes the evidence store as append-only JSONL and A5 describes the task store's hash chain as detecting a manual edit between runs, but nothing independently monitors either. Transparency-log practice is explicit that tamper-evidence is not tamper-proofness: a log only delivers its guarantee if something scans it for evidence of tampering, and verification by a party other than the writer is the point of the design."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "Merkle transparency-log inclusion/consistency proofs (Rekor as reference); in-toto/DSSE for the attestation format"
+      ],
+      "sources": [
+        "X-cross-structure-052",
+        "X-cross-structure-053",
+        "X-cross-structure-050"
+      ],
+      "lenses": [
+        "cross-structure"
+      ]
+    },
+    {
+      "key": "a-registered-problem-type-namespace-with",
+      "proposed_capability": "A registered problem-type namespace with a minimum set (policy-denied, budget-exceeded, idempotency-conflict, cancelled, timeout, partial-result, adapter-unavailable, schema-invalid), each with typed extension members, and a conformance test that every seam returns application/problem+json on failure.",
+      "layers": [
+        "core"
+      ],
+      "gaps": [
+        "PASS.md B3 lists Errors as absent and B4 requires typed, machine-readable errors, but no error taxonomy exists for the platform's own failure kinds. RFC 9457 supplies the container and extension mechanism; what is missing is the set of type URIs and the rule that every seam returns one. B5 explicitly asks what a Dispatch failure returns and PASS.md does not answer it."
+      ],
+      "target_requirements": [
+        "T-t2-02"
+      ],
+      "pass_sections": [
+        "B5"
+      ],
+      "standards": [
+        "RFC 9457 Problem Details for HTTP APIs"
+      ],
+      "sources": [
+        "X-cross-structure-039",
+        "X-cross-structure-040"
+      ],
+      "lenses": [
+        "cross-structure"
+      ]
+    },
+    {
+      "key": "a-single-cross-cutting-interception-chai",
+      "proposed_capability": "A single cross-cutting interception chain that every unit of work passes through regardless of entry point, with typed slots (identity resolve, policy decide, budget reserve, telemetry open, idempotency claim, provenance open ... inverse on exit) and a test proving a unit dispatched by each of the three entry points hits all slots.",
+      "layers": [
+        "xc"
+      ],
+      "gaps": [
+        "PASS.md B4 lists seven cross-cutting concerns as contracts but names no mechanism by which the platform applies them, and A6 records the concrete consequence: policy conformance checks exist but are not wired into the enforcement path. Prior art is unanimous that 'applied, not requested' requires a structural interception point — middleware chain, sidecar, admission-time injection, or lifecycle hook — not a documented obligation."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "none as a standard; the pattern is aspect-oriented advice/pointcut, realised as agent middleware, Envoy-style filters, or Temporal-style interceptors"
+      ],
+      "sources": [
+        "X-cross-structure-025",
+        "X-cross-structure-026",
+        "X-cross-structure-027",
+        "X-cross-structure-029",
+        "X-cross-structure-020",
+        "X-cross-structure-024",
+        "X-cross-structure-030"
+      ],
+      "lenses": [
+        "cross-structure"
+      ]
+    },
+    {
+      "key": "actor-binding-at-entry-each-driving-adap",
+      "proposed_capability": "Actor binding at entry — each driving adapter attaches an actor and, where the caller is acting for someone, a delegation chain, onto the entry envelope before any planning or spend.",
+      "layers": [
+        "xc"
+      ],
+      "gaps": [
+        "B3 marks Identity 'absent' while B4 requires every action to name an actor with explicit delegation chains. Identity has to be established at the entry adapter — that is the only place the human, the calling agent, and the event producer are distinguishable — so an absent Identity adapter is specifically an entry-surface hole, not a later concern."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "RFC 8693 OAuth 2.0 Token Exchange — the act claim, nested to express a delegation chain"
+      ],
+      "sources": [
+        "X-entry-composition-048",
+        "X-entry-composition-042",
+        "X-entry-composition-015"
+      ],
+      "lenses": [
+        "entry-composition"
+      ]
+    },
+    {
+      "key": "agent-ingress-the-platform-serves-an-a2a",
+      "proposed_capability": "Agent ingress — the platform serves an A2A endpoint (Agent Card, message send, task lifecycle, push-notification registration) and an MCP server endpoint, so an external agent enters with tools it already has.",
+      "layers": [
+        "seam"
+      ],
+      "gaps": [
+        "B3's Agent runtime row is outbound only — ACP with goose as adapter is the platform driving an agent. Nothing in Part B obliges the platform to be enterable BY an external agent: no Agent Card to publish, no task lifecycle to honour, no PushNotificationConfig to accept, no MCP server surface. T1.2 requires the inbound direction."
+      ],
+      "target_requirements": [
+        "T-t1-02"
+      ],
+      "pass_sections": [
+        "B3"
+      ],
+      "standards": [
+        "A2A (JSON-RPC 2.0 over HTTPS) and Model Context Protocol 2025-06-18"
+      ],
+      "sources": [
+        "X-entry-composition-011",
+        "X-entry-composition-012",
+        "X-entry-composition-013",
+        "X-entry-composition-018",
+        "X-entry-composition-019"
+      ],
+      "lenses": [
+        "entry-composition"
+      ]
+    },
+    {
+      "key": "an-eighth-design-rule-plus-its-check-the",
+      "proposed_capability": "An eighth design rule plus its check: the common case is one call or one declaration with defaults; options are additive; an escape hatch hands full control back. Machine-checkable as (a) count of concepts needed for a first successful run, (b) resident metadata budget per unit, (c) required handlers/fields for a minimum implementation.",
+      "layers": [
+        "build"
+      ],
+      "gaps": [
+        "B1's seven design rules are entirely about swappability and none is about learnability. Nothing in Part B bounds how much a user must know, states a default-first/options/escape-hatch layering, or sets a budget for resident surface. T3.1 and T3.2 are therefore unfalsifiable as written — there is no test a daunting design would fail."
+      ],
+      "target_requirements": [
+        "T-t3-01"
+      ],
+      "pass_sections": [
+        "B1"
+      ],
+      "standards": [
+        "none found; progressive disclosure as a named pattern, with Agent Skills' three-tier model as the measurable instance"
+      ],
+      "sources": [
+        "X-entry-composition-037",
+        "X-entry-composition-038",
+        "X-entry-composition-039",
+        "X-entry-composition-036",
+        "X-entry-composition-010"
+      ],
+      "lenses": [
+        "entry-composition"
+      ]
+    },
+    {
+      "key": "an-identity-capability-with-two-operatio",
+      "proposed_capability": "An identity capability with two operations: attest (issue an SVID to a unit, including via a delegated path for workloads the platform cannot attest in place) and delegate (exchange a subject token plus actor token for a scoped token whose act claim names the acting agent). The chain is recorded in provenance; authorisation reads only the current actor.",
+      "layers": [
+        "cap"
+      ],
+      "gaps": [
+        "PASS.md B3 lists Identity as absent and B4 requires explicit delegation chains, but no shape is specified. RFC 8693 already defines the distinction (delegation requires actor_token; the nestable act claim records the chain) and the critical constraint (only top-level claims and the current actor are authoritative; prior actors are informational). Separately, a microVM guest that holds only a dummy key cannot be attested in place — SPIRE's Delegated Identity API is the existing answer."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "SPIFFE (SVID) and RFC 8693 OAuth 2.0 Token Exchange"
+      ],
+      "sources": [
+        "X-cross-structure-034",
+        "X-cross-structure-035",
+        "X-cross-structure-036",
+        "X-cross-structure-037",
+        "X-cross-structure-038"
+      ],
+      "lenses": [
+        "cross-structure"
+      ]
+    },
+    {
+      "key": "an-intake-normaliser-one-required-mappin",
+      "proposed_capability": "An intake normaliser: one required mapping from every entry-point adapter (CLI, HTTP, git event, schedule, A2A message) onto a single work envelope carrying platform-minted run id plus the source protocol's own ids preserved as attributes, so a downstream component never branches on entry-point kind. Conformance test: identical work submitted through all adapters produces byte-identical envelopes apart from the source-specific fields.",
+      "layers": [
+        "compose"
+      ],
+      "gaps": [
+        "PASS.md B3 lists Work intake as 'A2A messaging · CloudEvents' with CLI, git event, HTTP and schedule as today's adapters, but nothing states that the four intakes produce the same envelope. T1 requires human, agent and event entry, and T2.3 requires the cross-cutting concerns to apply whichever entry point was used. The research shows the standards already carry the needed identity fields but that they are not the same fields (CloudEvents id/source/subject vs A2A contextId/taskId, which are minted per broker in a multi-broker network)."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "none"
+      ],
+      "standards": [
+        "CloudEvents v1.0.2 for the envelope shape; A2A for the agent entry point"
+      ],
+      "sources": [
+        "X-cross-structure-017",
+        "X-cross-structure-018",
+        "X-cross-structure-019",
+        "X-cross-structure-016"
+      ],
+      "lenses": [
+        "cross-structure"
+      ]
+    },
+    {
+      "key": "an-interface-version-discipline-applied",
+      "proposed_capability": "An interface-version discipline applied to every capability interface and to the cross-cutting chain: each call declares the interface version it speaks, unsupported versions are rejected per call rather than per session, deprecated members survive a stated window, and a frozen core field set is documented as never-changing. Deliberate breakage: an adapter declaring an unsupported version must be rejected, not silently accepted.",
+      "layers": [
+        "build"
+      ],
+      "gaps": [
+        "PASS.md B1 rule 7 ('cross-cutting guarantees are not optional') and T2.2 ('enhance one aspect without touching the rest') pull against each other unless extension points are versioned. The research is explicit that an extension point is a public API and changing it breaks every plugin built against it; MCP's answer is per-request version declaration with a twelve-month deprecation window, and OpenTelemetry's is a set of attributes that MUST NOT ever change."
+      ],
+      "target_requirements": [
+        "T-t2-02"
+      ],
+      "pass_sections": [
+        "A7"
+      ],
+      "standards": [
+        "MCP versioning policy (2026-07-28) as the pattern; OpenTelemetry versioning-and-stability for the frozen-attribute rule"
+      ],
+      "sources": [
+        "X-cross-structure-060",
+        "X-cross-structure-061",
+        "X-cross-structure-012"
+      ],
+      "lenses": [
+        "cross-structure"
+      ]
+    },
+    {
+      "key": "capability-registry-resolve-a-capability",
+      "proposed_capability": "Capability registry — resolve a capability by name and version constraint, return a signed, content-addressed package plus its acceptance criteria and rollback state; publishing goes through evaluate-gate-canary.",
+      "layers": [
+        "cap"
+      ],
+      "gaps": [
+        "No capability registry. Skills are files; there is no versioned, discoverable, signed catalogue, no rollout/rollback path, and the Agent Skills spec PASS names is not published as a versioned artifact, so rule 2 cannot be satisfied for that row."
+      ],
+      "target_requirements": [
+        "T-t4-04"
+      ],
+      "pass_sections": [
+        "B3"
+      ],
+      "standards": [
+        "Official MCP Registry API (OpenAPI-based, semver ordering) and OASF / AGNTCY Agent Directory Service (content-addressed over OCI registry, signed)"
+      ],
+      "sources": [
+        "X-end-to-end-022",
+        "X-end-to-end-023",
+        "X-end-to-end-024",
+        "X-end-to-end-025",
+        "X-end-to-end-026",
+        "X-end-to-end-069"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "compensation-and-idempotency-every-side",
+      "proposed_capability": "Compensation and idempotency — every side-effecting node declares an irreversibility class and, where compensable, a compensating node; the platform holds a keyed lease for the duration of the effect and replays the recorded response rather than the effect.",
+      "layers": [
+        "xc"
+      ],
+      "gaps": [
+        "Idempotency has a key but no lease, and there is no compensation model at all. A tool call that succeeds before a crash is retried on resume, and no node in the Graph declares how its effect is undone or whether it can be."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "draft-ietf-httpapi-idempotency-key-header-07 (Standards Track Internet-Draft, 15 October 2025)"
+      ],
+      "sources": [
+        "X-end-to-end-041",
+        "X-end-to-end-042",
+        "X-end-to-end-043",
+        "X-end-to-end-044"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "composition-operators-a-closed-set-of-de",
+      "proposed_capability": "Composition operators — a closed set of deterministic, model-free operators (sequence, parallel, loop/until, branch, approve) over typed steps, expressible both as document steps and as a chained API, with the operator being the single place cross-cutting concerns attach.",
+      "layers": [
+        "compose"
+      ],
+      "gaps": [
+        "Part B has no composition primitives at all. B2's five core components are data (Document), pure functions (Planner, Judge), a graph and a ledger — none of which is something a user writes to express 'do these in order', 'fan out', 'loop until', or 'ask a human here'. T2.1 says composability hides complexity, but Part B does not say what the user composes with. Every comparable framework exposes three to six such operators."
+      ],
+      "target_requirements": [
+        "T-t2-01"
+      ],
+      "pass_sections": [
+        "B2"
+      ],
+      "standards": [
+        "none found as a standard; Open Agent Specification is the nearest declarative prior art, ADK workflow agents and Mastra control flow the nearest API prior art"
+      ],
+      "sources": [
+        "X-entry-composition-031",
+        "X-entry-composition-032",
+        "X-entry-composition-033",
+        "X-entry-composition-052",
+        "X-entry-composition-030"
+      ],
+      "lenses": [
+        "entry-composition"
+      ]
+    },
+    {
+      "key": "conformance-check-every-entry-point-ship",
+      "proposed_capability": "Conformance check — every entry point ships an OpenAPI or AsyncAPI document, and CI drives a full task from intake to result using only a generated client, with no repository code on the caller side.",
+      "layers": [
+        "build"
+      ],
+      "gaps": [
+        "Rule 4 (no bespoke SDK) has no test. Nothing in Part C's definitions of done checks that a caller can integrate using only a published description document."
+      ],
+      "target_requirements": [
+        "T-t3-01"
+      ],
+      "pass_sections": [
+        "B5"
+      ],
+      "standards": [
+        "OpenAPI for REST entry points; AsyncAPI for event entry points"
+      ],
+      "sources": [
+        "X-end-to-end-035",
+        "X-end-to-end-036"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "context-contract-in-dispatch-the-request",
+      "proposed_capability": "Context contract in Dispatch — the request declares what context a unit receives; the result declares the folded summary returned to the parent; a compaction event is a first-class, recorded transition.",
+      "layers": [
+        "seam"
+      ],
+      "gaps": [
+        "No context-management contract for long-horizon or nested work. Nothing says what a sub-unit receives, what it returns, or how a run that outgrows its window continues."
+      ],
+      "target_requirements": [
+        "T-t2-02"
+      ],
+      "pass_sections": [
+        "B5"
+      ],
+      "standards": [
+        "none found"
+      ],
+      "sources": [
+        "X-end-to-end-004",
+        "X-end-to-end-005"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "correlation-envelope-a-named-versioned-s",
+      "proposed_capability": "Correlation envelope: a named, versioned set of fields (run id, parent unit id, entry-point kind, conversation id, idempotency key, budget ceiling id, actor chain ref) with a specified carrier per boundary — resource attribute in-process, baggage in-flight, CloudEvents extension attribute over events, and a dispatch request field over the VM boundary — plus a conformance test that a depth-3 task tree yields one run id in all three subtrees.",
+      "layers": [
+        "xc"
+      ],
+      "gaps": [
+        "PASS.md B4 states the correlation rule ('correlation rides on explicit attributes, not trace parentage') but names no carrier, no field, and no point of injection. The research shows there are three distinct carriers with different reach — OTel resource attributes (frozen, stable, per-process), W3C Baggage (in-flight, bounded to 64 entries / 8192 bytes, leaks across boundaries), and event-body fields (CloudEvents tracing extension) — and that GenAI semconv has no session attribute for grouping a multi-agent tree. Without a named carrier and field set, A7 finding 1 stays unfixed at every new boundary."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "OpenTelemetry resource attributes + W3C Baggage + CloudEvents Distributed Tracing extension; gen_ai.conversation.id where a conversation exists (no standard exists for a multi-agent session id — semantic-conventions-genai issue #51 is open)"
+      ],
+      "sources": [
+        "X-cross-structure-004",
+        "X-cross-structure-005",
+        "X-cross-structure-007",
+        "X-cross-structure-008",
+        "X-cross-structure-012",
+        "X-cross-structure-016",
+        "X-cross-structure-013"
+      ],
+      "lenses": [
+        "cross-structure"
+      ]
+    },
+    {
+      "key": "credential-brokering-exchange-an-actor-s",
+      "proposed_capability": "Credential brokering — exchange an actor's identity for a short-lived credential scoped to one destination, audience-bound, never handed to the sandbox; the broker filters destination and model overrides by name.",
+      "layers": [
+        "cap"
+      ],
+      "gaps": [
+        "No credential brokering capability. Identity is listed as absent, but even once identity exists, workload identity does not mint the per-tool, audience-bound tokens MCP requires; today the model key is brokered by a bespoke host component with no interface."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B3"
+      ],
+      "standards": [
+        "MCP Authorization revision 2025-11-25 (OAuth 2.1 + RFC 8707 Resource Indicators); RFC 8693 for the exchange"
+      ],
+      "sources": [
+        "X-end-to-end-028",
+        "X-end-to-end-029",
+        "X-end-to-end-030"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "discovery-publish-a-signed-capability-re",
+      "proposed_capability": "Discovery — publish a signed capability record describing entry points, capabilities and their versions; resolve another party's record by name.",
+      "layers": [
+        "cap"
+      ],
+      "gaps": [
+        "No discovery surface. TARGET T1.2 requires an agent to enter the system, but nothing publishes what the platform can do or lets it read another agent's capabilities."
+      ],
+      "target_requirements": [
+        "T-t1-02"
+      ],
+      "pass_sections": [
+        "B3"
+      ],
+      "standards": [
+        "OASF / AGNTCY Agent Directory Service; A2A Agent Card"
+      ],
+      "sources": [
+        "X-end-to-end-068",
+        "X-end-to-end-069"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "dispatch-contract-that-is-explicit-about",
+      "proposed_capability": "Dispatch contract that is explicit about durability: every dispatch is a recorded step with a step id, an idempotency key, a resumable checkpoint reference, and a defined replay semantic (recorded result returned, not re-executed); the seam must be satisfiable both by a durable engine and by a queue plus a state machine.",
+      "layers": [
+        "seam"
+      ],
+      "gaps": [
+        "PASS.md B5 says Dispatch must specify cancellation, timeout, budget enforcement and partial results, but does not address what durability model the seam assumes. Durable execution imposes a determinism constraint on the orchestrating code, which means agent calls must be shaped as recorded steps; agent runtimes independently converged on (thread_id, checkpoint_id) snapshots supporting pause, resume, rewind and fork. Whether Dispatch is a step inside a durable workflow or a standalone call changes its contract materially, and PASS.md A6 records that the durable engine is currently down."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B5"
+      ],
+      "standards": [
+        "none found (no cross-vendor durable execution standard)"
+      ],
+      "sources": [
+        "X-cross-structure-043",
+        "X-cross-structure-044",
+        "X-cross-structure-045",
+        "X-cross-structure-046",
+        "X-cross-structure-042"
+      ],
+      "lenses": [
+        "cross-structure"
+      ]
+    },
+    {
+      "key": "effective-configuration-attestation-at-s",
+      "proposed_capability": "Effective-configuration attestation: at start-up each adapter emits the configuration it actually resolved (not the file it was given) as an attested record, and a validator compares declared against effective; a gate additionally reports which stages were applicable, so a run with zero applicable behavioural stages is reported as inconclusive rather than green.",
+      "layers": [
+        "xc"
+      ],
+      "gaps": [
+        "PASS.md A7 finding 3 records configuration written in the documented place being silently discarded, and A7 finding 2 records a gate that was structurally green and meant nothing. Neither is covered by any B4 concern: there is no cross-cutting guarantee that a declared configuration or a declared check actually took effect. The research offers the analogous discipline from transparency logs (verify, do not assume) and from admission control (mutate-then-validate makes the effect structural)."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "A7"
+      ],
+      "standards": [
+        "in-toto/DSSE for the attestation; the mutate-then-validate admission pattern for the structural half"
+      ],
+      "sources": [
+        "X-cross-structure-023",
+        "X-cross-structure-053",
+        "X-cross-structure-050"
+      ],
+      "lenses": [
+        "cross-structure"
+      ]
+    },
+    {
+      "key": "entry-conformance-suite-for-each-of-the",
+      "proposed_capability": "Entry conformance suite — for each of the three actors, a run that enters the platform using only third-party tooling (a plain HTTP client posting a CloudEvent, an off-the-shelf A2A/MCP client, a terminal), plus a deliberately broken adapter that the suite must fail on.",
+      "layers": [
+        "build"
+      ],
+      "gaps": [
+        "B1 rule 4 ('A caller needs no client library we wrote') is asserted but has no entry-point test. T3.2's 'no one will use it' failure mode is exactly the one this rule guards against, and Part C's demand for a machine-checkable definition of done plus deliberate breakage is not applied to entry."
+      ],
+      "target_requirements": [
+        "T-t3-02"
+      ],
+      "pass_sections": [
+        "B1"
+      ],
+      "standards": [
+        "CloudEvents v1.0.2, A2A, MCP 2025-06-18 conformance"
+      ],
+      "sources": [
+        "X-entry-composition-007",
+        "X-entry-composition-019",
+        "X-entry-composition-009",
+        "X-entry-composition-041"
+      ],
+      "lenses": [
+        "entry-composition"
+      ]
+    },
+    {
+      "key": "entry-envelope-one-internal-record-every",
+      "proposed_capability": "Entry envelope — one internal record every driving adapter produces, carrying the CloudEvents required context attributes (id, source, specversion, type) plus actor, correlation id, budget ceiling and idempotency key; all routing and all cross-cutting concerns read only this record.",
+      "layers": [
+        "seam"
+      ],
+      "gaps": [
+        "Part B never states a single internal entry envelope. B3's Work intake row lists four adapters (CLI, git event, HTTP, schedule) but not the shape they normalise onto, and human and agent entries are in different rows entirely. Without one envelope, T2.3's 'whichever entry point was used' has nothing to hang on and every cross-cutting concern must be re-implemented per adapter."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B3"
+      ],
+      "standards": [
+        "CloudEvents v1.0.2 core context attributes and HTTP protocol binding"
+      ],
+      "sources": [
+        "X-entry-composition-001",
+        "X-entry-composition-003",
+        "X-entry-composition-004",
+        "X-entry-composition-005",
+        "X-entry-composition-015"
+      ],
+      "lenses": [
+        "entry-composition"
+      ]
+    },
+    {
+      "key": "entry-gate-a-single-point-through-which",
+      "proposed_capability": "Entry gate — a single point through which every driving adapter passes, applying policy decision, budget ceiling assignment, provenance stamping and telemetry attribute injection before the Planner sees the request; adopting a protocol never bypasses it.",
+      "layers": [
+        "xc"
+      ],
+      "gaps": [
+        "Part B assumes that adopting standards at the boundary delivers the B4 guarantees. It does not: the interoperability protocols can carry governance-related messages as opaque payloads but cannot interpret, validate or enforce their semantics. B1 rule 2 ('adopt the standard whole') therefore under-specifies the entry adapter, which must enforce budget, policy and audit itself."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "Rego/OPA for the decision; OTLP with GenAI semantic conventions for the attributes; the protocols themselves supply no governance semantics"
+      ],
+      "sources": [
+        "X-entry-composition-059",
+        "X-entry-composition-060",
+        "X-entry-composition-050"
+      ],
+      "lenses": [
+        "entry-composition"
+      ]
+    },
+    {
+      "key": "evaluation-run-a-versioned-dataset-of-ca",
+      "proposed_capability": "Evaluation — run a versioned dataset of cases against a versioned unit of work, emit per-case scores as OTel gen_ai.evaluation.result, and return a pass/fail against a stored baseline.",
+      "layers": [
+        "cap"
+      ],
+      "gaps": [
+        "No evaluation capability distinct from the Judge. There is no dataset store, no trajectory grading, no offline regression harness, and no record of grading history — so nothing can prove a change did not regress before it ships."
+      ],
+      "target_requirements": [
+        "T-t4-04"
+      ],
+      "pass_sections": [
+        "B3"
+      ],
+      "standards": [
+        "OpenTelemetry GenAI semantic conventions v1.37+ for the result carrier"
+      ],
+      "sources": [
+        "X-end-to-end-006",
+        "X-end-to-end-009",
+        "X-end-to-end-010",
+        "X-end-to-end-011"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "executable-acceptance-criteria-the-docum",
+      "proposed_capability": "Executable acceptance criteria — the Document's definition of done is a list of runnable checks with declared risk tiers; a run in which no behavioural check executed is reported as inconclusive, never as passed.",
+      "layers": [
+        "core"
+      ],
+      "gaps": [
+        "The Document carries a definition of done but nothing requires it to be executable or risk-tiered, which is precisely how the A7-2 gate ran structurally green with every behavioural stage skipped."
+      ],
+      "target_requirements": [
+        "T-t4-03"
+      ],
+      "pass_sections": [
+        "B2"
+      ],
+      "standards": [
+        "none found"
+      ],
+      "sources": [
+        "X-end-to-end-076",
+        "X-end-to-end-077",
+        "X-end-to-end-078"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "human-interaction-a-work-item-can-enter",
+      "proposed_capability": "Human interaction — a work item can enter a waiting-for-human state carrying the proposed action, its diff and its irreversibility class; the human returns approve, edit (with the edited artifact), reject-with-notes, or partial acceptance, and the run resumes on the same correlation id.",
+      "layers": [
+        "cap"
+      ],
+      "gaps": [
+        "Human interaction is not a capability. Approve / reject / return exists as a host service in Part A, but B3 lists no human-interaction row, so steering, edit-in-place, partial acceptance and draft-then-promote have no contract and no second adapter."
+      ],
+      "target_requirements": [
+        "T-t1-01"
+      ],
+      "pass_sections": [
+        "B3"
+      ],
+      "standards": [
+        "A2A Protocol v0.3.0 (input-required task state) for the state machine; AG-UI for the event stream"
+      ],
+      "sources": [
+        "X-end-to-end-014",
+        "X-end-to-end-016",
+        "X-end-to-end-018",
+        "X-end-to-end-019",
+        "X-end-to-end-020"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "human-interaction-surface-one-capability",
+      "proposed_capability": "Human interaction surface — one capability interface for an interactive session that streams typed events (message, tool-call lifecycle, state snapshot) to whatever client a person is holding, with a CLI adapter and a browser/SSE adapter as the required pair.",
+      "layers": [
+        "cap"
+      ],
+      "gaps": [
+        "Part B names no standard for the interactive human surface. B3 covers Work intake (A2A, CloudEvents) and Agent runtime (ACP, which is the platform driving an agent), but nothing governs the chat/CLI/approval-screen channel a person actually holds — the streaming event shape, session identity, and how a person sees progress. T1.1 is therefore satisfied only as 'submit a job', not as 'enter the system'."
+      ],
+      "target_requirements": [
+        "T-t1-01"
+      ],
+      "pass_sections": [
+        "B3"
+      ],
+      "standards": [
+        "AG-UI (Agent-User Interaction Protocol) over HTTP/SSE/WebSockets; Agent Client Protocol for the editor-shaped client"
+      ],
+      "sources": [
+        "X-entry-composition-020",
+        "X-entry-composition-021",
+        "X-entry-composition-008",
+        "X-entry-composition-010"
+      ],
+      "lenses": [
+        "entry-composition"
+      ]
+    },
+    {
+      "key": "idempotency-capability-claim-key-payload",
+      "proposed_capability": "Idempotency capability: claim(key, payload_digest) -> {fresh | duplicate(result_ref) | conflict}, backed by the ledger or a durable engine, applied at every entry point and at each recorded step boundary. Conflict (same key, different payload) must return a typed error, per the draft's MUST.",
+      "layers": [
+        "cap"
+      ],
+      "gaps": [
+        "PASS.md B3 records idempotency as 'key on the wire, no lease' and B4 requires every externally-triggered action to be safe to replay. A key without a keyed lease store is a convention, not a guarantee; the wire format itself is still an IETF draft (draft-07), not an RFC, and durable execution engines are the readiest source of the missing lease/dedup store."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "draft-ietf-httpapi-idempotency-key-header-07 (draft, not an RFC) for the wire; no standard for the lease store"
+      ],
+      "sources": [
+        "X-cross-structure-041",
+        "X-cross-structure-042",
+        "X-cross-structure-043"
+      ],
+      "lenses": [
+        "cross-structure"
+      ]
+    },
+    {
+      "key": "improvement-loop-collect-execution-trace",
+      "proposed_capability": "Improvement loop — collect execution traces and judge verdicts for a unit of work, produce a candidate revision of the skill that produced it, evaluate the candidate against the stored dataset, and promote through canary only if it beats the baseline; the loop writes to the capability registry, never to a live skill in place.",
+      "layers": [
+        "compose"
+      ],
+      "gaps": [
+        "The self-improvement loop TARGET T4.4 requires is absent from Part B entirely: no trace-to-revision path, no store for candidate skill revisions, no frontier, and no gate that promotes a revision."
+      ],
+      "target_requirements": [
+        "T-t4-04"
+      ],
+      "pass_sections": [
+        "none"
+      ],
+      "standards": [
+        "none found (GEPA and ACE are published methods)"
+      ],
+      "sources": [
+        "X-end-to-end-053",
+        "X-end-to-end-054",
+        "X-end-to-end-055"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "in-path-enforcement-every-tool-call-and",
+      "proposed_capability": "In-path enforcement — every tool call and every model call passes a decision point that can refuse; hard caps on autonomous iterations; an approval gate that fires on declared-irreversible actions regardless of prior approval.",
+      "layers": [
+        "xc"
+      ],
+      "gaps": [
+        "Policy is pre-execution only and is not in the enforcement path; dynamic tool selection at runtime therefore escapes it, and there are no loop caps or irreversible-action gates."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "OWASP Top 10 for Agentic Applications 2026 as the risk taxonomy the checks must cover"
+      ],
+      "sources": [
+        "X-end-to-end-061",
+        "X-end-to-end-062",
+        "X-end-to-end-063"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "interaction-approval-a-pause-primitive-t",
+      "proposed_capability": "Interaction/approval — a pause primitive that emits (prompt, response JSON Schema, correlation id) and a resume primitive that accepts one of approve / edit / reject / respond, with the state checkpointed by the platform.",
+      "layers": [
+        "cap"
+      ],
+      "gaps": [
+        "Approval / human-in-the-loop appears nowhere in Part B — not as a capability in B3, not as a cross-cutting concern in B4, not as a seam in B5. Yet a platform where a person must enter mid-run needs a defined pause point, a schema for what is being asked, a resume path keyed to the unit, and a bounded decision vocabulary. Part B's Judge is about grading a finished result, not about pausing for a person."
+      ],
+      "target_requirements": [
+        "T-t1-01"
+      ],
+      "pass_sections": [
+        "none"
+      ],
+      "standards": [
+        "MCP elicitation/create (2025-06-18) for the schema-typed ask; A2A task state input-required plus follow-up on the same context id for the pause/resume path"
+      ],
+      "sources": [
+        "X-entry-composition-016",
+        "X-entry-composition-014",
+        "X-entry-composition-023",
+        "X-entry-composition-022",
+        "X-entry-composition-054"
+      ],
+      "lenses": [
+        "entry-composition"
+      ]
+    },
+    {
+      "key": "judge-extension-criterion-sampling-drop",
+      "proposed_capability": "Judge extension — criterion sampling (drop a random subset per grading) plus a periodic held-out gold-judge audit whose divergence from the routine judge is an alarm, not a score.",
+      "layers": [
+        "core"
+      ],
+      "gaps": [
+        "Rule 6 hides the criterion but does not rotate it. A fixed criterion leaks through outcomes over repeated runs, and the divergence between a training judge and a stronger gold judge is measurable."
+      ],
+      "target_requirements": [
+        "T-t4-04"
+      ],
+      "pass_sections": [
+        "B2"
+      ],
+      "standards": [
+        "none found"
+      ],
+      "sources": [
+        "X-end-to-end-012",
+        "X-end-to-end-013"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "keyed-lease-store-behind-the-idempotency",
+      "proposed_capability": "Keyed lease store behind the Idempotency capability, with a per-adapter key derivation rule (caller-supplied key where the protocol carries one, fingerprint of selected payload elements where it does not) and attach-to-in-flight semantics on duplicate.",
+      "layers": [
+        "xc"
+      ],
+      "gaps": [
+        "B3's Idempotency row admits 'key on the wire, no lease', and B4 requires every externally-triggered action to be safe to replay. Three entry actors means three key-derivation problems: a human retry, an agent resend, and a webhook redelivery are not the same event, and the standard already anticipates this with the idempotency fingerprint."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "draft-ietf-httpapi-idempotency-key-header-07 (Idempotency-Key field and idempotency fingerprint)"
+      ],
+      "sources": [
+        "X-entry-composition-047",
+        "X-entry-composition-027",
+        "X-entry-composition-002"
+      ],
+      "lenses": [
+        "entry-composition"
+      ]
+    },
+    {
+      "key": "mandate-a-signed-expiring-scope-limited",
+      "proposed_capability": "Mandate — a signed, expiring, scope-limited authorization for an agent to act (spend, deploy, send) within stated bounds, verifiable independently of the platform that issued it.",
+      "layers": [
+        "xc"
+      ],
+      "gaps": [
+        "Approvals are unsigned and unscoped. A budget ceiling is a number the platform holds; there is no verifiable record of what a human authorized, for how long, or against which counterparties."
+      ],
+      "target_requirements": [
+        "T-t1-01"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "Agent Payments Protocol (AP2) mandates over W3C Verifiable Credentials"
+      ],
+      "sources": [
+        "X-end-to-end-070",
+        "X-end-to-end-071",
+        "X-end-to-end-032"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "memory-write-retrieve-and-expire-scoped",
+      "proposed_capability": "Memory — write, retrieve and expire scoped memory items; scopes are identity-derived (principal / agent / run / org) and every item carries provenance and a staleness policy.",
+      "layers": [
+        "cap"
+      ],
+      "gaps": [
+        "No memory capability. The Ledger persists platform facts across runs but nothing gives an agent scoped, retrievable working / episodic / semantic memory, and nothing states how memory is scoped to a principal, agent, session or org."
+      ],
+      "target_requirements": [
+        "T-t4-03"
+      ],
+      "pass_sections": [
+        "B2"
+      ],
+      "standards": [
+        "none found — this is a third design-ourselves seam alongside Dispatch and State"
+      ],
+      "sources": [
+        "X-end-to-end-001",
+        "X-end-to-end-002",
+        "X-end-to-end-003"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "named-enforcement-points-at-least-admiss",
+      "proposed_capability": "Named enforcement points, at least: admission PEP (before a work item is accepted), dispatch PEP (before a unit runs), and call PEP (before each model/tool call), each calling a policy decision API and a budget reservation API and each capable of returning a typed refusal. Deliberate-breakage test: a policy that denies everything must turn every stage red.",
+      "layers": [
+        "seam"
+      ],
+      "gaps": [
+        "PASS.md B4 requires 'refusal is deterministic and happens before execution, not after spend', and B4 separately requires a budget ceiling, but neither names the enforcement point. The research distinguishes a check that blocks before the provider call from monitoring that reports after the tokens are gone, and places the PEP immediately before tool execution. PASS.md A6 confirms policy is not in the gate path today."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "Rego/OPA decision API, with Cedar as the second adapter; no standard for budget reservation"
+      ],
+      "sources": [
+        "X-cross-structure-031",
+        "X-cross-structure-032",
+        "X-cross-structure-033",
+        "X-cross-structure-055",
+        "X-cross-structure-056",
+        "X-cross-structure-030"
+      ],
+      "lenses": [
+        "cross-structure"
+      ]
+    },
+    {
+      "key": "one-document-schema-that-every-entry-ada",
+      "proposed_capability": "One Document schema that every entry adapter produces and that carries the composition operators as its step vocabulary, so a human, an agent and an event all yield the same declarable artifact and the same thing is reviewable, diffable and replayable.",
+      "layers": [
+        "core"
+      ],
+      "gaps": [
+        "B2's Document is described only as 'declared intent, definition of done, steps' with JSON Schema 2020-12 validation. There is no statement that the document is the same artifact whichever entry point produced it, no portability target, and no relationship between 'steps' and any composition operator. This is the artifact a user actually writes, and it is the least specified thing in Part B relative to T3.1."
+      ],
+      "target_requirements": [
+        "T-t3-01"
+      ],
+      "pass_sections": [
+        "B2"
+      ],
+      "standards": [
+        "JSON Schema 2020-12 for validation; Open Agent Specification as the portability prior art"
+      ],
+      "sources": [
+        "X-entry-composition-052",
+        "X-entry-composition-005",
+        "X-entry-composition-026"
+      ],
+      "lenses": [
+        "entry-composition"
+      ]
+    },
+    {
+      "key": "one-problem-detail-type-registry-used-by",
+      "proposed_capability": "One problem-detail type registry used by every driving adapter, so a policy refusal, a budget termination and a validation failure carry the same machine-readable type whichever way the caller entered.",
+      "layers": [
+        "xc"
+      ],
+      "gaps": [
+        "B3 marks Errors 'absent' and B4 requires typed, machine-readable errors. With three different entry protocols, a refusal or failure must render identically to a human client, an agent client and a webhook caller, or each entry grows its own error dialect. Part B does not say the error shape is shared across entry points."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B3"
+      ],
+      "standards": [
+        "RFC 9457 Problem Details for HTTP APIs (July 2023)"
+      ],
+      "sources": [
+        "X-entry-composition-046",
+        "X-entry-composition-042"
+      ],
+      "lenses": [
+        "entry-composition"
+      ]
+    },
+    {
+      "key": "pin-the-genai-convention-version-in-the",
+      "proposed_capability": "Pin the GenAI convention version in the telemetry adapter and keep the platform's own correlation attributes (entry id, actor, delegation chain, budget) independent of it, so a convention revision changes one adapter and not the entry envelope.",
+      "layers": [
+        "cap"
+      ],
+      "gaps": [
+        "B3 adopts 'OTLP · GenAI semantic conventions' as a governing standard without noting maturity. Every gen_ai.* attribute, span, metric and event in the official registry is still Development status, so a design that binds correlation and cross-cutting telemetry tightly to those names inherits their churn — particularly at entry, where the correlation attributes are minted."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B3"
+      ],
+      "standards": [
+        "OTLP; OpenTelemetry GenAI semantic conventions (Development status as of mid-2026)"
+      ],
+      "sources": [
+        "X-entry-composition-051",
+        "X-entry-composition-050",
+        "X-entry-composition-015"
+      ],
+      "lenses": [
+        "entry-composition"
+      ]
+    },
+    {
+      "key": "replay-and-simulation-a-recorded-run-can",
+      "proposed_capability": "Replay and simulation — a recorded run can be replayed against a changed unit of work with external effects stubbed, and a scenario suite of synthetic personas runs in CI producing a pass/fail against a stored baseline.",
+      "layers": [
+        "cap"
+      ],
+      "gaps": [
+        "No simulation or replay capability. Neither the Dispatch seam nor the build sequence provides a way to re-run recorded work deterministically or to exercise an agent against synthetic users, so a revised skill cannot be shown non-regressive before rollout."
+      ],
+      "target_requirements": [
+        "T-t4-04"
+      ],
+      "pass_sections": [
+        "B5"
+      ],
+      "standards": [
+        "none found"
+      ],
+      "sources": [
+        "X-end-to-end-037",
+        "X-end-to-end-038",
+        "X-end-to-end-039",
+        "X-end-to-end-040"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "retention-and-attestation-policy-evidenc",
+      "proposed_capability": "Retention and attestation policy — evidence records are emitted as in-toto attestations in DSSE envelopes, retained for a stated minimum, and verifiable with a tool the platform did not write.",
+      "layers": [
+        "xc"
+      ],
+      "gaps": [
+        "Evidence has no retention or attestation-format policy, and no governance standard is named, despite high-risk obligations activating 2 August 2026 with a minimum six-month deployer retention."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "SLSA v1.1 and the in-toto Attestation Framework; ISO/IEC 42001; EU AI Act Articles 9-17"
+      ],
+      "sources": [
+        "X-end-to-end-049",
+        "X-end-to-end-050",
+        "X-end-to-end-051",
+        "X-end-to-end-052"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "routing-policy-a-pure-function-from-clas",
+      "proposed_capability": "Routing policy — a pure function from (class, unit of work, budget remaining, policy verdict) to an endpoint selection, evaluated before the model-access adapter is called.",
+      "layers": [
+        "cap"
+      ],
+      "gaps": [
+        "Routing policy is buried inside the model-access adapter, so the class contract that PASS gets right is not independently swappable and cannot be tested against a second implementation."
+      ],
+      "target_requirements": [
+        "T-t2-02"
+      ],
+      "pass_sections": [
+        "B3"
+      ],
+      "standards": [
+        "none found"
+      ],
+      "sources": [
+        "X-end-to-end-056",
+        "X-end-to-end-057",
+        "X-end-to-end-058"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "run-scoped-budget-one-ceiling-per-root-u",
+      "proposed_capability": "Run-scoped budget — one ceiling per root unit of work, decremented by every descendant, enforced mid-run with continue / narrow / require-approval / stop outcomes, plus explicit delegation depth and fan-out caps.",
+      "layers": [
+        "xc"
+      ],
+      "gaps": [
+        "Budget does not aggregate across a delegation tree. Per-key caps and per-unit ceilings do not bound what a run costs once it fans out, and no depth or fan-out limit is stated."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "FOCUS v1.3 for the cost record schema (split cost allocation)"
+      ],
+      "sources": [
+        "X-end-to-end-045",
+        "X-end-to-end-046",
+        "X-end-to-end-047",
+        "X-end-to-end-048"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "schedules-and-manual-triggers-declared-a",
+      "proposed_capability": "Schedules and manual triggers declared as sibling entries on the same unit, both producing the standard entry envelope; the schedule as a single portable recurrence string and the manual trigger as a typed input schema the surface renders.",
+      "layers": [
+        "compose"
+      ],
+      "gaps": [
+        "B3's Scheduling row names RFC 5545 recurrence rules with Temporal schedules as the adapter, but nothing connects a firing schedule to the entry path: a schedule that fires must produce the same envelope, actor and idempotency key as any other entry, or the platform has a fourth, privileged way in. Part B also does not say a human manual trigger is the sibling of the schedule."
+      ],
+      "target_requirements": [
+        "T-t1-03"
+      ],
+      "pass_sections": [
+        "B3"
+      ],
+      "standards": [
+        "RFC 5545 RRULE for recurrence; CloudEvents v1.0.2 for the produced envelope"
+      ],
+      "sources": [
+        "X-entry-composition-049",
+        "X-entry-composition-044",
+        "X-entry-composition-045",
+        "X-entry-composition-001"
+      ],
+      "lenses": [
+        "entry-composition"
+      ]
+    },
+    {
+      "key": "split-the-telemetry-interface-a-stable-t",
+      "proposed_capability": "Split the telemetry interface: a stable transport/shape contract pinned to OTLP, and a separately versioned attribute mapping for GenAI conventions that can be revised without touching emitters — plus a recorded pin of the semconv version each run emitted against.",
+      "layers": [
+        "cap"
+      ],
+      "gaps": [
+        "PASS.md B3 pins Telemetry to 'OTLP · GenAI semantic conventions' without noting their differing maturity. OTLP is stable for traces, metrics and logs at 1.11.0, while most GenAI semantic conventions were still experimental in 2026. Adopting them at the same confidence level puts churn in the core."
+      ],
+      "target_requirements": [
+        "T-t2-02"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "OTLP 1.11.0 (stable) and OpenTelemetry GenAI semantic conventions (experimental)"
+      ],
+      "sources": [
+        "X-cross-structure-010",
+        "X-cross-structure-011",
+        "X-cross-structure-009"
+      ],
+      "lenses": [
+        "cross-structure"
+      ]
+    },
+    {
+      "key": "state-seam-specified-as-an-event-sourced",
+      "proposed_capability": "State seam specified as an event-sourced append log: append(stream_id, expectedVersion, events) with a uniqueness constraint for conflict detection, periodic snapshots, named projections as the planner's query surface, and a Merkle/inclusion-proof integrity mode alongside the existing hash chain. Two adapters: file+chain and a relational or object-store event log.",
+      "layers": [
+        "seam"
+      ],
+      "gaps": [
+        "PASS.md B5 says the State seam must specify the write model, concurrency and single-writer guarantees, integrity, retention and query surface, and that a hash-chained JSONL file is today's implementation. The research supplies portable answers for four of the five that PASS.md does not yet name: expectedVersion / UNIQUE(stream_id, version) optimistic concurrency instead of a single-writer requirement, snapshots for replay cost and retention, projections for the query surface, and a transparency log for integrity verifiable by a third party."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B5"
+      ],
+      "standards": [
+        "none for durable execution / state persistence; event sourcing with expectedVersion append is a pattern, and Merkle transparency-log integrity is the standardised part"
+      ],
+      "sources": [
+        "X-cross-structure-047",
+        "X-cross-structure-048",
+        "X-cross-structure-049",
+        "X-cross-structure-052",
+        "X-cross-structure-043"
+      ],
+      "lenses": [
+        "cross-structure"
+      ]
+    },
+    {
+      "key": "tenancy-every-unit-of-work-carries-a-man",
+      "proposed_capability": "Tenancy — every unit of work carries a mandatory principal context that the platform verifies at each shared choke point; quotas (spend, concurrency, sandbox slots) are per principal, and storage keys are principal-prefixed.",
+      "layers": [
+        "xc"
+      ],
+      "gaps": [
+        "No tenancy. With no identity field anywhere, the shared model gateway, sandbox pool, trace store and ledger have no principal to isolate on and no per-principal quota, so noisy-neighbour and cross-principal leakage are unaddressed by construction."
+      ],
+      "target_requirements": [
+        "T-t2-03"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "none found"
+      ],
+      "sources": [
+        "X-end-to-end-033",
+        "X-end-to-end-034"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    },
+    {
+      "key": "two-provenance-predicates-behind-one-att",
+      "proposed_capability": "Two provenance predicates behind one attestation capability: a build-shaped predicate for artifacts (SLSA provenance) and a run-shaped predicate for agent actions (actor, tool, argument digest, result digest, decision refs), both emitted as in-toto Statements in DSSE envelopes so one verifier tool handles both.",
+      "layers": [
+        "cap"
+      ],
+      "gaps": [
+        "PASS.md B4 requires provenance for 'every artifact' attributable to code version, inputs and actor. The research shows build-time provenance (SLSA predicate: builder, recipe, materials, subject) says nothing about what an agent did at runtime; per-action signed receipts for tool calls and external writes are a separate, currently-research-stage layer. The evidence store today records script SHA, git commit and tree hash — build-time facts — with no per-action attestation."
+      ],
+      "target_requirements": [
+        "T-t2-02"
+      ],
+      "pass_sections": [
+        "B4"
+      ],
+      "standards": [
+        "in-toto Attestation Framework (Statement v1) + DSSE; SLSA Provenance for the build predicate; no standard predicate for agent actions"
+      ],
+      "sources": [
+        "X-cross-structure-050",
+        "X-cross-structure-051",
+        "X-cross-structure-054"
+      ],
+      "lenses": [
+        "cross-structure"
+      ]
+    },
+    {
+      "key": "uniform-packaging-for-every-composable-u",
+      "proposed_capability": "Uniform packaging for every composable unit — one file with required name and description resident, body on trigger, references on use — published to a registry rather than copied, with the tier budgets as the machine-checkable simplicity test.",
+      "layers": [
+        "compose"
+      ],
+      "gaps": [
+        "Part B has no capability-packaging story for composition units beyond 'skill files'. B3's Capability packaging row names the Agent Skills spec, but nothing says composition units (workflows, loops, agents) are packaged, versioned and discoverable the same way — which is what makes composition scale past one repository and what makes progressive disclosure enforceable per unit."
+      ],
+      "target_requirements": [
+        "T-t2-01"
+      ],
+      "pass_sections": [
+        "B3"
+      ],
+      "standards": [
+        "Agent Skills specification (three-tier progressive disclosure)"
+      ],
+      "sources": [
+        "X-entry-composition-035",
+        "X-entry-composition-036",
+        "X-entry-composition-056"
+      ],
+      "lenses": [
+        "entry-composition"
+      ]
+    },
+    {
+      "key": "workflow-definition-express-a-plan-as-a",
+      "proposed_capability": "Workflow definition — express a plan as a declarative, JSON-Schema-typed graph independent of the executing runtime; the durable-execution adapter compiles it.",
+      "layers": [
+        "seam"
+      ],
+      "gaps": [
+        "B5 claims durable execution has no standard to adopt. A declarative, runtime-portable agent/workflow specification with adapters for the named swap candidates now exists, so that claim needs re-testing before original design effort is spent there."
+      ],
+      "target_requirements": [
+        "T-t4-03"
+      ],
+      "pass_sections": [
+        "B5"
+      ],
+      "standards": [
+        "Open Agent Specification (Agent Spec)"
+      ],
+      "sources": [
+        "X-end-to-end-066",
+        "X-end-to-end-067"
+      ],
+      "lenses": [
+        "end-to-end"
+      ]
+    }
+  ],
+  "count": 49
+}

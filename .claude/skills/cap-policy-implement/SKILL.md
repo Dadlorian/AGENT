@@ -130,9 +130,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/policy/test.sh && python3 harness/policy/conformance.py --adapter dryrun --adapter second |
-| Expected | docs/decomposition.md section 3.2 row P10, extended with the swap: `python3 tools/conformance/policy_decision.py --adapter out-of-process-document-query --entry examples/end-to-end/entries/human.json --deny-rule deny-external-tool-without-mandate --report out/policy-a.json` then the same command with `--adapter in-process-typed-entity --report out/policy-b.json`, the engine chosen by configuration with no code edit between runs. Both reports must validate against the PolicyConformanceReport shape above and assert, per adapter, `spend_delta_micros == 0` for the denied dispatch, `rule_id_present == true`, `decided_before_first_metered_call == decisions_taken`, and the result `state: "rejected"` with problem type `urn:agentic:problem:policy-denied`. Earlier criterion named tools/conformance/policy_decision.py, replaced by the harness on 2026-09-03. |
+| Expected | Measured by tools/measure.py at 372cdc1: exit 0; last lines:   adapter=in-process-typed-entity cases=14 passed=14 decisions_taken=8 decided_before_first_metered_call=8 spend_delta_micros=0 rule_id_present=True subset=['dispatch.data_query'] product_hits=0 \| conformance PASSED: 28/28 cases, 2 binding(s) |
 | Deliberate breakage | Append an engine-name comment (`# breakage: opa`) to the end of harness/policy/call.py, outside adapters/. Restored with `git checkout -- harness/policy/call.py`. |
-| Expected failure | test.sh's engine-name scan (check 3) fails with product_hits going from 0 to 1, and `conformance.py --adapter dryrun --adapter second` also reports the same non-zero product_hits and exits non-zero, since every conformance run scans for an engine name outside adapters/. |
+| Expected failure | Measured by tools/measure.py at 372cdc1: exit 1; last lines:   FAIL both adapters failed \| passed 30, failed 8 |
 | Status | measured |
 | Evidence | `F-a6-04`, `F-b4-04` "not wired into the enforcement path" |
 

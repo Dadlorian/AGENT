@@ -142,9 +142,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/identity/test.sh && python3 harness/identity/conformance.py --adapter dryrun --adapter second |
-| Expected | The gate (46 checks) and the conformance run over a 50-action corpus together prove an actor and the chain that produced its right to act, under an exchange-issuing provider and an attested workload identity with a local trust bundle: no hop widens scope or outlives the credential it came from, a widening, cyclic, unrooted or expired chain is refused as a typed problem before anything is issued, the credential names the unit that will execute it, and the swap moves authority calls from 3 to 0 while ten contract facts stay identical (adapters_run=2). Earlier criterion named tools/conformance/identity_chain.py, replaced by the harness on 2026-09-03. |
+| Expected | Measured by tools/measure.py at b923246: exit 0; last lines:   adapter=attested workload identity with a local trust bundle cases=16 passed=16 actions_checked=50 short_chains=0 cyclic=0 executing_unit_mismatch=0 authority_calls=0 marker=workload-attestor product_hits=0 \| conformance PASSED: 32/32 cases, 2 binding(s), selected_by=configuration |
 | Deliberate breakage | In harness/identity/adapters/dryrun.py, make _break_this_hop() always forward the incoming credential unchanged on an agent actor's first hop, instead of only under IDENTITY_BREAK=forward-token (the harness README's breakage, made the default rather than env-gated so the criterion needs no extra variable) and change nothing else; restore with git checkout -- harness/identity/adapters/dryrun.py. |
-| Expected failure | The exchange adapter's delegation hop forwards the incoming token instead of exchanging it: the 50-action corpus assertion reports short_chains=1 and executing_unit_mismatch=1, and the conformance run drops to 27/32 cases and exits non-zero naming that adapter; the attested-workload adapter, which cannot forward a credential at all, is untouched and still passes. |
+| Expected failure | Measured by tools/measure.py at b923246: exit 1; last lines:   FAIL the same suite passes again once the hop is restored (expected 0, got 1) \| passed 36, failed 10 |
 | Status | measured |
 | Evidence | `F-a6-05`, `F-b1-04` "No identity field anywhere in the system" |
 

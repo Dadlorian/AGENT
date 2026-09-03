@@ -265,9 +265,9 @@
   ],
   "definition_of_done": {
     "criterion": "bash harness/document-validation/test.sh && python3 harness/document-validation/conformance.py --adapter dryrun --adapter second",
-    "expected": "The gate (24 checks) and the conformance run together prove: a declared shape is checked against a published JSON Schema 2020-12 dialect under a walk-per-document adapter and a compile-once adapter, a schema declaring no dialect or a different one is refused before any instance is checked, the outcome carries no validator-library name, and the two adapters return identical outcomes on the same fixtures while differing in execution model (adapters_run=2, product_hits=0 on every report). Earlier criterion named tools/conformance_document_validation.py, replaced by the harness on 2026-09-03.",
+    "expected": "Measured by tools/measure.py at 16d354c: exit 0; last lines:   adapter=compiled-schema checker (compile once, check many) cases=14 passed=14 prepares=6 schema_reads=0 dialect_in_effect=https://json-schema.org/draft/2020-12/schema product_hits=0 | conformance PASSED: 28/28 cases, 2 binding(s)",
     "breakage": "Import a validator library (jsonschema) directly at the top of harness/document-validation/call.py and change nothing else (the harness README's breakage); restore with git checkout -- harness/document-validation/call.py.",
-    "expected_failure": "Every adapter report's own product-name scan of the harness directory now finds one hit (product_hits=1); all 28 individual cases still pass, but the run reports conformance FAILED and exits non-zero, naming call.py — a library name leaked outside adapters/, which the scan run inside every conformance report is built to catch.",
+    "expected_failure": "Measured by tools/measure.py at 16d354c: exit 1; last lines:   FAIL hits not counted | passed 7, failed 17",
     "status": "measured",
     "sources": [
       "F-part-c-04",
@@ -281,7 +281,9 @@
       "clean_output": "nd validate() of the same schema\n  ok   dialect_in_effect is read from the adapter, never assumed from the file: https://json-schema.org/draft/2020-12/schema\n  ok   keywords_checked is reported and positive: keywords_checked=17\n  ok   nothing names a validator library on the way out: outcome carries valid, dialect, schema_uri, keywords_checked, errors and nothing else\n  adapter=compiled-schema checker (compile once, check many) cases=14 passed=14 prepares=6 schema_reads=0 dialect_in_effect=https://json-schema.org/draft/2020-12/schema product_hits=0\nconformance PASSED: 28/28 cases, 2 binding(s)",
       "breakage_exit": 1,
       "breakage_output": " on the second adapter (expected 0, got 1)\n  ok   the two adapters differ in execution model on 2 or more axes (0)\n  ok   both adapters gave the same outcome on every shared fixture (fixtures_compared=5)\n3. no validator library name in the interface, the caller or the conformance run\n  FAIL library-name scan over the shipped tree exits 0 (expected 0, got 1)\n  FAIL a library name leaked\n4. deliberate breakage: a validator library imported directly outside adapters/\n  ok   the breakage run exits non-zero (1)\n  ok   the run names the file that broke it\n  FAIL hits not counted\n\npassed 7, failed 17"
-    }
+    },
+    "expected_design": "The gate (24 checks) and the conformance run together prove: a declared shape is checked against a published JSON Schema 2020-12 dialect under a walk-per-document adapter and a compile-once adapter, a schema declaring no dialect or a different one is refused before any instance is checked, the outcome carries no validator-library name, and the two adapters return identical outcomes on the same fixtures while differing in execution model (adapters_run=2, product_hits=0 on every report). Earlier criterion named tools/conformance_document_validation.py, replaced by the harness on 2026-09-03.",
+    "expected_failure_design": "Every adapter report's own product-name scan of the harness directory now finds one hit (product_hits=1); all 28 individual cases still pass, but the run reports conformance FAILED and exits non-zero, naming call.py — a library name leaked outside adapters/, which the scan run inside every conformance report is built to catch."
   },
   "composes_with": {
     "builds_on": [

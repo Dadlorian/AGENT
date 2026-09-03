@@ -191,9 +191,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/capability-packaging/test.sh && python3 harness/capability-packaging/conformance.py --adapter dryrun --adapter second |
-| Expected | The gate (27 checks) and the conformance run together prove: one portable package directory resolves through the same interface from a filesystem source and a content-addressed registry source, discovery reads only the resident tier, the two required resident fields (name, description) are enforced by the interface itself rather than per adapter, a package missing one is refused as a typed document-invalid problem, and the swap is proven by an equal case count with the source and digest axes differing (adapters_run=2). Earlier criterion named tools/conformance_capability_packaging.py, replaced by the harness on 2026-09-03. |
+| Expected | Measured by tools/measure.py at 16d354c: exit 0; last lines:   adapter=content-addressed registry (network fetch, digest-verified) cases=12 passed=12 skipped=0 resolutions=7 refusals=3 source_marker=registry-digest-verified product_hits=0 \| conformance PASSED: 24/24 cases, 2 binding(s) |
 | Deliberate breakage | Widen REQUIRED_RESIDENT in harness/capability-packaging/interface.py from ("name", "description") to ("name", "description", "owner") and change nothing else (the harness README's breakage); restore with git checkout -- harness/capability-packaging/interface.py. |
-| Expected failure | Every fixture package, including the well-formed one, is now missing the invented required field: discovery, resolution and every dependent tier fail, and the conformance run drops from 12/12 to 2/12 cases passed and reports conformance FAILED, exiting non-zero — the green run can fail, and the interface enforces exactly the two fields the spec requires, never more. |
+| Expected failure | Measured by tools/measure.py at 16d354c: exit 1; last lines:   ok   conformance FAILED, not PASSED \| passed 17, failed 10 |
 | Status | measured |
 | Evidence | `F-part-c-04`, `F-b1-02` "A criterion nothing can fail is not a criterion" |
 

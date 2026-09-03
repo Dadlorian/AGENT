@@ -134,9 +134,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/document-validation/test.sh && python3 harness/document-validation/conformance.py --adapter dryrun --adapter second |
-| Expected | The gate (24 checks) and the conformance run together prove: a declared shape is checked against a published JSON Schema 2020-12 dialect under a walk-per-document adapter and a compile-once adapter, a schema declaring no dialect or a different one is refused before any instance is checked, the outcome carries no validator-library name, and the two adapters return identical outcomes on the same fixtures while differing in execution model (adapters_run=2, product_hits=0 on every report). Earlier criterion named tools/conformance_document_validation.py, replaced by the harness on 2026-09-03. |
+| Expected | Measured by tools/measure.py at 16d354c: exit 0; last lines:   adapter=compiled-schema checker (compile once, check many) cases=14 passed=14 prepares=6 schema_reads=0 dialect_in_effect=https://json-schema.org/draft/2020-12/schema product_hits=0 \| conformance PASSED: 28/28 cases, 2 binding(s) |
 | Deliberate breakage | Import a validator library (jsonschema) directly at the top of harness/document-validation/call.py and change nothing else (the harness README's breakage); restore with git checkout -- harness/document-validation/call.py. |
-| Expected failure | Every adapter report's own product-name scan of the harness directory now finds one hit (product_hits=1); all 28 individual cases still pass, but the run reports conformance FAILED and exits non-zero, naming call.py — a library name leaked outside adapters/, which the scan run inside every conformance report is built to catch. |
+| Expected failure | Measured by tools/measure.py at 16d354c: exit 1; last lines:   FAIL hits not counted \| passed 7, failed 17 |
 | Status | measured |
 | Evidence | `F-part-c-04`, `F-b1-02` "A criterion nothing can fail is not a criterion" |
 

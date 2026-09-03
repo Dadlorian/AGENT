@@ -190,9 +190,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second |
-| Expected | The gate (23 checks) and the conformance run together prove a 20-step durable flow with a real kill -9 at the irreversible step, resumed at the first incomplete step, under an in-process journaled executor and a queue-plus-state-machine executor sharing the same journal: committed steps are not replayed, the effect table (read from outside each executor's own tally) shows exactly one row for the killed step, the budget is recomputed from committed records rather than reset, and the two executors differ in execution model while both pass the same 28 checks (adapters_run=2). Earlier criterion named tools/conformance_durable_execution.py, replaced by the harness on 2026-09-03. |
+| Expected | Measured by tools/measure.py at 16d354c: exit 0; last lines: adapter=second executor_marker=queue-state-machine/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28 \| adapters_run=2 distinct_markers=2 |
 | Deliberate breakage | In harness/workflow/flow.py, make Attempt.key() always return None instead of the step's idempotency key (the harness's own --break-idempotency behaviour, made the default so the criterion needs no extra flag) and change nothing else; restore with git checkout -- harness/workflow/flow.py. |
-| Expected failure | Neither executor can recognise a checkpointed step as already done: both commit 14 steps instead of 8 and replay nothing (steps_replayed=0); the in-process journal additionally repeats the side effect (duplicate_effects=1) while the queue-based executor's own transaction still stops it at one. The conformance run exits non-zero naming both adapters — both failing is what says the defect is in the step record, not in one engine. |
+| Expected failure | Measured by tools/measure.py at 16d354c: exit 1; last lines:   FAIL the same suite passes again once the key is restored (expected 0, got 1) \| passed 13, failed 10 |
 | Status | measured |
 | Evidence | `F-part-c-04`, `F-b4-08` "A criterion nothing can fail is not a criterion" |
 

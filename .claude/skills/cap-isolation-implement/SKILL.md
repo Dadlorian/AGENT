@@ -176,9 +176,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/containment/test.sh && python3 harness/containment/conformance.py --adapter dryrun --adapter second |
-| Expected | The gate (25 checks) and the conformance run together prove: one contained unit runs one agent turn under each of two containment technologies from one declaration; jail mode is 0700 with no host passwd entry, the containment report is read from the host never the unit, egress attempts blocked equals egress attempts made, the output digest and exit status are equal across adapters, and the two adapters differ in execution model on at least one axis (adapters_run=2). Earlier criterion named tools/conformance_isolation.py, replaced by the harness on 2026-09-03. |
+| Expected | Measured by tools/measure.py at 16d354c: exit 0; last lines: adapters_run=2 \| conformance: pass  report=/home/user/AGENT/harness/containment/out/containment-conformance.json |
 | Deliberate breakage | Add 0.0.0.0/0 to harness/containment/binding.json's default_declaration egress_allowlist (egress: allowlist) and change nothing else (the harness README's breakage A); restore with git checkout -- harness/containment/binding.json. |
-| Expected failure | Both adapters' egress-attempt assertions fail (egress_blocked drops below egress_made) and the conformance run exits non-zero naming both adapters; the jail mode, digest and containment-marker assertions still pass, so the report is green on everything except the one property the breakage removed. |
+| Expected failure | Measured by tools/measure.py at 16d354c: exit 1; last lines:   ok   typed as isolation-unavailable (503) \| passed 19, failed 6 |
 | Status | measured |
 | Evidence | `F-part-c-04`, `F-a3-06` "owned by a per-VM uid with no passwd entry" |
 

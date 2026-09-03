@@ -345,9 +345,9 @@
   ],
   "definition_of_done": {
     "criterion": "bash harness/containment/test.sh && python3 harness/containment/conformance.py --adapter dryrun --adapter second",
-    "expected": "The gate and the conformance run together prove one agent turn started, cancelled mid-turn and read back through the capability interface under two containment technologies: a terminal frame with no frames after it, stop_reason cancelled for the adapter that offers cancellation, cancel_timeout (by boundary) for the one that does not, and declared_gap_honoured true for both (adapters_run=2). Earlier criterion named tools/conformance_agent_runtime.py, replaced by the harness on 2026-09-03.",
+    "expected": "Measured by tools/measure.py at 16d354c: exit 0; last lines: adapters_run=2 | conformance: pass  report=/home/user/AGENT/harness/containment/out/containment-conformance.json",
     "breakage": "Raise harness/containment/binding.json's tuning.cancel_poll_interval_s to 30, above the 0.5s grace window, and change nothing else (the harness README's breakage B); restore with git checkout -- harness/containment/binding.json.",
-    "expected_failure": "The adapter that offers cancellation (simulated-machine-unit) misses the grace window: its terminal frame arrives late, stop_reason becomes cancel_timeout instead of cancelled, declared_gap_honoured turns false because that adapter claimed it could cancel, and the conformance run exits non-zero naming it; the adapter that never claimed cancellation still passes.",
+    "expected_failure": "Measured by tools/measure.py at 16d354c: exit 1; last lines:   ok   typed as isolation-unavailable (503) | passed 20, failed 5",
     "status": "measured",
     "sources": [
       "F-part-c-04",
@@ -361,7 +361,9 @@
       "clean_output": "503)\n\npassed 25, failed 0\nadapter=simulated-machine-unit containment_marker=match exit=0 digest=sha256:adfdc984db3b83b7 jail_mode=0700 owner_in_host_passwd=false egress_made=3 egress_blocked=3 stop_reason=cancelled declared_gap_honoured=true checks=19/19\nadapter=capability-granted-unit containment_marker=match exit=0 digest=sha256:adfdc984db3b83b7 jail_mode=0700 owner_in_host_passwd=false egress_made=3 egress_blocked=3 stop_reason=cancel_timeout declared_gap_honoured=true checks=18/18\nadapters_run=2\nconformance: pass  report=/home/user/AGENT/harness/containment/out/containment-conformance.json",
       "breakage_exit": 1,
       "breakage_output": "interval rises above the grace window\n  ok   conformance fails (1)\nadapter that claimed cancellation: cancel_timeout declared_gap_honoured = False\nadapter that never claimed it:  cancel_timeout declared_gap_honoured = True\n  ok   a runtime that claimed cancellation and missed it is told apart from one that never claimed it (0)\n6. failure paths answer with typed problems\nrefusals: all typed and refused before anything ran\n  ok   every refusal is an RFC 9457 problem (0)\n  ok   live mode with no env refuses rather than degrading (2)\n  ok   typed as isolation-unavailable (503)\n\npassed 20, failed 5"
-    }
+    },
+    "expected_design": "The gate and the conformance run together prove one agent turn started, cancelled mid-turn and read back through the capability interface under two containment technologies: a terminal frame with no frames after it, stop_reason cancelled for the adapter that offers cancellation, cancel_timeout (by boundary) for the one that does not, and declared_gap_honoured true for both (adapters_run=2). Earlier criterion named tools/conformance_agent_runtime.py, replaced by the harness on 2026-09-03.",
+    "expected_failure_design": "The adapter that offers cancellation (simulated-machine-unit) misses the grace window: its terminal frame arrives late, stop_reason becomes cancel_timeout instead of cancelled, declared_gap_honoured turns false because that adapter claimed it could cancel, and the conformance run exits non-zero naming it; the adapter that never claimed cancellation still passes."
   },
   "composes_with": {
     "builds_on": [

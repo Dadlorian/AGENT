@@ -133,9 +133,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/idempotency/test.sh && python3 harness/idempotency/conformance.py --adapter dryrun --adapter second |
-| Expected | The gate and the conformance run together prove one claim over a key and a payload digest under a log-fold-at-entry adapter and a conditional-write lease adapter: a replayed key returns the stored result with no second effect, a reused key under a different payload is refused as a typed idempotency-conflict, and the lease adapter alone serialises a 20-way concurrent race to exactly one execution while the fold adapter honestly declares in-flight unsupported (adapters_run=2). Earlier criterion named tools/conformance/idempotency_race.py, replaced by the harness on 2026-09-03. |
+| Expected | Measured by tools/measure.py at 16d354c: exit 0; last lines:   adapter=conditional-write-lease cases=8 passed=8 supports_in_flight=True overlapped=19 \| conformance PASSED: 16/16 cases, 2 binding(s) |
 | Deliberate breakage | In harness/idempotency/adapters/second.py, remove the `with self._lock:` guard around the conditional write in claim() (replacing it with an unlocked read that widens the race window) and change nothing else (the harness README's breakage); restore with git checkout -- harness/idempotency/adapters/second.py. |
-| Expected failure | The lease adapter's 20-way concurrent race case fails: every concurrent copy wins (executions=20, overlapped=0) instead of serialising to one winner, and the conformance run drops to 15/16 cases and exits non-zero naming that adapter; the fold adapter's cases are untouched, which is the point — without a lease every concurrent copy wins, reproducing PASS.md's own row for today (F-b3-16). |
+| Expected failure | Measured by tools/measure.py at 16d354c: exit 1; last lines:   File "<stdin>", line 9, in <module> \| AssertionError: anchor block not found; second.py changed shape |
 | Status | measured |
 | Evidence | `F-b3-16`, `F-b1-04` "key on the wire, no lease" |
 

@@ -199,9 +199,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/work-intake/test.sh && python3 harness/work-intake/conformance.py --adapter dryrun --adapter second |
-| Expected | docs/decomposition.md section 3.2 row P7, extended with the swap: `python3 tools/conformance/intake_equivalence.py --adapter request-pushed-event --job fixtures/intake/one-job.json --report out/intake-a.json` then the same command with `--adapter agent-message --report out/intake-b.json`, the adapter chosen by configuration with no code edit between runs. Both reports must validate against the IntakeEquivalenceReport shape above and assert, per adapter, `distinct_job_digests == 1`, `distinct_entry_ids == producers_run`, `invalid == 0` and `untyped_refusals == 0`; the merged report must show `adapters_run == 2` and `selected_by == "configuration"` in both. Earlier criterion named tools/conformance/intake_equivalence.py, replaced by the harness on 2026-09-03. |
+| Expected | Measured by tools/measure.py at 372cdc1: exit 0; last lines:   producers_run=4 distinct_job_digests=1 distinct_entry_ids=4 invalid=0 untyped_refusals=0 records=4 work_started=0 marker=task-message-accepted product_hits=0 verdict=pass \| conformance PASSED: 30/30 cases, 2 binding(s) |
 | Deliberate breakage | Append a product-name comment (`# breakage: litellm`) to the end of harness/work-intake/call.py, outside adapters/. Restored with `git checkout -- harness/work-intake/call.py`. |
-| Expected failure | test.sh's product-name scan (check 3) fails with product_hits going from 0 to 1, and `conformance.py --adapter dryrun --adapter second` also reports the same non-zero product_hits and exits non-zero, since every conformance run scans for a product name outside adapters/. |
+| Expected failure | Measured by tools/measure.py at 372cdc1: exit 1; last lines:   ok   the breakage singles out one adapter and leaves the other green (0) \| passed 20, failed 8 |
 | Status | measured |
 | Evidence | `F-b3-08`, `F-b1-04`, `F-a6-06`, `F-a6-05` "any conformant producer" |
 

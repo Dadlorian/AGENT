@@ -147,9 +147,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second |
-| Expected | docs/decomposition.md section 3.2 row P11, extended with the swap: `python3 tools/conformance/provenance_verify.py --adapter local-signed-jsonl --artifact out/artifact.bin --report out/prov-a.json` then the same command with `--adapter keyless-transparency-log --report out/prov-b.json`, the adapter chosen by configuration with no code edit between runs. Each run produces the artifact, emits the statement, then invokes a third-party verifier we did not write as a subprocess with our evidence store unmounted. Both reports must validate against the ProvenanceConformanceReport shape above and assert, per adapter, `external_verifier_exit == 0`, `attestations_verified > 0`, `subject_mismatches == 0`, `orphan_subjects == 0` and `store_mounted == false`; the log adapter must additionally assert `log_inclusion_proofs > 0`, and the local adapter must declare that member unsupported rather than assert it. Earlier criterion named tools/conformance/provenance_verify.py, replaced by the harness on 2026-09-03. |
+| Expected | Measured by tools/measure.py at 372cdc1: exit 0; last lines:   cases=13 passed=13 emitted=2 verified=1 subject_mismatches=0 orphan_subjects=0 store_mounted=False verifier_exit=0 log_inclusion_proofs=1 product_hits=0 \| conformance PASSED: 26/26 cases, 2 binding(s) |
 | Deliberate breakage | Append a product-name comment (`# breakage: sigstore`) to the end of harness/provenance/call.py, outside adapters/. Restored with `git checkout -- harness/provenance/call.py`. |
-| Expected failure | test.sh's product-name scan (check 3) fails with product_hits going from 0 to 1, and `conformance.py --adapter dryrun --adapter second` also reports the same non-zero product_hits and exits non-zero, since every conformance run scans for a product name outside adapters/. |
+| Expected failure | Measured by tools/measure.py at 372cdc1: exit 1; last lines:   ok   the run names what broke it \| passed 21, failed 6 |
 | Status | measured |
 | Evidence | `F-b4-05`, `F-b3-12` "verifiable with a tool we did not write" |
 

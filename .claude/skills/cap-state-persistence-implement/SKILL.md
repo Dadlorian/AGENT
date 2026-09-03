@@ -149,9 +149,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second |
-| Expected | docs/decomposition.md section 3.2 row P16, extended with the swap: `python3 tools/conformance/state_persistence.py --adapter jsonl-hash-chain --records 1500 --report out/state-a.json` then the same command with `--adapter merkle-object-store --report out/state-b.json`, the adapter chosen by configuration with no code edit between runs. Each run appends the identical 1500-record sequence through the interface, races two writers on one partition at least once, then hands the stored records to an independent verifier we did not write, invoked as a subprocess with no access to our reader. Both reports must validate against the StateConformanceReport shape above and assert, per adapter, `records_written > 1000`, `chain_break_at == -1`, `external_head_matches == true`, `inclusion_proof_verified == true` for a uniformly random record, `concurrent_appends_rejected > 0` and `tombstone_proof_still_verifies == true`. Earlier criterion named tools/conformance/state_persistence.py, replaced by the harness on 2026-09-03. |
+| Expected | Measured by tools/measure.py at 372cdc1: exit 0; last lines:   adapter=content-addressed merkle log over an object store (second adapter) cases=11 passed=11 appends=10 refusals=2 product_hits=0 \| conformance PASSED: 22/22 cases, 2 binding(s) |
 | Deliberate breakage | Append a product-name comment (`# breakage: litellm`) to the end of harness/state-persistence/call.py, outside adapters/. Restored with `git checkout -- harness/state-persistence/call.py`. |
-| Expected failure | test.sh's product-name scan (check 3) fails with product_hits going from 0 to 1, and `conformance.py --adapter dryrun --adapter second` also reports the same non-zero product_hits and exits non-zero, since every conformance run scans for a product name outside adapters/. |
+| Expected failure | Measured by tools/measure.py at 372cdc1: exit 1; last lines:   ok   chain_break_at went from -1 to 2, the tampered record \| passed 14, failed 6 |
 | Status | measured |
 | Evidence | `F-b5-05`, `F-b3-17` "concurrency and single-writer guarantees" |
 

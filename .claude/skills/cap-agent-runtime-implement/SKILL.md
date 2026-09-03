@@ -171,9 +171,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/containment/test.sh && python3 harness/containment/conformance.py --adapter dryrun --adapter second |
-| Expected | The gate and the conformance run together prove one agent turn started, cancelled mid-turn and read back through the capability interface under two containment technologies: a terminal frame with no frames after it, stop_reason cancelled for the adapter that offers cancellation, cancel_timeout (by boundary) for the one that does not, and declared_gap_honoured true for both (adapters_run=2). Earlier criterion named tools/conformance_agent_runtime.py, replaced by the harness on 2026-09-03. |
+| Expected | Measured by tools/measure.py at 16d354c: exit 0; last lines: adapters_run=2 \| conformance: pass  report=/home/user/AGENT/harness/containment/out/containment-conformance.json |
 | Deliberate breakage | Raise harness/containment/binding.json's tuning.cancel_poll_interval_s to 30, above the 0.5s grace window, and change nothing else (the harness README's breakage B); restore with git checkout -- harness/containment/binding.json. |
-| Expected failure | The adapter that offers cancellation (simulated-machine-unit) misses the grace window: its terminal frame arrives late, stop_reason becomes cancel_timeout instead of cancelled, declared_gap_honoured turns false because that adapter claimed it could cancel, and the conformance run exits non-zero naming it; the adapter that never claimed cancellation still passes. |
+| Expected failure | Measured by tools/measure.py at 16d354c: exit 1; last lines:   ok   typed as isolation-unavailable (503) \| passed 20, failed 5 |
 | Status | measured |
 | Evidence | `F-part-c-04`, `F-a3-09` "ends the turn in ~8s against a 45s operation, zero trailing frames" |
 

@@ -290,9 +290,9 @@
   ],
   "definition_of_done": {
     "criterion": "bash harness/idempotency/test.sh && python3 harness/idempotency/conformance.py --adapter dryrun --adapter second",
-    "expected": "The gate and the conformance run together prove one claim over a key and a payload digest under a log-fold-at-entry adapter and a conditional-write lease adapter: a replayed key returns the stored result with no second effect, a reused key under a different payload is refused as a typed idempotency-conflict, and the lease adapter alone serialises a 20-way concurrent race to exactly one execution while the fold adapter honestly declares in-flight unsupported (adapters_run=2). Earlier criterion named tools/conformance/idempotency_race.py, replaced by the harness on 2026-09-03.",
+    "expected": "Measured by tools/measure.py at 16d354c: exit 0; last lines:   adapter=conditional-write-lease cases=8 passed=8 supports_in_flight=True overlapped=19 | conformance PASSED: 16/16 cases, 2 binding(s)",
     "breakage": "In harness/idempotency/adapters/second.py, remove the `with self._lock:` guard around the conditional write in claim() (replacing it with an unlocked read that widens the race window) and change nothing else (the harness README's breakage); restore with git checkout -- harness/idempotency/adapters/second.py.",
-    "expected_failure": "The lease adapter's 20-way concurrent race case fails: every concurrent copy wins (executions=20, overlapped=0) instead of serialising to one winner, and the conformance run drops to 15/16 cases and exits non-zero naming that adapter; the fold adapter's cases are untouched, which is the point — without a lease every concurrent copy wins, reproducing PASS.md's own row for today (F-b3-16).",
+    "expected_failure": "Measured by tools/measure.py at 16d354c: exit 1; last lines:   File \"<stdin>\", line 9, in <module> | AssertionError: anchor block not found; second.py changed shape",
     "status": "measured",
     "sources": [
       "F-b3-16",
@@ -306,7 +306,9 @@
       "clean_output": "tency-conflict 409\n  ok   20 claims, sequential: exactly one execution: executions=1 duplicates=19\n  ok   20 claims, launched at once: what this binding can prove: lease: executions=1 duplicates=19 overlapped=19\n  ok   retention: a claim past its window is claimable again: held within the window, released after it, then claimable again\n  ok   the outcome carries a digest, never the payload: claim carries payload_digest only; the outcome carries no payload field\n  adapter=conditional-write-lease cases=8 passed=8 supports_in_flight=True overlapped=19\nconformance PASSED: 16/16 cases, 2 binding(s)",
       "breakage_exit": 1,
       "breakage_output": "aller code runs on the second adapter (expected 0, got 1)\n  FAIL the two adapters differ in execution model on 2 or more axes (expected 0, got 1)\n  FAIL AssertionError: both bindings must pass the same cases\n3. deliberate breakage: remove the lease acquisition, leave the key on the wire\n  ok   the broken adapter's conformance run exits 1 (1)\n  ok   every concurrent copy won: executions=20, overlapped=0\n  ok   7/8: only the race case fails\n\npassed 11, failed 5\nTraceback (most recent call last):\n  File \"<stdin>\", line 9, in <module>\nAssertionError: anchor block not found; second.py changed shape"
-    }
+    },
+    "expected_design": "The gate and the conformance run together prove one claim over a key and a payload digest under a log-fold-at-entry adapter and a conditional-write lease adapter: a replayed key returns the stored result with no second effect, a reused key under a different payload is refused as a typed idempotency-conflict, and the lease adapter alone serialises a 20-way concurrent race to exactly one execution while the fold adapter honestly declares in-flight unsupported (adapters_run=2). Earlier criterion named tools/conformance/idempotency_race.py, replaced by the harness on 2026-09-03.",
+    "expected_failure_design": "The lease adapter's 20-way concurrent race case fails: every concurrent copy wins (executions=20, overlapped=0) instead of serialising to one winner, and the conformance run drops to 15/16 cases and exits non-zero naming that adapter; the fold adapter's cases are untouched, which is the point — without a lease every concurrent copy wins, reproducing PASS.md's own row for today (F-b3-16)."
   },
   "composes_with": {
     "builds_on": [

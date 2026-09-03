@@ -215,9 +215,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/gateway/test.sh && python3 harness/gateway/conformance.py --adapter dryrun --adapter second |
-| Expected | Proposed tool, built with the first implementation of this interface: `python3 tools/conformance_model_access.py --adapter today --adapter second --request fixtures/model-access/request.json --report out/model-access-conformance.json`. It sends the one request fixture, byte for byte, through the synchronous adapter and the asynchronous batch adapter and asserts per adapter that ticket_state is redeemed, result_schema_valid is true against the single result schema, cost_status is reconciled, budget_reconciled_micros was recomputed rather than copied from budget_reserved_micros, declared_gap_honoured is true, and endpoint_marker read from the response equals the adapter selected in the binding. Across adapters it asserts adapters_run >= 2 and results_validated == adapters_run. It then runs `grep -rIl -E '(litellm\|openrouter\|gemini\|sglang)' src/core/ src/seam/` and asserts product_hits == 0. Earlier criterion named tools/conformance_model_access.py, replaced by the harness on 2026-09-03. |
+| Expected | Measured by tools/measure.py at 372cdc1: exit 0; last lines:   adapter=provider-native asynchronous batch (claim-and-poll) cases=12 passed=12 dispatches=7 refusals=2 overshoot_violations=0 endpoint_marker=batch-job-accepted product_hits=0 \| conformance PASSED: 24/24 cases, 2 binding(s) |
 | Deliberate breakage | Append a product-name comment (`# breakage: litellm`) to the end of harness/gateway/call.py, outside adapters/. Restored with `git checkout -- harness/gateway/call.py`. |
-| Expected failure | test.sh's product-name scan (check 3) fails with product_hits going from 0 to 1, and the immediately following `conformance.py --adapter dryrun --adapter second` run also reports product_hits=1 and a non-zero exit, because every conformance run scans the whole harness tree outside adapters/ for a vendor name, not only the --product-scan invocation. |
+| Expected failure | Measured by tools/measure.py at 372cdc1: exit 1; last lines:   FAIL hits not counted \| passed 18, failed 7 |
 | Status | measured |
 | Evidence | `F-part-c-04`, `F-b1-02` "The core imports interfaces, never implementations" |
 

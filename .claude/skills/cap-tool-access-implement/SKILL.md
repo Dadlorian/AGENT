@@ -188,9 +188,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/tool-access/test.sh && python3 harness/tool-access/conformance.py --adapter dryrun --adapter second |
-| Expected | Proposed tool, built with this implementation: `python3 tools/conformance_tool_access.py --adapter today --adapter second --revision 2026-07-28 --report out/tool-access-conformance.json`. Per adapter it asserts conformance_failures == 0, tools_listed > 0, schemas_checked == tools_listed with schemas_invalid == 0, undeclared_refused >= 1, and server_marker read back from the running server equal to the adapter selected in the binding; across adapters it asserts adapters_run >= 2. Earlier criterion named tools/conformance_tool_access.py, replaced by the harness on 2026-09-03. |
+| Expected | Measured by tools/measure.py at 372cdc1: exit 0; last lines: adapters_run=2 \| conformance PASSED: 34/34 cases, 2 binding(s) |
 | Deliberate breakage | Append a product-name comment (`# breakage: litellm`) to the end of harness/tool-access/call.py, outside adapters/. Restored with `git checkout -- harness/tool-access/call.py`. |
-| Expected failure | test.sh's product-name scan fails with product_hits going from 0 to 1, and `conformance.py --adapter dryrun --adapter second` also reports the same non-zero product_hits and exits non-zero, since every conformance run scans for a product name outside adapters/. |
+| Expected failure | Measured by tools/measure.py at 372cdc1: exit 1; last lines:   ok   11 cases reported NOT EXERCISED rather than passing \| passed 30, failed 6 |
 | Status | measured |
 | Evidence | `F-part-c-04`, `F-a6-03` "MCP endpoint \| Live and authenticated" |
 

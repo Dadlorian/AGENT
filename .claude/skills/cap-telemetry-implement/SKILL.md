@@ -142,9 +142,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | cd harness/observability && bash test.sh && python3 conformance.py --adapter dryrun --report out/tel-a.json && ADAPTER=second python3 conformance.py --report out/tel-b.json && python3 conformance.py --merge out/tel-a.json out/tel-b.json --report out/merged.json |
-| Expected | docs/decomposition.md section 3.2 row P9, extended with the swap: `python3 tools/conformance/telemetry_correlate.py --adapter llm-trace-ui --depth 3 --report out/tel-a.json` then the same command with `--adapter otlp-collector-columnar --report out/tel-b.json`, the adapter chosen by configuration with no code edit between runs. Each run executes a depth-3 task tree, then queries that backend for every span carrying resource attribute `run.id == R`. Both reports must validate against the TelemetryConformanceReport shape above and assert, per adapter, `levels_covered == 3`, `run_id_groups == 1`, `spans_missing_run_id == 0` and a non-empty `mapping_version` read back off the wire; `distinct_trace_ids` is reported and never constrained, and the pipeline adapter declares `semantic_queries_supported` false rather than asserting it. Earlier criterion named tools/conformance/telemetry_correlate.py, replaced by the harness on 2026-09-03. |
+| Expected | Measured by tools/measure.py at 372cdc1: exit 0; last lines: } \| conformance: PASS adapter=['dryrun', 'second'] |
 | Deliberate breakage | Append a product-name comment (`# breakage: langfuse`) to the end of harness/observability/call.py, outside adapters/. Restored with `git checkout -- harness/observability/call.py`. |
-| Expected failure | test.sh's product-name grep over interface.py, call.py and conformance.py fails, naming call.py and the leaked vendor name, so `bash test.sh` exits non-zero and the chained conformance/merge commands after it never run. |
+| Expected failure | Measured by tools/measure.py at 372cdc1: exit 1; last lines:   ok   the unit shape has nowhere to put a parent span \| passed 36, failed 1 |
 | Status | measured |
 | Evidence | `F-b4-06`, `F-b1-04` "Correlation rides on explicit attributes, not trace parentage" |
 

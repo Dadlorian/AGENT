@@ -243,7 +243,7 @@
     ],
     "invariants": [
       {
-        "text": "The contract this capability must deliver is one sentence: every artifact is attributable to the code version, inputs and actor that produced it, and that attribution is checkable by a tool we did not write. build-evidence-record already states the same record as the boundary of its own discipline (F-b4-05); what this skill adds is the interface that discharges the second half.",
+        "text": "The contract this capability must deliver is one sentence: every artifact is attributable to the code version, inputs and actor that produced it, and that attribution is checkable by a tool we did not write. build-evidence-record states the same record as the boundary of its own discipline (F-b4-05).",
         "origin": "sourced",
         "sources": [
           "F-b4-05",
@@ -515,8 +515,8 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.2 row P11, made precise and run over the adapter pair above: `python3 tools/conformance/provenance_verify.py --adapter local-signed-jsonl --adapter keyless-transparency-log --artifact out/artifact.bin --report out/prov.json` (proposed tool, built with the first signing adapter), the adapter selected by configuration with no code edit between runs. Per adapter it produces an artifact, emits the statement, then shells out to a third-party verifier that we did not write, with our evidence store unmounted, and asserts that the external verifier exits 0, that `attestations_verified > 0`, and that every subject digest in the statement matches the artifact on disk; across adapters it asserts `adapters_run >= 2`.",
-    "expected": "exit 0 with, per adapter, `external_verifier_exit == 0`, `attestations_verified > 0`, `subject_mismatches == 0` and `store_mounted == false`, followed by `adapters_run=2`",
+    "criterion": "python3 tools/conformance/provenance_verify.py --adapter local-signed-jsonl --adapter keyless-transparency-log --artifact out/artifact.bin --report out/prov.json",
+    "expected": "docs/decomposition.md section 3.2 row P11, made precise and run over the adapter pair above: that command (proposed tool, built with the first signing adapter), the adapter selected by configuration with no code edit between runs. Per adapter it produces an artifact, emits the statement, then shells out to a third-party verifier that we did not write, with our evidence store unmounted, and asserts that the external verifier exits 0, that `attestations_verified > 0`, and that every subject digest in the statement matches the artifact on disk; across adapters it asserts `adapters_run >= 2`. exit 0 with, per adapter, `external_verifier_exit == 0`, `attestations_verified > 0`, `subject_mismatches == 0` and `store_mounted == false`, followed by `adapters_run=2`",
     "breakage": "Rebuild the artifact from a modified input without regenerating the attestation, and re-run the same command unchanged.",
     "expected_failure": "exit 1 with the external verifier exiting non-zero on subject digest mismatch, `subject_mismatches == 1` and `attestations_verified == 0`, under both adapters, because the mismatch is in the statement rather than in either signer; a run where the external verifier still exits 0 means the check was reading our own store and the store was not actually unmounted. Claimed: no statement is emitted anywhere today, neither signing adapter is written and the conformance tool does not exist, so neither run has been performed here. What is measured is the starting state, recorded in cap-provenance-use: the reference runner emits subject digests and zero attestations.",
     "status": "claimed",

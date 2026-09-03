@@ -1,0 +1,119 @@
+{
+  "status_row": 60,
+  "improver": "60-cap-improve-c",
+  "date": "2026-09-03",
+  "review_record": "kb/ceremonies/60-cap-review-c.json",
+  "scope": [
+    "cap-policy-implement",
+    "cap-provenance",
+    "cap-provenance-implement",
+    "cap-scheduling",
+    "cap-scheduling-implement",
+    "cap-state-persistence",
+    "cap-state-persistence-implement",
+    "cap-telemetry",
+    "cap-telemetry-implement",
+    "cap-tool-access",
+    "cap-tool-access-implement",
+    "cap-work-intake",
+    "cap-work-intake-implement"
+  ],
+  "note": "Every entry carries both `id` and `finding` with the same value: the record shape asked for by the orchestrator names the field `id`, and tools/check_ceremony.py reads `finding`.",
+  "applied": [
+    {
+      "id": "R60C-001",
+      "finding": "R60C-001",
+      "change": "Applied by the scheduling harness; re-measure follows in this ceremony. The finding is correct: cap-scheduling-implement's definition_of_done carries a measured status whose measured_run came from bash harness/workflow/test.sh, the durable-execution harness, so no RRULE, DST, leap-day or BYSETPOS vector has ever been run under this skill's name. The fix the finding asks for - build a real scheduling harness and re-measure against it - is in flight in this same ceremony: agent 60-harness-scheduling holds the harness/scheduling scope claim and harness/scheduling/ now exists on disk (interface.py, adapters/, tests/). Per the orchestrator's instruction this improver did not touch cap-scheduling-implement's definition_of_done at all and did not run tools/measure.py for scheduling: a definition of done's status and measured_run are set only by tools/measure.py, so the re-measure against harness/scheduling is left to the orchestrator once the harness lands. No file in this improver's scope was edited for this finding.",
+      "files": [".claude/skills/cap-scheduling-implement/skill.json"],
+      "files_note": "Named as the file the finding is against; it was deliberately left unmodified. The change lands in harness/scheduling/, held by 60-harness-scheduling, and in a measure.py run the orchestrator owns."
+    },
+    {
+      "id": "R60C-002",
+      "finding": "R60C-002",
+      "change": "contract.operations[3] (fire) now ends with the one-clause pointer the finding asked for, in the phrasing invariants[3] and instructions[6] of this same skill already use: 'cap-errors states the same record (T-t6-02) for its own boundary; this row is that rule's consequence at the schedule door'. Nothing was reworded and the T-t6-02 quote is unchanged. The pointer went in the operation's `output` field because that is one of the prose fields the compose-by-name checker reads (name is not). The warning cleared: cap-scheduling had no other row carrying T-t6-02 under that quote without naming cap-errors.",
+      "files": [".claude/skills/cap-scheduling/skill.json", ".claude/skills/cap-scheduling/SKILL.md"]
+    },
+    {
+      "id": "R60C-003",
+      "finding": "R60C-003",
+      "change": "Two rows had to change, not one, because the checker raises a single line per skill and id and it fires while any row citing that id under the shared quote is unattributed. (1) contract.operations[1] (normalise) got the pointer the finding asked for, matching invariants[5]: 'cap-errors states the same record (T-t6-02) for its own boundary; this row is that rule's consequence for the envelope intake writes'. (2) contract.shapes[0], the EntryEnvelope shape, was the second carrier of T-t6-02 under the identical quote and could not be fixed by a pointer at all: a shape row's only prose field is `name`, which the compose-by-name checker does not read (ceremony 11 recorded the same limitation). It was instead re-anchored to the sentence of T-t6-02 that actually supports it - 'Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent.' - which is the enumeration its own kind enum encodes (human, event, schedule, external), and its name now says so and names cap-errors as the carrier of the same record. The quote is a verbatim substring of T-t6-02 and the row's claim is unchanged.",
+      "files": [".claude/skills/cap-work-intake/skill.json", ".claude/skills/cap-work-intake/SKILL.md"]
+    },
+    {
+      "id": "R60C-004",
+      "finding": "R60C-004",
+      "change": "Resolved by deleting the extension rather than splitting the row, which the review's own fix permits where the extension adds nothing. contract.invariants[0] now reads '... build-evidence-record states the same record as the boundary of its own discipline (F-b4-05).' and stops there; the 'what this skill adds is the interface that discharges the second half' clause is gone, and 'already' was dropped so the row no longer trips the restate-and-extend marker. Deletion rather than a split for two reasons: cap-provenance already carries exactly 10 invariants, the ceiling of the checked 3-10 budget, so an eleventh row would have traded one warning for another; and the deleted claim is not lost - invariants[7] already states that verification is judged by what an outside verifier does and that a check reading our own store has not met the bar, and the purpose row already states the same scope. The F-b4-05 restatement stays origin=sourced under its unchanged quote, which now supports the whole row.",
+      "files": [".claude/skills/cap-provenance/skill.json", ".claude/skills/cap-provenance/SKILL.md"]
+    },
+    {
+      "id": "R60C-005",
+      "finding": "R60C-005",
+      "change": "Resolved by re-anchoring rather than splitting, because the extension turned out to be cited after all and cap-state-persistence is also at the 10-invariant ceiling. F-b5-01's full text is 'Two boundaries have no standard to adopt. They are the only places original design effort is warranted, and they carry the weight of the platform.' - the second sentence is exactly the 'original design is the deliverable rather than an indulgence' claim the review flagged as uncited. contract.invariants[2] now quotes that sentence instead of F-b5-06's 'These two are ours.', names both records in the text ('agentic-stack states that two boundaries have no standard to adopt and that they are the only places original design effort is warranted (F-b5-01, F-b5-06)'), drops the 'already states' marker, and keeps the reviewer-facing consequence. The row stays origin=sourced and its quote now supports the whole row, which is the property rule 3 asks for.",
+      "files": [".claude/skills/cap-state-persistence/skill.json", ".claude/skills/cap-state-persistence/SKILL.md"]
+    },
+    {
+      "id": "R60C-006",
+      "finding": "R60C-006",
+      "change": "All six rows fixed by labelling the extension clause proposed inside the row, which is the first branch of the review's own fix ('a separate origin=proposed sentence or row') and the shape cap-state-persistence-implement instructions[4] already uses cleanly. A new row was not available: cap-tool-access carries 10 instructions and 10 invariants, both at the checked ceiling. instructions[0], [2], [5] and [6] now read '... What this adds is our own consequence, proposed: ...' (or 'What this adds here is our own consequence, proposed:'), instructions[7] reads 'what this adds, as our own consequence and proposed, is that ...', and best_practices[0] reads 'What it adds here, as our own consequence and proposed: ...'. Every cited restatement, every id and every quote is untouched; only the honesty label on the extension was added, so the cited half stays sourced and the uncited half now says what it is.",
+      "files": [".claude/skills/cap-tool-access/skill.json", ".claude/skills/cap-tool-access/SKILL.md"]
+    },
+    {
+      "id": "R60C-007",
+      "finding": "R60C-007",
+      "change": "All eight rows fixed the same way as R60C-006, for the same reason (9 instructions, 8 invariants, 4 best practices - a ninth instruction would still fit but splitting one pattern into eight new rows would blow the 6-10 budget outright). instructions[0], [1], [2], [3], [6], [7], contract.invariants[2] and best_practices[2] now label the clause after the marker as our own consequence, proposed. Ids, quotes and the cited restatements are unchanged.",
+      "files": [".claude/skills/cap-tool-access-implement/skill.json", ".claude/skills/cap-tool-access-implement/SKILL.md"]
+    },
+    {
+      "id": "R60C-008",
+      "finding": "R60C-008",
+      "change": "instructions[4].why now reads 'cap-work-intake already states the rule that the platform applies each; a caller cannot decline them (F-b4-01). What this facet adds is our own placement consequence, proposed: a single builder no producer can route around.' The F-b4-01 restatement and its quote are unchanged and stay sourced; the placement claim now says it is ours and proposed, which is what the finding asked for.",
+      "files": [".claude/skills/cap-work-intake-implement/skill.json", ".claude/skills/cap-work-intake-implement/SKILL.md"]
+    }
+  ],
+  "declined": [],
+  "also_fixed_not_in_review": [
+    {
+      "skill": "cap-provenance, cap-scheduling, cap-state-persistence, cap-telemetry, cap-tool-access, cap-work-intake",
+      "location": "definition_of_done.criterion",
+      "change": "Six criteria were prose wrapped around a backticked command, the lesson-59 defect the validator warns on ('not a pure shell command; tools/measure.py cannot run it'). Each criterion is now the bare command it always named, byte-identical to the text that was inside the backticks, and the framing sentence plus the per-adapter assertion list moved verbatim to the head of `expected`, with 'that command' standing where the backticked string was. No assertion, threshold, tool name or argument was changed, added or dropped. definition_of_done.status and measured_run were not touched by hand and tools/measure.py was not run: all six were already status=claimed with no measured_run, and all six name a proposed conformance tool that does not exist in this repository yet, so nothing here upgrades a claim. This is the only reason the layer could not reach zero warnings on the review's findings alone.",
+      "why_in_scope": "The orchestrator asked for zero warnings on each of the thirteen skills, as the build layer reached; these six warnings were the remainder after the eight findings were applied."
+    },
+    {
+      "skill": "cap-work-intake",
+      "location": "contract.shapes[0]",
+      "change": "Recorded above under R60C-003: the shape row was a second carrier of the restatement the review found only in operations[1]. A finding's fix landing on the row it names does not clear the pattern from every row that shares it (ceremony 11 lesson)."
+    }
+  ],
+  "measured": {},
+  "measure_note": "tools/measure.py was not run in this part. Rule 4 of the brief: a definition of done's status and measured_run are set only by tools/measure.py, and it must not be run for scheduling. The five -implement skills in this part that carry measured definitions of done (cap-policy-implement, cap-provenance-implement, cap-state-persistence-implement, cap-telemetry-implement, cap-tool-access-implement, cap-work-intake-implement) had their definition_of_done blocks left entirely untouched, and the reviewer had already re-executed each of them and reproduced the recorded clean output. The six criteria reshaped above are all status=claimed with no measured_run, so no recorded measurement moved. cap-scheduling-implement's definition_of_done was not read into or written from at all; its re-measure against harness/scheduling belongs to the orchestrator.",
+  "validator_after": {
+    "cap-policy-implement": "0 errors, 0 warnings",
+    "cap-provenance": "0 errors, 0 warnings",
+    "cap-provenance-implement": "0 errors, 0 warnings",
+    "cap-scheduling": "0 errors, 0 warnings",
+    "cap-scheduling-implement": "0 errors, 0 warnings",
+    "cap-state-persistence": "0 errors, 0 warnings",
+    "cap-state-persistence-implement": "0 errors, 0 warnings",
+    "cap-telemetry": "0 errors, 0 warnings",
+    "cap-telemetry-implement": "0 errors, 0 warnings",
+    "cap-tool-access": "0 errors, 0 warnings",
+    "cap-tool-access-implement": "0 errors, 0 warnings",
+    "cap-work-intake": "0 errors, 0 warnings",
+    "cap-work-intake-implement": "0 errors, 0 warnings"
+  },
+  "metrics_after": {
+    "validator_errors": 0,
+    "validator_warnings": 0,
+    "warnings_before": 25,
+    "warnings_after": 0,
+    "skills_touched": 8,
+    "findings_applied": 8,
+    "findings_declined": 0
+  },
+  "lessons_for_next_section": [
+    "A one-clause compose-by-name pointer has nowhere to go in a contract.shapes row: name is the only prose field the shape renderer prints and the compose-by-name checker does not read it. Where a shape shares an (id, quote) pair with a builds_on skill, re-anchor the shape to the sentence of the record its own schema actually encodes instead of hunting for a field to put the pointer in.",
+    "A restate-and-extend warning is not always an uncited claim: F-b5-01's second sentence already said what cap-state-persistence's extension said, so the fix was a better quote, not a new proposed row. Read the whole cited record before splitting a row - the missing evidence is sometimes in the half of the paragraph the quote left out.",
+    "The 3-10 invariant and 6-10 instruction budgets make 'split the row' unavailable in exactly the skills that need it most: cap-provenance, cap-state-persistence and cap-tool-access were all at a ceiling. The two moves that work at a ceiling are labelling the extension proposed inside the row (cap-state-persistence-implement instructions[4] is the worked example) and deleting an extension a sibling row already carries.",
+    "Lesson 59's prose-criterion defect did not stop at the build layer: six of the thirteen capability-interface skills carried the same shape. A lessons row closes a defect only after the sweep reaches every layer that shares it, not the layer that surfaced it."
+  ]
+}

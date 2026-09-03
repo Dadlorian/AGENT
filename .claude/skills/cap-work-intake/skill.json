@@ -70,12 +70,12 @@
         "sources": [
           "F-b3-08"
         ],
-        "quote": "A2A messaging · CloudEvents"
+        "quote": "A2A messaging \u00b7 CloudEvents"
       },
       {
         "name": "normalise",
         "input": "a producer-native message and the name of the format it claims",
-        "output": "the canonical envelope fields - kind, actor with delegation chain, intent, correlation, budget ceiling, idempotency key and an opaque payload - with every producer-specific attribute either mapped onto one of them or dropped; a field that can be mapped for one producer and not another is a field the envelope should not have",
+        "output": "the canonical envelope fields - kind, actor with delegation chain, intent, correlation, budget ceiling, idempotency key and an opaque payload - with every producer-specific attribute either mapped onto one of them or dropped; a field that can be mapped for one producer and not another is a field the envelope should not have. cap-errors states the same record (T-t6-02) for its own boundary; this row is that rule's consequence for the envelope intake writes",
         "origin": "sourced",
         "sources": [
           "F-b3-08",
@@ -107,7 +107,7 @@
     ],
     "shapes": [
       {
-        "name": "EntryEnvelope (summary shape; the full schema, the per-producer mapping table and the fixture corpus are in references/intake-envelope.md)",
+        "name": "EntryEnvelope (summary shape; its kind enum is TARGET T6.2's four producer classes, the same record cap-errors carries for its own boundary; the full schema, the per-producer mapping table and the fixture corpus are in references/intake-envelope.md)",
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:intake:envelope:0.1",
@@ -195,7 +195,7 @@
           "T-t6-02",
           "F-b3-08"
         ],
-        "quote": "All four enter through the same shape."
+        "quote": "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent."
       },
       {
         "name": "IntakeAcknowledgement (the whole of what a producer gets back synchronously)",
@@ -240,7 +240,7 @@
         "sources": [
           "F-b3-08"
         ],
-        "quote": "A2A messaging · CloudEvents"
+        "quote": "A2A messaging \u00b7 CloudEvents"
       },
       {
         "name": "The failure you handle (proposed): problem details, measured [caller's view, folded from cap-work-intake-use]",
@@ -556,8 +556,8 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.2 row P7, made precise and run over the adapter pair above: `python3 tools/conformance/intake_equivalence.py --producer cloudevents-http --producer a2a-message --producer schedule-occurrence --job fixtures/intake/one-job.json --report out/intake.json` (proposed tool, built with the first producer adapter), the producer selected by configuration with no code edit between runs. It submits one logical job three ways and asserts `distinct_job_digests == 1` over the three resulting envelopes, `distinct_entry_ids == 3`, every envelope valid against the published envelope schema, and `adapters_run >= 2` across the request-pushed producer and the agent-message producer.",
-    "expected": "exit 0 with `distinct_job_digests: 1`, `distinct_entry_ids: 3`, `invalid: 0` and `adapters_run: 2`",
+    "criterion": "python3 tools/conformance/intake_equivalence.py --producer cloudevents-http --producer a2a-message --producer schedule-occurrence --job fixtures/intake/one-job.json --report out/intake.json",
+    "expected": "docs/decomposition.md section 3.2 row P7, made precise and run over the adapter pair above: that command (proposed tool, built with the first producer adapter), the producer selected by configuration with no code edit between runs. It submits one logical job three ways and asserts `distinct_job_digests == 1` over the three resulting envelopes, `distinct_entry_ids == 3`, every envelope valid against the published envelope schema, and `adapters_run >= 2` across the request-pushed producer and the agent-message producer. exit 0 with `distinct_job_digests: 1`, `distinct_entry_ids: 3`, `invalid: 0` and `adapters_run: 2`",
     "breakage": "Let the request-pushed intake path stamp a default `priority` field onto the envelope it builds, changing nothing else, and re-run the same command.",
     "expected_failure": "exit 1 with `distinct_job_digests == 2`: the envelope from the request-pushed producer no longer digests to the same value as the other two, so the equality assertion fails while `distinct_entry_ids` is still 3, which is the useful part - the failure is normalisation, not identity. Claimed: the fixture, the producers and the runner do not exist here and neither run has been performed, so this check starts red by construction.",
     "status": "claimed",

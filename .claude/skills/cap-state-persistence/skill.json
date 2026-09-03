@@ -308,13 +308,13 @@
         "quote": "This must specify: the write model, concurrency and single-writer guarantees, the integrity mechanism, retention, and the query surface a planner needs."
       },
       {
-        "text": "agentic-stack already states that two boundaries have no standard to adopt (F-b5-01); the consequence for this row is that original design is the deliverable rather than an indulgence, because these two are ours. A review that asks which specification we failed to adopt here is asking the wrong question of this capability.",
+        "text": "agentic-stack states that two boundaries have no standard to adopt and that they are the only places original design effort is warranted (F-b5-01, F-b5-06); the consequence for this capability is that original design here is the deliverable rather than an indulgence, and a review asking which specification we failed to adopt is asking the wrong question of this boundary.",
         "origin": "sourced",
         "sources": [
-          "F-b5-06",
-          "F-b5-01"
+          "F-b5-01",
+          "F-b5-06"
         ],
-        "quote": "These two are ours."
+        "quote": "They are the only places original design effort is warranted, and they carry the weight of the platform."
       },
       {
         "text": "One consumer is a core component with a hard requirement: the Ledger is append-only across runs; the deduplication authority. A store that cannot answer whether a key already reached a terminal result, at a head that will not move while the answer is being used, breaks the Ledger rather than merely inconveniencing it.",
@@ -576,8 +576,8 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "docs/decomposition.md section 3.2 row P16, made precise and run over the adapter pair above: `python3 tools/conformance/state_persistence.py --adapter jsonl-hash-chain --adapter merkle-object-store --records 1500 --report out/state.json` (proposed tool), the adapter selected by configuration with no code edit between runs. Per adapter it appends N records through the interface, then asserts that an independent verifier we did not write recomputes the same head digest from the stored records alone, that an inclusion proof for a uniformly random record verifies without the rest of the log, and that `records_written > 1000`; across adapters it asserts `head_digests_equal == true` and `adapters_run >= 2`.",
-    "expected": "exit 0 with, per adapter, `records_written == 1500`, `external_head_matches == true`, `inclusion_proof_verified == true` and `chain_break_at == -1`, followed by `head_digests_equal=true adapters_run=2`.",
+    "criterion": "python3 tools/conformance/state_persistence.py --adapter jsonl-hash-chain --adapter merkle-object-store --records 1500 --report out/state.json",
+    "expected": "docs/decomposition.md section 3.2 row P16, made precise and run over the adapter pair above: that command (proposed tool), the adapter selected by configuration with no code edit between runs. Per adapter it appends N records through the interface, then asserts that an independent verifier we did not write recomputes the same head digest from the stored records alone, that an inclusion proof for a uniformly random record verifies without the rest of the log, and that `records_written > 1000`; across adapters it asserts `head_digests_equal == true` and `adapters_run >= 2`. exit 0 with, per adapter, `records_written == 1500`, `external_head_matches == true`, `inclusion_proof_verified == true` and `chain_break_at == -1`, followed by `head_digests_equal=true adapters_run=2`.",
     "breakage": "Edit one record body in place in the store, leaving both adapters, the record count and the command untouched.",
     "expected_failure": "exit 1 under both adapters: the independent verifier reports a chain break at that index and the inclusion proof for that record fails, so `chain_break_at` becomes the edited index, `external_head_matches == false` and `inclusion_proof_verified == false`. A run where the object-store adapter still exits 0 means its proof was served from a cached head instead of recomputed, which is the failure this breakage is aimed at rather than an incidental one. Claimed: neither adapter is written, no conformance tool exists here, and no run has been performed. The measured starting state is recorded in cap-state-persistence-use: the reference runner's chain verifies over 56 records across 4 runs and produces zero inclusion proofs, zero content-addressed record ids and zero sealed heads.",
     "status": "claimed",

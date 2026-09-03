@@ -1,0 +1,74 @@
+{
+  "ceremony": 11,
+  "section": "round2",
+  "reviewer": "sonnet (fan-out reviewer, group round2)",
+  "date": "2026-09-03",
+  "numbering_note": "Fan-out review, group round2, alongside ceremony-11-review-compose.json (group compose) and ceremony-11-review-xc.json (group xc), all three sharing ceremony number 11 per the 1-3-1-protocol convention for parallel reviewers. This group reviews compose-agent, compose-agent-implement, compose-improvement-loop, compose-improvement-loop-implement, xc-tenancy and xc-tenancy-implement - six skills written in an earlier wave, not touched by either sibling group's ceremony-11 improve pass - checked in light of what those two siblings just applied (kb/ceremonies/ceremony-11-improve-compose.json, ceremony-11-improve-xc.json).",
+  "findings": [
+    {
+      "id": "C11R-001",
+      "skill": "compose-improvement-loop",
+      "location": "contract.operations[3] (iterate_or_close); contract.shapes[1] (CandidateOutcome).properties.reason.enum; instructions[4]/[6] (steps 5 and 7); definition_of_done.expected",
+      "severity": "block",
+      "category": "consistency",
+      "finding": "iterate_or_close is named 'compose-loop's evaluate_exit and close_loop, cited by name and reusing its terminated_by/termination_class vocabulary verbatim', but compose-loop's LoopOutcome.terminated_by is a closed three-member enum (verdict_pass, iteration_ceiling, budget_ceiling) with no fail value, because a failed verdict inside the ceiling re-enters the loop rather than terminating it. CandidateOutcome.reason instead declares a fourth value, verdict_fail, that compose-loop's vocabulary does not contain, and this skill's own instructions never describe a path that produces it: step 5 says a failed outcome inside the ceiling re-enters author_revision (no decline), and step 7 says only iteration_ceiling or budget_ceiling close a candidate as declined. Yet definition_of_done.expected requires 'declined=7 (5 verdict_fail, 1 iteration_ceiling, 1 budget_ceiling)' - a fresh composer implementing exactly what steps 1-9 describe has no operation that ever assigns reason=verdict_fail, so the definition of done's own expected output is unreachable from the contract's stated instructions.",
+      "evidence": "contract.operations[3].name: \"iterate_or_close (compose-loop's evaluate_exit and close_loop, cited by name and reusing its terminated_by/termination_class vocabulary verbatim)\". compose-loop's LoopOutcome.terminated_by: {\"enum\": [\"verdict_pass\", \"iteration_ceiling\", \"budget_ceiling\"]}. compose-improvement-loop.contract.shapes[1].properties.reason: {\"enum\": [\"verdict_fail\", \"iteration_ceiling\", \"budget_ceiling\", null]}. instructions[4].action (step 5): \"On a failed outcome inside the ceiling, re-enter author_revision in the same loop_id and candidate_id...\". instructions[6].action (step 7): \"On iteration_ceiling or budget_ceiling, close as compose-loop's cap: record the candidate declined with the ceiling name as reason...\" - no other closing condition is described. definition_of_done.expected: \"promoted=13 declined=7 (5 verdict_fail, 1 iteration_ceiling, 1 budget_ceiling) edited_in_place=0\".",
+      "suggested_change": "Either drop verdict_fail from CandidateOutcome.reason's enum (a decline is only ever iteration_ceiling or budget_ceiling, matching compose-loop's own cap vocabulary and matching what steps 5 and 7 actually describe) and rewrite definition_of_done.expected to show only those two reasons across the 7 declines; or, if a candidate really can be declined on a bare verdict fail without exhausting the loop's ceiling (e.g. an evaluator refusing further retries), add that path as its own instruction step and state which operation assigns it, so the vocabulary claimed 'verbatim' from compose-loop is either actually verbatim or the addition is named as this skill's own extension rather than silently smuggled into a schema the DoD then assumes."
+    },
+    {
+      "id": "C11R-002",
+      "skill": "compose-agent, compose-improvement-loop",
+      "location": "compose-agent contract.invariants[8]; compose-improvement-loop instructions[6] (step 7) and instructions[8] (step 9)",
+      "severity": "fix",
+      "category": "honesty",
+      "finding": "schemas/skill.schema.json's own field description for sources states the rule directly: 'a REF- citation alone does not make a row sourced to the host or the target, mark such rows origin=proposed and cite REF- as the example followed' (tools/kb.py:318 states the identical rule). Three rows across these two skills violate it: each cites REF-5-3-08 or REF-3-4-15 as its only source and is marked origin=sourced. Two other rows in compose-improvement-loop (invariants[1], invariants[4]) pair a REF- id with a real F- or T- id and are not in scope of this finding, since the rule only forbids a REF- citation alone from grounding origin=sourced.",
+      "evidence": "schemas/skill.schema.json:396 (sources field description): \"REF- owner-supplied reference example (docs/reference/composable-plan.md); a REF- citation alone does not make a row sourced to the host or the target, mark such rows origin=proposed and cite REF- as the example followed\". compose-agent.contract.invariants[8]: {\"origin\": \"sourced\", \"sources\": [\"REF-5-3-08\"], \"quote\": \"opposites and must not be collapsed\"}. compose-improvement-loop.instructions[6] (step 7): {\"origin\": \"sourced\", \"sources\": [\"REF-5-3-08\"]}. compose-improvement-loop.instructions[8] (step 9): {\"origin\": \"sourced\", \"sources\": [\"REF-3-4-15\"]}.",
+      "suggested_change": "Change origin to proposed on compose-agent's invariants[8] and on compose-improvement-loop's instructions[6] and instructions[8], leaving each REF- citation as the example followed per the schema's own wording - no text needs to change, only the origin field."
+    },
+    {
+      "id": "C11R-003",
+      "skill": "xc-tenancy",
+      "location": "contract.shapes ScopeByWayIn (examples, 3 entries); instructions[6] (step 7); purpose.text",
+      "severity": "fix",
+      "category": "completeness",
+      "finding": "The sibling xc-group ceremony just closed on exactly this pattern (C11X-001, kb/ceremonies/ceremony-11-improve-xc.json): a skill whose own worked-entries shape and instructions assert coverage only of TARGET T1's three ways in (human, agent, event) when TARGET T6.2 names four consumption entries (human, event, schedule, external), and the fix applied there was to widen the proof to all four wherever schedule coverage is implied. xc-tenancy carries the identical gap and was not in that batch: ScopeByWayIn's examples cover exactly three doors (human, external, event) with no schedule-actor worked instance; instructions[6] (step 7) literally says 'Wire the identical scope check on all three of TARGET T1's ways in' and the definition_of_done's corpus check never asserts a schedule-originated unit was exercised. A scheduled root run (e.g. a recurring compaction job under one principal) is exactly the kind of unit this guarantee has to scope, and nothing here proves it does.",
+      "evidence": "xc-tenancy contract.shapes[2] (ScopeByWayIn).examples has 3 items: kind human, external, event - no kind schedule. instructions[6].action (step 7): \"Wire the identical scope check on all three of TARGET T1's ways in - a human, an agent, and an internal or external event...\". TARGET.md T6.2: \"Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent. All four enter through the same shape.\" kb/ceremonies/ceremony-11-improve-xc.json lessons_for_next_section[0]: \"TARGET.md carries two entry enumerations, not one: T1's three ways in (human, agent, event) and T6.2's four consumption entries... A skill's own worked-entries shape can already show all four while its definition_of_done still asserts three - check the shape and the criterion as a pair, not as agreeing because they share a file.\"",
+      "suggested_change": "Add a fourth ScopeByWayIn example under a schedule actor (e.g. service:nightly-compaction bound to a principal, per xc-compensation's own fourth worked example from the sibling ceremony), reword instructions[6] to name TARGET T6.2's four entries rather than T1's three, and widen definition_of_done to assert principals_covered and zero cross-principal counts were checked across a corpus that includes at least one schedule-originated unit."
+    },
+    {
+      "id": "C11R-004",
+      "skill": "compose-agent",
+      "location": "instructions (12 entries)",
+      "severity": "nit",
+      "category": "size",
+      "finding": "python3 tools/validate_skills.py --only compose-agent reports 'compose-agent: 12 instructions, outside the checked budget of 6 to 10' - the only validator warning across the six skills in this batch.",
+      "evidence": "validate_skills.py output: \"warning: compose-agent: 12 instructions, outside the checked budget of 6 to 10\\ncompose-agent: 0 errors, 1 warnings\".",
+      "suggested_change": "Merge two topically adjacent steps, the way ceremony-11's compose group merged two invariants at the same ceiling (kb/ceremonies/ceremony-11-improve-compose.json, C11C-002): steps 2 (admit through isolation/tools/packaging) and 10 (check tool-list/capability-set exactness) both concern the same admission-time binding and could combine into one step without dropping either citation, or steps 6 and 9 (delegate; terminate/reconcile cost) could similarly fold."
+    }
+  ],
+  "metrics": {
+    "skills": 6,
+    "rows_total": 178,
+    "rows_sourced": 96,
+    "rows_proposed": 82,
+    "validator_errors": 0,
+    "validator_warnings_in_scope": 1,
+    "findings_block": 1,
+    "findings_fix": 2,
+    "findings_nit": 1
+  },
+  "brief_improvements": [
+    "Consider adding a defect item stating the schemas/skill.schema.json rule on REF- citations explicitly in the author brief text (not only in the schema's field description): a REF- id alone never grounds origin=sourced, only paired with a real F-/T-/X- id or marked proposed - C11R-002 found three rows across two skills in this small batch alone violating a rule that is otherwise only discoverable by reading the schema file directly.",
+    "Consider folding C11X-001's rule (definition_of_done and worked-entries coverage must track TARGET T6.2's four entries, not T1's three, whenever a skill's own shape or purpose implies schedule coverage) into the author brief as a standing item rather than leaving it recorded only in one ceremony's lessons row - xc-tenancy shows the same gap recurred in a skill the fixing ceremony never touched, because the rule lived in a lessons file rather than the brief a fresh author reads before starting."
+  ],
+  "what_worked": [
+    "All six skills pass `python3 tools/validate_skills.py --only <name>` with 0 errors (compose-agent carries the one size warning named in C11R-004; the other five are 0/0).",
+    "composes_with.builds_on/used_by for all six skills matches docs/skill-manifest.json exactly in both directions, including compose-agent's 8-skill builds_on list and xc-tenancy's 10-skill builds_on list naming xc-enforcement-chain by name.",
+    "xc-tenancy composes with xc-enforcement-chain by slot correctly, ahead of the sibling xc group's own fix: its invariants name identity.resolve (principal bound), policy.decide (cross-principal refusal) and budget.reserve (per-principal ceiling) as three of the chain's six named slots rather than restating placement independently - exactly the pattern C11X-002 required the sibling group's four skills to retrofit.",
+    "`python3 tools/render_skill.py` reproduced both compose-improvement-loop/SKILL.md and xc-tenancy/SKILL.md byte-for-byte from their skill.json (spot-check, no diff), confirming the render pipeline holds for this batch.",
+    "compose-improvement-loop-implement's decision to label both definition_of_done runs 'claimed' rather than 'measured' is correct and re-verified: the runs were real (`python3 tools/ceremony_check.py`, re-run in this review and reproducing the same numbering line and the same ceremony-10 trend line '0.00 findings/skill, proposed share 0.39'), but F-a5-04's own quote 'whether the tree was dirty' is the reason given, and kb/ledger.jsonl and state/lessons.jsonl genuinely carried concurrent uncommitted changes from sibling ceremony-11 sessions at measurement time - the label matches build-evidence-record's rule that measured is a property of an attached, reproducible-tree run, not of confidence.",
+    "compose-improvement-loop's self-referential claim about this ceremony ('this repository's own ceremony 11 review of the compose group names its reviewer as sonnet (fan-out reviewer, group compose)') is a true verbatim match against kb/ceremonies/ceremony-11-review-compose.json's own reviewer field, checked directly rather than assumed.",
+    "No description-triggering collision was found between compose-agent, compose-improvement-loop, xc-tenancy and cap-agent-runtime, cap-evaluation, build-ceremony or cap-isolation: cap-evaluation's own trigger clause ('when a self-improvement loop needs a gate that can actually say no') names compose-improvement-loop's subject deliberately rather than restating its own trigger vocabulary, and no near-verbatim phrase pair like C11X-004's was found among these six.",
+    "compose-agent's today-adapter claim that examples/end-to-end/agents.json declares seven profiles is a true count (`python3 -c \"import json; print(len(json.load(open('examples/end-to-end/agents.json'))['agents']))\"` returns 7), and `bash examples/end-to-end/test.sh` still passes 29/29 in this batch's own re-run, exercising the same agent-dispatch path run.py's profile lookup (line 213/251) that adapter row describes."
+  ]
+}

@@ -1,19 +1,88 @@
 {
   "name": "layer acceptance ceremony",
-  "status_rows": [59, 60, 61, 62],
-  "cites": ["T-t10-01", "T-t10-03", "T-t10-09", "T-t9-07", "T-t9-08"],
+  "status_rows": [
+    59,
+    60,
+    61,
+    62
+  ],
+  "cites": [
+    "T-t10-01",
+    "T-t10-03",
+    "T-t10-09",
+    "T-t9-07",
+    "T-t9-08"
+  ],
   "rule": "One ceremony per phase, run once. Every step below runs in this order; a step that is skipped is recorded as skipped with the reason, never omitted.",
   "naming": "Every agent label, scope claim and record starts with the STATUS row id: 59-build-sourcing-a, 59-build-review, 59-build-improve (OWNER.md 2026-09-03).",
   "steps": [
-    {"n": 1, "step": "claim", "who": "orchestrator", "does": "python3 tools/scopes.py claim <row>-<layer>-<step>[-<part>] <paths>; disjoint parts run in parallel", "record": "state/agent-scopes.json"},
-    {"n": 2, "step": "source", "who": "sonnet, one per disjoint part", "does": "for every proposed row: convert when a verbatim kb quote supports the claim; delete padding that restates a sibling or is generic advice; leave genuinely-ours rows proposed with the research query in the text. Never touch definition_of_done, adapters or composes_with.", "record": "kb/ceremonies/<row>-<layer>-sourcing-<part>.json", "stick": "T-t9-02"},
-    {"n": 3, "step": "measure", "who": "sonnet or orchestrator", "does": "python3 tools/measure.py <skill> [--breakage-cmd ... --restore-cmd ...] for every skill whose criterion can run here; a criterion that names a tool that does not exist is rewritten to name one that does, or recorded as claimed with the missing tool named as a gap", "record": "the skill's definition_of_done and a ledger record per run", "stick": "T-t9-04"},
-    {"n": 4, "step": "plant", "who": "orchestrator", "does": "python3 tools/plant.py plant <one skill in the layer>; the planted skill is never committed", "record": "state/plants.json (ignored by git)"},
-    {"n": 5, "step": "review", "who": "sonnet, one per disjoint part, reads nothing from the sourcing agents", "does": "findings against every skill in the layer: misquotes, restatements, uncited claims, definitions of done that prove nothing, description trigger clauses that do not fire on the skill's scope; each finding names skill, location, severity, evidence", "record": "kb/ceremonies/<row>-<layer>-review[-<part>].json", "stick": "T-t9-07"},
-    {"n": 6, "step": "plant check", "who": "orchestrator", "does": "python3 tools/plant.py check <review>; a review that misses a plant is discarded and re-run once with a different reviewer; then python3 tools/plant.py unplant", "record": "the review record's plants_caught field"},
-    {"n": 7, "step": "improve", "who": "opus, disjoint parts", "does": "every finding applied or declined with the files touched and why; validator at zero errors and no new restatement warnings after each skill; python3 tools/render_skill.py after every edit", "record": "kb/ceremonies/<row>-<layer>-improve[-<part>].json"},
-    {"n": 8, "step": "lessons", "who": "orchestrator", "does": "one row in state/lessons.jsonl naming what recurred and the sharper check that catches it; state/author-brief.md updated only if a rule changed", "record": "state/lessons.jsonl"},
-    {"n": 9, "step": "close", "who": "orchestrator", "does": "python3 tools/validate_skills.py, tools/kb.py verify, tools/kb.py ledger-verify, tools/acceptance_check.py, tools/skill_graph.py, tools/status_check.py --freshness; release every claim; one ledger record; STATUS row Done with the measured result and archived in the same commit", "record": "kb/ledger.jsonl, STATUS-ARCHIVE.md", "stick": "T-t9-08"}
+    {
+      "n": 1,
+      "step": "claim",
+      "who": "orchestrator",
+      "does": "python3 tools/scopes.py claim <row>-<layer>-<step>[-<part>] <paths>; disjoint parts run in parallel",
+      "record": "state/agent-scopes.json"
+    },
+    {
+      "n": 2,
+      "step": "source",
+      "who": "sonnet, one per disjoint part",
+      "does": "for every proposed row: convert when a verbatim kb quote supports the claim; delete padding that restates a sibling or is generic advice; leave genuinely-ours rows proposed with the research query in the text. Never touch definition_of_done, adapters or composes_with.",
+      "record": "kb/ceremonies/<row>-<layer>-sourcing-<part>.json",
+      "stick": "T-t9-02"
+    },
+    {
+      "n": 3,
+      "step": "measure",
+      "who": "sonnet or orchestrator",
+      "does": "python3 tools/measure.py <skill> [--breakage-cmd ... --restore-cmd ...] for every skill whose criterion can run here; a criterion that names a tool that does not exist is rewritten to name one that does, or recorded as claimed with the missing tool named as a gap After measuring, python3 tools/expected_from_measured.py <skill> so expected and expected_failure quote the run that was made.",
+      "record": "the skill's definition_of_done and a ledger record per run",
+      "stick": "T-t9-04"
+    },
+    {
+      "n": 4,
+      "step": "plant",
+      "who": "orchestrator",
+      "does": "python3 tools/plant.py plant <one skill in the layer>; the planted skill is never committed",
+      "record": "state/plants.json (ignored by git)"
+    },
+    {
+      "n": 5,
+      "step": "review",
+      "who": "sonnet, one per disjoint part, reads nothing from the sourcing agents",
+      "does": "findings against every skill in the layer: misquotes, restatements, uncited claims, definitions of done that prove nothing, description trigger clauses that do not fire on the skill's scope; each finding names skill, location, severity, evidence",
+      "record": "kb/ceremonies/<row>-<layer>-review[-<part>].json",
+      "stick": "T-t9-07"
+    },
+    {
+      "n": 6,
+      "step": "plant check",
+      "who": "orchestrator",
+      "does": "python3 tools/plant.py check <review>; a review that misses a plant is discarded and re-run once with a different reviewer; then python3 tools/plant.py unplant",
+      "record": "the review record's plants_caught field"
+    },
+    {
+      "n": 7,
+      "step": "improve",
+      "who": "opus, disjoint parts",
+      "does": "every finding applied or declined with the files touched and why; validator at zero errors and no new restatement warnings after each skill; python3 tools/render_skill.py after every edit",
+      "record": "kb/ceremonies/<row>-<layer>-improve[-<part>].json"
+    },
+    {
+      "n": 8,
+      "step": "lessons",
+      "who": "orchestrator",
+      "does": "one row in state/lessons.jsonl naming what recurred and the sharper check that catches it; state/author-brief.md updated only if a rule changed",
+      "record": "state/lessons.jsonl"
+    },
+    {
+      "n": 9,
+      "step": "close",
+      "who": "orchestrator",
+      "does": "python3 tools/validate_skills.py, tools/kb.py verify, tools/kb.py ledger-verify, tools/acceptance_check.py, tools/expected_from_measured.py --check (a measured definition of done quotes its own run), tools/skill_graph.py, tools/status_check.py --freshness; release every claim; one ledger record; STATUS row Done with the measured result and archived in the same commit",
+      "record": "kb/ledger.jsonl, STATUS-ARCHIVE.md",
+      "stick": "T-t9-08"
+    }
   ],
   "stop": "The phase closes when the layer's rows in the acceptance matrix and the scorecard hold, or the missing stick is recorded absent in docs/acceptance/absent.json with the reason (T-t10-03)."
 }

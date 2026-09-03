@@ -38,12 +38,12 @@ Content expectations per layer:
 - compose-: instructions are the recipe for assembling lower layers; invariants are what a composition must preserve (rules 5, 6, 7); best_practices are the composer's judgment.
 - build-: instructions are the discipline as steps with the reason for each; the definition_of_done proves the discipline itself can fail.
 
-Keep each skill.json focused, and treat these as checked budgets, not aspirations: 6 to 10 instructions, 3 to 10 invariants, 3 to 8 best practices, and roughly 3 to 10 rows in any table. Long material - a full JSON Schema, a table of standards, worked examples - goes in references/<file>.md in the skill dir, with a proposed instruction saying when to open it and stating that the skill body is enough without it. A schema longer than about 25 rendered lines is long material: put a summary shape in contract.shapes and the full one in references/.
+Keep each skill.json focused, and treat these as checked budgets, not aspirations: 6 to 10 instructions, 3 to 10 invariants, 3 to 8 best practices, and roughly 3 to 10 rows in any table. Long material - a full JSON Schema, a table of standards, worked examples - goes in references/<file>.md in the skill dir, with a proposed instruction saying when to open it and stating that the skill body is enough without it. A schema longer than about 25 rendered lines is long material: put a summary shape in contract.shapes and the full one in references/. These are checked: tools/validate_skills.py warns when instructions, invariants or best_practices fall outside the budget, so clear every warning naming your skills before you close them.
 
-## Defects found in ceremonies 1-2 - do not repeat them
+## Defects found in ceremonies 1-3 - do not repeat them
 
-Review findings from wave 1 and wave 1a. Each cost a fix; none should recur. Items 2 and 4 recurred in wave 1a,
-so they carry the sharper check that would have caught them.
+Review findings from waves 1, 1a and 2. Each cost a fix; none should recur. Item 2 has now recurred in all
+three ceremonies and item 4 in two, so both carry the sharper check that would have caught them.
 
 1. There are SEVEN layers, not six: root, core, cap, xc, seam, compose, build. `root` is reserved for
    agentic-stack alone (the schema's enum and tools/validate_skills.py both know it, and the validator
@@ -55,7 +55,12 @@ so they carry the sharper check that would have caught them.
    places. The rule: compose by name, not by copy. It applies per fact, not only when a fact recurs across
    several skills: before you write a row, grep the builds_on skill's skill.json for the kb id you are about
    to cite, and if it is there, open with "agentic-stack already states this (F-...)" and add only your
-   consequence. In wave 1a two of three skills did this and the third re-derived F-a7-03 anyway.
+   consequence. In wave 1a two of three skills did this and the third re-derived F-a7-03 anyway; in wave 2
+   two of eight did it again, each having stated the same finding correctly elsewhere in the same file - so
+   the check is per citation, not per skill. tools/validate_skills.py now warns whenever a row cites an id
+   under the same verbatim quote as the root contract or one of your builds_on skills without naming that
+   skill. A warning is not always a defect (a sibling may cite the same record for its own point), but you
+   must read each one and either name the owner or convince yourself the row is genuinely your own.
 3. Any machine-readable field you name in an invariant or an instruction must have a formal shape in the
    same skill's contract.shapes (JSON Schema 2020-12, origin proposed unless PASS.md gives the shape). Prose
    describing a field three times is not a specification: the next author has to code against it.
@@ -76,6 +81,11 @@ so they carry the sharper check that would have caught them.
    already taken by another section, take the next unused one and say so - obeying it overwrites a closed
    ceremony. The same N ties the review, improve, lessons, ledger and known-issues records together, and
    `python3 tools/ceremony_check.py` now reports a numbering problem when it does not.
+8. State a fact the sources enumerate ONCE per skill, and have every other row point at that one list rather
+   than re-listing its members. cap-errors-use named three entry kinds in an invariant while asserting four
+   in the same sentence, and got the four right in its own instructions two sections later. TARGET.md T1
+   lists three ways in (human, agent, event) and T6.2 lists four entries (human, event, schedule, external
+   system or agent); they are different enumerations, so name which one you are citing.
 
 ## What worked in waves 1 and 1a - keep doing it
 

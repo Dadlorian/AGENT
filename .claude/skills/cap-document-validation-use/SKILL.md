@@ -1,0 +1,184 @@
+---
+name: cap-document-validation-use
+description: How to use document validation as a caller: send the document and the name of the shape it claims to be, get back admitted or a located list of everything wrong. Covers the three ways in - a person, an agent, an event - the minimal inputs and outputs, two worked examples, and the failure body you will actually receive. Load it when you are submitting anything to this platform, when a submission came back rejected and you are deciding what to fix, when you are about to hand-write field checks in your own component, and when someone asks 'what exactly do I have to send', 'why was this refused', or 'if we tighten the rules, what breaks for callers'.
+---
+
+# cap-document-validation-use
+
+Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Source IDs resolve with `python3 tools/kb.py show <id>`.
+
+## Purpose
+
+| Statement | Origin | Evidence |
+|---|---|---|
+| Make the capability usable in two moves - send a document with the name of its shape, read a located list back - so a caller never has to know which validator, dialect or schema store served the call. | sourced | `T-t2-01`, `T-t3-01` "Composability hides the complexity." |
+
+## Entities
+
+| Entity |
+|---|
+| `E-capability-document-validation` |
+| `E-standard-json-schema-2020-12` |
+
+## Contract
+
+### Operations
+
+| Operation | Input | Output | Origin | Evidence |
+|---|---|---|---|---|
+| validate, as a caller sees it (proposed view of the operation cap-document-validation defines) | two things: the document you are submitting, and the identifier of the shape it claims to be (proposed) | admitted, or a list of every violation with the location of each inside your document (proposed) | proposed | - |
+
+### Shapes (JSON Schema 2020-12)
+
+**worked example 1 (proposed): a person submits a malformed entry and gets everything wrong with it, at once** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:document-validation:example:rejected:0.1",
+  "title": "Rejected submission, end to end (proposed)",
+  "type": "object",
+  "examples": [
+    {
+      "sent": {
+        "schema_uri": "urn:agentic:seam:entry:0.1",
+        "instance": {
+          "kind": "human",
+          "intent": "restart the ingest job",
+          "budget": {
+            "ceiling_micros": "50000"
+          }
+        }
+      },
+      "outcome": {
+        "valid": false,
+        "errors": [
+          {
+            "instance_location": "/actor",
+            "keyword_location": "/required",
+            "message": "required property 'actor' is missing"
+          },
+          {
+            "instance_location": "/budget/ceiling_micros",
+            "keyword_location": "/properties/budget/properties/ceiling_micros/type",
+            "message": "expected integer, got string"
+          }
+        ]
+      },
+      "received_on_the_wire": {
+        "media_type": "application/problem+json",
+        "type": "urn:agentic:problem:document-invalid",
+        "title": "Document failed schema validation",
+        "status": 422,
+        "detail": "2 violations; see errors",
+        "errors": "the list above, unchanged"
+      },
+      "what_the_caller_does": "fixes both violations in one edit and resubmits; there is no second round of discovery"
+    }
+  ]
+}
+```
+
+**worked example 2 (proposed): the shape is tightened and no caller changes** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:document-validation:example:tightened:0.1",
+  "title": "Enhancing one aspect without touching the rest (proposed)",
+  "type": "object",
+  "examples": [
+    {
+      "before": {
+        "schema_uri": "urn:agentic:seam:entry:0.1",
+        "rule": "idempotency_key is any non-empty string"
+      },
+      "change": "the schema adds a maxLength and a pattern to idempotency_key; the schema id gains a new version",
+      "unchanged": [
+        "what a caller sends: the same document and the same shape identifier",
+        "the outcome shape they read back",
+        "which validator serves the call",
+        "every other schema in the store"
+      ],
+      "newly_rejected": [
+        {
+          "instance_location": "/idempotency_key",
+          "keyword_location": "/properties/idempotency_key/pattern",
+          "message": "does not match the required pattern"
+        }
+      ],
+      "who_had_to_change": "nobody's calling code; only the schema resource and the callers whose documents were already out of shape"
+    }
+  ]
+}
+```
+
+### Invariants
+
+| Invariant | Origin | Evidence |
+|---|---|---|
+| All three ways in reach the same check: a person, an agent, and an internal or external event submit through one envelope, against one shape identifier, and read one outcome shape back. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t6-02` "All four enter through the same shape" |
+| A caller supplies two things and knows nothing else: the document, and the identifier of the shape it claims to be. Which validator ran, which dialect it resolved and where the schema lives are all hidden. | sourced | `T-t2-01` "Composability hides the complexity." |
+| Tightening a schema, replacing the validator behind the interface, and changing how a rejection is rendered are three independent changes; none of them alters what a caller sends or the outcome shape they read. | sourced | `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
+| A rejection arrives as data: a located list of every violation, carried on the wire as problem details with a type, title, status and detail. Match on the type; never parse the wording. | sourced | `F-b3-13`, `X-cap-errors-002` "A Problem Details response uses the application/problem+json content type" |
+| cap-document-validation already states the well-formedness finding for this capability (F-a7-03). For a caller it means admitted says your document is shaped correctly, and says nothing about whether what you asked for is sensible or affordable. | sourced | `F-a7-03` "Those establish well-formedness, not correctness" |
+
+### Deliberately not exposed
+
+| Item | Origin | Evidence |
+|---|---|---|
+| Proposed: cap-document-validation lists what this interface hides. The practical form for a caller is that no answer you receive names a library, a file path, a process or a version - so if you find yourself branching on one, you are reading something you were not given. | proposed | - |
+
+## Instructions
+
+| Step | Action | Why | Origin | Evidence |
+|---|---|---|---|---|
+| 1 | Send the document together with the identifier of the shape it claims to be, through the same envelope whether you are a person typing it, an agent submitting it, or an event carrying it. | All three must be able to enter, and one entry shape is what lets the same check, the same outcome and the same record apply to all of them. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03` "An internal or external event must be able to enter the system." |
+| 2 | Read the outcome as data. On rejection, work through the whole located list and fix it in one edit; do not stop at the first entry and do not pattern-match the message text. | Every violation is reported in one pass precisely so that repair is one round rather than as many rounds as your document has faults. | sourced | `X-cap-document-validation-005` "All errors are reported in a single pass instead of stopping at the first failure." |
+| 3 | On the wire, expect problem details: branch on the type field, read status for the class of failure, and show detail to a person rather than to your code. | A typed body is the difference between a caller that keeps working when the wording improves and one that breaks on a copy edit. | sourced | `F-b3-13`, `X-cap-errors-002` "type (URI identifying the error category)" |
+| 4 | When you need a stricter rule, tighten the schema and publish it under a new identifier; do not add a check in your own component and do not ask callers to change what they send. | The shape is the one place a rule can change without reaching anyone: worked example 2 is that change written out. | sourced | `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
+| 5 | Do not re-check the document after admission with hand-written field tests of your own. | Proposed: two checkers give two answers, and the second one is the one nobody maintains; it is also how a rule ends up enforced on one entry path and not the others. | proposed | - |
+| 6 | If a result surprises you, ask which dialect was in effect for the call rather than reading the schema file and reasoning from it. | cap-document-validation already states why (F-a7-04): what a file declares and what a runtime resolved are different facts, and only one of them decided your outcome. | sourced | `F-a7-04` "Values written to YAML validated, reviewed correctly, and had no runtime effect" |
+| 7 | If you cannot state the shape you must send in a sentence, say so and treat it as a defect in the schema rather than working around it. | A shape a caller cannot hold in their head gets guessed at instead, and a capability nobody can use straightforwardly is one nobody uses. | sourced | `T-t3-02` "It cannot be daunting or overly complex, or no one will use it." |
+
+## Best practices
+
+| Practice | Origin | Evidence |
+|---|---|---|
+| Ask for every violation at once with the location of each, rather than a first-failure answer; it is the difference between one repair and one repair per fault. | sourced | `X-cap-errors-004` "return all validation errors at once with field-level detail" |
+| Proposed: version the shape, never the caller. Publishing a new schema identifier lets old and new documents coexist while they migrate; adding an optional field with special meaning to an existing shape makes every reader guess which era a document came from. | proposed | - |
+| Proposed: validate the envelope once, at the way in, and let composition carry the result; a step that revalidates the same document is paying for the check twice and can still disagree with the admission point. | proposed | - |
+| Keep what a caller must know small: two inputs and one outcome. Every additional thing a caller must configure is a reason the check gets bypassed rather than used. | sourced | `T-t3-01`, `T-t2-01` "It has to be simple to use." |
+
+## Definition of done
+
+| Field | Value |
+|---|---|
+| Criterion | Proposed tool, built with the entry seam: `python3 tools/use_check_document_validation.py --entry human --entry event --entry external --schema urn:agentic:seam:entry:0.1 --valid fixtures/entry/valid.json --malformed fixtures/entry/malformed.json`. It asserts that the valid instance is admitted through all three entries with byte-identical outcomes, that the malformed instance is rejected through all three with the same problem type `urn:agentic:problem:document-invalid`, media type `application/problem+json` and the same located error list, and that `entries_run == 3` and `errors_reported > 1`. |
+| Expected | exit 0 and the line `entries_run=3 identical_outcomes=1 problem_type=urn:agentic:problem:document-invalid errors_reported=2`. |
+| Deliberate breakage | Have one entry path stamp a default field into the document before it is validated - for example a priority the other two entries do not set. |
+| Expected failure | That entry's outcome diverges from the other two, `identical_outcomes=0`, the run names which entry differed, and it exits non-zero while the other two entries still agree - so the check says which way in broke the equivalence rather than only that it broke. |
+| Status | claimed |
+| Evidence | `F-part-c-04`, `T-t1-01` "A criterion nothing can fail is not a criterion" |
+
+## Composes with
+
+Builds on: `cap-document-validation`, `cap-document-validation-implement`
+
+Used by: -
+
+## Open questions
+
+| Question | Deciding evidence | Default until then | Evidence |
+|---|---|---|---|
+| Should a caller be able to validate a document without submitting it - a dry run against a shape? | Count, over recorded submissions, how many were rejected for shape alone and how many of those came from an agent that could have checked first; if that fraction is large, the pre-check pays for itself in refused work. | Yes, using the same operation and the same outcome, with nothing dispatched and nothing spent. Proposed: it costs one call path and removes the reason an agent would keep a private copy of the rules. | `T-t2-01` "Composability hides the complexity." |
+
+## Provenance
+
+| Field | Value |
+|---|---|
+| PASS.md sha256 | cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96 |
+| kb facts head | 9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e |
+| kb entities head | 747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604 |
+| kb edges head | a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6 |
+| Author | session claude/auto-skill-creation-i8javu |

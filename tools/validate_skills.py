@@ -18,6 +18,10 @@ Errors (exit 1):
 Warnings:
   - manifest skill not written yet
   - fewer than 3 instructions
+  - a table outside the author brief's checked budget (6-10 instructions, 3-10 invariants,
+    3-8 best practices)
+  - a row restating a kb id under the same verbatim quote as the root contract or a builds_on
+    skill, without naming that skill: compose by name, not by copy (author-brief defect item 2)
 """
 from __future__ import annotations
 
@@ -95,6 +99,24 @@ def walk_sourced(obj, path, errs, kb_ids, name):
     elif isinstance(obj, list):
         for i, v in enumerate(obj):
             walk_sourced(v, f"{path}[{i}]", errs, kb_ids, name)
+
+
+def rows_of(sk: dict):
+    """Every statement row in a skill: instructions, contract tables, best practices, open questions."""
+    out = list(sk.get("instructions", []) or [])
+    c = sk.get("contract", {}) or {}
+    for k in ("invariants", "operations", "shapes", "standards", "not_exposed", "best_practices"):
+        v = c.get(k) or []
+        if isinstance(v, list):
+            out += [x for x in v if isinstance(x, dict)]
+    for k in ("best_practices", "open_questions", "adapters"):
+        v = sk.get(k) or []
+        if isinstance(v, list):
+            out += [x for x in v if isinstance(x, dict)]
+    p = sk.get("purpose")
+    if isinstance(p, dict):
+        out.append(p)
+    return out
 
 
 def check_structure(sk: dict, name: str, errs: list[str]):
@@ -213,6 +235,43 @@ def main() -> int:
                     errs.append(f"{name}: product name(s) {hits} outside Adapters, in section '{section or 'frontmatter'}'")
         if len(sk.get("instructions", [])) < 3:
             warns.append(f"{name}: fewer than 3 instructions")
+        for field, rows, lo, hi in (
+            ("instructions", sk.get("instructions", []), 6, 10),
+            ("invariants", sk.get("contract", {}).get("invariants", []), 3, 10),
+            ("best_practices", sk.get("contract", {}).get("best_practices", []) or sk.get("best_practices", []), 3, 8),
+        ):
+            if rows and not lo <= len(rows) <= hi:
+                warns.append(f"{name}: {len(rows)} {field}, outside the checked budget of {lo} to {hi}")
+
+    # compose by name, not by copy: a row citing an id its root contract or a builds_on skill
+    # already cites must name that skill, so a change to the fact lands in one place.
+    # keyed by (id, quote): the same id under the same verbatim quote is a restated fact, where the
+    # same id under a different quote is usually a sibling citing the same record for its own point.
+    cited_by: dict[tuple[str, str], set[str]] = {}
+    for name, sk in skills.items():
+        for r in rows_of(sk):
+            q = (r.get("quote") or "").strip()
+            if not q:
+                continue
+            for sid in r.get("sources") or []:
+                cited_by.setdefault((sid, q), set()).add(name)
+    for name, sk in skills.items():
+        if name == ROOT_SKILL:
+            continue
+        owners = set(sk.get("composes_with", {}).get("builds_on", [])) | {ROOT_SKILL}
+        owners.discard(name)
+        for r in rows_of(sk):
+            text = " ".join(str(r.get(k, "")) for k in ("text", "action", "why", "note"))
+            q = (r.get("quote") or "").strip()
+            if not q:
+                continue
+            for sid in r.get("sources") or []:
+                also = sorted((cited_by.get((sid, q), set()) & owners) - {name})
+                if also and not any(o in text for o in also):
+                    w = (f"{name}: restates {sid} under the same quote as {', '.join(also)}, without "
+                         f"naming it (compose by name, not by copy)")
+                    if w not in warns:  # one line per skill and id, however many rows repeat it
+                        warns.append(w)
 
     manifest_names: set[str] = set()
     manifest: dict[str, dict] = {}

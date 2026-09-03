@@ -148,7 +148,7 @@
           "angle": "depth",
           "question": "Proposed question: Which distinguishing fields of the runtime configuration are actually set per unit of work - read-only root filesystem, explicit mount set, user and namespace mapping, CPU, memory and process limits, network posture, and the hardware configuration where a virtual-machine class runtime serves - and where does each value come from?",
           "evidence_expected": "The generated runtime configuration for one real unit, with a line-by-line account of which field came from the unit's declaration and which is a default, and the run that shows a limit being enforced.",
-          "aligned_looks_like": "The configuration is derived from the unit's declared needs, is restrictive by default, denies host networking and privilege unless declared, and every non-default is justified; a limit breach is observably enforced.",
+          "aligned_looks_like": "The configuration is derived from the unit's declared needs, is restrictive by default, denies host networking and privilege unless declared, and every field that departs from the default is traceable to a field in the unit's own declaration; a limit breach is observably enforced.",
           "misaligned_looks_like": "The configuration is the runtime's default, or is privileged, shares the host network or mounts the host filesystem broadly; nothing distinguishes one unit's sandbox from another's.",
           "origin": "proposed",
           "cites": [
@@ -356,8 +356,8 @@
           "id": "model-access-q6",
           "angle": "direction",
           "question": "Proposed question: Is the interface shaped so that a move from the message-based format to an item-and-response format, or the addition of a second wire family, is an adapter change rather than a core change - and does anything in the core assume one format?",
-          "evidence_expected": "The interface's own type definitions, an account of which fields are format-specific, and a demonstration or a written migration path showing what a second wire family would require.",
-          "aligned_looks_like": "The interface speaks in turns, items and typed results of its own, adapters translate, and adding a second wire family touches only adapters and their conformance runs.",
+          "evidence_expected": "The interface's own type definitions, an account of which fields are format-specific, and the change set for a second wire family actually added behind the interface, with its conformance run.",
+          "aligned_looks_like": "The interface speaks in turns, items and typed results of its own, adapters translate, and the second wire family that was added touched only adapters and their conformance runs. A written migration path with no second wire family ever exercised is exists rather than aligned.",
           "misaligned_looks_like": "The core's types are one provider's request and response objects renamed; or the build has bet on a single format with no stated exit; or per-provider branches sit above the boundary.",
           "origin": "proposed",
           "cites": [
@@ -853,7 +853,7 @@
         ]
       },
       "direction": {
-        "text": "Inside the window packaging went from one vendor's convention to a foundation-stewarded open standard with roughly 40 conformant products, and the claimed property became portability: a package written to the spec runs across compatible platforms without modification. Distribution followed at a scale nobody governs - four registries offering 64K, 91K, 36K and 288K packages respectively as of May 2026, with a scan of 42,447 finding 26.1% carrying at least one security vulnerability. That is the gap the window is closing: registries 'operate like early-era package managers: open submission, minimal vetting, no code signing, no provenance tracking', and the stated remedy is that 'Skill integrity should be treated the same way the software industry treats package integrity through cryptographic signing and verified provenance, with agent runtimes requiring that skills are signed by a known and trusted publisher'. The trajectory named is toward curated, audited registries, semantic versioning of packages, and broader cross-platform portability. It would be an error now to build a loader that joins filesystem paths to find a capability, to copy packages between repositories instead of resolving them by name and version, to invent a private package format when a portable one exists, or to load third-party packages into a privileged agent without a digest and a signature check.",
+        "text": "What moved inside the window is adoption and distribution, not standardisation: the specification was already published as an open standard in December 2025, before the window opened, and what the window added is roughly 40 conformant products on its showcase by June 2026, with the claimed property becoming portability: a package written to the spec runs across compatible platforms without modification. Distribution followed at a scale nobody governs - four registries offering 64K, 91K, 36K and 288K packages respectively as of May 2026, with a scan of 42,447 finding 26.1% carrying at least one security vulnerability. That is the gap the window is closing: registries 'operate like early-era package managers: open submission, minimal vetting, no code signing, no provenance tracking', and the stated remedy is that 'Skill integrity should be treated the same way the software industry treats package integrity through cryptographic signing and verified provenance, with agent runtimes requiring that skills are signed by a known and trusted publisher'. The trajectory named is toward curated, audited registries, semantic versioning of packages, and broader cross-platform portability. It would be an error now to build a loader that joins filesystem paths to find a capability, to copy packages between repositories instead of resolving them by name and version, to invent a private package format when a portable one exists, or to load third-party packages into a privileged agent without a digest and a signature check.",
         "origin": "sourced",
         "cites": [
           "X-litmus-a-025",
@@ -868,8 +868,8 @@
           "id": "capability-packaging-q1",
           "angle": "presence",
           "question": "Proposed question: Are reusable capabilities packaged in the portable directory shape the specification defines - a manifest with the required frontmatter fields, a body, and optional executable, reference and asset subdirectories - such that a runtime the build does not control could load one unchanged?",
-          "evidence_expected": "One package's directory listing and manifest, plus the specification version it claims, and a statement of any field or layout the build added beyond the spec.",
-          "aligned_looks_like": "The shape is the spec's, the required fields are present and meaningful, and any addition is an optional extra that a conformant runtime can ignore without the package breaking.",
+          "evidence_expected": "One package's directory listing and manifest, plus the specification version it claims, a statement of any field or layout the build added beyond the spec, and one recorded selection made from the description alone, repeated after that description was edited.",
+          "aligned_looks_like": "The shape is the spec's; the required fields are present, and the description is the text a selector actually matches on, shown by a selection that changed when the description changed; any addition is an optional extra a conformant runtime can ignore without the package breaking.",
           "misaligned_looks_like": "Packages carry a private format, or depend on fields or a directory layout no other runtime would understand, so portability is claimed but untestable.",
           "origin": "proposed",
           "cites": [
@@ -976,11 +976,12 @@
       "standard": {
         "name": "A2A messaging · CloudEvents",
         "settledness": "contested",
-        "why": "Two published standards are live for the same job of getting a unit of work in, and neither has displaced the other. CloudEvents is a CNCF graduated project (graduated 25 January 2024) whose current revision v1.0.2 is backward compatible and unchanged inside the window, which makes it the settled envelope for the event and schedule doors. A2A reached v1.0 in April 2026 under the Linux Foundation with over 150 organisations, and v1.0.1 in May 2026 added an extension mechanism, which makes it the leading but recently-versioned choice for the external-agent door. The ecosystem map for 2026 still lists MCP, A2A, ACP and UCP as separate live protocols under institutional rather than technical convergence, both MCP and A2A having moved under the Linux Foundation's Agentic AI Foundation. So the future state names the property to hold, one normalised envelope behind every door, rather than a winner.",
+        "why": "Two published standards are live for the same job of getting a unit of work in, and neither has displaced the other. CloudEvents is a CNCF graduated project (graduated 25 January 2024) whose current revision v1.0.2 is backward compatible and unchanged inside the window, which makes it the settled envelope for the event and schedule doors. A2A reached v1.0 on 12 March 2026, the release that also introduced signed agent cards, was announced as having over 150 supporting organisations under the Linux Foundation on 9 April 2026, and added an extension mechanism in v1.0.1 in May 2026, which makes it the leading but recently-versioned choice for the external-agent door. The ecosystem map for 2026 still lists MCP, A2A, ACP and UCP as separate live protocols under institutional rather than technical convergence, both MCP and A2A having moved under the Linux Foundation's Agentic AI Foundation. So the future state names the property to hold, one normalised envelope behind every door, rather than a winner.",
         "cites": [
           "X-litmus-b-001",
           "X-litmus-b-002",
-          "X-litmus-b-005"
+          "X-litmus-b-005",
+          "X-litmus-b-026"
         ]
       },
       "future_state": {
@@ -997,13 +998,14 @@
         ]
       },
       "direction": {
-        "text": "Inside the window the external door consolidated onto foundation-governed protocols rather than converging into one: A2A reached v1.0 in April 2026 under the Linux Foundation with over 150 organisations and added an extension mechanism in v1.0.1, and both MCP and A2A now sit under the Agentic AI Foundation launched in December 2025, described as institutional rather than true protocol convergence. The event side did not move: CloudEvents stayed at a backward-compatible v1.0.2 with graduated status, and its distributed-tracing extension is the sanctioned way to carry context across the event door. What is being abandoned is explicit: Custom HTTP endpoints for agent communication in 2026 are creating technical debt. It would be an error now to define a bespoke intake payload per door, to let one door's wire format become the internal shape, or to treat the external-agent door as a private webhook contract that requires the caller to adopt code from this side.",
+        "text": "Inside the window the external door consolidated onto foundation-governed protocols rather than converging into one: A2A reached v1.0 on 12 March 2026, was announced at over 150 supporting organisations under the Linux Foundation on 9 April 2026, and added an extension mechanism in v1.0.1, and both MCP and A2A now sit under the Agentic AI Foundation launched in December 2025, described as institutional rather than true protocol convergence. The event side did not move: CloudEvents stayed at a backward-compatible v1.0.2 with graduated status, and its distributed-tracing extension is the sanctioned way to carry context across the event door. What is being abandoned is explicit: Custom HTTP endpoints for agent communication in 2026 are creating technical debt. It would be an error now to define a bespoke intake payload per door, to let one door's wire format become the internal shape, or to treat the external-agent door as a private webhook contract that requires the caller to adopt code from this side.",
         "origin": "sourced",
         "cites": [
           "X-litmus-b-001",
           "X-litmus-b-002",
           "X-litmus-b-005",
-          "X-litmus-b-006"
+          "X-litmus-b-006",
+          "X-litmus-b-026"
         ],
         "quote": "Custom HTTP endpoints for agent communication in 2026 are creating technical debt."
       },
@@ -1239,6 +1241,21 @@
             "X-litmus-b-007",
             "X-litmus-b-010"
           ]
+        },
+        {
+          "id": "document-validation-q7",
+          "angle": "depth",
+          "question": "Proposed: Is each boundary schema versioned in its own right, separately from the dialect it is written in, and what does a document written to the previous version of a schema receive once that schema changes?",
+          "evidence_expected": "One schema change carried through: both versions with their identifiers, how an incoming document declares which version it was written to, and the failure object returned for a document that was valid under the old version.",
+          "aligned_looks_like": "Every boundary schema carries its own version identifier distinct from the dialect declaration; a document names the version it targets; a change that breaks an older document yields a typed failure naming the schema, the version and the location that no longer validates, and any period during which both versions are accepted is declared.",
+          "misaligned_looks_like": "Schemas are edited in place with no version of their own, so a change silently rejects documents that were valid the day before; the only version anywhere is the dialect's; the rejection says the document is invalid without saying which version judged it.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-09",
+            "F-b1-03",
+            "F-b4-07",
+            "X-litmus-b-007"
+          ]
         }
       ],
       "gaps": [
@@ -1370,8 +1387,8 @@
           "id": "telemetry-q6",
           "angle": "direction",
           "question": "Proposed: Is the version of the generative-AI attribute conventions being emitted declared in one place, with a stated way to absorb a rename, given that this vocabulary is pre-stable inside the window?",
-          "evidence_expected": "The single declaration of the emitted convention version, and the record of one convention change absorbed, or a written statement of how one would be.",
-          "aligned_looks_like": "The version is pinned and declared once; a rename upstream is a configuration change and old and new names can be emitted during a transition.",
+          "evidence_expected": "The single declaration of the emitted convention version, and the record of one convention change actually absorbed: the change set, and exported signals from before, during and after the transition.",
+          "aligned_looks_like": "The version is pinned and declared once; a rename upstream was absorbed as a configuration change, with old and new names emitted together during the exercised transition. A written statement of how a rename would be absorbed, with no transition ever exercised, is exists rather than aligned.",
           "misaligned_looks_like": "Convention attribute names are hard-coded across many components with no version recorded, or the vocabulary is treated as stable and pinned to nothing, so an upstream rename silently breaks dashboards.",
           "origin": "proposed",
           "cites": [
@@ -1992,16 +2009,15 @@
         ]
       },
       "future_state": {
-        "text": "Every recurring unit of work is declared as a recurrence rule in the standard grammar, stored with an explicit start instant and a named time zone, never as a platform-specific interval string, so that the same rule parsed by any conforming implementation producing the same result is a property the build can rely on when it moves hosts. A schedule is durable, addressable platform state - creatable, inspectable, pausable, editable and backfillable through the same interface at any entry - rather than configuration on a host, and it carries its operational policy with it: what happens when a fire is missed, how far back catch-up may reach, whether overlapping runs are allowed or skipped, and how much jitter spreads a fleet of schedules. Expansion of a rule into concrete fire times sits behind a recurrence capability so the parser can be replaced without touching the core, and each fire produces a unit of work through the same intake path as any other entry, carrying an idempotency key derived from the schedule's identity and the nominal fire time so that a catch-up, an operator backfill and a retry of the same fire converge on one execution.",
-        "origin": "sourced",
+        "text": "The future state proposed for this capability: every recurring unit of work is declared as a recurrence rule in the standard grammar, stored with an explicit start instant and a named time zone, never as a platform-specific interval string, so that the same rule parsed by any conforming implementation producing the same result is a property the build can rely on when it moves hosts. A schedule is durable, addressable platform state - creatable, inspectable, pausable, editable and backfillable through the same interface at any entry - rather than configuration on a host, and its recurrence together with its operational policy - what happens when a fire is missed, how far back catch-up may reach, whether overlapping runs are allowed or skipped, and how much jitter spreads a fleet of schedules - is declared in one portable record that moves between runners intact, so that none of it is inherited from a particular runner's feature set. Expansion of a rule into concrete fire times sits behind a recurrence capability so the parser can be replaced without touching the core, and each fire produces a unit of work through the same intake path as any other entry, carrying - as this section proposes rather than sources - a replay identity derived from the schedule's identity and the nominal fire time so that a catch-up, an operator backfill and a retry of the same fire converge on one execution.",
+        "origin": "proposed",
         "cites": [
           "F-b3-15",
           "F-b3-16",
           "X-litmus-c-006",
           "X-litmus-c-007",
           "X-litmus-c-008"
-        ],
-        "quote": "the same rule parsed by any conforming implementation producing the same result"
+        ]
       },
       "direction": {
         "text": "Inside the window, scheduling moved from host configuration to durable, observable state owned by an execution service: Cadence shipped Schedules in June 2026, where a Schedule lives on the server and can be observed, paused, updated, and backfilled without touching workflow code, with catch-up bounded to a lookback window and dispatch governed by a declared overlap policy; jitter as thundering-herd protection is now discussed as standard practice for scheduled agent workloads. Recurrence-rule services extended the grammar to agent triggers, and conforming RFC 5545 libraries built on modern time-zone-aware date APIs (including RFC 7529 RSCALE support) landed in the window. What is being abandoned: bare per-platform cron strings as the source of truth, and timers with no record of the last fire. It would be an error now to hold schedules only in a host crontab or an in-process timer, to store a rule without its time zone, or to expand recurrence in UTC and treat local wall time as incidental, since the grammar's whole value is portable, zone-correct expansion.",
@@ -2096,6 +2112,20 @@
             "F-b3-15",
             "F-b1-04",
             "F-b3-18"
+          ]
+        },
+        {
+          "id": "scheduling-q7",
+          "angle": "direction",
+          "question": "Against the direction proposed for this section, is a schedule durable, inspectable state the platform owns rather than host configuration or an in-process timer, and does a fleet of schedules declare its overlap policy and spread its fires rather than arriving as one burst?",
+          "evidence_expected": "The stored set of schedules with what each one declares, the recorded last and next fire for one of them, and the distribution of actual fire times across many schedules sharing a single rule.",
+          "aligned_looks_like": "Schedules are records that can be listed, paused and edited while the platform runs, each carrying its catch-up bound and overlap policy; the last fire is recorded; many schedules on one rule fire spread across an interval by a declared jitter rather than at the same instant.",
+          "misaligned_looks_like": "Schedules live in host configuration or in an in-process timer and vanish with the process; nothing records the last fire, so a missed one cannot be detected; every schedule sharing a rule fires simultaneously; overlap is whatever the runner happens to do.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-15",
+            "X-litmus-c-006",
+            "X-litmus-c-008"
           ]
         }
       ],
@@ -2277,16 +2307,15 @@
         ]
       },
       "future_state": {
-        "text": "State is one append-only history behind a capability interface, not a file format: a write is an append of an immutable record to a named stream, admitted only if the caller's expected version is still current, so the store arbitrates a single logical writer per stream instead of trusting convention, and a torn or partial record is never visible to a reader. Integrity is stronger than a per-record hash link, because the append-only property of each log is achieved using Merkle Trees: a reader can be given an inclusion proof for one record and a consistency proof that the history it saw yesterday is a prefix of the history today, so an edit, a reorder and a truncation are all detectable, and detectable by an independent verifier that was not written by the platform. Retention is declared per stream, with snapshots or compaction bounding replay cost while the proof structure over the retained history survives, and deletion is itself a recorded, provable event rather than a silent gap. The read surface is stated as operations that cost planning actually needs - a record by identity, a stream from a version, and a materialised projection - so the contract mentions no file, path or layout, and an embedded log, an object store with conditional writes, or a transactional database can each serve behind it unchanged.",
-        "origin": "sourced",
+        "text": "The future state proposed for this boundary: state is one append-only history behind a capability interface, not a file format: a write is an append of an immutable record to a named stream, admitted only if the caller's expected version is still current, so the store arbitrates a single logical writer per stream instead of trusting convention, and a torn or partial record is never visible to a reader. Integrity is stronger than a per-record hash link, because the append-only property of each log is achieved using Merkle Trees: a reader can be given an inclusion proof for one record and a consistency proof that the history it saw yesterday is a prefix of the history today, so an edit, a reorder and a truncation are all detectable, and detectable by an independent verifier that was not written by the platform. Retention is declared per stream, with snapshots or compaction bounding replay cost while the proof structure over the retained history survives, and deletion is itself a recorded, provable event rather than a silent gap. The read surface is stated as operations that cost planning actually needs - as this section proposes rather than sources, a record by identity, a stream from a version, and a materialised projection - so the contract mentions no file, path or layout, and an embedded log, an object store with conditional writes, or a transactional database can each serve behind it unchanged. Every append carries the platform's guarantees with it, so a record names the actor, the correlation and the decision that admitted it whether or not the writer supplied them.",
+        "origin": "proposed",
         "cites": [
           "F-b3-17",
           "F-b5-05",
           "X-litmus-c-013",
           "X-litmus-c-014",
           "X-litmus-c-015"
-        ],
-        "quote": "the append-only property of each log is achieved using Merkle Trees"
+        ]
       },
       "direction": {
         "text": "Inside the window three things settled that a state design should now assume. First, conditional writes reached commodity object storage - S3 supports conditional writes using If-Match with ETag, and this pattern closely resembles a compare-and-swap (CAS) operation and enables optimistic concurrency control without locks - with nearly every other object store already offering preconditions, so a durable append-only log on plain storage with real single-writer arbitration is now ordinary rather than exotic, and write-ahead logs are being moved into the storage layer on that basis. Second, transparency-log technique (RFC 9162 Merkle inclusion and consistency proofs, already extended to key transparency and module mirrors) is being applied directly to agent audit history in 2026 research. Third, event-store practice has converged on expected-version optimistic concurrency, projections as the read surface, and snapshot or policy-driven compaction for retention. What is being abandoned: single-file, single-process state with no concurrency control, and integrity by chained hash alone with no proof of consistency or truncation. It would be an error now to write a contract in terms of a file layout, or to build a chain only the writer's own code can verify by re-reading the whole history.",
@@ -2384,6 +2413,23 @@
             "F-b5-05",
             "X-litmus-c-015"
           ]
+        },
+        {
+          "id": "state-persistence-q7",
+          "angle": "guarantees",
+          "question": "Against the proposed future state, which cross-cutting guarantees attach at the moment of an append - does every record name the actor and the delegation chain, the correlation and the decision that admitted the write, without the writer supplying them - and can any component append a record naming none of them?",
+          "evidence_expected": "One append record shown in full with the fields the platform stamped and the place on the write path where they are attached, plus the result of two attempts: appending through a component that supplies none of them, and writing to the underlying store directly.",
+          "aligned_looks_like": "Every record carries an actor, the delegation chain where one applies, a correlation identifier and the decision that admitted the write, all stamped on the shared append path; both bypass attempts are refused or are unreachable; any record read back answers who wrote it and under what authority.",
+          "misaligned_looks_like": "A record can be appended with no actor, or with an actor the caller chose for itself; the guarantee fields are optional and some writers omit them; a component reaches the underlying store directly, so a record exists that no guarantee ever touched.",
+          "origin": "proposed",
+          "cites": [
+            "F-b3-17",
+            "F-b2-06",
+            "F-b4-01",
+            "F-b4-03",
+            "F-b4-04",
+            "F-b4-06"
+          ]
         }
       ],
       "gaps": [
@@ -2414,8 +2460,8 @@
         ]
       },
       "future_state": {
-        "text": "Every unit of work is admitted with a ceiling attached by the platform before execution, derived from an estimate produced by pure planning and compared against a policy limit, so refusal happens before spend rather than being discovered afterwards; the ceiling is expressed in units the platform actually measures - tokens, currency, wall time, tool invocations - and is carried on the unit, not held in an account-level cap. Enforcement is continuous rather than periodic: code that checks cumulative token or cost spend before each API call and terminates the agent session when a defined ceiling is hit, with a second checkpoint at the capability boundary so the code inside the unit cannot bypass it, and with sub-units drawing from the parent's remaining ceiling rather than each receiving a fresh one, because multi-agent spend compounds rather than adding. Exhaustion terminates that unit and only that unit: siblings and the platform continue, any partial result is retained and recorded, and the caller receives a typed refusal naming the ceiling, the consumption and the unit - never a truncated success. A resumed, retried or replayed unit continues under the ceiling it had left, and the consumption of every unit is recorded against the same attributes telemetry uses, so the ceiling and the accounting cannot drift apart. The exit, if the accounting attributes are renamed or stabilise differently, is a mapping at the recording boundary rather than a change to where ceilings are enforced.",
-        "origin": "sourced",
+        "text": "The future state proposed for this concern: every unit of work is admitted with a ceiling attached by the platform before execution, derived from an estimate produced by pure planning and compared against a policy limit, so refusal happens before spend rather than being discovered afterwards; the ceiling is expressed in units the platform actually measures - tokens, currency, wall time, tool invocations - and is carried on the unit, not held in an account-level cap. Enforcement is continuous rather than periodic: code that checks cumulative token or cost spend before each API call and terminates the agent session when a defined ceiling is hit, with a second checkpoint at the capability boundary so the code inside the unit cannot bypass it, and with sub-units drawing from the parent's remaining ceiling rather than each receiving a fresh one, because multi-agent spend compounds rather than adding. Exhaustion terminates that unit and only that unit: siblings and the platform continue, any partial result is retained and recorded, and the caller receives a typed refusal naming the ceiling, the consumption and the unit - never a truncated success. A resumed, retried or replayed unit continues under the ceiling it had left - proposed here as a consequence of the ceiling riding on the unit, not as a sourced convention - and the consumption of every unit is recorded against the same attributes telemetry uses, so the ceiling and the accounting cannot drift apart. The exit, if the accounting attributes are renamed or stabilise differently, is a mapping at the recording boundary rather than a change to where ceilings are enforced.",
+        "origin": "proposed",
         "cites": [
           "F-b4-02",
           "F-b1-06",
@@ -2423,8 +2469,7 @@
           "X-litmus-c-016",
           "X-litmus-c-017",
           "X-litmus-c-019"
-        ],
-        "quote": "code that checks cumulative token or cost spend before each API call and terminates the agent session when a defined ceiling is hit"
+        ]
       },
       "direction": {
         "text": "Inside the window budget control moved from reporting to enforcement. The framing that settled is blunt: the only reliable cost control mechanism is one that enforces a ceiling during the session - not one that estimates costs upfront and hopes; run-scoped enforcement shipped in two major agent platforms a day apart, Anthropic in the session object and AWS at the gateway, which shows the layer is still being chosen while the requirement is not. Alongside it, pre-execution admission is established practice in infrastructure automation - the agent proposes, the estimate is computed, the policy rejects, and nothing is created - and practitioners now describe three layers, a pre-run cost check that can reject, a platform quota, and a hard account backstop, of which only the first two prevent spend rather than reporting it. Token accounting has a standard vocabulary in the OpenTelemetry GenAI conventions but those remain in Development status as of May 2026. What is being abandoned: monthly account caps as the only guard, and per-call limits that do nothing about a loop. It would be an error now to make the budget advisory, to check it only between top-level steps, or to give each spawned sub-agent a fresh ceiling, since sub-agent context feeds back into the orchestrator and compounds.",
@@ -2521,6 +2566,22 @@
             "F-b1-06",
             "X-litmus-c-019"
           ]
+        },
+        {
+          "id": "concern-budget-q7",
+          "angle": "boundary",
+          "question": "Against the proposed future state, is the unit of measure a declared mapping applied at one recording point, and can the source of measurement be replaced without moving any enforcement point - the exit this section names for a rename of the accounting attributes?",
+          "evidence_expected": "The single place raw usage figures are mapped into the unit a ceiling is expressed in, the list of places a ceiling is enforced, and the change set that replaced the measurement source with a different one, with the same run terminating at the same point before and after.",
+          "aligned_looks_like": "One mapping site names every attribute it consumes, so a rename is a change there and nowhere else; enforcement points import the measured unit and never the source; the swap touches wiring only and enforcement is unmoved and unchanged.",
+          "misaligned_looks_like": "Attribute names are read at each enforcement point, so a rename means editing all of them; the ceiling is expressed in whatever one provider happens to report; replacing the measurement source moves or breaks enforcement; the stated exit has never been exercised.",
+          "origin": "proposed",
+          "cites": [
+            "F-b4-02",
+            "F-b1-02",
+            "F-b1-04",
+            "F-b3-10",
+            "X-litmus-c-018"
+          ]
         }
       ],
       "gaps": [
@@ -2543,13 +2604,14 @@
       "standard": {
         "name": "— (no standard recorded; a platform-applied guarantee)",
         "settledness": "emerging",
-        "why": "Part B records no standard for the guarantee itself, and none governs it, but the direction is visible and converging inside the window. Multi-hop delegation has a standards-based expression - subject token plus nested act claims under RFC 8693 - and cross-organisation calls gained verifiable counterparty identity when A2A v1.0 introduced signed Agent Cards in January 2026. Audit practice has converged on recording two identities per action, the executing identity and the triggering identity, and on task-scoped ephemeral credentials of fifteen to thirty minutes rather than long-lived bearer tokens. Regulation arrived in the window too: the EU AI Act enters full application on 2 August 2026 and Article 12 requires automatic recording of events over a system's lifetime. No single specification ties these together into a guarantee a platform applies to every action, so the future state names the property and its exit: if the claim format changes, only the encoding of the chain changes, not the rule that every action names its actors.",
+        "why": "Part B records no standard for the guarantee itself, and none governs it, but the direction is visible and converging inside the window. Multi-hop delegation has a standards-based expression - subject token plus nested act claims under RFC 8693 - and cross-organisation calls gained verifiable counterparty identity when A2A v1.0, released on 12 March 2026 and so inside the window, introduced signed Agent Cards. Audit practice has converged on recording two identities per action, the executing identity and the triggering identity, and on task-scoped ephemeral credentials of fifteen to thirty minutes rather than long-lived bearer tokens. Regulation arrived in the window too: the EU AI Act enters full application on 2 August 2026 and Article 12 requires automatic recording of events over a system's lifetime. No single specification ties these together into a guarantee a platform applies to every action, so the future state names the property and its exit: if the claim format changes, only the encoding of the chain changes, not the rule that every action names its actors.",
         "cites": [
           "X-litmus-c-020",
           "X-litmus-c-021",
           "X-litmus-c-022",
           "X-litmus-c-023",
-          "X-litmus-c-024"
+          "X-litmus-c-024",
+          "X-litmus-c-025"
         ]
       },
       "future_state": {
@@ -2566,14 +2628,15 @@
         "quote": "the executing identity, which is the OAuth connection used to make the API call, and the triggering identity, which is the human whose message caused the agent to run"
       },
       "direction": {
-        "text": "Inside the window the requirement hardened from good practice into an audit and compliance obligation. The multi-hop position is now explicit: when an agent calls another agent, the provenance of who authorized the original action must travel with the delegation chain rather than be discarded at the first handoff, carried as a subject token plus nested act claims, with least privilege applied at the per-invocation level. Cross-organisation calls gained verifiable counterparty identity with signed Agent Cards in A2A v1.0 (January 2026). Enterprise architecture has settled on short-lived task-scoped credentials of fifteen to thirty minutes with rotation, per-agent identity governance, and a traceable line back to an accountable human with a way to shut the agent down instantly. The EU AI Act's full application on 2 August 2026, with Article 12's logging requirement, makes attribution a legal matter, not only an operational one. What is being abandoned: fleet-wide shared API keys, long-lived bearer tokens, and audit records whose actor is simply agent. It would be an error now to attribute an agent's actions to the human's own identity, because impersonation erases the acting party and makes the chain unauditable after the fact.",
+        "text": "Inside the window the requirement hardened from good practice into an audit and compliance obligation. The multi-hop position is now explicit: when an agent calls another agent, the provenance of who authorized the original action must travel with the delegation chain rather than be discarded at the first handoff, carried as a subject token plus nested act claims, with least privilege applied at the per-invocation level. Cross-organisation calls gained verifiable counterparty identity with signed Agent Cards in A2A v1.0, released on 12 March 2026; the widely-quoted April 2026 date is the 150-organisation adoption announcement rather than the release. Enterprise architecture has settled on short-lived task-scoped credentials of fifteen to thirty minutes with rotation, per-agent identity governance, and a traceable line back to an accountable human with a way to shut the agent down instantly. The EU AI Act's full application on 2 August 2026, with Article 12's logging requirement, makes attribution a legal matter, not only an operational one. What is being abandoned: fleet-wide shared API keys, long-lived bearer tokens, and audit records whose actor is simply agent. It would be an error now to attribute an agent's actions to the human's own identity, because impersonation erases the acting party and makes the chain unauditable after the fact.",
         "origin": "sourced",
         "cites": [
           "F-b4-03",
           "X-litmus-c-020",
           "X-litmus-c-022",
           "X-litmus-c-023",
-          "X-litmus-c-024"
+          "X-litmus-c-024",
+          "X-litmus-c-025"
         ],
         "quote": "the provenance of who authorized the original action must travel with the delegation chain rather than be discarded at the first handoff"
       },
@@ -2594,10 +2657,10 @@
         {
           "id": "concern-identity-q2",
           "angle": "depth",
-          "question": "The proposed future state turns on deep use, so: does each action record carry both the identity that executed it and the identity that caused it, plus the ordered chain of intervening actors, or a single conflated actor?",
-          "evidence_expected": "The action records from one run that passes through at least three actors before touching an external resource.",
-          "aligned_looks_like": "Executing and triggering identities are separate fields, the intervening actors appear in order, and each hop's authority is narrower than the one before.",
-          "misaligned_looks_like": "One actor field; or the chain flattened to the nearest caller; or the agent's actions recorded under the human's identity, which is impersonation.",
+          "question": "The proposed future state turns on deep use, so: in the stored record of an action - not in the credential that authorised it - are the executing identity and the triggering identity separate fields, with the intervening actors listed in order, and does the record still say so when read back long after the credential has expired?",
+          "evidence_expected": "The stored action records from one run that passes through at least three actors before touching an external resource, read back from the record store rather than from the request, together with the field that holds each actor.",
+          "aligned_looks_like": "The record itself carries executing and triggering identities as separate fields with the intervening actors in order; the ordering is recoverable from the record alone after the credentials it came from have expired; each recorded hop shows narrower authority than the one before.",
+          "misaligned_looks_like": "One actor field in the record; or the chain flattened to the nearest caller when it was written down; or the agent's actions recorded under the human's identity, which is impersonation; or the chain exists only in the credential and nothing durable retains it.",
           "origin": "proposed",
           "cites": [
             "F-b4-03",
@@ -2637,10 +2700,10 @@
         {
           "id": "concern-identity-q5",
           "angle": "depth",
-          "question": "The proposed future state turns on deep use, so: are the credentials behind these actions per-invocation and short-lived, and does revoking an agent's identity stop work that is already running under it?",
-          "evidence_expected": "Credential lifetimes and scopes for a sample of actions, and a revocation performed against an agent with work in flight, with the time until its next call fails.",
-          "aligned_looks_like": "Minutes-long, task-scoped credentials; revocation causes the next capability call to fail promptly and the unit to terminate with a typed refusal.",
-          "misaligned_looks_like": "One durable credential per agent or per deployment; revocation only prevents new work while in-flight work continues to completion.",
+          "question": "The proposed future state turns on deep use, so: when an identity is withdrawn while work is already running under it, does that work stop - and is the withdrawal itself recorded against the unit it stopped?",
+          "evidence_expected": "A revocation performed against an agent with work in flight: the time until its next capability call fails, what the unit did between the revocation and that failure, and the record written for the stopped unit.",
+          "aligned_looks_like": "The next capability call after the withdrawal fails, the unit terminates with a typed refusal naming the withdrawn identity, and the record shows who withdrew it and at which point the work stopped.",
+          "misaligned_looks_like": "Withdrawal prevents new work only, while in-flight work runs to completion under the identity that was taken away; or the work stops but nothing records why, so the stop is indistinguishable from a crash.",
           "origin": "proposed",
           "cites": [
             "F-b4-03",
@@ -2730,28 +2793,29 @@
         {
           "id": "concern-policy-q2",
           "angle": "depth",
-          "question": "Is the decision produced by evaluating declarative policy held as versioned, separately testable data through a decision API, or by conditionals compiled into the execution path? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The policy source, its tests, the version identifier it carries, and the call that submits an input and receives a decision; plus a demonstration that changing the policy changes the outcome with no code change.",
-          "aligned_looks_like": "Policy is data with its own tests and version, evaluated through a decision API; a rule change alters behaviour with no redeploy of the execution path; the input schema is explicit.",
-          "misaligned_looks_like": "Refusal is written as conditionals in the code; or a policy file exists but the decision actually taken is computed elsewhere, so the policy is nominal presence only.",
+          "question": "When a unit of work spawns further work while it is running, a tool call, a sub-agent, a retry or a compensating action, is each of those decided in its own right against the actor, the delegation chain and the ceiling that apply at that moment, or does the admission decision taken for the parent cover everything it later does? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "A run in which the parent is admitted and a child action is one the policy forbids, showing where the child's decision was taken and what the child received, plus the decision inputs for parent and child side by side.",
+          "aligned_looks_like": "Each spawned action carries its own decision taken before that action's own side effect, with an input naming the acting agent, the party it acts for and the budget remaining at that moment; a forbidden child is refused with a typed failure while the parent continues under its own terms.",
+          "misaligned_looks_like": "One admission decision at the door authorises everything the run subsequently does; a child action inherits the parent's allow; or the child is decided against the originating person alone with the agent hop absent from the input.",
           "origin": "proposed",
           "cites": [
             "F-b4-04",
-            "F-b3-11",
-            "X-litmus-d-001",
-            "X-litmus-d-002"
+            "F-b4-03",
+            "F-b4-02",
+            "X-litmus-d-003"
           ]
         },
         {
           "id": "concern-policy-q3",
           "angle": "depth",
-          "question": "Does every evaluation leave a decision record carrying the input, the outcome, the policy version and the timestamp, and can a past decision be replayed against the policy in force today? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "Decision records for one allow and one deny, and the output of replaying a recorded decision under the current policy version.",
-          "aligned_looks_like": "Allows are recorded as fully as denials; each record names the policy version that produced it; replay reproduces the recorded outcome or shows exactly which rule change explains the difference.",
-          "misaligned_looks_like": "Only refusals are recorded; no policy version in the record; or records exist but cannot be replayed because the input the engine saw was not kept.",
+          "question": "Does an allow have a stated scope and lifetime, so that work which was paused, queued, or resumed after a restart is decided again before its next side effect, or is a decision taken once treated as valid for as long as the run lasts? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The stated scope and validity of one decision, plus a run that is admitted, delayed past that validity, and then resumed, showing whether a second evaluation happened and what input it saw.",
+          "aligned_looks_like": "A decision names the single action it admits and the moment it was taken; work resumed after a delay, a restart or a queue is decided again before its next side effect, and a rule changed in the interval takes effect on the resumed work.",
+          "misaligned_looks_like": "An allow issued at admission is carried for the life of the run; work resumed long afterwards executes under a decision made against context that no longer holds; nothing states how long a decision is good for.",
           "origin": "proposed",
           "cites": [
             "F-b4-04",
+            "F-b4-01",
             "X-litmus-d-004"
           ]
         },
@@ -2774,26 +2838,26 @@
         {
           "id": "concern-policy-q5",
           "angle": "boundary",
-          "question": "Is the decision engine reached through a capability interface with a second engine proven against the same decision suite, and is enforcement wired at one chokepoint rather than repeated in each adapter? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The interface the core imports, the list of call sites that enforce, and the results of running the same decision cases against two engines.",
-          "aligned_looks_like": "One enforcement site; the core names the interface and never an engine; a second engine answers the same suite with the same outcomes, or every difference is written down as a known divergence.",
-          "misaligned_looks_like": "An engine's query language or evaluation quirks leak into callers; each adapter performs its own check, so a new adapter silently arrives with none; the second engine has never been run against the suite.",
+          "question": "Is the enforcement point reached by construction rather than by convention, so that a capability adapter added tomorrow, containing no policy code of its own, still cannot execute an undecided action? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "Where the decision is invoked relative to the interface the core imports, and the result of adding or stubbing an adapter that makes no policy call of its own and then attempting a forbidden action through it.",
+          "aligned_looks_like": "The decision is taken at the interface the core imports, so every implementation behind it inherits enforcement; the new adapter's forbidden action is refused although the adapter itself checks nothing; an adapter author cannot omit enforcement.",
+          "misaligned_looks_like": "Each adapter is expected to call the decision itself, so a new one arrives unenforced and nothing detects it; enforcement lives in a review checklist rather than in the path; a direct call to an implementation reaches the action with no decision.",
           "origin": "proposed",
           "cites": [
             "F-b4-04",
+            "F-b4-01",
             "F-b1-02",
-            "F-b1-04",
-            "F-b3-11",
-            "X-litmus-d-002"
+            "F-b1-08",
+            "X-litmus-d-003"
           ]
         },
         {
           "id": "concern-policy-q6",
           "angle": "direction",
-          "question": "Is refusal deterministic and independent of model output, and what happens to a unit of work when the decision engine is unreachable? (This question is proposed, derived from the row it cites.)",
+          "question": "Is refusal deterministic, the same input yielding the same decision because it is computed over the declared action and its arguments rather than as a probabilistic judgement of the model's output, and what happens to a unit of work when the decision engine is unreachable? (This question is proposed, derived from the row it cites.)",
           "evidence_expected": "The same input evaluated repeatedly with the outcomes recorded; a test showing the decision does not vary with model output; and a run with the engine made unavailable.",
-          "aligned_looks_like": "Identical inputs yield identical decisions, evaluation terminates within a stated bound, and an unreachable engine fails closed with a typed refusal that names the reason.",
-          "misaligned_looks_like": "The decision depends on model output, a guardrail prompt or a post-hoc classifier; evaluation can loop or vary; an unreachable engine fails open and work proceeds unchecked.",
+          "aligned_looks_like": "Identical inputs yield identical decisions, evaluation terminates within a stated bound, and an unreachable engine fails closed with a typed refusal that names the reason; deterministic scanning of the action's arguments feeds the decision input rather than standing in for the decision.",
+          "misaligned_looks_like": "The decision is a probabilistic judgement of the model's output, a guardrail prompt or a post-hoc classifier rather than a rule evaluated over the action and its arguments; evaluation can loop or vary; an unreachable engine fails open and work proceeds unchecked.",
           "origin": "proposed",
           "cites": [
             "F-b4-04",
@@ -2872,30 +2936,31 @@
         {
           "id": "concern-provenance-q2",
           "angle": "depth",
-          "question": "Does one record bind the artifact digest, the code version, the digests of every input and the acting identity inside a single signed statement with a typed predicate, or is it a log line that merely mentions them? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "One complete record with its fields, its predicate type and version, its signature, and the recomputed digest of the artifact it names.",
-          "aligned_looks_like": "A statement naming subjects by digest with a versioned predicate type; recomputed digests match the artifact bytes; the signature verifies; inputs are named by digest rather than by path or label.",
-          "misaligned_looks_like": "A chained log entry with no subject digest, no predicate type or no signature; inputs referenced by mutable name; the code version recorded as a branch rather than a commit or content digest.",
+          "question": "Is an artifact whose attestation is missing, unverifiable, or inconsistent with its bytes refused at the point where it is consumed or promoted, by the platform rather than by the diligence of whoever consumes it? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "A run in which a downstream unit is offered an artifact with no attestation, and a second in which the attestation is present but fails verification, showing in each case what the consuming step received and whether the work proceeded.",
+          "aligned_looks_like": "Verification happens before consumption on the shared path; an artifact that fails it is refused with a typed failure naming what did not verify; the same refusal occurs whether the consumer is a person, a scheduled run or another party's agent.",
+          "misaligned_looks_like": "Attestations are produced but nothing checks them before use; verification is left to each consumer to remember; a failed verification is recorded as a warning and the work continues.",
           "origin": "proposed",
           "cites": [
             "F-b4-05",
-            "F-b3-12",
-            "X-litmus-d-005",
-            "X-litmus-d-006"
+            "F-b4-01",
+            "F-b4-07",
+            "X-litmus-d-008"
           ]
         },
         {
           "id": "concern-provenance-q3",
           "angle": "depth",
-          "question": "Can a record be verified end to end by a verifier this build did not write, given only the published format and the public verification material, and does that verifier reject a tampered record? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The command and output of an independent verifier run against a good record and against the same record with one byte altered, plus the verification material it was given.",
-          "aligned_looks_like": "The independent verifier accepts the good record and rejects the tampered one; the verification path uses only published formats and needs no code from this platform.",
-          "misaligned_looks_like": "Verification is only possible with this platform's own reader; the format nominally resembles the standard but no third-party verifier accepts it; tampering is detectable only by a chain this platform also maintains.",
+          "question": "Can it be shown that no artifact escapes the guarantee, that every artifact produced over a period has a record, and that a component cannot produce one through a path which emits nothing? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "A reconciliation of artifacts produced against records emitted over one period, plus the result of an attempt to produce an artifact through a component that carries no attestation code of its own.",
+          "aligned_looks_like": "The two counts reconcile with no unattested artifact; emission is wired where every producing path passes, so a component that attests nothing itself still yields a record; the attempt to write outside that path is refused or is structurally impossible.",
+          "misaligned_looks_like": "Coverage is asserted rather than counted; some producing paths, typically an adapter writing its own output or a step added later, leave no record; the reconciliation cannot be performed because nothing enumerates what was produced.",
           "origin": "proposed",
           "cites": [
             "F-b4-05",
-            "F-b1-05",
-            "X-litmus-d-007"
+            "F-b4-01",
+            "F-b1-08",
+            "X-litmus-d-005"
           ]
         },
         {
@@ -2931,10 +2996,10 @@
         {
           "id": "concern-provenance-q6",
           "angle": "direction",
-          "question": "Is the signing identity short-lived and anchored in a transparency log rather than a long-lived key, and is verification actually enforced before an artifact is consumed or promoted? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The identity material used to sign and where it comes from, plus a run in which an artifact whose attestation fails verification is offered for consumption.",
-          "aligned_looks_like": "Signing uses short-lived credentials with a log entry, or a documented equivalent with stated rotation; consumption of an unverifiable artifact is refused with a typed failure at the point of use.",
-          "misaligned_looks_like": "A long-lived signing key lives with the build; attestations are produced but never checked before use; or the predicate version is unpinned so a schema change silently invalidates verification.",
+          "question": "Is the signing identity bound at the moment of signing and anchored in a transparency log, with its material not recoverable from the build afterwards, rather than a key the build holds? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The identity material used to sign and where it comes from, the transparency-log entry for one signature, and the predicate version the record pins.",
+          "aligned_looks_like": "The credential is issued for that signing, expires, and cannot be recovered from the build afterwards; the signature has a transparency-log entry; the predicate version is pinned so a schema change is visible rather than silent.",
+          "misaligned_looks_like": "A long-lived signing key lives with the build, whatever the rotation paperwork says; the signer is a shared secret rather than an attested identity; or the predicate version is unpinned so a schema change silently invalidates verification.",
           "origin": "proposed",
           "cites": [
             "F-b4-05",
@@ -3013,10 +3078,10 @@
         {
           "id": "concern-telemetry-q2",
           "angle": "depth",
-          "question": "When trace context does not propagate, across a queue, a scheduled hand-off, a process restart or a call to another party's agent, can two related units still be joined? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "Telemetry for a unit that was enqueued and resumed later, showing the attributes or links that join the parts, plus the same run repeated with the parent context deliberately dropped.",
-          "aligned_looks_like": "Explicit correlation attributes are present on every signal and survive the boundary; links carry causal relations that are not parent-child; joining still works with the parent context dropped.",
-          "misaligned_looks_like": "Correlation depends on parentage and breaks at the queue, the scheduler or the restart; the relation exists only in a log message; the join requires guessing by timestamp.",
+          "question": "Take a unit whose trace context did not survive, because it waited in a queue, resumed after a process restart, or was handed to another party's agent that never saw it: can its parts still be joined into one story after the fact? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "Telemetry for one such unit either side of the queue, the restart or the hand-off, showing what joined the parts, plus the same run repeated with the parent context deliberately removed.",
+          "aligned_looks_like": "The parts join on identifiers the platform stamped into the work itself, with links expressing causal relations that are not parent and child; the join still succeeds with the parent context dropped and across a party that never received it.",
+          "misaligned_looks_like": "The join breaks wherever context is not propagated; the relation survives only in a log message; the parts are matched by timestamp or reconstructed by hand.",
           "origin": "proposed",
           "cites": [
             "F-b4-06",
@@ -3026,48 +3091,49 @@
         {
           "id": "concern-telemetry-q3",
           "angle": "depth",
-          "question": "Are the attributes the published convention names with a recorded schema version, and is the whole unit modelled as a lifecycle of named operations rather than a single span around a model call? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "One exported trace for a multi-step unit with its span names, attribute keys and the schema version it declares.",
-          "aligned_looks_like": "Convention names are used for operations, tools and model calls; the schema version is recorded so a rename in a moving convention is detectable; the trace shows the unit's structure, including tool calls and decisions, not just one wrapper span.",
-          "misaligned_looks_like": "Home-grown attribute keys, or convention names copied with no version pinned; a single opaque span per unit; token and cost figures present in logs but not as metrics.",
+          "question": "Are the attributes the other guarantees need, the actor and delegation chain, the tenant, the entry, the policy outcome, the ceiling and what was consumed of it, stamped onto a unit's signals by the platform, and do they appear on metrics and logs as well as on spans? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The attribute set on the spans, the metrics and the logs of one unit that no caller instrumented, and the single place those attributes are attached.",
+          "aligned_looks_like": "One place stamps them, so all three signal kinds carry the same guarantee attributes with no caller supplying any of them; a refusal, a delegation hop and a budget termination are attribute values rather than prose.",
+          "misaligned_looks_like": "Guarantee attributes ride on spans only, so cost cannot be attributed to an actor or a tenant from metrics; they appear only where a caller remembered to add them; the policy outcome survives only inside a log message.",
           "origin": "proposed",
           "cites": [
             "F-b4-06",
-            "F-b3-10",
-            "X-litmus-d-010",
-            "X-litmus-d-011",
+            "F-b4-01",
+            "F-b4-02",
+            "F-b4-03",
+            "F-b4-04",
             "X-litmus-d-013"
           ]
         },
         {
           "id": "concern-telemetry-q4",
           "angle": "usage",
-          "question": "For one unit started from any entry, can an operator answer from telemetry alone what it cost, what was decided about it, why it stopped, and which actor ran it, with one query that works the same for all four entries? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The query and its result for a unit from each entry, including one unit that was refused and one that hit its ceiling.",
-          "aligned_looks_like": "A single query returns cost, outcome, refusal reason and actor for every entry; the refusal and the budget termination appear as first-class attributes rather than as text.",
-          "misaligned_looks_like": "Answering requires joining separate systems by hand; cost or refusal is missing; the answer differs by entry because attributes were stamped in different places.",
+          "question": "Across the four entries, what must a caller do to be observable at all, and what can it do to the telemetry the platform emits: can it add its own signals and have them join the unit, and can it suppress emission, change the sampling decision, or enrich beyond what the guarantee permits, for instance by attaching raw content? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The caller-side surface at each of the four entries, one run in which a caller adds a span and attributes of its own, and one in which a caller attempts to disable emission, lower sampling, or attach unredacted input content.",
+          "aligned_looks_like": "A caller supplies nothing at any entry to be fully observed; caller-added signals join the unit through the correlation attributes the platform stamped; attempts to emit less or more than the guarantee allows are refused or normalised in the pipeline.",
+          "misaligned_looks_like": "At some entries a caller must pass a context or wrap the call to be observed; caller signals float free of the unit; a caller can turn emission off, alter the sampling decision, or place raw content into attributes that are exported.",
           "origin": "proposed",
           "cites": [
             "F-b4-06",
-            "F-b4-02",
-            "F-b4-04",
+            "F-b4-01",
+            "F-b1-08",
             "F-b3-08",
-            "X-litmus-d-013"
+            "X-litmus-d-014"
           ]
         },
         {
           "id": "concern-telemetry-q5",
           "angle": "boundary",
-          "question": "Can the telemetry backend be changed by pointing the exporter somewhere else, with no change to instrumentation or to the attributes emitted? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The same run exported to two different collectors or backends, and a diff of what arrived at each.",
-          "aligned_looks_like": "The payloads are equivalent; the core imports the standard interface and no backend-specific library; the switch is configuration only.",
-          "misaligned_looks_like": "A vendor library is called from the core; attributes are shaped for one backend's query language; switching requires code changes or loses signals.",
+          "question": "Is instrumentation attached at the capability interfaces the core imports, so that an implementation added tomorrow which contains no telemetry code of its own emits the same signals as the one it stands beside? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "Where emission is wired relative to the interface, and the telemetry of the same operation performed by two implementations behind one interface, at least one of which instruments nothing itself.",
+          "aligned_looks_like": "Both produce the same span shape and the same attribute keys; which implementation answered is an attribute value, not a different tree; the uninstrumented implementation is nonetheless fully observed.",
+          "misaligned_looks_like": "Each implementation instruments itself, so a new one arrives silent or with span names of its own; the shape differs by implementation, so a swap breaks whatever reads the signals.",
           "origin": "proposed",
           "cites": [
             "F-b4-06",
             "F-b1-02",
             "F-b1-04",
-            "F-b3-10"
+            "F-b1-08"
           ]
         },
         {
@@ -3141,9 +3207,9 @@
           "id": "concern-errors-q1",
           "angle": "guarantees",
           "question": "Does every boundary return the typed failure object without the caller asking, including refusals taken before execution, ceilings exceeded during execution, validation rejections and faults raised inside an adapter? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "One captured failure of each of those four kinds, taken from at least two different entries, with the body exactly as a caller received it.",
-          "aligned_looks_like": "All of them share one shape and one type vocabulary; the failure is produced on the shared path; nothing reaches a caller as an exception, a stack trace or a bare status.",
-          "misaligned_looks_like": "The outer edge is typed while internal boundaries throw; some paths return prose or an empty body; a refusal and a crash are indistinguishable to a machine.",
+          "evidence_expected": "The single place the failure object is constructed and the path by which every boundary reaches it, plus a failure raised through a component or entry that contains no error-handling code of its own, shown exactly as it reached the caller.",
+          "aligned_looks_like": "Every boundary converges on one construction site, so a component that handles no errors itself still returns the typed object; nothing reaches a caller as an exception, a stack trace or a bare status.",
+          "misaligned_looks_like": "Each boundary builds a body of its own, so a component added without error-handling code returns prose, an empty body or an exception; the outer edge is typed while internal boundaries throw.",
           "origin": "proposed",
           "cites": [
             "F-b4-07",
@@ -3154,29 +3220,30 @@
         {
           "id": "concern-errors-q2",
           "angle": "depth",
-          "question": "Is the set of failure type identifiers closed, versioned and documented, with extension members that carry machine-actionable detail rather than putting the specifics only in human-readable text? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The registry of type identifiers with the members each type promises, and two failure bodies showing those extension members populated.",
-          "aligned_looks_like": "A closed registry that changes only by a reviewed addition; each type documents its extension members; the detail a machine needs is in fields, and the human-readable member adds nothing load-bearing.",
-          "misaligned_looks_like": "Type identifiers invented at the call site or reused for unrelated failures; the standard members present but every specific detail buried in the prose member; no version on the vocabulary.",
+          "question": "Do the platform's own stops arrive as typed failures rather than as silences: a refusal taken before execution, a ceiling exceeded mid-run, a cancellation, a validation rejection and a unit killed by its isolation, each with its own type and the members that say which rule, which ceiling and how much was consumed? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "One captured failure for each of those five stops, with the body exactly as the caller and the record received it.",
+          "aligned_looks_like": "Each stop has a distinct type identifier; the ceiling case names the ceiling and the amount consumed, the refusal names the rule and the policy version; none of them arrives as an empty result, a truncated success or a generic internal fault.",
+          "misaligned_looks_like": "A budget termination looks like a crash, or like a short but successful result; a refusal is a generic denial with the rule only in prose; a cancellation cannot be told from a timeout by a machine.",
           "origin": "proposed",
           "cites": [
             "F-b4-07",
-            "F-b3-13",
-            "X-litmus-d-016",
-            "X-litmus-d-018"
+            "F-b4-02",
+            "F-b4-04",
+            "F-b3-13"
           ]
         },
         {
           "id": "concern-errors-q3",
           "angle": "depth",
-          "question": "Can a caller decide retry, escalate to a human, or stop from the type identifier and members alone, without reading prose, matching a string or inferring from a status code? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The decision table a caller uses, and a recorded run driven by it that retried one failure, escalated another and stopped on a third.",
-          "aligned_looks_like": "Retryability, and any wait before retry, are carried explicitly; the same decision is reached identically on every transport; an agent consuming the failure does not have to interpret language to recover.",
-          "misaligned_looks_like": "Retry decided by status code family, by string matching, or by letting the model read the message and improvise a recovery; transient and permanent failures share one type.",
+          "question": "When a failure happens where nobody is waiting, a scheduled fire, a redelivered event, a sub-unit spawned inside a run, is the typed object still constructed, recorded and retrievable afterwards? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "A failure induced on the schedule entry and one inside a spawned sub-unit, plus the stored objects retrieved afterwards from the record by correlation identifier.",
+          "aligned_looks_like": "The object is built and stored whether or not anything reads it; it is findable later by correlation and carries the same type vocabulary as a failure returned to a person; a failed sub-unit is visible in the parent's outcome.",
+          "misaligned_looks_like": "Failures with no waiting caller become a log line or vanish; the sub-unit's failure is swallowed and the parent reports success; nothing can be retrieved afterwards because only the response path constructs the object.",
           "origin": "proposed",
           "cites": [
             "F-b4-07",
-            "X-litmus-d-018",
+            "F-b4-01",
+            "F-b3-08",
             "X-litmus-d-019"
           ]
         },
@@ -3213,16 +3280,16 @@
         {
           "id": "concern-errors-q6",
           "angle": "direction",
-          "question": "Does the typed failure survive transports that are not HTTP, such as messaging, an agent-to-agent binding, or a command-line invocation, with a documented mapping in each direction? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The same failure delivered over two different transports, plus the mapping table between the failure type and each transport's own error carrier.",
-          "aligned_looks_like": "One type identifier carried on every binding, with the transport's native error field holding a machine-readable identifier that maps back to it; the mapping is documented and round-trips.",
-          "misaligned_looks_like": "Failures are typed only over HTTP and degrade to prose or an exit code elsewhere; the transport's error field carries a message rather than an identifier; the mapping is lossy in one direction.",
+          "question": "Is the typed failure the platform's own currency for recovery, so that a retry, a compensation, an escalation to a person or an abandonment is selected from the type and its members, and nothing inside the platform recovers by reading prose or by handing the message to a model to interpret? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The mapping from failure type to the reaction the platform takes, and a recorded run in which one failure was retried, one compensated and one escalated, showing what selected each.",
+          "aligned_looks_like": "Every automatic reaction is selected from the type and its extension members; the human-readable member is read by nothing that decides; a type with no mapping stops the work and is reported rather than guessed at.",
+          "misaligned_looks_like": "Recovery is chosen by matching message strings, by exception class, or by asking a model what the failure meant; an unrecognised failure is retried by default; the reaction differs between two components seeing the same failure.",
           "origin": "proposed",
           "cites": [
             "F-b4-07",
+            "F-b4-08",
             "F-b3-13",
-            "F-b3-08",
-            "X-litmus-d-019"
+            "X-litmus-d-018"
           ]
         }
       ],
@@ -3255,7 +3322,7 @@
         ]
       },
       "future_state": {
-        "text": "The future state proposed for this concern: every externally-triggered unit of work carries a deduplication identity, supplied by the caller when it has one and otherwise derived by the platform from the entry itself, from the event envelope's source and id, from the schedule's occurrence, or from a request identifier at a human or external entry, so replay safety never depends on caller cooperation; that identity is enforced by an atomic claim with a time-bounded lease and a monotonic token rather than by a recently-seen cache, so a second delivery arriving concurrently either waits for the first or is refused with a typed failure, and a stalled holder that returns mid-effect is fenced out by the resource refusing its lower token; the claim record binds the identity to the unit, the actor, the tenant and the outcome, and a replay returns the stored outcome unchanged, including a stored failure, marked as a replay and carrying the original correlation; a run that crashed after a partial side effect resumes without repeating it; and keys are scoped so that two tenants cannot collide.",
+        "text": "The future state proposed for this concern: every externally-triggered unit of work carries a deduplication identity, supplied by the caller when it has one and otherwise derived by the platform from the entry itself, from the event envelope's source and id, from the schedule's occurrence, or from a request identifier at a human or external entry, so replay safety never depends on caller cooperation; that identity is enforced by an atomic claim with a time-bounded lease and a monotonic token rather than by a recently-seen cache, so a second delivery arriving concurrently either waits for the first or is refused with a typed failure, and a stalled holder that returns mid-effect is excluded: by the resource refusing its lower token where the platform owns that resource, and, where the effect lands on a resource the platform does not own and cannot fence, by the effect being made through a keyed operation whose stored outcome the stale holder must read before it may write; the claim record binds the identity to the unit, the actor, the tenant and the outcome, and a replay returns the stored outcome unchanged, including a stored failure, marked as a replay and carrying the original correlation; a run that crashed after a partial side effect resumes without repeating it; and keys are scoped so that two tenants cannot collide.",
         "origin": "proposed",
         "cites": [
           "F-b4-08",
@@ -3282,15 +3349,15 @@
         {
           "id": "concern-idempotency-q1",
           "angle": "guarantees",
-          "question": "Is every externally-triggered unit of work deduplicated even when the caller supplies no key, and is the derivation rule defined for each entry? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The key derivation rule for each of the four entries, and a replayed trigger through each entry with no key supplied, showing how many effects resulted.",
-          "aligned_looks_like": "The platform derives an identity at every entry, including redelivered events, re-fired schedule occurrences and repeated external calls; a replay produces no second effect anywhere; a caller cannot opt out.",
-          "misaligned_looks_like": "Deduplication happens only when the caller passes a key; one or more entries, typically the schedule or an internal event, are exempt; the derivation is undefined so the same trigger keys differently on each attempt.",
+          "question": "Can the guarantee be declined? Is there any flag, any omitted field, any trusted path or any direct call to an implementation by which a unit of work executes with no claim taken? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "Where the claim is taken relative to every path into execution, and the results of three attempts to avoid it: disabling deduplication from the caller side, disabling it in configuration, and calling an implementation directly.",
+          "aligned_looks_like": "The claim is taken on the shared path all four entries converge on; each attempt to skip it is refused with a typed failure or is structurally unreachable; there is no supported way for a caller to run unclaimed.",
+          "misaligned_looks_like": "A caller-supplied flag, an unset field or an internal fast path runs the work unclaimed; the claim is taken by convention in each caller rather than on the shared path; opting out is offered to callers judged trustworthy.",
           "origin": "proposed",
           "cites": [
             "F-b4-08",
             "F-b4-01",
-            "F-b3-16",
+            "F-b1-08",
             "X-litmus-d-023"
           ]
         },
@@ -3299,8 +3366,8 @@
           "angle": "depth",
           "question": "What happens when two identical triggers arrive at the same instant, and what happens when a holder stalls past its lease and then returns to write mid-effect? (This question is proposed, derived from the row it cites.)",
           "evidence_expected": "A concurrency run with two simultaneous duplicates and the count of effects produced, plus a run where a holder is paused beyond lease expiry, a second holder proceeds, and the first then attempts its write.",
-          "aligned_looks_like": "Exactly one claim wins and the other waits for the outcome or is refused with a typed failure; the resumed stale holder is refused because its token is lower than the one the resource has accepted; both results are reproducible under repetition.",
-          "misaligned_looks_like": "A seen-recently cache with a time window, or a read-then-write check that both callers pass; the stale holder's write lands and overwrites or duplicates the effect; the guarantee holds only in single-process tests.",
+          "aligned_looks_like": "Exactly one claim wins and the other waits for the outcome or is refused with a typed failure; where the effect lands on a resource the platform owns, the resource refuses the stale holder because its token is lower than the one already accepted; where it lands on a resource the platform cannot fence, the effect is made through a keyed operation whose stored outcome the stale holder reads before writing, so it does not repeat it; both results are reproducible under repetition.",
+          "misaligned_looks_like": "A seen-recently cache with a time window, or a read-then-write check that both callers pass; the stale holder's write lands and overwrites or duplicates the effect on either kind of resource; effects on resources the platform does not own have no answer at all; the guarantee holds only in single-process tests.",
           "origin": "proposed",
           "cites": [
             "F-b4-08",
@@ -3325,10 +3392,10 @@
         {
           "id": "concern-idempotency-q4",
           "angle": "usage",
-          "question": "Across the four entries, what is the deduplication identity composed of, how is it scoped, and what happens when the same logical work arrives twice through two different entries? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The composition and scope of the key for each entry, a case where two tenants issue the same caller-supplied key, and a case where identical work arrives once by event and once by human request.",
-          "aligned_looks_like": "The key is scoped by tenant and actor so identical strings from two tenants never collide; the per-entry composition is documented; work arriving twice by different doors either collapses to one unit or the decision not to collapse it is stated and deliberate.",
-          "misaligned_looks_like": "A global key namespace where one caller can suppress another's work; the same envelope processed twice because two entries key it differently; scope defined by whichever store happened to be used.",
+          "question": "Across the four entries, what is the deduplication identity composed of when a caller supplies one and when it supplies none, how is it scoped, and what happens when the same logical work arrives twice through two different entries? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The composition and scope of the identity at each of the four entries including the derivation used when no key is supplied, a replayed trigger through each entry with no key supplied and the count of effects, a case where two tenants issue the same caller-supplied key, and a case where identical work arrives once by event and once by human request.",
+          "aligned_looks_like": "Where a caller supplies nothing the platform derives an identity from the envelope, the schedule occurrence or the request, so replay safety never depends on caller cooperation; the key is scoped by tenant and actor so identical strings from two tenants never collide; the per-entry composition is documented; work arriving twice by different doors either collapses to one unit or the decision not to collapse it is stated and deliberate.",
+          "misaligned_looks_like": "Deduplication happens only when the caller passes a key, or one entry, typically the schedule or an internal event, is exempt; a global key namespace where one caller can suppress another's work; the same envelope processed twice because two entries key it differently; scope defined by whichever store happened to be used.",
           "origin": "proposed",
           "cites": [
             "F-b4-08",
@@ -3338,18 +3405,17 @@
         },
         {
           "id": "concern-idempotency-q5",
-          "angle": "boundary",
-          "question": "Is the claim store reached through a capability interface, and does a second store pass the same concurrency, lease-expiry and fencing suite as the first? (This question is proposed, derived from the row it cites.)",
-          "evidence_expected": "The interface the core imports, the suite itself, and its results against two stores with different concurrency primitives.",
-          "aligned_looks_like": "Both stores pass the same suite including the concurrent-duplicate and stale-holder cases; the core names the interface only; no caller depends on a store-specific primitive or on its clock.",
-          "misaligned_looks_like": "The guarantee is expressed in one store's primitives so a second cannot implement it; the second store is only exercised single-threaded; the lease depends on wall-clock agreement between callers.",
+          "angle": "depth",
+          "question": "Are the units the platform generates for itself keyed as well: a retry it schedules, a compensating action, a sub-unit an agent spawns, a step resumed after a crash? (This question is proposed, derived from the row it cites.)",
+          "evidence_expected": "The identity derivation for an internally generated retry, for a spawned sub-unit and for a resumed step, plus a restart injected between a step's side effect and the recording of its completion, with the effects counted afterwards.",
+          "aligned_looks_like": "Internal units carry derived identities as stable as an external caller's key, composed from the parent unit and the step; a restart re-derives the same identity, so the resumed step finds its stored outcome instead of repeating the effect; the derivation is written down for each kind.",
+          "misaligned_looks_like": "Only work arriving from outside is keyed, so internally generated retries and spawned sub-units duplicate their effects after a restart; the internal identity contains a timestamp or a random value and therefore never matches on resume.",
           "origin": "proposed",
           "cites": [
             "F-b4-08",
-            "F-b1-02",
-            "F-b1-04",
+            "F-b4-01",
             "F-b3-16",
-            "X-litmus-d-022"
+            "X-litmus-d-024"
           ]
         },
         {

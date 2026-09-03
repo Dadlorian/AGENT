@@ -72,7 +72,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | `kb/edges.jsonl` | `R-` (rel) | 109 typed links between entities, each citing the fact that states the link |
 | `kb/decisions.jsonl` | `D-` | 110 decisions lifted from `docs/decomposition.md` by line |
 | `kb/architecture.jsonl` | `A-` | 803 blueprint entries imported from `docs/architecture/blueprint.json` |
-| `kb/ledger.jsonl` | `L-` | 190 append-only, hash-chained run records; every measured run, ceremony and phase close |
+| `kb/ledger.jsonl` | `L-` | 197 append-only, hash-chained run records; every measured run, ceremony and phase close |
 | `kb/ceremonies/` | | 98 records: sourcing, measure, review and improve, named by the STATUS row they served |
 
 | To… | Run |
@@ -150,7 +150,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 |---|---|---|
 | Every skill valid | `python3 tools/validate_skills.py` | `103 skills checked, 0 errors, 0 warnings` |
 | Knowledge base intact | `python3 tools/kb.py verify` | chain and source-line checks pass |
-| Ledger intact | `python3 tools/kb.py ledger-verify` | `190 records, chain intact` |
+| Ledger intact | `python3 tools/kb.py ledger-verify` | `197 records, chain intact` |
 | Every stick holds | `python3 tools/final_acceptance.py` | `15 of 15 hold` (runs all 28 harness gates) |
 | Acceptance matrix current | `python3 tools/acceptance_check.py --check` | `16 of 16 elements accepted, 80 of 80 sticks hold` |
 | Status fresh | `python3 tools/status_check.py --freshness` | `0 stale` |

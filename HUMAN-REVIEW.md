@@ -12,7 +12,7 @@ Run these from the repo root. If any last line differs, stop and start the revie
 |---|---|---|
 | `python3 tools/validate_skills.py` | every skill conforms to the schema and every quote is in the knowledge base | `103 skills checked, 0 errors, 0 warnings` |
 | `python3 tools/kb.py verify` | the knowledge base still matches `PASS.md`, `TARGET.md` and the reference doc line for line | `kb verified: chains intact, ...` |
-| `python3 tools/kb.py ledger-verify` | no run record was altered or dropped | `ledger verified: 190 records, chain intact` |
+| `python3 tools/kb.py ledger-verify` | no run record was altered or dropped | `ledger verified: 197 records, chain intact` |
 | `python3 tools/final_acceptance.py` | every measuring stick in `TARGET.md` T9 and T10 holds; runs all 28 harnesses | `15 of 15 hold` |
 | `python3 tools/status_check.py --freshness` | `STATUS.md` is one clean table and no agent claim is stale | `freshness: 5 live rows, 0 claims, 0 stale` |
 | `bash examples/end-to-end/test.sh` | the consumption example runs end to end | `passed 30, failed 0` |
@@ -67,7 +67,7 @@ Open question for you: `state/grandfathered.json` lists 102 of the 103 skills, w
 | `entities.jsonl`, `edges.jsonl` | `E-`, `R-` | the things the facts name and the typed links between them | 184, 109 |
 | `decisions.jsonl` | `D-` | decisions lifted from `docs/decomposition.md` by line | 110 |
 | `architecture.jsonl` | `A-` | the blueprint imported as entities and edges | 803 |
-| `ledger.jsonl` | `L-` | one hash-chained record per run, ceremony or phase close, with commit and dirty flag | 190 |
+| `ledger.jsonl` | `L-` | one hash-chained record per run, ceremony or phase close, with commit and dirty flag | 197 |
 | `meta.json` | | source hashes and chain heads | |
 | `ceremonies/` | | the review, improve, sourcing and measure records (section 5) | 98 |
 

@@ -98,6 +98,7 @@
 | A caller learning which adapter answered, then branching on it | The ticket carries a class, a state and a result and nothing else; the endpoint marker is read from the response into the report, never into the ticket. The deliberate breakage is exactly this branch |
 | Treating a per-key cap as the run's ceiling | The ceiling is checked at `platform-pre-dispatch` before any call; the gateway's scoped key cap is a second enforcement point behind it, reported as `gateway-scoped-key` when it is the one that refuses |
 | Routing rules that can only be tested by spending | `route()` is pure, its table is data, and its vectors run with no model reachable |
+| A routing change believed to be in effect because of where it was written — measured on this substrate, where a config row in Postgres overlays and replaces `router_settings` on every gateway load (PASS.md A7 finding 3) | Routing is in front of the adapter, in `routing.json`, and the conformance run asserts the selection from the table rather than from the gateway's loaded configuration |
 
 ## What is measured here and what is not
 

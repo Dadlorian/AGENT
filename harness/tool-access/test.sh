@@ -122,6 +122,24 @@ BROKEN_SKIPPED=$(python3 -c "import json; print(json.load(open('out/broken.json'
 [ "$BROKEN_SKIPPED" -ge 8 ] && ok "$BROKEN_SKIPPED cases reported NOT EXERCISED rather than passing" \
   || bad "only $BROKEN_SKIPPED cases were reported as not exercised"
 
+echo "4b. authorization exchange mechanisms over a real local HTTP endpoint (tool-access-q2)"
+# adapters/auth_exchange.py: OAuth 2.1 + PKCE + RFC 8707 resource indicators over
+# real loopback sockets (http.server / urllib), never in-process dicts.
+python3 adapters/auth_exchange.py --check > out/auth-exchange.log 2>&1
+check "the OAuth 2.1 + PKCE + resource-indicator exchange over real HTTP passes every check" "$?" "0"
+grep -q "checks_passed=14/14" out/auth-exchange.log && ok "14/14 mechanism checks passed" || bad "not 14/14"
+AUTH_BREAK=refresh-omit-resource python3 adapters/auth_exchange.py --check > out/auth-exchange-break.log 2>&1
+check "the refresh-omit-resource breakage (X-maturity-c-002) fails the gate" "$?" "1"
+grep -q "checks_passed=13/14" out/auth-exchange-break.log \
+  && ok "exactly one check fails when refresh omits the resource parameter" || bad "not 13/14"
+grep -q "FAIL  resource_on_refresh_token_request" out/auth-exchange-break.log \
+  && ok "the failing check names the refresh's missing resource parameter" || bad "wrong check failed"
+python3 adapters/auth_exchange.py --live-demo > out/auth-live-demo.log 2>&1
+check "adapters/live.py, its token sourced via the same OAuth exchange, reaches a real endpoint" "$?" "0"
+grep -q "live-demo PASS" out/auth-live-demo.log \
+  && ok "the live adapter listed and called the tool; a replayed token was rejected by a second server" \
+  || bad "$(tail -3 out/auth-live-demo.log)"
+
 if [ "${1:-}" = "--live" ]; then
   echo "5. live: the tool endpoint on this host"
   if [ -z "${TOOL_ENDPOINT_URL:-}" ] || [ -z "${TOOL_ENDPOINT_TOKEN:-}" ]; then

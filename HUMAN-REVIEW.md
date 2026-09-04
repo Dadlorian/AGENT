@@ -1,8 +1,23 @@
 # Human review checklist
 
-One pass over every folder, in the order below. Each folder gets four things: what it holds, the command that checks it by machine, what only a person can judge, and what a problem looks like. Nothing here asks you to trust a markdown file: every claim points at a command or a record you can open.
+The review has a spine and a procedure. The spine is the two questionnaires, already answered by isolated crews: you read the answers, spot-check them, and decide the tensions. The procedure is the folder walk below, which tells you what to run and what only a person can judge when you want to go deeper than an answer.
 
-Findings go where the last section says. Do not edit generated files by hand (every one says so in its first lines); change the data or the tool and regenerate.
+## 0. The rubric: read the answers before anything else
+
+| Instrument | The questions | The answers | The roll-up |
+|---|---|---|---|
+| Litmus (outward: the 2026 future state, 23 sections, 144 questions) | `docs/litmus/questionnaire.md` | `docs/litmus/answers/a.jsonl` to `d.jsonl`: score, label, evidence the checker re-verifies | `docs/litmus/scorecard.md` |
+| Conformance (inward: the PASS.md brief, 42 properties, 144 questions) | `full-stack-questionair/QUESTIONNAIRE.md` | `full-stack-questionair/answers.jsonl`: verdict, evidence tier, quote, falsifier | `python3 tools/conformance_answers.py grade` (37 proven, 5 shown) |
+| Combined | | | `docs/combined/reading.md`: both sets joined per PASS.md row, 6 tensions |
+
+What to do with them, in order:
+
+1. **Read the two roll-ups and the combined reading.** Twenty minutes. The scorecard's misaligned and absent answers (7) and the six tensions are the whole measured gap.
+2. **Spot-check ten answers you did not choose at random.** `python3 tools/spot_check.py sample litmus 10` and `python3 tools/spot_check.py sample conformance 10` print seeded ids. Open each answer, open its evidence, and decide whether you would have scored it the same. A verifier already did this on 15 of each (13 of 15 exact on both); your disagreements are findings.
+3. **Decide each tension.** Every one reads "proven against the brief, behind the future state". Each is a decision about the brief: move `PASS.md` toward the future state, or record in `docs/acceptance/absent.json` that you accept the gap. The improvement plan (`state/improvement-plan.json`) already targets the seven litmus gaps; row 21 works it once you say go.
+4. **Then, and only then, walk the folders below** where an answer's evidence made you want to see the thing itself.
+
+The answers were written at commit 9475e09, before the skills were folded from 103 to 28; the platform they measured (harnesses, examples, tools, documents) is unchanged, and the seven flagged questions are re-answered by the loop, so a re-answer of the whole set is not due until the next phase closes.
 
 ## 1. Before you start: the whole repo in six commands
 

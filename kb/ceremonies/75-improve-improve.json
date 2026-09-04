@@ -1,0 +1,78 @@
+{
+  "status_row": 75,
+  "ledger_name": "75-improve-improve",
+  "ceremony": "75-improve",
+  "section": "examples/improve",
+  "improver": "75-improve-improve",
+  "date": "2026-09-04",
+  "area": "improve",
+  "review_record": "kb/ceremonies/75-improve-review.json",
+  "visible_checks_before": 76,
+  "visible_checks_after": 88,
+  "test_last_line": "passed 88, failed 0",
+  "applied": [
+    {
+      "finding": "R75IMPROVE-003",
+      "change": "Split the carried-and-not-consumed row in two and made each half a measured claim. `loop.on_cap` is now its own row saying it is read: the capability refuses `on_cap: \"continue\"` at `open_loop` with a 422 naming the member, and this example's own schema refuses such a specification before that. `loop.loop_ref` is its own row saying it reaches no code, no schema and no record. Both halves are run in test.sh section 8: a specification whose only change is `loop_ref` writes ten records against ten, identical except the specification's own digest; `LoopSpec`'s five field names and `LOOP_SPEC_SCHEMA` are asserted not to carry it; and `open_loop` is called with `on_cap: \"continue\"` and required to return a 422 whose detail names `on_cap`. Falsified: making run.py stamp `loop_ref` onto pass-submitted reddens exactly that check (passed 85, failed 3).",
+      "files": ["examples/improve/README.md", "examples/improve/test.sh"]
+    },
+    {
+      "finding": "R75IMPROVE-004",
+      "change": "Added the carried-and-not-consumed row for the specification's own `unit_id`, `template` and `note`, with the research query about what identifies a task specification across versions of one template, and closed it as a differential rather than a sentence: test.sh section 8 runs the human door against a specification renamed to `totally-different-id` / `template:something-else` with a different note, and asserts ten records against ten with exactly one record moving - pass-submitted, in `unit_id`, `template` and `unit_digest` - and that the renamed template never reaches the learned table, whose templates are `candidates[].template`. Falsified: dropping `template` from pass-submitted reddens that check (passed 85, failed 3). The mechanism to make `template` decide something (a loop id or a learned grouping keyed on it) does not exist in the capability, so the row states the gap rather than inventing one.",
+      "files": ["examples/improve/README.md", "examples/improve/test.sh"]
+    },
+    {
+      "finding": "R75IMPROVE-005",
+      "change": "Run step 5 was relabelled 'the second fire of that boundary: one more iteration, and it parks again', which is what its command prints; the run-steps preamble now says the schedule boundary takes five fires and that the fifth prints a `completed:` line. Every other label was made to state its own outcome too (steps 2, 3, 6, 7, 8). The label is now checked, not just the fourth column: test.sh section 12 compares each label's verb against the leading word of its promised last line - a label saying the pass closes or completes must promise `completed:` or `escalated:`, one saying it escalates must promise `escalated:`, one saying it parks must promise `parked:`, a `parked:` line under a label claiming a close is refused, and a `REPLAY:` line needs a label that says re-fire. Falsified twice: restoring 'the fifth fire closes it' reddens the check (passed 86, failed 2), and mislabelling step 2 as escalating reddens it (passed 86, failed 2). This is also the defect the closer reported from the hidden run.",
+      "files": ["examples/improve/README.md", "examples/improve/test.sh"]
+    },
+    {
+      "finding": "R75IMPROVE-006",
+      "change": "The runner half was already in the tree when this pass ran (run.py:187 `spend = lambda rs: sum(int(r[\"spend_micros\"]) for r in rs)`), the proof half was not. test.sh section 9 now recomputes every micros figure as the sum of the iteration records' own `spend_micros` instead of `len(rows) * per_iteration_micros`, and additionally requires the closing record's `cost_micros` to equal that sum and promoted plus declined to equal the number of iteration records, at all four doors. Added the missing differential: `loop.per_iteration_micros` halved to 125000 halves the plan floor printed before anything runs (750000 to 375000), every record's `spend_micros`, the learned micros and the closing `cost_micros`, over the same five iterations. The README's learned row and the section-3 row were rewritten to say that and now name a differential. Falsified twice: pricing `learned()` from a constant reddens the new differential (passed 86, failed 2); charging one iteration a different amount reddens the recompute, the closing-cost check and the adapter comparison (passed 83, failed 5).",
+      "files": ["examples/improve/README.md", "examples/improve/test.sh"]
+    },
+    {
+      "finding": "R75IMPROVE-007",
+      "change": "The runner half was already in the tree (run.py:277-279 keys the adapter store on the receipt's resolved path plus a digest of it, and run.py:367-377 refuses a resumed fire whose receipt holds no `loop-opened` with a typed 422 recorded as a refusal). Nothing measured either, so test.sh section 6 now does: two fires given `out/a/probe.jsonl` and `out/b/probe.jsonl` are asserted to be two passes, each writing pass-submitted, scorecard-registered, loop-opened, iteration-recorded and pass-parked with iteration index 0 and no traceback in either log; and the separated case - a store holding a checkpoint whose receipt was emptied - is asserted to exit 2 with `urn:agentic:problem:document-invalid` (422) whose detail names `loop-opened`, leaving one `refusal` record at `resume`. The run-steps preamble now says two receipts of one basename in different directories are two passes. Falsified twice: keying the store on the basename again reddens the two-pass check (passed 85, failed 3); removing the guard reddens the separated-fire checks with a traceback (passed 84, failed 4).",
+      "files": ["examples/improve/README.md", "examples/improve/test.sh"]
+    },
+    {
+      "finding": "R75IMPROVE-008",
+      "change": "Both halves. The check was narrowed: a `REF-<path>#<anchor>` on a source file now resolves to the definition the anchor names - class, def, or a module-level constant - and the quote must be inside that block, not anywhere in the module; a comma-separated anchor resolves to the union of its blocks, and an anchor that names no definition is an error rather than a silent fall-through. The sentence was made exactly what the check supports: 'grepped back verbatim out of one of the records its own line names, with a REF-<path>#<anchor> on a source file narrowed to the definition the anchor names rather than the file it sits in'. The narrowing immediately caught a misattribution the old check could not see: the ceiling quote 'iteration_ceiling is required: there is no unbounded variant to declare.' lives in `LOOP_SPEC_SCHEMA` (interface.py:220), not in `class LoopSpec`, so the composition row and provenance.cites now name `#LOOP_SPEC_SCHEMA`. Falsified: re-attributing the `Scorecard.furthest` quote to `#Metric` - the same file, a neighbouring class - reddens section 11 (passed 85, failed 3), which the whole-file check would have passed.",
+      "files": ["examples/improve/README.md", "examples/improve/test.sh", "examples/improve/provenance.json"]
+    },
+    {
+      "finding": "R75IMPROVE-009",
+      "change": "The lifecycle row now says what the records carry: three transitions as record kinds - pass-submitted to pass-completed, pass-escalated or pass-failed, with pass-parked in between on a one-iteration-per-fire pass - and states plainly that no record carries a lifecycle state, that `working` and `input-required` appear in no receipt, and that this area's row does not ask for the published five. X-litmus-b-003 is still quoted, now as what a mature build names rather than as what this example does. The unmeasured half was moved out of the README and into provenance.claimed: 'that a re-delivered iteration inside a loop returns the identical record - the capability dedupes on an iteration key and nothing in this example re-delivers one; what is measured here is the envelope-level REPLAY on a closed pass', plus a second claimed line for the absent lifecycle state.",
+      "files": ["examples/improve/README.md", "examples/improve/provenance.json"]
+    },
+    {
+      "finding": "R75IMPROVE-010",
+      "change": "test.sh section 5 now compares the two evaluation adapters on the outcome, not only on the rows inside it: the single `pass-completed` record and the single `learned` record of out/human.jsonl and out/gate2.jsonl are stripped of chain fields and compared whole, so terminated_by, termination_class, iterations_run, targets_held, cost_micros and final_checkpoint_id are all in the comparison, and the learned micros is checked against the closing cost. The adapters table and the extension row were reworded to the comparison that now runs. Falsified: making the closing record carry the gate's name reddens the check (passed 85, failed 3).",
+      "files": ["examples/improve/README.md", "examples/improve/test.sh"]
+    },
+    {
+      "finding": "R75IMPROVE-011",
+      "change": "Measured the narrower behaviour and found it narrower still than the finding says: `evaluate_exit` reads the `LoopSpec` stored at `open_loop`, so a resumed fire's declared ceiling reaches neither the plan refusal nor the exit condition. test.sh section 7 now fires the schedule door once at the full ceiling and then re-fires it declaring 500000 - the same value that refuses a first fire 402 before a case is replayed - and asserts four resuming fires, no refusal record, `verdict_pass`, and the printed line `spent 1250000 of 500000 micros`. The `budget.ceiling_micros` row and the ceiling extension point now say the plan is a first-fire gate and the exit condition reads the value the loop was opened with, and gap G11 records what is not supported with its research query (the gap table and its check moved to G1..G11). Falsified: pricing every fire at the plan reddens both new checks (passed 85, failed 3).",
+      "files": ["examples/improve/README.md", "examples/improve/test.sh"]
+    }
+  ],
+  "declined": [
+    {
+      "finding": "R75IMPROVE-001",
+      "why": "Already true when this pass ran, with evidence rather than disagreement: `grep -rn 'works on metrics furthest' examples/improve/` exits 1 and returns nothing, and README.md:27 carries T-t9-01 verbatim - \"The improvement loop works the metric furthest from its target and stops when every target holds or the owner says stop.\" - which is the text in kb/target-facts.jsonl. The area's own test.sh section 11 and the closing README-count check are green on it: the shipped area now prints passed 88, failed 0, not the passed 74, failed 2 the review recorded. The wording was reverted between the review and this brief."
+    },
+    {
+      "finding": "R75IMPROVE-002",
+      "why": "Already true when this pass ran: `grep -rn 'transition_allowed' examples/improve/` exits 1 and returns nothing - no README row, no schema member, no document, no line of run.py. The 'fields outside payload.improve' table now ends at README.md:101 with the `promotion.rollback_to` row, which names its own differential (test.sh section 8), so no row in either field table proves itself by inference. The row was removed between the review and this brief."
+    }
+  ],
+  "notes": [
+    "Two runner-side halves were already in the tree when this brief ran and are recorded as such rather than claimed as this pass's work: run.py:187 sums `spend_micros` (R75IMPROVE-006) and run.py:277-279 / 367-377 key the store on the resolved receipt path and guard the resumed read (R75IMPROVE-007). What this pass added for both is the proof - checks that go red without them, which is what the boundary asks a finding to close as. run.py was not edited by this pass at all; the three files touched are README.md, test.sh and provenance.json.",
+    "A later reader will be surprised by G11: a fire that resumes an open loop may declare any `budget.ceiling_micros` and it decides nothing, because `evaluate_exit` reads the spec stored at `open_loop`. The shipped schedule pass therefore prints `spent 1250000 of 500000 micros` on the resumed run in test.sh section 7 and refuses nothing. An outside check that reads a 402 as the signature of 'the ceiling was exceeded' will miss every resumed fire.",
+    "test.sh now writes out/a/, out/b/, out/c/, out/resume-tiny*.jsonl and three more out/mod documents, and empties out/c/probe.jsonl on purpose to build the separated-receipt case. As before, the whole of out/ is cleared and regenerated by the run, and the suite is not safe to run twice concurrently in one tree.",
+    "The quote check is stricter than the shipped README needed: because an anchor now resolves to a definition, moving a quoted sentence from a class into a neighbouring constant of the same module is a block. One such misattribution existed and was corrected (`#LoopSpec` to `#LOOP_SPEC_SCHEMA`, in the README row and in provenance.cites), so provenance.cites changed by one id.",
+    "Counts kept in step: FLOOR=88 in test.sh, `visible_checks_counted: 88` in provenance.json, and run step 1's promised last line `passed 88, failed 0` in the README, which the closing check compares against the count the run reached.",
+    "The area still has no hidden check inside its own brief's reach (README gap G10); this pass did not read docs/night/hidden/ and did not write there. Nothing was committed."
+  ]
+}

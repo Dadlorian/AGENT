@@ -59,10 +59,17 @@ def main(argv: list[str]) -> int:
                and "measured_run" in (sk.get("definition_of_done") or {}))
     rows.append(("T-t9-04", "at least half of definitions of done measured", f"{meas} of {len(skills)}", meas * 2 >= len(skills)))
 
-    # T9.5 load path per door, from the recorded review
-    lp = json.loads((ROOT / "kb" / "ceremonies" / "reconcile-01-review-xc.json").read_text()).get("load_path", [])
-    worst = max((len(r.get("proposed_skills", [])) for r in lp), default=0)
-    rows.append(("T-t9-05", "at most 11 skills per door", f"worst door {worst}", 0 < worst <= 11))
+    # T9.5 load path per task: since STATUS row 71 the measure is the trigger eval on the folded descriptions
+    # (docs/fold/eval-after.json: what a fresh reader loads for each of 20 tasks), not the pre-fold per-door record
+    ev = ROOT / "docs" / "fold" / "eval-after.json"
+    if ev.is_file():
+        picks = [len(p["skills"]) for p in json.loads(ev.read_text())["picks"]]
+        worst = max(picks, default=0)
+        rows.append(("T-t9-05", "at most 11 skills per task", f"worst task loads {worst}, mean {sum(picks) / max(1, len(picks)):.1f}", 0 < worst <= 11))
+    else:
+        lp = json.loads((ROOT / "kb" / "ceremonies" / "reconcile-01-review-xc.json").read_text()).get("load_path", [])
+        worst = max((len(r.get("proposed_skills", [])) for r in lp), default=0)
+        rows.append(("T-t9-05", "at most 11 skills per door", f"worst door {worst}", 0 < worst <= 11))
 
     # T9.6 swaps proven: every harness gate green and its plan row records a swap
     plan = json.loads((ROOT / "harness" / "plan.json").read_text())

@@ -1,5 +1,7 @@
 # Load path per door
 
+Pre-fold record (skills named here were folded into 28 at STATUS row 71; `docs/fold/plan.json` maps each). The current measure is `python3 tools/trigger_eval.py score after`.
+
 Generated from kb/ceremonies/reconcile-01-review-xc.json. Budget: 11 skills per common task (TARGET T9.5).
 
 | Door | Task | Rows today | Skills today | Proposed skills | Count | Within budget |

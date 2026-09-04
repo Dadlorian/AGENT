@@ -201,7 +201,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | A caller cannot decline this guarantee, because cross-cutting guarantees are not optional and telemetry is one of the four the platform applies rather than the caller requesting; correlation is that concern's whole contract, so there is no field on any request that switches the identifiers off and no sampling rate that omits them. | sourced | `F-b1-08`, `F-b4-01`, `F-b4-06` "Cross-cutting guarantees are not optional." |
 | Reassembly is equality on a stamped field, never a walk up a parent chain. The common advice is the opposite - reuse the trace identifier as the correlation identifier because it already propagates automatically - and that is precisely the design PASS.md A7 finding 1 rules out for this platform. | sourced | `X-xc-correlation-004`, `F-a7-02` "you can reuse the trace ID as your correlation ID, since it already propagates automatically" |
 | The failure body is in scope, not an exception to it: errors are typed and machine-readable and never parsed from prose, so a problem object carries the correlation record as a declared member rather than mentioning the run inside a human-readable detail string. | sourced | `F-b4-07` "Typed and machine-readable. Never parsed from prose" |
-| The audit asserts zero omissions over the whole population of a run's signals, not a rate and not a sample, and it asserts a non-zero population in the same run, so an audit that collected nothing cannot report success. (build-definition-of-done owns this criterion generally; this row applies it to the audit's own population count.) | sourced | `F-part-c-04` "Per piece: a machine-checkable definition of done, plus the deliberate breakage that proves the check can fail." |
+| The audit asserts zero omissions over the whole population of a run's signals, not a rate and not a sample, and it asserts a non-zero population in the same run, so an audit that collected nothing cannot report success. (build-evidence owns this criterion generally; this row applies it to the audit's own population count.) | sourced | `F-part-c-04` "Per piece: a machine-checkable definition of done, plus the deliberate breakage that proves the check can fail." |
 
 ### Deliberately not exposed
 
@@ -229,7 +229,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 |---|---|---|
 | Do not let the run identifier be the trace identifier, however convenient. A correlation identifier is a flat string meant for log search, which is exactly the property wanted here; a trace identifier is minted by whatever runtime happens to be executing, which is the property that failed. | sourced | `X-xc-correlation-004`, `F-a7-02` "A correlation ID is a flat string meant for log search" |
 | Do not shape the run identifier like a trace identifier either. Trace identifiers are a fixed 128-bit hexadecimal form, and a field declared with that width invites the next implementer to fill it from the trace identifier and reintroduce the coupling this guarantee removes. | sourced | `X-xc-correlation-001` "a trace ID is 128 bits, rendered as a 32-character hexadecimal string" |
-| Point the audit at the deepest subtree first. cap-telemetry and build-evidence-record both cite the same measured depth-3 result (F-a7-02); the practice this layer adds is where to look, because the breakage this guarantee is defined against is a sub-agent emitting without re-stamping, every level above it looks correct, and an audit that samples from the top reports green on the arrangement that is broken. | sourced | `F-a7-02`, `E-finding-a7-1` "A depth-3 task tree produces three unrelated root traces." |
+| Point the audit at the deepest subtree first. cap-telemetry and build-evidence both cite the same measured depth-3 result (F-a7-02); the practice this layer adds is where to look, because the breakage this guarantee is defined against is a sub-agent emitting without re-stamping, every level above it looks correct, and an audit that samples from the top reports green on the arrangement that is broken. | sourced | `F-a7-02`, `E-finding-a7-1` "A depth-3 task tree produces three unrelated root traces." |
 | Keep the stamped set small. The propagated carriers add overhead to requests, and every field added here is added to every span, every log line and every failure body of every run, so a field that is merely nice to have is paid for on every signal the platform emits. | sourced | `X-cross-structure-006`, `X-cross-structure-005` "Baggage adds overhead to requests" |
 | Record which carrier a hop used alongside the identifiers. The available propagators differ per hop and a hop that silently dropped its carrier is indistinguishable from a hop that never had one, unless the carrier in force was written down at the boundary. | sourced | `X-xc-correlation-003` "Currently supported options include W3C Trace-Context HTTP Propagator, W3C Correlation-Context HTTP Propagator, and B3 Zipkin HTTP Propagator." |
 
@@ -246,9 +246,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-definition-of-done`, `build-evidence-record`, `build-skill-authoring`, `cap-telemetry`
+Builds on: `agentic-stack`, `build-evidence`, `build-skill-authoring`, `cap-telemetry`
 
-Used by: `seam-dispatch`, `xc-correlation-implement`, `xc-enforcement-chain`
+Used by: `seam-dispatch`, `xc-correlation-implement`, `xc-guarantees`
 
 ## Open questions
 

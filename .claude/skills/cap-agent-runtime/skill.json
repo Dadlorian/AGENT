@@ -280,7 +280,7 @@
         ]
       },
       {
-        "text": "Every interactive capability - streaming updates, tool-permission callbacks, mid-turn cancellation - is negotiated at session open and defaults to absent. A capability the interface requires is a capability a one-shot runtime can never supply, which is exactly what build-adapter-pair's design rule 3 (F-b1-04) exists to catch: an interface that ships with only one adapter's assumptions baked in is not proven swappable until a second adapter is attempted.",
+        "text": "Every interactive capability - streaming updates, tool-permission callbacks, mid-turn cancellation - is negotiated at session open and defaults to absent. A capability the interface requires is a capability a one-shot runtime can never supply, which is exactly what build-evidence's design rule 3 (F-b1-04) exists to catch: an interface that ships with only one adapter's assumptions baked in is not proven swappable until a second adapter is attempted.",
         "origin": "sourced",
         "sources": [
           "F-b1-04",
@@ -375,7 +375,7 @@
     {
       "step": 1,
       "action": "State the boundary as a capability plus its standard before any agent is named: 'an agent is driven through one prompt turn, per the Agent Client Protocol, protocol version unverified'. Read this row the way the table's template row is read.",
-      "why": "build-adapter-pair already states that the interface survives the swap and the implementation does not (F-b3-18). What this adds, as this skill's own consequence and proposed: for a runtime the statement has teeth only if the boundary is written as a turn, because a contract written as a session is a contract only a session-holding runtime can meet.",
+      "why": "build-evidence already states that the interface survives the swap and the implementation does not (F-b3-18). What this adds, as this skill's own consequence and proposed: for a runtime the statement has teeth only if the boundary is written as a turn, because a contract written as a session is a contract only a session-holding runtime can meet.",
       "origin": "sourced",
       "sources": [
         "F-b3-05",
@@ -414,7 +414,7 @@
     },
     {
       "step": 5,
-      "action": "Choose the second adapter on execution model, not on brand: a single-shot runtime with no session to cancel, no stream and no callbacks, and record the axes on which the pair differs the way build-adapter-pair requires.",
+      "action": "Choose the second adapter on execution model, not on brand: a single-shot runtime with no session to cancel, no stream and no callbacks, and record the axes on which the pair differs the way build-evidence requires.",
       "why": "A second interactive agent of the same shape would leave every interactive assumption untested, whereas a runtime with none of them fails immediately on any requirement that was really adapter detail.",
       "origin": "sourced",
       "sources": [
@@ -447,7 +447,7 @@
     {
       "step": 8,
       "action": "Judge a candidate runtime by the cancellation criterion in this skill's definition of done, run against both adapters from the same suite, before deciding it may serve the interface.",
-      "why": "agentic-stack and build-definition-of-done already state that a criterion nothing can fail is not a criterion (F-part-c-04). What this adds, as this skill's own consequence and proposed: every other property of a runtime degrades gracefully, but one that cannot reach a terminal frame on request cannot be bounded by any ceiling above it, so cancellation is the property worth gating on here.",
+      "why": "agentic-stack and build-evidence already state that a criterion nothing can fail is not a criterion (F-part-c-04). What this adds, as this skill's own consequence and proposed: every other property of a runtime degrades gracefully, but one that cannot reach a terminal frame on request cannot be bounded by any ceiling above it, so cancellation is the property worth gating on here.",
       "origin": "sourced",
       "sources": [
         "F-part-c-04",
@@ -528,10 +528,10 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "bash harness/containment/test.sh && python3 harness/containment/conformance.py --adapter dryrun --adapter second",
-    "expected": "Measured by tools/measure.py at 16d354c: exit 0; last lines: adapters_run=2 | conformance: pass  report=/home/user/AGENT/harness/containment/out/containment-conformance.json",
+    "criterion": "bash harness/containment/test.sh; GATE=$?; python3 harness/containment/conformance.py --adapter dryrun --adapter second; CONF=$?; GATE=$GATE CONF=$CONF python3 -c \"import json,os,sys;rows=json.load(open('harness/containment/out/containment-conformance.json'))['per_adapter'];[print('adapter=%s stop_reason=%s declared_gap_honoured=%s'%(x['binding_adapter'],x['stop_reason'],str(x['declared_gap_honoured']).lower())) for x in rows];sys.exit(0 if os.environ['GATE']=='0' and os.environ['CONF']=='0' and all(x['declared_gap_honoured'] for x in rows) and {x['stop_reason'] for x in rows}=={'cancelled','cancel_timeout'} else 1)\"",
+    "expected": "Measured by tools/measure.py at 3ad234e: exit 0; last lines: adapter=simulated-machine-unit stop_reason=cancelled declared_gap_honoured=true | adapter=capability-granted-unit stop_reason=cancel_timeout declared_gap_honoured=true",
     "breakage": "Raise harness/containment/binding.json's tuning.cancel_poll_interval_s to 30, above the 0.5s grace window, and change nothing else (the harness README's breakage B); restore with git checkout -- harness/containment/binding.json.",
-    "expected_failure": "Measured by tools/measure.py at 16d354c: exit 1; last lines:   ok   typed as isolation-unavailable (503) | passed 20, failed 5",
+    "expected_failure": "Measured by tools/measure.py at 3ad234e: exit 1; last lines: adapter=simulated-machine-unit stop_reason=cancel_timeout declared_gap_honoured=false | adapter=capability-granted-unit stop_reason=cancel_timeout declared_gap_honoured=true",
     "status": "measured",
     "sources": [
       "F-part-c-04",
@@ -540,14 +540,15 @@
     "quote": "ends the turn in ~8s against a 45s operation, zero trailing frames",
     "measured_run": {
       "by": "tools/measure.py",
-      "commit": "16d354c",
+      "commit": "3ad234e",
       "clean_exit": 0,
-      "clean_output": "503)\n\npassed 25, failed 0\nadapter=simulated-machine-unit containment_marker=match exit=0 digest=sha256:adfdc984db3b83b7 jail_mode=0700 owner_in_host_passwd=false egress_made=3 egress_blocked=3 stop_reason=cancelled declared_gap_honoured=true checks=19/19\nadapter=capability-granted-unit containment_marker=match exit=0 digest=sha256:adfdc984db3b83b7 jail_mode=0700 owner_in_host_passwd=false egress_made=3 egress_blocked=3 stop_reason=cancel_timeout declared_gap_honoured=true checks=18/18\nadapters_run=2\nconformance: pass  report=/home/user/AGENT/harness/containment/out/containment-conformance.json",
+      "clean_output": "  ok   dryrun conformance exits 0 (0)\n  ok   dryrun minimal call exits 0 (0)\n  ok   second minimal call exits 0 (0)\nadapter=simulated-machine-unit containment_marker=match exit=0 digest=sha256:adfdc984db3b83b7 jail_mode=0700 owner_in_host_passwd=false egress_made=3 egress_blocked=3 stop_reason=cancelled declared_gap_honoured=true checks=19/19\nadapter=capability-granted-unit containment_marker=match exit=0 digest=sha256:adfdc984db3b83b7 jail_mode=0700 owner_in_host_passwd=false egress_made=3 egress_blocked=3 stop_reason=cancel_timeout declared_gap_honoured=true checks=18/18\n...\nconformance: pass  report=/home/user/AGENT/harness/containment/out/containment-conformance.json\nadapter=simulated-machine-unit stop_reason=cancelled declared_gap_honoured=true\nadapter=capability-granted-unit stop_reason=cancel_timeout declared_gap_honoured=true",
       "breakage_exit": 1,
-      "breakage_output": "interval rises above the grace window\n  ok   conformance fails (1)\nadapter that claimed cancellation: cancel_timeout declared_gap_honoured = False\nadapter that never claimed it:  cancel_timeout declared_gap_honoured = True\n  ok   a runtime that claimed cancellation and missed it is told apart from one that never claimed it (0)\n6. failure paths answer with typed problems\nrefusals: all typed and refused before anything ran\n  ok   every refusal is an RFC 9457 problem (0)\n  ok   live mode with no env refuses rather than degrading (2)\n  ok   typed as isolation-unavailable (503)\n\npassed 20, failed 5"
+      "breakage_output": "  FAIL dryrun conformance exits 0 (expected 0, got 1)\n  FAIL no check failed (expected 0, got 3)\n  FAIL before the swap, conformance passes (expected 0, got 1)\n  FAIL both technologies in one run (expected 0, got 1)\n  ok   dryrun minimal call exits 0 (0)\n  ok   second minimal call exits 0 (0)\n  FAIL dryrun did not report cancelled\nadapter=simulated-machine-unit containment_marker=match exit=0 digest=sha256:adfdc984db3b83b7 jail_mode=0700 owner_in_host_passwd=false egress_made=3 egress_blocked=3 stop_reason=cancel_timeout declared_gap_honoured=false checks=16/19\n  FAIL [simulated-machine-unit] terminal frame arrived inside the grace window -> 0.668\n  FAIL [simulated-machine-unit] stop reason is cancelled for a runtime that offers cancellation -> cancel_timeout\n  FAIL [simulated-machine-unit] the adapter behaved as its declared gap says -> False\nadapter=capability-granted-unit containment_marker=match exit=0 digest=sha256:adfdc984db3b83b7 jail_mode=0700 owner_in_host_passwd=false egress_made=3 egress_blocked=3 stop_reason=cancel_timeout declared_gap_honoured=true checks=18/18\n...\nconformance: FAIL  report=/home/user/AGENT/harness/containment/out/containment-conformance.json\nadapter=simulated-machine-unit stop_reason=cancel_timeout declared_gap_honoured=false\nadapter=capability-granted-unit stop_reason=cancel_timeout declared_gap_honoured=true",
+      "restored": true
     },
-    "expected_design": "The gate and the conformance run together prove one agent turn started, cancelled mid-turn and read back through the capability interface under two containment technologies: a terminal frame with no frames after it, stop_reason cancelled for the adapter that offers cancellation, cancel_timeout (by boundary) for the one that does not, and declared_gap_honoured true for both (adapters_run=2). Earlier criterion named tools/conformance_agent_runtime.py, replaced by the harness on 2026-09-03.",
-    "expected_failure_design": "The adapter that offers cancellation (simulated-machine-unit) misses the grace window: its terminal frame arrives late, stop_reason becomes cancel_timeout instead of cancelled, declared_gap_honoured turns false because that adapter claimed it could cancel, and the conformance run exits non-zero naming it; the adapter that never claimed cancellation still passes."
+    "expected_design": "The gate and the conformance run together prove one agent turn started, cancelled mid-turn and read back through the capability interface under two containment technologies: a terminal frame with no frames after it, stop_reason cancelled for the adapter that offers cancellation, cancel_timeout (by boundary) for the one that does not, and declared_gap_honoured true for both (adapters_run=2). The criterion's last command re-reads the conformance report and prints, per adapter, the stop reason and declared_gap_honoured this skill gates on, exiting non-zero unless the gate passed, the conformance run passed, both adapters honoured their declared gap, and the two stop reasons are exactly cancelled and cancel_timeout; it runs on both the clean and the broken path, so Expected and Expected failure quote the cancellation property rather than the containment summary the two skills used to share (2026-09-04, ceremony 71-improve-c, finding R71B-006). Earlier criterion named tools/conformance_agent_runtime.py, replaced by the harness on 2026-09-03.",
+    "expected_failure_design": "The adapter that offers cancellation (simulated-machine-unit) misses the grace window: its terminal frame arrives late, stop_reason becomes cancel_timeout instead of cancelled, declared_gap_honoured turns false because that adapter claimed it could cancel, and the conformance run exits non-zero naming it; the adapter that never claimed cancellation still passes. The gate's own runs over the base binding fail with it (five checks in sections 1 to 3, `passed 20, failed 5`), and the last command still prints both adapters, so the recorded failure line is the adapter that claimed cancellation reporting declared_gap_honoured=false."
   },
   "composes_with": {
     "builds_on": [
@@ -764,7 +765,7 @@
             "quote": "vsock → host broker, which holds the real key and picks the endpoint"
           },
           {
-            "text": "Apply build-evidence-record: every statement here about how a runtime behaves stays claimed until the conformance run and its evidence record exist, naming the code version and the tree hash under test; no adapter here has been run in this repository; proposed pointer, see that skill.",
+            "text": "Apply build-evidence: every statement here about how a runtime behaves stays claimed until the conformance run and its evidence record exist, naming the code version and the tree hash under test; no adapter here has been run in this repository; proposed pointer, see that skill.",
             "origin": "proposed",
             "sources": [
               "F-a5-04",
@@ -800,7 +801,7 @@
         {
           "step": 3,
           "action": "Record the pair's differs_in_execution_model naming prompt_cancellation and processes_required_for_progress, and write the second adapter's gaps down as gaps: it cannot report cancelled, cannot raise a permission request, and emits no in-turn frames.",
-          "why": "build-adapter-pair already states that a swap needing a core change means the boundary is drawn wrong (F-meta-04). What this adds, as this skill's own consequence and proposed: widening the contract until both runtimes satisfy every member is the quiet version of that failure, so the gap is declared and the conformance run asserts on it instead.",
+          "why": "build-evidence already states that a swap needing a core change means the boundary is drawn wrong (F-meta-04). What this adds, as this skill's own consequence and proposed: widening the contract until both runtimes satisfy every member is the quiet version of that failure, so the gap is declared and the conformance run asserts on it instead.",
           "origin": "sourced",
           "sources": [
             "F-meta-04",
@@ -863,8 +864,8 @@
         },
         {
           "step": 9,
-          "action": "Apply build-definition-of-done: run the definition of done below and then its deliberate breakage, and record both outputs as an evidence record the way build-evidence-record fixes, before calling this facet done; proposed pointer, see those skills.",
-          "why": "build-definition-of-done owns criterion plus deliberate breakage plus both recorded outputs, and build-evidence-record owns what the record names, so this row points at them instead of restating the sentence six sibling -implement skills had copied (consolidation part B, kb/ceremonies/implement-clusters.json).",
+          "action": "Apply build-evidence: run the definition of done below and then its deliberate breakage, and record both outputs as the evidence record it defines, before calling this facet done; proposed pointer, see that skill.",
+          "why": "build-evidence owns criterion plus deliberate breakage plus both recorded outputs and what the evidence record names, so this row points at it instead of restating the sentence six sibling -implement skills had copied (consolidation part B, kb/ceremonies/implement-clusters.json).",
           "origin": "proposed",
           "sources": [
             "F-part-c-04"
@@ -896,7 +897,7 @@
           "quote": "Callers request a class, never a vendor"
         },
         {
-          "text": "Apply build-adapter-pair: let the second adapter fail the cases it cannot serve honestly instead of emulating the first so both look alike; a declared gap the conformance run asserts on beats a silent emulation that would not survive a real cancellation. proposed pointer, see that skill.",
+          "text": "Apply build-evidence: let the second adapter fail the cases it cannot serve honestly instead of emulating the first so both look alike; a declared gap the conformance run asserts on beats a silent emulation that would not survive a real cancellation. proposed pointer, see that skill.",
           "origin": "proposed",
           "sources": [
             "F-b1-04"
@@ -957,9 +958,7 @@
       },
       "composes_with": {
         "builds_on": [
-          "build-adapter-pair",
-          "build-definition-of-done",
-          "build-evidence-record",
+          "build-evidence",
           "cap-agent-runtime"
         ],
         "used_by": []

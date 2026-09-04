@@ -2,7 +2,7 @@
   "name": "cap-telemetry",
   "layer": "cap",
   "wave": 3,
-  "description": "Traces and metrics any collector can ingest, plus correlation: run identifiers carried on explicit attributes set at dispatch, never on trace parentage. Load when deciding what a unit of work emits, where a run id lives, when one run appears as several unrelated trees, when swapping an observability backend, or when adopting an attribute naming convention.",
+  "description": "Traces, metrics and logs any collector ingests, plus correlation: run ids on explicit attributes set at dispatch, not trace parentage. Load when deciding what a unit of work emits, where run ids live, when one run appears as several unrelated trees, when auditing that every log record and problem object carries the run id, or when swapping an observability backend.",
   "purpose": {
     "text": "Fix the contract for emitting traces and metrics that a collector we did not write can ingest, and make reassembling a run a property of explicit attributes rather than of a trace tree that has already been measured not to survive the agent boundary.",
     "origin": "sourced",
@@ -250,7 +250,7 @@
         "quote": "A depth-3 task tree produces three unrelated root traces."
       },
       {
-        "text": "The correlation set is carried as resource attributes rather than span attributes because that surface is declared unchangeable by the specification that defines it: these resource attributes MUST NOT be ever changed. build-interface-versioning reads the same record as the model for a frozen field set; the consequence here is that the carrier for correlation is chosen for stability, not convenience.",
+        "text": "The correlation set is carried as resource attributes rather than span attributes because that surface is declared unchangeable by the specification that defines it: these resource attributes MUST NOT be ever changed. build-evidence reads the same record as the model for a frozen field set; the consequence here is that the carrier for correlation is chosen for stability, not convenience.",
         "origin": "sourced",
         "sources": [
           "X-cross-structure-012",
@@ -259,7 +259,7 @@
         "quote": "These resource attributes MUST NOT be ever changed"
       },
       {
-        "text": "Proposed: this interface is two contracts on two cadences, not one. The transport and shape half is pinned and rarely moves, the attribute-mapping half is versioned separately and may be revised without touching a single emitter. build-interface-versioning states the general discipline and names this interface as its first application; what is added here is that the split is part of the capability's contract rather than a release habit. Research query: has a GenAI semantic-convention revision actually landed since this repo was built, so the mapping-adapter split can be measured against a real version bump rather than argued from the maturity difference alone?",
+        "text": "Proposed: this interface is two contracts on two cadences, not one. The transport and shape half is pinned and rarely moves, the attribute-mapping half is versioned separately and may be revised without touching a single emitter. build-evidence states the general interface-versioning discipline and names this interface as its first application; what is added here is that the split is part of the capability's contract rather than a release habit. Research query: has a GenAI semantic-convention revision actually landed since this repo was built, so the mapping-adapter split can be measured against a real version bump rather than argued from the maturity difference alone?",
         "origin": "proposed",
         "sources": [
           "F-b3-10",
@@ -430,7 +430,7 @@
     },
     {
       "step": 9,
-      "action": "Proposed: open references/telemetry-attribute-mapping.md when you need the per-operation attribute table, the instrument list, or the record of what each cited research snippet does and does not establish. This skill body is enough to judge an implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
+      "action": "Proposed: open references/telemetry-attribute-mapping.md when you need the per-operation attribute table, the instrument list, or the record of what each cited research snippet does and does not establish. This skill body is enough to judge an implementation without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. Open references/xc-correlation.md for the stamp, derive_child, audit and reassemble operations and the audit's zero-omission criterion over a run's whole population, and references/xc-correlation-implement.md for the migration off inherited trace context and the per-adapter conformance subsets. The body of this skill is enough to call it or to judge it without any of these files.",
       "why": "Proposed, progressive disclosure. The mapping table is long material that moves on its own cadence, which is precisely why it does not belong in the part of the contract that is meant to stay still.",
       "origin": "proposed"
     }
@@ -487,7 +487,7 @@
       "role": "today",
       "maps_to": "The recorded adapter today is Langfuse + OpenTelemetry: an OTLP SDK exporting to a hosted trace UI with an LLM-aware ingestion API and its own object model of traces, observations and scores. It serves bind, emit and measure, and it is the only one of the pair that can answer a question about an LLM call without someone writing the query.",
       "cannot": "Cannot be the whole interface: its object model is richer than the transport, so any field that exists only in its ingestion API is a field the second adapter cannot accept. Its execution model is a hosted service reached over the network with a semantic model of LLM work built in.",
-      "swap_procedure": "Point the exporter at the other endpoint by configuration and change nothing else; cap-telemetry-implement owns the migration, the per-adapter conformance subsets and the full procedure, and this row records the roles PASS.md B3 fixes and the axis the pair differs on.",
+      "swap_procedure": "Point the exporter at the other endpoint by configuration and change nothing else; references/cap-telemetry-implement.md carries the migration, the per-adapter conformance subsets and the full procedure, and this row records the roles PASS.md B3 fixes and the axis the pair differs on.",
       "status": "claimed",
       "sources": [
         "F-b3-10",
@@ -712,7 +712,7 @@
             "quote": "was silently discarded"
           },
           {
-            "text": "build-definition-of-done already names the structurally-green trap (F-a7-03): a gate can pass while asserting nothing. The build consequence: the pipeline adapter declares semantic queries unsupported rather than reporting them as failing. A documented conformance subset is honest; an adapter that claims a property it cannot provide is the failure the pair exists to expose.",
+            "text": "build-evidence already names the structurally-green trap (F-a7-03): a gate can pass while asserting nothing. The build consequence: the pipeline adapter declares semantic queries unsupported rather than reporting them as failing. A documented conformance subset is honest; an adapter that claims a property it cannot provide is the failure the pair exists to expose.",
             "origin": "sourced",
             "sources": [
               "F-a7-03"
@@ -736,7 +736,7 @@
             "quote": "Typed and machine-readable. Never parsed from prose"
           },
           {
-            "text": "Apply build-evidence-record: the conformance run and its breakage are written to the evidence store naming the code version and the tree hash under test, and stay claimed until they have actually been run here; proposed pointer, see that skill.",
+            "text": "Apply build-evidence: the conformance run and its breakage are written to the evidence store naming the code version and the tree hash under test, and stay claimed until they have actually been run here; proposed pointer, see that skill.",
             "origin": "proposed",
             "sources": [
               "F-a5-04"
@@ -863,7 +863,7 @@
           "quote": "Correlation IDs should be preserved at every boundary"
         },
         {
-          "text": "cap-telemetry and build-evidence-record already name, via F-a7-02, the depth-3 shape this fixture is built to catch: a depth-3 task tree produces three unrelated root traces because trace context did not survive the agent boundary. The build consequence: build the depth-3 fixture before the exporter, and keep it as the smallest thing that reproduces the recorded failure. A fixture written after the exporter tends to assert what the exporter does; one written first asserts what the concern requires.",
+          "text": "cap-telemetry and build-evidence already name, via F-a7-02, the depth-3 shape this fixture is built to catch: a depth-3 task tree produces three unrelated root traces because trace context did not survive the agent boundary. The build consequence: build the depth-3 fixture before the exporter, and keep it as the smallest thing that reproduces the recorded failure. A fixture written after the exporter tends to assert what the exporter does; one written first asserts what the concern requires.",
           "origin": "sourced",
           "sources": [
             "F-a7-02"
@@ -925,9 +925,7 @@
       },
       "composes_with": {
         "builds_on": [
-          "build-adapter-pair",
-          "build-definition-of-done",
-          "build-evidence-record",
+          "build-evidence",
           "cap-telemetry"
         ],
         "used_by": []
@@ -1255,7 +1253,7 @@
             "quote": "Typed and machine-readable. Never parsed from prose"
           },
           {
-            "text": "The audit asserts zero omissions over the whole population of a run's signals, not a rate and not a sample, and it asserts a non-zero population in the same run, so an audit that collected nothing cannot report success. (build-definition-of-done owns this criterion generally; this row applies it to the audit's own population count.)",
+            "text": "The audit asserts zero omissions over the whole population of a run's signals, not a rate and not a sample, and it asserts a non-zero population in the same run, so an audit that collected nothing cannot report success. (build-evidence owns this criterion generally; this row applies it to the audit's own population count.)",
             "origin": "sourced",
             "sources": [
               "F-part-c-04"
@@ -1385,7 +1383,7 @@
           "quote": "a trace ID is 128 bits, rendered as a 32-character hexadecimal string"
         },
         {
-          "text": "Point the audit at the deepest subtree first. cap-telemetry and build-evidence-record both cite the same measured depth-3 result (F-a7-02); the practice this layer adds is where to look, because the breakage this guarantee is defined against is a sub-agent emitting without re-stamping, every level above it looks correct, and an audit that samples from the top reports green on the arrangement that is broken.",
+          "text": "Point the audit at the deepest subtree first. cap-telemetry and build-evidence both cite the same measured depth-3 result (F-a7-02); the practice this layer adds is where to look, because the breakage this guarantee is defined against is a sub-agent emitting without re-stamping, every level above it looks correct, and an audit that samples from the top reports green on the arrangement that is broken.",
           "origin": "sourced",
           "sources": [
             "F-a7-02",
@@ -1426,15 +1424,14 @@
       "composes_with": {
         "builds_on": [
           "agentic-stack",
-          "build-definition-of-done",
-          "build-evidence-record",
+          "build-evidence",
           "build-skill-authoring",
           "cap-telemetry"
         ],
         "used_by": [
           "seam-dispatch",
           "xc-correlation-implement",
-          "xc-enforcement-chain"
+          "xc-guarantees"
         ]
       },
       "open_questions": [
@@ -1586,7 +1583,7 @@
                 },
                 "evidence_record_ref": {
                   "type": "string",
-                  "description": "The evidence record this run was written into, per build-evidence-record: tool digest, commit, tree hash, dirty flag, and the claimed-or-measured label."
+                  "description": "The evidence record this run was written into, per build-evidence: tool digest, commit, tree hash, dirty flag, and the claimed-or-measured label."
                 }
               }
             },
@@ -1617,7 +1614,7 @@
             "quote": "The core imports interfaces, never implementations"
           },
           {
-            "text": "The audit runs unchanged against both implementations, selected by configuration with no code edit between runs, and a merged report showing fewer than two is a failed run rather than a partial one. build-adapter-pair owns the rule and the axis test (F-b1-04); what this facet adds is that the two differ in where enforcement executes, not in which vendor supplies it.",
+            "text": "The audit runs unchanged against both implementations, selected by configuration with no code edit between runs, and a merged report showing fewer than two is a failed run rather than a partial one. build-evidence owns the rule and the axis test (F-b1-04); what this facet adds is that the two differ in where enforcement executes, not in which vendor supplies it.",
             "origin": "sourced",
             "sources": [
               "F-b1-04"
@@ -1707,7 +1704,7 @@
         {
           "step": 6,
           "action": "Write every audit run into an evidence record before reading its numbers: the tool digest, the commit, the tree hash under test, whether the tree was dirty, and the claimed-or-measured label. Never label a run from a dirty tree measured.",
-          "why": "build-evidence-record owns the record's fields and agentic-stack owns the labelling rule (F-part-c-08); the consequence here is that the omission counts are the kind of number that gets quoted later, so an unlabelled count becomes a measurement the moment someone repeats it.",
+          "why": "build-evidence owns the record's fields and agentic-stack owns the labelling rule (F-part-c-08); the consequence here is that the omission counts are the kind of number that gets quoted later, so an unlabelled count becomes a measurement the moment someone repeats it.",
           "origin": "sourced",
           "sources": [
             "F-part-c-08"
@@ -1717,7 +1714,7 @@
         {
           "step": 7,
           "action": "Run the identical audit against both implementations with the choice made in configuration only, and treat any code edit needed between the two runs as the finding rather than as setup.",
-          "why": "build-adapter-pair states the discipline and the axis test; what this step adds is the failure mode specific to this guarantee, which is a check that reads the hosted backend's own query surface and therefore cannot run at all against a pipeline that has no query surface.",
+          "why": "build-evidence states the discipline and the axis test; what this step adds is the failure mode specific to this guarantee, which is a check that reads the hosted backend's own query surface and therefore cannot run at all against a pipeline that has no query surface.",
           "origin": "sourced",
           "sources": [
             "F-part-c-05",
@@ -1734,7 +1731,7 @@
       ],
       "best_practices": [
         {
-          "text": "Count non-conformant records in the pipeline stage; never drop them. A stage that silently discards what it cannot verify produces a clean report from a broken system, which is the same shape of green as a gate whose behavioural stages all skipped - agentic-stack states it as a best practice and build-evidence-record and build-definition-of-done both build on it (F-a7-03).",
+          "text": "Count non-conformant records in the pipeline stage; never drop them. A stage that silently discards what it cannot verify produces a clean report from a broken system, which is the same shape of green as a gate whose behavioural stages all skipped - agentic-stack states it as a best practice and build-evidence builds on it (F-a7-03).",
           "origin": "sourced",
           "sources": [
             "F-a7-03"
@@ -1777,7 +1774,7 @@
           "role": "second",
           "maps_to": "Any OTLP collector run as a separate process between the emitters and the stores: receivers accept the payload, a processor verifies that every record carries both identifiers and routes the ones that do not to a counted dead-letter, an exporter writes rows to a columnar store, and the audit reads those rows with a query anyone can write.",
           "cannot": "Cannot mint an identifier it was never sent, and must never try: it verifies and counts, it does not invent. It has no trace UI and no semantic model of a model call, so anything that exists only in the hosted service's object model is a field this guarantee must not depend on. The axis is where enforcement executes - a library inside the emitting process against a separate process the emitting runtime does not control - which is a different execution model rather than a different product of the same shape, and it is the axis that matters here because the measured failure happened at exactly that boundary.",
-          "swap_procedure": "Select by configuration only, with no code edit between runs, and require the merged report to show adapters_run == 2 and selected_by == \"configuration\" with identical per-entry assertions under both. build-adapter-pair owns the rule that the second exists to prove the first is not load-bearing (F-b1-04); what this row adds is the axis and the dead-letter count the pipeline adapter must publish.",
+          "swap_procedure": "Select by configuration only, with no code edit between runs, and require the merged report to show adapters_run == 2 and selected_by == \"configuration\" with identical per-entry assertions under both. build-evidence owns the rule that the second exists to prove the first is not load-bearing (F-b1-04); what this row adds is the axis and the dead-letter count the pipeline adapter must publish.",
           "status": "claimed",
           "sources": [
             "F-b3-10",
@@ -1812,9 +1809,7 @@
       },
       "composes_with": {
         "builds_on": [
-          "build-adapter-pair",
-          "build-definition-of-done",
-          "build-evidence-record",
+          "build-evidence",
           "xc-correlation"
         ],
         "used_by": []
@@ -1823,7 +1818,7 @@
         {
           "question": "When both implementations are deployed, which one enforces: the in-process stamp, the pipeline processor, or both?",
           "evidence": "Run the read-only audit under both for one week over the same traffic and compare the per-kind omission counts. If the pipeline sees records the in-process surface never showed, enforcement belongs where the wider view is; if the counts match, the cheaper one wins.",
-          "default": "Stamp in-process and verify in the pipeline, with the pipeline forbidden to invent a missing value. build-adapter-pair states the two-adapter rule this question sits inside (F-b1-04); what is open is only which of the two enforces. Reversible by promoting the processor to the only enforcement point, which costs one configuration change and no emitter change.",
+          "default": "Stamp in-process and verify in the pipeline, with the pipeline forbidden to invent a missing value. build-evidence states the two-adapter rule this question sits inside (F-b1-04); what is open is only which of the two enforces. Reversible by promoting the processor to the only enforcement point, which costs one configuration change and no emitter change.",
           "sources": [
             "F-b1-04"
           ],

@@ -4,7 +4,7 @@ import json, re, sys
 from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 reg = (ROOT / ".claude/skills/cap-errors/references/problem-registry.md").read_text()
-suffixes = set(re.findall(r"urn:agentic:problem:([a-z][a-z0-9-]+)", reg))
+suffixes = set(re.findall(r"^\| `([a-z][a-z0-9-]+)` \|", reg, re.M)) | set(re.findall(r"urn:agentic:problem:([a-z][a-z0-9-]+)", reg))
 p = json.loads(Path(sys.argv[1]).read_text())
 checks = {
     "type is a URI": isinstance(p.get("type"), str) and p["type"].startswith(("urn:", "http")),

@@ -1,0 +1,390 @@
+{
+ "part": "b",
+ "closures": [
+  {
+   "item": {
+    "kind": "litmus",
+    "section": "model-access",
+    "question_id": "model-access-q2",
+    "score": -1,
+    "question": "Proposed question: Which mechanisms beyond a plain completion are exercised and verified - streaming, tool-call turns, schema-constrained structured output, cache directives, reasoning effort, and a usage record separating prompt, cached, reasoning and completion tokens?",
+    "target": "Each mechanism is exercised on both adapters, and the effect is verified from the response - a cache hit is observed, not hoped for - with reasoning tokens counted in cost."
+   },
+   "mechanism": "A mature build exercises every mechanism a completion call exposes beyond a bare prompt/response round trip - streaming, tool-call turns, schema-constrained structured output, an explicit or implicit cache directive, a reasoning-effort setting, and a usage record - on at least two model adapters, and verifies each one from the response rather than from having merely requested it: a cache hit is read back from a provider-specific usage field, not assumed because a cache directive was set.",
+   "standard": "none - each provider defines its own usage-object shape (OpenAI prompt_tokens_details/completion_tokens_details, Anthropic cache_creation_input_tokens); no governing standard unifies them",
+   "check": "a test asserts a nonzero cached-token count on a deliberately repeated prompt and a nonzero reasoning-token count when reasoning effort is raised, and that the same assertions pass unmodified against a second adapter",
+   "direction": "settling on splitting token accounting into prompt/cached/reasoning/completion fields on the usage object as providers add reasoning and caching; being abandoned is treating 'the cache flag was set' as proof caching occurred",
+   "cites": [
+    "X-maturity-b-001",
+    "X-maturity-b-002"
+   ],
+   "origin": "sourced",
+   "quote": "Always verify caching occurred by checking cache_creation_input_tokens in the response.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "litmus",
+    "section": "concern-identity",
+    "question_id": "concern-identity-q5",
+    "score": 0,
+    "question": "The proposed future state turns on deep use, so: when an identity is withdrawn while work is already running under it, does that work stop - and is the withdrawal itself recorded against the unit it stopped?",
+    "target": "The next capability call after the withdrawal fails, the unit terminates with a typed refusal naming the withdrawn identity, and the record shows who withdrew it and at which point the work stopped."
+   },
+   "mechanism": "A mature build enforces identity per-request rather than per-session: every capability call re-checks the calling identity against the current grant, so a withdrawal takes effect on the very next call a running unit makes rather than requiring the unit to notice a signal. The call that fails after withdrawal returns a typed refusal naming the withdrawn identity, and the withdrawal event and the point the unit stopped are both written to the same audit trail that already ties every action to an identity, a delegator and a timestamp.",
+   "standard": "none - no governing standard specifies agent-credential revocation; the MCP specification (through 2026-07-28) contains no revoke/introspect/expires_in vocabulary",
+   "check": "a test withdraws an identity mid-run and asserts the next capability call under it returns a typed refusal naming that identity, and that a single audit record shows both the withdrawal and the run's stop point",
+   "direction": "settling on zero standing privileges with per-request, just-in-time authorization instead of session-length trust; being abandoned is treating credential revocation (disabling an account) as equivalent to stopping in-flight work, since disabling an SSO account does not itself revoke independently-authenticating API tokens",
+   "cites": [
+    "X-maturity-b-003",
+    "X-maturity-b-004",
+    "X-maturity-b-005"
+   ],
+   "origin": "sourced",
+   "quote": "Authorization is checked at the point of every request rather than granted up front and trusted for the duration of a session, so revocation takes effect on the very next request the agent makes",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "conformance",
+    "qid": "C01-F",
+    "verdict": "ABSENT",
+    "evidence": "harness/containment/interface.py line 82-86, class UnitContext: \"The stamps the platform applies around every unit. A caller asks for none of them.\" fields correlation_id, run_id, actor, idempotency_key, ceiling_s - one actor field is passed unchanged to admit(), run/prompt, and terminate. No second"
+   },
+   "mechanism": "A mature build stamps every unit with a full cross-cutting context object (correlation id, run id, actor/delegation chain, idempotency key, budget ceiling) that a caller never has to construct by hand, and that context is read - not merely carried - by admission, dispatch and every capability call along the delegation chain. The interface that defines this context has at least two independent adapters proving the core depends on the interface, not one concrete implementation.",
+   "standard": "none (settledness: emerging) - no standard defines a unit-context shape; the pattern is convention (hexagonal ports-and-adapters, OAuth on-behalf-of/actor-token delegation) rather than a specification",
+   "check": "a test constructs a second adapter for the context interface and asserts the same admit/run/terminate assertions pass against both, and asserts every field named in the interface (not just actor) is read by at least one guarantee at each of admission, dispatch and a capability call",
+   "direction": "settling on carrying a signed delegation chain (identity, actor claim, scope, expiration) through every hop rather than a single flat actor string; an unread field that is merely passed through unchanged is what the window treats as not yet real cross-cutting enforcement",
+   "cites": [
+    "X-maturity-b-006",
+    "X-maturity-b-007"
+   ],
+   "origin": "sourced",
+   "quote": "Ports are the interfaces that define how the domain core communicates with the outside world... adapters then connect real technologies to these ports without changing the core application logic.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "conformance",
+    "qid": "C14-F",
+    "verdict": "DEVIATES",
+    "evidence": ".claude/skills/cap-scheduling/SKILL.md Open questions table: \"Where does the occurrence-instant clock come from once evaluation is pure, and who owns the ticker that asks it?\", answered only as \"Proposed: a single ticker per deployment asks the pure evaluator for the occurrences in a short forward w"
+   },
+   "mechanism": "A mature build separates the pure recurrence evaluator (rule plus timezone plus window in, occurrence instants out, no side effects) from the ticker that drives it: exactly one ticker instance is active at a time, chosen and re-chosen by leader election over a consensus protocol, and it asks the pure evaluator for the next short forward window of occurrences rather than owning any scheduling logic itself.",
+   "standard": "RFC 5545 (iCalendar, recurrence rule grammar) for the pure evaluator; no standard governs ticker ownership, which is answered by the general leader-election pattern, not a scheduling-specific one",
+   "check": "a test kills the active ticker process and asserts a new leader is elected and resumes firing within a bounded window with no duplicate or missed occurrence at the handoff boundary",
+   "direction": "settling on leader-election-over-consensus as the answer to single-ticker ownership, borrowed from general distributed-systems practice rather than a scheduling standard; being abandoned is a single unelected process silently assumed to be the only one running",
+   "cites": [
+    "X-maturity-b-008",
+    "X-maturity-b-009"
+   ],
+   "origin": "sourced",
+   "quote": "Schedulers often rely on leader election mechanisms implemented using a consensus protocol. A single elected leader reads the schedule and pushes jobs to the queue.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "conformance",
+    "qid": "S2-F",
+    "verdict": "DEVIATES",
+    "evidence": "I counted both sides. Declared: .claude/skills/seam-state/SKILL.md and .claude/skills/seam-state/references/state-seam.md close the kind list at ten, while docs/decomposition.md 2.2.1 states nine in prose, \"Record kinds in the first cut: `node-asserted`, `edge-asserted`, `document-declared`, `dispat"
+   },
+   "mechanism": "A mature build defines one closed, versioned enumeration of record kinds for its append-only log, referenced by exactly one canonical location; every other document (prose descriptions, examples, generated docs) derives from that enumeration rather than re-declaring it, so a change in cardinality cannot silently diverge between two counts.",
+   "standard": "none - no external standard enumerates record kinds for an application-level event log; the discipline is general event-sourcing/append-only-log practice",
+   "check": "a script parses the canonical kind list and every prose mention of 'kinds' in the docs tree and fails the build if the counts or the member sets disagree",
+   "direction": "settling on treating the append-only log as the single source of truth with graph and ledger as projections of it; abandoned is maintaining the same enumeration by hand in two places, which is exactly the kind of drift the found nine-vs-ten mismatch demonstrates",
+   "cites": [
+    "X-maturity-b-010",
+    "X-maturity-b-011"
+   ],
+   "origin": "sourced",
+   "quote": "Event Sourcing, Durable Execution, and Consensus Protocols all rely on the same foundational abstraction: the distributed log",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "model-access",
+    "claim": "That a published specification, rather than a de facto convention, now governs the completion request shape.",
+    "research_query": "published open specification for LLM completion request format standards body 2026"
+   },
+   "mechanism": "A mature build treats the completion request/response shape as a de facto convention it must track (the OpenAI-compatible JSON body: model, messages, tool definitions, streaming envelope) rather than as a published specification it can certify against, and isolates that convention behind its own model-access interface so a shape change from the vendor does not leak into the core.",
+   "standard": "none - settledness is 'contested/emerging': no standards body (IETF, W3C, ISO) has published a completion-request specification; OpenAI's de facto shape is followed by over 80% of new providers without being formalized",
+   "check": "a schema captures the exact request/response shape the build depends on and a test fails when a live adapter's response no longer validates against it, since there is no external spec to check against instead",
+   "direction": "settling on OpenAI-compatible JSON as the universal convention despite having no governing body; the abandoned path is waiting for a formal standard before building a stable interface, since none exists in the window",
+   "cites": [
+    "X-maturity-b-012",
+    "X-maturity-b-013"
+   ],
+   "origin": "sourced",
+   "quote": "There is currently no formally specified standard like HTTP or SQL that is standardized by a governing body for LLM APIs, but instead a de facto standard has emerged",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "durable-execution",
+    "claim": "What resumption latency and journal size production users of many long-running agent workflows actually observe.",
+    "research_query": "production measurements durable agent workflow resume latency journal size 2026 postmortem"
+   },
+   "mechanism": "A mature build measures and publishes two numbers for its durable-execution layer from production traffic, not vendor claims: the added latency per journaled step (single-digit milliseconds is the observed range) and the replay/resume cost paid at workflow start or after a crash (tens to low hundreds of milliseconds, driven by history size). It treats journal growth as a metric to cap and compact, not an unbounded log.",
+   "standard": "none - no standard specifies acceptable resume latency or journal size; these are operational SLOs each platform sets for itself",
+   "check": "a load test injects a crash mid-workflow and asserts resume completes within a fixed millisecond budget and that journal size after N steps stays under a fixed byte ceiling",
+   "direction": "settling on per-step journaling overhead of single-digit milliseconds as acceptable, with replay cost paid only at start/crash rather than per step; what the search could not find is a published multi-agent-fleet-scale figure for resume latency or journal size under real production load",
+   "cites": [
+    "X-maturity-b-014",
+    "X-maturity-b-015"
+   ],
+   "origin": "sourced",
+   "quote": "Durable workflow engines add single-digit milliseconds of latency per activity call (journaling write plus ack)",
+   "gap": "no production postmortem or measurement specifically for 'many long-running agent workflows' at fleet scale was found; query used: \"production measurements durable agent workflow resume latency journal size 2026 postmortem\""
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "tool-access",
+    "claim": "Whether the 2026-07-28 revision mandates or merely enables a declared toolset or search-based discovery mechanism, as opposed to that being a client-side practice.",
+    "research_query": "Model Context Protocol 2026-07-28 specification tool discovery toolsets pagination cacheable list results normative requirements"
+   },
+   "mechanism": "A mature build treats the 2026-07-28 MCP revision's tool list as one of several per-request capabilities a client fetches through server/discover and _meta, and layers its own toolset grouping or search-based discovery on top as an implementation choice, because the specification enables per-request, cacheable capability discovery without mandating any particular grouping or search mechanism.",
+   "standard": "Model Context Protocol, revision 2026-07-28",
+   "check": "a schema check confirms tool and method names are present in the Mcp-Method/Mcp-Name headers on every request, and a client-side test confirms a toolset/search layer built on top continues to function using only spec-mandated fields",
+   "direction": "settling on stateless, per-request capability negotiation (server/discover, _meta) replacing the earlier stateful handshake; being abandoned is the once-per-connection capability exchange from prior MCP revisions",
+   "cites": [
+    "X-maturity-b-016",
+    "X-maturity-b-017"
+   ],
+   "origin": "sourced",
+   "quote": "MCP is transforming from a bidirectional stateful protocol into a request/response stateless protocol.",
+   "gap": "the exact normative status (MUST/SHOULD) of any toolset-grouping or search-based tool-discovery mechanism in the 2026-07-28 text itself was not found in searchable summaries; query used: \"Model Context Protocol 2026-07-28 specification tool discovery toolsets pagination cacheable list results normative requirements\""
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "capability-packaging",
+    "claim": "Whether any registry inside the window actually enforces publisher signing and transparency-log provenance in production.",
+    "research_query": "agent skill registry enforcing publisher signing transparency log provenance production 2026"
+   },
+   "mechanism": "A mature build does not depend on the registry to enforce signing; it depends on the client verifying a Sigstore bundle (a DSSE envelope wrapping an in-toto statement, a Fulcio certificate binding a CI-identity OIDC subject to the signer, and a Rekor transparency-log inclusion proof) at install or load time, treating the registry as an unauthenticated distribution channel.",
+   "standard": "Sigstore (Fulcio, Rekor) plus the in-toto attestation format - de facto, not a formal standards-body specification, but with production tooling (e.g. agent-sign) applying it specifically to agent skill artifacts",
+   "check": "an install step refuses to load a package whose Sigstore bundle fails Rekor inclusion-proof verification, tested by tampering with one byte of a signed artifact and asserting the load is refused",
+   "direction": "settling on keyless signing with client-side verification as the trust model, explicitly moving trust off the registry; what could not be confirmed in the window is whether any registry itself (as opposed to individual publisher tooling) enforces this as a mandatory gate rather than an optional, publisher-opted-in step",
+   "cites": [
+    "X-maturity-b-018",
+    "X-maturity-b-019"
+   ],
+   "origin": "sourced",
+   "quote": "the registry or any intermediary is a distribution channel, not a trust anchor, or mandatory part of the workflow",
+   "gap": "whether any registry enforces signing/provenance as a mandatory server-side gate (versus client-optional verification) in production was not confirmed; query used: \"agent skill registry enforcing publisher signing transparency log provenance production 2026\""
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "document-validation",
+    "claim": "Whether the standardised output formats of the dialect are implemented consistently enough across validators that a failure object can be built from them without validator-specific handling.",
+    "research_query": "JSON Schema 2020-12 output format basic detailed verbose validator support comparison 2026 interoperability"
+   },
+   "mechanism": "A mature build never hand-writes a failure object from a validator's error output; it requests the spec's standardized Basic (or Hierarchical) output format and builds its typed failure object directly from that structure, accepting that because the spec says implementations SHOULD (not MUST) conform, it still needs one thin per-validator adapter that normalizes to the same internal shape rather than assuming every validator's raw output is interchangeable.",
+   "standard": "JSON Schema 2020-12, Validation specification, output formats section (Flag, Basic, Detailed, Verbose/Hierarchical)",
+   "check": "the same malformed document is run through two validators (e.g. Ajv and Python jsonschema) and a test asserts both, after the per-validator normalization adapter, produce the same internal failure-object shape",
+   "direction": "settling on near-universal 2020-12 dialect support across major validators; not settled is output-format consistency, since conformance is a SHOULD - the direction is toward Basic-format convergence but full interoperability without an adapter layer is not yet reliable",
+   "cites": [
+    "X-maturity-b-020",
+    "X-maturity-b-021"
+   ],
+   "origin": "sourced",
+   "quote": "implementations SHOULD conform to a standard validation output format that describes the minimum requirements for machine consumers to properly interpret validation results",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "telemetry",
+    "claim": "What cost attribution looks like at scale for hundreds of concurrent agents, and whether per-call token attributes survive sampling.",
+    "research_query": "OpenTelemetry GenAI cost token attribution sampling head tail 2026 large agent fleet production practice"
+   },
+   "mechanism": "A mature build exports GenAI token and cost attributes as first-class metrics (not only as span attributes), specifically so that tail-based trace sampling - which keeps all error traces but only a fraction (commonly around 10%) of successful ones at fleet scale - does not silently drop cost visibility for the majority of calls; per-call cost is aggregated at the metrics pipeline while full-fidelity traces are kept only for the sampled and errored subset.",
+   "standard": "OpenTelemetry GenAI semantic conventions - experimental status as of the window; core chat/embedding token attributes are treated as production-usable despite that status",
+   "check": "a synthetic load of calls is run with tail sampling enabled at 10%, and a check asserts the aggregated cost metric total matches the true total token spend even though only 10% of traces were retained",
+   "direction": "settling on metrics (not sampled traces) as the source of truth for cost at scale, with GenAI conventions still experimental but core token attributes already load-bearing in production; being abandoned is relying on span attributes alone for cost, since sampling silently removes them",
+   "cites": [
+    "X-maturity-b-022",
+    "X-maturity-b-023"
+   ],
+   "origin": "sourced",
+   "quote": "As of March 2026, most GenAI semantic conventions are in experimental status, meaning the API isn't fully stabilized yet.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "provenance",
+    "claim": "Whether a predicate type for agent actions has been registered or is converging, or whether every implementer is still defining a private predicate.",
+    "research_query": "in-toto predicate type registry agent action evidence predicate 2026 standard registration proposal"
+   },
+   "mechanism": "A mature build proposes-and-uses its own agent-action predicate type today (recording the tool requested, the policy decision, the allow/deny outcome and a trace-correlation id, wrapped in a standard in-toto/DSSE envelope) while tracking the open in-toto registration proposal, so that the moment a predicate type is formally registered, the build's existing records need only a type-URI rename to become conformant rather than a redesign.",
+   "standard": "in-toto attestation framework (Statement/DSSE) as the envelope, version-locked; predicate type for agent actions is proposed but not registered (in-toto/attestation issue #554, agent-decision/v0.1) - settledness: emerging",
+   "check": "an attestation is generated for a real policy decision and validated against the DSSE/in-toto Statement schema even though its predicateType is not yet a registered URI, so the check is 'envelope-valid, predicate-pending' rather than a false pass",
+   "direction": "converging on in-toto/DSSE as the envelope of record for agent-action evidence, with the predicate type itself still an open proposal driven partly by EU AI Act Article 12 logging pressure; what would be an error now is inventing a private, non-in-toto envelope format instead of using the standard envelope with a provisional predicate type",
+   "cites": [
+    "X-maturity-b-024",
+    "X-maturity-b-025"
+   ],
+   "origin": "sourced",
+   "quote": "While build provenance (SLSA, SBOM) already uses in-toto, runtime agent decisions have not had a registered predicate until now.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "errors",
+    "claim": "Whether platforms publish their own problem-type registries publicly as machine-readable documents, and what that document looks like.",
+    "research_query": "publish machine readable problem type registry document RFC 9457 type URI catalogue example API 2026"
+   },
+   "mechanism": "A mature build maintains its own problem-type catalogue as a machine-readable document (a JSON or YAML list of type URI, title, status and meaning) published alongside its API, separate from - but structurally consistent with - the IANA registry RFC 9457 defines for cross-organization common types; every type URI the build emits resolves to an entry in that document.",
+   "standard": "RFC 9457 (Problem Details for HTTP APIs), which obsoletes RFC 7807, plus its IANA problem-type registry mechanism",
+   "check": "every distinct type URI produced by the running system in a fixed test suite is checked against the published catalogue document and the build fails if a URI is emitted with no matching entry",
+   "direction": "settling on RFC 9457 (2023) with an IANA-hosted registry for shared type URIs as the baseline; what remains unsettled and unconfirmed in the window is whether individual platforms publish their own catalogue documents publicly, as opposed to only defining type URIs inline in code",
+   "cites": [
+    "X-maturity-b-026",
+    "X-maturity-b-027"
+   ],
+   "origin": "sourced",
+   "quote": "an IANA registry for hosting of common problem type URIs",
+   "gap": "no example of a platform publishing its own machine-readable problem-type catalogue document (as opposed to the shared IANA registry) was found; query used: \"publish machine readable problem type registry document RFC 9457 type URI catalogue example API 2026\""
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "scheduling",
+    "claim": "That deriving a replay key from the schedule identity plus the nominal fire time is the prevailing convention for making catch-up and backfill converge, rather than my synthesis of the recurrence and idempotency findings.",
+    "research_query": "scheduled job idempotency key nominal fire time backfill deduplication convention 2026"
+   },
+   "mechanism": "A mature build derives a scheduled unit's idempotency key from the pair (schedule identity, nominal fire time) rather than from wall-clock execution time, so a catch-up run, a backfill, and the original on-time run of the same nominal occurrence all produce the same key and collapse to one execution, while two different nominal occurrences never collide even if executed back-to-back.",
+   "standard": "none found specifically for this construction - settledness: emerging, inferred from general idempotency-key practice (deduplication store keyed on a caller-supplied key) applied to RFC 5545-style recurrence",
+   "check": "a test fires the same nominal occurrence twice (once on time, once as a simulated backfill) and asserts the deduplication store returns a hit on the second, then fires the next nominal occurrence and asserts a miss",
+   "direction": "general idempotency-key deduplication (store a key before acting, check it first) is settled practice; specifically keying on schedule-identity-plus-nominal-fire-time for catch-up/backfill convergence is this build's synthesis, not confirmed as a named convention in any source found",
+   "cites": [
+    "X-maturity-b-028",
+    "X-maturity-b-029"
+   ],
+   "origin": "proposed",
+   "quote": null,
+   "gap": "no source explicitly names 'schedule identity plus nominal fire time' as the prevailing convention for scheduled-job idempotency keys, only the general pattern of idempotency-key deduplication; query used: \"scheduled job idempotency key nominal fire time backfill deduplication convention 2026\""
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "idempotency",
+    "claim": "That a typed conflict, rather than a plain rejection, is the settled response to a fingerprint mismatch - practitioner sources name conflict codes but none ties the response to a machine-readable failure format.",
+    "research_query": "idempotency key fingerprint mismatch RFC 9457 problem details typed error response 2026"
+   },
+   "mechanism": "A mature build returns a typed RFC 9457 problem-details document with a distinct type URI (e.g. .../problems/idempotency-fingerprint-mismatch) and 409 status when a repeated idempotency key arrives with a different request-body fingerprint, rather than a plain 409 with free-text detail - the type URI is what lets a caller branch programmatically instead of parsing prose.",
+   "standard": "RFC 9457 (Problem Details) for the response envelope; the IETF Idempotency-Key header draft (draft-ietf-httpapi-idempotency-key-header, expired 2026-04-18, not yet an RFC) for the fingerprint-mismatch concept itself",
+   "check": "a test replays the same idempotency key with a modified body and asserts the response is 409 with a Content-Type of application/problem+json and a type field distinct from the platform's generic conflict type",
+   "direction": "settling on RFC 9457-shaped responses for idempotency conflicts even though the underlying Idempotency-Key header mechanism itself remains an expired, unratified IETF draft; an error to avoid is treating fingerprint mismatch as a generic 409 with no distinguishing type URI",
+   "cites": [
+    "X-maturity-b-030",
+    "X-maturity-b-031"
+   ],
+   "origin": "sourced",
+   "quote": "RFC 9457 Problem Details error responses include error codes such as MISSING_KEY, KEY_TOO_LONG, FINGERPRINT_MISMATCH, and CONFLICT for idempotency implementations.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "concern-budget",
+    "claim": "That a resumed or replayed unit should continue under its remaining ceiling rather than a fresh one - stated as a design consequence here, with no source found that specifies budget carry-over across a restart.",
+    "research_query": "durable workflow resume remaining budget carry over restart token ceiling 2026 checkpoint budget state"
+   },
+   "mechanism": "A mature build persists the ceiling's remaining balance (not just the workflow's business state) at every checkpoint, so a resumed or replayed unit continues counting against what was left, not a freshly reset ceiling; approaching zero triggers a graceful wind-down rather than an abrupt kill, and the remaining-balance figure is itself part of the durable checkpoint record.",
+   "standard": "none - no standard specifies budget carry-over; the practice is observed directly in production durable-execution runtimes (Azure Durable Task, Codex CLI /goal)",
+   "check": "a workflow is checkpointed after consuming half its token ceiling, the process is killed and resumed, and a test asserts the remaining ceiling on resume equals the original minus what was already spent, not the original ceiling again",
+   "direction": "settling on preserving cumulative spend across checkpoint/resume as production runtimes already do this; being abandoned is resetting a fresh ceiling on every resume, which would let a workflow that keeps crashing near its limit spend unboundedly",
+   "cites": [
+    "X-maturity-b-032",
+    "X-maturity-b-033"
+   ],
+   "origin": "sourced",
+   "quote": "when a failure occurs, execution resumes automatically from the last checkpoint, preserving both token spend and wall-clock time",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "concern-identity",
+    "claim": "That the triggering identity for a schedule created long ago should be the creating principal rather than the current owner of the schedule, when the creator has since left.",
+    "research_query": "scheduled automation authorising principal departed user ownership transfer attribution audit 2026"
+   },
+   "mechanism": "A mature build never runs a schedule under a departed person's standing credential at all: the schedule's authorizing identity is a service/workload identity distinct from any human creator, and departure of the human who created it triggers a mandatory ownership-reassignment step (to a current, active owner) rather than either silently continuing on the old identity or silently keeping the departed person as the audit-of-record creator.",
+   "standard": "none - no standard governs this; the practice is inferred from offboarding-security guidance that treats creator-bound scheduled credentials as a defect to close",
+   "check": "an offboarding test disables a user account that owns a schedule and asserts the schedule's next run either fails closed (no workload identity assigned) or runs under a reassigned identity, and that both the disablement and the reassignment are recorded against the schedule",
+   "direction": "settling on workload identities distinct from any human, with mandatory reassignment on departure, as the direction; this item's proposed claim (keep the original creator as authorizing identity after departure) runs against that direction - the search found offboarding guidance treating creator-bound execution as the error to correct, not the target state",
+   "cites": [
+    "X-maturity-b-034",
+    "X-maturity-b-035"
+   ],
+   "origin": "proposed",
+   "quote": null,
+   "gap": "no source treats 'the departed creator remains the authorizing identity' as a valid or recommended design; the window's sources instead argue the opposite (reassign or revoke). query used: \"scheduled automation authorising principal departed user ownership transfer attribution audit 2026\""
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "concern-provenance",
+    "claim": "That there is an agreed predicate type for artifacts produced by an agent run, as distinct from a build, could not be sourced inside the window.",
+    "research_query": "in-toto predicate type for AI agent run output attestation registry 2026"
+   },
+   "mechanism": "A mature build attests an agent run's output artifact with its own predicate type, separate from the SLSA Provenance predicate it already emits for the build that produced the agent itself - two attestations chained (the build's SLSA provenance, and the run's agent-output predicate) rather than one predicate stretched to cover both, because SLSA Provenance is explicitly scoped to build characteristics only.",
+   "standard": "in-toto Statement/DSSE for the envelope; SLSA Provenance predicate (registered) for build artifacts; no registered predicate exists yet for agent-run output artifacts as of the window",
+   "check": "an attestation for an agent run's output is generated with a distinct predicateType from the build's SLSA provenance predicate, and a verifier check confirms it rejects a run-output attestation that reuses the build predicateType",
+   "direction": "SLSA Provenance is settled and stays scoped to build characteristics; a distinct predicate for agent-run output is not yet registered - the nearest registered-adjacent proposal (agent-decision/v0.1) covers policy decisions, not general run output, so this remains an open gap rather than an error to correct",
+   "cites": [
+    "X-maturity-b-036",
+    "X-maturity-b-037"
+   ],
+   "origin": "sourced",
+   "quote": "SLSA v1 is focused on the build aspects of the software supply chain and defines the Provenance predicate to record the build characteristics of the produced artifacts.",
+   "gap": "no registered (or clearly converging) predicate type specifically for an agent run's output artifact, as distinct from a build, was found; query used: \"in-toto predicate type for AI agent run output attestation registry 2026\""
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "concern-telemetry",
+    "claim": "That correlation identifiers should be carried in the work envelope itself rather than only in trace context is this section's design position, supported by the span-link evidence but not directly sourced as a convention.",
+    "research_query": "carrying correlation identifiers in message envelope versus trace context OpenTelemetry guidance 2026"
+   },
+   "mechanism": "A mature build puts a domain-level correlation id as an explicit field on the work envelope itself (set once at intake, unchanged across every hop and retry), separate from the W3C traceparent/tracestate carried for distributed tracing - because a correlation id identifies a business conversation that can span many traces (retries, sub-runs), while a trace id is scoped to one execution graph and would fragment on every retry if used as the durable correlator.",
+   "standard": "W3C Trace Context (traceparent/tracestate) for tracing; no standard governs application/business correlation ids, which is convention (explicit envelope field or message header) rather than a specification",
+   "check": "a workflow is retried after a failure, producing a new trace id for the retry, and a test asserts the correlation id on the envelope is unchanged across the original attempt and the retry while the trace id differs",
+   "direction": "settling on keeping correlation ids and trace ids as two distinct fields with two distinct lifetimes, carried explicitly (envelope field or message header) rather than conflated into trace context; an error to build now would be using a trace id as the durable business correlator, since it does not survive a retry",
+   "cites": [
+    "X-maturity-b-038",
+    "X-maturity-b-039"
+   ],
+   "origin": "sourced",
+   "quote": "Use the trace ID for one distributed execution graph. Use a correlation ID for a domain-level conversation that may include several executions.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "concern-idempotency",
+    "claim": "How long a claim record must be retained for replay to remain safe, and what a caller should receive once a key has aged out, is not settled by any source found inside the window.",
+    "research_query": "idempotency key retention window expiry policy what to return after key expires API 2026"
+   },
+   "mechanism": "A mature build documents its idempotency-key retention window as part of the API contract (commonly 24-72 hours, long enough to cover automated retries and short outages but short enough to bound storage), and after that window closes, a reused key is deliberately treated as a brand-new request rather than rejected or silently replayed - the aged-out key carries no special handling.",
+   "standard": "none - no standard fixes a retention duration; practice (exemplified by Stripe's 24-hour pruning) treats it as a documented, provider-chosen contract term",
+   "check": "a key is used, the store's TTL is fast-forwarded past the retention window, the same key is replayed, and a test asserts the second call executes as a new operation rather than returning the cached first response or an error",
+   "direction": "settling on a documented window in the 24-72 hour range with 'treat as new request' as the post-expiry behavior; not settled is any single canonical duration - each platform sets and documents its own",
+   "cites": [
+    "X-maturity-b-040",
+    "X-maturity-b-041"
+   ],
+   "origin": "sourced",
+   "quote": "Stripe removes keys after they are at least 24 hours old, and generates a fresh request if a key is reused after pruning.",
+   "gap": null
+  }
+ ]
+}

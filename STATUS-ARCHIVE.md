@@ -69,3 +69,4 @@
 | 70 | SKILL.md frontmatter | Every rendered frontmatter parses as strict YAML | Done | 98 of 103 were invalid, all fixed | 2026-09-03 81aa71f |
 | 71 | Phase 7: skill fold | 103 skills fold to about 25 focal skills at zero errors | Done | 28 skills, 0 warnings, trigger eval unchanged | 2026-09-04 f2bf74d |
 | 72 | Phase 8: improvement loop rebuilt | Per-skill usage and issue counts drive improvement toward TARGET at ceremonies | Done | Hook, health table, plan and check built | 2026-09-04 f2bf74d |
+| 64 | Skill structure review | An independent review against the Agent Skills guidance proposes the organisation | Done | Owner chose the fold, row 71 | 2026-09-04 b06346f |

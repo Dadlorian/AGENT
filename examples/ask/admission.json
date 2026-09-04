@@ -1,0 +1,105 @@
+{
+  "_note": "The admission declaration: everything a builder changes to add a producer, move a bound, or swap a binding, without touching run.py or doors.py. Every field below is read at the point of the decision it governs, and test.sh proves each one by running the same door twice with only that field changed. producers maps one registered producer format to its door, how the transport attested the producer, and the principals that authorised it to submit - the delegation chain is built from this registration and from what the transport observed, never from anything the producer's own body says. key_fields names the members of that producer's own message identity the boundary derives the idempotency key from, so replay safety does not depend on the caller supplying a key. parent_correlation_fields names, per producer format, the member of that producer's own body that carries the correlation it already had, which becomes this entry's parent and nothing else; a format with no row has no parent and depth 0. identity.scopes is a ladder read one rung per hop, so it must have at least one rung per admissible hop: a chain longer than the ladder is refused rather than issued the rung before it. policy.actions_permitted is the closed action vocabulary of this decision point, composed into the pinned rule set as one deny in front of it, so an action nobody registered is refused rather than carried.",
+  "declaration_version": "0.1",
+  "schema_ref": "examples/end-to-end/schemas/entry.schema.json",
+  "dialect": "https://json-schema.org/draft/2020-12/schema",
+  "tenant": "tenant-acme",
+  "audience": "svc:intake",
+  "budget": {
+    "ceiling_micros": 1500000,
+    "currency": "USD",
+    "on_exceed": "terminate_unit"
+  },
+  "producers": {
+    "cli-argv": {
+      "door": "human",
+      "acting_via": "direct",
+      "authorised_by": []
+    },
+    "cloudevents-http": {
+      "door": "event",
+      "acting_via": "workload_attestation",
+      "authorised_by": [
+        "user:corey"
+      ]
+    },
+    "schedule-occurrence": {
+      "door": "schedule",
+      "acting_via": "workload_attestation",
+      "authorised_by": [
+        "user:corey"
+      ]
+    },
+    "a2a-message": {
+      "door": "external",
+      "acting_via": "workload_attestation",
+      "authorised_by": [
+        "service:intake",
+        "user:corey"
+      ]
+    }
+  },
+  "key_fields": {
+    "cli-argv": [
+      "request_id"
+    ],
+    "cloudevents-http": [
+      "source",
+      "id"
+    ],
+    "schedule-occurrence": [
+      "schedule",
+      "occurrence"
+    ],
+    "a2a-message": [
+      "messageId"
+    ]
+  },
+  "parent_correlation_fields": {
+    "a2a-message": "contextId"
+  },
+  "identity": {
+    "max_delegation_depth": 4,
+    "scopes": [
+      "read:incident",
+      "read:memory",
+      "call:model",
+      "write:ledger"
+    ],
+    "hop_lifetime_s": [
+      1800,
+      1200,
+      900,
+      600
+    ]
+  },
+  "policy": {
+    "decision_point": "admission.entry",
+    "action": "submit",
+    "actions_permitted": [
+      "submit"
+    ]
+  },
+  "idempotency": {
+    "scope": "examples/ask:admit-entry",
+    "retention_s": 259200
+  },
+  "lifecycle": {
+    "states": [
+      "submitted",
+      "working",
+      "input-required",
+      "completed",
+      "failed",
+      "cancelled"
+    ],
+    "initial": "submitted"
+  },
+  "bindings": {
+    "intake": "derived",
+    "validation": "dryrun",
+    "identity": "dryrun",
+    "policy": "dryrun",
+    "idempotency": "dryrun"
+  }
+}

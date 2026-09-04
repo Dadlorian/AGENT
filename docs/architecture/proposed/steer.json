@@ -1,0 +1,204 @@
+{
+  "area": "fleet state management",
+  "row": "STATUS 75 - the steer example (examples/steer)",
+  "author": "75-steer-author",
+  "date": "2026-09-04",
+  "statement": "Everything examples/steer can steer, it steers one run at a time. A person approves one ask they already hold the correlation id for; an operator restarts one cell they already hold the handle for; a decision is replayed from a journal that lives on the engine object this process created. None of that survives the question the area's own name asks - fifty of them at once, and tomorrow. What is missing is not a bigger loop: it is the state a fleet is steered from - which units exist, which are still drivable, which asks are waiting and for whom, and which decisions were taken - none of which any capability on file publishes an operation for. This record proposes that area as blueprint rows. Nothing here is a mechanism this repository has: every row is proposed, with the research query that would close it. Written because examples/steer could steer one unit through every verb the area names and could not enumerate two.",
+  "measured_by": "bash examples/steer/test.sh, and examples/steer/out/*.json (the reports the runner writes)",
+  "evidence_from_the_example": [
+    {
+      "observation": "The isolation interface addresses a unit only through an `AdmissionHandle` the caller already holds: admit, terminate, inspect_containment, pause, resume and fork all take one. There is no operation that returns the units a binding is running, so a fleet is only enumerable by whoever kept the handles.",
+      "file": "harness/containment/interface.py#ContainedAgentAdapter"
+    },
+    {
+      "observation": "examples/steer reconnects to a unit the boundary had already destroyed - `open_session` returns a session and `inspect_containment` returns a report - and the run report records `attached_to_a_unit_the_boundary_had_destroyed: true` because no operation on the interface answers whether a unit is still drivable.",
+      "file": "examples/steer/run.py#intervene"
+    },
+    {
+      "observation": "The decision journal is a list on the policy adapter instance, and `explain` replays only what that instance decided. examples/steer replays its pre-pause decision inside the same process; after a restart there is nothing to replay against, although every decision is pinned to a bundle digest that would make the replay possible.",
+      "file": "harness/policy/interface.py#PolicyAdapter.journal"
+    },
+    {
+      "observation": "The parked-ask store publishes `open_asks()`, but it is constructed against one directory per correlation id in this example, so 'the asks this person may decide' is not a question the store is asked - it is a directory a caller must already know the path of.",
+      "file": "harness/human-interaction/store.py#ParkedAskStore.open_asks"
+    },
+    {
+      "observation": "Each of the five decision points is asked once per action, per run. Restarting fifty stuck units is fifty decisions with fifty input documents, and nothing on the interface says whether that is the intended shape or whether a fleet-scale operation is one decision over a set.",
+      "file": "examples/steer/run.py#steer_the_cell"
+    }
+  ],
+  "state_types": [
+    {
+      "state": "running-unit registry",
+      "owner_capability": "isolation",
+      "home_today": "absent as an operation - each adapter keeps a private dict of units it admitted, and only the caller that holds a handle can name one",
+      "home_ideal": "proposed: a read operation on the isolation interface returning the units this binding is running, addressed by (tenant, correlation id, unit id), so an operator can find a stuck unit without having kept the handle that admitted it",
+      "written_by": "the isolation adapter, at admit and at terminate",
+      "read_by": "an operator steering a fleet, and the improvement loop counting attempts per done",
+      "crosses_boundaries": true,
+      "pinning_risk": "high: a listing shaped like one containment technology's inventory API would pin the interface to it, and the two classes on file disagree about whether a unit outlives its turn at all",
+      "origin": "proposed",
+      "research_query": "what listing or inventory operation do sandbox and microVM control planes publish for running units - identity, filtering, and what a caller may assume about a unit that appears in the list but has ended"
+    },
+    {
+      "state": "unit attachability",
+      "owner_capability": "isolation, or agent runtime",
+      "home_today": "absent - open_session on a destroyed unit succeeds in this example and returns a session, which is what makes the reconnect verb dishonest",
+      "home_ideal": "proposed: a state on the unit record - admitted, running, snapshotted, destroyed - readable through the same operation that lists it, so reconnect is refused with a type rather than answered with a session",
+      "written_by": "the isolation adapter, at every lifecycle transition",
+      "read_by": "the operator's reconnect verb, before it attaches",
+      "crosses_boundaries": true,
+      "pinning_risk": "medium: the cell's own disposition is already named in docs/consumption/unit-design.md; the risk is adopting one runtime's session semantics as the definition of drivable",
+      "origin": "proposed",
+      "research_query": "what does an agent runtime protocol say about opening a session on a unit whose process has ended - a typed refusal, a new session on a new unit, or undefined"
+    },
+    {
+      "state": "the decision journal, durable",
+      "owner_capability": "policy",
+      "home_today": "a list on the adapter instance; explain() re-evaluates the pinned bundle and can only find decisions this process took",
+      "home_ideal": "proposed: the decision record written through the state seam like any other durable record - input digest, effect, rule, bundle digest, timestamp - so a refusal is auditable and replayable months later rather than for the life of a process",
+      "written_by": "the decision point, before the action it admits is issued",
+      "read_by": "an audit, the improvement loop, and any operator asking why a run was refused",
+      "crosses_boundaries": true,
+      "pinning_risk": "low for the record's shape, high for its retention: nothing on file says how long a decision record is kept or who may read one",
+      "origin": "proposed",
+      "research_query": "what retention, indexing and access rules do production decision-log pipelines apply, and what is the smallest record that still supports replaying a decision against the bundle that produced it"
+    },
+    {
+      "state": "the decision queue across runs",
+      "owner_capability": "human interaction",
+      "home_today": "open_asks() exists on the store, but the store this example builds is keyed per correlation id, so nothing answers 'which asks may this person decide'",
+      "home_ideal": "proposed: a query over parked asks by deciding authority, tenant and deadline, so a reviewer opens one inbox rather than being handed a correlation id per ask",
+      "written_by": "the platform, at every park and every decision",
+      "read_by": "whoever decides, and whatever sweeps the asks that are about to expire",
+      "crosses_boundaries": true,
+      "pinning_risk": "medium: an inbox modelled on one surface's notion of a queue would put the ask back on a screen, which is the failure the capability is drawn to avoid",
+      "origin": "proposed",
+      "research_query": "how is a cross-run approval inbox expressed as a capability operation rather than as a surface feature - filtering, authority, deadline ordering, and what a decider may see of a run they are not otherwise entitled to"
+    },
+    {
+      "state": "the intervention record",
+      "owner_capability": "isolation, with dispatch",
+      "home_today": "examples/steer writes it to the run's own hash-chained ledger, keyed by run",
+      "home_ideal": "proposed: the same record addressable by unit as well as by run, because the operator who restarts a unit is asking about the unit and does not know which run it belongs to",
+      "written_by": "the platform, around every lifecycle operation",
+      "read_by": "an operator, and an audit asking who replaced a machine and under which rule",
+      "crosses_boundaries": true,
+      "pinning_risk": "low",
+      "origin": "proposed",
+      "research_query": "what is the accepted record for an operator action on a running workload - who acted, under which authorisation, on which machine, and how it is joined to the work that machine was doing"
+    }
+  ],
+  "tool_entries": [
+    {
+      "component": "fleet lister and bulk intervention",
+      "capability": "isolation",
+      "adapter_boundary": "proposed: a list operation beside admit, and an intervention that takes a set of units rather than one handle",
+      "must_stay_loose": "whether a bulk operation is one decision over a set or one decision per unit, and what a partial failure returns",
+      "would_pin": "a listing shaped like one control plane's inventory response, or a bulk verb that assumes every unit in the set is on one host",
+      "second_adapter": "the capability-granted class, which holds no running machine at all and would have to answer the listing with the units it invoked rather than the units it is running",
+      "origin": "proposed",
+      "research_query": "what shape do bulk lifecycle operations take on sandbox control planes - one decision per unit or one over the set, and how a partial failure is reported"
+    },
+    {
+      "component": "the decision point at fleet rate",
+      "capability": "policy",
+      "adapter_boundary": "proposed: the same decide call, with the input document assembled from state that is pre-fetched rather than looked up per call",
+      "must_stay_loose": "where the input's remote members come from and how stale they may be, which is the half no published benchmark separates from evaluation time",
+      "would_pin": "an input assembled by a lookup inside the engine, which makes the decision's latency the store's latency",
+      "second_adapter": "the typed-entity engine, which marshals entities before evaluating and so pays the assembly cost in a different place",
+      "origin": "proposed",
+      "research_query": "policy decision point latency when the input document must be assembled from remote state at agent tool-call rates, measured as two numbers - assembly and evaluation - rather than one"
+    }
+  ],
+  "gaps": [
+    {
+      "gap_ref": "S-1",
+      "where": "isolation",
+      "claim": "No operation lists the units a binding is running. examples/steer can steer exactly the unit whose handle it is holding, so 'fifty of them at once' is not a question this interface can be asked.",
+      "why_needed": "the area's verbs are an operator's verbs, and an operator arrives with a symptom rather than with a handle",
+      "research_query": "what listing or inventory operation do sandbox and microVM control planes publish for running units - identity, filtering, and what a caller may assume about a unit that appears in the list but has ended",
+      "status": "unresearched"
+    },
+    {
+      "gap_ref": "S-2",
+      "where": "isolation / agent runtime",
+      "claim": "Nothing reports whether a unit may still be driven. open_session succeeds on a unit the boundary destroyed, and examples/steer records that its reconnect attached to one, because there was no way to ask.",
+      "why_needed": "reconnect is the cheapest of the three verbs and the only one that can silently do nothing",
+      "research_query": "what does an agent runtime protocol say about opening a session on a unit whose process has ended - a typed refusal, a new session on a new unit, or undefined",
+      "status": "unresearched"
+    },
+    {
+      "gap_ref": "S-3",
+      "where": "policy",
+      "claim": "The decision journal does not outlive the process. Every decision here is pinned to a bundle digest and could be replayed months later, and the record it would be replayed from is an attribute on an object.",
+      "why_needed": "the concern's own future state is that a refusal is auditable and replayable months later; a process-local list makes it replayable for seconds",
+      "research_query": "what retention, indexing and access rules do production decision-log pipelines apply, and what is the smallest record that still supports replaying a decision against the bundle that produced it",
+      "status": "unresearched"
+    },
+    {
+      "gap_ref": "S-4",
+      "where": "human interaction",
+      "claim": "There is no inbox. An ask is found by already knowing its correlation id, so 'which decisions are waiting on me' is answerable only by whoever parked them.",
+      "why_needed": "two of the four doors are systems with nobody at a screen, and the person who decides for them is not the person who submitted the work",
+      "research_query": "how is a cross-run approval inbox expressed as a capability operation rather than as a surface feature - filtering, authority, deadline ordering, and what a decider may see of a run they are not otherwise entitled to",
+      "status": "unresearched"
+    },
+    {
+      "gap_ref": "S-5",
+      "where": "policy / isolation",
+      "claim": "A bulk intervention has no shape. Restarting fifty stuck units is fifty decisions over fifty input documents, and nothing says whether one decision over the set would be the same guarantee or a weaker one.",
+      "why_needed": "an operator steering a fleet acts on a set, and a per-unit decision loop is either the guarantee or a performance problem, and no source on file says which",
+      "research_query": "what shape do bulk lifecycle operations take on sandbox control planes - one decision per unit or one over the set, and how a partial failure is reported",
+      "status": "unresearched"
+    },
+    {
+      "gap_ref": "S-6",
+      "where": "policy",
+      "claim": "An allow's lifetime is a convention in this example, not a member of the decision. examples/steer treats an allow as spent when its action fires or is abandoned and re-decides on the far side of every pause, and nothing in the Decision shape says so.",
+      "why_needed": "the mechanism on file for this question is described as emerging practice rather than a settled protocol, and a convention that lives only in a runner is one refactor from being lost",
+      "research_query": "does any decision API carry a stated scope and lifetime on the decision itself - the single action it admits and the moment it was taken - or is spend-on-use always the caller's discipline",
+      "status": "unresearched"
+    },
+    {
+      "gap_ref": "S-7",
+      "where": "policy",
+      "claim": "The decision's cost at fleet rate is unmeasured here. Every action of this run takes its own decision, which is the property the area wants, and nothing separates the cost of assembling the input from the cost of evaluating it.",
+      "why_needed": "a per-action decision is only affordable if the input assembly is off the hot path, and that is exactly the half no benchmark on file isolates",
+      "research_query": "policy decision point latency when the input document must be assembled from remote state at agent tool-call rates, measured as two numbers - assembly and evaluation - rather than one",
+      "status": "unresearched"
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Is a fleet a set of units, or a set of runs?",
+      "deciding_evidence": "examples/steer's operator verbs address a unit and its intervention record is written to a run's ledger; the two are the same thing only while one run holds one unit. Build the listing against a unit that outlived its run - a snapshot forked for a second attempt - and see which identifier the operator actually uses."
+    },
+    {
+      "question": "Does re-deciding on every resume scale, or does a fleet need a standing allow with a stated lifetime?",
+      "deciding_evidence": "examples/steer takes two decisions at one effect and the second one is what catches the change freeze. Measure the decision rate a fleet of fifty units produces at the five points this example registers, and compare it against the same fleet under one admission-time allow, counting the actions the second would have let through."
+    }
+  ],
+  "provenance": {
+    "cites": [
+      "F-b4-04",
+      "F-b1-08",
+      "X-litmus-a-004",
+      "X-litmus-d-004",
+      "X-maturity-c-003",
+      "X-maturity-c-004",
+      "X-maturity-c-010"
+    ],
+    "files_read": [
+      "harness/policy/interface.py",
+      "harness/human-interaction/interface.py",
+      "harness/human-interaction/store.py",
+      "harness/containment/interface.py",
+      "harness/errors/interface.py",
+      "docs/litmus/questionnaire.json#policy,concern-policy",
+      "docs/maturity/closures.md",
+      "docs/consumption/unit-design.md"
+    ],
+    "note": "Every row is proposed. No mechanism here was invented in place of a citation: where a mechanism would have to exist, the row says what is missing and carries the query that would find out how it is done."
+  }
+}

@@ -1,0 +1,162 @@
+{
+  "area": "inside-unit observability",
+  "row": "STATUS 75 - the watch example (examples/watch)",
+  "author": "75-watch-author",
+  "date": "2026-09-04",
+  "statement": "Everything the platform can say about a run today is said from outside the cell: the boundary counts frames, the host reads the containment report, the ledger records the steps the host took. What the unit itself did between two frames - which file it opened, which sub-step of its own plan it was on, why it retried - is not observable through any capability operation on file. This record proposes that area as blueprint rows. Nothing here is a mechanism this repository has: every row is proposed, with the research query that would close it. Written because examples/watch could show the outside of a unit in four signal kinds and could show nothing at all of the inside.",
+  "measured_by": "bash examples/watch/test.sh, and examples/watch/out/*.json (the reports the runner writes)",
+  "evidence_from_the_example": [
+    {
+      "observation": "The turn's inside reaches the platform as `TurnFrame(seq, kind, text)` - a sequence number, `update` or `terminal`, and free text. examples/watch turns each frame into one `step.progress` event carrying the frame number and nothing else, because there is nothing else on the frame to carry.",
+      "file": "harness/containment/interface.py#TurnFrame"
+    },
+    {
+      "observation": "The published operation vocabulary the telemetry adapter returns from `describe_mapping()` has three entries - entry, dispatch and tool - so a model call has no operation name of its own and this example records it as an unmapped kind rather than transcribing one. Every step below the turn has the same problem and worse: there is no kind for it at all.",
+      "file": "harness/observability/interface.py#OPERATION_NAMES"
+    },
+    {
+      "observation": "`describe_mapping()` publishes operations and not instruments, so an emitter can check an operation name against the published vocabulary and cannot check an instrument name; the adapter falls back to the platform's own string.",
+      "file": "harness/observability/interface.py#MappingDescription"
+    }
+  ],
+  "state_types": [
+    {
+      "state": "in-cell step record",
+      "owner_capability": "agent runtime",
+      "home_today": "absent - the boundary holds frame counts and one stop reason; the unit's own steps are not written anywhere",
+      "home_ideal": "proposed: a durable per-step record written by the harness inside the cell and drained through the boundary, addressed by (unit id, attempt, step id), so a resume names a step and not an attempt",
+      "written_by": "the harness inside the cell",
+      "read_by": "the telemetry pipeline, the trajectory a watcher renders, the improvement loop's tokens-per-done",
+      "crosses_boundaries": true,
+      "pinning_risk": "high: a step vocabulary taken from one runtime's frame format would pin the platform to that runtime",
+      "origin": "proposed",
+      "research_query": "what step-level record does an agent runtime protocol publish from inside a sandbox - identity, ordering, and what a client may assume when frames are lost or reordered"
+    },
+    {
+      "state": "observation declaration",
+      "owner_capability": "telemetry",
+      "home_today": "examples/watch carries it in payload.watch and validates it against examples/watch/schemas/watch.schema.json; no capability owns the shape",
+      "home_ideal": "proposed: one declared shape per unit covering surface, replay position, detail, redaction widening and the sampling decision, owned by the telemetry capability so every door declares it the same way",
+      "written_by": "the caller, at intake",
+      "read_by": "the platform's one emission path",
+      "crosses_boundaries": true,
+      "pinning_risk": "medium: a shape modelled on one collector's sampling configuration would not survive a collector swap",
+      "origin": "proposed",
+      "research_query": "is there a published shape for a per-request observability declaration - sampling, redaction and detail - that a collector honours, or is this always collector configuration"
+    },
+    {
+      "state": "task status projection",
+      "owner_capability": "human interaction, or dispatch",
+      "home_today": "examples/watch derives it in a pure function over the typed event stream; no capability operation returns it",
+      "home_ideal": "proposed: a read operation returning the current published task state for a correlation id, so a poll-shaped caller is not required to reimplement the projection",
+      "written_by": "the platform, as the run moves",
+      "read_by": "any caller that cannot hold a subscription open",
+      "crosses_boundaries": true,
+      "pinning_risk": "low: the state enumeration is already adopted rather than invented",
+      "origin": "proposed",
+      "research_query": "does the agent messaging specification's task-get and status-update-event pair belong on the human-interaction interface, on dispatch, or on a third read-side capability"
+    }
+  ],
+  "tool_entries": [
+    {
+      "component": "in-cell step reporter",
+      "capability": "agent runtime",
+      "adapter_boundary": "proposed: an operation on the contained-agent interface that drains typed step records, beside the frame stream rather than inside its text",
+      "must_stay_loose": "the step vocabulary, and whether a runtime that cannot report steps is refused or reported as offering none",
+      "would_pin": "parsing one runtime's frame text into steps",
+      "second_adapter": "a runtime with no interactive client at all, which is the case that decides whether step reporting can be required or must be declared",
+      "origin": "proposed",
+      "research_query": "which agent runtimes publish structured per-step events rather than free-text update frames, and what the negotiation looks like when one does not"
+    },
+    {
+      "component": "content-aware redaction in the pipeline",
+      "capability": "telemetry",
+      "adapter_boundary": "proposed: a redaction stage in the collector pipeline that matches content, not attribute keys",
+      "must_stay_loose": "what is matched and where the match runs, so a rename of an attribute does not silently unredact",
+      "would_pin": "key-based redaction lists compiled into emitters",
+      "second_adapter": "the collector-side pipeline adapter, which already redacts on its own key list, versus an in-process emitter stage",
+      "origin": "proposed",
+      "research_query": "what does prompt and completion scrubbing look like when the same content appears under an attribute name the redaction list does not carry"
+    }
+  ],
+  "gaps": [
+    {
+      "gap_ref": "W-1",
+      "where": "agent runtime / telemetry",
+      "claim": "The inside of a unit is observable only as a frame count and a stop reason. examples/watch emits one step.progress event per frame and can say nothing about what happened between two frames.",
+      "why_needed": "the area's question is 'the steps inside a unit', and a trajectory that stops at the cell wall is the outside of the unit rendered twice",
+      "research_query": "what step-level record does an agent runtime protocol publish from inside a sandbox - identity, ordering, and what a client may assume when frames are lost or reordered",
+      "status": "unresearched"
+    },
+    {
+      "gap_ref": "W-2",
+      "where": "telemetry",
+      "claim": "The published operation vocabulary has no name for a model call, so a model call is emitted under the dispatch operation and recorded as an unmapped kind. The conventions on file describe a model-call span inside the agent span; the mapping table this platform publishes does not carry one.",
+      "why_needed": "an emitter that transcribed the convention's name would be depending on a pre-stable vocabulary with no version pin, which is the error the section's direction names",
+      "research_query": "how is a pre-stable attribute and operation vocabulary pinned and extended locally - who may add a row to a platform's mapping table, and what marks a row as the platform's rather than the convention's",
+      "status": "unresearched"
+    },
+    {
+      "gap_ref": "W-3",
+      "where": "telemetry",
+      "claim": "A head sampling decision taken per span breaks the binding between the three emission kinds: at head_percent 0 examples/watch exports its problem object and its metrics and no span, so the problem object's trace id names a span that was never exported.",
+      "why_needed": "the conformance closure on file requires all three kinds bound to one trace identity, and a sampling decision silently voids it for the kinds that are always retained",
+      "research_query": "how do head and tail sampling interact with a guarantee that failures are always retained - is the retained problem object re-parented, re-emitted with its span, or accepted as an orphan",
+      "status": "unresearched"
+    },
+    {
+      "gap_ref": "W-4",
+      "where": "errors",
+      "claim": "The closed registry closes the extension members as well as the type. budget-exhausted declares only stop_reason, so which ceiling was exceeded and by how much can only be written into detail prose - the one place the concern says a caller must never read.",
+      "why_needed": "a caller deciding whether to retry with a larger ceiling has to parse a sentence",
+      "research_query": "what governs adding an extension member to a closed problem-type registry, and how does a caller discover which members a type carries",
+      "status": "unresearched"
+    },
+    {
+      "gap_ref": "W-5",
+      "where": "human interaction",
+      "claim": "The interface publishes ask, watch, decide and expire. A callback - the platform pushing an event to an endpoint the caller owns - is a third delivery model with no operation, so an external agent that cannot hold a subscription open has only polling.",
+      "why_needed": "the area's question names callbacks, and two of the four doors are systems that are not watching a screen",
+      "research_query": "how is push delivery to a caller-owned endpoint expressed as a capability operation - registration, retry, ordering and the failure mode when the endpoint is gone",
+      "status": "unresearched"
+    },
+    {
+      "gap_ref": "W-6",
+      "where": "telemetry",
+      "claim": "The mapping description publishes operations and not instruments, so an unmapped instrument name falls through under the platform's own string with nothing recorded, while an unmapped operation is detected.",
+      "why_needed": "the same class of drift is caught on one half of the vocabulary and silent on the other",
+      "research_query": "should a telemetry mapping description publish its instrument names alongside its operation names, and what does an emitter do with an instrument the description does not carry",
+      "status": "unresearched"
+    }
+  ],
+  "open_questions": [
+    {
+      "question": "Does the observation declaration belong in the work envelope, or is it configuration the caller never sees?",
+      "deciding_evidence": "Two of the four doors in examples/watch are systems with no person behind them and they still declare a surface; if a schedule's declaration is always the same, the declaration is configuration and the envelope member is decoration. Run the four doors with the member removed and see which behaviour changes."
+    },
+    {
+      "question": "Is the task status a projection every caller computes, or a read operation the platform publishes?",
+      "deciding_evidence": "examples/watch computes it in nine lines and the poll surface renders nothing of the run in flight, so the poll caller today gets a status only because the example computed one. Publish the operation on one capability and see whether any second caller's projection disagrees with it."
+    }
+  ],
+  "provenance": {
+    "cites": [
+      "F-b4-06",
+      "F-b3-10",
+      "X-litmus-b-012",
+      "X-litmus-d-013",
+      "X-litmus-b-003",
+      "X-litmus-d-014"
+    ],
+    "files_read": [
+      "harness/observability/interface.py",
+      "harness/human-interaction/interface.py",
+      "harness/containment/interface.py",
+      "harness/errors/interface.py",
+      "docs/litmus/questionnaire.json#telemetry,concern-telemetry,concern-errors",
+      "docs/maturity/closures.md",
+      "docs/architecture/blueprint.json"
+    ],
+    "note": "Every row is proposed. No mechanism here was invented in place of a citation: where a mechanism would have to exist, the row says what is missing and carries the query that would find out how it is done."
+  }
+}

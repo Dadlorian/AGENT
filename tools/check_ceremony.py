@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Validate a ceremony review record against its improve record.
 
-Usage: python3 tools/check_ceremony.py <review.json> <improve.json>
+Usage: python3 tools/check_ceremony.py <review.json> <improve.json> [<improve.json> ...]
+Several improve records (disjoint parts of one review) are merged before the check (STATUS row 71).
 
 Loads the review record's findings and the improve record's applied and declined lists,
 then asserts: findings_checked > 0 (the review is not empty), unresolved == 0 (every
@@ -22,11 +23,15 @@ from pathlib import Path
 
 
 def main(argv: list[str]) -> int:
-    if len(argv) != 2:
+    if len(argv) < 2:
         print(__doc__)
         return 2
     review = json.loads(Path(argv[0]).read_text())
-    improve = json.loads(Path(argv[1]).read_text())
+    improve = {"applied": [], "declined": []}
+    for a in argv[1:]:
+        d = json.loads(Path(a).read_text())
+        improve["applied"] += d.get("applied", [])
+        improve["declined"] += d.get("declined", [])
 
     finding_ids = [f["id"] for f in review.get("findings", [])]
     applied = improve.get("applied", [])

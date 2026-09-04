@@ -1,0 +1,389 @@
+{
+ "part": "c",
+ "closures": [
+  {
+   "item": {
+    "kind": "litmus",
+    "section": "tool-access",
+    "question_id": "tool-access-q2",
+    "score": -1,
+    "question": "Proposed question: For remote tool surfaces, which authorization and transport mechanisms are actually in force - the streamable transport rather than the deprecated event stream, OAuth 2.1 with PKCE, protected-resource and authorization-server metadata discovery, and resource indicators binding the token to one server on issue and on refresh?",
+    "target": "Every mechanism is present and verified from the exchange itself, including the resource indicator on refresh, and tool results are validated against declared output schemas rather than read as prose."
+   },
+   "mechanism": "A mature build treats every mechanism named in the question as independently verifiable from the wire exchange itself, not from configuration or documentation: the transport is Streamable HTTP (a single POST/SSE-upgrade endpoint, the deprecated HTTP+SSE transport retired); the client discovers the authorization server via RFC 9728 protected-resource metadata returned on a 401, and the authorization server via RFC 8414 metadata; the authorization code flow runs with PKCE (S256) as OAuth 2.1 requires for every client type; and every authorization request and every token request, including refresh, carries an RFC 8707 resource parameter naming the specific MCP server, so a token issued for one server is provably useless against another. Tool results are validated against the tool's declared output schema before being treated as structured data, rather than parsed out of prose.",
+   "standard": "Model Context Protocol Authorization specification, 2025-06-18 revision, built on OAuth 2.1 (IETF draft), RFC 9728 (Protected Resource Metadata), RFC 8414 (Authorization Server Metadata), RFC 8707 (Resource Indicators), and RFC 7636 (PKCE)",
+   "check": "A recorded token exchange transcript in which the authorization request, the initial token request, and every subsequent refresh request each carry the resource parameter, decoded token audience matches only the target server, and a captured attempt to replay the token against a second MCP server is rejected by that server; a schema-validation gate that rejects any tool result failing the tool's declared output schema.",
+   "direction": "Settling: OAuth 2.1 plus RFC 8707 resource indicators as the mandatory audience-binding mechanism for remote MCP servers, with Streamable HTTP fully replacing HTTP+SSE. Being abandoned: bearer tokens with no audience restriction, and treating tool output as free-form prose rather than schema-checked structured data. Still an open production gap rather than a settled abandonment: many real clients (including major ones) implement the resource parameter on the initial grant but omit it on refresh.",
+   "cites": [
+    "X-maturity-c-001",
+    "X-maturity-c-002"
+   ],
+   "origin": "sourced",
+   "quote": "MCP clients MUST implement Resource Indicators as defined in RFC 8707 to explicitly specify the target resource, and the resource parameter MUST be included in both authorization requests and token requests, identifying the MCP server that the client intends to use the token with.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "litmus",
+    "section": "concern-policy",
+    "question_id": "concern-policy-q3",
+    "score": 0,
+    "question": "Does an allow have a stated scope and lifetime, so that work which was paused, queued, or resumed after a restart is decided again before its next side effect, or is a decision taken once treated as valid for as long as the run lasts? (This question is proposed, derived from the row it cites.)",
+    "target": "A decision names the single action it admits and the moment it was taken; work resumed after a delay, a restart or a queue is decided again before its next side effect, and a rule changed in the interval takes effect on the resumed work."
+   },
+   "mechanism": "A mature build stamps every allow decision with the single action it admits and the instant it was taken, and treats that decision as spent the moment its action either fires or is abandoned. Work that was paused, queued, or resumed after a restart carries no residual authorization: before its next side-effecting step it re-enters the decision point, which evaluates against the rule set and the principal's current state as they stand at resume time, not as they stood when the run was first admitted. A rule changed during the interval therefore takes effect on the resumed work without any special-casing, because there was never a cached decision to invalidate.",
+   "standard": "none — no single ratified standard governs decision lifetime; the mechanism is described in emerging runtime-governance reference architectures rather than a settled protocol",
+   "check": "A conformance run that admits a unit of work, changes the governing policy rule mid-run, forces a pause/queue/restart cycle, and then asserts the resumed work's next side-effecting call is denied (or altered) to match the new rule rather than the rule in force at original admission; the decision log shows two distinct decision records — pre-pause and post-resume — for the same run.",
+   "direction": "Emerging: pausing a queued or resumed side-effecting call for a fresh, parallel policy re-evaluation against current state, rather than trusting a decision made before the interruption. Being abandoned: session-scoped 'decide once, valid for the run' authorization, and silent credential/decision carry-over across a restart without an explicit owner decision.",
+   "cites": [
+    "X-maturity-c-003",
+    "X-maturity-c-004"
+   ],
+   "origin": "sourced",
+   "quote": "Pause suspends the call until a parallel re-evaluation against the latest composite principal state completes.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "conformance",
+    "qid": "C09-F",
+    "verdict": "DEVIATES",
+    "evidence": ".claude/skills/xc-correlation/SKILL.md: the guarantee names four planes (three signal kinds under four entry doors): \"Bind all three emission kinds at once - spans, log records and problem objects - and count them separately in the audit rather than reporting one total.\" The stamp is set once at dis"
+   },
+   "mechanism": "A mature build binds all three emission kinds — spans, log records, and problem/error objects — to the same run identity at the moment each is produced, using the same trace and span identifiers, and counts and audits each kind separately rather than reporting one combined total that could hide a gap in one plane. The stamp is set once, at the entry that starts the unit of work, and every downstream span, log record, and problem object inherits it without a caller having to thread it through by hand.",
+   "standard": "OpenTelemetry Logs Data Model (stable specification), which defines TraceId, SpanId, and TraceFlags as top-level log-record fields",
+   "check": "For one run, assert that every span, every log record, and every emitted problem object carry an identical trace id, and that the audit counts each of the three kinds separately (three non-zero counters, not one), with a deliberately dropped stamp on one kind (e.g. a problem object built without the trace id) causing the check to fail.",
+   "direction": "Settling: OpenTelemetry's stable logs data model as the mechanism for span-to-log correlation, with several SDKs performing it automatically. Being abandoned: correlating by re-parsing free-text log lines for a run id, and treating error/problem objects as outside the correlation model entirely — this is the specific place current builds still fall short, since automatic correlation covers spans and logs but a problem object needs its own explicit stamp.",
+   "cites": [
+    "X-maturity-c-005",
+    "X-maturity-c-006"
+   ],
+   "origin": "sourced",
+   "quote": "OpenTelemetry's stable log data model defines top-level TraceId, SpanId, and TraceFlags fields.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "conformance",
+    "qid": "C15-F",
+    "verdict": "DEVIATES",
+    "evidence": "harness/idempotency/adapters/dryrun.py docstring: \"which is the adapter-today row PASS.md B3 records for this element\" naming (F-b3-16) \"key on the wire, no lease\", and \"none. The conformance run's race case proves the gap: without a lock around\" a claim-then-write. harness/idempotency/test.sh secti"
+   },
+   "mechanism": "A mature build never lets a caller's dedup key alone decide whether an operation is claimed; the claim and the write happen atomically (a single transaction or an explicit distributed lock), and the claim itself is a time-bounded lease rather than a permanent marker. A crash mid-operation leaves the lease to expire on its own TTL, so a retry after a real crash proceeds once the lease lapses, while a concurrent retry against a live lease is rejected outright — closing exactly the race a key-on-the-wire-with-no-lease design leaves open.",
+   "standard": "draft-ietf-httpapi-idempotency-key-header-07 (IETF HTTPAPI working group, expires April 2026) for the header mechanics; lease semantics are established distributed-systems practice, not yet codified in that draft",
+   "check": "A race-case test that fires two concurrent requests carrying the same idempotency key against the same handler and asserts exactly one performs the side effect while the second is rejected or returns the first's result, plus a crash-recovery test that kills the process mid-write, waits past the lease TTL, and asserts the retried request is now allowed to proceed.",
+   "direction": "Settling: idempotency key plus a short-TTL processing lease, claimed atomically with the write, as the production pattern for retry-safe side effects. Being abandoned: recording a key on the wire with no server-side lock or lease, which is exactly the gap this repo's dry-run adapter still has, per its own docstring.",
+   "cites": [
+    "X-maturity-c-007",
+    "X-maturity-c-008"
+   ],
+   "origin": "sourced",
+   "quote": "A lease allows recovery after a crash... your idempotency key should have a processing-phase TTL that is short enough to expire before the client's retry window closes.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "isolation",
+    "claim": "That the runtime specification itself defines pause, resume, snapshot or fork as standard lifecycle operations, rather than these being adapter-specific extensions.",
+    "research_query": "OCI runtime specification lifecycle operations pause resume checkpoint restore standardisation status"
+   },
+   "mechanism": "A mature build treats pause, resume, snapshot, and fork as capabilities layered on top of the runtime specification's base lifecycle (create, start, kill, delete plus hooks) rather than as operations the specification itself standardizes. The core imports only the OCI runtime-spec's create/start/delete contract; a checkpoint/restore or snapshot/fork capability is provided by a specific adapter (a CRIU-backed runtime, or a platform-specific sandbox API) behind a capability interface, so swapping that adapter never changes what the core is entitled to assume.",
+   "standard": "OCI Runtime Specification (opencontainers/runtime-spec, current release), which does not define checkpoint/restore, pause, snapshot, or fork as base lifecycle states",
+   "check": "A schema or interface-conformance check that the core only calls the four base lifecycle verbs (create, start, kill/pause-signal, delete) against the runtime-spec interface, plus a second-adapter test proving pause/resume/snapshot/fork can be swapped (e.g. a CRIU-backed runc versus a platform sandbox snapshot API) without a core code change.",
+   "direction": "Emerging: a dedicated Checkpoint/Restore Working Group (announced January 2026, tied to CRIU and Kubernetes) standardizing checkpoint/restore practice outside the base runtime-spec, while individual runtimes (runc, crun) add CRIU-backed support opportunistically. Being abandoned: waiting for the OCI runtime-spec itself to absorb these as base lifecycle verbs — the direction is a companion working group and runtime-level opt-in, not a runtime-spec revision.",
+   "cites": [
+    "X-maturity-c-009",
+    "X-maturity-c-010"
+   ],
+   "origin": "sourced",
+   "quote": "The OCI Runtime Specification defines standard container lifecycle phases including creating, created, running, and deleted states with associated hooks.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "model-access",
+    "claim": "Whether hard budget termination at the model boundary is a common production practice or mostly a documented feature.",
+    "research_query": "production evidence enforced token budget termination LLM gateway 2026 case studies measured"
+   },
+   "mechanism": "A mature build enforces a token/spend ceiling at the gateway itself, as a policy the execution infrastructure evaluates and acts on, not as a metric that triggers a human-facing alert. When a session or call crosses its ceiling, the gateway terminates the in-flight request or session immediately, with no human confirmation required to stop the spend, and the termination is itself an auditable event.",
+   "standard": "none — no ratified standard governs this; practice is documented in vendor gateway architecture writeups and an empirical incident catalog rather than a spec",
+   "check": "A test that sets a hard per-session token ceiling below what a scripted runaway loop would consume, runs the loop against the real gateway, and asserts the session is terminated by the gateway at or before the ceiling with a recorded termination event, and that no further tokens are billed after that point.",
+   "direction": "Settling: hard, policy-evaluated termination at the gateway as the answer to a well-documented failure class (63 catalogued production budget-overrun incidents across 21 frameworks). Being abandoned: budget tracking as an alerting-only, human-in-the-loop dashboard metric with no automatic stop.",
+   "cites": [
+    "X-maturity-c-011",
+    "X-maturity-c-012"
+   ],
+   "origin": "sourced",
+   "quote": "When the ceiling is hit, the session stops — not because someone responded to an alert, but because the execution infrastructure evaluated a policy and terminated the session, with no human in the loop required at the cost enforcement layer.",
+   "gap": "What proportion of production LLM gateway deployments actually wire hard termination versus alert-only budgets was not measured by any source found; query used: \"production evidence enforced token budget termination LLM gateway 2026 case studies measured\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "agent-runtime",
+    "claim": "Whether the protocol itself defines a non-interactive or policy-answered permission mode, as opposed to implementations adding one.",
+    "research_query": "Agent Client Protocol specification non-interactive permission mode automatic approval headless clients"
+   },
+   "mechanism": "A mature build treats session/request_permission (or the protocol's equivalent) as the one interactive permission method the protocol defines, and implements non-interactive operation as a client-side policy layer that answers that same method automatically — matching each request against a local allow/deny rule set, a hook, or a headless timeout — rather than inventing a second, protocol-blessed 'non-interactive mode'. A client that skips the method entirely to auto-approve is deviating from the spec, not exercising a documented mode of it.",
+   "standard": "Agent Client Protocol (Zed Industries, current specification), which defines session/request_permission as the baseline tool-call permission handshake",
+   "check": "A conformance test against an ACP transcript asserting every tool call the agent issues is preceded by a session/request_permission call (even when the client's policy answers it automatically and instantly), with a client that answers permission requests directly rather than a client that silently proceeds without sending the request at all.",
+   "direction": "Settling: request_permission as the universal handshake, with headless/CI clients answering it via a local policy engine (allow-list, hooks) rather than a human prompt. Being abandoned: clients that bypass the handshake altogether in headless mode, which several current implementations (including a major CLI) are documented as doing incorrectly.",
+   "cites": [
+    "X-maturity-c-013",
+    "X-maturity-c-014"
+   ],
+   "origin": "sourced",
+   "quote": "In --acp mode, Copilot CLI auto-approves tool operations without sending session/request_permission to the client.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "tool-access",
+    "claim": "What proportion of production remote tool surfaces actually enforce audience-bound tokens on refresh.",
+    "research_query": "measured survey remote MCP servers resource indicator enforcement refresh tokens 2026"
+   },
+   "mechanism": "A mature operator does not assume resource-indicator enforcement from a server's advertised capability; it measures the exchange directly across a representative population of remote tool surfaces, tracking what fraction issue audience-bound tokens, and separately what fraction actually re-check or re-bind the audience on refresh, since the two are documented as diverging in practice.",
+   "standard": "MCP Authorization specification (2025-06-18), RFC 8707 Resource Indicators — the measurement is of adoption, not of the standard's text",
+   "check": "A crawl-and-probe harness that, against a sampled population of live remote MCP servers, records whether the authorization request carries a resource parameter, whether the token request does, and whether the refresh request does, and reports the three proportions separately rather than one combined 'supports OAuth' figure.",
+   "direction": "Settling direction: resource indicators as the expected audience-binding mechanism per spec. Current reality inside the window: under a third of live remote MCP servers use OAuth at all, and roughly half of registry-listed servers still lack Resource Indicators as of Q2 2026 — so enforcement is adopted by a minority, and refresh-time enforcement specifically remains unmeasured. Being abandoned: bearer tokens with no audience scoping at all, though that remains the majority pattern today rather than a fully retired one.",
+   "cites": [
+    "X-maturity-c-015",
+    "X-maturity-c-016"
+   ],
+   "origin": "sourced",
+   "quote": "measured 7,973 live remote MCP servers and found 40.55% exposed tools with no authentication, 30.45% used OAuth, and 29.00% used other methods",
+   "gap": "No source separately measured resource-indicator enforcement specifically on the refresh request (as opposed to the initial grant); query used: \"measured survey remote MCP servers resource indicator enforcement refresh tokens 2026\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "work-intake",
+    "claim": "What operators running hundreds of concurrent agents actually use for work intake at scale, and whether they normalise the four doors into one envelope or keep them separate.",
+    "research_query": "production multi-agent platform 2026 architecture hundreds of agents work intake normalisation CloudEvents A2A case study"
+   },
+   "mechanism": "A mature build normalizes every entry door — a human request, an inbound event, a schedule firing, and an inter-agent task delegated over an agent-to-agent protocol — into one canonical work envelope before any downstream component sees it, so a downstream planner or graph never branches on which door the work arrived through. The agent-to-agent leg of that intake increasingly runs over a settling inter-agent protocol rather than a bespoke integration per platform pair.",
+   "standard": "Agent2Agent (A2A) Protocol (Linux Foundation project, current specification) for the agent-to-agent leg; no single standard governs normalization of all four doors into one envelope",
+   "check": "A schema check that a human-submitted request, a webhook-delivered event, a scheduler firing, and an inbound A2A task all produce structurally identical envelope documents (same required fields, same shape) before entering the planner, with a test that a downstream consumer's logic path is provably identical across all four origins.",
+   "direction": "Settling: A2A as the standard for inter-agent task routing, now in production across 150+ organizations at its one-year mark. Emerging and unsettled: whether operators normalize A2A tasks together with the other three doors into one canonical envelope, or keep A2A as a separate lane — no source inside the window documents the practice at hundreds-of-agents scale either way.",
+   "cites": [
+    "X-maturity-c-017",
+    "X-maturity-c-018"
+   ],
+   "origin": "sourced",
+   "quote": "more than 150 organizations supporting the standard, deep integration across Google, Microsoft and AWS platforms, and active production deployments across multiple industries",
+   "gap": "No source describes whether operators running hundreds of concurrent agents normalize the four intake doors into one envelope or keep A2A traffic on a separate path; query used: \"production multi-agent platform 2026 architecture hundreds of agents work intake normalisation CloudEvents A2A case study\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "document-validation",
+    "claim": "How large agent platforms validate documents whose shape is only known at run time, where a schema must be resolved per unit of work rather than compiled once.",
+    "research_query": "dynamic schema resolution per request agent tool input validation 2026 compile cache JSON Schema performance production"
+   },
+   "mechanism": "A mature build never recompiles a schema on the hot path. Whatever a unit of work's declared shape is at run time, the validator resolves it through a compiled-schema cache keyed by schema identity (a URI, hash, or version), compiling once on first sight and reusing the compiled validator on every subsequent unit that declares the same shape — even when the specific schema in play could only be known once the unit of work arrived.",
+   "standard": "JSON Schema (2020-12 dialect), with per-implementation compiled-validator caching as established practice rather than something the specification itself mandates",
+   "check": "A benchmark that submits a stream of units of work spanning a fixed set of schemas in random order and asserts p99 validation latency after warm-up is within a small constant factor of a pre-compiled baseline (not proportional to the number of distinct schemas seen), with a cache-hit counter confirming repeated schemas are not recompiled.",
+   "direction": "Settling: compile-once, cache, and reuse the compiled validator, keyed by schema identity — resolving 'the schema is only known at run time' by resolving identity at run time and compilation at most once per identity. Being abandoned: recompiling a schema on every request, and heavy use of fully dynamic ($dynamicRef-style) schema resolution, which surveyed corpora show is rare in practice.",
+   "cites": [
+    "X-maturity-c-019",
+    "X-maturity-c-020"
+   ],
+   "origin": "sourced",
+   "quote": "Avoiding per-request schema compilation can yield a 1000× performance difference by compiling once per schema and reusing the validator.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "policy",
+    "claim": "Whether the published decision API's request shape can express a budget ceiling and a delegation chain without extensions, or whether those require profile-specific fields.",
+    "research_query": "AuthZEN 1.0 request schema subject resource action context extensions delegation budget attributes profile 2026"
+   },
+   "mechanism": "A mature build issues the published decision API's request as-is for the ordinary case — subject, action, resource, and context, each an open type/id/properties triple — and reaches for a named profile extension, not ad-hoc fields, whenever it needs to express something the base request shape does not: a delegation chain (an actor distinct from subject) or a spend ceiling ride in the properties bag until or unless a dedicated profile standardizes them, at which point the build adopts that profile rather than inventing its own field names.",
+   "standard": "AuthZEN Authorization API 1.0 (OpenID Foundation, Final Specification since January 2026); delegation and agent-tool concerns are addressed by separate Working Group Drafts (AARP — Access Request and Approval Profile; COAZ — MCP Tool Authorization Profile)",
+   "check": "A schema-conformance test that a request expressing a delegation chain or a budget ceiling validates against the base AuthZEN 1.0 schema only by using the open 'properties' object (never a top-level extension the base spec doesn't define), and a second test that a profile-aware PDP recognizes and enforces those properties when the relevant profile is declared.",
+   "direction": "Settling: AuthZEN 1.0's subject/action/resource/context shape as the baseline, with delegation and agent-specific semantics being added through dedicated profile drafts published in 2026 rather than through base-schema extension fields. Being abandoned: bespoke, PDP-specific request shapes for delegation or budget that don't map onto AuthZEN's open properties model.",
+   "cites": [
+    "X-maturity-c-021",
+    "X-maturity-c-022"
+   ],
+   "origin": "sourced",
+   "quote": "A Subject is an object that contains two REQUIRED keys, type and id, which have a string value, and an OPTIONAL key, properties, with a value of an object.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "provenance",
+    "claim": "The cost and retention practice of attesting every unit of agent work rather than every release, at hundreds of agents.",
+    "research_query": "attestation volume retention cost transparency log per action agent scale 2026 production practice"
+   },
+   "mechanism": "A mature build does not attest every unit of agent work at full fidelity by default. It signs and logs a hash-level, metadata-light record for the common case, reserving a full attestation (in-toto/SLSA-style, transparency-logged) for units that cross a materiality threshold — a produced artifact, a high-impact action, or a refusal worth auditing — keeping the per-action overhead and the transparency-log write volume bounded as agent count and action rate grow.",
+   "standard": "in-toto Attestation Framework and Sigstore/Rekor (current specifications) for the attestation and transparency-log mechanism; no standard specifies a retention or sampling policy for per-action agent-scale volume",
+   "check": "A load test that runs a fixed high action-rate for a fixed duration, measures transparency-log write latency and storage growth under the build's actual attest-what policy, and asserts both stay within a stated bound; a spot-check that a sampled non-attested action still has a verifiable hash-chained record even without a full signed attestation.",
+   "direction": "Settling: Sigstore/Rekor's append-only Merkle log with public inclusion/consistency proofs as the mechanism for the attestations that are made. Emerging and unmeasured inside the window: what to attest fully versus hash-only at hundreds-of-agents action rates — the cost/retention tradeoff research found (metadata-light recovery, pre-execution mediation overhead) is early and not yet benchmarked at that scale.",
+   "cites": [
+    "X-maturity-c-023",
+    "X-maturity-c-024"
+   ],
+   "origin": "sourced",
+   "quote": "Metadata-light recovery is a way to reduce cost while preserving accountability, and pre-execution mediation adds 8.3 ms median overhead.",
+   "gap": "No source gives a measured cost or retention figure for attesting every unit of agent work (versus every release) at hundreds-of-agents scale; query used: \"attestation volume retention cost transparency log per action agent scale 2026 production practice\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "identity",
+    "claim": "That an attested workload identity plane and an assertion-grant issuer can satisfy one identity interface without the interface leaking either token shape - asserted from the two mechanisms separately, not from a source describing both behind one abstraction.",
+    "research_query": "single workload identity abstraction over SPIFFE JWT-SVID and OAuth token exchange interface design 2026 pluggable issuer"
+   },
+   "mechanism": "A mature build exposes one identity interface to its core, but behind that interface it composes two genuinely separate mechanisms rather than blending them: a SPIFFE/SPIRE-issued JWT-SVID asserts which workload is calling (short-lived, auto-rotated, verifiable against a trust bundle), and a token-exchange step at an authorization server converts that workload assertion into an OAuth access token scoped to what the workload may do. The interface's contract names both steps explicitly rather than describing a single fused token shape, so a caller can swap either the SPIFFE issuer or the OAuth authorization server independently.",
+   "standard": "SPIFFE/SPIRE specification (JWT-SVID profile) plus OAuth 2.0 Token Exchange (RFC 8693); a 2026 IETF draft (AIMS) proposes composing these with WIMSE conceptually but has not settled",
+   "check": "A two-adapter test that swaps the SPIFFE issuer (e.g. two different SPIRE deployments) and separately swaps the OAuth authorization server, asserting the interface's callers need no code change either time, plus an assertion that the interface's documented contract never leaks a raw JWT-SVID where an OAuth access token is expected or vice versa.",
+   "direction": "Emerging: composing WIMSE, SPIFFE, and OAuth token exchange as a layered identity model, formalized in early-2026 IETF drafts (AIMS) but not yet a ratified single interface. Being abandoned: shared, long-lived OAuth client-credential secrets for workload identity in favor of short-lived, auto-rotated SPIFFE SVIDs exchanged per-call.",
+   "cites": [
+    "X-maturity-c-025",
+    "X-maturity-c-026"
+   ],
+   "origin": "sourced",
+   "quote": "SPIFFE provides workload identity in cloud-native environments via X.509 or JWT SVIDs, with production deployments at Uber, Stripe, and Netflix.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "scheduling",
+    "claim": "The current revision status and adoption of the recurrence grammar's own base specification inside the window - searches returned libraries and successors but no ietf activity record for the base document.",
+    "research_query": "RFC 5545 errata revision calext working group activity 2026 icalendar base specification status"
+   },
+   "mechanism": "A mature build treats RFC 5545's recurrence-rule grammar as a stable, unrevised base it can rely on without tracking churn, while watching the CALEXT working group's companion and extension drafts for anything that changes how recurring occurrences are described or merged (for example, machine-readable property dependencies or JSCalendar conversion) — adopting those as additive capability, never as a reason to hold back on RRULE itself.",
+   "standard": "RFC 5545 (Internet Calendaring and Scheduling Core Object Specification), unrevised within the window; IETF CALEXT working group active with companion drafts including draft-kashyap-calext-ical-property-deps and draft-ietf-calext-jscalendar-icalendar",
+   "check": "A version-pin check that the build's RRULE parser is tested against the RFC 5545 grammar's published test vectors and that its dependency manifest names RFC 5545 with no revision number pending, alongside a changelog gate that flags (without blocking) any new CALEXT draft touching recurrence.",
+   "direction": "Settled baseline: RFC 5545 remains the unrevised base specification for recurrence, with CALEXT continuing as a long-running working group producing extensions (property dependencies, JSCalendar interop) rather than a base-document rewrite. Nothing is being abandoned here inside the window — the base document is stable and the direction is additive.",
+   "cites": [
+    "X-maturity-c-027",
+    "X-maturity-c-028"
+   ],
+   "origin": "sourced",
+   "quote": "The working group is envisaged to be long-running and deal with a steady flow of changes, as these specifications continue to see significant need for updates as new use-cases are identified and user requirements change.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "state-persistence",
+    "claim": "That inclusion and consistency proofs are practical at the write rate a busy agent platform generates, rather than at certificate-issuance rates.",
+    "research_query": "transparency log throughput write rate benchmark 2026 merkle inclusion proof high volume application log"
+   },
+   "mechanism": "A mature build treats an inclusion or consistency proof as a cheap, constant-work-per-query operation (logarithmic in log size, sub-kilobyte proof size) and generates one for any entry a caller needs to verify without holding the whole log, at the platform's actual write rate — which recent Merkle-log implementations demonstrate comfortably exceeds typical agent-platform action rates, so this is an engineering choice to make, not a scalability wall to work around.",
+   "standard": "Merkle-tree transparency-log construction as used by Certificate Transparency (RFC 6962) and Sigstore/Rekor; no single standard sets a required throughput, but implementations demonstrate the headroom",
+   "check": "A load test that writes at the platform's peak measured action rate for a sustained period against the real log implementation, and asserts p99 write latency and inclusion-proof generation latency both stay within a stated bound (e.g. under 100ms) without falling behind the write rate.",
+   "direction": "Settling: Merkle-tree transparency logs as the mechanism, now demonstrated at throughputs (tens to hundreds of thousands of writes/second, sub-second proof latency) well above what most agent platforms need, closing the 'is this practical at our write rate' question in the affirmative. Nothing here is being abandoned; the direction is adopting Merkle-log throughput headroom with confidence rather than assuming certificate-issuance-era limits.",
+   "cites": [
+    "X-maturity-c-029",
+    "X-maturity-c-030"
+   ],
+   "origin": "sourced",
+   "quote": "throughput exceeding 130,000 logs/s for 100,000 records, with per-entry verification latency of approximately 22 ms and proof generation latency of 22 ms",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "concern-budget",
+    "claim": "A settled unit of measure for a ceiling that spans model tokens, tool invocations and wall time - sources measure tokens and currency but not a combined ceiling.",
+    "research_query": "unified agent work unit budget tokens tool calls wall clock combined ceiling normalisation 2026"
+   },
+   "mechanism": "A mature build normalizes token consumption and tool-call count into one formalized cost metric for the purpose of scaling analysis, and separately enforces a wall-clock ceiling — but it does not yet fold all three into one settled combined unit, because even the two halves of a wall-clock budget (the agent's clock and the tool's clock) are anchored at different starting points in current implementations. Until a combined normalization settles, a mature build states its ceiling as an explicit small tuple (token ceiling, tool-call ceiling, wall-clock ceiling) evaluated together rather than pretending one number covers all three.",
+   "standard": "none — a unified token+tool-call cost metric has been formalized in agent-scaling research, but no standard defines a combined ceiling that also includes wall-clock time",
+   "check": "A budget-enforcement test that runs a synthetic agent against a stated (tokens, tool-calls, wall-clock) tuple ceiling and asserts termination fires on whichever axis is exhausted first, with a clock-anchoring test asserting the agent-side and tool-side wall-clock counters start from the same event (e.g. call dispatch, not first token) so the two don't silently diverge.",
+   "direction": "Emerging: formalizing a joint token+tool-call cost metric for scaling analysis (2026 research). Unsettled: folding wall-clock time into that same unit, and even anchoring wall-clock consistently across the agent and tool layers, which current implementations get wrong by starting the clock at different events.",
+   "cites": [
+    "X-maturity-c-031",
+    "X-maturity-c-032"
+   ],
+   "origin": "sourced",
+   "quote": "A unified cost metric has been formalized that jointly accounts for token and tool consumption to analyze cost-performance scaling in a controlled manner.",
+   "gap": "No source proposes or measures a single normalized unit spanning tokens, tool calls, and wall-clock time together; query used: \"unified agent work unit budget tokens tool calls wall clock combined ceiling normalisation 2026\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "concern-policy",
+    "claim": "That a deterministic pre-execution decision should fail closed when the decision engine is unreachable, rather than degrade to a cached or default allow, is stated here without a source inside the window.",
+    "research_query": "agent tool gateway policy decision point unavailable fail closed versus cached decision 2026"
+   },
+   "mechanism": "A mature build states, as an explicit named policy rather than an implicit fallback, what happens when the decision engine cannot be reached: it fails closed, treating an undecided request as denied, because an unaccountable allow is worse than a refused request. Because enforcement now sits at every layer (agent, tool, API, data system) rather than only at one perimeter gateway per 2026 agentic-identity guidance, this fail-closed default is a property each enforcement point must hold individually, not a single gateway's job.",
+   "standard": "none inside the window ratifies fail-closed as mandatory; CoSAI agentic identity guidance (approved March 2026) establishes multi-layer enforcement as the expected architecture within which the fail-closed choice is made",
+   "check": "A chaos test that kills the policy decision service, then issues a request at every enforcement point (agent, tool, API, data layer) and asserts every one of them denies rather than allows, with the denial recorded as an auditable event distinct from an ordinary policy-denied decision.",
+   "direction": "Contested inside the window: fail-open (favored for user experience, avoiding visible service degradation) versus fail-closed (favored by security and compliance, avoiding unaccountable allows) remain live alternatives with named tradeoffs; no source states one has won. What is settling is where enforcement lives: at every layer per CoSAI guidance, not only a perimeter gateway.",
+   "cites": [
+    "X-maturity-c-033",
+    "X-maturity-c-034"
+   ],
+   "origin": "sourced",
+   "quote": "Fail-open means that if the policy decision point does not provide a decision, the request is treated as allowed, while fail-closed means the request is treated as denied.",
+   "gap": "No source inside the window states that deterministic pre-execution decisions should fail closed as a settled default rather than a contested tradeoff; query used: \"agent tool gateway policy decision point unavailable fail closed versus cached decision 2026\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "concern-provenance",
+    "claim": "That attesting refused and failed units, and not only produced artifacts, is established practice rather than this section's extrapolation from build provenance.",
+    "research_query": "attestation for failed or refused runs negative provenance records practice 2026"
+   },
+   "mechanism": "A mature build extends attestation to failed and refused units of work in principle — the same append-only, hash-chained record used for a produced artifact applies equally to 'this action was refused, here is why, signed by this policy decision' — but this repo's assertion that this is established practice is this section's own extrapolation from build-artifact provenance, not something found stated as production practice for agent runs specifically.",
+   "standard": "in-toto Attestation Framework and SLSA provenance (current specifications) define the mechanism for artifact provenance; neither is documented as extended to refused or failed runs as standard practice",
+   "check": "A completeness check over a fixed window of agent activity asserting that the count of provenance records equals the count of attempted units of work (successes, failures, and refusals alike), not only the count of produced artifacts, with a spot check that a refused unit's record names the refusing policy decision.",
+   "direction": "Direction unclear inside the window: build-artifact SLSA/in-toto attestation practice remains focused on verifying successful builds at admission; failure-attribution and decision-record auditing are active research areas but the search found no source establishing negative provenance (attesting refusals and failures) as adopted practice one way or the other.",
+   "cites": [
+    "X-maturity-c-035",
+    "X-maturity-c-036"
+   ],
+   "origin": "proposed",
+   "quote": "without admission enforcement, a signed provenance document is metadata with no operational teeth",
+   "gap": "No source establishes attesting refused or failed units of agent work as established practice distinct from build-artifact provenance; query used: \"attestation for failed or refused runs negative provenance records practice 2026\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "concern-errors",
+    "claim": "How a problem type identifier should be mapped onto the error codes of agent messaging and RPC bindings, so one vocabulary survives both, was not resolved by any source found inside the window.",
+    "research_query": "mapping RFC 9457 problem type URI to JSON-RPC and gRPC error codes agent protocol guidance 2026"
+   },
+   "mechanism": "A mature build carries one problem-type vocabulary — an RFC 9457 type URI plus its fixed fields — as the semantic source of truth for an error, and maps it onto whichever wire protocol carries a given call: as the HTTP response body directly for REST, folded into a JSON-RPC error object's structured `data` field for JSON-RPC, and carried in gRPC's `google.rpc.Status` / `ErrorInfo` detail channel for gRPC — so a caller downstream of any binding can still recover the same type URI and reason about it uniformly, even though each protocol's native error envelope differs.",
+   "standard": "RFC 9457 (Problem Details for HTTP APIs) for the vocabulary; no standard defines its mapping onto JSON-RPC 2.0's reserved error codes or gRPC's canonical status codes",
+   "check": "A cross-protocol test that triggers the same underlying failure through an HTTP endpoint, a JSON-RPC call, and a gRPC call, and asserts the same problem type URI is recoverable from all three responses (HTTP body, JSON-RPC error.data, gRPC ErrorInfo), even though the surrounding envelope and status code differ per protocol.",
+   "direction": "Settling: RFC 9457 as the HTTP problem-vocabulary baseline, and gRPC's google.rpc.ErrorInfo as the closest existing carrier for a type-URI-shaped detail. Unsettled inside the window: no source found gives a published, agent-protocol-endorsed mapping table from a problem type URI onto JSON-RPC's reserved -32700..-32603 codes or gRPC's 17 canonical codes — each binding still improvises its own convention.",
+   "cites": [
+    "X-maturity-c-037",
+    "X-maturity-c-038"
+   ],
+   "origin": "proposed",
+   "quote": "gRPC sits between JSON-RPC and SOAP: a small canonical set (like JSON-RPC) plus rich typed details via google.rpc.Status and google.rpc.ErrorInfo (like SOAP's <detail>).",
+   "gap": "No official guidance was found mapping an RFC 9457 problem type URI onto JSON-RPC and gRPC error codes; query used: \"mapping RFC 9457 problem type URI to JSON-RPC and gRPC error codes agent protocol guidance 2026\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "concern-idempotency",
+    "claim": "That a schedule occurrence should be treated as a deduplication identity in the same way an event envelope's source and id are was not directly sourced.",
+    "research_query": "scheduled job occurrence identifier idempotency duplicate firing recurrence rule 2026"
+   },
+   "mechanism": "A mature build treats one scheduled occurrence the same way it treats one event envelope: the pair (recurring-item identity, occurrence timestamp derived from the recurrence rule) is the deduplication key, recorded in a durable store before or atomically with the side effect it guards, exactly as an event envelope's (source, id) pair is. A redelivered firing for the same occurrence is recognized and dropped by that store rather than by re-deriving intent from the recurrence rule at execution time.",
+   "standard": "RFC 5545 (RRULE grammar) defines occurrence generation but not an occurrence-identity primitive; idempotency-key-plus-durable-store is established job-queue practice, not itself standardized for scheduled occurrences specifically",
+   "check": "A redelivery test that fires the same computed occurrence twice (simulating a scheduler at-least-once redelivery) and asserts the durable dedup store causes the second firing's side effect to be skipped, with the store keyed on (recurring-item id, occurrence time) rather than a per-delivery message id that would differ between the two firings.",
+   "direction": "Emerging: applying the same idempotency-key-plus-durable-store pattern used for event envelopes to scheduled occurrences, treating (item, occurrence time) as the key. Not directly sourced: no source explicitly equates an RRULE-derived occurrence with an event envelope's source+id as the same conceptual identity — this repo's build would be first to state that equivalence explicitly rather than following a stated source.",
+   "cites": [
+    "X-maturity-c-039",
+    "X-maturity-c-040"
+   ],
+   "origin": "proposed",
+   "quote": "An idempotency key is only useful if a fast, durable store records \"this key has been processed\" before — or atomically with — the side effect.",
+   "gap": "No source directly states that a schedule occurrence should be treated as a deduplication identity in the same way an event envelope's source and id are; query used: \"scheduled job occurrence identifier idempotency duplicate firing recurrence rule 2026\"."
+  }
+ ]
+}

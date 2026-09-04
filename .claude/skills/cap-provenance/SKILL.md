@@ -1,6 +1,6 @@
 ---
 name: "cap-provenance"
-description: "The ideal state of the Provenance capability: a signed statement binding an artifact to the code version, inputs and actor that produced it, in a format a verifier we did not write can check standing alone. Load it when deciding what makes an output accountable after the fact, when choosing an attestation format or a predicate, when judging whether a store's own integrity check counts as verification, or when a review asks how an outsider would confirm that this output came from that input. Also load it when someone proposes proving an output by rehashing our own log, when an agent action rather than a build artifact is the thing to be vouched for, when signing keys or a transparency log come up, and when a record is described as tamper-proof."
+description: "Signed statements binding an artifact or agent action to the code version, inputs and actor that produced it, with provenance chains and audit trails an outside verifier can check standing alone. Load when choosing an attestation format or predicate, when signing keys or a transparency log come up, or when a record is called tamper-proof."
 ---
 
 # cap-provenance
@@ -194,7 +194,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 |---|---|---|
 | Proposed: the artifact itself never travels in a predicate, only its digest. A statement has to be publishable to a party that may not read the output it vouches for, and a predicate carrying the payload would make publication a disclosure decision every time. Research query: does F-b4-05's 'verifiable with a tool we did not write' requirement itself imply the artifact stays out of the predicate, or is that a separate design step this row is taking beyond what the fact states? | proposed | `F-b4-05` |
 | Signing material is not part of this interface. A caller asks for a statement and receives an envelope; which key, which identity and which lifetime signed it is the adapter's business, which is what makes moving from a held key to an ephemeral one a configuration change rather than an interface change. | sourced | `X-cap-provenance-004` "ephemeral key signing tied to OIDC identities" |
-| The criterion a result is judged against never appears in a predicate, in a subject name or in a trust policy. agentic-stack states design rule 6 (F-b1-07); the consequence here is that an attestation over a judged output records the verdict and the digests, never the rule. | sourced | `F-b1-07` "An agent sees its outcome, never the criterion it is judged against." |
+| The criterion a result is judged against never appears in a predicate, in a subject name or in a trust policy. agentic-stack states design rule 6 (F-b1-07) and cap-scheduling states it for a fired envelope; the consequence here is that an attestation over a judged output records the verdict and the digests, never the rule. | sourced | `F-b1-07` "An agent sees its outcome, never the criterion it is judged against." |
 
 ## Instructions
 

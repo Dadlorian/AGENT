@@ -1,6 +1,6 @@
 ---
 name: "cap-telemetry"
-description: "The ideal state of the Telemetry capability: traces and metrics emitted in a form any collector can ingest, with correlation carried on explicit attributes set at dispatch rather than on trace parentage, and with the stable transport half of the interface kept apart from the pre-stable attribute vocabulary. Load it when deciding what a unit of work must emit, when choosing where a run identifier lives, when a run shows up as several unrelated trees instead of one, when judging whether an observability backend can be swapped, or when someone proposes reconstructing a run from span parents. Also load it when an attribute naming convention is about to be adopted wholesale, when spans and metrics must line up with a run that crossed an agent or process boundary, and when a review asks what an emitter is allowed to put on the wire."
+description: "Traces and metrics any collector can ingest, plus correlation: run identifiers carried on explicit attributes set at dispatch, never on trace parentage. Load when deciding what a unit of work emits, where a run id lives, when one run appears as several unrelated trees, when swapping an observability backend, or when adopting an attribute naming convention."
 ---
 
 # cap-telemetry

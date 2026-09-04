@@ -1,6 +1,6 @@
 ---
 name: "cap-policy"
-description: "The ideal state of the Policy capability: one decision API that takes a structured request and returns a deterministic allow or deny together with the rule that decided it, before anything is spent. Load it when deciding what a refusal means and when it is taken, when adding a decision point or a rule set, when choosing or judging a policy engine, when a review asks whether the rule language has leaked into the interface, or when someone proposes letting a caller skip the check on a fast path. Also load it when a refusal arrives after work has already run, when a denial comes back as a message rather than a typed answer, when a decision cannot be replayed because nothing recorded which rules were active, or when the same allow-or-deny logic is about to be written a second time inside a caller."
+description: "One decision API and the policy gate that calls it: a structured request in, a deterministic allow or deny plus the deciding rule out, before anything is spent. Load when adding a decision point or rule set, choosing or judging an engine, when a refusal arrives after work ran, or when a caller wants a check-free fast path."
 ---
 
 # cap-policy

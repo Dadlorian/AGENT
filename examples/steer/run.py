@@ -681,6 +681,10 @@ def ask_and_decide(gate, env, unit_doc, ledger, args, store, surface, hi, event,
             # on. A traceback would be a refusal a caller has to parse from
             # prose (`F-b4-07`).
             refused = render_problem(exc.body)
+            # This refusal ends the unit the same way an admission refusal does
+            # (`fail()`), so it is surfaced to the caller the same way: printed
+            # as the typed problem body, not left to a summary table only.
+            print("PROBLEM (application/problem+json):\n" + json.dumps(refused, indent=2, sort_keys=True))
             report["refusals"].append({"where": "ask", "type": refused["type"],
                                        "status": refused["status"], "ends_unit": True})
             ledger.record("refusal", step="gate", attempt=attempt, ask_id=ask_id,

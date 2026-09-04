@@ -1,0 +1,1176 @@
+{
+ "origin": "derived from docs/litmus/answers, the questionnaire's recorded gaps and full-stack-questionair/answers at 19e61e4",
+ "litmus_below_aligned": [
+  {
+   "section": "isolation",
+   "question_id": "isolation-q1",
+   "angle": "presence",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: Is there a named isolation capability whose contract cites the runtime specification and a version, and does every unit of work reach execution through it?",
+   "aligned_looks_like": "The contract names the specification and a version, and every execution path - not only the one used for untrusted input - resolves through that interface.",
+   "answer_summary": ""
+  },
+  {
+   "section": "isolation",
+   "question_id": "isolation-q2",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: Which distinguishing fields of the runtime configuration are actually set per unit of work - read-only root filesystem, explicit mount set, user and namespace mapping, CPU, memory and process limits, network posture, and the hardware configuration where a virtual-machine class runtime serves - and where does each value come from?",
+   "aligned_looks_like": "The configuration is derived from the unit's declared needs, is restrictive by default, denies host networking and privilege unless declared, and every field that departs from the default is traceable to a field in the unit's own declaration; a limit breach is observably enforced.",
+   "answer_summary": ""
+  },
+  {
+   "section": "isolation",
+   "question_id": "isolation-q4",
+   "angle": "guarantees",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: Which cross-cutting guarantees ride on the sandbox lifecycle without the caller asking - a ceiling that terminates the unit and not the platform, an actor named on every sandbox start including delegated agent actors, a policy decision taken before the sandbox boots, telemetry spanning the lifecycle, and provenance binding produced artifacts to the code version, inputs and actor?",
+   "aligned_looks_like": "All five are applied by the platform, are present identically for a unit no caller configured, and a ceiling breach terminates that unit alone.",
+   "answer_summary": ""
+  },
+  {
+   "section": "isolation",
+   "question_id": "isolation-q6",
+   "angle": "direction",
+   "score": 0,
+   "label": "absent",
+   "question": "Proposed question: Does the build use machine-state lifecycle operations - pause, resume, and fork of a paused sandbox - where the isolation class offers them, and is it free of the errors the window has ruled out?",
+   "aligned_looks_like": "Suspension, resumption and forking are capability operations with a defined answer when an adapter cannot serve them, and the security boundary chosen for untrusted output is not a shared kernel.",
+   "answer_summary": ""
+  },
+  {
+   "section": "model-access",
+   "question_id": "model-access-q1",
+   "angle": "presence",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: Is there a model-access capability with a declared request and response contract, and is every model call in the build made through it?",
+   "aligned_looks_like": "One contract, every call routed through it, and the wire convention it speaks named explicitly with the format variant it targets.",
+   "answer_summary": ""
+  },
+  {
+   "section": "model-access",
+   "question_id": "model-access-q2",
+   "angle": "depth",
+   "score": -1,
+   "label": "misaligned",
+   "question": "Proposed question: Which mechanisms beyond a plain completion are exercised and verified - streaming, tool-call turns, schema-constrained structured output, cache directives, reasoning effort, and a usage record separating prompt, cached, reasoning and completion tokens?",
+   "aligned_looks_like": "Each mechanism is exercised on both adapters, and the effect is verified from the response - a cache hit is observed, not hoped for - with reasoning tokens counted in cost.",
+   "answer_summary": ""
+  },
+  {
+   "section": "model-access",
+   "question_id": "model-access-q6",
+   "angle": "direction",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: Is the interface shaped so that a move from the message-based format to an item-and-response format, or the addition of a second wire family, is an adapter change rather than a core change - and does anything in the core assume one format?",
+   "aligned_looks_like": "The interface speaks in turns, items and typed results of its own, adapters translate, and the second wire family that was added touched only adapters and their conformance runs. A written migration path with no second wire family ever exercised is exists rather than aligned.",
+   "answer_summary": ""
+  },
+  {
+   "section": "durable-execution",
+   "question_id": "durable-execution-q1",
+   "angle": "presence",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: Is there a written contract for a multi-step unit of work that names its own step, checkpoint and resume-point vocabulary, and does it cover all six things the specification requires - request shape, result shape, cancellation, timeout and budget enforcement, partial results, and what a failure returns?",
+   "aligned_looks_like": "All six are specified in the platform's own vocabulary, and the contract is what the executors implement rather than a description of what one of them happens to do.",
+   "answer_summary": ""
+  },
+  {
+   "section": "durable-execution",
+   "question_id": "durable-execution-q5",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: How does a caller start, observe, cancel and resume a multi-step unit from each of the four entries, and what does an externally triggered replay of the same unit do?",
+   "aligned_looks_like": "One field set at every entry, cancellation returns a defined result rather than an exception, a replayed trigger is recognised and produces no second effect, and a schedule-driven run is indistinguishable downstream from a human-driven one.",
+   "answer_summary": ""
+  },
+  {
+   "section": "agent-runtime",
+   "question_id": "agent-runtime-q1",
+   "angle": "presence",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: Is agent execution reached through one named capability that cites the protocol and a protocol version, and does every path that runs an agent go through it?",
+   "aligned_looks_like": "One capability, one declared protocol version, and no execution path that spawns an agent by its own means.",
+   "answer_summary": ""
+  },
+  {
+   "section": "agent-runtime",
+   "question_id": "agent-runtime-q2",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: Which of the protocol's distinguishing mechanisms are actually used - session setup, a prompt turn closed by a typed stop reason, streamed session updates carrying message chunks and tool-call status, permission requests, and session restoration - and which are stubbed?",
+   "aligned_looks_like": "The turn ends with a typed stop reason that the caller branches on; updates stream as the turn runs rather than arriving as one final blob; permission requests are real and answered; anything unimplemented is refused explicitly rather than silently ignored.",
+   "answer_summary": ""
+  },
+  {
+   "section": "agent-runtime",
+   "question_id": "agent-runtime-q3",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: How is one turn started, observed, permitted and cancelled from each of the four entries, and what answers a permission request when no human is present?",
+   "aligned_looks_like": "All four use one path; permission requests in non-interactive runs are resolved deterministically from policy before the turn or answered by a defined non-interactive profile; nothing hangs waiting for a click.",
+   "answer_summary": ""
+  },
+  {
+   "section": "agent-runtime",
+   "question_id": "agent-runtime-q5",
+   "angle": "guarantees",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: Do the ceiling, the actor with its delegation chain, the deterministic pre-turn policy decision, the telemetry attributes and the provenance record attach to the turn itself without the caller requesting them, and is the criterion a turn is judged against kept out of the turn?",
+   "aligned_looks_like": "All are applied by the platform, a turn exceeding its ceiling is terminated while the platform continues, refusal precedes spend, and the agent sees its outcome but never the criterion it is judged against.",
+   "answer_summary": ""
+  },
+  {
+   "section": "tool-access",
+   "question_id": "tool-access-q1",
+   "angle": "presence",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: Is every external tool an agent can reach exposed through the protocol, with a declared protocol revision, and is there any other way for an agent to call out?",
+   "aligned_looks_like": "One protocol, one declared revision, and every outward tool call goes through it - including internal ones, which are servers like any other.",
+   "answer_summary": ""
+  },
+  {
+   "section": "tool-access",
+   "question_id": "tool-access-q2",
+   "angle": "depth",
+   "score": -1,
+   "label": "misaligned",
+   "question": "Proposed question: For remote tool surfaces, which authorization and transport mechanisms are actually in force - the streamable transport rather than the deprecated event stream, OAuth 2.1 with PKCE, protected-resource and authorization-server metadata discovery, and resource indicators binding the token to one server on issue and on refresh?",
+   "aligned_looks_like": "Every mechanism is present and verified from the exchange itself, including the resource indicator on refresh, and tool results are validated against declared output schemas rather than read as prose.",
+   "answer_summary": ""
+  },
+  {
+   "section": "tool-access",
+   "question_id": "tool-access-q3",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: How does a caller cause a tool to be used from each of the four entries, and how is tool exposure decided for a given turn as the number of reachable tools grows?",
+   "aligned_looks_like": "One path serves all four; the set of tools entering a turn is selected by declared toolset or by search, and measured context cost is roughly flat as the catalogue grows by an order of magnitude.",
+   "answer_summary": ""
+  },
+  {
+   "section": "capability-packaging",
+   "question_id": "capability-packaging-q2",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: Is loading actually tiered - metadata resident, body on trigger, references on demand - and what is the measured resident cost per package and the cost of a full load?",
+   "aligned_looks_like": "The three tiers are observable in a real run, the resident cost per package is a measured number rather than an estimate, and reference material demonstrably does not enter context until it is needed.",
+   "answer_summary": ""
+  },
+  {
+   "section": "capability-packaging",
+   "question_id": "capability-packaging-q3",
+   "angle": "guarantees",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: Before a package is loaded, is its integrity digest matched and its publisher signature verified, is the load decision a policy decision, and is what was loaded recorded in the provenance of whatever the run produced?",
+   "aligned_looks_like": "Verification is mandatory and precedes load, a failure is a deterministic refusal rather than a warning, and the set of packages in force is part of what an artifact is attributable to.",
+   "answer_summary": ""
+  },
+  {
+   "section": "capability-packaging",
+   "question_id": "capability-packaging-q5",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: How does a capability get selected and loaded for work arriving from each of the four entries, and how do two packages compose when a task needs both?",
+   "aligned_looks_like": "Selection is the same mechanism at every entry and does not depend on a human describing which package to use; composition is defined, and a conflict has a stated resolution rather than last-writer-wins.",
+   "answer_summary": ""
+  },
+  {
+   "section": "capability-packaging",
+   "question_id": "capability-packaging-q6",
+   "angle": "direction",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed question: Are packages versioned so a breaking change is visible before load, and is there a way to withdraw or roll back a bad version - the governance the open registries lack?",
+   "aligned_looks_like": "Versions separate breaking changes from compatible additions and safe fixes, consumers resolve by constraint, and a withdrawn version stops resolving while existing pins get a deterministic refusal rather than silence.",
+   "answer_summary": ""
+  },
+  {
+   "section": "work-intake",
+   "question_id": "work-intake-q1",
+   "angle": "presence",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Is every arrival represented by an envelope whose attributes come from a published event envelope or agent messaging standard, and is there a machine-readable description of the work this system accepts that an outside caller can fetch?",
+   "aligned_looks_like": "Each captured envelope validates against the published standard's own schema, and the capability description is retrieved over the wire by a caller holding nothing from this side.",
+   "answer_summary": ""
+  },
+  {
+   "section": "work-intake",
+   "question_id": "work-intake-q2",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Are the mechanisms that separate deep use from a label in use: an explicit task lifecycle that reaches named terminal states including cancelled and rejected, a subscription or streaming path for work that outlives a request, declared extension attributes for correlation and idempotency, and deliberate handling of the envelope's content modes?",
+   "aligned_looks_like": "Terminal states are distinguished from each other and acted on differently, cancellation actually stops work rather than being recorded, and correlation and idempotency ride in named extension attributes rather than in the payload.",
+   "answer_summary": ""
+  },
+  {
+   "section": "work-intake",
+   "question_id": "work-intake-q5",
+   "angle": "guarantees",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Do identity, correlation, idempotency and budget attach to the envelope at the intake boundary without the caller supplying or requesting them, and are they attached identically at every door?",
+   "aligned_looks_like": "The boundary adds the actor, the correlation key, the idempotency key and the ceiling at every door; a caller that omits all of them still gets them, and a caller that supplies a hostile value cannot override the boundary's.",
+   "answer_summary": ""
+  },
+  {
+   "section": "work-intake",
+   "question_id": "work-intake-q6",
+   "angle": "direction",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Is the external-agent door a versioned, publicly specified protocol whose revision is negotiated per exchange, or an endpoint shaped for the callers currently known?",
+   "aligned_looks_like": "The served revision is stated on the wire and an unsupported one is refused explicitly; a caller integrates from the published specification alone.",
+   "answer_summary": ""
+  },
+  {
+   "section": "document-validation",
+   "question_id": "document-validation-q1",
+   "angle": "presence",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Does every document that crosses a boundary have a schema in the published dialect, and does each schema declare the dialect it is written in?",
+   "aligned_looks_like": "Every boundary document type has a schema, each names 2020-12 explicitly, and there is no document type entering the system without one.",
+   "answer_summary": ""
+  },
+  {
+   "section": "document-validation",
+   "question_id": "document-validation-q2",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Are the dialect's distinguishing mechanisms in use \u2014 identifiers and references for reuse, dynamic references for recursive or extensible shapes, unevaluated-property closure under composition, declared vocabularies, and the assertion form of format where a format must reject \u2014 or is the schema a flat list of types and required fields?",
+   "aligned_looks_like": "Composition keywords are closed with unevaluated-property handling, shared fragments are referenced rather than copied, and a format that must reject is under the assertion vocabulary and demonstrably rejects.",
+   "answer_summary": ""
+  },
+  {
+   "section": "document-validation",
+   "question_id": "document-validation-q3",
+   "angle": "boundary",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Does the core import a validation interface rather than a validator, and has a second validator with a different execution model been run against the same schemas and instances?",
+   "aligned_looks_like": "Both validators pass the same conformance run and agree on the same corpus of instances; swapping which one serves is a configuration change with no core diff.",
+   "answer_summary": ""
+  },
+  {
+   "section": "document-validation",
+   "question_id": "document-validation-q4",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Does a caller at every entry get the same validation outcome for the same malformed document, and does the failure name the exact location in the instance and in the schema?",
+   "aligned_looks_like": "All four failures carry the same type, the same instance location and the same schema location, and a machine can act on them without reading prose.",
+   "answer_summary": ""
+  },
+  {
+   "section": "document-validation",
+   "question_id": "document-validation-q5",
+   "angle": "guarantees",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Is validation applied by the platform at the boundary so no caller and no component can decline it, and is the refusal it produces recorded and attributable like any other refusal?",
+   "aligned_looks_like": "There is exactly one place a document can enter, validation there is unconditional, and a rejection is recorded with the actor and the correlation key before any spend.",
+   "answer_summary": ""
+  },
+  {
+   "section": "document-validation",
+   "question_id": "document-validation-q6",
+   "angle": "direction",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Is the dialect version a declaration that can be changed, and is the shape of a document defined once in the published dialect rather than in one language's type system with the schema derived as an afterthought?",
+   "aligned_looks_like": "Schemas are the source of truth and language types are generated from them; the dialect identifier appears in one place and a change to it is a declaration change.",
+   "answer_summary": ""
+  },
+  {
+   "section": "document-validation",
+   "question_id": "document-validation-q7",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Is each boundary schema versioned in its own right, separately from the dialect it is written in, and what does a document written to the previous version of a schema receive once that schema changes?",
+   "aligned_looks_like": "Every boundary schema carries its own version identifier distinct from the dialect declaration; a document names the version it targets; a change that breaks an older document yields a typed failure naming the schema, the version and the location that no longer validates, and any period during which both versions are accepted is declared.",
+   "answer_summary": ""
+  },
+  {
+   "section": "telemetry",
+   "question_id": "telemetry-q1",
+   "angle": "presence",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Do traces, metrics and logs all leave the platform over the standard telemetry protocol, or only some of them, and is the receiving backend named anywhere the core can see?",
+   "aligned_looks_like": "All three signals are exported over the standard protocol to a collector, and the backend appears only in configuration.",
+   "answer_summary": ""
+  },
+  {
+   "section": "telemetry",
+   "question_id": "telemetry-q2",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Does one exported trace of one unit of agent work show the span tree the conventions prescribe \u2014 a run span parenting model-call spans and tool-call spans, each with its operation name \u2014 with token counts and cost attributes on the spans that own them?",
+   "aligned_looks_like": "The tree matches the prescribed parent-child shape, operation names come from the published set, and token and cost attributes sit on the model spans rather than being summed at the top.",
+   "answer_summary": ""
+  },
+  {
+   "section": "telemetry",
+   "question_id": "telemetry-q5",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: For a single unit of work entering by each of the four entries, can an operator answer from telemetry alone what it cost, which model and tool calls it made, whether it was refused or terminated on budget, and how it relates to the work that triggered it?",
+   "aligned_looks_like": "The same query answers all four, and refusals and budget terminations appear as spans or events with a reason attribute, not only in prose logs.",
+   "answer_summary": ""
+  },
+  {
+   "section": "telemetry",
+   "question_id": "telemetry-q6",
+   "angle": "direction",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Is the version of the generative-AI attribute conventions being emitted declared in one place, with a stated way to absorb a rename, given that this vocabulary is pre-stable inside the window?",
+   "aligned_looks_like": "The version is pinned and declared once; a rename upstream was absorbed as a configuration change, with old and new names emitted together during the exercised transition. A written statement of how a rename would be absorbed, with no transition ever exercised, is exists rather than aligned.",
+   "answer_summary": ""
+  },
+  {
+   "section": "policy",
+   "question_id": "policy-q2",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Are the mechanisms that separate deep use from a rules file in use: versioned distributable policy bundles rather than files edited in place, a structured decision record per query carrying the input, result, decision identifier and bundle version, and a decision input document assembled by the platform?",
+   "aligned_looks_like": "The refusal can be replayed later from its record against the exact bundle version that produced it, and the input document is built from platform-held facts about the actor and the unit of work.",
+   "answer_summary": ""
+  },
+  {
+   "section": "policy",
+   "question_id": "policy-q3",
+   "angle": "boundary",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Does the core import a decision interface whose request and response follow the published language-neutral decision API, with a second engine in a different policy language proved against the same decision corpus?",
+   "aligned_looks_like": "Both engines answer the same corpus identically through the same request shape; the second engine uses a genuinely different language, and swapping is a configuration change.",
+   "answer_summary": ""
+  },
+  {
+   "section": "policy",
+   "question_id": "policy-q5",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Is the same decision reached for the same action regardless of which of the four entries requested it, and does a caller receive the refusal in a form it can branch on without reading prose?",
+   "aligned_looks_like": "All four are refused identically, and each response carries a typed failure whose type identifies the refusal and whose members name the rule.",
+   "answer_summary": ""
+  },
+  {
+   "section": "provenance",
+   "question_id": "provenance-q1",
+   "angle": "presence",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Does every artifact the platform produces carry an attestation in the published statement format, wrapped in the published signing envelope, or does provenance exist only for some artifact kinds?",
+   "aligned_looks_like": "Every emitted artifact kind has an attestation whose statement names the subject by digest and whose envelope is the published signing format.",
+   "answer_summary": ""
+  },
+  {
+   "section": "provenance",
+   "question_id": "provenance-q3",
+   "angle": "boundary",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Can a third party verify an attestation with a general-purpose verifier and public key material alone, with no code from this platform, and has that been demonstrated?",
+   "aligned_looks_like": "The independent verifier accepts the genuine artifact and rejects the mutated one, and the failing run is recorded alongside the passing one.",
+   "answer_summary": ""
+  },
+  {
+   "section": "provenance",
+   "question_id": "provenance-q4",
+   "angle": "guarantees",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Is the attestation produced by the platform for every unit of work without the caller asking, and is the store append-only with an integrity mechanism that makes a later edit detectable rather than merely discouraged?",
+   "aligned_looks_like": "A tampered past record is detected by an inclusion or chain proof rather than by convention, and every unit of work is attested whether or not it asked.",
+   "answer_summary": ""
+  },
+  {
+   "section": "provenance",
+   "question_id": "provenance-q5",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Starting from one artifact, can an answerer walk the chain back through every unit of work, decision and input that produced it, regardless of which entry started it?",
+   "aligned_looks_like": "The chain is unbroken and machine-traversable across entries and across process boundaries, linked by digests and correlation identifiers rather than by timestamp proximity.",
+   "answer_summary": ""
+  },
+  {
+   "section": "provenance",
+   "question_id": "provenance-q6",
+   "angle": "direction",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Is signing keyless and short-lived with the identity of the signer bound at signing time, and is the record of what an agent did signed at the moment of the action rather than assembled afterwards from logs?",
+   "aligned_looks_like": "Signing identity is short-lived and bound to the workload, and the record is produced and signed as the action completes, before anything downstream could edit it.",
+   "answer_summary": ""
+  },
+  {
+   "section": "errors",
+   "question_id": "errors-q1",
+   "angle": "presence",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Does every boundary return the standard problem object with its five standard members and its media type, or do some boundaries still return a bespoke error shape?",
+   "aligned_looks_like": "Every captured failure is a problem object with the standard members and the correct media type, and no boundary has its own error shape.",
+   "answer_summary": ""
+  },
+  {
+   "section": "errors",
+   "question_id": "errors-q2",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Are the type identifiers drawn from a published closed registry with documented extension members per type, and do the extension members carry what a caller must act on \u2014 retryability, correlation, the location that failed, the rule that refused \u2014 rather than the human-readable members carrying it?",
+   "aligned_looks_like": "Each type is registered, stable and documented with its extensions; a caller can decide retry, escalate or correct from the machine-readable members alone with the prose removed.",
+   "answer_summary": ""
+  },
+  {
+   "section": "errors",
+   "question_id": "errors-q4",
+   "angle": "guarantees",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Does every failure object carry the correlation identifier and the actor without the caller asking, and does a budget termination or a policy refusal arrive as a typed problem rather than as a silent stop?",
+   "aligned_looks_like": "Both carry a distinct type, the correlation identifier, and the remaining or exceeded amount as extension members, and both are joinable to their telemetry without a text search.",
+   "answer_summary": ""
+  },
+  {
+   "section": "errors",
+   "question_id": "errors-q5",
+   "angle": "boundary",
+   "score": -1,
+   "label": "misaligned",
+   "question": "Proposed: Is the production of the failure object owned by one place the core imports, so a new capability adapter cannot invent its own failure shape?",
+   "aligned_looks_like": "Adapters raise typed conditions that the shared construction point renders; there is no second place a failure body is built.",
+   "answer_summary": ""
+  },
+  {
+   "section": "errors",
+   "question_id": "errors-q6",
+   "angle": "direction",
+   "score": 1,
+   "label": "exists",
+   "question": "Proposed: Is retryability stated in the failure rather than inferred by the caller, and is the same problem shape produced on transports that are not request-and-response?",
+   "aligned_looks_like": "Retryability and the wait are stated explicitly in the body; the asynchronous path records the identical problem object for its dead-letter or failure channel.",
+   "answer_summary": ""
+  },
+  {
+   "section": "identity",
+   "question_id": "identity-q1",
+   "angle": "presence",
+   "score": 1,
+   "label": "exists",
+   "question": "Against the proposed future state, is there a single named identity capability interface that every credential passes through, such that no other component obtains, stores or validates a credential of its own?",
+   "aligned_looks_like": "One interface with mint/exchange/verify operations; every other component receives an already-scoped credential and holds no secret material.",
+   "answer_summary": ""
+  },
+  {
+   "section": "identity",
+   "question_id": "identity-q3",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "The proposed future state turns on deep use, so: are credentials attested at issue time from the running environment and bound to the specific resource they are presented to, or are they long-lived bearer secrets with a broad audience?",
+   "aligned_looks_like": "Minutes-long lifetimes, one audience per resource, the authorization server discovered from the resource rather than hard-coded, and no static secret at rest.",
+   "answer_summary": ""
+  },
+  {
+   "section": "identity",
+   "question_id": "identity-q6",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Against the proposed future state across every entry, for each of the four entries - a person, an event, a schedule, an external system - how is the initiating principal established before any work runs, and how does that principal reach the tool and model calls the work makes?",
+   "aligned_looks_like": "All four resolve a named principal by the same interface, and each downstream call carries an exchanged token derived from it; the schedule and event entries name the principal that authorised the schedule or subscription.",
+   "answer_summary": ""
+  },
+  {
+   "section": "identity",
+   "question_id": "identity-q7",
+   "angle": "direction",
+   "score": 1,
+   "label": "exists",
+   "question": "Against the direction proposed for this section, does the build treat authorization as a property of each resource, discovered and audience-bound per call, or as one credential agreed once and reused everywhere?",
+   "aligned_looks_like": "The resource is asked which authorization server governs it, a token is minted for that audience alone, and adding a resource requires no core change.",
+   "answer_summary": ""
+  },
+  {
+   "section": "scheduling",
+   "question_id": "scheduling-q4",
+   "angle": "guarantees",
+   "score": 1,
+   "label": "exists",
+   "question": "The guarantee proposed here is applied, not requested, so: when fires are missed because the platform was down, what does the schedule's declared policy say happens, and do the resulting runs carry budget, actor and replay-safety without the schedule's author supplying them?",
+   "aligned_looks_like": "Catch-up is bounded by a declared lookback and overlap policy, each recovered fire is keyed by schedule and nominal fire time so a repeat converges, and each run carries a ceiling and a named actor nobody passed in.",
+   "answer_summary": ""
+  },
+  {
+   "section": "scheduling",
+   "question_id": "scheduling-q5",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Against the proposed future state across every entry, can a schedule be created, paused, edited and backfilled from any of the four entries, and does a fire travel the same downstream path as work arriving from a person, an event or an external system?",
+   "aligned_looks_like": "One interface for schedule operations regardless of entry, and the two traces differ only in how the work arrived.",
+   "answer_summary": ""
+  },
+  {
+   "section": "scheduling",
+   "question_id": "scheduling-q7",
+   "angle": "direction",
+   "score": 1,
+   "label": "exists",
+   "question": "Against the direction proposed for this section, is a schedule durable, inspectable state the platform owns rather than host configuration or an in-process timer, and does a fleet of schedules declare its overlap policy and spread its fires rather than arriving as one burst?",
+   "aligned_looks_like": "Schedules are records that can be listed, paused and edited while the platform runs, each carrying its catch-up bound and overlap policy; the last fire is recorded; many schedules on one rule fire spread across an interval by a declared jitter rather than at the same instant.",
+   "answer_summary": ""
+  },
+  {
+   "section": "idempotency",
+   "question_id": "idempotency-q2",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "The proposed future state turns on deep use, so: behind the key, is there a durable claim - a uniqueness constraint that arbitrates the race, a stored request fingerprint, an in-progress lease, and the outcome persisted with the side effect - or is the key only recorded?",
+   "aligned_looks_like": "Exactly one execution; the loser receives the stored outcome or an in-progress signal; the outcome and the claim were committed together.",
+   "answer_summary": ""
+  },
+  {
+   "section": "idempotency",
+   "question_id": "idempotency-q3",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "The proposed future state turns on deep use, so: what happens when the same key arrives with a different payload, and what happens when the holder of a claim dies mid-execution?",
+   "aligned_looks_like": "The altered payload is refused as a typed conflict naming the fingerprint mismatch, with no side effect attempted; the abandoned claim is reclaimed by exactly one retry after its lease lapses.",
+   "answer_summary": ""
+  },
+  {
+   "section": "idempotency",
+   "question_id": "idempotency-q4",
+   "angle": "guarantees",
+   "score": 1,
+   "label": "exists",
+   "question": "The guarantee proposed here is applied, not requested, so: is claim retention at least as long as the longest retry window of any producer permitted to reach the platform, and is that relationship enforced rather than assumed?",
+   "aligned_looks_like": "Retention is derived from the longest admitted retry window and the late replay still returns the stored outcome without re-executing.",
+   "answer_summary": ""
+  },
+  {
+   "section": "idempotency",
+   "question_id": "idempotency-q5",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Against the proposed future state across every entry, across a person retrying, an event redelivered, a scheduled fire caught up after an outage, and an external partner retrying a timed-out call, do all four converge on one execution and one answer for the same logical action?",
+   "aligned_looks_like": "One execution total; every entry returns the same outcome body; the deduplication decision is made in one place, not per entry.",
+   "answer_summary": ""
+  },
+  {
+   "section": "state-persistence",
+   "question_id": "state-persistence-q4",
+   "angle": "boundary",
+   "score": 1,
+   "label": "exists",
+   "question": "Against the proposed future state, are there two implementations with genuinely different durability models behind one interface, passing one conformance suite, and does the core import only the interface?",
+   "aligned_looks_like": "Both pass identical concurrency, integrity and query tests; the swap touches wiring only; no component reaches past the interface to the underlying store.",
+   "answer_summary": ""
+  },
+  {
+   "section": "state-persistence",
+   "question_id": "state-persistence-q5",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Against the proposed future state across every entry, do units of work arriving from all four entries write through the same append path, and can cost planning answer its questions from the stated read operations without scanning the whole history?",
+   "aligned_looks_like": "One append path for every entry; planning is served by record-by-identity, stream-from-version and projection reads whose cost does not grow with total history.",
+   "answer_summary": ""
+  },
+  {
+   "section": "state-persistence",
+   "question_id": "state-persistence-q6",
+   "angle": "direction",
+   "score": 1,
+   "label": "exists",
+   "question": "Against the direction proposed for this section, is retention a declared, enforced policy per stream that keeps verification possible over what remains, or is history kept forever by default and pruned by hand when it hurts?",
+   "aligned_looks_like": "Retention declared with the unit of work it belongs to; compaction or snapshotting bounds replay cost; verification still succeeds afterwards and the removal is itself recorded.",
+   "answer_summary": ""
+  },
+  {
+   "section": "state-persistence",
+   "question_id": "state-persistence-q7",
+   "angle": "guarantees",
+   "score": 1,
+   "label": "exists",
+   "question": "Against the proposed future state, which cross-cutting guarantees attach at the moment of an append - does every record name the actor and the delegation chain, the correlation and the decision that admitted the write, without the writer supplying them - and can any component append a record naming none of them?",
+   "aligned_looks_like": "Every record carries an actor, the delegation chain where one applies, a correlation identifier and the decision that admitted the write, all stamped on the shared append path; both bypass attempts are refused or are unreachable; any record read back answers who wrote it and under what authority.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-budget",
+   "question_id": "concern-budget-q5",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Against the proposed future state across every entry, for each of the four entries, where does the ceiling come from and what does the caller see when it is hit - including the schedule and event entries, where nobody is present to be asked?",
+   "aligned_looks_like": "Every entry attaches a ceiling from policy without asking, and each returns or records the same typed refusal naming ceiling and consumption; non-interactive entries inherit the ceiling of the schedule or subscription owner.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-budget",
+   "question_id": "concern-budget-q7",
+   "angle": "boundary",
+   "score": 1,
+   "label": "exists",
+   "question": "Against the proposed future state, is the unit of measure a declared mapping applied at one recording point, and can the source of measurement be replaced without moving any enforcement point - the exit this section names for a rename of the accounting attributes?",
+   "aligned_looks_like": "One mapping site names every attribute it consumes, so a rename is a change there and nowhere else; enforcement points import the measured unit and never the source; the swap touches wiring only and enforcement is unmoved and unchanged.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-identity",
+   "question_id": "concern-identity-q1",
+   "angle": "presence",
+   "score": 1,
+   "label": "exists",
+   "question": "Against the proposed future state, take a random sample of recorded actions from the last period of real operation: does every one name an actor, and is that actor ever a shared or generic account?",
+   "aligned_looks_like": "No record has an empty, generic or placeholder actor; distinct actors correspond to distinct real principals.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-identity",
+   "question_id": "concern-identity-q2",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "The proposed future state turns on deep use, so: in the stored record of an action - not in the credential that authorised it - are the executing identity and the triggering identity separate fields, with the intervening actors listed in order, and does the record still say so when read back long after the credential has expired?",
+   "aligned_looks_like": "The record itself carries executing and triggering identities as separate fields with the intervening actors in order; the ordering is recoverable from the record alone after the credentials it came from have expired; each recorded hop shows narrower authority than the one before.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-identity",
+   "question_id": "concern-identity-q3",
+   "angle": "guarantees",
+   "score": 1,
+   "label": "exists",
+   "question": "The guarantee proposed here is applied, not requested, so: is the actor chain attached by the platform rather than supplied by the caller - what happens when a caller sends its own chain, an altered one, or none at all?",
+   "aligned_looks_like": "The platform derives the chain from the presented credentials at admission; caller-supplied chains are ignored or refused with a typed failure; the missing case still produces a full chain.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-identity",
+   "question_id": "concern-identity-q5",
+   "angle": "depth",
+   "score": 0,
+   "label": "absent",
+   "question": "The proposed future state turns on deep use, so: when an identity is withdrawn while work is already running under it, does that work stop - and is the withdrawal itself recorded against the unit it stopped?",
+   "aligned_looks_like": "The next capability call after the withdrawal fails, the unit terminates with a typed refusal naming the withdrawn identity, and the record shows who withdrew it and at which point the work stopped.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-identity",
+   "question_id": "concern-identity-q6",
+   "angle": "direction",
+   "score": 1,
+   "label": "exists",
+   "question": "Against the direction proposed for this section, can an auditor answer who authorised this action, with what authority, for which task, from the immutable record alone - without access to the agent's reasoning and without the platform's cooperation in interpreting it?",
+   "aligned_looks_like": "Agent, credential, task and authorising principal all recoverable from the record; the record is tamper-evident; nothing depends on the agent's own narration of what it did.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-policy",
+   "question_id": "concern-policy-q1",
+   "angle": "guarantees",
+   "score": 1,
+   "label": "exists",
+   "question": "Can any unit of work reach execution through any entry without a policy decision having been taken first, and can a caller argument, a configuration flag or an internal call path skip it? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "All four entries are refused identically before any spend or side effect; the refusal comes from one shared mediation point; no caller-supplied field, flag or internal path bypasses it, and the attempt to disable it is itself refused.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-policy",
+   "question_id": "concern-policy-q2",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "When a unit of work spawns further work while it is running, a tool call, a sub-agent, a retry or a compensating action, is each of those decided in its own right against the actor, the delegation chain and the ceiling that apply at that moment, or does the admission decision taken for the parent cover everything it later does? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "Each spawned action carries its own decision taken before that action's own side effect, with an input naming the acting agent, the party it acts for and the budget remaining at that moment; a forbidden child is refused with a typed failure while the parent continues under its own terms.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-policy",
+   "question_id": "concern-policy-q3",
+   "angle": "depth",
+   "score": 0,
+   "label": "absent",
+   "question": "Does an allow have a stated scope and lifetime, so that work which was paused, queued, or resumed after a restart is decided again before its next side effect, or is a decision taken once treated as valid for as long as the run lasts? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "A decision names the single action it admits and the moment it was taken; work resumed after a delay, a restart or a queue is decided again before its next side effect, and a rule changed in the interval takes effect on the resumed work.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-policy",
+   "question_id": "concern-policy-q4",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Across the human, event, schedule and external entries, does the decision see the same input shape, and how does a refusal compose with the other guarantees the platform applies? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "One input schema for all entries, with the entry itself as an attribute rather than a different shape; a refusal is typed, correlated, attributable and costs nothing beyond the decision.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-policy",
+   "question_id": "concern-policy-q5",
+   "angle": "boundary",
+   "score": 1,
+   "label": "exists",
+   "question": "Is the enforcement point reached by construction rather than by convention, so that a capability adapter added tomorrow, containing no policy code of its own, still cannot execute an undecided action? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "The decision is taken at the interface the core imports, so every implementation behind it inherits enforcement; the new adapter's forbidden action is refused although the adapter itself checks nothing; an adapter author cannot omit enforcement.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-provenance",
+   "question_id": "concern-provenance-q1",
+   "angle": "guarantees",
+   "score": 1,
+   "label": "exists",
+   "question": "Is a provenance record produced for every unit of work without the caller asking, including units that failed and units that were refused before execution? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "All three produce records with the same identity, correlation and entry fields; emission is on the shared path, not in the caller; nothing a caller passes turns it off.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-provenance",
+   "question_id": "concern-provenance-q2",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "Is an artifact whose attestation is missing, unverifiable, or inconsistent with its bytes refused at the point where it is consumed or promoted, by the platform rather than by the diligence of whoever consumes it? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "Verification happens before consumption on the shared path; an artifact that fails it is refused with a typed failure naming what did not verify; the same refusal occurs whether the consumer is a person, a scheduled run or another party's agent.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-provenance",
+   "question_id": "concern-provenance-q3",
+   "angle": "depth",
+   "score": 0,
+   "label": "absent",
+   "question": "Can it be shown that no artifact escapes the guarantee, that every artifact produced over a period has a record, and that a component cannot produce one through a path which emits nothing? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "The two counts reconcile with no unattested artifact; emission is wired where every producing path passes, so a component that attests nothing itself still yields a record; the attempt to write outside that path is refused or is structurally impossible.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-provenance",
+   "question_id": "concern-provenance-q4",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "For a unit started from each of the four entries, can you traverse from a produced artifact back to its inputs, the code version, the requesting entry and the delegated actor, and forward to everything that consumed it? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "The same traversal works for every entry; the delegation chain is present so an agent action names both the agent and the party it acted for; consumers are discoverable because inputs are recorded by digest.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-telemetry",
+   "question_id": "concern-telemetry-q3",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "Are the attributes the other guarantees need, the actor and delegation chain, the tenant, the entry, the policy outcome, the ceiling and what was consumed of it, stamped onto a unit's signals by the platform, and do they appear on metrics and logs as well as on spans? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "One place stamps them, so all three signal kinds carry the same guarantee attributes with no caller supplying any of them; a refusal, a delegation hop and a budget termination are attribute values rather than prose.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-telemetry",
+   "question_id": "concern-telemetry-q4",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Across the four entries, what must a caller do to be observable at all, and what can it do to the telemetry the platform emits: can it add its own signals and have them join the unit, and can it suppress emission, change the sampling decision, or enrich beyond what the guarantee permits, for instance by attaching raw content? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "A caller supplies nothing at any entry to be fully observed; caller-added signals join the unit through the correlation attributes the platform stamped; attempts to emit less or more than the guarantee allows are refused or normalised in the pipeline.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-telemetry",
+   "question_id": "concern-telemetry-q6",
+   "angle": "direction",
+   "score": 1,
+   "label": "exists",
+   "question": "Are content redaction and the sampling decision applied by the pipeline rather than by each call site, and are failures and refusals exempt from sampling loss? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "Redaction happens before export and is not the caller's responsibility; sampling is decided centrally with all errors, refusals and budget terminations retained; the policy is stated and testable.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-errors",
+   "question_id": "concern-errors-q1",
+   "angle": "guarantees",
+   "score": 1,
+   "label": "exists",
+   "question": "Does every boundary return the typed failure object without the caller asking, including refusals taken before execution, ceilings exceeded during execution, validation rejections and faults raised inside an adapter? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "Every boundary converges on one construction site, so a component that handles no errors itself still returns the typed object; nothing reaches a caller as an exception, a stack trace or a bare status.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-errors",
+   "question_id": "concern-errors-q2",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "Do the platform's own stops arrive as typed failures rather than as silences: a refusal taken before execution, a ceiling exceeded mid-run, a cancellation, a validation rejection and a unit killed by its isolation, each with its own type and the members that say which rule, which ceiling and how much was consumed? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "Each stop has a distinct type identifier; the ceiling case names the ceiling and the amount consumed, the refusal names the rule and the policy version; none of them arrives as an empty result, a truncated success or a generic internal fault.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-errors",
+   "question_id": "concern-errors-q3",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "When a failure happens where nobody is waiting, a scheduled fire, a redelivered event, a sub-unit spawned inside a run, is the typed object still constructed, recorded and retrievable afterwards? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "The object is built and stored whether or not anything reads it; it is findable later by correlation and carries the same type vocabulary as a failure returned to a person; a failed sub-unit is visible in the parent's outcome.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-errors",
+   "question_id": "concern-errors-q4",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Across the human, event, schedule and external entries, does one underlying fault produce one type identifier, and does the failure carry the correlation identifier and the actor so it can be found in telemetry and in the record afterwards? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "One type across all four with transport-appropriate encoding only; correlation identifier and actor present on every one; a schedule-triggered failure is as reportable as a human one.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-errors",
+   "question_id": "concern-errors-q6",
+   "angle": "direction",
+   "score": 1,
+   "label": "exists",
+   "question": "Is the typed failure the platform's own currency for recovery, so that a retry, a compensation, an escalation to a person or an abandonment is selected from the type and its members, and nothing inside the platform recovers by reading prose or by handing the message to a model to interpret? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "Every automatic reaction is selected from the type and its extension members; the human-readable member is read by nothing that decides; a type with no mapping stops the work and is reported rather than guessed at.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-idempotency",
+   "question_id": "concern-idempotency-q2",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "What happens when two identical triggers arrive at the same instant, and what happens when a holder stalls past its lease and then returns to write mid-effect? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "Exactly one claim wins and the other waits for the outcome or is refused with a typed failure; where the effect lands on a resource the platform owns, the resource refuses the stale holder because its token is lower than the one already accepted; where it lands on a resource the platform cannot fence, the effect is made through a keyed operation whose stored outcome the stale holder reads before writing, so it does not repeat it; both results are reproducible under repetition.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-idempotency",
+   "question_id": "concern-idempotency-q3",
+   "angle": "depth",
+   "score": 1,
+   "label": "exists",
+   "question": "On a replay, is the original outcome returned unchanged, and is a recorded failure replayed as that same typed failure rather than re-executed? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "The second returns the stored result with the original correlation identifier and a marker that it is a replay; a stored failure comes back as the same type; the record binds identity, unit, actor and outcome.",
+   "answer_summary": ""
+  },
+  {
+   "section": "concern-idempotency",
+   "question_id": "concern-idempotency-q4",
+   "angle": "usage",
+   "score": 1,
+   "label": "exists",
+   "question": "Across the four entries, what is the deduplication identity composed of when a caller supplies one and when it supplies none, how is it scoped, and what happens when the same logical work arrives twice through two different entries? (This question is proposed, derived from the row it cites.)",
+   "aligned_looks_like": "Where a caller supplies nothing the platform derives an identity from the envelope, the schedule occurrence or the request, so replay safety never depends on caller cooperation; the key is scoped by tenant and actor so identical strings from two tenants never collide; the per-entry composition is documented; work arriving twice by different doors either collapses to one unit or the decision not to collapse it is stated and deliberate.",
+   "answer_summary": ""
+  }
+ ],
+ "research_gaps": [
+  {
+   "section": "isolation",
+   "gap": "That the runtime specification itself defines pause, resume, snapshot or fork as standard lifecycle operations, rather than these being adapter-specific extensions.",
+   "research_query": "OCI runtime specification lifecycle operations pause resume checkpoint restore standardisation status"
+  },
+  {
+   "section": "isolation",
+   "gap": "Which isolation class operators running hundreds of concurrent agent units actually default to, with measured cost per resident sandbox.",
+   "research_query": "operators running hundreds of concurrent agent sandboxes 2026 default isolation class measured cost per resident sandbox"
+  },
+  {
+   "section": "model-access",
+   "gap": "That a published specification, rather than a de facto convention, now governs the completion request shape.",
+   "research_query": "published open specification for LLM completion request format standards body 2026"
+  },
+  {
+   "section": "model-access",
+   "gap": "Whether hard budget termination at the model boundary is a common production practice or mostly a documented feature.",
+   "research_query": "production evidence enforced token budget termination LLM gateway 2026 case studies measured"
+  },
+  {
+   "section": "durable-execution",
+   "gap": "That any cross-engine specification or portable journal format for durable execution exists or is being drafted inside the window.",
+   "research_query": "cross-engine durable execution specification portable workflow journal format working group 2026"
+  },
+  {
+   "section": "durable-execution",
+   "gap": "What resumption latency and journal size production users of many long-running agent workflows actually observe.",
+   "research_query": "production measurements durable agent workflow resume latency journal size 2026 postmortem"
+  },
+  {
+   "section": "agent-runtime",
+   "gap": "Whether the protocol itself defines a non-interactive or policy-answered permission mode, as opposed to implementations adding one.",
+   "research_query": "Agent Client Protocol specification non-interactive permission mode automatic approval headless clients"
+  },
+  {
+   "section": "agent-runtime",
+   "gap": "Whether a conformance test suite published by the protocol's stewards exists that an adapter can be run against.",
+   "research_query": "Agent Client Protocol official conformance test suite certification 2026"
+  },
+  {
+   "section": "tool-access",
+   "gap": "Whether the 2026-07-28 revision mandates or merely enables a declared toolset or search-based discovery mechanism, as opposed to that being a client-side practice.",
+   "research_query": "Model Context Protocol 2026-07-28 specification tool discovery toolsets pagination cacheable list results normative requirements"
+  },
+  {
+   "section": "tool-access",
+   "gap": "What proportion of production remote tool surfaces actually enforce audience-bound tokens on refresh.",
+   "research_query": "measured survey remote MCP servers resource indicator enforcement refresh tokens 2026"
+  },
+  {
+   "section": "capability-packaging",
+   "gap": "Whether the packaging specification itself defines a version field, a digest or a signature mechanism, as opposed to registries and runtimes adding these around it.",
+   "research_query": "Agent Skills specification manifest fields version integrity digest signature normative requirements 2026"
+  },
+  {
+   "section": "capability-packaging",
+   "gap": "Whether any registry inside the window actually enforces publisher signing and transparency-log provenance in production.",
+   "research_query": "agent skill registry enforcing publisher signing transparency log provenance production 2026"
+  },
+  {
+   "section": "work-intake",
+   "gap": "What operators running hundreds of concurrent agents actually use for work intake at scale, and whether they normalise the four doors into one envelope or keep them separate.",
+   "research_query": "production multi-agent platform 2026 architecture hundreds of agents work intake normalisation CloudEvents A2A case study"
+  },
+  {
+   "section": "work-intake",
+   "gap": "Whether the agent messaging standard's extension mechanism is in practice used to carry idempotency keys and budget ceilings, or whether implementers put them in the payload.",
+   "research_query": "A2A extension mechanism 1.0.1 examples idempotency key budget metadata extension registry usage 2026"
+  },
+  {
+   "section": "document-validation",
+   "gap": "Whether the standardised output formats of the dialect are implemented consistently enough across validators that a failure object can be built from them without validator-specific handling.",
+   "research_query": "JSON Schema 2020-12 output format basic detailed verbose validator support comparison 2026 interoperability"
+  },
+  {
+   "section": "document-validation",
+   "gap": "How large agent platforms validate documents whose shape is only known at run time, where a schema must be resolved per unit of work rather than compiled once.",
+   "research_query": "dynamic schema resolution per request agent tool input validation 2026 compile cache JSON Schema performance production"
+  },
+  {
+   "section": "telemetry",
+   "gap": "Whether the CloudEvents distributed-tracing extension and explicit correlation attributes are used together in practice, or whether implementers choose one and lose the other.",
+   "research_query": "CloudEvents distributed tracing extension plus explicit correlation attributes agent workflow 2026 implementation guidance conflict"
+  },
+  {
+   "section": "telemetry",
+   "gap": "What cost attribution looks like at scale for hundreds of concurrent agents, and whether per-call token attributes survive sampling.",
+   "research_query": "OpenTelemetry GenAI cost token attribution sampling head tail 2026 large agent fleet production practice"
+  },
+  {
+   "section": "policy",
+   "gap": "Whether the published decision API's request shape can express a budget ceiling and a delegation chain without extensions, or whether those require profile-specific fields.",
+   "research_query": "AuthZEN 1.0 request schema subject resource action context extensions delegation budget attributes profile 2026"
+  },
+  {
+   "section": "policy",
+   "gap": "How decision latency behaves when the input document must be assembled from remote state per call at agent scale.",
+   "research_query": "policy decision point latency input document assembly remote data agent tool call rate 2026 benchmark production"
+  },
+  {
+   "section": "provenance",
+   "gap": "Whether a predicate type for agent actions has been registered or is converging, or whether every implementer is still defining a private predicate.",
+   "research_query": "in-toto predicate type registry agent action evidence predicate 2026 standard registration proposal"
+  },
+  {
+   "section": "provenance",
+   "gap": "The cost and retention practice of attesting every unit of agent work rather than every release, at hundreds of agents.",
+   "research_query": "attestation volume retention cost transparency log per action agent scale 2026 production practice"
+  },
+  {
+   "section": "errors",
+   "gap": "Whether a convention has emerged for carrying problem details over non-HTTP agent transports, so an agent-to-agent or event failure uses the same object rather than a transport-native error code.",
+   "research_query": "RFC 9457 problem details over JSON-RPC gRPC messaging non-HTTP transport convention 2026 agent protocol error mapping"
+  },
+  {
+   "section": "errors",
+   "gap": "Whether platforms publish their own problem-type registries publicly as machine-readable documents, and what that document looks like.",
+   "research_query": "publish machine readable problem type registry document RFC 9457 type URI catalogue example API 2026"
+  },
+  {
+   "section": "identity",
+   "gap": "That an attested workload identity plane and an assertion-grant issuer can satisfy one identity interface without the interface leaking either token shape - asserted from the two mechanisms separately, not from a source describing both behind one abstraction.",
+   "research_query": "single workload identity abstraction over SPIFFE JWT-SVID and OAuth token exchange interface design 2026 pluggable issuer"
+  },
+  {
+   "section": "identity",
+   "gap": "That revocation of an agent credential reliably halts work already in flight rather than only preventing new calls.",
+   "research_query": "revoke short-lived agent credential in-flight task termination 2026 token revocation propagation latency"
+  },
+  {
+   "section": "scheduling",
+   "gap": "That deriving a replay key from the schedule identity plus the nominal fire time is the prevailing convention for making catch-up and backfill converge, rather than my synthesis of the recurrence and idempotency findings.",
+   "research_query": "scheduled job idempotency key nominal fire time backfill deduplication convention 2026"
+  },
+  {
+   "section": "scheduling",
+   "gap": "The current revision status and adoption of the recurrence grammar's own base specification inside the window - searches returned libraries and successors but no ietf activity record for the base document.",
+   "research_query": "RFC 5545 errata revision calext working group activity 2026 icalendar base specification status"
+  },
+  {
+   "section": "idempotency",
+   "gap": "Whether the header draft was revived, replaced or formally abandoned after its April 2026 expiry - the search returned the expired revision but no later working-group action.",
+   "research_query": "httpapi working group idempotency key header draft 08 status 2026 revived expired abandoned"
+  },
+  {
+   "section": "idempotency",
+   "gap": "That a typed conflict, rather than a plain rejection, is the settled response to a fingerprint mismatch - practitioner sources name conflict codes but none ties the response to a machine-readable failure format.",
+   "research_query": "idempotency key fingerprint mismatch RFC 9457 problem details typed error response 2026"
+  },
+  {
+   "section": "state-persistence",
+   "gap": "That inclusion and consistency proofs are practical at the write rate a busy agent platform generates, rather than at certificate-issuance rates.",
+   "research_query": "transparency log throughput write rate benchmark 2026 merkle inclusion proof high volume application log"
+  },
+  {
+   "section": "state-persistence",
+   "gap": "That a single read surface of record-by-identity, stream-from-version and projection is sufficient for cost planning over a typed dependency structure - this is my synthesis, not a sourced finding.",
+   "research_query": "event sourced graph query surface projections planning cost estimation read model design 2026"
+  },
+  {
+   "section": "concern-budget",
+   "gap": "That a resumed or replayed unit should continue under its remaining ceiling rather than a fresh one - stated as a design consequence here, with no source found that specifies budget carry-over across a restart.",
+   "research_query": "durable workflow resume remaining budget carry over restart token ceiling 2026 checkpoint budget state"
+  },
+  {
+   "section": "concern-budget",
+   "gap": "A settled unit of measure for a ceiling that spans model tokens, tool invocations and wall time - sources measure tokens and currency but not a combined ceiling.",
+   "research_query": "unified agent work unit budget tokens tool calls wall clock combined ceiling normalisation 2026"
+  },
+  {
+   "section": "concern-identity",
+   "gap": "That a maximum delegation depth, or a rule for refusing a chain that has grown too long, is established practice - sources describe accumulating chains but none names a bound.",
+   "research_query": "maximum delegation chain depth limit agent to agent act claim nesting bound policy 2026"
+  },
+  {
+   "section": "concern-identity",
+   "gap": "That the triggering identity for a schedule created long ago should be the creating principal rather than the current owner of the schedule, when the creator has since left.",
+   "research_query": "scheduled automation authorising principal departed user ownership transfer attribution audit 2026"
+  },
+  {
+   "section": "concern-policy",
+   "gap": "That a deterministic pre-execution decision should fail closed when the decision engine is unreachable, rather than degrade to a cached or default allow, is stated here without a source inside the window.",
+   "research_query": "agent tool gateway policy decision point unavailable fail closed versus cached decision 2026"
+  },
+  {
+   "section": "concern-policy",
+   "gap": "That there is a portable request and response shape for a policy decision that survives a change of engine (so a second engine can be proven against the same suite) is asserted without a source.",
+   "research_query": "portable policy decision request response schema across policy engines interoperability 2026"
+  },
+  {
+   "section": "concern-provenance",
+   "gap": "That there is an agreed predicate type for artifacts produced by an agent run, as distinct from a build, could not be sourced inside the window.",
+   "research_query": "in-toto predicate type for AI agent run output attestation registry 2026"
+  },
+  {
+   "section": "concern-provenance",
+   "gap": "That attesting refused and failed units, and not only produced artifacts, is established practice rather than this section's extrapolation from build provenance.",
+   "research_query": "attestation for failed or refused runs negative provenance records practice 2026"
+  },
+  {
+   "section": "concern-telemetry",
+   "gap": "Which specific generative-AI attribute names are safe to depend on inside the window, given every one of them still carries a development stability badge, is not resolved by the sources found.",
+   "research_query": "which gen_ai semantic convention attributes are considered safe to depend on production 2026 stability roadmap"
+  },
+  {
+   "section": "concern-telemetry",
+   "gap": "That correlation identifiers should be carried in the work envelope itself rather than only in trace context is this section's design position, supported by the span-link evidence but not directly sourced as a convention.",
+   "research_query": "carrying correlation identifiers in message envelope versus trace context OpenTelemetry guidance 2026"
+  },
+  {
+   "section": "concern-errors",
+   "gap": "How a problem type identifier should be mapped onto the error codes of agent messaging and RPC bindings, so one vocabulary survives both, was not resolved by any source found inside the window.",
+   "research_query": "mapping RFC 9457 problem type URI to JSON-RPC and gRPC error codes agent protocol guidance 2026"
+  },
+  {
+   "section": "concern-errors",
+   "gap": "That retry semantics belong in extension members of the failure body, rather than in transport headers, is this section's position and was not sourced.",
+   "research_query": "retryable flag retry-after in problem details extension members versus HTTP headers API guidance 2026"
+  },
+  {
+   "section": "concern-idempotency",
+   "gap": "How long a claim record must be retained for replay to remain safe, and what a caller should receive once a key has aged out, is not settled by any source found inside the window.",
+   "research_query": "idempotency key retention window expiry policy what to return after key expires API 2026"
+  },
+  {
+   "section": "concern-idempotency",
+   "gap": "That a schedule occurrence should be treated as a deduplication identity in the same way an event envelope's source and id are was not directly sourced.",
+   "research_query": "scheduled job occurrence identifier idempotency duplicate firing recurrence rule 2026"
+  }
+ ],
+ "conformance_not_conforming": [
+  {
+   "qid": "C01-F",
+   "verdict": "ABSENT",
+   "evidence": "harness/containment/interface.py line 82-86, class UnitContext: \"The stamps the platform applies around every unit. A caller asks for none of them.\" fields correlation_id, run_id, actor, idempotency_key, ceiling_s - one actor field is passed unchanged to admit(), run/prompt, and terminate. No second"
+  },
+  {
+   "qid": "C09-F",
+   "verdict": "DEVIATES",
+   "evidence": ".claude/skills/xc-correlation/SKILL.md: the guarantee names four planes (three signal kinds under four entry doors): \"Bind all three emission kinds at once - spans, log records and problem objects - and count them separately in the audit rather than reporting one total.\" The stamp is set once at dis"
+  },
+  {
+   "qid": "C11-F",
+   "verdict": "DEVIATES",
+   "evidence": "harness/provenance/conformance.py VERIFIER constant, the string a caller sees as external_verifier in every conformance report: \"(written in this repository; a verifier we did not write is not available here)\", following the path harness/provenance/conformance.py --verify-bundle, run as a separate p"
+  },
+  {
+   "qid": "C14-F",
+   "verdict": "DEVIATES",
+   "evidence": ".claude/skills/cap-scheduling/SKILL.md Open questions table: \"Where does the occurrence-instant clock come from once evaluation is pure, and who owns the ticker that asks it?\", answered only as \"Proposed: a single ticker per deployment asks the pure evaluator for the occurrences in a short forward w"
+  },
+  {
+   "qid": "C15-F",
+   "verdict": "DEVIATES",
+   "evidence": "harness/idempotency/adapters/dryrun.py docstring: \"which is the adapter-today row PASS.md B3 records for this element\" naming (F-b3-16) \"key on the wire, no lease\", and \"none. The conformance run's race case proves the gap: without a lock around\" a claim-then-write. harness/idempotency/test.sh secti"
+  },
+  {
+   "qid": "A2-F",
+   "verdict": "DEVIATES",
+   "evidence": "docs/decomposition.md records the search as issued queries, and records the one fetch attempt failing: \"returned `EGRESS_BLOCKED` from the network egress proxy\". kb/research.jsonl holds 660 research records; I counted status and read fields with python3 (json load over the file): 660 of 660 are stat",
+   "from": "verifier"
+  },
+  {
+   "qid": "S2-F",
+   "verdict": "DEVIATES",
+   "evidence": "I counted both sides. Declared: .claude/skills/seam-state/SKILL.md and .claude/skills/seam-state/references/state-seam.md close the kind list at ten, while docs/decomposition.md 2.2.1 states nine in prose, \"Record kinds in the first cut: `node-asserted`, `edge-asserted`, `document-declared`, `dispat",
+   "from": "verifier"
+  }
+ ]
+}

@@ -95,6 +95,41 @@ def construct_problem(type_: str, title: str, status: int, detail: str, retryabl
                     tuple(causes), dict(ext or {}))
 
 
+_RENDER_COUNT = 0  # incremented once per render_body() call, by every capability that
+# imports it. The platform-wide test (platform_conformance.py --raise-all) raises every
+# typed condition every harness under harness/ defines and asserts the counter rose by
+# exactly that many -- proof that each one rendered through this function, not a local
+# copy (errors-q5's second clause: "a test that raises every typed condition the build
+# defines and asserts each is rendered by that same single path, never a second one").
+
+
+def render_body(type_: str, title: str, status: int, detail: str, retryable: bool,
+                 ext: dict | None = None) -> dict:
+    """The one function anywhere under harness/ that assembles the RFC 9457 wire
+    dict (application/problem+json: type, title, status, detail, retryable, plus
+    extension members). errors-q5: a capability keeps its own closed registry and
+    its own typed exception/condition class -- cap-errors names each capability's
+    own typed conditions, and that is correct -- but the *serialization* into the
+    wire shape is owned here alone. Every other harness's Problem.__init__ (or, for
+    the two dataclass-shaped interfaces, its as_dict()) calls this instead of
+    building the dict itself; platform_conformance.py's construction scan is the
+    mechanical check that no second hand-built dict with this key set exists
+    anywhere else under harness/, and --raise-all is the dynamic companion that
+    raises every row of every registry and confirms each one passed through here."""
+    global _RENDER_COUNT
+    _RENDER_COUNT += 1
+    doc = {"type": type_, "title": title, "status": status, "detail": detail, "retryable": retryable}
+    doc.update(ext or {})
+    return doc
+
+
+def render_count() -> int:
+    """How many times render_body() has run in this process. Read by
+    platform_conformance.py --raise-all before and after raising every typed
+    condition across every harness loaded into that process."""
+    return _RENDER_COUNT
+
+
 def reshape_from_body(doc: dict) -> Problem:
     """Rebuild a Problem from a wire body a caller's gate has already found
     well-formed and registered (e.g. adapters/second.py's classify(), after

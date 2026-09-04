@@ -247,10 +247,12 @@ def conform(adapter: str, base: str, breakage: str = "") -> dict:
         s7.log.verify() is None, str(s7.log.verify()))
 
     # -- S5 every failure body is typed -------------------------------------
+    # content_type is no longer a body member (errors-q5: it was this adapter's
+    # own invented shape, no other body carried it -- media type is transport
+    # metadata, rendered once by the shared point, never a per-adapter body key).
     untyped = [p for p in problems if not is_typed(p)]
-    chk("S5 every failure body is application/problem+json with a registered type",
-        not untyped and all(p.get("content_type") == "application/problem+json" for p in problems),
-        f"{len(problems)} problems, {len(untyped)} untyped")
+    chk("S5 every failure body is typed, with the registered type as its `type` member",
+        not untyped, f"{len(problems)} problems, {len(untyped)} untyped")
 
     # -- P the Planner ------------------------------------------------------
     binding = load_dispatcher(adapter, d("p-plan"))

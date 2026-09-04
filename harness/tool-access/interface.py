@@ -39,6 +39,17 @@ No product name, endpoint, transport or protocol method name appears here
 """
 from __future__ import annotations
 
+import os as _errors_os
+import sys as _errors_sys
+_errors_path = _errors_os.path.join(
+    _errors_os.path.dirname(_errors_os.path.abspath(__file__)), "..", "errors")
+if _errors_path not in _errors_sys.path:
+    _errors_sys.path.append(_errors_path)  # appended, never inserted at 0: this
+    # harness's own adapters/ package must resolve before errors/adapters/ does
+from problem import render_body  # noqa: E402  -- errors-q5: the one shared point every
+# capability's own registry gate renders its wire body through, instead of building one
+# itself (harness/errors/problem.py owns render_body; this is not a second copy of it).
+
 import hashlib
 import json
 from abc import ABC, abstractmethod
@@ -75,8 +86,7 @@ class Problem(Exception):
 
     def __init__(self, suffix: str, detail: str, **ext):
         status, title, retryable = REGISTRY[suffix]
-        self.body = {"type": PROBLEM_BASE + suffix, "title": title, "status": status,
-                     "detail": detail, "retryable": retryable, **ext}
+        self.body = render_body(PROBLEM_BASE + suffix, title, status, detail, retryable, ext)
         super().__init__(detail)
 
 

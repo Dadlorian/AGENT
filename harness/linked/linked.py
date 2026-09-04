@@ -37,6 +37,13 @@ import components  # noqa: E402
 from interface import (Envelope, Plan, PlanStep, Platform, Problem, Receipt,  # noqa: E402
                        Result, digest)
 
+# row 76 B1 concern-provenance-q3: every Result this platform produces is
+# attested at the one method every submit() passes through to make one
+# (Linked._run, below) -- wired here, not asked for by anything above it.
+PROV_DIR = os.path.normpath(os.path.join(HERE, "..", "provenance"))
+sys.path.insert(0, PROV_DIR)
+import emit as provenance_emit  # noqa: E402
+
 # --- the declared unit of work: data, not code ------------------------------
 FLOW = {
     "sequence_id": "linked-triage/0.1",
@@ -261,6 +268,9 @@ class Linked(Platform):
             envelope_digest=env.envelope_digest(), outcome="completed",
             stop_reason=receipt["stop_reason"], spent_micros=spent,
             ceiling_micros=env.ceiling_micros)
+        provenance_emit.attest_and_record(os.path.join(self.out_dir, "provenance"), "linked-result",
+                                          json.dumps(result.dict(), sort_keys=True).encode(),
+                                          actor=env.actor_subject)
         note = Receipt(
             run_id=env.run_id, kind=env.kind, step_costs=costs,
             nested_ceiling_micros=receipt["nested_ceiling_micros"],

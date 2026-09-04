@@ -16,6 +16,17 @@ Python 3.11 standard library only.
 """
 from __future__ import annotations
 
+import os as _errors_os
+import sys as _errors_sys
+_errors_path = _errors_os.path.join(
+    _errors_os.path.dirname(_errors_os.path.abspath(__file__)), "..", "errors")
+if _errors_path not in _errors_sys.path:
+    _errors_sys.path.append(_errors_path)  # appended, never inserted at 0: this
+    # harness's own adapters/ package must resolve before errors/adapters/ does
+from problem import render_body  # noqa: E402  -- errors-q5: the one shared point every
+# capability's own registry gate renders its wire body through, instead of building one
+# itself (harness/errors/problem.py owns render_body; this is not a second copy of it).
+
 import importlib
 import re
 from abc import ABC, abstractmethod
@@ -146,10 +157,9 @@ class Problem:
     span_id: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
-        return {"type": self.type, "title": self.title, "status": self.status,
-                "detail": self.detail, "retryable": self.retryable,
-                "correlation_id": self.correlation_id, "trace_id": self.trace_id,
-                "span_id": self.span_id}
+        return render_body(self.type, self.title, self.status, self.detail, self.retryable,
+                            {"correlation_id": self.correlation_id, "trace_id": self.trace_id,
+                             "span_id": self.span_id})
 
 
 PROBLEM_BASE = "urn:agentic:problem:"

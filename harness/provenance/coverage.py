@@ -5,29 +5,33 @@ interface.py and call.py answer "can one caller get one signed statement over
 one artifact it hands us." concern-provenance-q3 asks the question they leave
 open (docs/litmus/answers/d.jsonl, score 0): does every artifact PRODUCED over
 a period have a record, can that be shown by counting rather than assumed, and
-can a component produce one through a path that emits nothing at all. The
-finding there was concrete: orphan_subjects was a hard-coded 0, not a count,
-and grep -c 'attest' examples/end-to-end/run.py was 0 -- the platform's own
-dispatch path emitted no records for what it produced.
+can a component produce one through a path that emits nothing at all.
 
-The mechanism (closure for concern-provenance-q3, citing X-maturity-a-005 and
-X-maturity-a-006): wire emission into the one execution boundary every
-artifact-producing action must pass through, so a component that calls no
-attestation API of its own still yields a record -- emission is a property of
-the *path*, not of the producer's cooperation. Below, produce_artifact() is
-that boundary; component_a and component_b (under the CALLER CODE marker) are
-producers that mention no adapter, no signer, no store, and still end up
-attested. Store.register() is the second half: it is the only write path into
-the manifest reconcile() trusts, and it refuses (Problem, document-invalid) to
-record any digest the adapter cannot resolve to a real attestation, modelling
-"no credential to publish through any other route." reconcile() then counts
-artifacts recorded against attestations the adapter can resolve for the same
-window and names any gap as a defect, rather than asserting zero
-(X-maturity-a-005: coverage moving from opt-in to default, always-on).
-admission_check() is the second, independent enforcement X-maturity-a-006
-describes: an attestation alone is only a linkage claim, so a consumer at
-admission time refuses anything it cannot resolve, regardless of what the
-store's manifest claims.
+The first build of this file answered that against two functions it defined
+inside itself, with a manifest wiped on every process invocation and a bypass
+that was written and then merely noticed. This build fixes all three:
+
+  1. component_a/component_b below the CALLER CODE marker call no attestation
+     API of their own, exactly as before -- but emit.attest_and_record(), the
+     function that gives them a record anyway, is the SAME function
+     examples/end-to-end/run.py's Run.call_agent() and harness/linked/
+     linked.py's Linked._run() call at their own real production boundary
+     (grep -c attest across both: no longer zero). The demonstration here and
+     the wiring there are one piece of code, not two.
+  2. emit.py's store is not wiped by construction; `--reset` wipes it exactly
+     once, and this file is invoked more than once in test.sh step 6 with no
+     reset between the calls, so `artifacts_produced` in `reconcile` grows
+     across separate process invocations -- a real period, not a truncated one.
+  3. Two breakages, matching the closure's two enforcement layers:
+       --break bypass-refused    calls the manifest's only write path with no
+                                  attestation and asserts it raises (refused,
+                                  not merely counted afterward).
+       --break filesystem-escape writes a file straight into the artifact
+                                  store's directory, the one route this
+                                  process cannot refuse (it does not own the
+                                  filesystem) -- and shows reconcile() catches
+                                  it anyway because it enumerates the store,
+                                  not a self-reported log.
 
 Standard: reuses interface.py's in-toto Statement / DSSE envelope / verify
 machinery already cited there (in-toto Attestation Framework + SLSA
@@ -41,94 +45,18 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from interface import AttestRequest, PREDICATE_BUILD, Problem, digest_of  # noqa: E402
-from adapters.dryrun import LocalSignedRecordAdapter                      # noqa: E402
-
-CLOCK = os.environ.get("PROVENANCE_CLOCK", "2026-09-03T00:00:00Z")
-WINDOW = "2026-09-03"
-
-
-def _predicate(component: str, digest: str) -> dict:
-    return {"builder": {"id": "harness/provenance/coverage", "actor": "user:corey",
-                        "delegation_chain": [{"actor": "user:corey", "obtained_via": "direct"}]},
-            "code_version": {"scripts_sha256": {"coverage.py": "n/a"}, "git_commit": "unset",
-                             "interface_version": "0.1"},
-            "materials": [{"name": component, "digest": digest}],
-            "invocation": {"workflow_ref": "harness/provenance/coverage",
-                           "correlation": {"run_id": "cov-run", "correlation_id": "cov-corr"},
-                           "decision_refs": ["budget:ceiling_micros", "policy:allow"]},
-            "started_at": CLOCK, "ended_at": CLOCK}
-
-
-class Store:
-    """The one artifact store this window's coverage is measured against.
-
-    register() is called only from produce_artifact(): it refuses to add a
-    manifest entry for any digest the adapter cannot resolve to a real
-    attestation. inject_bypass() is the deliberate breakage -- it writes an
-    artifact and a manifest line the way a component would if it wrote its
-    own output and skipped the boundary, so the escape path the litmus
-    question asks about actually exists here to be caught or missed.
-    """
-
-    def __init__(self, root: str, adapter):
-        self.root = root
-        self.adapter = adapter
-        self.artifacts_dir = os.path.join(root, "artifacts")
-        self.manifest_path = os.path.join(root, "manifest.jsonl")
-        os.makedirs(self.artifacts_dir, exist_ok=True)
-        open(self.manifest_path, "w").close()   # a run starts from an empty manifest
-
-    def _append(self, record: dict) -> None:
-        with open(self.manifest_path, "a") as f:
-            f.write(json.dumps(record) + "\n")
-
-    def register(self, artifact_id: str, digest: str, component: str, statement_id: str) -> None:
-        if not self.adapter.resolve(digest):
-            raise Problem("document-invalid",
-                          f"no attestation resolves for {digest}; refusing to register {artifact_id}",
-                          coverage_violation="unattested-registration")
-        self._append({"artifact_id": artifact_id, "digest": digest, "component": component,
-                      "statement_id": statement_id, "window": WINDOW})
-
-    def entries(self) -> list:
-        with open(self.manifest_path) as f:
-            return [json.loads(line) for line in f if line.strip()]
-
-    def inject_bypass(self, artifact_id: str, payload: bytes) -> str:
-        digest = digest_of(payload)
-        with open(os.path.join(self.artifacts_dir, artifact_id), "wb") as f:
-            f.write(payload)
-        # Deliberately skips register(): the escape path, not the boundary.
-        self._append({"artifact_id": artifact_id, "digest": digest, "component": "bypass",
-                      "statement_id": None, "window": WINDOW})
-        return digest
-
-
-def produce_artifact(store: Store, component: str, payload: bytes) -> dict:
-    """THE execution boundary. Every artifact a component below the CALLER
-    CODE marker returns comes in here to become a recorded artifact; nothing
-    below this function names an adapter, a signer or a store."""
-    digest = digest_of(payload)
-    artifact_id = component + "-" + digest[7:19]
-    ask = AttestRequest.from_dict({
-        "subjects": [{"name": component, "digest": digest}],
-        "predicate_type": PREDICATE_BUILD, "predicate": _predicate(component, digest),
-        "actor": "user:corey",
-        "correlation": {"run_id": "cov-run", "correlation_id": "cov-corr"},
-        "idempotency_key": "idem-" + digest[7:31]})
-    receipt = store.adapter.attest(ask)
-    store.adapter.publish(receipt)
-    with open(os.path.join(store.artifacts_dir, artifact_id), "wb") as f:
-        f.write(payload)
-    store.register(artifact_id, digest, component, receipt.statement_id)
-    return {"artifact_id": artifact_id, "digest": digest, "statement_id": receipt.statement_id}
+import emit                                     # noqa: E402  -- THE boundary; see emit.py
+# Problem and digest_of come from emit's own privately-loaded interface module
+# (see emit.py's docstring on why), not a second, separately-imported copy --
+# a `Problem` from a different module instance would not be caught by
+# `except Problem` below.
+Problem, digest_of = emit.Problem, emit.digest_of
 
 
 # --------------------------------------------------------------------------
 # >>> CALLER CODE: two producing components. Neither imports interface.py,
 # neither knows an adapter exists, and both still end up with a record
-# because the harness routes their output through produce_artifact().
+# because the harness routes their output through emit.attest_and_record().
 def component_a(source: bytes) -> bytes:
     return b"summary: " + source[:8] + b"\n"
 
@@ -138,51 +66,73 @@ def component_b(source: bytes) -> bytes:
 # --------------------------------------------------------------------------
 
 
-def reconcile(store: Store) -> dict:
-    """Count artifacts recorded in the store against attestations the adapter
-    can resolve for the same window; name any gap instead of asserting zero."""
-    entries = store.entries()
-    unattested = [e["artifact_id"] for e in entries
-                  if not (e.get("statement_id") and store.adapter.resolve(e["digest"]))]
-    attested = len(entries) - len(unattested)
-    return {"window": WINDOW, "artifacts_produced": len(entries), "attestations_valid": attested,
-            "unattested": unattested, "reconciled": attested == len(entries) and not unattested}
-
-
-def admission_check(store: Store, digest: str) -> bool:
-    """The second, independent enforcement: refuses anything the adapter
-    cannot itself resolve, regardless of what the manifest claims."""
-    return bool(store.adapter.resolve(digest))
+def _admission_over_ground_truth(root: str) -> dict:
+    """Admission checked against every artifact actually on disk, computing
+    the digest from the bytes that are really there -- so a file that reached
+    the store with no manifest entry at all (the filesystem-escape breakage)
+    is still checked, not skipped because it has no entry to look up."""
+    admitted = {}
+    for artifact_id in emit.produced_artifacts(root):
+        with open(os.path.join(root, "artifacts", artifact_id), "rb") as f:
+            digest = digest_of(f.read())
+        admitted[artifact_id] = emit.admission_check(root, digest)
+    return admitted
 
 
 def main() -> int:
     root = "out/coverage"
     if "--root" in sys.argv:
         root = sys.argv[sys.argv.index("--root") + 1]
-    breakage = "--break" in sys.argv
+    if "--reset" in sys.argv:
+        emit.reset(root)
+        print(f"period reset: {root} starts empty")
 
-    adapter = LocalSignedRecordAdapter(path=os.path.join(root, "attestations.jsonl"))
-    store = Store(root, adapter)
+    breakage = None
+    if "--break" in sys.argv:
+        breakage = sys.argv[sys.argv.index("--break") + 1]
+        if breakage not in ("bypass-refused", "filesystem-escape"):
+            print(f"unknown --break mode {breakage!r}")
+            return 2
 
-    r1 = produce_artifact(store, "component_a", component_a(b"hello world"))
-    r2 = produce_artifact(store, "component_b", component_b(b"hello world"))
+    r1 = emit.attest_and_record(root, "component_a", component_a(b"hello world"))
+    r2 = emit.attest_and_record(root, "component_b", component_b(b"hello world"))
     print(f"produced via boundary: {r1['artifact_id']}, {r2['artifact_id']} "
           f"(component_a/component_b call no attestation API of their own)")
 
-    if breakage:
-        digest = store.inject_bypass("bypass-artifact", b"snuck in with no attestation\n")
-        print(f"deliberate breakage: an artifact was written to the store bypassing "
-              f"produce_artifact (digest {digest}); this is the escape path the guarantee claims "
-              f"cannot happen unnoticed")
+    if breakage == "bypass-refused":
+        # The manifest's one write path, called the way a component skipping
+        # attestation would have to call it: no statement_id at all. This
+        # must be REFUSED, not written and caught later.
+        digest = digest_of(b"snuck in with no attestation\n")
+        try:
+            emit.register_or_refuse(root, "bypass-artifact", digest, "bypass", statement_id=None)
+            print("BYPASS NOT REFUSED: a manifest entry was written with no attestation")
+        except Problem as p:
+            print(f"bypass refused at write time: {p.body['detail']}")
 
-    report = reconcile(store)
+    elif breakage == "filesystem-escape":
+        # The one route attest_and_record cannot refuse, because refusing it
+        # would require owning the filesystem, not just the manifest API: a
+        # file dropped straight into the artifact store's directory, with no
+        # call to attest_and_record and no manifest line at all.
+        payload = b"snuck in with no attestation, no manifest line either\n"
+        artifacts_dir = os.path.join(root, "artifacts")
+        os.makedirs(artifacts_dir, exist_ok=True)
+        with open(os.path.join(artifacts_dir, "bypass-artifact"), "wb") as f:
+            f.write(payload)
+        print("deliberate breakage: a file was written directly into the artifact store's "
+              "directory, bypassing attest_and_record and the manifest entirely -- this is "
+              "the escape reconcile() must catch by enumerating the store, not by trusting it")
+
+    report = emit.reconcile(root)
     print("reconcile: " + json.dumps(report))
 
-    admitted = {e["artifact_id"]: admission_check(store, e["digest"]) for e in store.entries()}
+    admitted = _admission_over_ground_truth(root)
     print("admission_check: " + json.dumps(admitted))
 
     ok = report["reconciled"] and all(admitted.values())
-    print("COVERAGE OK: two counts reconcile, nothing admitted without a resolvable attestation"
+    print("COVERAGE OK: artifacts actually in the store equal attestations that resolve for them, "
+          "nothing admitted without one"
           if ok else
           "COVERAGE VIOLATION: an artifact exists in the store with no attestation the adapter "
           "can resolve, and admission_check refuses it")

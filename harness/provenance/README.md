@@ -16,7 +16,9 @@ shape. Second adapter: Sigstore, or any attestation store.
 | `adapters/second.py` | Keyless signing with a public append-only log: an identity obtained per run and discarded, an inclusion proof returned with the envelope, and no ability to sign offline. |
 | `call.py` | The minimal call, 22 lines of caller code below the `>>> CALLER CODE` marker. |
 | `conformance.py` | The 13 cases every adapter passes, the store-unmounted verifier subprocess, the two breakages, the product scan and the caller-line count. |
-| `test.sh` | The gate: conformance, the swap proof, the breakages; `--live` for this host. |
+| `emit.py` | The coverage boundary: `attest_and_record()`, the one function a producing path calls to get a record with no adapter, signer or store named. Not just this harness's own demo -- `examples/end-to-end/run.py` and `harness/linked/linked.py` import this same module and call this same function at their own single production choke point. Loaded privately (`importlib`, not a bare `import interface`) because it is imported from inside other harnesses' own processes, where the bare name `interface` is already bound to that harness's own module (see the module docstring). |
+| `coverage.py` | concern-provenance-q3 (row 76 B1): does every artifact produced over a period have a record, shown by counting rather than assumed, with no path that emits nothing. Gated in `test.sh` step 6: a manifest that accumulates across process invocations instead of resetting, ground-truth enumeration of the artifact store's directory (not a self-reported log), and two deliberate breakages -- a bypass write refused at the manifest's one write path, and a filesystem-level escape that the write-time refusal cannot reach but ground-truth enumeration still catches. |
+| `test.sh` | The gate: conformance, the swap proof, the breakages, coverage; `--live` for this host. |
 | `provenance.json` | Which skills, kb ids and research ids this harness stands on; what is measured and what is claimed. |
 | `plan-entry.json` | This harness's row, in the shape of an entry in `harness/plan.json`. |
 
@@ -64,6 +66,10 @@ live adapter opens files and imports no network library at all.
 | 4 | the definition-of-done breakage: the artifact is rebuilt and the statement is not, so the run exits 1 with `subject_mismatches=1`, `attestations_verified=0` and a non-zero verifier exit, with the store still unmounted |
 | 4b | a second breakage: an envelope whose signature is dropped is rejected on the second adapter too |
 | 5 (`--live`) | the same 13 cases against the evidence records on this host, or a clear skip naming the env vars |
+| 6 | coverage: the manifest accumulates across two separate process invocations of `coverage.py` (2 to 4 entries) rather than being truncated; ground-truth enumeration of the artifact store's directory reconciles against attested manifest entries |
+| 6b | breakage: a manifest write carrying no attestation is refused at the one write path into `manifest.jsonl`, not written and merely counted afterward |
+| 6c | breakage: a file dropped directly into the artifact store's directory (the one route the write-time refusal cannot reach) is still caught, because `reconcile()` enumerates the store instead of trusting a self-reported log |
+| 6d | `examples/end-to-end/run.py` and `harness/linked/linked.py` call the same `emit.attest_and_record()` coverage.py demonstrates, at their own real production boundary -- not a synthetic stand-in |
 
 ## What would pin, and how the boundary avoids it
 

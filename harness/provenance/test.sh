@@ -125,6 +125,61 @@ check "a report that falsely claims independence: exits 1" "$?" "1"
 grep -q "NONCONFORMANT" out/independence-broken-check.log && ok "the false claim is named, not silently accepted" \
   || bad "$(cat out/independence-broken-check.log)"
 
+echo "6. coverage: no artifact escapes attestation, over more than one run"
+rm -rf out/coverage
+python3 coverage.py --reset --root out/coverage > out/coverage-run1.log 2>&1
+check "run 1 of the period exits 0" "$?" "0"
+grep -q "COVERAGE OK" out/coverage-run1.log && ok "two artifacts produced via the boundary reconcile" \
+  || bad "$(tail -3 out/coverage-run1.log)"
+python3 coverage.py --root out/coverage > out/coverage-run2.log 2>&1
+check "run 2 of the same period (no --reset) exits 0" "$?" "0"
+MLINES=$(wc -l < out/coverage/manifest.jsonl)
+check "manifest has 4 entries (2 production events x 2 process runs): not truncated between runs" "$MLINES" "4"
+grep -q '"artifacts_produced": 2' out/coverage-run2.log \
+  && ok "2 distinct artifacts in the store (component_a/b are deterministic, so run 2 re-produces the same bytes) reconcile cleanly" \
+  || bad "$(grep reconcile out/coverage-run2.log)"
+
+echo "6b. deliberate breakage: a manifest write with no attestation is refused, not counted after the fact"
+python3 coverage.py --root out/coverage --break bypass-refused > out/coverage-bypass.log 2>&1
+check "the refused attempt does not itself fail the run" "$?" "0"
+grep -q "bypass refused at write time" out/coverage-bypass.log \
+  && ok "the write was refused before it reached the manifest" || bad "the bypass was not refused"
+grep -q "no credential to publish through any other route" out/coverage-bypass.log \
+  && ok "refused for the reason the closure names" || bad "wrong reason"
+python3 -c "
+import json
+e = [json.loads(l) for l in open('out/coverage/manifest.jsonl') if l.strip()]
+assert not any(x['artifact_id'] == 'bypass-artifact' for x in e), 'the refused write still landed in the manifest'
+print('manifest unchanged by the refused attempt:', len(e), 'entries')
+" > out/coverage-bypass-check.log 2>&1
+check "the manifest carries no trace of the refused write" "$?" "0"
+cat out/coverage-bypass-check.log | sed 's/^/  ..   /'
+
+echo "6c. deliberate breakage: a file dropped straight into the store, bypassing the API entirely"
+python3 coverage.py --root out/coverage --break filesystem-escape > out/coverage-escape.log 2>&1
+check "the run exits non-zero: the escape is caught, not missed" "$?" "1"
+grep -q "COVERAGE VIOLATION" out/coverage-escape.log && ok "named as a violation, not silently passed" \
+  || bad "$(tail -3 out/coverage-escape.log)"
+grep -q '"unattested": \["bypass-artifact"\]' out/coverage-escape.log \
+  && ok "the escaped artifact is named by enumerating the store, not by trusting the manifest" \
+  || bad "$(grep reconcile out/coverage-escape.log)"
+python3 coverage.py --reset --root out/coverage > out/coverage-restored.log 2>&1
+check "the period resets clean again (restored)" "$?" "0"
+
+echo "6d. the boundary coverage.py demonstrates is the same one real producing paths call"
+python3 -c "
+import re
+run_py = open('../../examples/end-to-end/run.py').read()
+linked_py = open('../linked/linked.py').read()
+assert run_py.count('provenance_emit.attest_and_record') >= 1, 'run.py does not call the boundary'
+assert 'emit.attest_and_record' in linked_py or 'provenance_emit.attest_and_record' in linked_py, \
+    'linked.py does not call the boundary'
+print('attest_hits_run_py=%d attest_hits_linked_py=%d' % (
+    len(re.findall('attest', run_py)), len(re.findall('attest|provenance', linked_py))))
+" > out/wired.log 2>&1
+check "both real producing paths call the boundary, not zero times" "$?" "0"
+cat out/wired.log | sed 's/^/  ..   /'
+
 if [ "${1:-}" = "--live" ]; then
   echo "5. live: the evidence records on this host"
   if [ -z "${EVIDENCE_STORE:-}" ] || [ -z "${ATTESTATION_STORE:-}" ] || [ -z "${PROVENANCE_KEY_FILE:-}" ]; then

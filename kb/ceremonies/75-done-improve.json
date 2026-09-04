@@ -8,8 +8,8 @@
   "area": "done",
   "review_read": "kb/ceremonies/75-done-review.json",
   "visible_checks_before": 63,
-  "visible_checks_after": 78,
-  "test_last_line": "passed 78, failed 0",
+  "visible_checks_after": 81,
+  "test_last_line": "passed 81, failed 0",
   "applied": [
     {
       "finding": "R75DONE-003",
@@ -144,7 +144,11 @@
     "The suite is not safe to run concurrently in one tree: it starts with `rm -rf out` and every check writes under examples/done/out/.",
     "harnesses.py was not modified; R75DONE-013 was closed by calling the helper it already exported.",
     "The closure declares delegation.max_declared_hops (round b). An entry whose actor.delegation_chain is deeper is refused 403 policy-denied / delegation-depth-exceeded before any credential is issued and with no record written, so an outside check that expected a deep-but-schema-valid chain to close now needs the ceiling raised on the closure; the ladder and the lifetimes are still computed from the chain's own length.",
-    "The visible suite is 78 checks (round b): the four-arm section-10 identity block gained the depth differential and section 6 gained the light-predicate differential."
+    "The visible suite is 78 checks (round b): the four-arm section-10 identity block gained the depth differential and section 6 gained the light-predicate differential.",
+    "The trust policy is built in one place (run.py:trust_policy) and used at two decisions: the gate and the bundle. An outside check that read out/<door>.bundle.json's policy as a fixed shape now finds expected_subjects and expected_predicate_types empty whenever the closure does not declare the rule that puts them there; with the shipped closure, which declares all four, the bundle is byte-identical to what it was.",
+    "test.sh's verify_alone.py --falsify moves every subject the policy expects rather than the first, so a bundle whose policy expects none is accepted rather than raising StopIteration.",
+    "The visible suite is 81 checks (round c): section 4 gained the gap-row check and section 7 gained the bundle-policy differential and its printed-line assertion. FLOOR, provenance.visible_checks_counted and the README's run step all read 81.",
+    "The suite is still not safe to run concurrently in one tree - it starts with rm -rf out - and a sibling session running it in a loop during this pass produced a different set of failures on every run; round c's runs were done in a copy of the tree under the scratchpad and the final run in place once the tree was quiet."
   ],
   "files_touched": [
     "examples/done/run.py",
@@ -201,5 +205,34 @@
     "visible_checks_before": 76,
     "visible_checks_after": 78,
     "test_last_line": "passed 78, failed 0"
+  },
+  "third_round": {
+    "improver": "75-done-improve-c",
+    "date": "2026-09-04",
+    "why": "The area closed red on two hidden assertions. Both were reconstructed from the review's own evidence rather than by reading docs/night/hidden/, and both turned out to be about a second place the same thing decides, not about the place rounds a and b fixed. R75DONE-003 was closed in Close.gate() only; the other decision the declared gate rules reach - the trust policy write_bundle() hands a third party, which is what an outside verifier refuses on - was still written unconditionally, so with subject-digest-must-match dropped from the closure the published policy still carried the subject expectation and that party still refused by it. R75DONE-009 was left open on the ground that the mechanism does not exist, which is true and still true; what was missing is the other half the brief allows - the gap table saying exactly which statements cannot and why, in fields and counts a reader can check.",
+    "applied": [
+      {
+        "finding": "R75DONE-003",
+        "change": "The declared gate rules now reach both decisions through one function. run.py grew trust_policy(), which turns promotion.gate_rules into the published policy shape - subject-digest-must-match puts the recomputed subject digest in expected_subjects and nothing there when undeclared, run-output-predicate-required puts the resolved predicate type in expected_predicate_types - and Close.gate() and Close.write_bundle() both build from it, so the policy this platform refuses on and the policy a third party refuses on are one declaration and cannot drift. test.sh section 7 runs a ninth arm of the same differential: the same door twice with subject-digest-must-match dropped, --bundle-out on both, verified by the standalone verifier under --falsify. Declared, the bundle expects patch-checkout-coupon and one moved byte exits 3 with subject_mismatches 1; undeclared, the bundle expects no subject and the same moved byte is accepted, exit 0. verify_alone.py's --falsify now moves every expected subject rather than next(iter(...)), because a policy expecting none has nothing to falsify - which is the point of the arm. Falsified two ways: writing expected_subjects unconditionally back into write_bundle() turns section 7's new pair red and nothing else (passed 79, failed 2), and dropping the 'in rules' read inside trust_policy() turns section 6's eight arms and section 7's ninth red together (passed 77, failed 4).",
+        "files": [
+          "examples/done/run.py",
+          "examples/done/test.sh",
+          "examples/done/README.md",
+          "examples/done/provenance.json"
+        ]
+      },
+      {
+        "finding": "R75DONE-009",
+        "change": "The mechanism still does not exist - harness/provenance/emit.py builds the metadata-light predicate from (root, component, payload, actor) and this brief may not change a shared harness - so the row closes the way the brief's other half allows: the gap table now says exactly which statements cannot bind the code version and the run id, and why. G15 names the 17 of 21 a single pass over the four doors writes that cannot (the metadata-light statement each attested subject gets through the wired boundary, the 16 units plus the pull-request door's review request, in <prov-root>/attestations.jsonl), the three predicate fields a reader checks (code_version.scripts_sha256 empty, invocation.correlation.run_id 'n/a', no entry-envelope material, with code_version.git_commit 'unset' in both stores and so separating nothing), the 4 that do bind both, the boundary's signature as the reason, and what a verifier may therefore not conclude. The counts are not prose: a new check in test.sh section 4 reads both stores back, partitions the 21 statements by whether they bind the code version and the run, and requires the G15 row to name that count, both stores and those fields. Falsified: changing the row to '16 of the 21' turns that one check red (passed 80, failed 1) and nothing else.",
+        "files": [
+          "examples/done/README.md",
+          "examples/done/test.sh",
+          "examples/done/provenance.json"
+        ]
+      }
+    ],
+    "visible_checks_before": 78,
+    "visible_checks_after": 81,
+    "test_last_line": "passed 81, failed 0"
   }
 }

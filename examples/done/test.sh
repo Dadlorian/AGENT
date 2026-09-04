@@ -12,7 +12,7 @@
 #
 # The deciding check for this example is held out and is not in this directory.
 set -u
-FLOOR=78
+FLOOR=81
 cd "$(dirname "$0")"
 ROOT=$(cd ../.. && pwd)
 PASS=0; FAIL=0
@@ -233,6 +233,42 @@ print(f"{len(full)} run-output statements name the envelope, the code version an
       f"(gap G15)")
 PYL
 check "the run-output statement names the run and the code version; the light record names neither" "$?" "0"
+
+py <<'PYG' > out/gap-light.log 2>&1
+import base64, json
+# F-b4-05 asks every artifact to be attributable to the code version, the inputs
+# and the actor. Some statements this example writes cannot be: the gap row has
+# to name exactly which ones, in the fields a reader can check, and its counts
+# are read back out of the statements rather than out of its neighbours.
+def statements(path):
+    return [json.loads(base64.b64decode(json.loads(l)["envelope"]["payload"]))
+            for l in open(path)]
+light = statements("out/provenance/attestations.jsonl")
+full = [s for d in ("human", "event", "schedule", "external")
+        for s in statements(f"out/attestations-{d}.jsonl")]
+def binds(doc):
+    # the code version, by the exact digest of every script that ran, and the
+    # run: the two a verifier needs to attribute the bytes to a version and an
+    # execution. `git_commit` is whatever the environment named and is "unset"
+    # in both stores here, so it separates nothing and is not the test.
+    pred = doc["predicate"]
+    return (bool(pred["code_version"]["scripts_sha256"])
+            and pred["invocation"]["correlation"]["run_id"] not in ("", "n/a", "unset"))
+cannot = [d for d in light + full if not binds(d)]
+assert [d for d in full if not binds(d)] == [], "a run-output statement binds neither"
+assert len(cannot) == len(light), (len(cannot), len(light))
+rows = [l for l in open("README.md") if l.startswith("| G15 |")]
+assert len(rows) == 1, f"{len(rows)} rows of the gap table are G15"
+row = rows[0]
+for owed in (f"{len(cannot)} of the {len(light) + len(full)}", "metadata-light",
+             "attestations.jsonl", "code_version.scripts_sha256",
+             "code_version.git_commit", "invocation.correlation.run_id",
+             "harness/provenance/emit.py"):
+    assert owed in row, f"the gap row does not say {owed!r}"
+print(f"{len(cannot)} of {len(light) + len(full)} statements cannot bind the code version and the "
+      f"run id, and G15 names exactly those, by store and by field")
+PYG
+check "the gap row says which statements cannot name the code version and the run" "$?" "0"
 
 echo "5. materiality is read at the decision (differential)"
 mkdir -p out/v
@@ -466,8 +502,11 @@ import importlib.util, json, os, sys
 bundle = json.load(open(os.path.abspath(sys.argv[1])))
 iface_path = os.path.abspath(sys.argv[2])
 if len(sys.argv) > 3 and sys.argv[3] == "--falsify":      # one byte of the artifact moves
-    name, digest = next(iter(bundle["policy"]["expected_subjects"].items()))
-    bundle["policy"]["expected_subjects"][name] = digest[:-1] + ("0" if digest[-1] != "0" else "1")
+    # every subject the policy expects, not the first: a policy that expects
+    # none has nothing to falsify, which is what a closure that does not declare
+    # subject-digest-must-match hands its third party.
+    for name, digest in list(bundle["policy"]["expected_subjects"].items()):
+        bundle["policy"]["expected_subjects"][name] = digest[:-1] + ("0" if digest[-1] != "0" else "1")
 os.chdir("/")
 spec = importlib.util.spec_from_file_location("prov_iface", iface_path)
 iface = importlib.util.module_from_spec(spec)
@@ -499,6 +538,48 @@ check "one byte of the artifact moved makes that same verification fail" "$?" "3
 grep -q '"subject_mismatches": 1' out/verify-falsified.log \
   && ok "the falsified arm fails on the subject digest, not on something else" \
   || bad "the falsified arm failed for the wrong reason"
+py <<'PYB' > out/bundle-rules.log 2>&1
+import json, os, subprocess
+# The policy in the bundle is the second place subject-digest-must-match
+# decides, and the one that decides for someone who is not us: it is what a
+# third party holding only the envelope refuses on. It is built by the same
+# run.py:trust_policy() the gate decides with, so the same declaration reaches
+# both. Same door twice, one declared rule dropped: with it, the party has the
+# subject expectation and one byte moved makes them refuse; without it, the
+# bundle carries no subject expectation and the same moved byte is accepted -
+# the rule is not an expectation only the published policy still carries.
+base = json.load(open("units/close-checkout-coupon-fix.json"))
+seen = {}
+for arm, rules in (("with", base["promotion"]["gate_rules"]),
+                   ("without", [r for r in base["promotion"]["gate_rules"]
+                                if r != "subject-digest-must-match"])):
+    label = f"bundle-{arm}"
+    doc = json.loads(json.dumps(base)); doc["promotion"]["gate_rules"] = rules
+    json.dump(doc, open(f"out/v/closure-{label}.json", "w"))
+    entry = json.load(open("entries/human.json"))
+    entry["intent"]["workflow_ref"] = f"out/v/closure-{label}.json"
+    entry["correlation"] = {"run_id": f"run-{label}", "correlation_id": f"corr-{label}", "depth": 0}
+    entry["idempotency_key"] = f"bundle-{label}-2026-09-03"
+    json.dump(entry, open(f"out/v/entry-{label}.json", "w"))
+    r = subprocess.run(["python3", "run.py", "--entry", f"out/v/entry-{label}.json",
+                        "--ledger", f"out/v/{label}.jsonl", "--prov-root", f"out/v/{label}/prov",
+                        "--bundle-out", f"out/v/{label}.bundle.json"], capture_output=True,
+                       text=True, env=dict(os.environ, OBJSTORE_DIR=f"out/v/{label}/os"))
+    assert r.returncode == 0, r.stdout + r.stderr
+    policy = json.load(open(f"out/v/{label}.bundle.json"))["policy"]
+    moved = subprocess.run(["python3", "out/v/verify_alone.py", f"out/v/{label}.bundle.json",
+                            "../../harness/provenance/interface.py", "--falsify"],
+                           capture_output=True, text=True)
+    seen[arm] = (sorted(policy["expected_subjects"]), moved.returncode,
+                 json.loads(moved.stdout)["subject_mismatches"])
+assert seen["with"] == (["patch-checkout-coupon"], 3, 1), seen["with"]
+assert seen["without"] == ([], 0, 0), seen["without"]
+print("the declared rule reaches the policy the third party decides with:", seen)
+PYB
+check "the same declared rule reaches the gate and the published policy (differential)" "$?" "0"
+grep -q "'without': (\[\], 0, 0)" out/bundle-rules.log \
+  && ok "with the rule undeclared the third party has no subject expectation to refuse on" \
+  || bad "the bundle kept an expectation the closure does not declare"
 
 echo "8. the append-only log: pinned, proved, and checkable by a verifier that imports nothing of ours"
 py <<'PY' > out/state.log 2>&1

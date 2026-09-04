@@ -449,6 +449,22 @@ class Close:
             "started_at": CLOCK, "ended_at": CLOCK}
 
     # --- 5. the admission gate ----------------------------------------------
+    def trust_policy(self, subject_name: str, digest: str, proof: dict | None) -> dict:
+        """What the closure's declared gate rules expect of a verifier, as the
+        published policy shape - built here once and used at both decisions:
+        `gate()`, where this platform decides whether to promote, and
+        `write_bundle()`, the policy a third party holding only the envelope
+        decides with. A rule the closure does not declare puts no expectation in
+        it, so dropping the rule changes both decisions and neither can drift
+        from the other. `accepted_signers` is not here: who signs is the
+        binding's answer, not a rule the closure declares."""
+        rules = self.closure["promotion"]["gate_rules"]              # read at the decision
+        return {"expected_subjects":
+                {subject_name: digest} if "subject-digest-must-match" in rules else {},
+                "expected_predicate_types":
+                [self.full_predicate_type()] if "run-output-predicate-required" in rules else [],
+                "require_inclusion_proof": bool(proof), "now": CLOCK}
+
     def gate(self, row: dict) -> dict:
         """Verification happens here, before consumption, on the shared path: an
         artifact whose statement is missing, whose bytes moved, or whose predicate
@@ -471,12 +487,12 @@ class Close:
                     else {material["issuer"]: "accepted by issuer"})
         # each of the other three rules is read here, at the point it would
         # decide: an undeclared rule contributes no expectation to the policy,
-        # and a failure it alone would have caught does not refuse.
-        trust = self.prov_iface.TrustPolicy(
-            accepted,
-            {row["subject_name"]: digest} if "subject-digest-must-match" in rules else {},
-            (self.full_predicate_type(),) if "run-output-predicate-required" in rules else (),
-            bool(proof), CLOCK)
+        # and a failure it alone would have caught does not refuse. The same
+        # policy is what the bundle hands a third party, so what this gate
+        # refuses on and what they refuse on are one declaration.
+        trust = self.prov_iface.TrustPolicy.from_dict(
+            dict(self.trust_policy(row["subject_name"], digest, proof),
+                 accepted_signers=accepted))
         result = self.prov_iface.verify(found[0], trust, proof, material)
         if result.accepted:
             return {"admitted": True, "rule_id": "", "detail": "accepted", "checks": result.checks,
@@ -682,19 +698,21 @@ class Close:
 
     def write_bundle(self, row: dict) -> None:
         """Everything a party holding no store needs: the envelope, the verifying
-        material and the trust policy. Nothing here names an adapter."""
+        material and the trust policy. Nothing here names an adapter, and nothing
+        here decides what the policy expects: the expectations are the closure's
+        declared gate rules, resolved by the same `trust_policy()` this platform's
+        own gate decides with (`test.sh` section 7), so a rule dropped from the
+        declaration is dropped from the third party's decision too rather than
+        surviving as an expectation only the published bundle carries."""
         envelope = self.prov.resolve(row["digest"])[0]
         material = self.prov.verifying_material(envelope["signatures"][0]["keyid"])
         accepted = ({material["keyid"]: material["material"]} if material.get("issuer") is None
                     else {material["issuer"]: "accepted by issuer"})
         where = self.locations.get(row["digest"])
-        json.dump({"envelope": envelope, "material": material,
-                   "proof": where.inclusion_proof if where else None,
-                   "policy": {"accepted_signers": accepted,
-                              "expected_subjects": {row["subject_name"]: row["digest"]},
-                              "expected_predicate_types": [self.full_predicate_type()],
-                              "require_inclusion_proof": bool(where and where.inclusion_proof),
-                              "now": CLOCK}},
+        proof = where.inclusion_proof if where else None
+        json.dump({"envelope": envelope, "material": material, "proof": proof,
+                   "policy": dict(self.trust_policy(row["subject_name"], row["digest"], proof),
+                                  accepted_signers=accepted)},
                   open(self.args.bundle_out, "w"), indent=1)
 
 

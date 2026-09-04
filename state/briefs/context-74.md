@@ -1,6 +1,6 @@
 # Context for STATUS row 74: the unit (captain's context for the advisor; read this, the files it names, and the web)
 
-## The owner's statements (2026-09-04, distilled; treat as the brief, origin owner)
+## The owner's direction (2026-09-04, distilled): intent to improve past, not a phrase to preserve; mark where you went further as proposed, with why
 - A container is a protected unit: a Firecracker microVM here, chosen for start-up speed over a VM or a container; a sandbox or a container elsewhere. Most agentic work is a wrapper around a harness calling a model API, manipulating code, persisting to GitHub, solving a problem and sending code back for review.
 - Break the features up so the thing can be called composably; easy to use is the art, composability gives the depth for workflows, loops and fan-out. Which model is called (LiteLLM: local GPUs or frontier) is universal; models work a problem and work together across problems.
 - Token economics is first-class: smart ways to save time and tokens to solve the same thing.
@@ -35,4 +35,4 @@ Current practice, inside the window 2026-03 to 2026-09, for: sandboxed coding ag
   "advisor": {"where": ..., "loop": [...]}, "escalation": {"options": [...], "recommended": ..., "why": ...}, "seed": {"options": [...], "recommended": ...},
   "one_call": {"shell": "...", "event": "...", "schedule": "...", "agent": "..."}, "token_economics": [...], "composition": {...},
   "gaps": [{"claim": ..., "research_query": ...}], "first_example": {"name": ..., "does": ..., "measured_by": ..., "steps": [...]}, "cites": [...] }
-Every statement is origin sourced with a kb id or X- id and a verbatim quote, or says proposed. Cite the owner's statements above as origin "owner". Run `python3 tools/kb.py merge-research` is NOT yours to run; leave the jsonl for the captain.
+Every statement is origin sourced with a kb id or X- id and a verbatim quote, or says proposed. Cite the owner's direction as origin "owner" for where an idea came from; that mark is never a ceiling: where you can make the idea better, do, and say why. Run `python3 tools/kb.py merge-research` is NOT yours to run; leave the jsonl for the captain.

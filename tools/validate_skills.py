@@ -262,6 +262,8 @@ def check_frontmatter(skill_dir: Path, name: str, errs: list[str]):
         errs.append(f"{name}: SKILL.md frontmatter must carry name (= directory) and description")
     elif len(d["description"]) > 1024:
         errs.append(f"{name}: SKILL.md description is {len(d['description'])} characters; the Agent Skills limit is 1024")
+    elif len(d["description"].split()) > 60:
+        errs.append(f"{name}: description is {len(d['description'].split())} words; the budget is 60 (owner rule 2026-09-03, STATUS row 71)")
 
 
 def check_reference_links(skill_dir: Path, name: str, errs: list[str]):

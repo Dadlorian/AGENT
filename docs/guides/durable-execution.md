@@ -48,7 +48,7 @@ From `harness/workflow/README.md`. Every command runs here in dry-run mode; live
 
 Status: measured
 
-Criterion: bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second.
+Criterion: bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second && bash harness/xc-compensation/test.sh && python3 harness/xc-compensation/conformance.py --register dryrun && python3 harness/xc-compensation/conformance.py --register second.
 
 From `cap-durable-execution-implement` definition_of_done; only `tools/measure.py` may set the status to measured.
 

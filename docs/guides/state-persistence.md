@@ -50,7 +50,7 @@ From `harness/state-persistence/README.md`. Every command runs here in dry-run m
 
 Status: measured
 
-Criterion: bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second.
+Criterion: bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second && bash harness/memory/test.sh && python3 harness/memory/conformance.py --adapter dryrun --adapter second.
 
 From `cap-state-persistence-implement` definition_of_done; only `tools/measure.py` may set the status to measured.
 

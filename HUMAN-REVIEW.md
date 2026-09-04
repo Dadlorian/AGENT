@@ -62,12 +62,12 @@ Open question for you: `state/grandfathered.json` lists every skill, which lets 
 |---|---|---|---|
 | `facts.jsonl` | `F-` | one record per row of `PASS.md`, with its line range and hash | 109 |
 | `target-facts.jsonl` | `T-` | one record per numbered item of `TARGET.md` | 47 |
-| `reference-facts.jsonl` | `REF-` | `docs/reference/composable-plan.md`, an example, never a fact | 208 |
+| `reference-facts.jsonl` | `REF-` | `docs/reference/composable-plan.md`, an example, never a fact | 265 |
 | `research.jsonl` | `X-` | web search records merged from `kb/research/*.jsonl` (60 files) | 660 |
 | `entities.jsonl`, `edges.jsonl` | `E-`, `R-` | the things the facts name and the typed links between them | 184, 109 |
 | `decisions.jsonl` | `D-` | decisions lifted from `docs/decomposition.md` by line | 110 |
 | `architecture.jsonl` | `A-` | the blueprint imported as entities and edges | 803 |
-| `ledger.jsonl` | `L-` | one hash-chained record per run, ceremony or phase close, with commit and dirty flag | 208 |
+| `ledger.jsonl` | `L-` | one hash-chained record per run, ceremony or phase close, with commit and dirty flag | 265 |
 | `meta.json` | | source hashes and chain heads | |
 | `ceremonies/` | | the review, improve, sourcing and measure records (section 5) | 98 |
 

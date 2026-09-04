@@ -50,7 +50,7 @@ From `harness/containment/README.md`. Every command runs here in dry-run mode; l
 
 Status: measured
 
-Criterion: bash harness/containment/test.sh && python3 harness/containment/conformance.py --adapter dryrun --adapter second.
+Criterion: bash harness/containment/test.sh; GATE=$?; python3 harness/containment/conformance.py --adapter dryrun --adapter second; CONF=$?; GATE=$GATE CONF=$CONF python3 -c "import json,os,sys;rows=json.load(open('harness/containment/out/containment-conformance.json'))['per_adapter'];[print('adapter=%s stop_reason=%s declared_gap_honoured=%s'%(x['binding_adapter'],x['stop_reason'],str(x['declared_gap_honoured']).lower())) for x in rows];sys.exit(0 if os.environ['GATE']=='0' and os.environ['CONF']=='0' and all(x['declared_gap_honoured'] for x in rows) and {x['stop_reason'] for x in rows}=={'cancelled','cancel_timeout'} else 1)".
 
 From `cap-agent-runtime-implement` definition_of_done; only `tools/measure.py` may set the status to measured.
 

@@ -1,6 +1,6 @@
 ---
 name: "cap-isolation"
-description: "One unit of work runs with declared resources and declared egress, per the container runtime spec, plus how a sandbox is built and swapped. Load it when deciding how work is contained, when a field names a machine instead of a resource, when asking what stops this reaching the network, why no real secret enters the unit, or who asserted containment."
+description: "One unit of work runs with declared resources and declared egress, per the container runtime spec, plus how a sandbox is built and swapped. Load it when deciding how work is contained, when a field names a machine instead of a resource, when asking what stops this reaching the network, why no secret enters the unit, or who asserted containment."
 ---
 
 # cap-isolation

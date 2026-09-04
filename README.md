@@ -74,7 +74,7 @@ Each skill's description is at most 60 words, so the text Claude Code keeps resi
 | `kb/edges.jsonl` | `R-` (rel) | 109 typed links between entities, each citing the fact that states the link |
 | `kb/decisions.jsonl` | `D-` | 110 decisions lifted from `docs/decomposition.md` by line |
 | `kb/architecture.jsonl` | `A-` | 803 blueprint entries imported from `docs/architecture/blueprint.json` |
-| `kb/ledger.jsonl` | `L-` | 208 append-only, hash-chained run records; every measured run, ceremony and phase close |
+| `kb/ledger.jsonl` | `L-` | 265 append-only, hash-chained run records; every measured run, ceremony and phase close |
 | `kb/ceremonies/` | | 98 records: sourcing, measure, review and improve, named by the STATUS row they served |
 
 | To… | Run |

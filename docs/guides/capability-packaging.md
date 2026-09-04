@@ -49,7 +49,7 @@ From `harness/capability-packaging/README.md`. Every command runs here in dry-ru
 
 Status: measured
 
-Criterion: bash harness/capability-packaging/test.sh && python3 harness/capability-packaging/conformance.py --adapter dryrun --adapter second.
+Criterion: bash harness/capability-packaging/test.sh && python3 harness/capability-packaging/conformance.py --adapter dryrun --adapter second && bash harness/capability-registry/test.sh && python3 harness/capability-registry/conformance.py --adapter dryrun --adapter second.
 
 From `cap-capability-packaging-implement` definition_of_done; only `tools/measure.py` may set the status to measured.
 

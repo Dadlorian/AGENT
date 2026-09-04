@@ -1,0 +1,3 @@
+# Improver brief (row 75): apply the review to one example
+Read OWNER.md, state/briefs/context-75.md, kb/ceremonies/75-<area>-review.json, then examples/<area>/. Do not read docs/night/hidden/. Do not commit or push. Touch only examples/<area>/ and kb/ceremonies/75-<area>-improve.json.
+Apply or decline every finding (declined only with a reason from the context or the standards); keep `bash examples/<area>/test.sh` green; every review finding id appears exactly once in applied or declined. Record: {"status_row":75,"area":...,"applied":[{"finding":id,"change":...,"files":[...]}],"declined":[{"finding":id,"why":...}],"test_last_line":...}. Return that JSON as your final text.

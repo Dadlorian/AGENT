@@ -587,7 +587,7 @@
         "F-b2-02",
         "F-b1-06"
       ],
-      "quote": "data \u2014 declared intent, definition of done, steps"
+      "quote": "data — declared intent, definition of done, steps"
     },
     {
       "state": "resolved manifest and effective configuration - the values a run actually resolved, per layer",
@@ -643,7 +643,7 @@
         "F-b2-03",
         "F-b1-06"
       ],
-      "quote": "pure function `document \u2192 plan + cost`"
+      "quote": "pure function `document → plan + cost`"
     },
     {
       "state": "cost inputs pinned at a head - price table and historical cost quantiles a plan was derived from",
@@ -816,7 +816,7 @@
         "F-a3-06",
         "F-b3-18"
       ],
-      "quote": "`0700`, owned by a per-VM uid with no passwd entry \u2014 verified live"
+      "quote": "`0700`, owned by a per-VM uid with no passwd entry — verified live"
     },
     {
       "state": "model routing selection and claim ticket - which class was asked for, what it resolved to, and the outstanding future for a slow answer",
@@ -1267,7 +1267,7 @@
         "F-a3-07",
         "F-a3-08"
       ],
-      "quote": "vsock \u2192 host broker, which holds the real key and picks the endpoint"
+      "quote": "vsock → host broker, which holds the real key and picks the endpoint"
     },
     {
       "state": "policy decision - a deterministic refusal recorded before execution, at each of the enforcement points",
@@ -1813,7 +1813,7 @@
         "F-a3-07",
         "X-cap-mandate-broker-008"
       ],
-      "quote": "| Model egress | vsock \u2192 host broker, which holds the real key and picks the endpoint |",
+      "quote": "| Model egress | vsock → host broker, which holds the real key and picks the endpoint |",
       "status": "gap"
     },
     {
@@ -1936,7 +1936,7 @@
         "F-a6-02",
         "X-compose-loop-003"
       ],
-      "quote": "Retries must be bounded\u2014unlimited retries are not a reliability strategy.",
+      "quote": "Retries must be bounded—unlimited retries are not a reliability strategy.",
       "status": "gap"
     },
     {
@@ -2255,6 +2255,219 @@
       "quote": "The Agent Audit Trail format addresses requirements from the EU AI Act (Regulation 2024/1689), which mandates automatic recording of events for high-risk AI systems",
       "status": "gap",
       "gap_ref": "audit-evidence-bundle-standard"
+    },
+    {
+      "state": "running-unit registry",
+      "owner_capability_prose": "isolation",
+      "owner_capability": "cap-isolation",
+      "home_today": "absent as an operation - each adapter keeps a private dict of units it admitted, and only the caller that holds a handle can name one",
+      "home_ideal_note": "a read operation on the isolation interface returning the units this binding is running, addressed by (tenant, correlation id, unit id), so an operator can find a stuck unit without having kept the handle that admitted it",
+      "home_ideal": "cap-isolation",
+      "standard": "gap",
+      "written_by": "the isolation adapter, at admit and at terminate",
+      "read_by": [
+        "an operator steering a fleet",
+        "the improvement loop counting attempts per done"
+      ],
+      "lifetime": "run",
+      "crosses_boundaries": [
+        "process",
+        "vm"
+      ],
+      "pinning_risk": "high: a listing shaped like one containment technology's inventory API would pin the interface to it, and the two classes on file disagree about whether a unit outlives its turn at all",
+      "sources": [
+        "X-maturity-c-010"
+      ],
+      "quote": "The OCI Runtime Specification defines standard container lifecycle phases including creating, created, running, and deleted states with associated hooks.",
+      "status": "gap",
+      "gap_ref": "steer-running-unit-registry"
+    },
+    {
+      "state": "unit attachability",
+      "owner_capability_prose": "isolation, or agent runtime",
+      "owner_capability": "cap-isolation",
+      "co_owners": [
+        "cap-agent-runtime"
+      ],
+      "home_today": "absent - open_session on a destroyed unit succeeds in this example and returns a session, which is what makes the reconnect verb dishonest",
+      "home_ideal_note": "a state on the unit record - admitted, running, snapshotted, destroyed - readable through the same operation that lists it, so reconnect is refused with a type rather than answered with a session",
+      "home_ideal": "cap-isolation",
+      "standard": "gap",
+      "written_by": "the isolation adapter, at every lifecycle transition",
+      "read_by": [
+        "the operator's reconnect verb, before it attaches"
+      ],
+      "lifetime": "run",
+      "crosses_boundaries": [
+        "process",
+        "vm"
+      ],
+      "pinning_risk": "medium: the cell's own disposition is already named in docs/consumption/unit-design.md; the risk is adopting one runtime's session semantics as the definition of drivable",
+      "sources": [
+        "X-litmus-a-004"
+      ],
+      "quote": "A fork is a server-side copy of a paused sandbox into a new sandbox, not a boot from zero.",
+      "status": "gap",
+      "gap_ref": "steer-unit-attachability"
+    },
+    {
+      "state": "the decision journal, durable",
+      "owner_capability_prose": "policy",
+      "owner_capability": "cap-policy",
+      "home_today": "a list on the adapter instance; explain() re-evaluates the pinned bundle and can only find decisions this process took",
+      "home_ideal_note": "the decision record written through the state seam like any other durable record - input digest, effect, rule, bundle digest, timestamp - so a refusal is auditable and replayable months later rather than for the life of a process",
+      "home_ideal": "seam-state",
+      "standard": "gap",
+      "written_by": "the decision point, before the action it admits is issued",
+      "read_by": [
+        "an audit",
+        "the improvement loop",
+        "any operator asking why a run was refused"
+      ],
+      "lifetime": "cross-run",
+      "crosses_boundaries": [
+        "process"
+      ],
+      "pinning_risk": "low for the record's shape, high for its retention: nothing on file says how long a decision record is kept or who may read one",
+      "sources": [
+        "X-litmus-d-004"
+      ],
+      "quote": "Decision logging changes policy from an assumption into evidence.",
+      "status": "gap",
+      "gap_ref": "steer-decision-journal-durable"
+    },
+    {
+      "state": "the decision queue across runs",
+      "owner_capability_prose": "human interaction",
+      "owner_capability": "cap-human-interaction",
+      "home_today": "open_asks() exists on the store, but the store this example builds is keyed per correlation id, so nothing answers 'which asks may this person decide'",
+      "home_ideal_note": "a query over parked asks by deciding authority, tenant and deadline, so a reviewer opens one inbox rather than being handed a correlation id per ask",
+      "home_ideal": "cap-human-interaction",
+      "standard": "gap",
+      "written_by": "the platform, at every park and every decision",
+      "read_by": [
+        "whoever decides",
+        "whatever sweeps the asks that are about to expire"
+      ],
+      "lifetime": "cross-run",
+      "crosses_boundaries": [
+        "process",
+        "org"
+      ],
+      "pinning_risk": "medium: an inbox modelled on one surface's notion of a queue would put the ask back on a screen, which is the failure the capability is drawn to avoid",
+      "sources": [
+        "F-b1-08"
+      ],
+      "quote": "Cross-cutting guarantees are not optional.",
+      "status": "gap",
+      "gap_ref": "steer-decision-queue-across-runs"
+    },
+    {
+      "state": "the intervention record, addressable by unit",
+      "owner_capability_prose": "isolation, with dispatch",
+      "owner_capability": "cap-isolation",
+      "co_owners": [
+        "seam-dispatch"
+      ],
+      "home_today": "examples/steer writes it to the run's own hash-chained ledger, keyed by run",
+      "home_ideal_note": "the same record addressable by unit as well as by run, because the operator who restarts a unit is asking about the unit and does not know which run it belongs to",
+      "home_ideal": "seam-state",
+      "standard": "gap",
+      "written_by": "the platform, around every lifecycle operation",
+      "read_by": [
+        "an operator",
+        "an audit asking who replaced a machine and under which rule"
+      ],
+      "lifetime": "cross-run",
+      "crosses_boundaries": [
+        "process",
+        "vm"
+      ],
+      "pinning_risk": "low",
+      "sources": [
+        "X-maturity-c-004"
+      ],
+      "quote": "Control restart requires an explicit owner decision, a documented cause and fresh credentials before resuming.",
+      "status": "gap",
+      "gap_ref": "steer-intervention-record"
+    },
+    {
+      "state": "in-cell step record",
+      "owner_capability_prose": "agent runtime",
+      "owner_capability": "cap-agent-runtime",
+      "home_today": "absent - the boundary holds frame counts and one stop reason; the unit's own steps are not written anywhere",
+      "home_ideal_note": "a durable per-step record written by the harness inside the cell and drained through the boundary, addressed by (unit id, attempt, step id), so a resume names a step and not an attempt",
+      "home_ideal": "cap-agent-runtime",
+      "standard": "gap",
+      "written_by": "the harness inside the cell",
+      "read_by": [
+        "the telemetry pipeline",
+        "the trajectory a watcher renders",
+        "the improvement loop's tokens-per-done"
+      ],
+      "lifetime": "run",
+      "crosses_boundaries": [
+        "process",
+        "vm"
+      ],
+      "pinning_risk": "high: a step vocabulary taken from one runtime's frame format would pin the platform to that runtime",
+      "sources": [
+        "X-litmus-b-012"
+      ],
+      "quote": "The conventions now model the whole agent execution as a span tree, with invoke_agent (the agent run) as the parent span containing chat spans for each model call, and execute_tool spans for each tool invocation.",
+      "status": "gap",
+      "gap_ref": "watch-in-cell-step-record"
+    },
+    {
+      "state": "observation declaration",
+      "owner_capability_prose": "telemetry",
+      "owner_capability": "cap-telemetry",
+      "home_today": "examples/watch carries it in payload.watch and validates it against examples/watch/schemas/watch.schema.json; no capability owns the shape",
+      "home_ideal_note": "one declared shape per unit covering surface, replay position, detail, redaction widening and the sampling decision, owned by the telemetry capability so every door declares it the same way",
+      "home_ideal": "cap-telemetry",
+      "standard": "gap",
+      "written_by": "the caller, at intake",
+      "read_by": [
+        "the platform's one emission path"
+      ],
+      "lifetime": "run",
+      "crosses_boundaries": [
+        "process"
+      ],
+      "pinning_risk": "medium: a shape modelled on one collector's sampling configuration would not survive a collector swap",
+      "sources": [
+        "X-litmus-d-014"
+      ],
+      "quote": "Head-based sampling (decided at trace start) is simpler; tail-based sampling (decided after the trace completes) is more powerful for capturing error cases",
+      "status": "gap",
+      "gap_ref": "watch-observation-declaration"
+    },
+    {
+      "state": "task status projection",
+      "owner_capability_prose": "human interaction, or dispatch",
+      "owner_capability": "cap-human-interaction",
+      "co_owners": [
+        "seam-dispatch"
+      ],
+      "home_today": "examples/watch derives it in a pure function over the typed event stream; no capability operation returns it",
+      "home_ideal_note": "a read operation returning the current published task state for a correlation id, so a poll-shaped caller is not required to reimplement the projection",
+      "home_ideal": "cap-human-interaction",
+      "standard": "gap",
+      "written_by": "the platform, as the run moves",
+      "read_by": [
+        "any caller that cannot hold a subscription open"
+      ],
+      "lifetime": "run",
+      "crosses_boundaries": [
+        "process"
+      ],
+      "pinning_risk": "low: the state enumeration is already adopted rather than invented",
+      "sources": [
+        "X-litmus-b-003"
+      ],
+      "quote": "Tasks progress through a defined lifecycle including submitted, working, input-required, completed, and failed states.",
+      "status": "gap",
+      "gap_ref": "watch-task-status-projection"
     }
   ],
   "entry_matrix": [
@@ -3080,7 +3293,7 @@
         "F-a3-01",
         "F-b3-18"
       ],
-      "quote": "Firecracker microVM \u2014 hardware virtualisation, not a container"
+      "quote": "Firecracker microVM — hardware virtualisation, not a container"
     },
     {
       "entry": "human",
@@ -3158,7 +3371,7 @@
         "F-a3-01",
         "F-b3-18"
       ],
-      "quote": "Firecracker microVM \u2014 hardware virtualisation, not a container"
+      "quote": "Firecracker microVM — hardware virtualisation, not a container"
     },
     {
       "entry": "event",
@@ -3236,7 +3449,7 @@
         "F-a3-01",
         "F-b3-18"
       ],
-      "quote": "Firecracker microVM \u2014 hardware virtualisation, not a container"
+      "quote": "Firecracker microVM — hardware virtualisation, not a container"
     },
     {
       "entry": "schedule",
@@ -3314,7 +3527,7 @@
         "F-a3-01",
         "F-b3-18"
       ],
-      "quote": "Firecracker microVM \u2014 hardware virtualisation, not a container"
+      "quote": "Firecracker microVM — hardware virtualisation, not a container"
     },
     {
       "entry": "external system or agent",
@@ -3366,7 +3579,7 @@
         "F-a3-07",
         "F-b4-03"
       ],
-      "quote": "vsock \u2192 host broker, which holds the real key and picks the endpoint"
+      "quote": "vsock → host broker, which holds the real key and picks the endpoint"
     },
     {
       "entry": "event",
@@ -3392,7 +3605,7 @@
         "F-a3-07",
         "F-b4-03"
       ],
-      "quote": "vsock \u2192 host broker, which holds the real key and picks the endpoint"
+      "quote": "vsock → host broker, which holds the real key and picks the endpoint"
     },
     {
       "entry": "schedule",
@@ -3418,7 +3631,7 @@
         "F-a3-07",
         "F-b4-03"
       ],
-      "quote": "vsock \u2192 host broker, which holds the real key and picks the endpoint"
+      "quote": "vsock → host broker, which holds the real key and picks the endpoint"
     },
     {
       "entry": "external system or agent",
@@ -3450,7 +3663,7 @@
         "F-a4-01",
         "F-a4-08"
       ],
-      "quote": "Model gateway \u2014 one OpenAI-compatible API over every provider"
+      "quote": "Model gateway — one OpenAI-compatible API over every provider"
     },
     {
       "component": "gateway-cli-bridge-1 (cli-bridge 0.2.0)",
@@ -3617,7 +3830,7 @@
         "F-b3-17",
         "F-b5-05"
       ],
-      "quote": "JSONL, hash-chained \u2014 each run's closing digest is the next run's opening digest"
+      "quote": "JSONL, hash-chained — each run's closing digest is the next run's opening digest"
     },
     {
       "component": "append-only JSONL evidence store",
@@ -3765,7 +3978,71 @@
         "F-a2-02",
         "F-b3-18"
       ],
-      "quote": "| `firecracker-cell-long@.service` | systemd template, static | \u2014 | Long-lived variant, larger runtime ceiling |"
+      "quote": "| `firecracker-cell-long@.service` | systemd template, static | — | Long-lived variant, larger runtime ceiling |"
+    },
+    {
+      "component": "fleet lister and bulk intervention",
+      "capability": "isolation",
+      "standard": "gap",
+      "adapter_boundary": "proposed: a list operation beside admit, and an intervention that takes a set of units rather than one handle",
+      "must_stay_loose": "whether a bulk operation is one decision over a set or one decision per unit, and what a partial failure returns",
+      "would_pin": "a listing shaped like one control plane's inventory response, or a bulk verb that assumes every unit in the set is on one host",
+      "second_adapter": "the capability-granted class, which holds no running machine at all and would have to answer the listing with the units it invoked rather than the units it is running",
+      "harness_minimal_call": "proposed: list(binding) -> units, and intervene(unit_set, action) -> per-unit result",
+      "sources": [
+        "X-maturity-c-010"
+      ],
+      "quote": "The OCI Runtime Specification defines standard container lifecycle phases including creating, created, running, and deleted states with associated hooks.",
+      "status": "gap",
+      "gap_ref": "steer-fleet-lister-bulk-intervention"
+    },
+    {
+      "component": "the decision point at fleet rate",
+      "capability": "policy",
+      "standard": "gap",
+      "adapter_boundary": "proposed: the same decide call, with the input document assembled from state that is pre-fetched rather than looked up per call",
+      "must_stay_loose": "where the input's remote members come from and how stale they may be, which is the half no published benchmark separates from evaluation time",
+      "would_pin": "an input assembled by a lookup inside the engine, which makes the decision's latency the store's latency",
+      "second_adapter": "the typed-entity engine, which marshals entities before evaluating and so pays the assembly cost in a different place",
+      "harness_minimal_call": "proposed: decide(input) unchanged, measured as assembly_ms and evaluation_ms separately",
+      "sources": [
+        "F-b4-04"
+      ],
+      "quote": "Refusal is deterministic and happens before execution, not after spend",
+      "status": "gap",
+      "gap_ref": "steer-decision-point-fleet-rate"
+    },
+    {
+      "component": "in-cell step reporter",
+      "capability": "agent runtime",
+      "standard": "gap",
+      "adapter_boundary": "proposed: an operation on the contained-agent interface that drains typed step records, beside the frame stream rather than inside its text",
+      "must_stay_loose": "the step vocabulary, and whether a runtime that cannot report steps is refused or reported as offering none",
+      "would_pin": "parsing one runtime's frame text into steps",
+      "second_adapter": "a runtime with no interactive client at all, which is the case that decides whether step reporting can be required or must be declared",
+      "harness_minimal_call": "proposed: drain_steps(unit, attempt) -> ordered step records, beside read_frames",
+      "sources": [
+        "X-litmus-d-013"
+      ],
+      "quote": "the conventions now model the whole agent execution as a span tree, not just single LLM calls, with gen_ai.operation.name covering the full agent lifecycle",
+      "status": "gap",
+      "gap_ref": "watch-in-cell-step-reporter"
+    },
+    {
+      "component": "content-aware redaction in the pipeline",
+      "capability": "telemetry",
+      "standard": "gap",
+      "adapter_boundary": "proposed: a redaction stage in the collector pipeline that matches content, not attribute keys",
+      "must_stay_loose": "what is matched and where the match runs, so a rename of an attribute does not silently unredact",
+      "would_pin": "key-based redaction lists compiled into emitters",
+      "second_adapter": "the collector-side pipeline adapter, which already redacts on its own key list, versus an in-process emitter stage",
+      "harness_minimal_call": "proposed: redact(span_or_log) applied at the pipeline stage, independent of attribute naming",
+      "sources": [
+        "X-litmus-d-014"
+      ],
+      "quote": "Prompts and completions often contain sensitive user data, and the instrumentation layer must scrub or mask this content before it reaches any observability backend.",
+      "status": "gap",
+      "gap_ref": "watch-content-aware-redaction"
     }
   ],
   "impact_map": [
@@ -3958,7 +4235,7 @@
         "F-a3-07",
         "REF-8-04"
       ],
-      "quote": "vsock \u2192 host broker, which holds the real key and picks the endpoint",
+      "quote": "vsock → host broker, which holds the real key and picks the endpoint",
       "note": "Reconcile-01 RC-005: core-judge was dropped. REF-8-04's 'the held-out-judge pattern uses the same mechanism, so swapping costs both' is about a held-out judge *model* reached over the broker's model-egress path; core-judge's own contract implements a different mechanism, a held-out *criterion set* sampled and audited on an unpredictable cadence, and names neither the broker nor model egress. cap-model-access is named instead because the egress path the broker sits on is its adapter boundary. The held-out-judge-model pattern is recorded as an uncovered gap (held-out-judge-model).",
       "harness_test": [
         "bash harness/identity/test.sh"
@@ -4201,7 +4478,7 @@
         "F-b5-05",
         "X-cross-structure-048"
       ],
-      "quote": "object store \u00b7 relational \u00b7 event log",
+      "quote": "object store · relational · event log",
       "note": "Reconcile-01 RC-002/RC-003: core-graph and core-ledger were removed because they read and write only through the state seam's operations, which is what unaffected_core: true asserts and what their own contracts say (core-graph carries no head, no write model; core-ledger carries no file path, row id or offset). core-document-implement, core-graph-implement and core-ledger-implement were added because they are the skills that hold the swappable adapters this change exercises: the JSONL hash-chain adapter that runs today and the relational and event-log second-adapter candidates each of them names.",
       "harness_test": [
         "bash harness/state-persistence/test.sh"
@@ -4309,7 +4586,7 @@
         "F-b1-06",
         "F-b5-05"
       ],
-      "quote": "pure function `document \u2192 plan + cost`",
+      "quote": "pure function `document → plan + cost`",
       "harness_test": [
         "bash harness/state-persistence/test.sh"
       ]
@@ -5001,6 +5278,222 @@
         "REF-8-04"
       ],
       "quote": "the held-out-judge pattern uses the same mechanism, so swapping costs both"
+    },
+    {
+      "gap_ref": "steer-running-unit-registry",
+      "where": "state_types[57]",
+      "claim": "No operation lists the units a binding is running. examples/steer can steer exactly the unit whose handle it is holding, so 'fifty of them at once' is not a question this interface can be asked.",
+      "why_needed": "the area's verbs are an operator's verbs, and an operator arrives with a symptom rather than with a handle",
+      "research_query": "what listing or inventory operation do sandbox and microVM control planes publish for running units - identity, filtering, and what a caller may assume about a unit that appears in the list but has ended",
+      "status": "gap",
+      "sources": [
+        "X-maturity-c-010"
+      ],
+      "quote": "The OCI Runtime Specification defines standard container lifecycle phases including creating, created, running, and deleted states with associated hooks."
+    },
+    {
+      "gap_ref": "steer-unit-attachability",
+      "where": "state_types[58]",
+      "claim": "Nothing reports whether a unit may still be driven. open_session succeeds on a unit the boundary destroyed, and examples/steer records that its reconnect attached to one, because there was no way to ask.",
+      "why_needed": "reconnect is the cheapest of the three verbs and the only one that can silently do nothing",
+      "research_query": "what does an agent runtime protocol say about opening a session on a unit whose process has ended - a typed refusal, a new session on a new unit, or undefined",
+      "status": "gap",
+      "sources": [
+        "X-litmus-a-004"
+      ],
+      "quote": "A fork is a server-side copy of a paused sandbox into a new sandbox, not a boot from zero."
+    },
+    {
+      "gap_ref": "steer-decision-journal-durable",
+      "where": "state_types[59]",
+      "claim": "The decision journal does not outlive the process. Every decision here is pinned to a bundle digest and could be replayed months later, and the record it would be replayed from is an attribute on an object.",
+      "why_needed": "the concern's own future state is that a refusal is auditable and replayable months later; a process-local list makes it replayable for seconds",
+      "research_query": "what retention, indexing and access rules do production decision-log pipelines apply, and what is the smallest record that still supports replaying a decision against the bundle that produced it",
+      "status": "gap",
+      "sources": [
+        "X-litmus-d-004"
+      ],
+      "quote": "Decision logging changes policy from an assumption into evidence."
+    },
+    {
+      "gap_ref": "steer-decision-queue-across-runs",
+      "where": "state_types[60]",
+      "claim": "There is no inbox. An ask is found by already knowing its correlation id, so 'which decisions are waiting on me' is answerable only by whoever parked them.",
+      "why_needed": "two of the four doors are systems with nobody at a screen, and the person who decides for them is not the person who submitted the work",
+      "research_query": "how is a cross-run approval inbox expressed as a capability operation rather than as a surface feature - filtering, authority, deadline ordering, and what a decider may see of a run they are not otherwise entitled to",
+      "status": "gap",
+      "sources": [
+        "F-b1-08"
+      ],
+      "quote": "Cross-cutting guarantees are not optional."
+    },
+    {
+      "gap_ref": "steer-intervention-record",
+      "where": "state_types[61]",
+      "claim": "The intervention record is keyed by run, not by unit. An operator who restarts a stuck unit is asking about the unit and does not know which run it belongs to, so the record of what was done to it is not addressable from where the operator stands.",
+      "why_needed": "an operator steering a fleet arrives with a unit's symptom, not a run id, and the audit trail of who acted on a machine needs to be found from the machine",
+      "research_query": "what is the accepted record for an operator action on a running workload - who acted, under which authorisation, on which machine, and how it is joined to the work that machine was doing",
+      "status": "gap",
+      "sources": [
+        "X-maturity-c-004"
+      ],
+      "quote": "Control restart requires an explicit owner decision, a documented cause and fresh credentials before resuming."
+    },
+    {
+      "gap_ref": "steer-fleet-lister-bulk-intervention",
+      "where": "tool_entries[20]",
+      "claim": "A bulk intervention has no shape. Restarting fifty stuck units is fifty decisions over fifty input documents, and nothing says whether one decision over the set would be the same guarantee or a weaker one.",
+      "why_needed": "an operator steering a fleet acts on a set, and a per-unit decision loop is either the guarantee or a performance problem, and no source on file says which",
+      "research_query": "what shape do bulk lifecycle operations take on sandbox control planes - one decision per unit or one over the set, and how a partial failure is reported",
+      "status": "gap",
+      "sources": [
+        "X-maturity-c-010"
+      ],
+      "quote": "The OCI Runtime Specification defines standard container lifecycle phases including creating, created, running, and deleted states with associated hooks."
+    },
+    {
+      "gap_ref": "steer-decision-point-fleet-rate",
+      "where": "tool_entries[21]",
+      "claim": "The decision's cost at fleet rate is unmeasured here. Every action of this run takes its own decision, which is the property the area wants, and nothing separates the cost of assembling the input from the cost of evaluating it.",
+      "why_needed": "a per-action decision is only affordable if the input assembly is off the hot path, and that is exactly the half no benchmark on file isolates",
+      "research_query": "policy decision point latency when the input document must be assembled from remote state at agent tool-call rates, measured as two numbers - assembly and evaluation - rather than one",
+      "status": "gap",
+      "sources": [
+        "F-b4-04"
+      ],
+      "quote": "Refusal is deterministic and happens before execution, not after spend"
+    },
+    {
+      "gap_ref": "watch-in-cell-step-record",
+      "where": "state_types[62]",
+      "claim": "The inside of a unit is observable only as a frame count and a stop reason. examples/watch emits one step.progress event per frame and can say nothing about what happened between two frames.",
+      "why_needed": "the area's question is 'the steps inside a unit', and a trajectory that stops at the cell wall is the outside of the unit rendered twice",
+      "research_query": "what step-level record does an agent runtime protocol publish from inside a sandbox - identity, ordering, and what a client may assume when frames are lost or reordered",
+      "status": "gap",
+      "sources": [
+        "X-litmus-b-012"
+      ],
+      "quote": "The conventions now model the whole agent execution as a span tree, with invoke_agent (the agent run) as the parent span containing chat spans for each model call, and execute_tool spans for each tool invocation."
+    },
+    {
+      "gap_ref": "watch-observation-declaration",
+      "where": "state_types[63]",
+      "claim": "The observation declaration lives only in examples/watch's own schema. No capability owns the shape, so a second door that wants a surface, replay position, detail and redaction control has nothing published to declare it against.",
+      "why_needed": "two of the four doors in examples/watch are systems with nobody at a screen and they still declare a surface, so the shape needs one owner rather than one per door",
+      "research_query": "is there a published shape for a per-request observability declaration - sampling, redaction and detail - that a collector honours, or is this always collector configuration",
+      "status": "gap",
+      "sources": [
+        "X-litmus-d-014"
+      ],
+      "quote": "Head-based sampling (decided at trace start) is simpler; tail-based sampling (decided after the trace completes) is more powerful for capturing error cases"
+    },
+    {
+      "gap_ref": "watch-task-status-projection",
+      "where": "state_types[64]",
+      "claim": "The task status is a projection every caller must compute, not a read operation the platform publishes. examples/watch derives it in nine lines over the typed event stream, and a poll-shaped caller has no operation to call instead.",
+      "why_needed": "a caller that cannot hold a subscription open still needs to know where a run stands, and a projection computed once per caller can disagree with a second caller's",
+      "research_query": "does the agent messaging specification's task-get and status-update-event pair belong on the human-interaction interface, on dispatch, or on a third read-side capability",
+      "status": "gap",
+      "sources": [
+        "X-litmus-b-003"
+      ],
+      "quote": "Tasks progress through a defined lifecycle including submitted, working, input-required, completed, and failed states."
+    },
+    {
+      "gap_ref": "watch-in-cell-step-reporter",
+      "where": "tool_entries[22]",
+      "claim": "No operation drains typed step records from inside a unit. The published operation vocabulary has three entries - entry, dispatch and tool - so a model call and every step below the turn falls through to an unmapped kind.",
+      "why_needed": "a step reporter beside the frame stream is what a trajectory renderer needs to show the inside of a unit rather than the outside of it twice",
+      "research_query": "which agent runtimes publish structured per-step events rather than free-text update frames, and what the negotiation looks like when one does not",
+      "status": "gap",
+      "sources": [
+        "X-litmus-d-013"
+      ],
+      "quote": "the conventions now model the whole agent execution as a span tree, not just single LLM calls, with gen_ai.operation.name covering the full agent lifecycle"
+    },
+    {
+      "gap_ref": "watch-content-aware-redaction",
+      "where": "tool_entries[23]",
+      "claim": "Redaction in the pipeline matches attribute keys, not content. The same sensitive content that appears under an attribute name the redaction list does not carry passes through unredacted.",
+      "why_needed": "a rename of an attribute must not silently unredact what it carries, and a key-based list compiled into emitters cannot see content moved to a new key",
+      "research_query": "what does prompt and completion scrubbing look like when the same content appears under an attribute name the redaction list does not carry",
+      "status": "gap",
+      "sources": [
+        "X-litmus-d-014"
+      ],
+      "quote": "Prompts and completions often contain sensitive user data, and the instrumentation layer must scrub or mask this content before it reaches any observability backend."
+    },
+    {
+      "gap_ref": "S-6",
+      "where": "policy",
+      "claim": "An allow's lifetime is a convention in this example, not a member of the decision. examples/steer treats an allow as spent when its action fires or is abandoned and re-decides on the far side of every pause, and nothing in the Decision shape says so.",
+      "why_needed": "the mechanism on file for this question is described as emerging practice rather than a settled protocol, and a convention that lives only in a runner is one refactor from being lost",
+      "research_query": "does any decision API carry a stated scope and lifetime on the decision itself - the single action it admits and the moment it was taken - or is spend-on-use always the caller's discipline",
+      "status": "gap",
+      "sources": [
+        "X-maturity-c-003"
+      ],
+      "quote": "Pause suspends the call until a parallel re-evaluation against the latest composite principal state completes."
+    },
+    {
+      "gap_ref": "W-2",
+      "where": "telemetry",
+      "claim": "The published operation vocabulary has no name for a model call, so a model call is emitted under the dispatch operation and recorded as an unmapped kind. The conventions on file describe a model-call span inside the agent span; the mapping table this platform publishes does not carry one.",
+      "why_needed": "an emitter that transcribed the convention's name would be depending on a pre-stable vocabulary with no version pin, which is the error the section's direction names",
+      "research_query": "how is a pre-stable attribute and operation vocabulary pinned and extended locally - who may add a row to a platform's mapping table, and what marks a row as the platform's rather than the convention's",
+      "status": "gap",
+      "sources": [
+        "F-b3-10"
+      ],
+      "quote": "OTLP · GenAI semantic conventions"
+    },
+    {
+      "gap_ref": "W-3",
+      "where": "telemetry",
+      "claim": "A head sampling decision taken per span breaks the binding between the three emission kinds: at head_percent 0 examples/watch exports its problem object and its metrics and no span, so the problem object's trace id names a span that was never exported.",
+      "why_needed": "the conformance closure on file requires all three kinds bound to one trace identity, and a sampling decision silently voids it for the kinds that are always retained",
+      "research_query": "how do head and tail sampling interact with a guarantee that failures are always retained - is the retained problem object re-parented, re-emitted with its span, or accepted as an orphan",
+      "status": "gap",
+      "sources": [
+        "X-litmus-d-014"
+      ],
+      "quote": "tail-based sampling (decided after the trace completes) is more powerful for capturing error cases"
+    },
+    {
+      "gap_ref": "W-4",
+      "where": "errors",
+      "claim": "The closed registry closes the extension members as well as the type. budget-exhausted declares only stop_reason, so which ceiling was exceeded and by how much can only be written into detail prose - the one place the concern says a caller must never read.",
+      "why_needed": "a caller deciding whether to retry with a larger ceiling has to parse a sentence",
+      "research_query": "what governs adding an extension member to a closed problem-type registry, and how does a caller discover which members a type carries",
+      "status": "gap",
+      "sources": [
+        "F-b4-06"
+      ],
+      "quote": "Correlation rides on explicit attributes, not trace parentage"
+    },
+    {
+      "gap_ref": "W-5",
+      "where": "human interaction",
+      "claim": "The interface publishes ask, watch, decide and expire. A callback - the platform pushing an event to an endpoint the caller owns - is a third delivery model with no operation, so an external agent that cannot hold a subscription open has only polling.",
+      "why_needed": "the area's question names callbacks, and two of the four doors are systems that are not watching a screen",
+      "research_query": "how is push delivery to a caller-owned endpoint expressed as a capability operation - registration, retry, ordering and the failure mode when the endpoint is gone",
+      "status": "gap",
+      "sources": [
+        "X-litmus-b-003"
+      ],
+      "quote": "A2A provides three core interaction methods: message/send for single exchanges, message/stream for continuous updates during long sessions, and tasks/get, tasks/list, or tasks/cancel for managing task lifecycles."
+    },
+    {
+      "gap_ref": "W-6",
+      "where": "telemetry",
+      "claim": "The mapping description publishes operations and not instruments, so an unmapped instrument name falls through under the platform's own string with nothing recorded, while an unmapped operation is detected.",
+      "why_needed": "the same class of drift is caught on one half of the vocabulary and silent on the other",
+      "research_query": "should a telemetry mapping description publish its instrument names alongside its operation names, and what does an emitter do with an instrument the description does not carry",
+      "status": "gap",
+      "sources": [
+        "F-b3-10"
+      ],
+      "quote": "OTLP · GenAI semantic conventions"
     }
   ],
   "provenance": {

@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | 1 | `PASS.md` states current state (Part A) and a target architecture (Part B): a five-piece core, capability interfaces, cross-cutting guarantees, and two seams. |
-| 2 | `TARGET.md` extends that into a composability baseline and the measuring sticks (T1 to T10); this repo is `PASS.md` Part B built out as 103 linked Claude Code skills (102 under `docs/skill-manifest.json` plus the `agentic-stack` root the manifest excludes by design), 28 harnesses that prove each stack element swaps behind its interface, and 16 integration guides. |
+| 2 | `TARGET.md` extends that into a composability baseline and the measuring sticks (T1 to T10); this repo is `PASS.md` Part B built out as 28 focal Claude Code skills (folded from 103 at STATUS row 71; every former skill survives whole under its target's `references/`), 28 harnesses that prove each stack element swaps behind its interface, and 16 integration guides. |
 | 3 | Every claim a skill makes is either cited to a knowledge-base record with a verbatim quote, or marked `proposed`; nothing is asserted from memory. |
 | 4 | `STATUS.md` is the owner's single view of what is open; `STATUS-ARCHIVE.md` holds every closed row with its commit. `OWNER.md` holds the owner's corrections, one line each. |
 
@@ -29,13 +29,15 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 
 | Layer | Count | What it is |
 |---|---|---|
-| root | 1 | `agentic-stack` — vocabulary, the 7 design rules as tests, claimed vs. measured, definition of done. Every skill assumes it. |
-| core | 10 | The 5 owned components — Document, Planner, Graph, Judge, Ledger — each an ideal + implement pair. |
-| cap | 43 | One skill per capability interface (agent runtime, isolation, model access, errors, identity, …), each naming a standard, today's adapter, and a second adapter. `cap-consumption` is the one cross-capability member: the call shape every capability shares. |
-| xc | 22 | 7 cross-cutting guarantees a caller cannot decline (budget, identity, policy, provenance, telemetry/correlation, errors, idempotency), each an ideal + implement pair. |
-| seam | 4 | Dispatch and State — the 2 boundaries with no standard to adopt, so original design was warranted. |
-| compose | 10 | Assembling workflows, loops, approvals and agents from the layers below; introduces no new interface. |
-| build | 13 | Authoring disciplines every skill in this repo follows: definition of done with a breakage, adapter pairing, evidence recording, ceremony, solution architecture, the litmus questionnaire, skill authoring itself. |
+| root | 1 | `agentic-stack` — vocabulary, the 7 design rules as tests, claimed vs. measured, definition of done, and the consumption contract every caller shares. Every skill assumes it. |
+| core | 1 | `core-components` — Document, Planner, Graph, Judge, Ledger: each contract plus how to build it. |
+| cap | 18 | One skill per capability interface in `PASS.md` B3 (16), plus evaluation and human interaction; each holds the ideal, the build, and the cross-cutting concern of the same name (identity, policy, provenance, telemetry, errors, idempotency). |
+| xc | 1 | `xc-guarantees` — the enforcement chain, budget and tenancy: where every guarantee is applied, whichever door the work came through. |
+| seam | 2 | Dispatch and State — the 2 boundaries with no standard to adopt. |
+| compose | 2 | `compose-workflow` (the six operators, loops, agents) and `compose-improvement-loop`. |
+| build | 3 | `build-skill-authoring`, `build-evidence` (definition of done, evidence records, adapter pairs, entry conformance, worked examples, versioning), `build-ceremony` (ceremonies, solution architecture, the litmus questionnaire). |
+
+Each skill's description is at most 60 words, so the text Claude Code keeps resident for all 28 is about 2,200 tokens (about 20,000 before the fold). A body stays under 500 lines; depth lives in `references/`, where every folded former skill is rendered whole with its citations. The fold plan is `docs/fold/plan.json`; the trigger eval before and after it is `docs/fold/` (`python3 tools/trigger_eval.py score after`).
 
 `docs/skill-graph.md` draws the `builds_on` edges as focal groups, each kept under the mermaid rendering limits.
 
@@ -155,6 +157,11 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | `tools/conformance_answers.py` | Check the conformance answers against the repo and run the owner's grader |
 | `tools/spot_check.py` | Seeded sample for a verifier who never saw the crew's answers; agreement and contradictions |
 | `tools/combined_reading.py` | Join the two answer sets per PASS.md row; reads nothing else |
+| `tools/fold_skills.py` | Fold skills per `docs/fold/plan.json`; former skills kept whole under `folded` and rendered to references |
+| `tools/trigger_eval.py` | Score a trigger eval: did the descriptions alone lead a fresh reader to the right skill |
+| `tools/skill_health.py` | Per-skill usage, findings, warnings, measured state and distance from the litmus target |
+| `tools/improvement_loop.py` | At a boundary, rank skills by health into a plan with one target and a stopping point each; check whether the plan moved |
+| `tools/usage_log.py` | PreToolUse hook: record every skill load to `state/usage.jsonl` |
 | `tools/skill_graph.py` | Generate `docs/skill-graph.md` from every `skill.json` as focal groups, each counted against the mermaid edge and text limits; exit 1 when one would not render |
 | `tools/manifest_facets.py` | Expand `docs/skill-manifest.json` into ideal/implement facets and emit the loop's sections |
 | `tools/gaps.py` | Aggregate research gaps into `docs/research/gaps.json`, and with `--apply`, add gap skills to the manifest |
@@ -163,7 +170,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 
 | Check | Command | Expected |
 |---|---|---|
-| Every skill valid | `python3 tools/validate_skills.py` | `103 skills checked, 0 errors, 0 warnings` |
+| Every skill valid | `python3 tools/validate_skills.py` | `28 skills checked, 0 errors, 0 warnings` |
 | Knowledge base intact | `python3 tools/kb.py verify` | chain and source-line checks pass |
 | Ledger intact | `python3 tools/kb.py ledger-verify` | `208 records, chain intact` |
 | Every stick holds | `python3 tools/final_acceptance.py` | `15 of 15 hold` (runs all 28 harness gates) |
@@ -179,7 +186,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | 1 | 810 of 2725 rows across every `skill.json` (29.7%) are `origin: proposed`: this repo's own design, under the 30% stick, not sourced facts. |
 | 2 | No standard's version has been verified against its published spec: all 660 research records are `search-only`, because page fetch is blocked here (STATUS rows 14 and 45). The standard stick is recorded absent by the owner for all 16 elements. |
 | 3 | Every harness's live adapter is claimed, not measured; no run has reached the host from a session (STATUS row 37). |
-| 4 | 48 of 103 definitions of done are still claimed; 55 have a measured run. |
+| 4 | The definition of done of every folded skill is its former implement facet's; 21 of 28 are measured. |
 | 5 | Every reviewer to date is a model (Sonnet or Opus); one Sonnet review missed both planted defects and was discarded and re-run. `HUMAN-REVIEW.md` is the first human pass. |
-| 6 | `state/grandfathered.json` lists 102 of the 103 skills, exempting them from two validator rules that no skill currently needs. |
-| 7 | The skill layout (103 skills, ideal/implement pairs) awaits the owner's choice among the options in `kb/ceremonies/64-structure-review.json` (STATUS row 64). |
+| 6 | `state/grandfathered.json` still lists every skill, exempting them from two validator rules none of them needs. |
+| 7 | Every skill is an improvement candidate until the usage hook has recorded a phase of loads; the first plan names seven skills with a misaligned or absent litmus answer. |

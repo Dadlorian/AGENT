@@ -10,7 +10,7 @@ Run these from the repo root. If any last line differs, stop and start the revie
 
 | Command | Proves | Last line today |
 |---|---|---|
-| `python3 tools/validate_skills.py` | every skill conforms to the schema and every quote is in the knowledge base | `103 skills checked, 0 errors, 0 warnings` |
+| `python3 tools/validate_skills.py` | every skill conforms to the schema and every quote is in the knowledge base | `28 skills checked, 0 errors, 0 warnings` |
 | `python3 tools/kb.py verify` | the knowledge base still matches `PASS.md`, `TARGET.md` and the reference doc line for line | `kb verified: chains intact, ...` |
 | `python3 tools/kb.py ledger-verify` | no run record was altered or dropped | `ledger verified: 208 records, chain intact` |
 | `python3 tools/final_acceptance.py` | every measuring stick in `TARGET.md` T9 and T10 holds; runs all 28 harnesses | `15 of 15 hold` |
@@ -30,9 +30,9 @@ Run these from the repo root. If any last line differs, stop and start the revie
 | `STATUS-ARCHIVE.md` | Every Done row with the date and commit it closed at. | Pick three archived rows and reproduce their Result from the commands in this checklist. | A Result that the command no longer reproduces at HEAD. |
 | `README.md` | The map of the repo. | Every number in it should come from a command in section 1. | A count in the README that a command does not print. |
 
-## 3. `.claude/skills/` (103 skills)
+## 3. `.claude/skills/` (28 skills)
 
-Each skill is a directory: `skill.json` (the data, the only thing authored), `SKILL.md` (rendered from it, never edited), and for 74 of them `references/` (registries and usage notes the skill points at).
+Each skill is a directory: `skill.json` (the data, the only thing authored), `SKILL.md` (rendered from it, never edited), and `references/`: registries and usage notes, plus one rendered file per former skill folded into it at STATUS row 71 (`docs/fold/plan.json` says what folded where).
 
 Run first:
 
@@ -43,12 +43,12 @@ Run first:
 | `python3 tools/check_adapter_pairs.py --skills .claude/skills` | every `cap-` and `seam-` skill has a today adapter and a second adapter that differ on at least one axis |
 | `python3 tools/skill_graph.py` | every `builds_on` name exists (`0 dangling builds_on edges`) |
 
-Sample at least one skill per layer (`agentic-stack`, one `core-`, one `cap-` pair, one `xc-` pair, one `seam-`, one `compose-`, one `build-`) and open `SKILL.md`. Judge, in this order:
+Sample at least one skill per layer (`agentic-stack`, `core-components`, two `cap-`, `xc-guarantees`, one `seam-`, one `compose-`, one `build-`) and open `SKILL.md`; then open one file under its `references/` and check it says what the body's pointer claims. Judge, in this order:
 
 1. **The description in the frontmatter.** It says when to load the skill. Would you load it for the task it names, and only then? A description that fires on every task is a defect; so is one that never fires.
 2. **Two sourced rows.** Pick any two rows marked `sourced`. Run `python3 tools/kb.py show <id>` on the first id in the Evidence cell and confirm the quoted words appear in that record's `text`. The validator does this for every row; you are checking that the quote supports the statement, which no tool can.
 3. **Two proposed rows.** A proposed row is this repo's own design. Does the text say so, and is it a design choice rather than a fact someone should have looked up? A proposed row that reads as a fact is a research gap.
-4. **The definition of done.** Read `criterion`: it must be a command you can paste. `status: measured` means `tools/measure.py` ran it and `measured_run.commit` names the commit. Paste the criterion and compare with `expected`. `status: claimed` means nobody has run it; 48 of 103 are still claimed (STATUS rows 16 and 37 say why).
+4. **The definition of done.** Read `criterion`: it must be a command you can paste. `status: measured` means `tools/measure.py` ran it and `measured_run.commit` names the commit. Paste the criterion and compare with `expected`. `status: claimed` means nobody has run it; 7 of 28 are still claimed (STATUS rows 16 and 37 say why).
 5. **Adapters** (`cap-` and `seam-` only). The today adapter names what runs on the host per `PASS.md` B3; the second names a different execution model. `cannot` should be a real limitation, not a compliment.
 6. **`builds_on` and `composes_with`.** Follow one link. The linked skill should add something this one does not restate.
 

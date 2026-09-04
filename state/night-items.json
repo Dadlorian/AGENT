@@ -1,0 +1,297 @@
+[
+ {
+  "item": {
+   "kind": "litmus",
+   "section": "isolation",
+   "question_id": "isolation-q6",
+   "score": 0,
+   "question": "Proposed question: Does the build use machine-state lifecycle operations - pause, resume, and fork of a paused sandbox - where the isolation class offers them, and is it free of the errors the window has ruled out?",
+   "target": "Suspension, resumption and forking are capability operations with a defined answer when an adapter cannot serve them, and the security boundary chosen for untrusted output is not a shared kernel."
+  },
+  "closure": {
+   "mechanism": "A mature build treats pause, resume and fork of a sandbox as capability operations on the isolation adapter, not ad hoc scripting: pausing checkpoints the sandbox's memory and filesystem state (a microVM snapshot, or an equivalent CRIU-based checkpoint), resume restores from that snapshot in tens of milliseconds, and fork clones a paused or running sandbox from a shared base without re-provisioning. Where the underlying adapter cannot serve one of these operations, the interface returns a defined, typed unsupported result rather than silently degrading or emulating it. The security boundary chosen for untrusted output is a dedicated guest kernel (a microVM such as Firecracker) or an intercepting user-space kernel (gVisor) -- never a shared host kernel, which several 2026 sandbox-escape incidents show is the boundary attackers actually cross.",
+   "standard": "none -- no standards body governs sandbox lifecycle operations; the OCI Runtime Spec covers container configuration but not pause/resume/fork semantics, so this is vendor convention (Firecracker snapshot-restore, CRIU) rather than a ratified spec.",
+   "check": "a state-hash test: snapshot a running sandbox, compute a digest of memory+filesystem state, resume it, and assert the digest is unchanged before any further syscall; separately, a conformance test that calls fork on an adapter lacking the operation and asserts a typed unsupported error rather than a crash or silent no-op.",
+   "direction": "Settling: checkpoint/restore is becoming table stakes across providers (E2B, Daytona, Fly Sprites, Runloop, Vercel, CodeSandbox all shipped some form by mid-2026), and microVMs vs. gVisor is a live, deliberate tradeoff (isolation strength vs. cold-start cost), not a settled winner. Being abandoned: sharing a host kernel between the agent's untrusted output and the host as the isolation boundary.",
+   "cites": [
+    "X-maturity-a-001",
+    "X-maturity-a-002"
+   ],
+   "origin": "sourced",
+   "gap": null
+  }
+ },
+ {
+  "item": {
+   "kind": "litmus",
+   "section": "errors",
+   "question_id": "errors-q5",
+   "score": -1,
+   "question": "Proposed: Is the production of the failure object owned by one place the core imports, so a new capability adapter cannot invent its own failure shape?",
+   "target": "Adapters raise typed conditions that the shared construction point renders; there is no second place a failure body is built."
+  },
+  "closure": {
+   "mechanism": "A mature build owns problem-object construction at exactly one place the core imports -- a shared error-rendering component (e.g. a global exception handler / controller-advice-equivalent) -- and every capability adapter raises a typed condition into it rather than building a problem+json body itself. The shared point is the only place that knows how to serialize the standard fields (type, title, status, detail, instance) plus any extension members, so adding a new adapter means defining a new typed condition, never a new serialization path.",
+   "standard": "RFC 9457, Problem Details for HTTP APIs (RFC Editor, July 2023, obsoletes RFC 7807) -- baseline, no credible competitor for the wire shape; centralization of its construction is framework convention layered on top, not part of the RFC itself.",
+   "check": "a source scan asserting exactly one code path constructs the problem-detail/content-type object (e.g. one class or module owns `application/problem+json` serialization); a test that raises every typed condition the build defines and asserts each is rendered by that same single path, never a second one.",
+   "direction": "Settling: recent framework majors (e.g. Spring Boot 4) make centralized, framework-wide Problem Details handling the default with no per-controller opt-in, confirming the direction toward one shared rendering point. Nothing in the window is displacing RFC 9457 itself as the wire format.",
+   "cites": [
+    "X-maturity-a-003",
+    "X-maturity-a-004"
+   ],
+   "origin": "sourced",
+   "gap": null
+  }
+ },
+ {
+  "item": {
+   "kind": "litmus",
+   "section": "concern-provenance",
+   "question_id": "concern-provenance-q3",
+   "score": 0,
+   "question": "Can it be shown that no artifact escapes the guarantee, that every artifact produced over a period has a record, and that a component cannot produce one through a path which emits nothing? (This question is proposed, derived from the row it cites.)",
+   "target": "The two counts reconcile with no unattested artifact; emission is wired where every producing path passes, so a component that attests nothing itself still yields a record; the attempt to write outside that path is refused or is structurally impossible."
+  },
+  "closure": {
+   "mechanism": "A mature build wires attestation emission into the one execution boundary every artifact-producing action must pass through, so a component that itself calls no attestation API still yields a record -- emission is a property of the path, not of the producer's cooperation. A reconciliation job counts artifacts produced against attestations issued for the same period and treats any mismatch as a defect; the attempt to write an artifact outside the wired path is refused by the platform (e.g. no credential to publish through any other route) rather than merely discouraged by convention. Because an attestation alone is only a linkage claim, the guarantee is enforced a second time at deployment/consumption via admission policy that refuses anything unattested.",
+   "standard": "in-toto Attestation Framework plus SLSA provenance (build platform attests at Level 2+ with signed provenance); no single standard mandates the coverage guarantee itself, which is implemented as pipeline and admission-policy design.",
+   "check": "a count reconciliation: number of artifacts recorded in the artifact store equals the number of valid, matching attestations issued in the same window, enforced by an admission-time policy check (e.g. a ValidatingImagePolicy-equivalent) that structurally refuses any artifact without one.",
+   "direction": "Settling: attestation generation is moving from opt-in to default for public/production pipelines through 2025-2026, and enforcement is moving from \"attestation exists\" to \"attestation is evaluated at admission time,\" since attestations alone were shown not to guarantee security by themselves.",
+   "cites": [
+    "X-maturity-a-005",
+    "X-maturity-a-006"
+   ],
+   "origin": "sourced",
+   "gap": null
+  }
+ },
+ {
+  "item": {
+   "kind": "conformance",
+   "qid": "C11-F",
+   "verdict": "DEVIATES",
+   "evidence": "harness/provenance/conformance.py VERIFIER constant, the string a caller sees as external_verifier in every conformance report: \"(written in this repository; a verifier we did not write is not available here)\", following the path harness/provenance/conformance.py --verify-bundle, run as a separate p"
+  },
+  "closure": {
+   "mechanism": "A mature build verifies its own provenance/attestation claims with a verifier that shares no codebase or authorship with the system under verification -- an externally maintained, widely used tool run as a separate process against the signed statement and a trust root the verifier does not itself issue. Where no such external verifier is wired in yet, the honest state is to say so explicitly in the conformance output (naming the gap) rather than to substitute a verifier written inside the repository being verified, which cannot prove independence of the claim it is checking.",
+   "standard": "in-toto Attestation Framework (ITE-10/ITE-11 layout) for the statement shape; Sigstore/cosign as the practical, production-grade external verification toolchain (cosign v3, keyless verification against a trusted root).",
+   "check": "run `cosign verify-attestation` (or an equivalent independent verifier) as a separate process/binary from the build, exiting non-zero on any signature-chain or trust-root failure; a conformance report is non-conformant if the verifier's source history overlaps the artifact producer's.",
+   "direction": "Settling: cosign/Sigstore's keyless, trusted-root verification is the practical default external verifier for in-toto-shaped attestations; the in-toto project's own prototype verifier is explicitly marked unfit for production, reinforcing that an in-repo or reference verifier is not a substitute for an external one. This is a genuine gap this platform has (VERIFIER: \"a verifier we did not write is not available here\"), not a difference of philosophy.",
+   "cites": [
+    "X-maturity-a-007",
+    "X-maturity-a-008"
+   ],
+   "origin": "sourced",
+   "gap": null
+  }
+ },
+ {
+  "item": {
+   "kind": "conformance",
+   "qid": "A2-F",
+   "verdict": "DEVIATES",
+   "evidence": "docs/decomposition.md records the search as issued queries, and records the one fetch attempt failing: \"returned `EGRESS_BLOCKED` from the network egress proxy\". kb/research.jsonl holds 660 research records; I counted status and read fields with python3 (json load over the file): 660 of 660 are stat"
+  },
+  "closure": {
+   "mechanism": "A mature build enforces default-deny network egress for any sandbox doing research or executing agent-directed code, routed through a proxy the agent cannot bypass, with a narrow allowlist for the hosts a given task actually needs; every blocked attempt is itself written as a typed record (not dropped silently), so a downstream count of research citations can be reconciled against the proxy's own access log. When a fetch is blocked, the mature response is to route the same request through a permitted path (an allowlisted search/fetch tool) and record the substitution, rather than leave a claim uncorroborated by a live fetch.",
+   "standard": "none formally normative -- egress control for agent sandboxes is an emerging best-practice pattern (default-deny proxy allowlisting), not governed by a standards body; vendor-specific allowlist configuration mechanisms exist.",
+   "check": "reconcile the proxy's access-decision log against the research-record file: every URL cited with status \"search-only\" has a matching allow decision in the log, and every EGRESS_BLOCKED event has a corresponding record rather than being silently dropped.",
+   "direction": "Settling: default-deny egress at an unavoidable proxy is treated as the single highest-leverage agent-security control, and disclosed 2026 sandbox-escape incidents that exploited proxy vulnerabilities to gain unrestricted egress are reinforcing that direction, not weakening it. EGRESS_BLOCKED as a broad, sometimes over-aggressive failure mode is a known current pain point across tooling, not unique to this platform.",
+   "cites": [
+    "X-maturity-a-009",
+    "X-maturity-a-010"
+   ],
+   "origin": "sourced",
+   "gap": null
+  }
+ },
+ {
+  "item": {
+   "kind": "litmus",
+   "section": "model-access",
+   "question_id": "model-access-q2",
+   "score": -1,
+   "question": "Proposed question: Which mechanisms beyond a plain completion are exercised and verified - streaming, tool-call turns, schema-constrained structured output, cache directives, reasoning effort, and a usage record separating prompt, cached, reasoning and completion tokens?",
+   "target": "Each mechanism is exercised on both adapters, and the effect is verified from the response - a cache hit is observed, not hoped for - with reasoning tokens counted in cost."
+  },
+  "closure": {
+   "mechanism": "A mature build exercises every mechanism a completion call exposes beyond a bare prompt/response round trip - streaming, tool-call turns, schema-constrained structured output, an explicit or implicit cache directive, a reasoning-effort setting, and a usage record - on at least two model adapters, and verifies each one from the response rather than from having merely requested it: a cache hit is read back from a provider-specific usage field, not assumed because a cache directive was set.",
+   "standard": "none - each provider defines its own usage-object shape (OpenAI prompt_tokens_details/completion_tokens_details, Anthropic cache_creation_input_tokens); no governing standard unifies them",
+   "check": "a test asserts a nonzero cached-token count on a deliberately repeated prompt and a nonzero reasoning-token count when reasoning effort is raised, and that the same assertions pass unmodified against a second adapter",
+   "direction": "settling on splitting token accounting into prompt/cached/reasoning/completion fields on the usage object as providers add reasoning and caching; being abandoned is treating 'the cache flag was set' as proof caching occurred",
+   "cites": [
+    "X-maturity-b-001",
+    "X-maturity-b-002"
+   ],
+   "origin": "sourced",
+   "gap": null
+  }
+ },
+ {
+  "item": {
+   "kind": "litmus",
+   "section": "concern-identity",
+   "question_id": "concern-identity-q5",
+   "score": 0,
+   "question": "The proposed future state turns on deep use, so: when an identity is withdrawn while work is already running under it, does that work stop - and is the withdrawal itself recorded against the unit it stopped?",
+   "target": "The next capability call after the withdrawal fails, the unit terminates with a typed refusal naming the withdrawn identity, and the record shows who withdrew it and at which point the work stopped."
+  },
+  "closure": {
+   "mechanism": "A mature build enforces identity per-request rather than per-session: every capability call re-checks the calling identity against the current grant, so a withdrawal takes effect on the very next call a running unit makes rather than requiring the unit to notice a signal. The call that fails after withdrawal returns a typed refusal naming the withdrawn identity, and the withdrawal event and the point the unit stopped are both written to the same audit trail that already ties every action to an identity, a delegator and a timestamp.",
+   "standard": "none - no governing standard specifies agent-credential revocation; the MCP specification (through 2026-07-28) contains no revoke/introspect/expires_in vocabulary",
+   "check": "a test withdraws an identity mid-run and asserts the next capability call under it returns a typed refusal naming that identity, and that a single audit record shows both the withdrawal and the run's stop point",
+   "direction": "settling on zero standing privileges with per-request, just-in-time authorization instead of session-length trust; being abandoned is treating credential revocation (disabling an account) as equivalent to stopping in-flight work, since disabling an SSO account does not itself revoke independently-authenticating API tokens",
+   "cites": [
+    "X-maturity-b-003",
+    "X-maturity-b-004",
+    "X-maturity-b-005"
+   ],
+   "origin": "sourced",
+   "gap": null
+  }
+ },
+ {
+  "item": {
+   "kind": "conformance",
+   "qid": "C01-F",
+   "verdict": "ABSENT",
+   "evidence": "harness/containment/interface.py line 82-86, class UnitContext: \"The stamps the platform applies around every unit. A caller asks for none of them.\" fields correlation_id, run_id, actor, idempotency_key, ceiling_s - one actor field is passed unchanged to admit(), run/prompt, and terminate. No second"
+  },
+  "closure": {
+   "mechanism": "A mature build stamps every unit with a full cross-cutting context object (correlation id, run id, actor/delegation chain, idempotency key, budget ceiling) that a caller never has to construct by hand, and that context is read - not merely carried - by admission, dispatch and every capability call along the delegation chain. The interface that defines this context has at least two independent adapters proving the core depends on the interface, not one concrete implementation.",
+   "standard": "none (settledness: emerging) - no standard defines a unit-context shape; the pattern is convention (hexagonal ports-and-adapters, OAuth on-behalf-of/actor-token delegation) rather than a specification",
+   "check": "a test constructs a second adapter for the context interface and asserts the same admit/run/terminate assertions pass against both, and asserts every field named in the interface (not just actor) is read by at least one guarantee at each of admission, dispatch and a capability call",
+   "direction": "settling on carrying a signed delegation chain (identity, actor claim, scope, expiration) through every hop rather than a single flat actor string; an unread field that is merely passed through unchanged is what the window treats as not yet real cross-cutting enforcement",
+   "cites": [
+    "X-maturity-b-006",
+    "X-maturity-b-007"
+   ],
+   "origin": "sourced",
+   "gap": null
+  }
+ },
+ {
+  "item": {
+   "kind": "conformance",
+   "qid": "C14-F",
+   "verdict": "DEVIATES",
+   "evidence": ".claude/skills/cap-scheduling/SKILL.md Open questions table: \"Where does the occurrence-instant clock come from once evaluation is pure, and who owns the ticker that asks it?\", answered only as \"Proposed: a single ticker per deployment asks the pure evaluator for the occurrences in a short forward w"
+  },
+  "closure": {
+   "mechanism": "A mature build separates the pure recurrence evaluator (rule plus timezone plus window in, occurrence instants out, no side effects) from the ticker that drives it: exactly one ticker instance is active at a time, chosen and re-chosen by leader election over a consensus protocol, and it asks the pure evaluator for the next short forward window of occurrences rather than owning any scheduling logic itself.",
+   "standard": "RFC 5545 (iCalendar, recurrence rule grammar) for the pure evaluator; no standard governs ticker ownership, which is answered by the general leader-election pattern, not a scheduling-specific one",
+   "check": "a test kills the active ticker process and asserts a new leader is elected and resumes firing within a bounded window with no duplicate or missed occurrence at the handoff boundary",
+   "direction": "settling on leader-election-over-consensus as the answer to single-ticker ownership, borrowed from general distributed-systems practice rather than a scheduling standard; being abandoned is a single unelected process silently assumed to be the only one running",
+   "cites": [
+    "X-maturity-b-008",
+    "X-maturity-b-009"
+   ],
+   "origin": "sourced",
+   "gap": null
+  }
+ },
+ {
+  "item": {
+   "kind": "conformance",
+   "qid": "S2-F",
+   "verdict": "DEVIATES",
+   "evidence": "I counted both sides. Declared: .claude/skills/seam-state/SKILL.md and .claude/skills/seam-state/references/state-seam.md close the kind list at ten, while docs/decomposition.md 2.2.1 states nine in prose, \"Record kinds in the first cut: `node-asserted`, `edge-asserted`, `document-declared`, `dispat"
+  },
+  "closure": {
+   "mechanism": "A mature build defines one closed, versioned enumeration of record kinds for its append-only log, referenced by exactly one canonical location; every other document (prose descriptions, examples, generated docs) derives from that enumeration rather than re-declaring it, so a change in cardinality cannot silently diverge between two counts.",
+   "standard": "none - no external standard enumerates record kinds for an application-level event log; the discipline is general event-sourcing/append-only-log practice",
+   "check": "a script parses the canonical kind list and every prose mention of 'kinds' in the docs tree and fails the build if the counts or the member sets disagree",
+   "direction": "settling on treating the append-only log as the single source of truth with graph and ledger as projections of it; abandoned is maintaining the same enumeration by hand in two places, which is exactly the kind of drift the found nine-vs-ten mismatch demonstrates",
+   "cites": [
+    "X-maturity-b-010",
+    "X-maturity-b-011"
+   ],
+   "origin": "sourced",
+   "gap": null
+  }
+ },
+ {
+  "item": {
+   "kind": "litmus",
+   "section": "tool-access",
+   "question_id": "tool-access-q2",
+   "score": -1,
+   "question": "Proposed question: For remote tool surfaces, which authorization and transport mechanisms are actually in force - the streamable transport rather than the deprecated event stream, OAuth 2.1 with PKCE, protected-resource and authorization-server metadata discovery, and resource indicators binding the token to one server on issue and on refresh?",
+   "target": "Every mechanism is present and verified from the exchange itself, including the resource indicator on refresh, and tool results are validated against declared output schemas rather than read as prose."
+  },
+  "closure": {
+   "mechanism": "A mature build treats every mechanism named in the question as independently verifiable from the wire exchange itself, not from configuration or documentation: the transport is Streamable HTTP (a single POST/SSE-upgrade endpoint, the deprecated HTTP+SSE transport retired); the client discovers the authorization server via RFC 9728 protected-resource metadata returned on a 401, and the authorization server via RFC 8414 metadata; the authorization code flow runs with PKCE (S256) as OAuth 2.1 requires for every client type; and every authorization request and every token request, including refresh, carries an RFC 8707 resource parameter naming the specific MCP server, so a token issued for one server is provably useless against another. Tool results are validated against the tool's declared output schema before being treated as structured data, rather than parsed out of prose.",
+   "standard": "Model Context Protocol Authorization specification, 2025-06-18 revision, built on OAuth 2.1 (IETF draft), RFC 9728 (Protected Resource Metadata), RFC 8414 (Authorization Server Metadata), RFC 8707 (Resource Indicators), and RFC 7636 (PKCE)",
+   "check": "A recorded token exchange transcript in which the authorization request, the initial token request, and every subsequent refresh request each carry the resource parameter, decoded token audience matches only the target server, and a captured attempt to replay the token against a second MCP server is rejected by that server; a schema-validation gate that rejects any tool result failing the tool's declared output schema.",
+   "direction": "Settling: OAuth 2.1 plus RFC 8707 resource indicators as the mandatory audience-binding mechanism for remote MCP servers, with Streamable HTTP fully replacing HTTP+SSE. Being abandoned: bearer tokens with no audience restriction, and treating tool output as free-form prose rather than schema-checked structured data. Still an open production gap rather than a settled abandonment: many real clients (including major ones) implement the resource parameter on the initial grant but omit it on refresh.",
+   "cites": [
+    "X-maturity-c-001",
+    "X-maturity-c-002"
+   ],
+   "origin": "sourced",
+   "gap": null
+  }
+ },
+ {
+  "item": {
+   "kind": "litmus",
+   "section": "concern-policy",
+   "question_id": "concern-policy-q3",
+   "score": 0,
+   "question": "Does an allow have a stated scope and lifetime, so that work which was paused, queued, or resumed after a restart is decided again before its next side effect, or is a decision taken once treated as valid for as long as the run lasts? (This question is proposed, derived from the row it cites.)",
+   "target": "A decision names the single action it admits and the moment it was taken; work resumed after a delay, a restart or a queue is decided again before its next side effect, and a rule changed in the interval takes effect on the resumed work."
+  },
+  "closure": {
+   "mechanism": "A mature build stamps every allow decision with the single action it admits and the instant it was taken, and treats that decision as spent the moment its action either fires or is abandoned. Work that was paused, queued, or resumed after a restart carries no residual authorization: before its next side-effecting step it re-enters the decision point, which evaluates against the rule set and the principal's current state as they stand at resume time, not as they stood when the run was first admitted. A rule changed during the interval therefore takes effect on the resumed work without any special-casing, because there was never a cached decision to invalidate.",
+   "standard": "none \u2014 no single ratified standard governs decision lifetime; the mechanism is described in emerging runtime-governance reference architectures rather than a settled protocol",
+   "check": "A conformance run that admits a unit of work, changes the governing policy rule mid-run, forces a pause/queue/restart cycle, and then asserts the resumed work's next side-effecting call is denied (or altered) to match the new rule rather than the rule in force at original admission; the decision log shows two distinct decision records \u2014 pre-pause and post-resume \u2014 for the same run.",
+   "direction": "Emerging: pausing a queued or resumed side-effecting call for a fresh, parallel policy re-evaluation against current state, rather than trusting a decision made before the interruption. Being abandoned: session-scoped 'decide once, valid for the run' authorization, and silent credential/decision carry-over across a restart without an explicit owner decision.",
+   "cites": [
+    "X-maturity-c-003",
+    "X-maturity-c-004"
+   ],
+   "origin": "sourced",
+   "gap": null
+  }
+ },
+ {
+  "item": {
+   "kind": "conformance",
+   "qid": "C09-F",
+   "verdict": "DEVIATES",
+   "evidence": ".claude/skills/xc-correlation/SKILL.md: the guarantee names four planes (three signal kinds under four entry doors): \"Bind all three emission kinds at once - spans, log records and problem objects - and count them separately in the audit rather than reporting one total.\" The stamp is set once at dis"
+  },
+  "closure": {
+   "mechanism": "A mature build binds all three emission kinds \u2014 spans, log records, and problem/error objects \u2014 to the same run identity at the moment each is produced, using the same trace and span identifiers, and counts and audits each kind separately rather than reporting one combined total that could hide a gap in one plane. The stamp is set once, at the entry that starts the unit of work, and every downstream span, log record, and problem object inherits it without a caller having to thread it through by hand.",
+   "standard": "OpenTelemetry Logs Data Model (stable specification), which defines TraceId, SpanId, and TraceFlags as top-level log-record fields",
+   "check": "For one run, assert that every span, every log record, and every emitted problem object carry an identical trace id, and that the audit counts each of the three kinds separately (three non-zero counters, not one), with a deliberately dropped stamp on one kind (e.g. a problem object built without the trace id) causing the check to fail.",
+   "direction": "Settling: OpenTelemetry's stable logs data model as the mechanism for span-to-log correlation, with several SDKs performing it automatically. Being abandoned: correlating by re-parsing free-text log lines for a run id, and treating error/problem objects as outside the correlation model entirely \u2014 this is the specific place current builds still fall short, since automatic correlation covers spans and logs but a problem object needs its own explicit stamp.",
+   "cites": [
+    "X-maturity-c-005",
+    "X-maturity-c-006"
+   ],
+   "origin": "sourced",
+   "gap": null
+  }
+ },
+ {
+  "item": {
+   "kind": "conformance",
+   "qid": "C15-F",
+   "verdict": "DEVIATES",
+   "evidence": "harness/idempotency/adapters/dryrun.py docstring: \"which is the adapter-today row PASS.md B3 records for this element\" naming (F-b3-16) \"key on the wire, no lease\", and \"none. The conformance run's race case proves the gap: without a lock around\" a claim-then-write. harness/idempotency/test.sh secti"
+  },
+  "closure": {
+   "mechanism": "A mature build never lets a caller's dedup key alone decide whether an operation is claimed; the claim and the write happen atomically (a single transaction or an explicit distributed lock), and the claim itself is a time-bounded lease rather than a permanent marker. A crash mid-operation leaves the lease to expire on its own TTL, so a retry after a real crash proceeds once the lease lapses, while a concurrent retry against a live lease is rejected outright \u2014 closing exactly the race a key-on-the-wire-with-no-lease design leaves open.",
+   "standard": "draft-ietf-httpapi-idempotency-key-header-07 (IETF HTTPAPI working group, expires April 2026) for the header mechanics; lease semantics are established distributed-systems practice, not yet codified in that draft",
+   "check": "A race-case test that fires two concurrent requests carrying the same idempotency key against the same handler and asserts exactly one performs the side effect while the second is rejected or returns the first's result, plus a crash-recovery test that kills the process mid-write, waits past the lease TTL, and asserts the retried request is now allowed to proceed.",
+   "direction": "Settling: idempotency key plus a short-TTL processing lease, claimed atomically with the write, as the production pattern for retry-safe side effects. Being abandoned: recording a key on the wire with no server-side lock or lease, which is exactly the gap this repo's dry-run adapter still has, per its own docstring.",
+   "cites": [
+    "X-maturity-c-007",
+    "X-maturity-c-008"
+   ],
+   "origin": "sourced",
+   "gap": null
+  }
+ }
+]

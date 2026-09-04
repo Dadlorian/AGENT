@@ -19,6 +19,23 @@
 set -u
 FLOOR=131
 cd "$(dirname "$0")"
+
+# Serialize invocations. Every check below writes under out/ by a fixed name,
+# and run.py's own --ledger default (examples/progress/out/ledger.jsonl,
+# exercised by section 13's README-driven subprocess calls) is not one of
+# those names but a path baked into run.py itself, so no per-run rename of
+# the out/ literals in this file can make it unique. Two invocations racing
+# on the same out/ (this test started twice, or a stray process from a
+# previous run still finishing while a fresh one starts) corrupt each
+# other's runs rather than merely doubling the work - reproduced by running
+# this file against itself concurrently: FAIL count went from 0 to double
+# digits with no code change. A held lock makes the race impossible instead
+# of merely unlikely: a second invocation waits here for the first to exit
+# rather than touching out/ while it is in use. The lock file lives beside
+# this script, outside out/, so `rm -rf out` below never orphans it.
+exec 9>".test.lock"
+flock -x 9
+
 PASS=0; FAIL=0
 ok()   { echo "  ok   $1"; PASS=$((PASS+1)); }
 bad()  { echo "  FAIL $1"; FAIL=$((FAIL+1)); }

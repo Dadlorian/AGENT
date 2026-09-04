@@ -89,7 +89,7 @@
         "quote": "checking cryptographic signatures and matching expected values such as builder ID and source repository"
       },
       {
-        "name": "resolve (proposed)",
+        "name": "resolve (proposed; the chain's standalone form is references/xc-provenance-chain.md's resolve_standalone)",
         "input": "a subject digest",
         "output": "every envelope whose statement names that digest as a subject, so a reader holding only an output can find what vouches for it",
         "origin": "proposed",
@@ -243,7 +243,7 @@
     ],
     "invariants": [
       {
-        "text": "The contract this capability must deliver is one sentence: every artifact is attributable to the code version, inputs and actor that produced it, and that attribution is checkable by a tool we did not write. build-evidence-record states the same record as the boundary of its own discipline (F-b4-05).",
+        "text": "The contract this capability must deliver is one sentence: every artifact is attributable to the code version, inputs and actor that produced it, and that attribution is checkable by a tool we did not write. build-evidence (formerly build-evidence-record) states the same record as the boundary of its own discipline (F-b4-05).",
         "origin": "sourced",
         "sources": [
           "F-b4-05",
@@ -423,7 +423,7 @@
     {
       "step": 7,
       "action": "Where the store is an append-only log, monitor it rather than trusting it, and record the monitoring as part of the capability instead of as an operational extra.",
-      "why": "build-definition-of-done already cites this record for gates (X-cross-structure-053); the consequence for this capability is that transparency logs are tamper-evident but not tamper-proof, so a log nobody watches gives a third party the ability to detect tampering that nobody is exercising.",
+      "why": "build-evidence (formerly build-definition-of-done) already cites this record for gates (X-cross-structure-053); the consequence for this capability is that transparency logs are tamper-evident but not tamper-proof, so a log nobody watches gives a third party the ability to detect tampering that nobody is exercising.",
       "origin": "sourced",
       "sources": [
         "X-cross-structure-053",
@@ -444,7 +444,7 @@
   ],
   "best_practices": [
     {
-      "text": "Keep note-taking and attestation apart. build-evidence-record is the discipline for recording what was run and observed; this capability produces a signed envelope for someone else. Merging them is how an unsigned note ends up quoted as if a third party had checked it.",
+      "text": "Keep note-taking and attestation apart. build-evidence is the discipline for recording what was run and observed; this capability produces a signed envelope for someone else. Merging them is how an unsigned note ends up quoted as if a third party had checked it.",
       "origin": "sourced",
       "sources": [
         "F-a5-04",
@@ -509,10 +509,10 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second",
-    "expected": "Measured by tools/measure.py at 372cdc1: exit 0; last lines:   cases=13 passed=13 emitted=2 verified=1 subject_mismatches=0 orphan_subjects=0 store_mounted=False verifier_exit=0 log_inclusion_proofs=1 product_hits=0 | conformance PASSED: 26/26 cases, 2 binding(s)",
-    "breakage": "Append a product-name comment (`# breakage: sigstore`) to the end of harness/provenance/call.py, outside adapters/. Restored with `git checkout -- harness/provenance/call.py`.",
-    "expected_failure": "Measured by tools/measure.py at 372cdc1: exit 1; last lines:   ok   the run names what broke it | passed 21, failed 6",
+    "criterion": "bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second && bash harness/xc-audit-trail/test.sh && python3 harness/xc-audit-trail/conformance.py --adapter dryrun --adapter second",
+    "expected": "Measured by tools/measure.py at 4445dfd: exit 0; last lines:   ok   a break inserted into the middle is found by both stores: tampered seq 13; the trail's own scan found it at seq 13; the external verifier independently found window 2 | conformance PASSED: 7/7 on second (external-checkable-log)",
+    "breakage": "Disable the audit log's chain comparison so a tampered entry goes unreported: `sed -i '206s@.*@            if False:  # BREAKAGE@' harness/xc-audit-trail/interface.py` (interface.py:206, the line that compares each entry's prev and hash against the recomputed values). The provenance half still passes; the folded audit-trail half stops catching the tampered entry its corpus plants and the gate exits non-zero. Restore with `git checkout -- harness/xc-audit-trail/interface.py`.",
+    "expected_failure": "Measured by tools/measure.py at 4445dfd: exit 1; last lines: chain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False | passed 12, failed 6",
     "status": "measured",
     "sources": [
       "F-b4-05",
@@ -521,11 +521,12 @@
     "quote": "verifiable with a tool we did not write",
     "measured_run": {
       "by": "tools/measure.py",
-      "commit": "372cdc1",
+      "commit": "4445dfd",
       "clean_exit": 0,
-      "clean_output": " accepts both predicates in the same envelope\n  ok   the declared subset is honest: a proof is verified or declared unsupported: inclusion proof over a log of 1 entries verified\n  ok   the store's own integrity check is not what verification rests on: append-only merkle log head f58212cacc29 over 2 entries, verified\n  entity=an identity that expires, and a public append-only log (Sigstore-shaped)\n  cases=13 passed=13 emitted=2 verified=1 subject_mismatches=0 orphan_subjects=0 store_mounted=False verifier_exit=0 log_inclusion_proofs=1 product_hits=0\nconformance PASSED: 26/26 cases, 2 binding(s)",
+      "clean_output": "  ok   13 cases exit 0 (0)\n  ok   one attested artifact exits 0 (0)\n  ok   a caller asking to skip provenance exits 2 (2)\n  ok   an unreadable signing key exits 2 (2)\n  ok   conformance after the swap exits 0 (0)\n  ok   product scan over the shipped tree exits 0 (0)\n  ok   the breakage run exits non-zero (1)\n  ..   subject_mismatches=1 attestations_verified=0 verifier_exit=1\n  ok   the breakage run exits non-zero on the second adapter too (1)\n  ok   the envelope verifies in another process with our store unreachable: exit 0, store_mounted=false, 4 checks, no adapter imported\n  cases=13 passed=13 emitted=2 verified=1 subject_mismatches=0 orphan_subjects=0 store_mounted=False verifier_exit=0 log_inclusion_proofs=unsupported product_hits=0\n  ok   the envelope verifies in another process with our store unreachable: exit 0, store_mounted=false, 6 checks, no adapter imported\n...\n  ok   a party holding none of our credentials verifies the published heads: 20 window(s) verified, 0 modules importing an adapter\n  ok   a break inserted into the middle is found by both stores: tampered seq 13; the trail's own scan found it at seq 13; the external verifier independently found window 2\nconformance PASSED: 7/7 on second (external-checkable-log)",
       "breakage_exit": 1,
-      "breakage_output": " the interface, the caller or the conformance run\n  FAIL product scan over the shipped tree exits 0 (expected 0, got 1)\n  FAIL product names leaked\n4. deliberate breakage: the artifact is rebuilt and the statement is not\n  ok   the breakage run exits non-zero (1)\n  ok   the verifier rejected it on the subject digest, not on our store (0)\n  ..   subject_mismatches=1 attestations_verified=0 verifier_exit=1\n4b. deliberate breakage: the signature is dropped from the envelope\n  ok   the breakage run exits non-zero on the second adapter too (1)\n  ok   the run names what broke it\n\npassed 21, failed 6"
+      "breakage_output": "  ok   13 cases exit 0 (0)\n  ok   one attested artifact exits 0 (0)\n  ok   a caller asking to skip provenance exits 2 (2)\n  ok   an unreadable signing key exits 2 (2)\n  ok   conformance after the swap exits 0 (0)\n  ok   product scan over the shipped tree exits 0 (0)\n  ok   the breakage run exits non-zero (1)\n  ..   subject_mismatches=1 attestations_verified=0 verifier_exit=1\n  ok   the breakage run exits non-zero on the second adapter too (1)\n  ok   the envelope verifies in another process with our store unreachable: exit 0, store_mounted=false, 4 checks, no adapter imported\n  cases=13 passed=13 emitted=2 verified=1 subject_mismatches=0 orphan_subjects=0 store_mounted=False verifier_exit=0 log_inclusion_proofs=unsupported product_hits=0\n  ok   the envelope verifies in another process with our store unreachable: exit 0, store_mounted=false, 6 checks, no adapter imported\n...\nchain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False\n\npassed 12, failed 6",
+      "restored": true
     },
     "expected_design": "docs/decomposition.md section 3.2 row P11, extended with the swap: `python3 tools/conformance/provenance_verify.py --adapter local-signed-jsonl --artifact out/artifact.bin --report out/prov-a.json` then the same command with `--adapter keyless-transparency-log --report out/prov-b.json`, the adapter chosen by configuration with no code edit between runs. Each run produces the artifact, emits the statement, then invokes a third-party verifier we did not write as a subprocess with our evidence store unmounted. Both reports must validate against the ProvenanceConformanceReport shape above and assert, per adapter, `external_verifier_exit == 0`, `attestations_verified > 0`, `subject_mismatches == 0`, `orphan_subjects == 0` and `store_mounted == false`; the log adapter must additionally assert `log_inclusion_proofs > 0`, and the local adapter must declare that member unsupported rather than assert it. Earlier criterion named tools/conformance/provenance_verify.py, replaced by the harness on 2026-09-03.",
     "expected_failure_design": "test.sh's product-name scan (check 3) fails with product_hits going from 0 to 1, and `conformance.py --adapter dryrun --adapter second` also reports the same non-zero product_hits and exits non-zero, since every conformance run scans for a product name outside adapters/."
@@ -1005,7 +1006,7 @@
             ]
           },
           {
-            "name": "resolve (proposed)",
+            "name": "resolve_standalone (proposed; the outside-verifier form of this skill's body operation resolve, renamed so one name does not carry two signatures)",
             "input": "one artifact digest, held by someone who has the bytes and nothing else (proposed)",
             "output": "the statement whose subject is that digest and the sealed head it was recorded under, fetchable without our credentials so the check can be run by a tool we did not write (proposed)",
             "origin": "proposed",

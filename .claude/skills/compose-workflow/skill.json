@@ -115,7 +115,7 @@
                 "decisions",
                 "returns"
               ],
-              "description": "decisions is this operator's caller-facing narrowing of compose-approval's ApprovalGate.outcomes: same four-member enum, same return_with_notes value. return_to_step_id is required when decisions includes return_with_notes, matching compose-approval's ApprovalGate.return_to_step_id.",
+              "description": "decisions is this operator's caller-facing narrowing of cap-human-interaction (formerly compose-approval)'s ApprovalGate.outcomes: same four-member enum, same return_with_notes value. return_to_step_id is required when decisions includes return_with_notes, matching cap-human-interaction's ApprovalGate.return_to_step_id.",
               "properties": {
                 "op": {
                   "const": "approval"
@@ -134,7 +134,7 @@
                 },
                 "return_to_step_id": {
                   "type": "string",
-                  "description": "The step re-entered with the decider's notes when return_with_notes fires; required exactly when decisions includes return_with_notes (compose-approval's GateOutcome.outcome=return_with_notes)."
+                  "description": "The step re-entered with the decider's notes when return_with_notes fires; required exactly when decisions includes return_with_notes (cap-human-interaction's GateOutcome.outcome=return_with_notes)."
                 }
               }
             },
@@ -297,7 +297,7 @@
         "quote": "Exceeding it terminates the unit, not the platform"
       },
       {
-        "text": "Proposed: the approval operator's decisions enum is the caller-facing narrowing of compose-approval's own four-outcome vocabulary, never an independent one. compose-approval states as an invariant that a gate has exactly four outcomes and only one of them, return_with_notes, puts work back into the graph; this operator's decisions enum names the identical four values, and a decisions array containing return_with_notes requires return_to_step_id, naming the step re-entered with the decider's notes, exactly as compose-approval's ApprovalGate.return_to_step_id does for a full gate record. Fields this operator does not carry - decider, deadline_at, response_schema - resolve from the platform default the approval capability applies rather than from the caller, per the resolved_default precedence invariant above.",
+        "text": "Proposed: the approval operator's decisions enum is the caller-facing narrowing of cap-human-interaction's own four-outcome vocabulary, never an independent one. cap-human-interaction states as an invariant that a gate has exactly four outcomes and only one of them, return_with_notes, puts work back into the graph; this operator's decisions enum names the identical four values, and a decisions array containing return_with_notes requires return_to_step_id, naming the step re-entered with the decider's notes, exactly as cap-human-interaction's ApprovalGate.return_to_step_id does for a full gate record. Fields this operator does not carry - decider, deadline_at, response_schema - resolve from the platform default the approval capability applies rather than from the caller, per the resolved_default precedence invariant above.",
         "origin": "proposed",
         "sources": [
           "F-a2-01",
@@ -356,7 +356,7 @@
     },
     {
       "step": 3,
-      "action": "Price the composition with core-planner and reconcile before you accept the number: each operator declares its own cost contribution, and a parent's total must equal the sum of its children's at every level. Print the reconciliation next to the estimate.",
+      "action": "Price the composition with core-components (formerly core-planner) and reconcile before you accept the number: each operator declares its own cost contribution, and a parent's total must equal the sum of its children's at every level. Print the reconciliation next to the estimate.",
       "why": "A nested composition that reports a parent figure nobody derived cannot be checked against actuals, and cost known before commitment is the rule the whole planning step exists to satisfy. Proposed: the reconciliation print is ours.",
       "origin": "sourced",
       "sources": [
@@ -403,7 +403,7 @@
       "quote": "complexity lives in a named file"
     },
     {
-      "text": "Count what executed, not what passed, and keep one reference composition that exercises every operator exactly once so the count is assertable. A conformance run over a composition asserts how many distinct operators were exercised and how many steps actually dispatched, because a deterministic gate can be structurally green and mean nothing - the finding build-ceremony and core-document cite from the same A7 record for their own gates.",
+      "text": "Count what executed, not what passed, and keep one reference composition that exercises every operator exactly once so the count is assertable. A conformance run over a composition asserts how many distinct operators were exercised and how many steps actually dispatched, because a deterministic gate can be structurally green and mean nothing - the finding build-ceremony and core-components (formerly core-document) cite from the same A7 record for their own gates.",
       "origin": "sourced",
       "sources": [
         "F-a7-03"
@@ -411,7 +411,7 @@
       "quote": "A deterministic gate can be structurally green and mean nothing."
     },
     {
-      "text": "Write the operator set down once and make the two copies prove they agree. The document schema admits a closed set and the running engine dispatches one; build-adapter-pair states that swappability is a tested property rather than an intention (F-b1-04), and the cheapest form of that test here is a per-engine drift count reported in the same run - schema_ops, executor_ops and drift - because an operator the schema admits and no engine dispatches is a vocabulary entry no caller can use, and one an engine dispatches without the schema admitting it is a composition nothing can validate.",
+      "text": "Write the operator set down once and make the two copies prove they agree. The document schema admits a closed set and the running engine dispatches one; build-evidence (formerly build-adapter-pair) states that swappability is a tested property rather than an intention (F-b1-04), and the cheapest form of that test here is a per-engine drift count reported in the same run - schema_ops, executor_ops and drift - because an operator the schema admits and no engine dispatches is a vocabulary entry no caller can use, and one an engine dispatches without the schema admitting it is a composition nothing can validate.",
       "origin": "sourced",
       "sources": [
         "F-b1-04"
@@ -447,10 +447,10 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "bash harness/compose-operators/test.sh && python3 harness/compose-operators/conformance.py --engine dryrun --engine second",
-    "expected": "Measured by tools/measure.py at c754723: exit 0; last lines: engine_marker=compiled-state-machine/0.1 schema_ops=6 executor_ops=6 drift=0 operators_exercised=6 terminal_outcome=completed checks=39/39 | engines_run=2 step_order=identical terminal_outcome=identical distinct_markers=2 differ=nothing",
-    "breakage": "In harness/compose-operators/adapters/dryrun.py, make the interpreted engine register a branch operator arm the schema does not admit regardless of the gate's own flag (the operator set is then written in two places), run the criterion (drift lists branch, executor_ops is 7 on that engine while the compiled engine stays clean, and the gate exits 1), then git checkout harness/compose-operators/adapters/dryrun.py.",
-    "expected_failure": "Measured by tools/measure.py at c754723: exit 1; last lines:   FAIL the same suite exits 0 again (expected 0, got 1) | passed 29, failed 5",
+    "criterion": "bash harness/compose-operators/test.sh && python3 harness/compose-operators/conformance.py --engine dryrun --engine second && bash harness/linked/test.sh && ADAPTER_CONTAINMENT=second ADAPTER_GATEWAY=second ADAPTER_TRACE=second ADAPTER_WORKFLOW=second python3 harness/linked/conformance.py --report harness/linked/out/linked-swap.json",
+    "expected": "Measured by tools/measure.py at 4445dfd: exit 0; last lines: counters: {\"doors_checked\": 4, \"manifests_distinct\": 1, \"subjects_distinct\": 1, \"typed_refusals\": 4, \"replay_noops\": 4, \"traces_reassembled\": 4} | verdict pass: 23 of 23 checks pass",
+    "breakage": "Break the replay check submit() makes against the ledger in the linked half so a prior completion is never recognised: `sed -i 's/prior = self.ledger.completed(env.idempotency_key)/prior = None/' harness/linked/linked.py`. The operator half still passes; a replay of any door then re-runs the whole unit instead of returning the stored result with zero new spend, and the gate exits non-zero. Restore with `git checkout -- harness/linked/linked.py`.",
+    "expected_failure": "Measured by tools/measure.py at 4445dfd: exit 1; last lines:   FAIL the same suite passes again once the door is restored (expected 0, got 1) | passed 20, failed 12",
     "status": "measured",
     "sources": [
       "F-part-c-04",
@@ -459,14 +459,14 @@
     "quote": "Swappability is a tested property, not an intention.",
     "measured_run": {
       "by": "tools/measure.py",
-      "commit": "c754723",
+      "commit": "4445dfd",
       "clean_exit": 0,
-      "clean_output": "  ok   call.py exits 0 (0)\n  ok   the live engine with no endpoint exits 2 (2)\n  ok   dry-run conformance exits 0 (0)\n  ok   after: the compiled engine exits 0 (0)\n  ok   the breakage run exits non-zero (nonzero)\n  ok   the same suite exits 0 again (0)\n...\nengine_marker=interpreted-walk/0.1 schema_ops=6 executor_ops=6 drift=0 operators_exercised=6 terminal_outcome=completed checks=39/39\nengine_marker=compiled-state-machine/0.1 schema_ops=6 executor_ops=6 drift=0 operators_exercised=6 terminal_outcome=completed checks=39/39\nengines_run=2 step_order=identical terminal_outcome=identical distinct_markers=2 differ=nothing",
+      "clean_output": "  ok   call.py exits 0 (0)\n  ok   the live engine with no endpoint exits 2 (2)\n  ok   dry-run conformance exits 0 (0)\n  ok   after: the compiled engine exits 0 (0)\n  ok   the breakage run exits non-zero (nonzero)\n  ok   the same suite exits 0 again (0)\n  ok   call.py exits 0 (0)\n  ok   dry-run conformance exits 0 (0)\n  ok   second-adapter conformance exits 0 (0)\n  ok   the breakage run exits non-zero (nonzero)\n...\n  ok   F1 no product is named in any file of this harness  [[]]\ncounters: {\"doors_checked\": 4, \"manifests_distinct\": 1, \"subjects_distinct\": 1, \"typed_refusals\": 4, \"replay_noops\": 4, \"traces_reassembled\": 4}\nverdict pass: 23 of 23 checks pass",
       "breakage_exit": 1,
-      "breakage_output": "  ok   call.py exits 0 (0)\n  ok   the live engine with no endpoint exits 2 (2)\n  FAIL dry-run conformance exits 0 (expected 0, got 1)\n  FAIL every check passed (expected [], got [{\"check\": \"A2 the running engine dispatches exactly the operators the schema admits\", \"detail\": \"drift=['branch']\"}])\n  FAIL drift between the schema and the executor (expected [], got [\"branch\"])\n  ok   after: the compiled engine exits 0 (0)\n  FAIL both engines in one report (expected 0, got 1)\n  ok   the breakage run exits non-zero (nonzero)\n  FAIL the same suite exits 0 again (expected 0, got 1)\n...\n  FAIL the same suite exits 0 again (expected 0, got 1)\n\npassed 29, failed 5",
+      "breakage_output": "  ok   call.py exits 0 (0)\n  ok   the live engine with no endpoint exits 2 (2)\n  ok   dry-run conformance exits 0 (0)\n  ok   after: the compiled engine exits 0 (0)\n  ok   the breakage run exits non-zero (nonzero)\n  ok   the same suite exits 0 again (0)\n  ok   call.py exits 0 (0)\n  FAIL dry-run conformance exits 0 (expected 0, got 1)\n  FAIL verdict (expected pass, got fail)\n  FAIL no check failed (expected [], got [\"D1 a replay of every door returns the same result\", \"D2 a replay writes nothing and reaches no component\"])\n  FAIL replays that were no-ops (expected 4, got 0)\n  FAIL second-adapter conformance exits 0 (expected 0, got 1)\n...\n  FAIL the same suite passes again once the door is restored (expected 0, got 1)\n\npassed 20, failed 12",
       "restored": true
     },
-    "expected_design": "What the run proves: Proposed tool, built with stage 1 of the migration: `python3 tools/conformance_operators.py --workflow examples/end-to-end/workflows/triage-and-fix.json --schema examples/end-to-end/schemas/workflow.schema.json --engine interpreted --engine compiled --assert-binding --report out/operators-conformance.json`. Beyond the contract assertions compose-operators states, it asserts the build's own binding: for every engine, the operator names read from the running engine's dispatch equal the operator names read from the schema, so `drift` is empty; `engine_marker` is read from the running engine rather than from the binding record; `engines_run >= 2`; and `operators_exercised == 6` on each engine independently. | exit 0 and one line per engine of the form `engine_marker=<interpreted|compiled> schema_ops=6 executor_ops=6 drift=0 operators_exercised=6 step_order=<identical> terminal_outcome=completed`, followed by `engines_run=2`. Claimed: the tool does not exist yet, stage 1 of the migration is not applied, and the compiled engine is not built. What is measured today, on 2026-09-03, is the baseline the tool would wrap: `bash examples/end-to-end/test.sh` reports `passed 29, failed 0` on the interpreted engine, with `ok   agent registry and workflow validate (0)`.",
+    "expected_design": "What the run proves: Proposed tool, built with stage 1 of the migration: `python3 tools/conformance_operators.py --workflow examples/end-to-end/workflows/triage-and-fix.json --schema examples/end-to-end/schemas/workflow.schema.json --engine interpreted --engine compiled --assert-binding --report out/operators-conformance.json`. Beyond the contract assertions this skill states, it asserts the build's own binding: for every engine, the operator names read from the running engine's dispatch equal the operator names read from the schema, so `drift` is empty; `engine_marker` is read from the running engine rather than from the binding record; `engines_run >= 2`; and `operators_exercised == 6` on each engine independently. | exit 0 and one line per engine of the form `engine_marker=<interpreted|compiled> schema_ops=6 executor_ops=6 drift=0 operators_exercised=6 step_order=<identical> terminal_outcome=completed`, followed by `engines_run=2`. Claimed: the tool does not exist yet, stage 1 of the migration is not applied, and the compiled engine is not built. What is measured today, on 2026-09-03, is the baseline the tool would wrap: `bash examples/end-to-end/test.sh` reports `passed 29, failed 0` on the interpreted engine, with `ok   agent registry and workflow validate (0)`.",
     "expected_failure_design": "Every contract-level assertion still passes - the document is unchanged, so it validates, all six operators are exercised and both engines produce the same step order and terminal outcome - and the run exits non-zero on the binding alone: `drift=[\"branch\"] engine=interpreted schema_ops=6 executor_ops=7`. The compiled engine reports `drift=0`, which localises the fault to one engine's wiring rather than to the vocabulary. That is the failure mode this facet owns: an operator the schema does not admit but an executor would happily run is a door the closed set does not know about, and it opens only in the build."
   },
   "composes_with": {

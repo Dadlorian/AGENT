@@ -43,7 +43,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 |---|---|---|---|---|
 | bind (proposed operation set; the recorded standards fix a document format rather than a set of calls, and cap-provenance owns the attest call this one wraps) | a result about to be released, the set of artifact digests it references, and the actor and code version that produced them | one attestation-recorded record per subject digest, appended in the same write as the result, or a typed refusal that stops the release (proposed) | proposed | `F-b4-05`, `X-xc-provenance-chain-003` |
 | sweep (proposed) | a corpus of results read at one pinned state head (proposed) | artifacts_checked, attestations_matched and orphans, where an orphan is an output digest with no statement whose subject matches it (proposed) | proposed | `F-b4-05`, `F-a7-03` |
-| resolve (proposed) | one artifact digest, held by someone who has the bytes and nothing else (proposed) | the statement whose subject is that digest and the sealed head it was recorded under, fetchable without our credentials so the check can be run by a tool we did not write (proposed) | proposed | `F-b4-05`, `X-xc-provenance-chain-002` |
+| resolve_standalone (proposed; the outside-verifier form of this skill's body operation resolve, renamed so one name does not carry two signatures) | one artifact digest, held by someone who has the bytes and nothing else (proposed) | the statement whose subject is that digest and the sealed head it was recorded under, fetchable without our credentials so the check can be run by a tool we did not write (proposed) | proposed | `F-b4-05`, `X-xc-provenance-chain-002` |
 
 ### Shapes (JSON Schema 2020-12)
 

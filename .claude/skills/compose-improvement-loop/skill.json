@@ -4,7 +4,7 @@
   "wave": 6,
   "description": "The self-improvement loop as a composition: ceremony review and improve findings seed candidate revisions; a bounded loop retries one candidate against the evaluation gate; a passing candidate is promoted with a rollback state. Load it when a finding becomes a revision, when deciding whether a candidate retries or escalates, or when asking what proves a change helped.",
   "purpose": {
-    "text": "build-ceremony states the self-improvement loop as TARGET fixes it (T-t4-04), and cap-evaluation cites the same quote as the reason its own reports and baselines are retained: a ceremony closes each section, re-reviews the output, and improves the skills that produced it. This composition's consequence is architectural, in service of TARGET's scale requirement that agents keep 'working together, managing state, breaking problems down, and self-improving where they can' (T-t6-06): turn a ceremony's applied findings, and cap-evaluation's own recorded regressions, into candidates that retry inside one bounded compose-loop instance and are promoted through cap-capability-registry only on a pass - so a revision can be refused, and 'self-improving' names a checkable pipeline rather than a session conducted carefully.",
+    "text": "build-ceremony states the self-improvement loop as TARGET fixes it (T-t4-04), and cap-evaluation cites the same quote as the reason its own reports and baselines are retained: a ceremony closes each section, re-reviews the output, and improves the skills that produced it. This composition's consequence is architectural, in service of TARGET's scale requirement that agents keep 'working together, managing state, breaking problems down, and self-improving where they can' (T-t6-06): turn a ceremony's applied findings, and cap-evaluation's own recorded regressions, into candidates that retry inside one bounded compose-workflow (formerly compose-loop) instance and are promoted through cap-capability-packaging (formerly cap-capability-registry) only on a pass - so a revision can be refused, and 'self-improving' names a checkable pipeline rather than a session conducted carefully.",
     "origin": "sourced",
     "sources": [
       "T-t4-04",
@@ -23,9 +23,9 @@
   "contract": {
     "operations": [
       {
-        "name": "promote_revision (cap-capability-registry's publish, cited by name and reused unchanged)",
+        "name": "promote_revision (cap-capability-packaging's publish, cited by name and reused unchanged)",
         "input": "a passed EvaluationReport, the candidate's content_ref, and rollback_to set to the target's currently resolved registry version (proposed)",
-        "output": "cap-capability-registry already states that a change is a new version record, never an edit to the one that is there; the consequence here is that promote_revision writes only there, and the candidate's outcome - promoted with the record, or declined with the reason - is appended to the section's improve record and to kb/ledger.jsonl",
+        "output": "cap-capability-packaging already states that a change is a new version record, never an edit to the one that is there; the consequence here is that promote_revision writes only there, and the candidate's outcome - promoted with the record, or declined with the reason - is appended to the section's improve record and to kb/ledger.jsonl",
         "origin": "sourced",
         "sources": [
           "X-cap-capability-registry-007"
@@ -119,7 +119,7 @@
                 "string",
                 "null"
               ],
-              "description": "The compose-loop instance this candidate is iterating inside."
+              "description": "The compose-workflow instance this candidate is iterating inside."
             },
             "iteration_index": {
               "type": "integer",
@@ -213,7 +213,7 @@
                   ]
                 }
               },
-              "description": "cap-capability-registry's own record; set only when decision is promoted."
+              "description": "cap-capability-packaging's own record; set only when decision is promoted."
             }
           }
         }
@@ -229,7 +229,7 @@
         "quote": "improves the skills that produced it, and the loop continues"
       },
       {
-        "text": "compose-loop states that a loop terminates on exactly one of three conditions and classifies a pass verdict as stop, the other two as cap, and that the two must never be collapsed (REF-5-3-08, F-b4-02). This composition's consequence: gate_revision's outcome maps onto that same enum unchanged - passed is verdict_pass, and failed inside the ceiling re-enters author_revision rather than closing anything - so a candidate still iterating is neither promoted nor declined.",
+        "text": "compose-workflow states that a loop terminates on exactly one of three conditions and classifies a pass verdict as stop, the other two as cap, and that the two must never be collapsed (REF-5-3-08, F-b4-02). This composition's consequence: gate_revision's outcome maps onto that same enum unchanged - passed is verdict_pass, and failed inside the ceiling re-enters author_revision rather than closing anything - so a candidate still iterating is neither promoted nor declined.",
         "origin": "sourced",
         "sources": [
           "REF-5-3-08",
@@ -238,7 +238,7 @@
         "quote": "`stop` firing means done. `cap` firing means escalate."
       },
       {
-        "text": "core-judge and cap-evaluation state design rule 6 (F-b1-07): the grader is never visible to the graded. This composition's consequence: author_revision's retry input is failed_check_ids and a verdict only, across every iteration of the same candidate_id - the loop is the place this rule is cheapest to break, because the obvious way to fix a candidate is to show it what it failed.",
+        "text": "core-components (formerly core-judge) and cap-evaluation state design rule 6 (F-b1-07): the grader is never visible to the graded. This composition's consequence: author_revision's retry input is failed_check_ids and a verdict only, across every iteration of the same candidate_id - the loop is the place this rule is cheapest to break, because the obvious way to fix a candidate is to show it what it failed.",
         "origin": "sourced",
         "sources": [
           "F-b1-07"
@@ -246,7 +246,7 @@
         "quote": "The grader is never visible to the graded"
       },
       {
-        "text": "cap-capability-registry states that a record is immutable and a change is a new version, never an edit in place. This composition's consequence: promote_revision never writes to a target's checked-out file; a passed candidate becomes a new registry record with rollback_to set to the resolved baseline, which is not yet how the skills in this repository are edited - a gap named as an open question and carried into compose-improvement-loop-implement.",
+        "text": "cap-capability-packaging states that a record is immutable and a change is a new version, never an edit in place. This composition's consequence: promote_revision never writes to a target's checked-out file; a passed candidate becomes a new registry record with rollback_to set to the resolved baseline, which is not yet how the skills in this repository are edited - a gap named as an open question and carried into compose-improvement-loop-implement.",
         "origin": "sourced",
         "sources": [
           "X-cap-capability-registry-007"
@@ -254,7 +254,7 @@
         "quote": "Mutable metadata are represented as new versioned records rather than in-place edits"
       },
       {
-        "text": "compose-loop states, following the reference example, that internal steers but never starts (REF-3-4-15, T-t4-04, T-t6-02). This composition's consequence: a running iteration may report a lesson into the rationale of the next candidate, but the compose-loop instance that gates and promotes a candidate is opened only by a person closing a ceremony, a schedule, or the outside event that produced the seed - never by author_revision or iterate_or_close themselves.",
+        "text": "compose-workflow states, following the reference example, that internal steers but never starts (REF-3-4-15, T-t4-04, T-t6-02). This composition's consequence: a running iteration may report a lesson into the rationale of the next candidate, but the compose-workflow instance that gates and promotes a candidate is opened only by a person closing a ceremony, a schedule, or the outside event that produced the seed - never by author_revision or iterate_or_close themselves.",
         "origin": "sourced",
         "sources": [
           "REF-3-4-15",
@@ -265,7 +265,7 @@
     ],
     "not_exposed": [
       {
-        "text": "core-judge and cap-evaluation state design rule 6 (F-b1-07): the grader is never visible to the graded. On this composition it forbids the case set and the rubric text gate_revision scores against from reaching author_revision's retry input, which carries a verdict and failed_check_ids only.",
+        "text": "core-components and cap-evaluation state design rule 6 (F-b1-07): the grader is never visible to the graded. On this composition it forbids the case set and the rubric text gate_revision scores against from reaching author_revision's retry input, which carries a verdict and failed_check_ids only.",
         "origin": "sourced",
         "sources": [
           "F-b1-07"
@@ -288,7 +288,7 @@
     {
       "step": 2,
       "action": "Author the revision's content_ref. On the first pass, author it from the finding or transition alone; on a retry, author it from the finding plus the prior EvaluationReport's verdict and failed_check_ids only, never with the case set.",
-      "why": "core-components (core-judge) owns the rule that the grader is never visible to the graded (F-b1-07); the consequence owned here is that this is the one step of the loop structurally placed to leak it, because it holds both the candidate and, on a retry, the verdict that came back.",
+      "why": "core-components owns the rule that the grader is never visible to the graded (F-b1-07); the consequence owned here is that this is the one step of the loop structurally placed to leak it, because it holds both the candidate and, on a retry, the verdict that came back.",
       "origin": "sourced",
       "sources": [
         "F-b1-07"
@@ -297,7 +297,7 @@
     },
     {
       "step": 3,
-      "action": "Wrap the retry in one compose-loop declaration before author_revision runs a second time: max_iterations, a per-iteration budget slice, exit_when naming gate_revision's verdict, on_cap escalate. agentic-stack and compose-loop state that planning is a pure function completed before execution begins (F-b1-06, F-b2-03).",
+      "action": "Wrap the retry in one compose-workflow declaration before author_revision runs a second time: max_iterations, a per-iteration budget slice, exit_when naming gate_revision's verdict, on_cap escalate. agentic-stack and compose-workflow state that planning is a pure function completed before execution begins (F-b1-06, F-b2-03).",
       "why": "Cost is knowable before commitment only because the ceiling is declared first; a candidate authored before its loop is declared is a retry with no bound on how many times it may fail.",
       "origin": "sourced",
       "sources": [
@@ -318,7 +318,7 @@
     {
       "step": 5,
       "action": "On a failed outcome inside the ceiling, re-enter author_revision in the same loop_id and candidate_id with only the EvaluationReport's verdict and failed_check_ids - never with the case set, the rubric, or the record of the prior content_ref that was tried.",
-      "why": "core-components (core-judge) and cap-evaluation state design rule 6 (F-b1-07); a candidate that also saw its own prior attempts would be optimising against a map of what to avoid saying rather than what to avoid doing, which core-judge's invariant on leaked history already forbids at any depth.",
+      "why": "core-components and cap-evaluation state design rule 6 (F-b1-07); a candidate that also saw its own prior attempts would be optimising against a map of what to avoid saying rather than what to avoid doing, which core-components's invariant on leaked history already forbids at any depth.",
       "origin": "sourced",
       "sources": [
         "F-b1-07"
@@ -327,8 +327,8 @@
     },
     {
       "step": 6,
-      "action": "On a passed outcome, call cap-capability-registry's publish with rollback_to set to the target's currently resolved version. Append the CandidateOutcome to the section's improve record and to kb/ledger.jsonl; never write to the target's checked-out file.",
-      "why": "cap-capability-registry states that a change is a new version record, never an edit to the one that is there; a promotion that writes to the checked-out skill.json instead is the exact defect compose-improvement-loop-implement's second executor - cap-evaluation's passed outcome as the sole promotion authority, cap-capability-registry's publish as the only write path - is chosen to close.",
+      "action": "On a passed outcome, call cap-capability-packaging's publish with rollback_to set to the target's currently resolved version. Append the CandidateOutcome to the section's improve record and to kb/ledger.jsonl; never write to the target's checked-out file.",
+      "why": "cap-capability-packaging states that a change is a new version record, never an edit to the one that is there; a promotion that writes to the checked-out skill.json instead is the exact defect compose-improvement-loop-implement's second executor - cap-evaluation's passed outcome as the sole promotion authority, cap-capability-packaging's publish as the only write path - is chosen to close.",
       "origin": "sourced",
       "sources": [
         "X-cap-capability-registry-007"
@@ -337,8 +337,8 @@
     },
     {
       "step": 7,
-      "action": "Proposed: on iteration_ceiling or budget_ceiling, close as compose-loop's cap: record the candidate declined with the ceiling name as reason, escalate to a human, and never silently drop it or retry past the declared bound.",
-      "why": "compose-loop already states that stop and cap are opposites and must not be collapsed; a declined candidate with no recorded reason reads, downstream, exactly like one nobody ever tried.",
+      "action": "Proposed: on iteration_ceiling or budget_ceiling, close as compose-workflow's cap: record the candidate declined with the ceiling name as reason, escalate to a human, and never silently drop it or retry past the declared bound.",
+      "why": "compose-workflow already states that stop and cap are opposites and must not be collapsed; a declined candidate with no recorded reason reads, downstream, exactly like one nobody ever tried.",
       "origin": "proposed",
       "sources": [
         "REF-5-3-08"
@@ -358,7 +358,7 @@
     {
       "step": 9,
       "action": "Proposed: start a new root loop_id only when the trigger is a person closing a ceremony, a schedule, or an outside event such as a merge or a monitored regression. A candidate's own retry re-enters the loop_id it was seeded in and never opens a second one.",
-      "why": "compose-loop already states, following the reference example, that internal steers but never starts; a self-improvement loop is exactly the case TARGET names this constraint for, because a loop that could mint its own root work would have no actor to attribute a promotion to and no ceiling to spend against.",
+      "why": "compose-workflow already states, following the reference example, that internal steers but never starts; a self-improvement loop is exactly the case TARGET names this constraint for, because a loop that could mint its own root work would have no actor to attribute a promotion to and no ceiling to spend against.",
       "origin": "proposed",
       "sources": [
         "REF-3-4-15"
@@ -368,7 +368,7 @@
     {
       "step": 10,
       "action": "Proposed: measure the loop's own effect as a population trend, not a single run. Run `python3 tools/ceremony_check.py` over kb/ceremonies/*, state/lessons.jsonl and kb/ledger.jsonl before claiming the discipline is working, and read the printed findings-per-skill and proposed-row-share lines rather than one ceremony's outcome; this repository's own run is today's measured instance, and compose-improvement-loop-implement names the gaps between it and this contract.",
-      "why": "Proposed: agentic-stack and build-definition-of-done already state that a criterion nothing can fail is not a criterion and that a structurally green run can mean nothing; a loop judged by its most recent ceremony alone could be improving on average and still look broken, or the reverse.",
+      "why": "Proposed: agentic-stack and build-evidence (formerly build-definition-of-done) already state that a criterion nothing can fail is not a criterion and that a structurally green run can mean nothing; a loop judged by its most recent ceremony alone could be improving on average and still look broken, or the reverse.",
       "origin": "proposed",
       "sources": [
         "F-part-c-04",
@@ -393,7 +393,7 @@
       "quote": "improves the skills that produced it, and the loop continues"
     },
     {
-      "text": "Proposed: core-judge states that a judge grading with a model carries systematic biases - position, verbosity, self-preference - and should not grade its own model family's output without a bias control in the criterion set (X-core-judge-002). This repository's own ceremony 11 compose-group review names its reviewer as a single model with no held-out audit behind it - name this as an open defect rather than a settled property of the loop.",
+      "text": "Proposed: core-components states that a judge grading with a model carries systematic biases - position, verbosity, self-preference - and should not grade its own model family's output without a bias control in the criterion set (X-core-judge-002). This repository's own ceremony 11 compose-group review names its reviewer as a single model with no held-out audit behind it - name this as an open defect rather than a settled property of the loop.",
       "origin": "proposed",
       "sources": [
         "X-core-judge-002"
@@ -463,8 +463,8 @@
       "quote": "improves the skills that produced it, and the loop continues"
     },
     {
-      "question": "Does the audit core-judge's contract already requires (a held-out re-grading of routine verdicts) apply to a ceremony's own findings, given that this repository's ceremonies today are graded by a single reviewing model with no stated bias control?",
-      "evidence": "A sample of closed ceremony findings re-reviewed by a model outside the family that authored the section, with divergence counted the way core-judge's audit operation counts it against the routine judge.",
+      "question": "Does the audit core-components's contract already requires (a held-out re-grading of routine verdicts) apply to a ceremony's own findings, given that this repository's ceremonies today are graded by a single reviewing model with no stated bias control?",
+      "evidence": "A sample of closed ceremony findings re-reviewed by a model outside the family that authored the section, with divergence counted the way core-components's audit operation counts it against the routine judge.",
       "default": "No audit runs yet; the gap is named in this skill's invariants and best practices as a known, unresolved bias in today's adapter rather than assumed acceptable. cap-evaluation states F-b1-07 under this quote for its own gate; the question here is whether a ceremony's findings fall under the same audit.",
       "sources": [
         "F-b1-07"

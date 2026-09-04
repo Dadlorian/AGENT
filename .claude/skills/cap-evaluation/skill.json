@@ -304,7 +304,7 @@
         "schema": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "$id": "urn:agentic:evaluation:worked-calls:0.1",
-          "description": "Proposed. cap-consumption owns the entry envelope and the caller doctrine; these are this capability's payloads inside it, one per way in. TARGET T1 lists the three ways in that these instances cover; references/usage.md carries them in full with the answers.",
+          "description": "Proposed. agentic-stack (formerly cap-consumption) owns the entry envelope and the caller doctrine; these are this capability's payloads inside it, one per way in. TARGET T1 lists the three ways in that these instances cover; references/usage.md carries them in full with the answers.",
           "type": "object",
           "examples": [
             {
@@ -425,7 +425,7 @@
     ],
     "invariants": [
       {
-        "text": "Evaluation is offline and dev-time work, and is a different artifact from the runtime Judge. core-judge owns the runtime verdict on one result against one criterion (F-b2-05). Proposed consequence: this interface may therefore be slow, expensive and repeated, because nothing is waiting on its answer.",
+        "text": "Evaluation is offline and dev-time work, and is a different artifact from the runtime Judge. core-components (formerly core-judge) owns the runtime verdict on one result against one criterion (F-b2-05). Proposed consequence: this interface may therefore be slow, expensive and repeated, because nothing is waiting on its answer.",
         "origin": "sourced",
         "sources": [
           "X-end-to-end-009",
@@ -441,7 +441,7 @@
         ]
       },
       {
-        "text": "Scoring reads the ordered trace, not only the final answer. core-judge records the trajectory gap in PASS.md's Judge signature (X-end-to-end-010). Proposed consequence on this interface: a case whose final answer is right and whose tool calls were wrong is a failing case, and a scorer that cannot see the steps cannot serve here.",
+        "text": "Scoring reads the ordered trace, not only the final answer. core-components records the trajectory gap in PASS.md's Judge signature (X-end-to-end-010). Proposed consequence on this interface: a case whose final answer is right and whose tool calls were wrong is a failing case, and a scorer that cannot see the steps cannot serve here.",
         "origin": "sourced",
         "sources": [
           "X-end-to-end-010",
@@ -466,12 +466,16 @@
         "quote": "A criterion nothing can fail is not a criterion."
       },
       {
-        "text": "Reports and baselines are appended and retained, never overwritten. build-ceremony owns the improvement loop this feeds (T-t4-04); the consequence here is that promoting a new baseline keeps the old one, so a loop that made things worse can be shown to have done so rather than argued about.",
+        "text": "build-ceremony owns the improvement loop this interface feeds (T-t4-04): a ceremony re-reviews a section's output, improves the skills that produced it, and the loop continues, so this capability's verdicts are what that loop turns on.",
         "origin": "sourced",
         "sources": [
           "T-t4-04"
         ],
         "quote": "improves the skills that produced it, and the loop continues"
+      },
+      {
+        "text": "Proposed consequence of the row above: reports and baselines are appended and retained, never overwritten. Promoting a new baseline keeps the old one, so a loop that made things worse can be shown to have done so rather than argued about. No record in kb/ states a retention rule for evaluation reports; this is the author's extension and is owed research.",
+        "origin": "proposed"
       },
       {
         "text": "The core imports this interface and never a harness. agentic-stack states design rule 1 (F-b1-02); on this interface it forbids a metric class, a dataset loader, a test-runner decorator or a collector client appearing in a core signature, because those are the parts that differ between the two adapters.",
@@ -492,7 +496,7 @@
     ],
     "not_exposed": [
       {
-        "text": "The rubric body. agentic-stack states design rule 6 (F-b1-07) and core-judge states it for the runtime verdict; on this interface it forbids exactly one thing: the text a case is scored against may never travel into the unit under test. A case carries rubric_ref, an opaque handle, and the handle is resolved inside the scorer after the trajectory exists, so a unit that reads its whole input still cannot read what it is graded on.",
+        "text": "The rubric body. agentic-stack states design rule 6 (F-b1-07) and core-components states it for the runtime verdict; on this interface it forbids exactly one thing: the text a case is scored against may never travel into the unit under test. A case carries rubric_ref, an opaque handle, and the handle is resolved inside the scorer after the trajectory exists, so a unit that reads its whole input still cannot read what it is graded on.",
         "origin": "sourced",
         "sources": [
           "F-b1-07"
@@ -560,7 +564,7 @@
     {
       "step": 5,
       "action": "Emit each per-case verdict on the standard evaluation-result carrier from the Standards table, and keep the platform's own scoring separate from the emission.",
-      "why": "cap-telemetry owns the carrier and the collector for the Telemetry row of PASS.md B3, and core-judge already records that the conventions carry an evaluator verdict without producing one (X-end-to-end-006); the consequence here is that a reader of evaluation results learns no second format, while the scoring itself stays inside this capability where it can be swapped.",
+      "why": "cap-telemetry owns the carrier and the collector for the Telemetry row of PASS.md B3, and core-components already records that the conventions carry an evaluator verdict without producing one (X-end-to-end-006); the consequence here is that a reader of evaluation results learns no second format, while the scoring itself stays inside this capability where it can be swapped.",
       "origin": "sourced",
       "sources": [
         "X-end-to-end-006",
@@ -571,7 +575,7 @@
     {
       "step": 6,
       "action": "Pass rubric_ref into a case and resolve it only inside the scorer, after the trajectory is complete. Never let the resolved body into the unit's input, its context, its tool results or a replayed effect.",
-      "why": "Design rule 6 is agentic-stack's, and core-judge holds it for the runtime verdict (F-b1-07): the grader is never visible to the graded, and an evaluation harness inherits that rule unchanged.",
+      "why": "Design rule 6 is agentic-stack's, and core-components holds it for the runtime verdict (F-b1-07): the grader is never visible to the graded, and an evaluation harness inherits that rule unchanged.",
       "origin": "sourced",
       "sources": [
         "F-b1-07"
@@ -590,7 +594,7 @@
     {
       "step": 8,
       "action": "Run the same registered case set through both adapters in the Adapters table and require identical per-case verdicts before either is allowed to gate anything.",
-      "why": "build-adapter-pair owns design rule 3; the consequence here is specific - a verdict that only reproduces on the adapter with a collector attached is a property of that collector, not of the unit under test, and would silently become the thing the whole gate rests on.",
+      "why": "build-evidence (formerly build-adapter-pair) owns design rule 3; the consequence here is specific - a verdict that only reproduces on the adapter with a collector attached is a property of that collector, not of the unit under test, and would silently become the thing the whole gate rests on.",
       "origin": "sourced",
       "sources": [
         "F-b1-04"
@@ -675,8 +679,8 @@
       "entity": "E-swap-candidate-local-fixture-replay-harness",
       "role": "second",
       "maps_to": "Proposed adapter, and a proposed entity id: a test-runner-shaped local harness with no collector and no server, where each case is a test function, the recorded run is a fixture on disk, and the assertion is the per-case verdict against the stored baseline. It reads the same CaseSet and writes the same EvaluationReport, so the corpus registered for the first adapter runs here unchanged.",
-      "cannot": "Proposed: cannot score a production run it did not record, cannot aggregate across a fleet, and cannot show a trend over time without something else keeping the reports. That is the axis build-adapter-pair asks for: the first adapter scores traces that a running collector delivers, the second scores fixtures on a filesystem with nothing running, so any operation shaped around a live trace stream fails outright here rather than degrading.",
-      "swap_procedure": "One conformance run puts the identical case set through both adapters against the same baseline and diffs per-case verdicts, transitions and refusal types; the merged report must show adapters_run >= 2 and verdict_divergence == 0. Design rule 3 is agentic-stack's and build-adapter-pair's (F-b1-04); what is new here is that the second adapter is chosen for having no server at all, not for being a different evaluation product of the same shape.",
+      "cannot": "Proposed: cannot score a production run it did not record, cannot aggregate across a fleet, and cannot show a trend over time without something else keeping the reports. That is the axis build-evidence asks for: the first adapter scores traces that a running collector delivers, the second scores fixtures on a filesystem with nothing running, so any operation shaped around a live trace stream fails outright here rather than degrading.",
+      "swap_procedure": "One conformance run puts the identical case set through both adapters against the same baseline and diffs per-case verdicts, transitions and refusal types; the merged report must show adapters_run >= 2 and verdict_divergence == 0. Design rule 3 is agentic-stack's and build-evidence's (F-b1-04); what is new here is that the second adapter is chosen for having no server at all, not for being a different evaluation product of the same shape.",
       "status": "claimed",
       "sources": [
         "X-cap-evaluation-001",
@@ -725,7 +729,7 @@
   "open_questions": [
     {
       "question": "Which entity ids should the two adapter rows carry, given that PASS.md B3 has no Evaluation row and so kb/entities.jsonl holds no adapter entity for this capability?",
-      "evidence": "`python3 tools/kb.py tree` returns no capability, adapter or swap-candidate entity for Evaluation, and kb/meta.json's entity head is pinned in the provenance of every skill already written, so appending an entity would invalidate all of them. Applying 1-3-1: (1) reuse a swap candidate from the Telemetry row, which resolves but sends a reader to another capability's row; (2) mint proposed ids and say in each row that they are proposed, which is what cap-memory and cap-human-interaction did for the same gap; (3) carry no adapters here and defer the pair to cap-evaluation-implement, which hides the pair from the reader who loads only the ideal facet. Recommendation and choice: (2).",
+      "evidence": "`python3 tools/kb.py tree` returns no capability, adapter or swap-candidate entity for Evaluation, and kb/meta.json's entity head is pinned in the provenance of every skill already written, so appending an entity would invalidate all of them. Applying 1-3-1: (1) reuse a swap candidate from the Telemetry row, which resolves but sends a reader to another capability's row; (2) mint proposed ids and say in each row that they are proposed, which is what cap-state-persistence (formerly cap-memory) and cap-human-interaction did for the same gap; (3) carry no adapters here and defer the pair to cap-evaluation-implement, which hides the pair from the reader who loads only the ideal facet. Recommendation and choice: (2).",
       "default": "Both rows carry minted ids and say so in maps_to. If an Evaluation row is ever added to the knowledge base, replace the ids and delete this question.",
       "sources": [
         "T-t5-02",
@@ -745,7 +749,7 @@
     },
     {
       "question": "Does a refusal that is specific to evaluation - a case set that does not resolve, a baseline that was never promoted - need a registry row of its own, or is the registered criterion-unresolvable row the honest fit?",
-      "evidence": "cap-errors owns the problem object and the closed registry, and core-judge states the same typed-failure rule for a verdict (F-b3-13, F-b4-07). That registry, in docs/decomposition.md section 2.1.6, raises criterion-unresolvable when a criterion reference does not resolve; a rubric handle is a criterion reference, and a baseline that was never promoted is a reference that does not resolve either. No case has yet been found where a caller would branch differently.",
+      "evidence": "cap-errors owns the problem object and the closed registry, and core-components states the same typed-failure rule for a verdict (F-b3-13, F-b4-07). That registry, in docs/decomposition.md section 2.1.6, raises criterion-unresolvable when a criterion reference does not resolve; a rubric handle is a criterion reference, and a baseline that was never promoted is a reference that does not resolve either. No case has yet been found where a caller would branch differently.",
       "default": "Reuse criterion-unresolvable for an unresolvable rubric handle, case set or baseline, and document-invalid for a malformed evaluation request. No new suffix is proposed and none is stated anywhere in this skill.",
       "sources": [
         "F-b3-13",

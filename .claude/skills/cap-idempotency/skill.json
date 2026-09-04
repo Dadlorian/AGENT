@@ -2,7 +2,7 @@
   "name": "cap-idempotency",
   "layer": "cap",
   "wave": 3,
-  "description": "The ideal state of the Idempotency capability: one claim over a key and a payload digest that turns a repeated externally-triggered request into one execution and one answer, governed by the idempotency-key convention and by lease semantics this platform specifies itself. Load it when deciding what makes a repeated request safe, when a request may arrive more than once from a retry, a redelivery or a re-fire, when judging whether an implementation actually deduplicates or merely records a key, or when a review asks why a key alone is not enough. Also load it when the same operation could run twice and charge, send or write twice, when two copies of one request could be in flight at the same moment, when someone proposes reusing a key across attempts, or when a retention window is about to be chosen by accident.",
+  "description": "Idempotency contract and build, including the lease: one claim over a key and payload digest turns a repeated request into one execution and one answer. Load it when a retry, redelivery or re-fire could run twice, when two copies race for one key, when choosing a retention window, or when judging whether a store deduplicates or merely records keys.",
   "purpose": {
     "text": "Fix the contract that makes a repeated externally-triggered request produce one execution and one answer, so that replay safety is a property the platform delivers rather than a convention each caller reimplements.",
     "origin": "sourced",
@@ -64,7 +64,7 @@
       {
         "name": "resolve (call name is ours; the Ledger's own deduplication-authority role is the sourced fact)",
         "input": "an idempotency key and its scope",
-        "output": "the prior result reference and whether that execution has finished, or null when the key has never been claimed; this is the read a planner needs before it plans work that has already been done",
+        "output": "the prior result reference and whether that execution has finished, or null when the key has never been claimed; this is the read a planner needs before it plans work that has already been done; cap-state-persistence states F-b2-06 under this quote for the record store, and this row names the read the claim needs",
         "origin": "sourced",
         "sources": [
           "F-b2-06"
@@ -293,7 +293,7 @@
         "quote": "State, telemetry, and every cross-cutting concern are managed across the entire structure"
       },
       {
-        "text": "The core already owns a deduplication authority: the Ledger is append-only across runs and is the deduplication authority, and removing it means nothing survives the run.",
+        "text": "The core already owns a deduplication authority: the Ledger is append-only across runs and is the deduplication authority, and removing it means nothing survives the run. cap-state-persistence states the same record for the durable store beneath; on this interface the fact fixes which component answers whether a key has been claimed.",
         "origin": "sourced",
         "sources": [
           "F-b2-06",
@@ -318,7 +318,7 @@
         "quote": "Despite consistent header names, idempotency implementations vary by provider in retention windows and parameter handling."
       },
       {
-        "text": "All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: changing the retention window, moving the claim from a log fold to a lease store, or adding a new entry kind changes nothing in a caller that sends one key per intent, because the key is the only thing it was ever asked for. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here.",
+        "text": "All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: changing the retention window, moving the claim from a log fold to a lease store, or adding a new entry kind changes nothing in a caller that sends one key per intent, because the key is the only thing it was ever asked for. cap-errors states the same record (T-t2-02) for its own boundary, and cap-state-persistence states T-t1-01 to T-t1-03 under this quote for the store; this row is that rule's consequence here.",
         "origin": "sourced",
         "sources": [
           "T-t1-01",
@@ -342,7 +342,7 @@
         "origin": "proposed"
       },
       {
-        "text": "The criterion a result is judged against never travels on a claim, on a duplicate answer or on a conflict problem. agentic-stack states design rule 6 (F-b1-07); the consequence here is that the duplicate path is caller-visible like any other.",
+        "text": "The criterion a result is judged against never travels on a claim, on a duplicate answer or on a conflict problem. agentic-stack states design rule 6 (F-b1-07) and cap-state-persistence states it for the store; the consequence here is that the duplicate path is caller-visible like any other.",
         "origin": "sourced",
         "sources": [
           "F-b1-07"
@@ -552,7 +552,7 @@
     {
       "question": "Does the lease live in the Ledger, which the core already names as the deduplication authority, or in any store with a conditional write?",
       "evidence": "Measure whether a claim served from the persistence interface can meet the P15 race criterion without the Ledger being on the write path, and count how many components would have to import the Ledger if the answer were the Ledger.",
-      "default": "Any store with a conditional write, per docs/decomposition.md's note that the Ledger is one implementation of the lease store rather than the interface. The Ledger stays the authority for what has been done; the lease is what decides who may do it.",
+      "default": "Any store with a conditional write, per docs/decomposition.md's note that the Ledger is one implementation of the lease store rather than the interface. The Ledger stays the authority for what has been done; the lease is what decides who may do it. cap-state-persistence states F-b2-06 under this quote for the record store.",
       "sources": [
         "F-b2-06",
         "F-b1-04"

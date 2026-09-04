@@ -2,7 +2,7 @@
   "name": "cap-state-persistence",
   "layer": "cap",
   "wave": 3,
-  "description": "The ideal state of the State persistence capability: put an opaque record somewhere durable, read it back at a pinned snapshot, and hand someone a proof that nothing was changed, without making them hold the whole log. Load it when designing or judging the store behind the graph and the ledger, when deciding what a record's identity is, when two writers could append at once, when a planner needs an answer that will not move underneath it, or when retention and redaction have to coexist with integrity. Also load it when someone proposes proving one record by rehashing the entire file, when a store is called tamper-proof, when a log's file format is being treated as the contract, or when a proposed second implementation is a different database of the same shape.",
+  "description": "State persistence contract and build, memory items included: store an opaque record durably, read it back at a pinned snapshot, prove one record's membership without holding the log. Load it when designing the store under graph and ledger, when two writers race, when retention or redaction must coexist with integrity, or when a store is called tamper-proof.",
   "purpose": {
     "text": "Fix the contract for a durable, tamper-evident store of opaque records: append under a head the writer expects, read at a pinned snapshot, and prove one record's membership to a party that holds neither the log nor our code. The graph and the ledger are its consumers, not its vocabulary.",
     "origin": "sourced",
@@ -370,7 +370,7 @@
         "quote": "a valid log can be cryptographically verified by any third-party"
       },
       {
-        "text": "All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: the store can move from a local file to content-addressed objects, gain proofs, gain a lease and change its retention classes, and a caller holding a head and a proof changes nothing, because a head and a proof are the only things it was ever given. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here.",
+        "text": "All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: the store can move from a local file to content-addressed objects, gain proofs, gain a lease and change its retention classes, and a caller holding a head and a proof changes nothing, because a head and a proof are the only things it was ever given. cap-errors states the same record (T-t2-02) for its own boundary, and cap-identity states T-t1-01 to T-t1-03 under this quote for actors; this row is that rule's consequence here.",
         "origin": "sourced",
         "sources": [
           "T-t1-01",
@@ -383,7 +383,7 @@
     ],
     "not_exposed": [
       {
-        "text": "No operation returns a judging criterion to the thing being judged. agentic-stack states design rule 6 (F-b1-07); the consequence on this interface is that a verdict record stores the verdict and a reference to the criterion, never the criterion body, and read_at offers no selector that would let a graded agent fetch one. A store that hands back whole bodies by kind would deliver the grader's rule to the graded through the back door while every other rule still passed.",
+        "text": "No operation returns a judging criterion to the thing being judged. agentic-stack states design rule 6 (F-b1-07) and cap-identity states it for the actor chain; the consequence on this interface is that a verdict record stores the verdict and a reference to the criterion, never the criterion body, and read_at offers no selector that would let a graded agent fetch one. A store that hands back whole bodies by kind would deliver the grader's rule to the graded through the back door while every other rule still passed.",
         "origin": "sourced",
         "sources": [
           "F-b1-07"

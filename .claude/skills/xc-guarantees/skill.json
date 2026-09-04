@@ -2,9 +2,9 @@
   "name": "xc-guarantees",
   "layer": "xc",
   "wave": 4,
-  "description": "One ordered interception chain through which every unit of work passes, whichever way it entered: six typed slots applied in one declared order on the way in and in the inverse order on the way out, at three named points - admission before a work item is accepted, dispatch before a unit runs, and call before each model or tool call. Load it when asking where a cross-cutting guarantee is actually applied rather than what it decides, when a new concern needs somewhere to attach, when one door into the platform received a check the others did not, when a tool chosen at runtime reaches the outside without passing anything, when an agent loop has no ceiling on its own iterations, when an irreversible action is about to run on an approval granted earlier for something else, when someone proposes a fast path around a whole point, a trusted caller or a per-team exemption, or when a review asks what precisely a caller cannot decline.",
+  "description": "Cross-cutting guarantees: one ordered interception chain of typed slots applied at admission, dispatch and each model or tool call, carrying run budgets and tenant scoping. Load it when asking where a guarantee is enforced rather than what it decides, when a loop has no ceiling on spend, or when someone proposes a fast path or per-tenant exemption.",
   "purpose": {
-    "text": "xc-typed-errors, xc-budget and xc-correlation each carry one guarantee across every entry point (T-t2-03). This skill fixes the single structure that carries all of them: one ordered chain of typed slots, applied at named enforcement points, entered before anything is spent and unwound in the inverse order on the way out, so that a guarantee is a property of the path rather than of the caller who remembered it.",
+    "text": "cap-errors, the budget rows folded in here and cap-telemetry (formerly xc-correlation) each carry one guarantee across every entry point (T-t2-03). This skill fixes the single structure that carries all of them: one ordered chain of typed slots, applied at named enforcement points, entered before anything is spent and unwound in the inverse order on the way out, so that a guarantee is a property of the path rather than of the caller who remembered it.",
     "origin": "sourced",
     "sources": [
       "T-t2-03",
@@ -306,7 +306,7 @@
         "quote": "Interceptors form a chain that always surrounds and invokes a fixed target operation, ensuring every interceptor executes both before and after the target regardless of outcomes."
       },
       {
-        "text": "xc-policy-gate owns the rule that refusal precedes spend (F-b4-04). What the chain adds is that the rule holds at three points and not one: admission, dispatch and every model or tool call each take the decision and the reservation before the thing they wrap begins, so a unit admitted once cannot spend unboundedly afterwards.",
+        "text": "cap-policy (formerly xc-policy-gate) owns the rule that refusal precedes spend (F-b4-04) and the entity row behind it. What the chain adds is that the rule holds at three points and not one: admission, dispatch and every model or tool call each take the decision and the reservation before the thing they wrap begins, so a unit admitted once cannot spend unboundedly afterwards.",
         "origin": "sourced",
         "sources": [
           "F-b4-04",
@@ -361,7 +361,7 @@
         "quote": "An agent sees its outcome, never the criterion it is judged against"
       },
       {
-        "text": "No engine, process or product behind a slot appears in a chain context or a refusal. A caller learns which point and which slot refused, which is what they can act on; which implementation decided is configuration and appears only in the conformance report. (agentic-stack and build-skill-authoring apply the same rule generally; this row applies it to a chain refusal specifically.)",
+        "text": "No engine, process or product behind a slot appears in a chain context or a refusal. A caller learns which point and which slot refused, which is what they can act on; which implementation decided is configuration and appears only in the conformance report. (agentic-stack, build-skill-authoring and cap-errors apply the same rule generally; this row applies it to a chain refusal specifically.)",
         "origin": "sourced",
         "sources": [
           "F-part-c-09"
@@ -394,7 +394,7 @@
     {
       "step": 3,
       "action": "Order the slots so that everything that can refuse runs before anything that can spend, and record each slot's sequence position as it runs: identity resolve, policy decide, budget reserve, telemetry open, idempotency claim, provenance open.",
-      "why": "xc-policy-gate owns the ordering rule for the decision and xc-budget owns the ceiling; what the chain adds is that both are positions in one list, so 'before spend' is checkable as a sequence rather than argued per call site.",
+      "why": "xc-policy-gate owns the ordering rule for the decision and xc-budget owns the ceiling; what the chain adds is that both are positions in one list, so 'before spend' is checkable as a sequence rather than argued per call site. cap-isolation states the same ceiling record (F-b4-02) for a contained unit; the chain's part is the slot's position.",
       "origin": "sourced",
       "sources": [
         "F-b4-04",
@@ -449,7 +449,7 @@
     {
       "step": 8,
       "action": "Return the refusal of the first slot that refuses as one typed problem from the closed registry, naming the point and the slot in its detail, and stop the traversal there rather than collecting further refusals.",
-      "why": "xc-typed-errors owns the rule that no failure is discovered by matching a string; what the chain adds is that a caller who sees one object still learns where in the chain it stopped, which is the only part of the traversal they can act on.",
+      "why": "cap-errors (formerly xc-typed-errors) owns the rule that no failure is discovered by matching a string, and cap-model-access states F-b4-07 under this quote for a completion call; what the chain adds is that a caller who sees one object still learns where in the chain it stopped, which is the only part of the traversal they can act on.",
       "origin": "sourced",
       "sources": [
         "F-b4-07",
@@ -585,7 +585,7 @@
     {
       "question": "Should `idempotency.claim` run before `budget.reserve` rather than after it, so that a replayed unit cannot draw a reservation it will never use?",
       "evidence": "Replay a corpus containing duplicate idempotency keys under both orders and read the reservation store afterwards: whichever order leaves no reservation drawn for a unit that was deduplicated is the one that satisfies the zero-spend property literally rather than by reversal. Count the reservations released by the exit inverse under the current order; if that count is non-zero in normal operation, the order is wrong.",
-      "default": "Keep the declared order (identity, policy, budget, telemetry, idempotency, provenance) because it is what the manifest row for this piece names, and rely on the exit inverse to release a reservation held by a deduplicated unit. The question closes when the replay above has been run.",
+      "default": "Keep the declared order (identity, policy, budget, telemetry, idempotency, provenance) because it is what the manifest row for this piece names, and rely on the exit inverse to release a reservation held by a deduplicated unit. The question closes when the replay above has been run. cap-model-access states F-b4-08 under this quote for a completion call; the order asked about here is the chain's own.",
       "sources": [
         "F-b4-08",
         "F-b4-02",

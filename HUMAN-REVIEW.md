@@ -27,7 +27,7 @@ Run these from the repo root. If any last line differs, stop and start the revie
 |---|---|---|
 | `python3 tools/validate_skills.py` | every skill conforms to the schema and every quote is in the knowledge base | `28 skills checked, 0 errors, 0 warnings` |
 | `python3 tools/kb.py verify` | the knowledge base still matches `PASS.md`, `TARGET.md` and the reference doc line for line | `kb verified: chains intact, ...` |
-| `python3 tools/kb.py ledger-verify` | no run record was altered or dropped | `ledger verified: 208 records, chain intact` |
+| `python3 tools/kb.py ledger-verify` | no run record was altered or dropped | `ledger verified: 265 records, chain intact` |
 | `python3 tools/final_acceptance.py` | every measuring stick in `TARGET.md` T9 and T10 holds; runs all 28 harnesses | `15 of 15 hold` |
 | `python3 tools/status_check.py --freshness` | `STATUS.md` is one clean table and no agent claim is stale | `freshness: 5 live rows, 0 claims, 0 stale` |
 | `bash examples/end-to-end/test.sh` | the consumption example runs end to end | `passed 30, failed 0` |

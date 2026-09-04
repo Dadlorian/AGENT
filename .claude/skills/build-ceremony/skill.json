@@ -2,7 +2,7 @@
   "name": "build-ceremony",
   "layer": "build",
   "wave": 1,
-  "description": "Close a section with a ceremony: a review record of findings, then an improve record marking each applied or declined with the files touched. Load it when a wave or section ends, when writing or checking records under kb/ceremonies/, when someone would skip the check because output looked fine, and for the pre-build solution blueprint and the litmus questionnaires.",
+  "description": "Close a section with a ceremony: a review record of findings, then an improve record marking each applied or declined with the files touched. Load it when a wave or section ends, when writing or checking a record under kb/ceremonies/, and for the pre-build solution blueprint (formerly build-solution-architecture) and the litmus questionnaires.",
   "purpose": {
     "text": "Make the end of a section a checkable event rather than a habit: the section's output is re-reviewed, the skills that produced it are improved, the lessons are carried forward, and the loop continues.",
     "origin": "sourced",
@@ -318,10 +318,10 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "python3 tools/check_ceremony.py kb/ceremonies/ceremony-01-review.json kb/ceremonies/ceremony-01-improve.json",
-    "expected": "Measured by tools/measure.py at 1ff81e1: exit 0; last lines: findings_checked=7, unresolved=0, duplicated=0, missing_files=0, unknown_finding_ids=0",
-    "breakage": "Delete the C1-007 entry from the applied list of kb/ceremonies/ceremony-01-improve.json without adding it to declined, so the finding is recorded in the review and resolved in neither list.",
-    "expected_failure": "Measured by tools/measure.py at 1ff81e1: exit 1; last lines: findings_checked=7, unresolved=1, duplicated=0, missing_files=0, unknown_finding_ids=0 | unresolved: ['C1-007']",
+    "criterion": "python3 tools/check_ceremony.py kb/ceremonies/66-litmus-review.json kb/ceremonies/66-litmus-improve.json",
+    "expected": "Measured by tools/measure.py at 4445dfd: exit 0; last lines: findings_checked=21, unresolved=0, duplicated=0, missing_files=0, unknown_finding_ids=0",
+    "breakage": "Drop the first entry of the applied list in kb/ceremonies/66-litmus-improve.json without adding it to declined, so a finding the review recorded is resolved in neither list: python3 -c \"import json;p='kb/ceremonies/66-litmus-improve.json';d=json.load(open(p));d['applied']=d['applied'][1:];json.dump(d,open(p,'w'),indent=2,ensure_ascii=False)\"; restore with git checkout -- kb/ceremonies/66-litmus-improve.json.",
+    "expected_failure": "Measured by tools/measure.py at 4445dfd: exit 1; last lines: findings_checked=21, unresolved=1, duplicated=0, missing_files=0, unknown_finding_ids=0 | unresolved: ['R66-001']",
     "status": "measured",
     "sources": [
       "F-part-c-04"
@@ -329,11 +329,12 @@
     "quote": "A criterion nothing can fail is not a criterion",
     "measured_run": {
       "by": "tools/measure.py",
-      "commit": "1ff81e1",
+      "commit": "4445dfd",
       "clean_exit": 0,
-      "clean_output": "findings_checked=7, unresolved=0, duplicated=0, missing_files=0, unknown_finding_ids=0",
+      "clean_output": "findings_checked=21, unresolved=0, duplicated=0, missing_files=0, unknown_finding_ids=0",
       "breakage_exit": 1,
-      "breakage_output": "findings_checked=7, unresolved=1, duplicated=0, missing_files=0, unknown_finding_ids=0\nunresolved: ['C1-007']"
+      "breakage_output": "findings_checked=21, unresolved=1, duplicated=0, missing_files=0, unknown_finding_ids=0\nunresolved: ['R66-001']",
+      "restored": true
     },
     "expected_design": "Run via tools/check_ceremony.py, built in the STATUS row 59 measure ceremony. It validates both files against the review-record and improve-record shapes, then assert findings_checked > 0, unresolved == 0 (every review finding id appears exactly once across applied and declined), duplicated == 0, missing_files == 0 (every path in an applied entry's files exists), and unknown_finding_ids == 0. findings_checked=7, unresolved=0, duplicated=0, missing_files=0, unknown_finding_ids=0; exit 0",
     "expected_failure_design": "unresolved=1 naming C1-007, exit 1. A second breakage, pointing an applied entry's files at a path that does not exist, must give missing_files=1 and exit 1."
@@ -376,6 +377,11 @@
         "T-t4-01"
       ],
       "quote": "Treat this as a baseline target and improve on it."
+    },
+    {
+      "question": "Which records would source this skill's ten proposed rows, and does the ceremony discipline have a knowledge-base anchor at all beyond T-t4-04?",
+      "evidence": "Counted at ceremony 71 (finding R71A-045): 10 of this skill's 24 origin-carrying rows are proposed, 42 percent, above the T-t9-02 stick of at most 30 percent that tools/acceptance_check.py applies to a capability skill. The sourcing pass recorded in kb/ceremonies/71-source-b.json covered cap-policy, cap-provenance and cap-errors and did not reach this skill. The candidate records a pass would draw on are T-t4-04 (a ceremony at the end of each section re-reviews the output and improves the skills that produced it), T-t10-09 (the remaining elements are accepted through a formal ceremony per layer, run in parallel where scopes are disjoint), REF-12-17 and the research rows X-end-to-end-053 and X-end-to-end-054 on GEPA and ACE; none of them carries the numbering rule, the record shapes or the author-brief rule, which is why those rows are proposed rather than misquoted.",
+      "default": "Proposed: the overshoot stands recorded here rather than repaired by attaching a quote that does not support the whole row; the numbering, record-shape and author-brief rows stay origin=proposed until a record that states them exists, and tools/acceptance_check.py does not apply the stick to a build skill."
     }
   ],
   "provenance": {

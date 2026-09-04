@@ -67,9 +67,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | python3 tools/render_skill.py .claude/skills/build-skill-authoring && python3 tools/validate_skills.py |
-| Expected | Measured by tools/measure.py at 9b3f40c: exit 0; last lines: 102 skills checked, 0 errors, 242 warnings \| of which restate-and-extend (MECH-2): 204 |
-| Deliberate breakage | Delete the sources array from contract.invariants[2] of .claude/skills/build-skill-authoring/skill.json in place, leaving origin=sourced and the quote behind, then re-run the criterion and restore the file from a copy taken before the mutation: python3 -c "import json;p='.claude/skills/build-skill-authoring/skill.json';d=json.load(open(p));d['contract']['invariants'][2].pop('sources');json.dump(d,open(p,'w'),indent=2,ensure_ascii=False)". The criterion re-renders before it validates, so SKILL.md still matches skill.json and the only failures are the ones the mutation causes. |
-| Expected failure | Measured by tools/measure.py at 9b3f40c: exit 1; last lines: 102 skills checked, 2 errors, 242 warnings \| of which restate-and-extend (MECH-2): 204 |
+| Expected | Measured by tools/measure.py at 3ad234e: exit 0; last lines: 28 skills checked, 0 errors, 0 warnings \| of which restate-and-extend (MECH-2): 0 |
+| Deliberate breakage | Delete the sources array from contract.invariants[2] of .claude/skills/build-skill-authoring/skill.json in place, leaving origin=sourced and the quote behind, so a sourced row cites nothing: python3 -c "import json;p='.claude/skills/build-skill-authoring/skill.json';d=json.load(open(p));d['contract']['invariants'][2].pop('sources');json.dump(d,open(p,'w'),indent=2,ensure_ascii=False)"; restore with a copy of skill.json taken before the mutation, then python3 tools/render_skill.py .claude/skills/build-skill-authoring (git checkout would also discard any uncommitted edit to this skill). The criterion re-renders before it validates, so SKILL.md still matches skill.json and the only failures are the ones the mutation causes. |
+| Expected failure | Measured by tools/measure.py at 3ad234e: exit 1; last lines: 28 skills checked, 2 errors, 0 warnings \| of which restate-and-extend (MECH-2): 0 |
 | Status | measured |
 | Evidence | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
 

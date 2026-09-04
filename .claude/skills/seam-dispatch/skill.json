@@ -4,7 +4,7 @@
   "wave": 5,
   "description": "The Dispatch seam, contract and build: one unit of agent work runs under a declared ceiling and returns one typed result whose partial progress is durable. Load it when deciding how work is started, bounded, cancelled or resumed, when a request may arrive twice, when asking why a unit stopped, or before inventing stop reasons.",
   "purpose": {
-    "text": "Fix one contract for executing a single unit of agent work and returning one result, so agent execution is pluggable, the F-b5-03 sentence xc-identity-delegation also carries: the request, the result, cancellation, the ceilings, the partial and the failure are the seam's, and what runs the unit is an adapter.",
+    "text": "Fix one contract for executing a single unit of agent work and returning one result, so agent execution is pluggable, the F-b5-03 sentence cap-identity (formerly xc-identity-delegation) also carries: the request, the result, cancellation, the ceilings, the partial and the failure are the seam's, and what runs the unit is an adapter.",
     "origin": "sourced",
     "sources": [
       "F-b5-02",
@@ -523,7 +523,7 @@
     ],
     "not_exposed": [
       {
-        "text": "The criterion the result will be judged against, and any verdict. The request carries only an opaque criterion handle the Judge resolves out of band, because agentic-stack and core-judge state design rule 6 (F-b1-07) and a criterion that arrives in the request is a target rather than a grade.",
+        "text": "The criterion the result will be judged against, and any verdict. The request carries only an opaque criterion handle the Judge resolves out of band, because agentic-stack and core-components (formerly core-judge) state design rule 6 (F-b1-07) and a criterion that arrives in the request is a target rather than a grade.",
         "origin": "sourced",
         "sources": [
           "F-b1-07"
@@ -567,7 +567,7 @@
     {
       "step": 2,
       "action": "Put every ceiling in the request and keep the criterion out of it: carry an opaque criterion handle and nothing that resolves it. Enforce both ceilings outside the unit, and declare the on-exceed behaviour as a constant rather than a choice.",
-      "why": "agentic-stack and core-judge state design rule 6 (F-b1-07): a criterion in the request is a target the unit can optimise against. A unit that enforced its own ceiling could decline to, and a caller that could choose what happens on breach could choose to keep going.",
+      "why": "agentic-stack and core-components (formerly core-judge) state design rule 6 (F-b1-07): a criterion in the request is a target the unit can optimise against. A unit that enforced its own ceiling could decline to, and a caller that could choose what happens on breach could choose to keep going.",
       "origin": "sourced",
       "sources": [
         "F-b1-07",
@@ -578,7 +578,7 @@
     {
       "step": 3,
       "action": "Write durability into the contract rather than leaving it to whichever executor is installed: every output goes through the state seam and carries the head digest at which it became durable before the result is assembled, the partial flag is derived from the state and the outputs rather than set by the executor, and a partial is resumed with a new dispatch id naming the previous one instead of being promoted in place.",
-      "why": "Proposed. A result that claims an output a later reader cannot find is a lie no caller can detect; and mutating a prior result would make the append-only ledger's history disagree with the answer, which core-ledger's write model does not allow even as a mistake.",
+      "why": "Proposed. A result that claims an output a later reader cannot find is a lie no caller can detect; and mutating a prior result would make the append-only ledger's history disagree with the answer, which core-components' ledger row (formerly core-ledger) does not allow in its write model even as a mistake.",
       "origin": "sourced",
       "sources": [
         "X-cross-structure-045",
@@ -622,7 +622,7 @@
     {
       "step": 7,
       "action": "Carry correlation as explicit members of the request and of every result, span, log record and problem object it produces, and stamp them at dispatch rather than inheriting them.",
-      "why": "agentic-stack and xc-correlation state the trace-context finding (F-a7-02). What this seam adds, as its own consequence and proposed: dispatch is the boundary the finding was measured at, so the correlation members belong in the request shape here and a sub-dispatch re-stamps them rather than relying on parentage.",
+      "why": "agentic-stack and cap-telemetry (formerly xc-correlation) state the trace-context finding (F-a7-02). What this seam adds, as its own consequence and proposed: dispatch is the boundary the finding was measured at, so the correlation members belong in the request shape here and a sub-dispatch re-stamps them rather than relying on parentage.",
       "origin": "sourced",
       "sources": [
         "F-a7-02"
@@ -632,7 +632,7 @@
     {
       "step": 8,
       "action": "Return every failure as a problem object whose type is a row of the closed registry cap-errors owns, set retryable as a field rather than leaving it inferred from the status, and count per adapter the failures that could not be typed.",
-      "why": "Proposed: cap-errors and xc-typed-errors own the failure shape; what this adds is the counter. A registry is only closed if something checks it, so an adapter's untyped-failure count is the number that decides conformance rather than the intention to be typed.",
+      "why": "Proposed: cap-errors (formerly xc-typed-errors) owns the failure shape; what this adds is the counter. A registry is only closed if something checks it, so an adapter's untyped-failure count is the number that decides conformance rather than the intention to be typed.",
       "origin": "sourced",
       "sources": [
         "F-b4-07",
@@ -643,7 +643,7 @@
     {
       "step": 9,
       "action": "Choose the second adapter on execution model, not on brand: something with no host-side session to hold open, no callbacks and nothing to cancel mid-call, so any requirement that was really a property of today's executor fails immediately. Run one conformance suite over both, and require it to name which adapter failed.",
-      "why": "build-adapter-pair states that the second adapter exists to prove the first is not load-bearing (F-b1-04), and xc-identity-delegation carries the same F-b5-03 sentence about the three implementations this seam stands in front of. What this adds here, as this seam's own consequence and proposed: those three share no contract, so a suite that reports a single aggregate pass would leave the seam exactly as unpluggable as it is now.",
+      "why": "build-evidence (formerly build-adapter-pair) states that the second adapter exists to prove the first is not load-bearing (F-b1-04), and cap-identity (formerly xc-identity-delegation) carries the same F-b5-03 sentence about the three implementations this seam stands in front of. What this adds here, as this seam's own consequence and proposed: those three share no contract, so a suite that reports a single aggregate pass would leave the seam exactly as unpluggable as it is now.",
       "origin": "sourced",
       "sources": [
         "F-b1-04",
@@ -653,8 +653,8 @@
     },
     {
       "step": 10,
-      "action": "Proposed: to call this seam rather than serve it, read cap-consumption first for the doctrine every capability shares, then open references/usage.md for the minimal inputs and outputs and the three worked calls - one per way in - and the worked refusal. Open references/dispatch-shapes.md when implementing or reviewing the full request, result and problem schemas. The body of this skill is enough to judge a candidate dispatcher and to make a first call without either file.",
-      "why": "Proposed: the full schemas and the worked calls are past the progressive-disclosure budget for a skill body, and the caller doctrine is stated once in cap-consumption so that naming it costs less than repeating it and cannot drift from it.",
+      "action": "Proposed: to call this seam rather than serve it, read agentic-stack (formerly cap-consumption) first for the doctrine every capability shares, then open references/usage.md for the minimal inputs and outputs and the three worked calls - one per way in - and the worked refusal. Open references/dispatch-shapes.md when implementing or reviewing the full request, result and problem schemas. The body of this skill is enough to judge a candidate dispatcher and to make a first call without either file.",
+      "why": "Proposed: the full schemas and the worked calls are past the progressive-disclosure budget for a skill body, and the caller doctrine is stated once in agentic-stack (formerly cap-consumption) so that naming it costs less than repeating it and cannot drift from it.",
       "origin": "proposed"
     }
   ],
@@ -668,7 +668,7 @@
       "quote": "Those establish well-formedness, not correctness"
     },
     {
-      "text": "Proposed - no record in this knowledge base carries the stop-reason vocabulary, so this is our reading, not a sourced fact: state completed with stop_reason end_turn says the unit ended, not that its output is acceptable; ask core-judge and never substitute the stop reason for a verdict. Research query: has any adapter actually been caught reporting stop_reason end_turn as a substitute for a judge verdict, or is this a preventive rule with no observed incident behind it?",
+      "text": "Proposed - no record in this knowledge base carries the stop-reason vocabulary, so this is our reading, not a sourced fact: state completed with stop_reason end_turn says the unit ended, not that its output is acceptable; ask core-components (formerly core-judge) and never substitute the stop reason for a verdict. Research query: has any adapter actually been caught reporting stop_reason end_turn as a substitute for a judge verdict, or is this a preventive rule with no observed incident behind it?",
       "origin": "proposed"
     },
     {
@@ -826,14 +826,8 @@
       "layer": "seam",
       "description": "Overflow reference for seam-dispatch: contract shapes cut from the body, unchanged with their citations, to keep the body inside the progressive-disclosure budget. Load it when you need the full dispatch-context schema.",
       "purpose": {
-        "text": "Fix one contract for executing a single unit of agent work and returning one result, so agent execution is pluggable, the F-b5-03 sentence xc-identity-delegation also carries: the request, the result, cancellation, the ceilings, the partial and the failure are the seam's, and what runs the unit is an adapter.",
-        "origin": "sourced",
-        "sources": [
-          "F-b5-02",
-          "F-b5-03",
-          "E-seam-dispatch"
-        ],
-        "quote": "This is the seam that decides whether agent execution is pluggable at all."
+        "text": "Proposed: this entry is not a former skill and was never one. It is the overflow reference the body of seam-dispatch points at, split out under the fold plan's rule that a body over 500 lines moves its longest sections to references (docs/fold/plan.json). The purpose of the seam is stated once, in the body, and is not restated here.",
+        "origin": "proposed"
       },
       "contract": {
         "shapes": [

@@ -1,6 +1,6 @@
 ---
 name: "agentic-stack"
-description: "Root contract for this agentic platform. Load first for any work on it: core components, capability interfaces, standards, adapters, the Dispatch or State seams, cross-cutting guarantees, workflows, loops, or any skill here. Fixes vocabulary, the seven design rules as pass/fail tests, claimed versus measured labeling, done, kb citation, and the shared consumption contract every caller uses."
+description: "Root contract for this agentic platform: the vocabulary every skill uses, the seven design rules as pass/fail tests, claimed versus measured labelling, what done means, the kb citation rule, and the shared consumption contract (formerly cap-consumption) every caller reads before calling a capability. Load it first, alongside the skill for the layer you are working in."
 ---
 
 # agentic-stack
@@ -86,9 +86,9 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | python3 tools/kb.py verify && python3 tools/validate_skills.py |
-| Expected | Measured by tools/measure.py at 5c0d8a8: exit 0; last lines: 102 skills checked, 0 errors, 2 warnings \| of which restate-and-extend (MECH-2): 2 |
-| Deliberate breakage | Change one character of one fact's text in kb/facts.jsonl (the record no longer hashes to its stored digest), run the criterion (tools/kb.py verify reports the chain broken and exits non-zero), then git checkout kb/facts.jsonl. |
-| Expected failure | Measured by tools/measure.py at 5c0d8a8: exit 1; last lines: FAIL: F-meta-03 text does not match PASS.md lines 7-7 \| kb verification FAILED |
+| Expected | Measured by tools/measure.py at 3ad234e: exit 0; last lines: 28 skills checked, 0 errors, 0 warnings \| of which restate-and-extend (MECH-2): 0 |
+| Deliberate breakage | Change one character of one fact's text in kb/facts.jsonl so the record no longer hashes to its stored digest and no longer matches the PASS.md lines it cites: sed -i '3s/greenfield/greenfeild/' kb/facts.jsonl (F-meta-03); restore with git checkout -- kb/facts.jsonl. |
+| Expected failure | Measured by tools/measure.py at 3ad234e: exit 1; last lines: FAIL: F-meta-03 text does not match PASS.md lines 7-7 \| kb verification FAILED |
 | Status | measured |
 | Evidence | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
 

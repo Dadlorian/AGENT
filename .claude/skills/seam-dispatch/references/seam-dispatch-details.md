@@ -11,7 +11,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Statement | Origin | Evidence |
 |---|---|---|
-| Fix one contract for executing a single unit of agent work and returning one result, so agent execution is pluggable, the F-b5-03 sentence xc-identity-delegation also carries: the request, the result, cancellation, the ceilings, the partial and the failure are the seam's, and what runs the unit is an adapter. | sourced | `F-b5-02`, `F-b5-03`, `E-seam-dispatch` "This is the seam that decides whether agent execution is pluggable at all." |
+| Proposed: this entry is not a former skill and was never one. It is the overflow reference the body of seam-dispatch points at, split out under the fold plan's rule that a body over 500 lines moves its longest sections to references (docs/fold/plan.json). The purpose of the seam is stated once, in the body, and is not restated here. | proposed | - |
 
 ## Contract
 

@@ -317,7 +317,7 @@
     },
     {
       "step": 4,
-      "action": "Pick the second adapter on execution-model axes, as build-adapter-pair defines them: locus_of_durability_and_verification, processes_required_for_progress and replay_determinism_required must all differ from today's adapter.",
+      "action": "Pick the second adapter on execution-model axes, as build-evidence (formerly build-adapter-pair) defines them: locus_of_durability_and_verification, processes_required_for_progress and replay_determinism_required must all differ from today's adapter.",
       "why": "agentic-stack states design rule 3 (F-b1-04). What this adds, as this skill's own consequence and proposed: another engine that also journals history onto a separate server would agree with today's adapter on all three axes, so the swap would test configuration rather than the contract.",
       "origin": "sourced",
       "sources": [
@@ -329,7 +329,7 @@
     {
       "step": 5,
       "action": "Judge a candidate engine by the crash criterion in this skill's definition of done, run from one suite over both adapters, before it is allowed to serve the interface.",
-      "why": "agentic-stack and build-definition-of-done already state that a criterion nothing can fail is not a criterion (F-part-c-04). What this adds, as this skill's own consequence and proposed: the property worth gating on here is exactly-once effect under a real kill, because every other property of an executor is visible without crashing it.",
+      "why": "agentic-stack and build-evidence (formerly build-definition-of-done) already state that a criterion nothing can fail is not a criterion (F-part-c-04). What this adds, as this skill's own consequence and proposed: the property worth gating on here is exactly-once effect under a real kill, because every other property of an executor is visible without crashing it.",
       "origin": "sourced",
       "sources": [
         "F-part-c-04",
@@ -420,10 +420,10 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second",
-    "expected": "Measured by tools/measure.py at 16d354c: exit 0; last lines: adapter=second executor_marker=queue-state-machine/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28 | adapters_run=2 distinct_markers=2",
-    "breakage": "In harness/workflow/flow.py, make Attempt.key() always return None instead of the step's idempotency key (the harness's own --break-idempotency behaviour, made the default so the criterion needs no extra flag) and change nothing else; restore with git checkout -- harness/workflow/flow.py.",
-    "expected_failure": "Measured by tools/measure.py at 16d354c: exit 1; last lines:   FAIL the same suite passes again once the key is restored (expected 0, got 1) | passed 13, failed 10",
+    "criterion": "bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second && bash harness/xc-compensation/test.sh && python3 harness/xc-compensation/conformance.py --register dryrun && python3 harness/xc-compensation/conformance.py --register second",
+    "expected": "Measured by tools/measure.py at 4445dfd: exit 0; last lines:   register=second effects_checked=64 undeclared_class_admitted=0 records_after_effect=0 irreversible_without_mandate=0 runs_killed=12 replayed=28 compensated=36 unwind_failed=0 unwinds_resumed=1 ways_in_covered=4 register_observed=chained-log-fold/0.1 | conformance PASSED: 25/25 cases, 1 register(s), adapters_run=2",
+    "breakage": "Drop the mandate gate in front of an irreversible effect in the compensation half, changing nothing else, so an effect declared irreversible commits with no mandate_ref: sed -i '307s#.*#        if False:#' harness/xc-compensation/interface.py; restore with git checkout -- harness/xc-compensation/interface.py. The workflow half passes first, so the failure is the folded compensation gate's own.",
+    "expected_failure": "Measured by tools/measure.py at 4445dfd: exit 1; last lines:   ok   AssertionError: the mandate gate was disturbed too | passed 11, failed 11",
     "status": "measured",
     "sources": [
       "F-part-c-04",
@@ -432,11 +432,12 @@
     "quote": "A criterion nothing can fail is not a criterion",
     "measured_run": {
       "by": "tools/measure.py",
-      "commit": "16d354c",
+      "commit": "4445dfd",
       "clean_exit": 0,
-      "clean_output": "landed, so this is duplication and not a missing crash (True)\n  ok   the same suite passes again once the key is restored (0)\n\npassed 23, failed 0\ndry-run: 23 checks pass, swap proven across 2 executors, breakage fails both\nadapter=dryrun executor_marker=in-process-journal/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28\nadapter=second executor_marker=queue-state-machine/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28\nadapters_run=2 distinct_markers=2",
+      "clean_output": "  ok   call.py exits 0 (0)\n  ok   dry-run conformance exits 0 (0)\n  ok   the breakage run exits non-zero (nonzero)\n  ok   25 cases and 11 assertions exit 0 (0)\n  ok   declare five, commit four, fail the fifth, unwind: exits 0 (0)\n  ok   conformance after the swap exits 0 (0)\n  ok   the broken register's conformance run exits 1 (1)\n...\n  ok   adapters_run >= 2\n  register=second effects_checked=64 undeclared_class_admitted=0 records_after_effect=0 irreversible_without_mandate=0 runs_killed=12 replayed=28 compensated=36 unwind_failed=0 unwinds_resumed=1 ways_in_covered=4 register_observed=chained-log-fold/0.1\nconformance PASSED: 25/25 cases, 1 register(s), adapters_run=2",
       "breakage_exit": 1,
-      "breakage_output": " executors in one report (expected 0, got 1)\n  ok   adapters_run (2)\n  ok   distinct executor markers (2)\n  FAIL the executors disagree on the effect count\n4. deliberate breakage: the step record carries no idempotency key\n  ok   the breakage run exits non-zero (nonzero)\n  ok   the keyed-effect executor repeats the side effect (1)\n  ok   both executors report failures, so the defect is in the step record (True)\n  ok   the kill still landed, so this is duplication and not a missing crash (True)\n  FAIL the same suite passes again once the key is restored (expected 0, got 1)\n\npassed 13, failed 10"
+      "breakage_output": "  ok   call.py exits 0 (0)\n  ok   dry-run conformance exits 0 (0)\n  ok   the breakage run exits non-zero (nonzero)\n  FAIL 25 cases and 11 assertions exit 0 (expected 0, got 1)\n  FAIL not 25/25\n  FAIL declare five, commit four, fail the fifth, unwind: exits 0 (expected 0, got 1)\n  FAIL no 403\n  FAIL conformance after the swap exits 0 (expected 0, got 1)\n  FAIL not 25/25\n  FAIL the same caller code runs on the second register (expected 0, got 1)\n  FAIL the two registers differ in execution model on 3 or more axes (expected 0, got 1)\n  FAIL AssertionError: both registers must pass the same cases\n...\n  ok   AssertionError: the mandate gate was disturbed too\n\npassed 11, failed 11",
+      "restored": true
     },
     "expected_design": "The gate (23 checks) and the conformance run together prove a 20-step durable flow with a real kill -9 at the irreversible step, resumed at the first incomplete step, under an in-process journaled executor and a queue-plus-state-machine executor sharing the same journal: committed steps are not replayed, the effect table (read from outside each executor's own tally) shows exactly one row for the killed step, the budget is recomputed from committed records rather than reset, and the two executors differ in execution model while both pass the same 28 checks (adapters_run=2). Earlier criterion named tools/conformance_durable_execution.py, replaced by the harness on 2026-09-03.",
     "expected_failure_design": "Neither executor can recognise a checkpointed step as already done: both commit 14 steps instead of 8 and replay nothing (steps_replayed=0); the in-process journal additionally repeats the side effect (duplicate_effects=1) while the queue-based executor's own transaction still stops it at one. The conformance run exits non-zero naming both adapters — both failing is what says the defect is in the step record, not in one engine."

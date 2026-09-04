@@ -270,7 +270,7 @@
         "quote": "pure function `document → plan + cost`"
       },
       {
-        "text": "The definition of done lives in the document, but its criterion text does not travel with the work. agentic-stack and build-definition-of-done state design rule 6 (F-b1-07); the consequence here is that criterion_of is the Judge's path only, and a criterion string reachable from a dispatch request, a document handle given to a graded unit, or a step payload is a defect in this component, not in the Judge.",
+        "text": "The definition of done lives in the document, but its criterion text does not travel with the work. agentic-stack and build-evidence (formerly build-definition-of-done) state design rule 6 (F-b1-07); the consequence here is that criterion_of is the Judge's path only, and a criterion string reachable from a dispatch request, a document handle given to a graded unit, or a step payload is a defect in this component, not in the Judge.",
         "origin": "sourced",
         "sources": [
           "F-b1-07"
@@ -305,7 +305,7 @@
         ]
       },
       {
-        "text": "Proposed: a definition of done is a list of runnable checks, each carrying a kind and a risk tier per the check shape above. build-definition-of-done owns the discipline and the measured green-gate finding (F-a7-03); the consequence for this artifact is a reporting rule - a run in which behavioural_run is 0 is reported inconclusive, never passed, so a document cannot be closed by checks that never applied to it.",
+        "text": "Proposed: a definition of done is a list of runnable checks, each carrying a kind and a risk tier per the check shape above. build-evidence (formerly build-definition-of-done) owns the discipline and the measured green-gate finding (F-a7-03); the consequence for this artifact is a reporting rule - a run in which behavioural_run is 0 is reported inconclusive, never passed, so a document cannot be closed by checks that never applied to it.",
         "origin": "sourced",
         "sources": [
           "F-a7-03",
@@ -383,7 +383,7 @@
     {
       "step": 2,
       "action": "State the definition of done as a list of checks conforming to the check shape above: each with a check_id, a kind of behavioural or well_formedness, a risk_tier, a command, an expected result, and the breakage that must make it fail.",
-      "why": "A definition of done written as a sentence cannot be run, and a check with no declared breakage has never been shown capable of failing; agentic-stack, build-skill-authoring and build-definition-of-done all state the criterion rule (F-part-c-04); the field layout above is what carries it into the document rather than into a review comment.",
+      "why": "A definition of done written as a sentence cannot be run, and a check with no declared breakage has never been shown capable of failing; agentic-stack, build-skill-authoring and build-evidence (formerly build-definition-of-done) all state the criterion rule (F-part-c-04); the field layout above is what carries it into the document rather than into a review comment.",
       "origin": "sourced",
       "sources": [
         "F-part-c-04",
@@ -518,10 +518,10 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "bash harness/document-validation/test.sh && python3 harness/document-validation/conformance.py --adapter dryrun --adapter second",
-    "expected": "Measured by tools/measure.py at f8b9dcd: exit 0; last lines:   adapter=compiled-schema checker (compile once, check many) cases=14 passed=14 prepares=6 schema_reads=0 dialect_in_effect=https://json-schema.org/draft/2020-12/schema product_hits=0 | conformance PASSED: 28/28 cases, 2 binding(s)",
-    "breakage": "sed -i '28s#.*#DIALECT_2020_12 = \"https://json-schema.org/draft/2020-12/schema-broken\"#' harness/document-validation/interface.py",
-    "expected_failure": "Measured by tools/measure.py at f8b9dcd: exit 1; last lines:   ok   product_hits went from 0 to 1 | passed 12, failed 12",
+    "criterion": "bash harness/document-validation/test.sh && python3 harness/document-validation/conformance.py --adapter dryrun --adapter second && bash harness/dispatch/test.sh && python3 harness/dispatch/conformance.py --adapter dryrun --adapter second && bash harness/core-graph/test.sh && python3 harness/core-graph/conformance.py --adapter dryrun --adapter second && python3 harness/core-graph/conformance.py --cross-store dryrun second && bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second && bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second",
+    "expected": "Measured by tools/measure.py at 4445dfd: exit 0; last lines:   adapter=content-addressed merkle log over an object store (second adapter) cases=11 passed=11 appends=10 refusals=2 product_hits=0 | conformance PASSED: 22/22 cases, 2 binding(s)",
+    "breakage": "Widen the implementation-edge rule in the Graph so any target kind is accepted, changing nothing else, so the Graph's own suite fails inside the chain: sed -i '117s#.*#        if from_kind != \"implementation\":#' harness/core-graph/interface.py; restore with git checkout -- harness/core-graph/interface.py.",
+    "expected_failure": "Measured by tools/measure.py at 4445dfd: exit 1; last lines:   ok   counterexample found on the first case; oracle reports false_accepts=1 while the checker reports 0 | passed 14, failed 6",
     "status": "measured",
     "sources": [
       "F-part-c-04",
@@ -530,11 +530,11 @@
     "quote": "the deliberate breakage that proves the check can fail",
     "measured_run": {
       "by": "tools/measure.py",
-      "commit": "f8b9dcd",
+      "commit": "4445dfd",
       "clean_exit": 0,
-      "clean_output": "nd validate() of the same schema\n  ok   dialect_in_effect is read from the adapter, never assumed from the file: https://json-schema.org/draft/2020-12/schema\n  ok   keywords_checked is reported and positive: keywords_checked=17\n  ok   nothing names a validator library on the way out: outcome carries valid, dialect, schema_uri, keywords_checked, errors and nothing else\n  adapter=compiled-schema checker (compile once, check many) cases=14 passed=14 prepares=6 schema_reads=0 dialect_in_effect=https://json-schema.org/draft/2020-12/schema product_hits=0\nconformance PASSED: 28/28 cases, 2 binding(s)",
+      "clean_output": "  ok   conformance exits 0 (0)\n  ok   one call against entry.schema.json exits 0 (0)\n  ok   a valid envelope exits 0 (0)\n  ok   a schema declaring draft-07 exits 2 (2)\n  ok   an unreachable schema store exits 2 (2)\n  ok   conformance after the swap exits 0 (0)\n  ok   library-name scan over the shipped tree exits 0 (0)\n  ok   the breakage run exits non-zero (1)\n  ok   call.py exits 0 (0)\n  ok   dry-run conformance exits 0 (0)\n  ok   the durability breakage exits non-zero (nonzero)\n  ok   the criterion breakage exits non-zero (nonzero)\n...\n  ok   an independent verifier, run as a subprocess, recomputes the same head: 20 records, external root matches the adapter's head, chain_break_at=-1\n  adapter=content-addressed merkle log over an object store (second adapter) cases=11 passed=11 appends=10 refusals=2 product_hits=0\nconformance PASSED: 22/22 cases, 2 binding(s)",
       "breakage_exit": 1,
-      "breakage_output": "(expected 0, got 2)\n  FAIL the two adapters differ in execution model on 2 or more axes (expected 0, got 1)\n  FAIL AssertionError: only 1 axes differ; the swap would test configuration, not the contract\n3. no validator library name in the interface, the caller or the conformance run\n  ok   library-name scan over the shipped tree exits 0 (0)\n  ok   0 hits outside adapters/\n4. deliberate breakage: a validator library imported directly outside adapters/\n  ok   the breakage run exits non-zero (1)\n  ok   the run names the file that broke it\n  ok   product_hits went from 0 to 1\n\npassed 12, failed 12",
+      "breakage_output": "  ok   conformance exits 0 (0)\n  ok   one call against entry.schema.json exits 0 (0)\n  ok   a valid envelope exits 0 (0)\n  ok   a schema declaring draft-07 exits 2 (2)\n  ok   an unreachable schema store exits 2 (2)\n  ok   conformance after the swap exits 0 (0)\n  ok   library-name scan over the shipped tree exits 0 (0)\n  ok   the breakage run exits non-zero (1)\n  ok   call.py exits 0 (0)\n  ok   dry-run conformance exits 0 (0)\n  ok   the durability breakage exits non-zero (nonzero)\n  ok   the criterion breakage exits non-zero (nonzero)\n...\n  ok   counterexample found on the first case; oracle reports false_accepts=1 while the checker reports 0\n\npassed 14, failed 6",
       "restored": true
     },
     "expected_design": "test.sh: exit 0, `passed 24, failed 0`; conformance.py: exit 0, `conformance PASSED: 28/28 cases, 2 binding(s)`, with one `adapter=<name> ... cases=14 passed=14 ... product_hits=0` line per binding (the run prints `adapter=`, never `binding=`). What that measures is the document-validation boundary this facet shares with cap-document-validation-implement, whose harness this criterion is; the store pair, the digest computed at construction and the criterion-leak lint are not exercised by it and stay claimed until the round-trip below is run. Proposed tool (not run): python3 tools/document_roundtrip.py --binding bindings/today.json --binding bindings/second.json --corpus fixtures/ --dispatch-log out/recorded-dispatch-requests.jsonl --report out/document-roundtrip.json, asserting per binding documents_round_tripped >= 21 with byte_mismatches == 0, and across bindings adapters_run >= 2, digest_mismatches == 0 and criterion_leaks == 0.",
@@ -1525,7 +1525,7 @@
         {
           "step": 9,
           "action": "Record the schema dialect and the problem-details standard as unverified until their published specifications have been read in an environment that can fetch them, and write no version string that was not read.",
-          "why": "build-skill-authoring requires a standard and its version to be cited rather than recalled (F-part-c-10); a version number nobody read is a fabrication with a decimal point in it, and a plan is a document other teams will code against.",
+          "why": "build-skill-authoring requires a standard and its version to be cited rather than recalled (F-part-c-10); a version number nobody read is a fabrication with a decimal point in it, and a plan is a document other teams will code against. core-components states this rule once in its body (step 9); this folded row is the pre-fold copy and adds only the problem-details standard.",
           "origin": "sourced",
           "sources": [
             "F-part-c-10"
@@ -2504,7 +2504,7 @@
         {
           "step": 8,
           "action": "Record the schema dialect and the problem-details standard as unverified until their published specifications have been read in an environment that can fetch them, and write no version string that was not read.",
-          "why": "build-skill-authoring requires a standard and its version to be cited rather than recalled, and a version number nobody read is a fabrication with a decimal point in it.",
+          "why": "build-skill-authoring requires a standard and its version to be cited rather than recalled, and a version number nobody read is a fabrication with a decimal point in it. core-components states this rule once in its body (step 9); this folded row is the pre-fold copy and adds only the problem-details standard.",
           "origin": "sourced",
           "sources": [
             "F-part-c-10"

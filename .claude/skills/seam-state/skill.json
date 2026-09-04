@@ -4,7 +4,7 @@
   "wave": 5,
   "description": "The State seam, contract and build: graph and ledger as two projections of one append-only, tamper-evident log, one writer per run, read at a pinned snapshot. Load it when deciding where a node, edge, entry, policy decision or attestation is written, when a query must answer the same twice, or before opening a second store.",
   "purpose": {
-    "text": "Settle the one boundary where the graph and the ledger persist: a single append-only, tamper-evident log of immutable facts, one writer per run, every read pinned to a head, with the graph and the ledger as folds over it rather than as two stores. core-graph and core-ledger both defer persistence to this row (F-b5-04); cap-state-persistence supplies the opaque record store underneath, and this seam fixes what the records mean, who may write them and what a planner may ask.",
+    "text": "Settle the one boundary where the graph and the ledger persist: a single append-only, tamper-evident log of immutable facts, one writer per run, every read pinned to a head, with the graph and the ledger as folds over it rather than as two stores. core-components' graph and ledger rows (formerly core-graph and core-ledger) both defer persistence to this row (F-b5-04); cap-state-persistence supplies the opaque record store underneath, and this seam fixes what the records mean, who may write them and what a planner may ask.",
     "origin": "sourced",
     "sources": [
       "F-b5-04",
@@ -52,7 +52,7 @@
       {
         "entity": "E-standard-in-toto",
         "version": "Statement v1 (unverified)",
-        "version_note": "cap-provenance and xc-provenance-chain own this row and its version; it appears here only because the sealed head is the object they sign, so this seam produces the head and never the signature.",
+        "version_note": "cap-provenance (formerly xc-provenance-chain) owns this row and its version; it appears here only because the sealed head is the object they sign, so this seam produces the head and never the signature.",
         "version_status": "unverified",
         "url": null,
         "sources": [
@@ -289,7 +289,7 @@
           "$id": "urn:agentic:state:example:appends",
           "title": "Three appends, one log",
           "$ref": "urn:agentic:state:seam-record:0.1",
-          "description": "Proposed. A human approving a step, an agent asserting an edge and an event arriving on a schedule differ only in declared_by; every other field, the head they append under and the refusal they get are identical. cap-consumption owns the caller doctrine these three share.",
+          "description": "Proposed. A human approving a step, an agent asserting an edge and an event arriving on a schedule differ only in declared_by; every other field, the head they append under and the refusal they get are identical. agentic-stack (formerly cap-consumption) owns the caller doctrine these three share.",
           "examples": [
             {
               "record_id": "sha256:0c7ac1...",
@@ -432,7 +432,7 @@
         "quote": "Planning is a pure function and completes before execution begins"
       },
       {
-        "text": "The chain is kept and a tree is added over the same records. The source asks for exactly this - the chain is the valuable idea and should survive - and build-adapter-pair cites the same sentence for the swap; the consequence here is a change of verification cost, since hash chaining requires scanning the entire prefix of the log for verification, while Merkle trees improve this by allowing proofs of inclusion (X-seam-state-003).",
+        "text": "The chain is kept and a tree is added over the same records. The source asks for exactly this - the chain is the valuable idea and should survive - and build-evidence (formerly build-adapter-pair) cites the same sentence for the swap; the consequence here is a change of verification cost, since hash chaining requires scanning the entire prefix of the log for verification, while Merkle trees improve this by allowing proofs of inclusion (X-seam-state-003).",
         "origin": "sourced",
         "sources": [
           "F-b5-05",
@@ -441,7 +441,7 @@
         "quote": "The chain is the valuable idea and should survive"
       },
       {
-        "text": "Continuity across runs is a sealed head, not an interleaving. build-evidence-record and core-ledger both rely on the property the store already has (F-a5-03), that a manual edit between runs is detectable; the consequence here is that the closing sealed head of one run is the opening head of the next, cross-run total order is neither guaranteed nor needed, and detection becomes a consistency proof rather than a rehash.",
+        "text": "Continuity across runs is a sealed head, not an interleaving. build-evidence (formerly build-evidence-record) and core-components (formerly core-ledger) both rely on the property the store already has (F-a5-03), that a manual edit between runs is detectable; the consequence here is that the closing sealed head of one run is the opening head of the next, cross-run total order is neither guaranteed nor needed, and detection becomes a consistency proof rather than a rehash.",
         "origin": "sourced",
         "sources": [
           "F-a5-03",
@@ -457,7 +457,7 @@
         ]
       },
       {
-        "text": "Tamper-evident is not tamper-proof, and this seam does not claim otherwise: transparency logs are tamper-evident but not tamper-proof, so the guarantee is only delivered if something independently monitors the log. That monitoring is xc-audit-trail's job, and the consequence here is that this seam must expose proofs an outside monitor can take, not a self-report that the log verified.",
+        "text": "Tamper-evident is not tamper-proof, and this seam does not claim otherwise: transparency logs are tamper-evident but not tamper-proof, so the guarantee is only delivered if something independently monitors the log. That monitoring is cap-provenance's job (formerly xc-audit-trail), and the consequence here is that this seam must expose proofs an outside monitor can take, not a self-report that the log verified.",
         "origin": "sourced",
         "sources": [
           "X-cross-structure-053",
@@ -466,7 +466,7 @@
         "quote": "Transparency logs are tamper-evident but not tamper-proof"
       },
       {
-        "text": "Whichever of TARGET T1's three ways in produced a record - a human, an agent, an internal or external event - it is written through the same append under the same head, and the platform stamps the actor, the correlation identifier, the policy decision and the attestation on that one path rather than the caller supplying them. agentic-stack states design rule 7 (F-b1-08); cap-consumption owns the caller doctrine and is named here instead of restated.",
+        "text": "Whichever of TARGET T1's three ways in produced a record - a human, an agent, an internal or external event - it is written through the same append under the same head, and the platform stamps the actor, the correlation identifier, the policy decision and the attestation on that one path rather than the caller supplying them. agentic-stack states design rule 7 (F-b1-08); agentic-stack (formerly cap-consumption) owns the caller doctrine and is named here instead of restated.",
         "origin": "sourced",
         "sources": [
           "F-b1-08",
@@ -511,7 +511,7 @@
     {
       "step": 1,
       "action": "Write one log, not two stores: give the graph and the ledger the same append path, the same head and the same partition, and derive each as a named fold over the records.",
-      "why": "core-graph and core-ledger both defer persistence to this row (F-b5-04), and two stores would need a distributed transaction to stay consistent where one log needs none. The prior art is the ledger itself: an immutable audit trail that enables reconstruction of system state at any point in time.",
+      "why": "core-components' graph and ledger rows (formerly core-graph and core-ledger) both defer persistence to this row (F-b5-04), and two stores would need a distributed transaction to stay consistent where one log needs none. The prior art is the ledger itself: an immutable audit trail that enables reconstruction of system state at any point in time.",
       "origin": "sourced",
       "sources": [
         "F-b5-04",
@@ -555,7 +555,7 @@
     {
       "step": 5,
       "action": "Expose the planner's reads as the eight named projections in references/state-seam.md, each taking at_head, and give none of them a default head. Add a ninth only by adding a row there.",
-      "why": "Design rule 5 requires cost to be knowable before commitment (F-b1-06, stated by agentic-stack), and a pure function cannot read a moving store; core-ledger cites the same phrase from F-b5-05 for its own deduplication query, and what this seam adds is that the list is closed and shared. A closed, named projection list is also what makes the snapshot-pinning assertion in the definition of done finite: eight projections, one head, identical answers.",
+      "why": "Design rule 5 requires cost to be knowable before commitment (F-b1-06, stated by agentic-stack), and a pure function cannot read a moving store; core-components' ledger row (formerly core-ledger) cites the same phrase from F-b5-05 for its own deduplication query, and what this seam adds is that the list is closed and shared. A closed, named projection list is also what makes the snapshot-pinning assertion in the definition of done finite: eight projections, one head, identical answers.",
       "origin": "sourced",
       "sources": [
         "F-b1-06",
@@ -597,7 +597,7 @@
     {
       "step": 9,
       "action": "Ship the two adapters below behind this one contract, selected by configuration with no code edit between runs, and make the conformance suite report which one answered.",
-      "why": "build-adapter-pair states design rule 3 (F-b1-04), where the second exists to prove the first is not load-bearing; what this seam adds is the axis that matters here - one adapter finds its head by reading the last line of a file and verifies by rehashing, the other has immutable objects, an eventually consistent listing and verification only through proofs.",
+      "why": "build-evidence (formerly build-adapter-pair) states design rule 3 (F-b1-04), where the second exists to prove the first is not load-bearing; what this seam adds is the axis that matters here - one adapter finds its head by reading the last line of a file and verifies by rehashing, the other has immutable objects, an eventually consistent listing and verification only through proofs.",
       "origin": "sourced",
       "sources": [
         "F-b1-04",
@@ -618,7 +618,7 @@
   ],
   "best_practices": [
     {
-      "text": "Size verification against where the store is going, not where it is. build-evidence-record cites the scale that exists (F-a5-04), ~2,445 records across 308 runs; rehashing that is tractable and rehashing a hundred times that is not, which is the practical half of the argument for adding proofs rather than tuning the chain.",
+      "text": "Size verification against where the store is going, not where it is. build-evidence (formerly build-evidence-record) cites the scale that exists (F-a5-04), ~2,445 records across 308 runs; rehashing that is tractable and rehashing a hundred times that is not, which is the practical half of the argument for adding proofs rather than tuning the chain.",
       "origin": "sourced",
       "sources": [
         "F-a5-04"
@@ -634,7 +634,7 @@
       "quote": "Those establish well-formedness, not correctness"
     },
     {
-      "text": "Version the record kinds from the first release, because event versions allow our system to grow and evolve over time and a log is the one place a shape change cannot be migrated by rewriting: old records stay exactly as written, so a reader must be able to tell which version of a kind it is folding. build-interface-versioning owns the discipline.",
+      "text": "Version the record kinds from the first release, because event versions allow our system to grow and evolve over time and a log is the one place a shape change cannot be migrated by rewriting: old records stay exactly as written, so a reader must be able to tell which version of a kind it is folding. build-evidence (formerly build-interface-versioning) owns the discipline.",
       "origin": "sourced",
       "sources": [
         "X-seam-state-006"

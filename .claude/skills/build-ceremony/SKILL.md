@@ -1,6 +1,6 @@
 ---
 name: "build-ceremony"
-description: "Close a section with a ceremony: a review record of findings, then an improve record marking each applied or declined with the files touched. Load it when a wave or section ends, when writing or checking records under kb/ceremonies/, when someone would skip the check because output looked fine, and for the pre-build solution blueprint and the litmus questionnaires."
+description: "Close a section with a ceremony: a review record of findings, then an improve record marking each applied or declined with the files touched. Load it when a wave or section ends, when writing or checking a record under kb/ceremonies/, and for the pre-build solution blueprint (formerly build-solution-architecture) and the litmus questionnaires."
 ---
 
 # build-ceremony
@@ -188,10 +188,10 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | python3 tools/check_ceremony.py kb/ceremonies/ceremony-01-review.json kb/ceremonies/ceremony-01-improve.json |
-| Expected | Measured by tools/measure.py at 1ff81e1: exit 0; last lines: findings_checked=7, unresolved=0, duplicated=0, missing_files=0, unknown_finding_ids=0 |
-| Deliberate breakage | Delete the C1-007 entry from the applied list of kb/ceremonies/ceremony-01-improve.json without adding it to declined, so the finding is recorded in the review and resolved in neither list. |
-| Expected failure | Measured by tools/measure.py at 1ff81e1: exit 1; last lines: findings_checked=7, unresolved=1, duplicated=0, missing_files=0, unknown_finding_ids=0 \| unresolved: ['C1-007'] |
+| Criterion | python3 tools/check_ceremony.py kb/ceremonies/66-litmus-review.json kb/ceremonies/66-litmus-improve.json |
+| Expected | Measured by tools/measure.py at 4445dfd: exit 0; last lines: findings_checked=21, unresolved=0, duplicated=0, missing_files=0, unknown_finding_ids=0 |
+| Deliberate breakage | Drop the first entry of the applied list in kb/ceremonies/66-litmus-improve.json without adding it to declined, so a finding the review recorded is resolved in neither list: python3 -c "import json;p='kb/ceremonies/66-litmus-improve.json';d=json.load(open(p));d['applied']=d['applied'][1:];json.dump(d,open(p,'w'),indent=2,ensure_ascii=False)"; restore with git checkout -- kb/ceremonies/66-litmus-improve.json. |
+| Expected failure | Measured by tools/measure.py at 4445dfd: exit 1; last lines: findings_checked=21, unresolved=1, duplicated=0, missing_files=0, unknown_finding_ids=0 \| unresolved: ['R66-001'] |
 | Status | measured |
 | Evidence | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
 
@@ -216,6 +216,7 @@ Used by: `build-evidence`, `build-skill-authoring`, `cap-capability-packaging`, 
 |---|---|---|---|
 | Should the reviewer be an agent other than the one that authored the section, and should its findings be scored automatically? | One section reviewed twice, once by an author of the section and once by a separate reviewer, with the two finding sets compared for defects each missed; and a model-judge scoring pass compared against the recorded findings. | A reviewer separate from the section's authors writes the review record by hand, and no automated score is recorded, since automated diagnostic evaluation is available in the prior art but unmeasured here. | `X-build-ceremony-006` "using LLMs as general-purpose judges" |
 | Can metrics_after ever be labelled measured rather than claimed for anything other than the validator error count? | A run in which the counters in metrics and metrics_after are produced by the same tool over the same tree, with the tree hash recorded, so the difference is an observation rather than a recount. | Only counters produced by a tool in the run are reported; every judgement about whether the section got better stays claimed. | `T-t4-01` "Treat this as a baseline target and improve on it." |
+| Which records would source this skill's ten proposed rows, and does the ceremony discipline have a knowledge-base anchor at all beyond T-t4-04? | Counted at ceremony 71 (finding R71A-045): 10 of this skill's 24 origin-carrying rows are proposed, 42 percent, above the T-t9-02 stick of at most 30 percent that tools/acceptance_check.py applies to a capability skill. The sourcing pass recorded in kb/ceremonies/71-source-b.json covered cap-policy, cap-provenance and cap-errors and did not reach this skill. The candidate records a pass would draw on are T-t4-04 (a ceremony at the end of each section re-reviews the output and improves the skills that produced it), T-t10-09 (the remaining elements are accepted through a formal ceremony per layer, run in parallel where scopes are disjoint), REF-12-17 and the research rows X-end-to-end-053 and X-end-to-end-054 on GEPA and ACE; none of them carries the numbering rule, the record shapes or the author-brief rule, which is why those rows are proposed rather than misquoted. | Proposed: the overshoot stands recorded here rather than repaired by attaching a quote that does not support the whole row; the numbering, record-shape and author-brief rows stay origin=proposed until a record that states them exists, and tools/acceptance_check.py does not apply the stick to a build skill. | - |
 
 ## Provenance
 

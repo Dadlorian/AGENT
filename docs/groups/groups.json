@@ -1,0 +1,241 @@
+{
+ "origin": "captain draft from PASS.md B3, B4, B5 (F-b3-02..17, F-b4-02..08, F-b5-01..05), improving past the owner's sketch of 2026-09-04; reviewed and improved by the row 75 advisor; proposed until then",
+ "principle": "Groups follow what one unit of work meets, in the order it meets it: it arrives, it executes in a cell, it survives time and failure, it runs under guarantees it cannot decline, it leaves evidence, and it is composed with others. A capability belongs to the group where a caller first needs it; the standards inside a group are the ones that must interoperate.",
+ "information_flow": {
+  "text": "One envelope enters at the door and its correlation id, actor chain, budget and idempotency key ride every hop; the contract hash and the cell's containment report join at execution; checkpoints and leases join in continuity; each guarantee stamps a decision; telemetry, the problem object and the attestation carry the same ids out. The standards that make this one flow: CloudEvents and A2A for the envelope, W3C trace context carried as explicit attributes for correlation, RFC 9457 for every failure, DSSE and in-toto for what survives.",
+  "cites": [
+   "F-b3-08",
+   "F-b4-06",
+   "F-a7-02",
+   "F-b3-13",
+   "F-b3-12"
+  ]
+ },
+ "groups": [
+  {
+   "id": "entry",
+   "name": "Entry",
+   "asks": "How does work arrive, and is it well-formed?",
+   "capabilities": [
+    "work-intake",
+    "document-validation",
+    "scheduling",
+    "human-interaction"
+   ],
+   "skills": [
+    "cap-work-intake",
+    "cap-document-validation",
+    "cap-scheduling",
+    "cap-human-interaction"
+   ],
+   "standards": [
+    "CloudEvents",
+    "A2A",
+    "JSON Schema 2020-12",
+    "RFC 5545"
+   ],
+   "harnesses": [
+    "work-intake",
+    "document-validation",
+    "scheduling",
+    "human-interaction"
+   ],
+   "example": "examples/entry",
+   "sources": [
+    "F-b3-08",
+    "F-b3-09",
+    "F-b3-15"
+   ]
+  },
+  {
+   "id": "cell",
+   "name": "Cell",
+   "asks": "How does one unit of work execute, contained, with a model and tools, and return one result?",
+   "capabilities": [
+    "isolation",
+    "agent-runtime",
+    "tool-access",
+    "capability-packaging",
+    "model-access"
+   ],
+   "skills": [
+    "cap-isolation",
+    "cap-agent-runtime",
+    "cap-tool-access",
+    "cap-capability-packaging",
+    "cap-model-access",
+    "seam-dispatch"
+   ],
+   "standards": [
+    "OCI Runtime Spec",
+    "Agent Client Protocol",
+    "Model Context Protocol",
+    "Agent Skills",
+    "OpenAI-compatible completions"
+   ],
+   "harnesses": [
+    "containment",
+    "gateway",
+    "tool-access",
+    "capability-packaging",
+    "dispatch"
+   ],
+   "example": "examples/cell",
+   "sources": [
+    "F-b3-02",
+    "F-b3-03",
+    "F-b3-05",
+    "F-b3-06",
+    "F-b3-07",
+    "F-b5-01"
+   ],
+   "note": "the unit design under STATUS row 74 is this group's contract"
+  },
+  {
+   "id": "continuity",
+   "name": "Continuity",
+   "asks": "How does work survive a crash, a retry and time?",
+   "capabilities": [
+    "durable-execution",
+    "state-persistence",
+    "idempotency"
+   ],
+   "skills": [
+    "cap-durable-execution",
+    "cap-state-persistence",
+    "cap-idempotency",
+    "seam-state"
+   ],
+   "standards": [
+    "none (B5 design)",
+    "idempotency-key convention"
+   ],
+   "harnesses": [
+    "workflow",
+    "state-persistence",
+    "idempotency"
+   ],
+   "example": "examples/continuity",
+   "sources": [
+    "F-b3-04",
+    "F-b3-16",
+    "F-b3-17",
+    "F-b5-03"
+   ]
+  },
+  {
+   "id": "assurance",
+   "name": "Assurance",
+   "asks": "What does the platform apply that a caller cannot decline, and what does a refusal look like?",
+   "capabilities": [
+    "identity",
+    "policy",
+    "errors"
+   ],
+   "concerns": [
+    "budget",
+    "identity",
+    "policy",
+    "errors",
+    "idempotency"
+   ],
+   "skills": [
+    "cap-identity",
+    "cap-policy",
+    "cap-errors",
+    "xc-guarantees"
+   ],
+   "standards": [
+    "OAuth 2.0 Token Exchange",
+    "workload identity",
+    "Rego / OPA",
+    "RFC 9457"
+   ],
+   "harnesses": [
+    "identity",
+    "policy",
+    "errors",
+    "xc-enforcement-chain",
+    "xc-tenancy"
+   ],
+   "example": "examples/assurance",
+   "sources": [
+    "F-b3-11",
+    "F-b3-13",
+    "F-b3-14",
+    "F-b4-01"
+   ]
+  },
+  {
+   "id": "evidence",
+   "name": "Evidence",
+   "asks": "What survives the run that a stranger can verify, and how is done decided?",
+   "capabilities": [
+    "telemetry",
+    "provenance",
+    "evaluation"
+   ],
+   "concerns": [
+    "telemetry",
+    "provenance"
+   ],
+   "skills": [
+    "cap-telemetry",
+    "cap-provenance",
+    "cap-evaluation",
+    "core-components"
+   ],
+   "standards": [
+    "OTLP",
+    "GenAI semantic conventions",
+    "in-toto",
+    "SLSA",
+    "DSSE"
+   ],
+   "harnesses": [
+    "observability",
+    "provenance",
+    "evaluation",
+    "xc-audit-trail",
+    "core-graph"
+   ],
+   "example": "examples/evidence",
+   "sources": [
+    "F-b3-10",
+    "F-b3-12",
+    "F-b4-05",
+    "F-b4-06"
+   ]
+  },
+  {
+   "id": "composition",
+   "name": "Composition",
+   "asks": "How are units wired into workflows, loops, panels and an improving system?",
+   "capabilities": [],
+   "skills": [
+    "compose-workflow",
+    "compose-improvement-loop"
+   ],
+   "standards": [
+    "none (operators are this platform's closed set)"
+   ],
+   "harnesses": [
+    "compose-operators",
+    "compose-improvement-loop",
+    "linked"
+   ],
+   "example": "examples/composition",
+   "sources": [
+    "F-b2-03",
+    "F-b5-01"
+   ]
+  }
+ ],
+ "example_rules": [
+  "One example per group under examples/<group>/, runnable dependency-free in dry run (bash examples/<group>/test.sh), calling the harness interfaces the group already has; never a monolith and never a copy of examples/end-to-end.",
+  "Each example answers the six questions of build-evidence's worked-example discipline and is graded by its six criteria; it shows the group's information in and out as a table with the ids that ride through.",
+  "Each example carries a definition of done with a breakage, measured by tools/measure.py, and a token line where a model is called.",
+  "The cell example is the unit's first example and follows docs/consumption/unit-design.json."
+ ],
+ "loop": "Each group is one STATUS row. At its ceremony: the example is measured, an isolated reviewer scores it against the group's litmus sections and the maturity closures, the improver applies, the lesson is recorded, and the improvement plan is regenerated. The decomposition method is the pre-build step of every row."
+}

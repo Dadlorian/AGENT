@@ -1,0 +1,155 @@
+{
+  "status_row": 75,
+  "ledger_name": "75-done-improve",
+  "ceremony": "75-done",
+  "section": "examples/done",
+  "improver": "75-done-improve",
+  "date": "2026-09-04",
+  "area": "done",
+  "review_read": "kb/ceremonies/75-done-review.json",
+  "visible_checks_before": 63,
+  "visible_checks_after": 76,
+  "test_last_line": "passed 76, failed 0",
+  "applied": [
+    {
+      "finding": "R75DONE-003",
+      "change": "Every one of the four declared gate rules is now read where it decides, not two of them. Close.gate() builds the trust policy from the declaration: subject-digest-must-match puts the recomputed artifact digest in expected_subjects (and nothing there when undeclared), run-output-predicate-required puts the declared predicate type in expected_predicate_types, attested-subject-required decides what an unresolved statement means, and statement-must-verify - the one that cannot be expressed as an expectation the policy carries - decides whether a signature or expiry failure refuses. A fourth breakage, --break resign, tampers with the stored envelope's signature so that rule has something only it catches. test.sh section 6 now runs eight arms: each rule removed in turn admits exactly the breakage it alone caught, and refuses it while declared. Falsified four ways - reading any one of the four unconditionally turns section 6 red (passed 74, failed 2) and not merely the suite.",
+      "files": [
+        "examples/done/run.py",
+        "examples/done/test.sh",
+        "examples/done/README.md",
+        "examples/done/provenance.json"
+      ]
+    },
+    {
+      "finding": "R75DONE-004",
+      "change": "The count is now checked against the program instead of against itself. The gate at the foot of test.sh grew a third arm: after the failure check and the floor, it compares the line this run actually printed with the line the README promises beside `bash examples/done/test.sh`, and exits 1 on a difference. Falsified by setting FLOOR, provenance.visible_checks_counted and the README all to 75: section 17's three-files check stays green, the floor is satisfied, failures are zero, and the run still exits 1 saying \"the README promises 'passed 75, failed 0'; this run printed 'passed 76, failed 0'\". The three numbers were moved to 76 and the suite's first measured bullet re-pasted from the real last line.",
+      "files": [
+        "examples/done/test.sh",
+        "examples/done/README.md",
+        "examples/done/provenance.json"
+      ]
+    },
+    {
+      "finding": "R75DONE-005",
+      "change": "attestation.full_predicate is now resolved to the interface's own predicate URI at the two points it decides - where the statement is made and where the gate says which type it will accept - through PREDICATE_BY_NAME, which maps a declared name to an interface constant and never writes a URI here; a name the interface does not publish is refused 422 before anything is attested, and write_bundle expects the same declared type. attestation.light_predicate was deleted rather than left inert: the metadata-light statement's predicate type belongs to the wired boundary, which takes no argument for it, and that is now gap G15 with a research query. test.sh section 6 runs the two declared names as a differential and reads the type back off the record and off the statement in the envelope store; writing the URI down again turns that section red.",
+      "files": [
+        "examples/done/run.py",
+        "examples/done/units/close-checkout-coupon-fix.json",
+        "examples/done/test.sh",
+        "examples/done/README.md",
+        "examples/done/provenance.json"
+      ]
+    },
+    {
+      "finding": "R75DONE-006",
+      "change": "The whole declared hop is carried now, not just its actor: each hop's declared obtained_via is what that hop's presented credential asserts, and hop_trace records it as declared_obtained_via beside the obtained_via the binding issued (null for the last hop, which this platform mints for itself and no envelope declares). test.sh section 10 varies the external door's second hop between token_exchange and workload_attestation and asserts the declared value moves while the issued one does not, and the section-10 chain check now compares the whole declared column against the envelope. The README's schedule row no longer reads as though the issued hop were attested: it says the declared value is carried and recorded, and gap G14 says why the issued value is the binding's - both adapters stamp token_exchange in _delegate, so honouring a declared non-root value is not something this example can do without inventing an interface.",
+      "files": [
+        "examples/done/run.py",
+        "examples/done/test.sh",
+        "examples/done/README.md",
+        "examples/done/provenance.json"
+      ]
+    },
+    {
+      "finding": "R75DONE-007",
+      "change": "HOP_LIFETIMES, a four-tuple indexed by hop number, is gone. hop_lifetime(i) computes each hop's lifetime from the root's lifetime and a declared divisor, so the ladder is as long as the chain the caller declared - which the published entry schema does not bound - the way narrow_ladder() already computed the scope ladder. A five-hop probe entry, longer than any shipped document and valid against the entry schema, is now run in test.sh section 10: it closes with six issued hops, narrows to the required scope and shortens at every hop, with no traceback. Writing the tuple back turns that check red. Note the issued lifetimes moved from 1800/1200/900/600 to halving (1800/900/450/225).",
+      "files": [
+        "examples/done/run.py",
+        "examples/done/test.sh",
+        "examples/done/README.md"
+      ]
+    },
+    {
+      "finding": "R75DONE-008",
+      "change": "Close.run() now handles self.problems on the same path as its own Refusal: both go through record_rejection(), which appends one run-rejected record naming the problem type (and gives up silently only if the store is what refused). The seal is no longer recorded before the statement exists - subject-sealed is written after the light and full attestations return, immediately before the attested record, so the receipt's order is unchanged and a capability refusing in between leaves neither. test.sh section 6 runs the binding's own published failure path, PROVENANCE_FAIL=1, and asserts a 503 adapter-unavailable body, one run-rejected record as the last line of the receipt, and sealed <= attested on every receipt. Recording the seal early again turns that check red.",
+      "files": [
+        "examples/done/run.py",
+        "examples/done/test.sh",
+        "examples/done/README.md",
+        "examples/done/provenance.json"
+      ]
+    },
+    {
+      "finding": "R75DONE-009",
+      "change": "The mechanism to make the stronger sentence true does not exist here: harness/provenance/emit.py takes root, component, payload and actor and nothing else, and this brief may not change a shared harness. So the sentence was narrowed to what the record supports - the entry envelope's digest is a material of every run-output statement - and the other shape is now stated and measured rather than left unsaid: test.sh section 4 reads both stores back and asserts the four run-output statements name the envelope, the code version and the run id, while the metadata-light statements (one per attested record, counted out of the four receipts rather than written down) name none of the three. Gap G15 carries the research query, and the claimed list says what a verifier may therefore not conclude from a light record. Dropping the code version from the predicate turns that section red.",
+      "files": [
+        "examples/done/test.sh",
+        "examples/done/README.md",
+        "examples/done/provenance.json"
+      ]
+    },
+    {
+      "finding": "R75DONE-010",
+      "change": "The note points at G7, the source-tree gap, instead of G6. The walk was extended rather than the one reference fixed: test.sh section 17 now resolves every G<n> reference in the example's ten prose and code files against the gap table's own keys, checks the keys are unique, and requires at least ten distinct references. Pointing a reference at G22 turns that check red.",
+      "files": [
+        "examples/done/units/close-checkout-coupon-fix.json",
+        "examples/done/test.sh",
+        "examples/done/provenance.json"
+      ]
+    },
+    {
+      "finding": "R75DONE-011",
+      "change": "Section 5 carries a `parallel, agent call` row in the shape the judge row uses: what the two would be at this boundary and why the closure does not use them - the units arrive already run, so this boundary is the join, and a second writer would be refused 409 by the head this example pins rather than admitted as concurrency, which section 8 already measures. All six operators are now accounted for.",
+      "files": [
+        "examples/done/README.md"
+      ]
+    },
+    {
+      "finding": "R75DONE-012",
+      "change": "(a) The falsification sentence left `measured` - it is a claim about the author's process, not about anything test.sh executes - and sits in `claimed` saying so; the differentials the suite does run are what the measured rows now name. (b) --identity-adapter's help is \"identity binding: dryrun or second\", and test.sh section 17 asserts that each of the three adapter flags the README names has both of its bindings in --help (read out of the options section, not the usage line). Restoring the one-value help text turns that check red.",
+      "files": [
+        "examples/done/run.py",
+        "examples/done/test.sh",
+        "examples/done/provenance.json"
+      ]
+    },
+    {
+      "finding": "R75DONE-013",
+      "change": "The four literal `../../harness/state-persistence/verify_external.py` paths in test.sh sections 8, 9 and 14 now come from harnesses.state_external_verifier(); the string appears nowhere in the example, which the replacement asserted before writing the file. The helper is called rather than deleted, because the composition row's claim is that this example calls rather than copies.",
+      "files": [
+        "examples/done/test.sh"
+      ]
+    },
+    {
+      "finding": "R75DONE-014",
+      "change": "The dry-run envelope store is now <prov-root>/envelopes-<door>.jsonl, so one flag names one period, and the binding is built at first use rather than at construction - a run refused before it attests anything (a replay, an envelope that does not validate) opens no store and truncates none, which is what was really wiping the human door's envelopes mid-suite. test.sh section 1 records the statement ids it asserted over and section 17 re-reads those four files at the end of the suite, after every command the README prints has run. Opening the store at construction again turns that check red.",
+      "files": [
+        "examples/done/run.py",
+        "examples/done/test.sh",
+        "examples/done/provenance.json"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "finding": "R75DONE-001",
+      "why": "Already true when this brief ran; the plant had been reverted. `grep -rn 'wrapped in the published envelope' examples/done/` exits 1 with no output, and README.md:21 carries \"wrapped in the published signing envelope\" in both the middle and the Evidence column of the `provenance` row. The area's own section 16 is green on the shipped tree and the suite's first run in this pass printed passed 63, failed 0, not the passed 62, failed 1 the review recorded."
+    },
+    {
+      "finding": "R75DONE-002",
+      "why": "Already true when this brief ran; the plant had been reverted. `grep -rn 'outcome tier\\|completion tier\\|behavioral' examples/done/` exits 1 with no output, and the last row of section 4's table is now `Per door, the lifecycle a closed unit is left in`. The example uses `behavioural` in four README lines and the ontology's ladder vocabulary throughout; there is no tier row to delete."
+    }
+  ],
+  "notes": [
+    "The dry-run envelope store moved: it was examples/done/out/attestations-<door>.jsonl and is now <prov-root>/envelopes-<door>.jsonl (examples/done/out/provenance/envelopes-<door>.jsonl at the default). An outside check reading the old path finds nothing.",
+    "The provenance binding is built lazily. A replay and a document-invalid refusal now open no attestation store at all, so a check that expected such a run to create or truncate a store file will not find one - that eager construction was what silently emptied the human door's envelopes between section 2 and the end of the suite.",
+    "--break has a fifth value, `resign`: it rewrites the signature of the stored statement for the promotable subject, which is the only breakage `statement-must-verify` catches. It needs the file-backed binding and refuses 422 on the in-process one.",
+    "hop_trace entries grew a `declared_obtained_via` key, null on the last hop (the one this platform mints for itself, which no envelope declares). A check that read the hop record as a fixed set of keys sees one more.",
+    "Issued hop lifetimes changed from the written-down 1800/1200/900/600 to halving from the root's 3600 (1800, 900, 450, 225, ...). An outside check asserting 1200 or 600 now misses.",
+    "The receipt's record order is unchanged, but subject-sealed is written after the attestation work rather than before it, so a run that a capability refuses mid-attestation carries no subject-sealed line at all: a check reading `subject-sealed` as the signature of \"the run got as far as sealing\" now misses that case, and sealed <= attested holds on every receipt.",
+    "attestation.light_predicate was deleted from units/close-checkout-coupon-fix.json; anything reading that member gets a KeyError. attestation.full_predicate is still there and is now load-bearing: an unknown name is a 422 before anything is attested.",
+    "A fourth refusal type is measured: adapter-unavailable (503), reached through the binding's own PROVENANCE_FAIL=1 path after the entry was admitted, and that run leaves a run-rejected record whose problem_type is the 503 - so run-rejected is no longer evidence that this runner raised the refusal.",
+    "test.sh's gate has three arms now: no failure, PASS >= FLOOR, and the line this run printed against the line the README promises. A suite with zero failures and a satisfied floor can still exit 1, which is the point.",
+    "The suite is not safe to run concurrently in one tree: it starts with `rm -rf out` and every check writes under examples/done/out/.",
+    "harnesses.py was not modified; R75DONE-013 was closed by calling the helper it already exported."
+  ],
+  "files_touched": [
+    "examples/done/run.py",
+    "examples/done/test.sh",
+    "examples/done/README.md",
+    "examples/done/provenance.json",
+    "examples/done/units/close-checkout-coupon-fix.json"
+  ],
+  "test_command": "bash examples/done/test.sh"
+}

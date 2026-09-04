@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:example:improve-pass:0.1",
+  "title": "Improvement pass declaration",
+  "description": "What a caller declares inside payload.improve at any of the four doors: the boundary this pass runs at, how it fires, and - for a partner-finding boundary only - the one revision the caller is offering. There is no member for the promotion authority, the decision rule or the criterion: additionalProperties is false, so a caller that adds one is refused before anything runs rather than being allowed to soften the gate its own change is judged by.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "boundary",
+    "fire_mode"
+  ],
+  "properties": {
+    "boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "ref"
+      ],
+      "description": "Self-improvement runs at a ceremony, phase or structure boundary, never per iteration (OWNER.md, 2026-09-03). Both members are read: the loop id is derived from them, so one boundary is one pass and a re-fire of the same boundary resumes it rather than starting a second.",
+      "properties": {
+        "kind": {
+          "enum": [
+            "ceremony",
+            "phase",
+            "structure",
+            "partner-finding"
+          ]
+        },
+        "ref": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 200
+        }
+      }
+    },
+    "fire_mode": {
+      "enum": [
+        "in-one-process",
+        "one-iteration-per-fire"
+      ],
+      "description": "Selects the loop driver. in-one-process holds the whole pass in one process; one-iteration-per-fire keeps nothing between iterations, so a scheduler fires the next one into a process that has never seen this loop."
+    },
+    "revision_offered": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "metric_id",
+        "template",
+        "slot",
+        "value_if_promoted",
+        "rationale",
+        "gate"
+      ],
+      "description": "One candidate revision an outside caller offers. Permitted only when boundary.kind is partner-finding, and tried first for its metric - but it is gated like any other candidate and carries no criterion and no verdict.",
+      "properties": {
+        "candidate_id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"
+        },
+        "metric_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "template": {
+          "type": "string",
+          "pattern": "^template:[a-z0-9-]+$"
+        },
+        "slot": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value_if_promoted": {
+          "type": "number"
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 300
+        },
+        "gate": {
+          "$ref": "#/$defs/gate"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit_ref",
+        "unit_version",
+        "case_set_id",
+        "baseline_id"
+      ],
+      "description": "What the candidate is put through. It names a unit and a registered case set; it has nowhere to carry the criterion, which belongs to the evaluation capability and is resolved inside the scorer.",
+      "properties": {
+        "unit_ref": {
+          "type": "string",
+          "minLength": 3
+        },
+        "unit_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_set_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "baseline_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "case_filter": {
+          "type": "string",
+          "minLength": 3,
+          "description": "Optional. Omitted or 'all' selects every case; a case id selects one; 'none' selects nothing, which the gate reports as inconclusive and never as a pass."
+        }
+      }
+    }
+  }
+}

@@ -176,35 +176,45 @@ assert len(classes) == 1, f"the class moved though no class step was permitted: 
 PY
 
 # --- h-09 the criterion never reaches anything the unit can read -------------
-py "$AREA" "$WORK" <<'PY' && ok "h-09 no criterion body, fixture or check name reaches a contract mount" || bad "h-09 the grader leaked to the graded"
-import os, re, sys
+py "$AREA" "$WORK" <<'PY' && ok "h-09 no criterion body, held-out fixture or check name reaches a contract mount" || bad "h-09 the grader leaked to the graded"
+import importlib.util, os, sys
 area, work = sys.argv[1], sys.argv[2]
-import importlib.util
 spec = importlib.util.spec_from_file_location("assessor_hidden", os.path.join(area, "assessor.py"))
 assessor = importlib.util.module_from_spec(spec); spec.loader.exec_module(assessor)
-banned = set()
+
+# What the deciding set knows: the names of its check bodies and the literal
+# fixtures they exercise. Anything the visible surface already publishes is not
+# a leak - the deciding checks cover the same observable behaviour on purpose -
+# so the visible surface is subtracted and what is left is held out by
+# construction: if it appears on a mount or in caller output, it escaped.
+visible = ""
+for path in (os.path.join(area, "contract", "checks.visible.json"),
+             os.path.join(area, "source", "tests", "test_coupon_visible.py"),
+             os.path.join(area, "contract", "system.md")):
+    if os.path.exists(path):
+        visible += open(path, errors="ignore").read()
+held = set()
 for ref, checks in assessor.CRITERIA.items():
     for c in checks:
-        banned.add(c["run"].__name__)
-        src = c["run"].__code__.co_consts
-        for k in src:
-            if isinstance(k, str) and len(k) > 3 and k.islower():
-                banned.add(k)
-banned = {b for b in banned if b not in ("candidate", "tag", "total", "tier", "source_tests")}
+        held.add(c["run"].__name__)
+        for k in c["run"].__code__.co_consts:
+            if isinstance(k, str) and len(k) > 3:
+                held.add(k)
+held = {h for h in held if h and h not in visible}
+assert held, "the deciding set has no held-out detail at all; there is nothing to keep from the unit"
+
 leaked = []
 for base, _, files in os.walk(os.path.join(area, "out", "units")):
-    if os.path.basename(base) != "contract" and "/contract" not in base:
+    if os.path.basename(base) != "contract" and os.sep + "contract" not in base:
         continue
     for name in files:
         text = open(os.path.join(base, name), errors="ignore").read()
-        for b in banned:
-            if b and b in text:
-                leaked.append((os.path.join(base, name), b))
-assert not leaked, f"criterion detail inside a contract mount: {leaked[:5]}"
+        leaked += [(os.path.join(base, name), h) for h in held if h in text]
+assert not leaked, f"held-out criterion detail inside a contract mount: {sorted(set(leaked))[:5]}"
 for door in ("human", "widen", "stuck"):
     text = open(os.path.join(work, f"{door}.log"), errors="ignore").read()
-    for b in banned:
-        assert b not in text, f"criterion body name {b!r} reached the caller in {door}.log"
+    escaped = [h for h in held if h in text]
+    assert not escaped, f"held-out criterion detail reached the caller in {door}.log: {escaped}"
 PY
 
 # --- h-10 the receipt is tamper-evident --------------------------------------

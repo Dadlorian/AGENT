@@ -1,0 +1,52 @@
+{
+  "envelope_version": "0.1",
+  "kind": "external",
+  "entry_id": "improve-external-partner-finding",
+  "occurred_at": "2026-09-04T18:22:41Z",
+  "actor": {
+    "subject": "agent:partner-eval-bot",
+    "delegation_chain": [
+      {"actor": "agent:partner-eval-bot", "obtained_via": "workload_attestation"},
+      {"actor": "service:intake", "obtained_via": "token_exchange"},
+      {"actor": "user:corey", "obtained_via": "direct"}
+    ]
+  },
+  "intent": {
+    "workflow_ref": "units/improve-platform-scorecard.json",
+    "summary": "A partner agent has a finding of its own and offers the revision it thinks closes it; gate it like any other."
+  },
+  "correlation": {
+    "run_id": "run-improve-external-0001",
+    "correlation_id": "corr-improve-external-0001",
+    "parent_correlation_id": "corr-partner-2291",
+    "depth": 1
+  },
+  "budget": {
+    "ceiling_micros": 3000000,
+    "currency": "USD",
+    "on_exceed": "terminate_unit"
+  },
+  "idempotency_key": "improve-external-partner-finding-2291",
+  "payload": {
+    "improve": {
+      "boundary": {"kind": "partner-finding", "ref": "finding-pf-2291"},
+      "fire_mode": "in-one-process",
+      "revision_offered": {
+        "candidate_id": "rev-xp-01",
+        "metric_id": "template_hold_rate",
+        "template": "template:partner-sweep",
+        "slot": "judge.visible_checks",
+        "value_if_promoted": 0.85,
+        "rationale": "the partner's own sweep, offered ahead of the unit's candidate for the same metric",
+        "gate": {
+          "unit_ref": "agent:release-reviewer",
+          "unit_version": "1.4.0",
+          "case_set_id": "cs-release-review",
+          "baseline_id": "bl-2026-08-27",
+          "case_filter": "none"
+        }
+      }
+    },
+    "source_kind": "a finding submitted by another system or agent"
+  }
+}

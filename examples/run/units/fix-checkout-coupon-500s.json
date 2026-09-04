@@ -1,0 +1,36 @@
+{
+  "_": "The task specification (docs/reference/ontology.md). One unit: contract + cell + harness + model door + measure step + ledger record. Named by the design record's first example, docs/consumption/unit-design.md.",
+  "unit": "unit-fix-checkout-coupon-500s",
+  "template": "solve-and-review",
+  "form": "full",
+  "task": "POST /checkout/coupon returns 500; the traceback ends at pricing/coupon.py, KeyError: 'tier'. Return a candidate that fixes it.",
+  "isolation": {
+    "profile": "small",
+    "egress": "none",
+    "egress_allowlist": [],
+    "credentials": "broker_only"
+  },
+  "source_ref": "source@pinned",
+  "attempt_class": "i-fast",
+  "escalation_class": "cli-",
+  "ceilings": {
+    "attempts": 3,
+    "wall_seconds": 5.0,
+    "cancel_grace_s": 0.5,
+    "turn_op_seconds": 0.05
+  },
+  "contract_entries": [
+    {"path": "system.md", "load_tier": "resident"},
+    {"path": "checks.visible.json", "load_tier": "resident"},
+    {"path": "tools.json", "load_tier": "resident"},
+    {"path": "skills.json", "load_tier": "resident"},
+    {"path": "policy.json", "load_tier": "resident"}
+  ],
+  "deciding_criteria_ref": "criterion://coupon-behaviour/v1",
+  "escalation": {
+    "policy": "bounded cascade, evidence-gated class step",
+    "trigger": "the same deciding check fails the same way twice",
+    "class_steps_permitted": 1,
+    "on_ceiling": "park an approval gate; never stop silently"
+  }
+}

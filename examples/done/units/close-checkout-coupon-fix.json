@@ -1,0 +1,150 @@
+{
+  "closure_version": "0.1",
+  "closure_id": "close-checkout-coupon-fix",
+  "summary": "Close the four units of the checkout-coupon fault sweep: read each check report, seal what each unit leaves behind, attest it, append it, promote what the gate admits, and tell the door that asked.",
+  "source_ref": {
+    "name": "source-tree",
+    "digest": "sha256:2b7c1f0a4d5e6b8c9a0d1e2f3a4b5c6d7e8f9a0b1c2d3e4f5a6b7c8d9e0f1a2b",
+    "note": "declared by the run that produced these units; nothing in this area re-hashes that tree (README gap G7)"
+  },
+  "attestation": {
+    "materiality": [
+      "produced-artifact"
+    ],
+    "full_predicate": "agent-action",
+    "note": "which units cross the threshold for a full, published, verified attestation, and which predicate type that statement carries. Every unit gets the metadata-light record whatever this says; the predicate type of that record belongs to the wired boundary and is not declared here (README gap G15)."
+  },
+  "retention": {
+    "partition": "done-checkout-coupon",
+    "redactable": true,
+    "redact_kinds": [
+      "notified"
+    ],
+    "reason": "the notification body carries the reporter's own words and is kept only until delivery"
+  },
+  "promotion": {
+    "requires_scope": [
+      "write:ledger"
+    ],
+    "audience": "svc:ledger",
+    "gate_rules": [
+      "attested-subject-required",
+      "statement-must-verify",
+      "subject-digest-must-match",
+      "run-output-predicate-required"
+    ]
+  },
+  "closes": [
+    {
+      "unit_id": "fix-checkout-coupon-500s",
+      "task": "POST /checkout/coupon returns 500 on a missing tier key",
+      "attempts": 2,
+      "model_class": "cli-",
+      "stop_reason": "end_turn",
+      "cost_micros": 412000,
+      "check_report": {
+        "behavioural_run": 3,
+        "deciding": [
+          {
+            "check_id": "d-01",
+            "kind": "behavioural",
+            "outcome": "pass"
+          },
+          {
+            "check_id": "d-02",
+            "kind": "behavioural",
+            "outcome": "pass"
+          },
+          {
+            "check_id": "d-03",
+            "kind": "behavioural",
+            "outcome": "pass"
+          },
+          {
+            "check_id": "d-05",
+            "kind": "well_formedness",
+            "outcome": "pass"
+          }
+        ]
+      },
+      "produced": {
+        "subject_kind": "work_product",
+        "name": "patch-checkout-coupon",
+        "text": "--- a/pricing/coupon.py\n+++ b/pricing/coupon.py\n@@\n-    tier = order[\"tier\"]\n+    tier = order.get(\"tier\", DEFAULT_TIER)\n"
+      }
+    },
+    {
+      "unit_id": "dedupe-incident-notifier",
+      "task": "Stop the notifier raising one incident per retry",
+      "attempts": 3,
+      "model_class": "b-deep",
+      "stop_reason": "end_turn",
+      "cost_micros": 268000,
+      "check_report": {
+        "behavioural_run": 2,
+        "deciding": [
+          {
+            "check_id": "d-01",
+            "kind": "behavioural",
+            "outcome": "pass"
+          },
+          {
+            "check_id": "d-04",
+            "kind": "behavioural",
+            "outcome": "fail"
+          }
+        ]
+      },
+      "produced": {
+        "subject_kind": "failure_report",
+        "name": "failure-dedupe-incident-notifier",
+        "text": "deciding check d-04 failed on attempt 3 of 3; the candidate is kept, the unit is not closed as completed\n"
+      }
+    },
+    {
+      "unit_id": "rotate-coupon-cache-keys",
+      "task": "Rotate the coupon cache keys in production",
+      "attempts": 0,
+      "model_class": "i-fast",
+      "stop_reason": "policy_denied",
+      "cost_micros": 0,
+      "refusal": {
+        "rule_id": "irreversible-action-needs-approval",
+        "decision_point": "admission",
+        "detail": "a production key rotation is irreversible and no approval was attached to the entry"
+      },
+      "check_report": {
+        "behavioural_run": 0,
+        "deciding": []
+      },
+      "produced": {
+        "subject_kind": "refusal_record",
+        "name": "refusal-rotate-coupon-cache-keys",
+        "text": "refused at admission by irreversible-action-needs-approval; nothing was dispatched and nothing was spent\n"
+      }
+    },
+    {
+      "unit_id": "document-coupon-tiers",
+      "task": "Write the tier table into the pricing README",
+      "attempts": 1,
+      "model_class": "f-smoke",
+      "stop_reason": "end_turn",
+      "cost_micros": 41000,
+      "check_report": {
+        "behavioural_run": 0,
+        "deciding": [
+          {
+            "check_id": "d-06",
+            "kind": "well_formedness",
+            "outcome": "pass"
+          }
+        ]
+      },
+      "produced": {
+        "subject_kind": "candidate_held",
+        "name": "candidate-document-coupon-tiers",
+        "text": "| tier | discount |\n|---|---|\n| base | 0% |\n| plus | 10% |\n"
+      }
+    }
+  ]
+}

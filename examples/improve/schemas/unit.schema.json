@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:example:improve-unit:0.1",
+  "title": "Improvement pass task specification",
+  "description": "The unit behind all four doors: the scorecard being improved, the candidate revisions offered for each metric, the loop's ceilings, and the promotion rule. iteration_ceiling is required here as it is on the loop capability's own declaration - there is no unbounded variant to declare - and promotion.authority has one legal value, so nothing in this document can promote a change the gate did not pass.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "unit_id",
+    "template",
+    "scorecard",
+    "candidates",
+    "loop",
+    "promotion"
+  ],
+  "properties": {
+    "unit_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"
+    },
+    "note": {
+      "type": "string"
+    },
+    "template": {
+      "type": "string",
+      "pattern": "^template:[a-z0-9-]+$",
+      "description": "The named composition this pass improves. The improvement loop improves the template, not the run (OWNER.md, 2026-09-04)."
+    },
+    "scorecard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scorecard_id",
+        "metrics"
+      ],
+      "properties": {
+        "scorecard_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "metrics": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "metric_id",
+              "direction",
+              "current",
+              "target",
+              "scale",
+              "means"
+            ],
+            "properties": {
+              "metric_id": {
+                "type": "string",
+                "minLength": 3
+              },
+              "direction": {
+                "enum": [
+                  "up",
+                  "down"
+                ]
+              },
+              "current": {
+                "type": "number"
+              },
+              "target": {
+                "type": "number"
+              },
+              "scale": {
+                "type": "number",
+                "description": "The span the gap is divided by, so metrics in different units are comparable and 'furthest from its target' means something."
+              },
+              "means": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "candidates": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered per metric: attempt N for a metric takes the Nth candidate offered for it, so which change is tried when is declared rather than chosen at run time. Running out of candidates for a metric is a typed refusal, never a fourth termination reason.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidate_id",
+          "metric_id",
+          "template",
+          "slot",
+          "value_if_promoted",
+          "rationale",
+          "gate"
+        ],
+        "properties": {
+          "candidate_id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{2,63}$"
+          },
+          "metric_id": {
+            "type": "string",
+            "minLength": 3
+          },
+          "template": {
+            "type": "string",
+            "pattern": "^template:[a-z0-9-]+$"
+          },
+          "slot": {
+            "type": "string",
+            "minLength": 1
+          },
+          "value_if_promoted": {
+            "type": "number"
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 300
+          },
+          "gate": {
+            "$ref": "#/$defs/gate"
+          }
+        }
+      }
+    },
+    "loop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "loop_ref",
+        "iteration_ceiling",
+        "per_iteration_micros",
+        "on_cap"
+      ],
+      "properties": {
+        "loop_ref": {
+          "type": "string",
+          "minLength": 3
+        },
+        "iteration_ceiling": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "per_iteration_micros": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "on_cap": {
+          "const": "escalate"
+        }
+      }
+    },
+    "promotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "authority",
+        "rollback_to"
+      ],
+      "properties": {
+        "authority": {
+          "const": "evaluation_gate",
+          "description": "One legal value. A unit declaring any other authority is refused before a case is replayed."
+        },
+        "rollback_to": {
+          "enum": [
+            "previous_checkpoint",
+            "open_loop_checkpoint"
+          ],
+          "description": "Which stored state a rollback would restore: the checkpoint standing when the iteration ran, or the one the pass opened at. Read on every iteration record."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unit_ref",
+        "unit_version",
+        "case_set_id",
+        "baseline_id"
+      ],
+      "description": "What the candidate is put through. It names a unit and a registered case set; it has nowhere to carry the criterion, which belongs to the evaluation capability and is resolved inside the scorer.",
+      "properties": {
+        "unit_ref": {
+          "type": "string",
+          "minLength": 3
+        },
+        "unit_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "case_set_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "baseline_id": {
+          "type": "string",
+          "minLength": 3
+        },
+        "case_filter": {
+          "type": "string",
+          "minLength": 3,
+          "description": "Optional. Omitted or 'all' selects every case; a case id selects one; 'none' selects nothing, which the gate reports as inconclusive and never as a pass."
+        }
+      }
+    }
+  }
+}

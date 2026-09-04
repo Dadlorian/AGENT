@@ -15,6 +15,19 @@ from datetime import datetime, timedelta, timezone
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "out")
 
+# row 76 B1 concern-provenance-q3: every agent completion this platform
+# produces is attested at the one method every one of them passes through
+# (call_agent, below) -- wired here, not asked for by any step above it. The
+# store is not reset by this import; a period spans every entry this process
+# and every earlier one in the same `out/` directory has run (see emit.py).
+PROV_DIR = os.path.normpath(os.path.join(HERE, "..", "..", "harness", "provenance"))
+sys.path.insert(0, PROV_DIR)
+import emit as provenance_emit  # noqa: E402
+
+
+def _attest_artifact(actor: str, component: str, payload: bytes) -> dict:
+    return provenance_emit.attest_and_record(os.path.join(OUT, "provenance"), component, payload, actor=actor)
+
 # --- Minimal JSON Schema 2020-12 validator ----------------------------------
 # Supports exactly the keywords these schemas use ($ref, anyOf, if/then/else, type, const, enum,
 # pattern, min/maxLength, minimum, maximum, minItems, contains, items, required, properties,
@@ -271,6 +284,7 @@ class Run:
         out = self.adapter.complete(profile, node["task"], step_input, self.env["correlation"])
         self.remaining -= out["cost_micros"]
         self.results[node["id"]] = out
+        _attest_artifact(self.env["actor"]["subject"], node["agent"], out["text"].encode())
         self.record("agent-called", step_id=sid, op="agent", agent=node["agent"],
                     model_class=profile["model_class"], cost_micros=out["cost_micros"],
                     output_digest="sha256:" + hashlib.sha256(out["text"].encode()).hexdigest(),

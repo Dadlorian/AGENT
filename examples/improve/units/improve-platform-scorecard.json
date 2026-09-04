@@ -1,0 +1,117 @@
+{
+  "unit_id": "improve-platform-scorecard",
+  "template": "template:improvement-pass",
+  "note": "The task specification behind all four doors. The metric names are what the owner asked this area to show - tokens per done, attempts, which template held (state/briefs/context-75.md) - and their numbers are fixture values, chosen so one pass meets a failed gate, an inconclusive gate and four passing ones. Nothing here measures this repository: what IS measured is what the pass then does with them, read back out of the iteration records into the learned table. The gate replays harness/evaluation's own registered corpus at two pinned versions of its release reviewer, so what each candidate is really put through is that corpus and not a corpus of this platform's runs; README section 6, gap G1.",
+  "scorecard": {
+    "scorecard_id": "sc-improve-platform",
+    "metrics": [
+      {
+        "metric_id": "micros_per_done",
+        "direction": "down",
+        "current": 1.0,
+        "target": 0.6,
+        "scale": 1.0,
+        "means": "spend per definition of done reached, as a share of the spend it takes today"
+      },
+      {
+        "metric_id": "attempts_per_done",
+        "direction": "down",
+        "current": 2.4,
+        "target": 1.5,
+        "scale": 3.0,
+        "means": "attempts taken per definition of done reached, over a span of three attempts"
+      },
+      {
+        "metric_id": "template_hold_rate",
+        "direction": "up",
+        "current": 0.55,
+        "target": 0.8,
+        "scale": 1.0,
+        "means": "share of runs of a named template that reach their done without a revision"
+      }
+    ]
+  },
+  "candidates": [
+    {
+      "candidate_id": "rev-mp-01",
+      "metric_id": "micros_per_done",
+      "template": "template:contained-fix",
+      "slot": "attempter.model_class",
+      "value_if_promoted": 0.6,
+      "rationale": "fill the attempter slot from a cheaper model class and answer without reading the change",
+      "gate": {
+        "unit_ref": "agent:release-reviewer",
+        "unit_version": "1.4.1-rc",
+        "case_set_id": "cs-release-review",
+        "baseline_id": "bl-2026-08-27"
+      }
+    },
+    {
+      "candidate_id": "rev-mp-02",
+      "metric_id": "micros_per_done",
+      "template": "template:contained-fix",
+      "slot": "attempter.model_class",
+      "value_if_promoted": 0.6,
+      "rationale": "same slot, same saving, with the step that reads the change kept",
+      "gate": {
+        "unit_ref": "agent:release-reviewer",
+        "unit_version": "1.4.0",
+        "case_set_id": "cs-release-review",
+        "baseline_id": "bl-2026-08-27"
+      }
+    },
+    {
+      "candidate_id": "rev-ap-01",
+      "metric_id": "attempts_per_done",
+      "template": "template:contained-fix",
+      "slot": "escalation.trigger",
+      "value_if_promoted": 1.8,
+      "rationale": "escalate on the deciding check failing twice the same way, gated over the one case that shows it",
+      "gate": {
+        "unit_ref": "agent:release-reviewer",
+        "unit_version": "1.4.0",
+        "case_set_id": "cs-release-review",
+        "baseline_id": "bl-2026-08-27",
+        "case_filter": "cs-r2"
+      }
+    },
+    {
+      "candidate_id": "rev-ap-02",
+      "metric_id": "attempts_per_done",
+      "template": "template:contained-fix",
+      "slot": "contract.folded_outcome",
+      "value_if_promoted": 1.5,
+      "rationale": "fold the previous attempt's outcome into the next attempt's contract",
+      "gate": {
+        "unit_ref": "agent:release-reviewer",
+        "unit_version": "1.4.0",
+        "case_set_id": "cs-release-review",
+        "baseline_id": "bl-2026-08-27"
+      }
+    },
+    {
+      "candidate_id": "rev-th-01",
+      "metric_id": "template_hold_rate",
+      "template": "template:gated-release",
+      "slot": "judge.visible_checks",
+      "value_if_promoted": 0.8,
+      "rationale": "put the visible checks inside the contract so a run that cannot pass them never reaches the gate",
+      "gate": {
+        "unit_ref": "agent:release-reviewer",
+        "unit_version": "1.4.0",
+        "case_set_id": "cs-release-review",
+        "baseline_id": "bl-2026-08-27"
+      }
+    }
+  ],
+  "loop": {
+    "loop_ref": "compose-improvement-loop",
+    "iteration_ceiling": 8,
+    "per_iteration_micros": 250000,
+    "on_cap": "escalate"
+  },
+  "promotion": {
+    "authority": "evaluation_gate",
+    "rollback_to": "previous_checkpoint"
+  }
+}

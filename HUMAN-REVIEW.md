@@ -9,6 +9,7 @@ The review has a spine and a procedure. The spine is the two questionnaires, alr
 | Litmus (outward: the 2026 future state, 23 sections, 144 questions) | `docs/litmus/questionnaire.md` | `docs/litmus/answers/a.jsonl` to `d.jsonl`: score, label, evidence the checker re-verifies | `docs/litmus/scorecard.md` |
 | Conformance (inward: the PASS.md brief, 42 properties, 144 questions) | `full-stack-questionair/QUESTIONNAIRE.md` | `full-stack-questionair/answers.jsonl`: verdict, evidence tier, quote, falsifier | `python3 tools/conformance_answers.py grade` (37 proven, 5 shown) |
 | Combined | | | `docs/combined/reading.md`: both sets joined per PASS.md row, 6 tensions |
+| Litmus, second pass | | `docs/litmus/answers-v2/`: sections re-answered after the examples landed (`LITMUS_ANSWERS_DIR=answers-v2 python3 tools/litmus_answers.py check`) | `docs/litmus/scorecard-v2.md` once written |
 
 What to do with them, in order:
 
@@ -25,7 +26,7 @@ Run these from the repo root. If any last line differs, stop and start the revie
 
 | Command | Proves | Last line today |
 |---|---|---|
-| `python3 tools/validate_skills.py` | every skill conforms to the schema and every quote is in the knowledge base | `28 skills checked, 0 errors, 0 warnings` |
+| `python3 tools/validate_skills.py` | every skill conforms to the schema and every quote is in the knowledge base | `29 skills checked, 0 errors, 0 warnings` |
 | `python3 tools/kb.py verify` | the knowledge base still matches `PASS.md`, `TARGET.md` and the reference doc line for line | `kb verified: chains intact, ...` |
 | `python3 tools/kb.py ledger-verify` | no run record was altered or dropped | `ledger verified: 265 records, chain intact` |
 | `python3 tools/final_acceptance.py` | every measuring stick in `TARGET.md` T9 and T10 holds; runs all 28 harnesses | `15 of 15 hold` |
@@ -45,7 +46,7 @@ Run these from the repo root. If any last line differs, stop and start the revie
 | `STATUS-ARCHIVE.md` | Every Done row with the date and commit it closed at. | Pick three archived rows and reproduce their Result from the commands in this checklist. | A Result that the command no longer reproduces at HEAD. |
 | `README.md` | The map of the repo. | Every number in it should come from a command in section 1. | A count in the README that a command does not print. |
 
-## 3. `.claude/skills/` (28 skills)
+## 3. `.claude/skills/` (29 skills)
 
 Each skill is a directory: `skill.json` (the data, the only thing authored), `SKILL.md` (rendered from it, never edited), and `references/`: registries and usage notes, plus one rendered file per former skill folded into it at STATUS row 71 (`docs/fold/plan.json` says what folded where).
 

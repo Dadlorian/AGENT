@@ -5,7 +5,7 @@
 | | |
 |---|---|
 | 1 | `PASS.md` states current state (Part A) and a target architecture (Part B): a five-piece core, capability interfaces, cross-cutting guarantees, and two seams. |
-| 2 | `TARGET.md` extends that into a composability baseline and the measuring sticks (T1 to T10); this repo is `PASS.md` Part B built out as 28 focal Claude Code skills (folded from 103 at STATUS row 71; every former skill survives whole under its target's `references/`), 28 harnesses that prove each stack element swaps behind its interface, and 16 integration guides. |
+| 2 | `TARGET.md` extends that into a composability baseline and the measuring sticks (T1 to T10); this repo is `PASS.md` Part B built out as 29 focal Claude Code skills (folded from 103 at STATUS row 71; every former skill survives whole under its target's `references/`), 28 harnesses that prove each stack element swaps behind its interface, and 16 integration guides. |
 | 3 | Every claim a skill makes is either cited to a knowledge-base record with a verbatim quote, or marked `proposed`; nothing is asserted from memory. |
 | 4 | `STATUS.md` is the owner's single view of what is open; `STATUS-ARCHIVE.md` holds every closed row with its commit. `OWNER.md` holds the owner's corrections, one line each. |
 
@@ -35,7 +35,7 @@ Each skill also names its `-implement` sibling (how to build it on this stack) u
 | xc | 1 | `xc-guarantees` — the enforcement chain, budget and tenancy: where every guarantee is applied, whichever door the work came through. |
 | seam | 2 | Dispatch and State — the 2 boundaries with no standard to adopt. |
 | compose | 2 | `compose-workflow` (the six operators, loops, agents) and `compose-improvement-loop`. |
-| build | 3 | `build-skill-authoring`, `build-evidence` (definition of done, evidence records, adapter pairs, entry conformance, worked examples, versioning), `build-ceremony` (ceremonies, solution architecture, the litmus questionnaire). |
+| build | 4 | `build-skill-authoring`, `build-evidence` (definition of done, evidence records, adapter pairs, entry conformance, worked examples, versioning), `build-ceremony` (ceremonies, solution architecture, the litmus questionnaire), `build-example` (the seven user-view example areas). |
 
 Each skill's description is at most 60 words, so the text Claude Code keeps resident for all 28 is about 2,200 tokens (about 20,000 before the fold). A body stays under 500 lines; depth lives in `references/`, where every folded former skill is rendered whole with its citations. The fold plan is `docs/fold/plan.json`; the trigger eval before and after it is `docs/fold/` (`python3 tools/trigger_eval.py score after`).
 
@@ -51,6 +51,16 @@ Each skill's description is at most 60 words, so the text Claude Code keeps resi
 | Guides | `docs/guides/<element>.md`, one per stack element in `PASS.md` B3, rendered by `tools/render_guide.py` from the skill data and the harness step table; 16 of 16 runnable |
 | Acceptance | `docs/acceptance/matrix.md` walks five sticks (sourced, measured, swap, standard, guide) down every element; 16 of 16 accepted, the standard stick recorded absent by the owner in `absent.json` because page fetch is blocked |
 | Live mode | Every harness's `live` adapter is claimed, not measured: it has never run against the host from a session (STATUS row 37) |
+
+## The examples: the future state as its user meets it
+
+| | |
+|---|---|
+| Where | `examples/<area>/` for seven areas in the order a user meets them: run (the unit), ask, watch, steer, progress, done, improve; `docs/examples/index.md` is the seven-by-four-door matrix |
+| Shape | Each README carries six tables: the ideal for the area (cited), the standards, the one call at each of the four doors and the document behind it, what the user sees, how it composes from units and the six operators, and the extension points and gaps |
+| Checks | `bash examples/<area>/test.sh` is the visible check the author could see; `docs/night/hidden/<area>.sh` is the hidden check written by an isolated reviewer, run only at close |
+| Discipline | `.claude/skills/build-example/`; the design the run example follows is `docs/consumption/unit-design.md` (cell, unit, harness; contract mounts; driver and assessor; the success ladder) |
+| Vocabulary | `docs/reference/ontology.md`: task, attempt, execution, trajectory, artifact, evaluation, disposition; execution success through promotion success |
 
 ## The end-to-end example
 
@@ -162,6 +172,9 @@ Each skill's description is at most 60 words, so the text Claude Code keeps resi
 | `tools/skill_health.py` | Per-skill usage, findings, warnings, measured state and distance from the litmus target |
 | `tools/improvement_loop.py` | At a boundary, rank skills by health into a plan with one target and a stopping point each; check whether the plan moved |
 | `tools/usage_log.py` | PreToolUse hook: record every skill load to `state/usage.jsonl` |
+| `tools/checkpoint.sh` | Serialized commit for a crew: checks first, one commit at a time under a lock, push with retries |
+| `tools/examples_index.py` | The seven-area by four-door matrix from `examples/` on disk |
+| `tools/night_report.py` | The morning page after an overnight run, from records only |
 | `tools/skill_graph.py` | Generate `docs/skill-graph.md` from every `skill.json` as focal groups, each counted against the mermaid edge and text limits; exit 1 when one would not render |
 | `tools/manifest_facets.py` | Expand `docs/skill-manifest.json` into ideal/implement facets and emit the loop's sections |
 | `tools/gaps.py` | Aggregate research gaps into `docs/research/gaps.json`, and with `--apply`, add gap skills to the manifest |
@@ -170,7 +183,7 @@ Each skill's description is at most 60 words, so the text Claude Code keeps resi
 
 | Check | Command | Expected |
 |---|---|---|
-| Every skill valid | `python3 tools/validate_skills.py` | `28 skills checked, 0 errors, 0 warnings` |
+| Every skill valid | `python3 tools/validate_skills.py` | `29 skills checked, 0 errors, 0 warnings` |
 | Knowledge base intact | `python3 tools/kb.py verify` | chain and source-line checks pass |
 | Ledger intact | `python3 tools/kb.py ledger-verify` | `208 records, chain intact` |
 | Every stick holds | `python3 tools/final_acceptance.py` | `15 of 15 hold` (runs all 28 harness gates) |

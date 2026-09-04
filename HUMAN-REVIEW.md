@@ -48,13 +48,13 @@ Sample at least one skill per layer (`agentic-stack`, `core-components`, two `ca
 1. **The description in the frontmatter.** It says when to load the skill. Would you load it for the task it names, and only then? A description that fires on every task is a defect; so is one that never fires.
 2. **Two sourced rows.** Pick any two rows marked `sourced`. Run `python3 tools/kb.py show <id>` on the first id in the Evidence cell and confirm the quoted words appear in that record's `text`. The validator does this for every row; you are checking that the quote supports the statement, which no tool can.
 3. **Two proposed rows.** A proposed row is this repo's own design. Does the text say so, and is it a design choice rather than a fact someone should have looked up? A proposed row that reads as a fact is a research gap.
-4. **The definition of done.** Read `criterion`: it must be a command you can paste. `status: measured` means `tools/measure.py` ran it and `measured_run.commit` names the commit. Paste the criterion and compare with `expected`. `status: claimed` means nobody has run it; 7 of 28 are still claimed (STATUS rows 16 and 37 say why).
+4. **The definition of done.** Read `criterion`: it must be a command you can paste. `status: measured` means `tools/measure.py` ran it and `measured_run.commit` names the commit. Paste the criterion and compare with `expected`. `status: claimed` means nobody has run it; all 28 are measured, at commits before the fold; the next boundary re-runs them (STATUS row 37 says why live mode stays claimed).
 5. **Adapters** (`cap-` and `seam-` only). The today adapter names what runs on the host per `PASS.md` B3; the second names a different execution model. `cannot` should be a real limitation, not a compliment.
 6. **`builds_on` and `composes_with`.** Follow one link. The linked skill should add something this one does not restate.
 
 A problem looks like: a quote not in the record; a proposed row written as a fact; a criterion with prose in it; a measured skill whose criterion fails at HEAD; a description that would load on any task; an ideal skill and its `-implement` sibling that say the same thing twice.
 
-Open question for you: `state/grandfathered.json` lists 102 of the 103 skills, which lets the validator keep restatement findings as warnings rather than errors, and lets `status: measured` stand without a run. Today no skill needs either exemption (0 warnings; every measured skill has a run). Emptying the list makes both rules hard errors from here on.
+Open question for you: `state/grandfathered.json` lists every skill, which lets the validator keep restatement findings as warnings rather than errors, and lets `status: measured` stand without a run. Today no skill needs either exemption (0 warnings; every measured skill has a run). Emptying the list makes both rules hard errors from here on.
 
 ## 4. `kb/` (the knowledge base)
 

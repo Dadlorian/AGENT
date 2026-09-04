@@ -186,7 +186,7 @@ Each skill's description is at most 60 words, so the text Claude Code keeps resi
 | 1 | 810 of 2725 rows across every `skill.json` (29.7%) are `origin: proposed`: this repo's own design, under the 30% stick, not sourced facts. |
 | 2 | No standard's version has been verified against its published spec: all 660 research records are `search-only`, because page fetch is blocked here (STATUS rows 14 and 45). The standard stick is recorded absent by the owner for all 16 elements. |
 | 3 | Every harness's live adapter is claimed, not measured; no run has reached the host from a session (STATUS row 37). |
-| 4 | The definition of done of every folded skill is its former implement facet's; 21 of 28 are measured. |
+| 4 | Every skill's definition of done is measured, carried over from its former implement facet; the measured runs predate the fold (their commits are recorded) and are re-run at the next boundary. |
 | 5 | Every reviewer to date is a model (Sonnet or Opus); one Sonnet review missed both planted defects and was discarded and re-run. `HUMAN-REVIEW.md` is the first human pass. |
 | 6 | `state/grandfathered.json` still lists every skill, exempting them from two validator rules none of them needs. |
 | 7 | Every skill is an improvement candidate until the usage hook has recorded a phase of loads; the first plan names seven skills with a misaligned or absent litmus answer. |

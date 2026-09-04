@@ -17,11 +17,24 @@ from __future__ import annotations
 
 import os as _errors_os
 import sys as _errors_sys
-_errors_path = _errors_os.path.join(
-    _errors_os.path.dirname(_errors_os.path.abspath(__file__)), "..", "errors")
-if _errors_path not in _errors_sys.path:
-    _errors_sys.path.append(_errors_path)  # appended, never inserted at 0: this
-    # harness's own adapters/ package must resolve before errors/adapters/ does
+# Found by walking up from this file's own directory, not by a fixed "../errors"
+# offset: several harnesses' test.sh copy interface.py into out/breakage/ (and
+# deeper) for a deliberate-breakage run, and a fixed relative offset would miss
+# harness/errors/problem.py from there. The walk stays inside the repository
+# tree either way (out/breakage/ is still nested under this harness's own
+# directory), and stops at the first "errors" sibling that actually has it.
+_search_dir = _errors_os.path.dirname(_errors_os.path.abspath(__file__))
+for _ in range(10):
+    _candidate = _errors_os.path.join(_search_dir, "errors")
+    if _errors_os.path.isfile(_errors_os.path.join(_candidate, "problem.py")):
+        if _candidate not in _errors_sys.path:
+            _errors_sys.path.append(_candidate)  # appended, never inserted at 0: this
+            # harness's own adapters/ package must resolve before errors/adapters/ does
+        break
+    _up = _errors_os.path.dirname(_search_dir)
+    if _up == _search_dir:
+        break
+    _search_dir = _up
 from problem import render_body  # noqa: E402  -- errors-q5: the one shared point every
 # capability's own registry gate renders its wire body through, instead of building one
 # itself (harness/errors/problem.py owns render_body; this is not a second copy of it).

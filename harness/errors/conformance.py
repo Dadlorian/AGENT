@@ -30,6 +30,11 @@ ADAPTERS = {"dryrun": DryRunAdapter, "live": LiveProblemFactory, "second": EdgeF
 # Product names would live in adapters/ and README.md's env table. None exist for this
 # capability (PASS.md B3: *absent*), so this scan only guards against one appearing later.
 PRODUCTS = re.compile(r"(litellm|openrouter|gemini|sglang|vllm|openai|anthropic|cursor|goose|firecracker|temporal|langfuse)", re.I)
+# A direct call to the Problem dataclass constructor. Exactly one should exist
+# anywhere under this harness: construct_problem() in problem.py (errors-q5).
+# The (?<![\w.]) guard keeps this off "ProblemException(" (no "(" right after
+# "Problem") and off attribute access / imports that merely name the class.
+PROBLEM_CONSTRUCT_CALL = re.compile(r"(?<![\w.])Problem\(")
 
 
 def raised(adapter: ErrorsAdapter, suffix: str, detail: str, want_type: str, **kw) -> dict:
@@ -181,11 +186,40 @@ def product_scan(root: str) -> tuple[int, list]:
     return len(hits), hits
 
 
+def construction_scan(root: str) -> tuple[int, list, str | None]:
+    """errors-q5: 'Is the production of the failure object owned by one place
+    the core imports, so a new capability adapter cannot invent its own
+    failure shape?' Mechanically: exactly one call to the Problem dataclass
+    constructor should exist anywhere under this harness -- inside
+    construct_problem() in problem.py. Every other function that needs a
+    Problem (construct()'s registry gate, chain(), problem_from_body()/
+    reshape_from_body()) routes through that one function; an adapter that
+    built a Problem itself -- rather than raising through construct() -- would
+    show up here as a second call site."""
+    hits = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        dirnames[:] = [d for d in dirnames if d not in ("out", "__pycache__")]
+        for name in sorted(filenames):
+            if not name.endswith(".py"):
+                continue
+            path = os.path.join(dirpath, name)
+            rel = os.path.relpath(path, root)
+            for i, line in enumerate(open(path, encoding="utf-8", errors="replace"), 1):
+                if PROBLEM_CONSTRUCT_CALL.search(line):
+                    hits.append((rel, i, line.strip()))
+    owner_hits = [h for h in hits if h[0] == "problem.py"]
+    stray_hits = [h for h in hits if h[0] != "problem.py"]
+    owner = f"{owner_hits[0][0]}:{owner_hits[0][1]}" if len(owner_hits) == 1 else None
+    return len(stray_hits), [f"{r}:{i}: {t}" for r, i, t in stray_hits], owner
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description="Conformance run for the errors interface.")
     ap.add_argument("--adapter", action="append", choices=sorted(ADAPTERS), default=[])
     ap.add_argument("--report", help="write the report JSON here")
     ap.add_argument("--product-scan", metavar="DIR", help="scan a tree for product names")
+    ap.add_argument("--construction-scan", metavar="DIR",
+                     help="scan a tree for a second Problem-construction path (errors-q5)")
     args = ap.parse_args(argv)
 
     if args.product_scan:
@@ -193,6 +227,13 @@ def main(argv=None) -> int:
         print("\n".join(hits) or "no product name in this harness")
         print(f"product_hits={count}")
         return 1 if count else 0
+
+    if args.construction_scan:
+        stray_count, stray_hits, owner = construction_scan(os.path.abspath(args.construction_scan))
+        print("\n".join(stray_hits) or "no Problem construction outside problem.py")
+        print(f"owner={owner or 'MISSING'}")
+        print(f"stray_construction_hits={stray_count}")
+        return 1 if (stray_count or not owner) else 0
 
     reports, failures = [], 0
     for name in args.adapter or ["dryrun"]:

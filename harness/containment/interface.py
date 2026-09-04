@@ -27,6 +27,8 @@ PROBLEM_REGISTRY = {  # suffix -> (status, title, retryable)
     "isolation-unavailable": (503, "No isolation adapter could admit the unit", True),
     "runtime-unavailable": (503, "No agent runtime could serve the turn", True),
     "budget-exhausted": (402, "The unit would cross its ceiling", False),
+    "isolation-operation-unsupported": (501,
+        "This adapter does not serve this sandbox lifecycle operation", False),
 }
 
 
@@ -79,7 +81,12 @@ class IsolationDeclaration:
 
 @dataclass(frozen=True)
 class UnitContext:
-    """The stamps the platform applies around every unit. A caller asks for none of them."""
+    """The stamps the platform applies around every unit. A caller asks for none of them.
+
+    Every field here is read - not merely carried - by a guarantee at each of
+    admission, dispatch and a capability call: see context_guarantees.py,
+    wired the same way into every adapter (dryrun, second, live). C01-F.
+    """
     correlation_id: str
     run_id: str
     actor: str
@@ -105,6 +112,16 @@ class ContainmentReport:
     egress_attempts_blocked: int
     secrets_seen_inside: int           # must be 0
     containment_marker: str            # read from the running unit, not from the binding
+
+
+@dataclass(frozen=True)
+class SnapshotHandle:
+    """What pause returns: a checkpoint of a unit's memory and filesystem state,
+    never the unit itself. `state_digest` is the digest a resume (or a fork off
+    this snapshot) must reproduce before any further syscall runs."""
+    snapshot_id: str
+    unit_id: str
+    state_digest: str
 
 
 @dataclass(frozen=True)
@@ -164,6 +181,16 @@ class TurnResult:
 
 
 @dataclass(frozen=True)
+class LifecycleCapabilities:
+    """Every member defaults to false: an adapter offers none of these until it
+    says so. Machine-state lifecycle operations, not agent-runtime ones -
+    `pause`/`resume`/`fork` act on the sandbox, never on the turn it serves."""
+    pause: bool = False
+    resume: bool = False
+    fork: bool = False
+
+
+@dataclass(frozen=True)
 class AdapterBinding:
     """Read by the adapter factory and by the conformance run. No core code and
     no caller reads this object or branches on `adapter`."""
@@ -174,6 +201,7 @@ class AdapterBinding:
     cancel_floor_s: float
     containment_marker: str
     execution_model: Mapping[str, str]   # axis -> this adapter's value; the pair is compared, never one
+    lifecycle_offered: LifecycleCapabilities = field(default_factory=LifecycleCapabilities)
 
 
 # --- The interface every containment technology implements -------------------
@@ -207,6 +235,35 @@ class ContainedAgentAdapter(ABC):
     @abstractmethod
     def inspect_containment(self, handle: AdmissionHandle) -> ContainmentReport:
         """Assert containment from outside the unit."""
+
+    # -- Machine-state lifecycle ----------------------------------------------
+    # Capability operations, not ad hoc scripting: a caller calls them the same
+    # way on every adapter. Where the isolation class beneath an adapter cannot
+    # serve one, the operation returns a defined, typed unsupported result
+    # (urn:agentic:problem:isolation-operation-unsupported, 501) rather than
+    # silently degrading or emulating it - so the base class raises that by
+    # default, and only an adapter whose binding declares the capability
+    # overrides it with a real implementation.
+    def pause(self, handle: AdmissionHandle) -> SnapshotHandle:
+        """Checkpoint the unit's memory and filesystem state."""
+        raise Problem("isolation-operation-unsupported",
+                      f"{self.binding().adapter} does not serve pause: not offered by "
+                      f"this isolation class", operation="pause", unit_id=handle.unit_id)
+
+    def resume(self, snapshot: SnapshotHandle) -> AdmissionHandle:
+        """Restore a paused unit from its snapshot. The state digest of the
+        resumed unit, taken before any further syscall, must equal
+        `snapshot.state_digest`."""
+        raise Problem("isolation-operation-unsupported",
+                      f"{self.binding().adapter} does not serve resume: not offered by "
+                      f"this isolation class", operation="resume", snapshot_id=snapshot.snapshot_id)
+
+    def fork(self, handle: AdmissionHandle) -> AdmissionHandle:
+        """Clone a paused or running unit from a shared base, without
+        re-provisioning (re-running admission's own resolution and validation)."""
+        raise Problem("isolation-operation-unsupported",
+                      f"{self.binding().adapter} does not serve fork: not offered by "
+                      f"this isolation class", operation="fork", unit_id=handle.unit_id)
 
     # -- Agent runtime -------------------------------------------------------
     @abstractmethod

@@ -47,6 +47,7 @@ key and actor are stamped onto the envelope by `call.py` above the marker, witho
 | `PROVENANCE_KEY_FILE` | the file holding the key this host signs with (hex, at least 32 bytes) | as above |
 | `TRANSPARENCY_LOG_URL`, `IDENTITY_URL`, `LOG_TIMEOUT_S` | the second adapter's log and identity routes, supplied whole by the operator | the same state machine runs in process |
 | `PROVENANCE_FAIL`, `PROVENANCE_OFFLINE`, `SKIP_PROVENANCE`, `PROVENANCE_CLOCK` | the failure paths and the fixed clock the gate uses | off |
+| `PROVENANCE_EXTERNAL_VERIFIER_BIN` | the name of an external verifier binary on PATH (e.g. `cosign`) that shares no codebase with this repository; `verifier_identity()` in `conformance.py` looks it up and reports it as the independent verifier when found | no such binary is looked for, `external_verifier_independent` is `false`, and the report says so in `external_verifier` (C11-F: the honest gap, not an in-repo substitute) |
 
 There is no endpoint and no socket: today's component for this capability is a local store, so the
 live adapter opens files and imports no network library at all.

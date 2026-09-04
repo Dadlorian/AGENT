@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Dadlorian/AGENT/schemas/egress-log.schema.json",
+  "title": "Egress access-decision record",
+  "description": "One line of kb/egress-log.jsonl: the egress proxy's own record of one allow or block decision for one outbound access attempt made while researching or executing agent-directed code. Built from, and reconciled against, kb/research.jsonl by tools/reconcile_egress.py -- never hand-edited except by the builder or a deliberate breakage test.",
+  "type": "object",
+  "required": ["id", "type", "decision", "tool", "host", "url", "research_id", "date"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {"type": "string", "pattern": "^G-[0-9]{5}$", "description": "G-nnnnn, assigned in build order"},
+    "type": {"const": "egress-decision"},
+    "decision": {"enum": ["allow", "block"], "description": "what the proxy did with this attempt"},
+    "tool": {"enum": ["search", "fetch"], "description": "search: an allowlisted search API call, whose result may cite a URL never itself contacted; fetch: a direct attempt to reach the cited URL's host"},
+    "host": {"type": "string", "description": "the host actually contacted through the proxy: the search API host for tool=search, the cited URL's host for tool=fetch"},
+    "url": {"type": "string", "format": "uri", "description": "the URL the decision concerns (the cited URL for both tools, even though tool=search never contacts it directly)"},
+    "reason": {"type": ["string", "null"], "description": "the proxy's own reason string for a block decision (e.g. EGRESS_BLOCKED); null for an allow decision"},
+    "research_id": {"type": ["string", "null"], "description": "the kb/research.jsonl record (X-...) this decision belongs to; null means the decision has no matching research record -- the exact failure mode the reconciliation check exists to catch"},
+    "date": {"type": "string", "format": "date"},
+    "prev": {"type": "string", "description": "hash of the previous record in the chain, or 'genesis'"},
+    "hash": {"type": "string", "description": "sha256 of this record's canonical JSON (all fields but hash), chaining the log"}
+  }
+}

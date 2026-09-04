@@ -31,6 +31,7 @@ from interface import (AdapterBinding, AdmissionHandle, ContainedAgentAdapter, C
                        IsolationDeclaration, Problem, Session, SessionCapabilities, TurnFrame,
                        TurnRequest, UnitContext, UnitResult, digest)
 from adapters.hostside import Jail
+import context_guarantees
 
 MARKER = "contained-by:firecracker-microvm"
 
@@ -112,6 +113,7 @@ class Adapter(ContainedAgentAdapter):
                           f"profile {declaration.profile!r} is not resolvable by this adapter",
                           retry_after_s=60, correlation_id=context.correlation_id)
         unit_id = "fc-" + uuid.uuid4().hex[:10]
+        context_guarantees.LEDGER.guard_admission(context, unit_id)   # C01-F: every field, read here
         env = dict(os.environ,
                    CELL_UNIT_ID=unit_id,
                    CELL_TEMPLATE=PROFILES[declaration.profile]["template"],
@@ -143,6 +145,7 @@ class Adapter(ContainedAgentAdapter):
                 pass
         if unit.sock is not None:
             unit.sock.close()
+        context_guarantees.LEDGER.release(handle.unit_id)   # C01-F: the ledger's claim on this unit ends here
         made, blocked = self._egress_counters(unit.unit_id)
         return UnitResult(exit_status=0 if unit.probe_done else 1, output_digest=unit.output_digest,
                           wall_seconds=round(time.monotonic() - unit.started, 3) if unit.started else 0.0,
@@ -178,6 +181,8 @@ class Adapter(ContainedAgentAdapter):
                 stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, text=True)
         unit.reader = threading.Thread(target=self._read_frames, args=(unit,), daemon=True)
         unit.reader.start()
+        # C01-F: capability-call point - the first RPC into the running unit
+        context_guarantees.LEDGER.guard_capability_call(unit.ctx, unit.unit_id, "acp.initialize")
         agreed = self._call(unit, "initialize", {
             "protocolVersion": 1,
             "clientCapabilities": {"streaming": offered.streaming,
@@ -201,6 +206,7 @@ class Adapter(ContainedAgentAdapter):
             raise Problem("document-invalid",
                           f"grace {request.grace_s}s is below this adapter's cancel floor {floor}s")
         unit = self._unit(session.unit_id)
+        context_guarantees.LEDGER.guard_dispatch(unit.ctx, unit.unit_id)   # C01-F: dispatch point
         unit.started = time.monotonic()
         unit.prompt_id = self._send(unit, "session/prompt",
                                     {"sessionId": session.session_id,

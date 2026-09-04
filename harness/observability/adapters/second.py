@@ -33,7 +33,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from interface import (MAPPING_VERSION, OPERATION_NAMES, RUN_ID_KEY, CorrelationRecord,
-                       EmissionContext, INSTRUMENT_NAMES, MappingDescription, Problem,
+                       EmissionContext, INSTRUMENT_NAMES, LogRecord, MappingDescription, Problem,
                        Signal, TelemetryAdapter, TelemetryUnit, problem)
 
 try:                                    # guarded; the pipeline runs without it
@@ -70,29 +70,56 @@ def _unattrs(items: list[dict]) -> dict:
     return out
 
 
+# kind -> (resource-bucket key, scope-list key). log_record follows the
+# OpenTelemetry Logs Data Model's own bucket names (resourceLogs/scopeLogs);
+# problem_object has no OTel signal of its own, so it gets a platform-specific
+# bucket built the same shape as the other three rather than being folded into
+# one of them, which is exactly the "outside the correlation model" arrangement
+# C09-F closes.
+_BUCKETS = {"span": ("resourceSpans", "scopeSpans"),
+            "metric": ("resourceMetrics", "scopeMetrics"),
+            "log_record": ("resourceLogs", "scopeLogs"),
+            "problem_object": ("resourceProblems", "scopeProblems")}
+
+
 def otlp_body(signals: list[dict]) -> dict:
     """One OTLP/HTTP JSON body for a batch of signals. Shared with adapters/live.py
     so both backends receive byte-identical payloads."""
     body: dict = {}
     for sig in signals:
-        res = {"resource": {"attributes": _attrs(sig["resource"])},
-               "scopeSpans" if sig["kind"] == "span" else "scopeMetrics": []}
+        kind = sig["kind"]
+        res_key, scope_key = _BUCKETS[kind]
+        res = {"resource": {"attributes": _attrs(sig["resource"])}, scope_key: []}
         scope = {"scope": {"name": "agentic.platform", "version": MAPPING_VERSION}}
         u = sig["unit"]
-        if sig["kind"] == "span":
+        if kind == "span":
             scope["spans"] = [{
                 "traceId": u.get("trace_id") or "", "spanId": "", "name": u["operation"],
                 "kind": 1, "startTimeUnixNano": str(_nanos(u["started_at"])),
                 "endTimeUnixNano": str(_nanos(u["ended_at"])),
                 "status": {"code": 1 if u["outcome"] == "ok" else 2},
                 "attributes": _attrs(u.get("attributes") or {})}]
-            res["scopeSpans"].append(scope)
-            body.setdefault("resourceSpans", []).append(res)
-        else:
+        elif kind == "metric":
             scope["metrics"] = [{"name": u["instrument"], "gauge": {"dataPoints": [
                 {"asDouble": u["value"], "attributes": _attrs(u.get("attributes") or {})}]}}]
-            res["scopeMetrics"].append(scope)
-            body.setdefault("resourceMetrics", []).append(res)
+        elif kind == "log_record":
+            # TraceId, SpanId and TraceFlags as top-level fields, per the
+            # OpenTelemetry Logs Data Model (stable specification) - never
+            # folded into resource attributes.
+            scope["logRecords"] = [{
+                "traceId": u.get("trace_id") or "", "spanId": u.get("span_id") or "",
+                "flags": u.get("trace_flags") or 0, "severityText": u.get("severity_text", ""),
+                "body": {"stringValue": u.get("body", "")},
+                "attributes": _attrs(u.get("attributes") or {})}]
+        else:  # problem_object
+            scope["problems"] = [{
+                "traceId": u.get("trace_id") or "", "spanId": u.get("span_id") or "",
+                "type": u.get("type", ""), "title": u.get("title", ""),
+                "status": u.get("status", 0), "detail": u.get("detail", ""),
+                "retryable": u.get("retryable", False),
+                "correlationId": u.get("correlation_id") or ""}]
+        res[scope_key].append(scope)
+        body.setdefault(res_key, []).append(res)
     return body
 
 
@@ -117,6 +144,14 @@ class Adapter(TelemetryAdapter):
         self._receive(otlp_body([{"kind": "metric", "resource": copy.deepcopy(ctx.resource),
                                   "unit": {"instrument": INSTRUMENT_NAMES.get(instrument, instrument),
                                            "value": value, "attributes": attributes or {}}}]))
+
+    def log(self, ctx: EmissionContext, record: LogRecord) -> None:
+        self._receive(otlp_body([{"kind": "log_record", "resource": copy.deepcopy(ctx.resource),
+                                  "unit": asdict(record)}]))
+
+    def emit_problem(self, ctx: EmissionContext, prob: Problem) -> None:
+        self._receive(otlp_body([{"kind": "problem_object", "resource": copy.deepcopy(ctx.resource),
+                                  "unit": prob.as_dict()}]))
 
     def describe_mapping(self) -> MappingDescription:
         return MappingDescription(version=MAPPING_VERSION, operations=dict(OPERATION_NAMES))
@@ -154,14 +189,16 @@ class Adapter(TelemetryAdapter):
         return body
 
     def _export(self, body: dict) -> None:
-        for kind, key, inner in (("span", "resourceSpans", "scopeSpans"),
-                                 ("metric", "resourceMetrics", "scopeMetrics")):
+        item_key = {"span": "spans", "metric": "metrics",
+                    "log_record": "logRecords", "problem_object": "problems"}
+        unit_of = {"span": self._span_unit, "metric": self._metric_unit,
+                   "log_record": self._log_unit, "problem_object": self._problem_unit}
+        for kind, (key, inner) in _BUCKETS.items():
             for res in body.get(key, []):
                 resource = _unattrs(res["resource"]["attributes"])
                 for scope in res[inner]:
-                    for item in scope.get("spans", []) or scope.get("metrics", []):
-                        unit = (self._span_unit(item) if kind == "span"
-                                else self._metric_unit(item))
+                    for item in scope.get(item_key[kind], []):
+                        unit = unit_of[kind](item)
                         row = {"kind": kind, "run_id": resource.get(RUN_ID_KEY, ""),
                                "resource_json": json.dumps(resource), "unit_json": json.dumps(unit)}
                         self._rows.append(row)
@@ -182,3 +219,16 @@ class Adapter(TelemetryAdapter):
         point = metric["gauge"]["dataPoints"][0]
         return {"instrument": metric["name"], "value": point["asDouble"],
                 "attributes": _unattrs(point["attributes"])}
+
+    @staticmethod
+    def _log_unit(rec: dict) -> dict:
+        return {"body": rec["body"].get("stringValue", ""), "severity_text": rec["severityText"],
+                "trace_id": rec["traceId"] or None, "span_id": rec["spanId"] or None,
+                "trace_flags": rec.get("flags") or None, "attributes": _unattrs(rec["attributes"])}
+
+    @staticmethod
+    def _problem_unit(p: dict) -> dict:
+        return {"type": p["type"], "title": p["title"], "status": p["status"],
+                "detail": p["detail"], "retryable": p["retryable"],
+                "correlation_id": p.get("correlationId") or None,
+                "trace_id": p["traceId"] or None, "span_id": p["spanId"] or None}

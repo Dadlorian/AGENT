@@ -16,7 +16,7 @@ from dataclasses import asdict
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from interface import (MAPPING_VERSION, OPERATION_NAMES, RUN_ID_KEY, CorrelationRecord,
-                       EmissionContext, INSTRUMENT_NAMES, MappingDescription, Problem,
+                       EmissionContext, INSTRUMENT_NAMES, LogRecord, MappingDescription, Problem,
                        Signal, TelemetryAdapter, TelemetryUnit, problem)
 
 
@@ -39,6 +39,14 @@ class Adapter(TelemetryAdapter):
         self._store.append({"kind": "metric", "resource": copy.deepcopy(ctx.resource),
                             "unit": {"instrument": INSTRUMENT_NAMES.get(instrument, instrument),
                                      "value": value, "attributes": attributes or {}}})
+
+    def log(self, ctx: EmissionContext, record: LogRecord) -> None:
+        self._store.append({"kind": "log_record", "resource": copy.deepcopy(ctx.resource),
+                            "unit": asdict(record)})
+
+    def emit_problem(self, ctx: EmissionContext, prob: Problem) -> None:
+        self._store.append({"kind": "problem_object", "resource": copy.deepcopy(ctx.resource),
+                            "unit": prob.as_dict()})
 
     def describe_mapping(self) -> MappingDescription:
         return MappingDescription(version=MAPPING_VERSION, operations=dict(OPERATION_NAMES))

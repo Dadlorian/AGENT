@@ -16,10 +16,11 @@
     "url": {"type": "string", "format": "uri"},
     "title": {"type": "string"},
     "snippet": {"type": "string", "description": "verbatim text from the search result"},
-    "read": {"type": ["string", "null"], "description": "verbatim excerpt if the page could be fetched; null if fetch was blocked"},
-    "status": {"enum": ["search-only", "fetched"], "description": "search-only: title/snippet from a search result; fetched: page content was read"},
+    "read": {"type": ["string", "null"], "description": "verbatim excerpt if the page could be fetched; null if fetch was blocked or never attempted"},
+    "status": {"enum": ["search-only", "fetched", "blocked"], "description": "search-only: title/snippet from a search result, no direct fetch attempted; fetched: page content was read; blocked: a direct fetch was attempted and the egress proxy refused it (see egress_ref) -- the claim then rests on the search-result snippet, not on a live read"},
     "claim": {"type": "string", "description": "what this record supports, in one sentence"},
     "agent": {"type": "string"},
-    "date": {"type": "string", "format": "date"}
+    "date": {"type": "string", "format": "date"},
+    "egress_ref": {"type": ["string", "null"], "description": "id of the matching kb/egress-log.jsonl decision (G-nnnnn) for this record's access attempt; required in practice when status is fetched or blocked, since those are the two statuses that name a real proxy decision"}
   }
 }

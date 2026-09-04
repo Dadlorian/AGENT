@@ -69,6 +69,15 @@ PY
 check "the two adapters differ in execution model on 2 or more axes" "$?" "0"
 grep -q "axes_differing=" out/axes.log && ok "$(tail -1 out/axes.log)" || bad "axes did not differ"
 
+echo "2b. one construction point: no second place builds a Problem (errors-q5)"
+python3 conformance.py --construction-scan . > out/construction-scan.log 2>&1
+check "construction scan exits 0" "$?" "0"
+grep -q "^owner=problem.py:" out/construction-scan.log \
+  && ok "the shared point ($(grep '^owner=' out/construction-scan.log | cut -d= -f2)) is the sole Problem(...) call site" \
+  || bad "no single owning call site found"
+grep -q "^stray_construction_hits=0$" out/construction-scan.log \
+  && ok "0 Problem(...) constructions outside problem.py" || bad "a second construction path exists"
+
 echo "3. no product name anywhere in this harness"
 python3 conformance.py --product-scan . > out/scan.log 2>&1
 check "product scan over the shipped tree exits 0" "$?" "0"
@@ -76,7 +85,7 @@ grep -q "product_hits=0" out/scan.log && ok "0 hits (PASS.md B3 records no compo
 
 echo "4. deliberate breakage: the edge adapter forwards an untyped upstream body unchanged"
 rm -rf out/breakage && mkdir -p out/breakage
-cp interface.py conformance.py call.py out/breakage/
+cp interface.py conformance.py call.py problem.py out/breakage/
 cp -r adapters out/breakage/
 python3 - <<'PY'
 # The bug cap-errors-implement names directly: an edge filter's most likely
@@ -103,6 +112,36 @@ PY
 check "the breakage run exits non-zero" "$?" "1"
 grep -q "adapters/second.py" out/breakage.log && ok "the run names the file the breakage broke" || bad "file not named"
 grep -Eq "FAIL|Traceback" out/breakage.log && ok "an untyped upstream body is no longer converted; the check catches it" || bad "the breakage went unnoticed"
+
+echo "4b. deliberate breakage: a capability adapter invents its own failure shape"
+rm -rf out/breakage2 && mkdir -p out/breakage2
+cp interface.py conformance.py call.py problem.py out/breakage2/
+cp -r adapters out/breakage2/
+python3 - <<'PY'
+# The exact defect errors-q5 asks whether the platform can still have: a new
+# capability adapter builds a Problem itself instead of raising through
+# construct(). This edits the edge adapter's own untyped/wrong-media-type
+# fallback to build the wire body's dataclass by hand -- same field values,
+# but a second Problem(...) call site outside problem.py.
+path = "out/breakage2/adapters/second.py"
+src = open(path).read().replace(
+    '            return construct(\n'
+    '                "adapter-unavailable",\n'
+    '                f"upstream answered {wire.get(\'status\')} {media_type or \'(no media type)\'}: {raw[:200]}",\n'
+    '                retry_after_s=30)\n',
+    '            # the breakage: this adapter invents its own Problem instead of\n'
+    '            # raising into the one shared construction point\n'
+    '            return Problem(PROBLEM_BASE + "adapter-unavailable",\n'
+    '                "A capability adapter is down, or raised an untyped failure", 503,\n'
+    '                f"upstream answered {wire.get(\'status\')} {media_type or \'(no media type)\'}: {raw[:200]}",\n'
+    '                True, None, (), {"retry_after_s": 30})\n')
+assert src != open(path).read(), "the breakage pattern was not found; test.sh is out of sync with second.py"
+open(path, "w").write(src)
+PY
+(cd out/breakage2 && python3 conformance.py --construction-scan . > ../breakage2.log 2>&1)
+check "the construction-scan run exits non-zero" "$?" "1"
+grep -q "adapters/second.py" out/breakage2.log && ok "the scan names the file the breakage broke" || bad "file not named"
+grep -q "^stray_construction_hits=1$" out/breakage2.log && ok "a second Problem(...) call site is caught" || bad "the breakage went unnoticed"
 
 if [ "${1:-}" = "--live" ]; then
   echo "5. live: real deployment context"

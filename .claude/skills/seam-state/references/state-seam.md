@@ -5,7 +5,16 @@ read may assume; this file carries the four things that are too long to state th
 **proposed** and taken from `docs/decomposition.md` section 2.2 unless a kb id is named. Source ids resolve with
 `python3 tools/kb.py show <id>`.
 
-## 1. The closed record-kind list
+## 1. The closed record-kind list (canonical, version 1)
+
+**This table is the one canonical enumeration of record kinds.** Every other appearance of the kind
+list anywhere in this repo — the `StateRecord` example in `SKILL.md`, the full-shape schema in
+section 2 below, the prose in `docs/decomposition.md` 2.2.1, and any future generated doc — derives
+from it and must name the same ten kinds, in count and in membership. `tools/check_record_kinds.py`
+parses this table plus every other occurrence and fails the build on a mismatch, so a change in
+cardinality here can no longer silently diverge from a paraphrase elsewhere. A change to the list
+bumps the version above; readers must know which version of a kind an old record was written under
+(see `kind_version` in section 2).
 
 One log holds all of it. The kind is what this seam interprets and what the store beneath it never reads
 (`cap-state-persistence` keeps the record opaque).

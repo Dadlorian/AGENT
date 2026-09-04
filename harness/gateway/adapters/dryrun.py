@@ -12,7 +12,8 @@ import hashlib
 import os
 
 from interface import (CancelAck, ClaimTicket, CompletionRequest, CompletionResult,
-                       ModelAccessAdapter, Problem, RouteDecision, estimate_tokens_in, price_micros)
+                       ModelAccessAdapter, Problem, RouteDecision, apply_mechanisms,
+                       estimate_tokens_in, price_micros)
 
 
 class DryRunAdapter(ModelAccessAdapter):
@@ -26,17 +27,22 @@ class DryRunAdapter(ModelAccessAdapter):
                           "the dry-run endpoint was made unreachable by DRYRUN_FAIL=1",
                           model_class=request.model_class, retry_after_s=1)
         seed = hashlib.sha256((decision.member + request.digest()).encode()).hexdigest()
+        cache_hit = self.note_cache(request)            # observed against the store, not assumed
         tokens_in = estimate_tokens_in(request)
         tokens_out = min(request.max_output_tokens, 40 + int(seed[:2], 16) % 24)
-        text = (f"[class {request.model_class} / {decision.contract}] "
-                f"{request.messages[-1]['content'][:60]} -> settled in {tokens_out} tokens (seed {seed[:8]})")
+        base_text = (f"[class {request.model_class} / {decision.contract}] "
+                     f"{request.messages[-1]['content'][:60]} -> settled in {tokens_out} tokens (seed {seed[:8]})")
+        mech = apply_mechanisms(request, seed, cache_hit, base_text, tokens_out)
         self.observed_marker = self.declared_marker    # what the response said
         return ClaimTicket(
             ticket_id="tkt-" + seed[:16],
             state="redeemed",
             model_class=request.model_class,
-            result=CompletionResult(text, price_micros(decision, tokens_in, tokens_out),
-                                    tokens_in, tokens_out, "reconciled"),
+            result=CompletionResult(mech["text"], price_micros(decision, mech["tokens_in"], mech["tokens_out"]),
+                                    mech["tokens_in"], mech["tokens_out"], "reconciled",
+                                    cached_tokens=mech["cached_tokens"], reasoning_tokens=mech["reasoning_tokens"],
+                                    tool_calls=mech["tool_calls"], structured_output=mech["structured_output"],
+                                    stream_chunks=mech["stream_chunks"]),
             cancellable=False,
         )
 

@@ -142,8 +142,24 @@ python3 out/breakage/conformance.py --adapter second --report out/breakage-b.jso
 check "the untouched adapter still exits 0" "$?" "0"
 grep -q "conformance PASSED: 14/14" out/breakage-second.log && ok "singling out one adapter: the other is still 14/14" || bad "both adapters failed"
 
+echo "5. concern-policy-q3: work resumed after a pause, queue or restart is decided again"
+python3 resume.py > out/resume.log 2>&1
+check "the resume check exits 0" "$?" "0"
+grep -q "RESUME_CHECK PASSED" out/resume.log && ok "8/8 resume assertions passed" || bad "resume check did not pass"
+grep -q "post_resume=denied:deny-tool-call-after-policy-change" out/resume.log \
+  && ok "the rule changed mid-interval governed the resumed work, not the rule in force at admission" \
+  || bad "the resumed work was not decided under the changed rule"
+POLICY_TRUST_STALE_DECISION=1 python3 resume.py > out/resume-breakage.log 2>&1
+check "the breakage (trusting the pre-pause decision) exits non-zero" "$?" "1"
+grep -q "RESUME_CHECK FAILED" out/resume-breakage.log && ok "the breakage is caught, not silently green" || bad "the breakage passed"
+grep -q "work_ran=True" out/resume-breakage.log \
+  && ok "under the breakage the resumed work ran on a stale decision, which is exactly the defect this check exists to catch" \
+  || bad "the breakage did not reproduce the defect"
+python3 resume.py > out/resume-restored.log 2>&1
+check "the property holds again after the breakage run (no state carried over)" "$?" "0"
+
 if [ "${1:-}" = "--live" ]; then
-  echo "5. live: the policy engine on this host"
+  echo "6. live: the policy engine on this host"
   if [ -z "${POLICY_DECISION_URL:-}" ]; then
     echo "  SKIP live mode: set POLICY_DECISION_URL (see README.md). Nothing live was measured."
   else

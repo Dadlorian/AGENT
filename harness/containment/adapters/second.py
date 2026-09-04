@@ -24,9 +24,10 @@ import time
 import uuid
 
 from interface import (AdapterBinding, AdmissionHandle, ContainedAgentAdapter, ContainmentReport,
-                       IsolationDeclaration, Problem, Session, SessionCapabilities, TurnFrame,
-                       TurnRequest, UnitContext, UnitResult, digest)
+                       IsolationDeclaration, LifecycleCapabilities, Problem, Session,
+                       SessionCapabilities, TurnFrame, TurnRequest, UnitContext, UnitResult, digest)
 from adapters.hostside import Broker, Jail
+import context_guarantees
 
 MARKER = "contained-by:capability-granted-unit"
 
@@ -73,6 +74,9 @@ class Adapter(ContainedAgentAdapter):
                 "never mounted into the unit",
                 "cannot honour boot arguments, block devices or a guest network interface, and "
                 "does not claim hardware-level isolation",
+                "cannot pause, resume, or fork a unit: a single-shot invocation leaves no "
+                "running machine to checkpoint, so these calls return a typed "
+                "isolation-operation-unsupported result, never a crash or a silent no-op",
             ],
             capabilities_offered=SessionCapabilities(streaming=False, permission_callbacks=False,
                                                      cancellation=False),
@@ -84,6 +88,7 @@ class Adapter(ContainedAgentAdapter):
                 "processes_required_for_progress": "one invocation, nothing held open",
                 "prompt_cancellation": "none: the boundary must destroy the unit",
             },
+            lifecycle_offered=LifecycleCapabilities(),   # pause=resume=fork=False: not this class
         )
 
     # -- Isolation -----------------------------------------------------------
@@ -93,6 +98,7 @@ class Adapter(ContainedAgentAdapter):
                           f"profile {declaration.profile!r} is not resolvable by this adapter",
                           retry_after_s=60, correlation_id=context.correlation_id)
         unit_id = "c-" + uuid.uuid4().hex[:10]
+        context_guarantees.LEDGER.guard_admission(context, unit_id)   # C01-F: every field, read here
         jail = Jail(self.jail_root, unit_id)
         allow = list(declaration.egress_allowlist) if declaration.egress == "allowlist" else []
         unit = _Unit(unit_id, declaration, context, jail, Broker(allow))
@@ -106,6 +112,7 @@ class Adapter(ContainedAgentAdapter):
         unit.killed = True
         if unit.thread is not None:
             unit.thread.join(timeout=max(grace_s, 0.1))
+        context_guarantees.LEDGER.release(handle.unit_id)   # C01-F: the ledger's claim on this unit ends here
         return UnitResult(
             exit_status=0 if unit.probe_done else 1,
             output_digest=unit.output_digest,
@@ -137,6 +144,7 @@ class Adapter(ContainedAgentAdapter):
 
     def prompt(self, session: Session, request: TurnRequest) -> str:
         unit = self._unit(session.unit_id)
+        context_guarantees.LEDGER.guard_dispatch(unit.ctx, unit.unit_id)   # C01-F: dispatch point
         unit.started = time.monotonic()
         unit.thread = threading.Thread(target=self._turn, args=(unit, request), daemon=True)
         unit.thread.start()
@@ -156,6 +164,14 @@ class Adapter(ContainedAgentAdapter):
 
     # -- one invocation ------------------------------------------------------
     def _turn(self, unit: _Unit, request: TurnRequest) -> None:
+        try:
+            # C01-F: capability-call point - the first reach for a broker capability
+            context_guarantees.LEDGER.guard_capability_call(unit.ctx, unit.unit_id,
+                                                             "broker.credential_for_unit")
+        except Problem as problem:
+            unit.frames.put(TurnFrame(1, "terminal", f"capability call refused: {problem.body['detail']}",
+                                      stop_reason="terminated"))
+            return
         cred = unit.broker.credential_for_unit()
         for _ in range(self.attempts):
             unit.broker.connect("models.internal:443")

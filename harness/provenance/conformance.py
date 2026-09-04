@@ -25,11 +25,13 @@ import copy
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+REPO_ROOT = os.path.dirname(os.path.dirname(HERE))  # .../harness/provenance -> repo root
 sys.path.insert(0, HERE)
 from interface import (AttestRequest, PREDICATE_AGENT_ACTION, PREDICATE_BUILD,  # noqa: E402
                        Problem, TrustPolicy, canonical, digest_of, mac, pae, verify)
@@ -127,13 +129,71 @@ VERIFIER = ("harness/provenance/conformance.py --verify-bundle, run as a separat
             "(written in this repository; a verifier we did not write is not available here)")
 
 
+def verifier_identity() -> dict:
+    """Which verifier a conformance run would actually invoke right now, and
+    whether its source shares a codebase with the system it is checking (this
+    repository, the artifact producer). The binary is named only by
+    PROVENANCE_EXTERNAL_VERIFIER_BIN (README's env table names the expected
+    value; no product name belongs in this file per PRODUCTS above) and is
+    looked for on PATH only -- never imported, vendored or assumed present.
+    C11-F: an in-repo verifier cannot prove independence of the claim it is
+    checking, so this must be computed, not asserted.
+    """
+    binary = os.environ.get("PROVENANCE_EXTERNAL_VERIFIER_BIN", "")
+    external = shutil.which(binary) if binary else None
+    if external:
+        real = os.path.realpath(external)
+        return {"tool": binary, "path": real,
+                "independent": not (real == REPO_ROOT or real.startswith(REPO_ROOT + os.sep))}
+    return {"tool": "conformance.py --verify-bundle", "path": os.path.abspath(__file__), "independent": False}
+
+
+def check_verifier_independence(path: str) -> int:
+    """The honesty property C11-F's closure asks for, made runnable: a report
+    may not claim an independent external verifier while the verifier it
+    actually ran shares a codebase with the artifact producer (this repo,
+    computed from external_verifier_path, not taken on faith) -- and if it
+    is not independent, the report must name that gap in external_verifier
+    rather than stay silent about it. Exits 0 when the report is honest
+    either way, 1 when it is not.
+    """
+    report = json.load(open(path))
+    verifier_path = os.path.abspath(report.get("external_verifier_path") or "")
+    same_repo = verifier_path == REPO_ROOT or verifier_path.startswith(REPO_ROOT + os.sep)
+    declared_independent = bool(report.get("external_verifier_independent"))
+    gap_named = "not available here" in report.get("external_verifier", "")
+    lies_about_independence = same_repo and declared_independent
+    silent_about_gap = same_repo and not declared_independent and not gap_named
+    honest = not lies_about_independence and not silent_about_gap
+    print(json.dumps({"verifier_path": verifier_path, "same_repo_as_producer": same_repo,
+                      "declared_independent": declared_independent, "gap_named_in_report": gap_named,
+                      "honest": honest}, sort_keys=True))
+    if lies_about_independence:
+        print(f"NONCONFORMANT: external_verifier_independent=true but {verifier_path} shares this "
+              f"repository ({REPO_ROOT}) with the artifact producer -- it cannot prove independence")
+    elif silent_about_gap:
+        print("NONCONFORMANT: the verifier is in-repo and independence is correctly false, but "
+              "external_verifier does not name the gap")
+    else:
+        print("conformant: " + ("an independently-sourced verifier was used" if declared_independent
+              else "no independent verifier is wired in here, and the report says so"))
+    return 0 if honest else 1
+
+
 def run(name: str, breakage: str = "") -> tuple:
     adapter = adapters()[name]()
     out_dir = os.path.join(HERE, "out", f"{name}{'-' + breakage if breakage else ''}")
+    identity = verifier_identity()
+    if os.environ.get("PROVENANCE_FAKE_INDEPENDENT") == "1":
+        # The deliberate breakage for check_verifier_independence: a report that
+        # claims independence it does not have. No production path sets this.
+        identity = dict(identity, independent=True)
     report = {"binding": name, "adapter": adapter.adapter_kind, "selected_by": "configuration",
               "adapters_run": 1, "attestations_emitted": 0, "attestations_verified": 0,
               "subject_mismatches": 0, "orphan_subjects": 0,
               "external_verifier": VERIFIER, "external_verifier_exit": -1, "store_mounted": True,
+              "external_verifier_tool": identity["tool"], "external_verifier_path": identity["path"],
+              "external_verifier_independent": identity["independent"],
               "log_inclusion_proofs": 0 if adapter.supports_inclusion_proof else "unsupported",
               "breakage": breakage or None, "cases": []}
     report.update(adapter.binding())
@@ -348,8 +408,12 @@ def main(argv=None) -> int:
     ap.add_argument("--verify-bundle", metavar="PATH", help="child mode: verify one bundle, read no store")
     ap.add_argument("--product-scan", metavar="DIR", help="scan a tree for product names outside adapters/")
     ap.add_argument("--caller-lines", action="store_true", help="count the caller region of call.py")
+    ap.add_argument("--check-verifier-independence", metavar="REPORT",
+                    help="exit 0 iff REPORT is honest about whether its external verifier is independent")
     args = ap.parse_args(argv)
 
+    if args.check_verifier_independence:
+        return check_verifier_independence(args.check_verifier_independence)
     if args.verify_bundle:
         return verify_bundle(args.verify_bundle)
     if args.product_scan:

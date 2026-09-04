@@ -56,6 +56,7 @@ REGISTRY = {  # suffix -> (status, title, retryable)
     "identity-untrusted": (401, "The delegation chain does not verify", False),
     "policy-denied": (403, "A hop asked for more than it was given", False),
     "adapter-unavailable": (503, "No identity adapter can serve this operation", True),
+    "identity-withdrawn": (403, "The identity used for this call has been withdrawn", False),
 }
 
 
@@ -278,6 +279,7 @@ class IdentityAdapter(ABC):
         self.hops: list[dict] = []     # one DelegationHopRecord per hop, appended, never mutated
         self.current_action = "action"
         self._issued: dict[str, dict] = {}   # handle -> the material, which never leaves this object
+        self._withdrawn: dict[str, dict] = {}   # subject -> {withdrawn_by, withdrawn_at, reason}
 
     # --- 1. verify: the only way an actor comes into existence ---------------
     def verify(self, presented: str) -> Credential:
@@ -369,13 +371,48 @@ class IdentityAdapter(ABC):
                      executing_unit=actor.actor)
         return cred
 
+    # --- withdrawal: takes effect on the very next capability call -----------
+    def withdraw(self, subject: str, withdrawn_by: str, reason: str = "withdrawn") -> dict:
+        """Record that `subject`'s identity is withdrawn.
+
+        No signal reaches a unit already running under `subject`: the platform
+        does not enforce per-session trust, so nothing here needs to interrupt a
+        loop or close a socket. Enforcement is per-request instead (concern-
+        identity-q5): `authorise` re-checks this registry on every capability
+        call, so the very next call a running unit makes is the one that stops.
+        """
+        record = {"subject": check_subject(subject, "subject"),
+                  "withdrawn_by": check_subject(withdrawn_by, "withdrawn_by"),
+                  "withdrawn_at": iso(now()), "reason": reason}
+        self._withdrawn[subject] = record
+        return record
+
     # --- what an authorisation decision is allowed to read -------------------
     def authorise(self, cred: Credential, required: str) -> str:
         """Reads the top-level scope and the current actor. Prior hops are not offered.
 
         X-cross-structure-038: prior actors identified by nested act claims are
         informational only, so a rule that wanted to read one cannot get at it here.
+
+        Checked first, ahead of scope: a withdrawn identity is refused before its
+        scope is even read, and the refusal, plus who withdrew it and where the
+        run stopped, is written as one record to the same audit trail every hop
+        already writes to (`self.hops`) — never a signal the unit had to notice.
         """
+        withdrawal = self._withdrawn.get(cred.actor)
+        if withdrawal is not None:
+            self.refusals += 1
+            stop = {"run_id": os.environ.get("RUN_ID", "run-harness-identity"),
+                    "action_id": self.current_action, "kind": "withdrawal-stop",
+                    "subject": cred.actor, "handle": cred.handle,
+                    "withdrawn_by": withdrawal["withdrawn_by"],
+                    "withdrawn_at": withdrawal["withdrawn_at"], "stopped_at": iso(now())}
+            self.hops.append(stop)
+            raise Problem("identity-withdrawn",
+                          f"{cred.actor}'s identity was withdrawn by {withdrawal['withdrawn_by']} at "
+                          f"{withdrawal['withdrawn_at']}; the call stopped here and nothing proceeded",
+                          subject=cred.actor, withdrawn_by=withdrawal["withdrawn_by"],
+                          withdrawn_at=withdrawal["withdrawn_at"], stopped_at=stop["stopped_at"])
         if required not in cred.scope:
             raise Problem("policy-denied",
                           f"{cred.actor} holds {sorted(cred.scope)} and the action needs {required!r}; the "

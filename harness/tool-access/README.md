@@ -20,6 +20,8 @@ recorded state is why this harness counts tools instead of reporting green.
 | 3. Swap the server | `ADAPTER=second python3 harness/tool-access/call.py` |
 | 4. Prove the interface held | `python3 harness/tool-access/conformance.py --adapter dryrun --adapter second` |
 | 5. Run against the host | `bash harness/tool-access/test.sh --live` |
+| 6. Check the authorization and transport mechanisms (tool-access-q2) | `python3 harness/tool-access/adapters/auth_exchange.py --check` |
+| 7. Reproduce the real refresh gap (X-maturity-c-002) | `AUTH_BREAK=refresh-omit-resource python3 harness/tool-access/adapters/auth_exchange.py --check` |
 
 ## Files
 
@@ -29,6 +31,7 @@ recorded state is why this harness counts tools instead of reporting green.
 | `adapters/dryrun.py` | 117 | Deterministic in-process adapter. A catalogue this platform registers itself, five tools, one slow enough to cancel mid-flight, one that fails inside a successful envelope. No network, no privileges |
 | `adapters/live.py` | 149 | Today's component: the MCP endpoint on this host, reached over JSON-RPC with the revision declared per request. Reached only through the env vars below |
 | `adapters/second.py` | 191 | The second server: a conformant catalogue published outside this platform. Different tool names, an extra required argument on a shared tool, one tool withdrawn between binds, a cancel that can only be recorded. Faithful stub here; `SECOND_SERVER_URL` points it at a real server |
+| `adapters/auth_exchange.py` | ~330 | Answers tool-access-q2: which authorization and transport mechanisms are actually in force, verified from a recorded exchange rather than from configuration - the 401's RFC 9728 pointer, RFC 9728 and RFC 8414 metadata discovery, PKCE S256, an RFC 8707 `resource` parameter on the authorization request and on every token request including refresh, the issued token's audience, Streamable HTTP, a captured token rejected by a second server, and a tool result checked against its declared output schema. `AUTH_BREAK=<mode>` isolates one deliberate deviation at a time (`refresh-omit-resource` reproduces X-maturity-c-002's real client gap) |
 | `binding.json` | 12 | Configuration. Which adapter, the server reference, the declared surface, the call, the call to cancel, the ceiling, the revision |
 | `call.py` | 139 | The minimal call. 15 lines of caller code below the `>>> CALLER CODE` marker, counted by `harness/caller_lines.py`; everything above it is the platform |
 | `conformance.py` | 466 | The same 17 cases and 6 counts against any adapter, with every argument built from the schema the server published |

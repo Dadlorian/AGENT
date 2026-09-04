@@ -111,6 +111,20 @@ python3 conformance.py --adapter second --break dropped-signature > out/break-2.
 check "the breakage run exits non-zero on the second adapter too" "$?" "1"
 grep -q "the envelope carries no signature" out/break-2.log && ok "the run names what broke it" || bad "no reason given"
 
+echo "5. the honest-gap declaration is a checked property, not just a comment (C11-F)"
+python3 conformance.py --adapter dryrun --report out/independence.json > out/independence-run.log 2>&1
+check "generating the report exits 0" "$?" "0"
+python3 conformance.py --check-verifier-independence out/independence.json > out/independence-check.log 2>&1
+check "no independent verifier is wired in here, and the report honestly says so: exits 0" "$?" "0"
+grep -q '"honest": true' out/independence-check.log && ok "declared_independent=false with the gap named in external_verifier" \
+  || bad "$(cat out/independence-check.log)"
+PROVENANCE_FAKE_INDEPENDENT=1 python3 conformance.py --adapter dryrun --report out/independence-broken.json \
+  > out/independence-broken-run.log 2>&1
+python3 conformance.py --check-verifier-independence out/independence-broken.json > out/independence-broken-check.log 2>&1
+check "a report that falsely claims independence: exits 1" "$?" "1"
+grep -q "NONCONFORMANT" out/independence-broken-check.log && ok "the false claim is named, not silently accepted" \
+  || bad "$(cat out/independence-broken-check.log)"
+
 if [ "${1:-}" = "--live" ]; then
   echo "5. live: the evidence records on this host"
   if [ -z "${EVIDENCE_STORE:-}" ] || [ -z "${ATTESTATION_STORE:-}" ] || [ -z "${PROVENANCE_KEY_FILE:-}" ]; then

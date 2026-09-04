@@ -18,6 +18,7 @@
 | `adapters/second.py` | 145 | The second serving path: provider-native asynchronous batch, claim-and-poll. Submit returns pending, claim polls, cost is committed then reconciled, nothing is stoppable |
 | `call.py` | 85 | The minimal call. 13 lines below the `>>> CALLER CODE` marker, counted by `harness/caller_lines.py`; everything above it is the platform stamping the envelope |
 | `conformance.py` | 269 | The 12 cases every adapter passes, plus the product-name scan over code |
+| `mechanisms.py` | 172 | model-access-q2: the six mechanisms beyond a plain completion - streaming, a tool-call turn, schema-constrained structured output, a cache directive, reasoning effort, and the prompt/cached/reasoning/completion usage record - exercised on `dryrun` and `second` alike and verified from the response, never from the request having been merely accepted (`python3 harness/gateway/mechanisms.py`) |
 | `test.sh` | 112 | The gate: 25 checks in dry run, the swap proof, and one deliberate breakage |
 | `provenance.json` | — | Owner skill, co-skill, blueprint entry, kb ids, what is measured and what is claimed |
 

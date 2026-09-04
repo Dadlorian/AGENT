@@ -27,7 +27,7 @@ Search was available and ran. Queries issued, in order:
 10. "IETF draft-ietf-httpapi-idempotency-key-header status 2026 RFC"
 11. "Agent Skills spec SKILL.md specification version agentskills 2026"
 
-One direct fetch was blocked: `https://a2a-protocol.org/latest/specification/` returned `EGRESS_BLOCKED` from the network egress proxy. Everything asserted about A2A below therefore rests on search-result summaries, not on the specification text, and is labelled claimed with the version unverified.
+One direct fetch was blocked: `https://a2a-protocol.org/latest/specification/` returned `EGRESS_BLOCKED` from the network egress proxy. Everything asserted about A2A below therefore rests on search-result summaries, not on the specification text, and is labelled claimed with the version unverified. This is now a typed record, not only prose: kb/research.jsonl's `X-end-to-end-015` carries `status: "blocked"` and `egress_ref: "G-00330"`, the matching decision in kb/egress-log.jsonl (the proxy's own access-decision log, built by `tools/build_egress_log.py`); `tools/reconcile_egress.py` reconciles the two files and fails if a block event is ever silently dropped from the citation trail again (A2-F).
 
 **Result of the search for Part C item 2.** No published standard was found that defines a portable contract for "one unit of agent work executes and returns one result", and none was found for a durable-execution wire contract across engines (claimed, from queries 1 and 8). Search surfaced an ISA committee call and a CNCF sandbox workflow DSL, neither of which is a dispatch contract (claimed). PASS.md B5's judgement that Dispatch and State have no standard to adopt is therefore supported by search rather than contradicted by it.
 
@@ -428,7 +428,7 @@ Two rules that make this enforceable rather than decorative. First, `retryable` 
 ### 2.2.1 Write model
 
 - **One log, two projections.** There is not a graph store and a ledger store. There is a log of immutable facts, and both the graph and the ledger are folds over it. Two stores would need a distributed transaction to stay consistent; one log does not.
-- **Records are facts, never updates.** Record kinds in the first cut: `node-asserted`, `edge-asserted`, `document-declared`, `dispatch-submitted`, `dispatch-observed`, `ledger-entry`, `policy-decided`, `attestation-recorded`, `head-sealed`. Retraction is a new `edge-asserted` record with `retracts` set, not a delete.
+- **Records are facts, never updates.** Record kinds in the first cut: `node-asserted`, `edge-asserted`, `document-declared`, `dispatch-submitted`, `dispatch-observed`, `ledger-entry`, `policy-decided`, `attestation-recorded`, `head-sealed`, `tombstone`. This list is a mirror, not a second authority: the canonical, versioned enumeration lives at `.claude/skills/seam-state/references/state-seam.md` #1 (marked **canonical**), and this prose must name the same ten kinds it does — `tools/check_record_kinds.py` fails the build if they diverge. Retraction is a new `edge-asserted` record with `retracts` set, not a delete; a body redaction is a `tombstone` record, which preserves the `record_id` but nulls the body.
 - **Records are content-addressed.** `record_id = sha256(JCS(body))` where JCS is RFC 8785 JSON Canonicalization Scheme. Canonical bytes are what makes two independent writers agree on an identity.
 - **Current state is a fold.** Anything that cannot be derived by folding the log from empty is not state, it is cache.
 

@@ -98,9 +98,26 @@ class TelemetryUnit:
 
 
 @dataclass(frozen=True)
+class LogRecord:
+    """One log record beneath a unit of work - the second of the three emission
+    kinds xc-correlation's guarantee binds. trace_id, span_id and trace_flags
+    are top-level fields here, never resource attributes, per the OpenTelemetry
+    Logs Data Model (stable specification): TraceId, SpanId and TraceFlags are
+    top-level log-record fields. run_id and root_dispatch_id still arrive
+    through the resource the emission context carries; this shape adds only
+    what that resource cannot hold - the identifiers scoped to this one record."""
+    body: str
+    severity_text: str
+    trace_id: str | None = None
+    span_id: str | None = None
+    trace_flags: int | None = None
+    attributes: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
 class Signal:
     """One stored signal, as read back off the wire by fetch_run."""
-    kind: str                          # "span" | "metric"
+    kind: str                          # "span" | "metric" | "log_record" | "problem_object"
     resource: dict[str, Any]
     unit: dict[str, Any]
 
@@ -113,18 +130,26 @@ class MappingDescription:
 
 @dataclass(frozen=True)
 class Problem:
-    """RFC 9457 problem details. The only failure shape this interface returns."""
+    """RFC 9457 problem details. The only failure shape this interface returns.
+    trace_id and span_id are the third emission kind's stamp: xc-correlation's
+    guarantee treats the failure body as in scope, not an exception to it, so a
+    problem object is bound to the same trace identity as the span and log
+    record of the unit that raised it rather than being outside the
+    correlation model."""
     type: str
     title: str
     status: int
     detail: str
     retryable: bool
     correlation_id: str | None = None
+    trace_id: str | None = None
+    span_id: str | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {"type": self.type, "title": self.title, "status": self.status,
                 "detail": self.detail, "retryable": self.retryable,
-                "correlation_id": self.correlation_id}
+                "correlation_id": self.correlation_id, "trace_id": self.trace_id,
+                "span_id": self.span_id}
 
 
 PROBLEM_BASE = "urn:agentic:problem:"
@@ -160,9 +185,13 @@ class AdapterUnavailable(Exception):
 
 # --- the interface -----------------------------------------------------------
 class TelemetryAdapter(ABC):
-    """Five operations and nothing else. There is no flag that switches emission
+    """Seven operations and nothing else. There is no flag that switches emission
     off, no sampling decision a caller can make, and no operation that names a
-    destination, a query language or a UI concept."""
+    destination, a query language or a UI concept. log() and emit_problem() are
+    the C09-F addition: xc-correlation's guarantee binds all three emission
+    kinds - spans, log records and problem objects - not spans alone, and an
+    adapter that only carried emit()/measure() left two of the three kinds with
+    nowhere to be stamped."""
 
     name: str = "unnamed"
     semantic_queries_supported: bool = False
@@ -181,6 +210,18 @@ class TelemetryAdapter(ABC):
                 attributes: dict[str, Any] | None = None) -> None:
         """Same transport, same resource attributes, so a metric joins to a span
         on the run id."""
+
+    @abstractmethod
+    def log(self, ctx: EmissionContext, record: LogRecord) -> None:
+        """Hand one log record to the pipeline, stamped with the same resource
+        attributes as the unit's span. Second of the three emission kinds."""
+
+    @abstractmethod
+    def emit_problem(self, ctx: EmissionContext, prob: Problem) -> None:
+        """Hand one problem/error object to the pipeline, stamped with the same
+        resource attributes as the unit that raised it. Third of the three
+        emission kinds - the one a correlation model that stops at spans and
+        logs leaves outside it."""
 
     @abstractmethod
     def describe_mapping(self) -> MappingDescription:

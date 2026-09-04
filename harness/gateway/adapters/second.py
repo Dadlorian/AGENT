@@ -27,7 +27,8 @@ import os
 from datetime import datetime, timedelta, timezone
 
 from interface import (CancelAck, ClaimTicket, CompletionRequest, CompletionResult,
-                       ModelAccessAdapter, Problem, RouteDecision, estimate_tokens_in, price_micros)
+                       ModelAccessAdapter, Problem, RouteDecision, apply_mechanisms,
+                       estimate_tokens_in, price_micros)
 
 try:                                   # guarded: absence is a typed failure, never an import crash
     import urllib.error
@@ -57,7 +58,12 @@ class BatchClaimAdapter(ModelAccessAdapter):
             job_id = self._post(url, {"model": decision.member,
                                       "messages": [dict(m) for m in request.messages],
                                       "max_tokens": request.max_output_tokens})
-        self._jobs[job_id] = {"request": request, "decision": decision, "estimate": estimate, "polls": 0}
+        # Cache is a property of the prompt, known before dispatch even though the
+        # rest of the result only resolves when the job is claimed - so it is
+        # observed against the store here, at submit, not invented at claim.
+        cache_hit = self.note_cache(request)
+        self._jobs[job_id] = {"request": request, "decision": decision, "estimate": estimate,
+                              "polls": 0, "cache_hit": cache_hit}
         self.observed_marker = self.declared_marker
         return ClaimTicket(
             ticket_id=job_id,
@@ -82,12 +88,16 @@ class BatchClaimAdapter(ModelAccessAdapter):
             ticket.earliest_retry = self._retry_at()
             return ticket
         request, decision = job["request"], job["decision"]
-        tokens_in = estimate_tokens_in(request)
-        tokens_out = min(request.max_output_tokens, len(payload) // 4 + 1)
+        seed = hashlib.sha256((decision.member + request.digest()).encode()).hexdigest()
+        base_tokens_out = min(request.max_output_tokens, len(payload) // 4 + 1)
+        mech = apply_mechanisms(request, seed, job["cache_hit"], payload, base_tokens_out)
         ticket.state = "redeemed"
         ticket.earliest_retry = None
-        ticket.result = CompletionResult(payload, price_micros(decision, tokens_in, tokens_out),
-                                         tokens_in, tokens_out, "reconciled")
+        ticket.result = CompletionResult(mech["text"], price_micros(decision, mech["tokens_in"], mech["tokens_out"]),
+                                         mech["tokens_in"], mech["tokens_out"], "reconciled",
+                                         cached_tokens=mech["cached_tokens"], reasoning_tokens=mech["reasoning_tokens"],
+                                         tool_calls=mech["tool_calls"], structured_output=mech["structured_output"],
+                                         stream_chunks=mech["stream_chunks"])
         self.observed_marker = self.declared_marker
         return ticket
 

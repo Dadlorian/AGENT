@@ -21,9 +21,9 @@ from dataclasses import replace
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from interface import (MAPPING_VERSION_KEY, OPERATION_NAMES, ROOT_DISPATCH_ID_KEY,
-                       RUN_ID_KEY, AdapterUnavailable, CorrelationRecord, Problem,
-                       TelemetryUnit, load_adapter)
+from interface import (MAPPING_VERSION_KEY, OPERATION_NAMES, PROBLEM_BASE, REGISTRY,
+                       ROOT_DISPATCH_ID_KEY, RUN_ID_KEY, AdapterUnavailable,
+                       CorrelationRecord, LogRecord, Problem, TelemetryUnit, load_adapter)
 
 DEPTH = 3                       # a depth-3 task tree: the smallest thing that reproduces the finding
 BASE_INSTANT = "2026-09-03T00:00:%02dZ"
@@ -56,14 +56,26 @@ def _trace_id(run_id: str, level: int) -> str:
     return hashlib.sha256(f"{run_id}/{level}/minted-by-the-agent".encode()).hexdigest()[:32]
 
 
-def dispatch_tree(adapter, correlation: CorrelationRecord, break_stamp: bool = False) -> dict:
+def dispatch_tree(adapter, correlation: CorrelationRecord, break_stamp: bool = False,
+                  break_problem_trace: bool = False) -> dict:
     """The dispatch seam. bind() is called here and nowhere else, so every signal
     below inherits the correlation record whatever the runtime does to the trace.
+    Three emission kinds are bound per level, not one: a span, a log record and a
+    problem object, all three carrying the level's trace id - C09-F's guarantee
+    that a run is reassembled per kind, and that the failure body is bound at the
+    moment it is produced rather than treated as outside the correlation model.
 
-    break_stamp is the deliberate breakage: the platform stops re-stamping at the
-    child-dispatch boundary, so each child agent binds a record it minted itself -
-    exactly what a runtime that ignores an injected trace header does today."""
-    spans = metrics = 0
+    break_stamp is the deliberate breakage for run_id/root_dispatch_id: the
+    platform stops re-stamping at the child-dispatch boundary, so each child
+    agent binds a record it minted itself - exactly what a runtime that ignores
+    an injected trace header does today.
+
+    break_problem_trace is the deliberate breakage for the third kind: the
+    problem object at level 0 is built without its trace id, so it no longer
+    shares the trace identity its span and log record carry - one kind silently
+    left unstamped while the other two look correct, which is the omission
+    xc-correlation's audit exists to catch."""
+    spans = metrics = logs = problems = 0
     for level in range(DEPTH):
         record = correlation if level == 0 else replace(
             correlation, depth=level,
@@ -73,16 +85,38 @@ def dispatch_tree(adapter, correlation: CorrelationRecord, break_stamp: bool = F
                                        root_dispatch_id=f"minted-d-{level}",
                                        depth=level, entry_kind=correlation.entry_kind)
         ctx = adapter.bind(record)
+        trace_id = _trace_id(correlation.run_id, level)
+        operation = OPERATION_NAMES["entry" if level == 0 else "dispatch"]
         adapter.emit(ctx, TelemetryUnit(
-            operation=OPERATION_NAMES["entry" if level == 0 else "dispatch"],
-            started_at=BASE_INSTANT % (level * 2), ended_at=BASE_INSTANT % (level * 2 + 1),
-            outcome="ok", attributes={"gen_ai.operation.name": "invoke_agent"},
-            trace_id=_trace_id(correlation.run_id, level)))
+            operation=operation, started_at=BASE_INSTANT % (level * 2),
+            ended_at=BASE_INSTANT % (level * 2 + 1), outcome="ok",
+            attributes={"gen_ai.operation.name": "invoke_agent"}, trace_id=trace_id))
         spans += 1
+
+        adapter.log(ctx, LogRecord(
+            body=f"level {level}: {operation} completed", severity_text="INFO",
+            trace_id=trace_id, attributes={"correlation.depth": level}))
+        logs += 1
+
+        # The closed problem-type registry (interface.REGISTRY) is reused, not
+        # widened: "adapter-unavailable" is the only fully registered row, so
+        # this synthetic per-level failure body reuses it rather than minting a
+        # new type, matching the practice xc-correlation's reference notes for
+        # the entry rejection this level is not.
+        row = REGISTRY["adapter-unavailable"]
+        prob_trace = None if (break_problem_trace and level == 0) else trace_id
+        adapter.emit_problem(ctx, Problem(
+            type=PROBLEM_BASE + "adapter-unavailable", title=row["title"], status=row["status"],
+            detail=f"synthetic problem object for level {level}, correlation-audit fixture",
+            retryable=row["retryable"], correlation_id=record.root_dispatch_id,
+            trace_id=prob_trace))
+        problems += 1
+
         if level == DEPTH - 1:
             adapter.measure(ctx, "step_duration", 1000.0 * level)
             metrics += 1
-    return {"spans_emitted": spans, "metrics_emitted": metrics}
+    return {"spans_emitted": spans, "metrics_emitted": metrics,
+            "logs_emitted": logs, "problems_emitted": problems}
 
 
 def reassemble(adapter, run_id: str, emitted: dict) -> dict | Problem:

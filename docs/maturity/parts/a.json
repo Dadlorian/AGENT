@@ -1,0 +1,392 @@
+{
+ "part": "a",
+ "closures": [
+  {
+   "item": {
+    "kind": "litmus",
+    "section": "isolation",
+    "question_id": "isolation-q6",
+    "score": 0,
+    "question": "Proposed question: Does the build use machine-state lifecycle operations - pause, resume, and fork of a paused sandbox - where the isolation class offers them, and is it free of the errors the window has ruled out?",
+    "target": "Suspension, resumption and forking are capability operations with a defined answer when an adapter cannot serve them, and the security boundary chosen for untrusted output is not a shared kernel."
+   },
+   "mechanism": "A mature build treats pause, resume and fork of a sandbox as capability operations on the isolation adapter, not ad hoc scripting: pausing checkpoints the sandbox's memory and filesystem state (a microVM snapshot, or an equivalent CRIU-based checkpoint), resume restores from that snapshot in tens of milliseconds, and fork clones a paused or running sandbox from a shared base without re-provisioning. Where the underlying adapter cannot serve one of these operations, the interface returns a defined, typed unsupported result rather than silently degrading or emulating it. The security boundary chosen for untrusted output is a dedicated guest kernel (a microVM such as Firecracker) or an intercepting user-space kernel (gVisor) -- never a shared host kernel, which several 2026 sandbox-escape incidents show is the boundary attackers actually cross.",
+   "standard": "none -- no standards body governs sandbox lifecycle operations; the OCI Runtime Spec covers container configuration but not pause/resume/fork semantics, so this is vendor convention (Firecracker snapshot-restore, CRIU) rather than a ratified spec.",
+   "check": "a state-hash test: snapshot a running sandbox, compute a digest of memory+filesystem state, resume it, and assert the digest is unchanged before any further syscall; separately, a conformance test that calls fork on an adapter lacking the operation and asserts a typed unsupported error rather than a crash or silent no-op.",
+   "direction": "Settling: checkpoint/restore is becoming table stakes across providers (E2B, Daytona, Fly Sprites, Runloop, Vercel, CodeSandbox all shipped some form by mid-2026), and microVMs vs. gVisor is a live, deliberate tradeoff (isolation strength vs. cold-start cost), not a settled winner. Being abandoned: sharing a host kernel between the agent's untrusted output and the host as the isolation boundary.",
+   "cites": [
+    "X-maturity-a-001",
+    "X-maturity-a-002"
+   ],
+   "origin": "sourced",
+   "quote": "Firecracker's snapshot-restore mechanism lets you pause a sandbox, preserve its memory and filesystem state, and resume it in 5-30ms.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "litmus",
+    "section": "errors",
+    "question_id": "errors-q5",
+    "score": -1,
+    "question": "Proposed: Is the production of the failure object owned by one place the core imports, so a new capability adapter cannot invent its own failure shape?",
+    "target": "Adapters raise typed conditions that the shared construction point renders; there is no second place a failure body is built."
+   },
+   "mechanism": "A mature build owns problem-object construction at exactly one place the core imports -- a shared error-rendering component (e.g. a global exception handler / controller-advice-equivalent) -- and every capability adapter raises a typed condition into it rather than building a problem+json body itself. The shared point is the only place that knows how to serialize the standard fields (type, title, status, detail, instance) plus any extension members, so adding a new adapter means defining a new typed condition, never a new serialization path.",
+   "standard": "RFC 9457, Problem Details for HTTP APIs (RFC Editor, July 2023, obsoletes RFC 7807) -- baseline, no credible competitor for the wire shape; centralization of its construction is framework convention layered on top, not part of the RFC itself.",
+   "check": "a source scan asserting exactly one code path constructs the problem-detail/content-type object (e.g. one class or module owns `application/problem+json` serialization); a test that raises every typed condition the build defines and asserts each is rendered by that same single path, never a second one.",
+   "direction": "Settling: recent framework majors (e.g. Spring Boot 4) make centralized, framework-wide Problem Details handling the default with no per-controller opt-in, confirming the direction toward one shared rendering point. Nothing in the window is displacing RFC 9457 itself as the wire format.",
+   "cites": [
+    "X-maturity-a-003",
+    "X-maturity-a-004"
+   ],
+   "origin": "sourced",
+   "quote": "In Spring Boot 4, unified framework-wide error handling with Problem Details is now a standard, allowing centralized handling that no longer requires manual opt-in for every controller.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "litmus",
+    "section": "concern-provenance",
+    "question_id": "concern-provenance-q3",
+    "score": 0,
+    "question": "Can it be shown that no artifact escapes the guarantee, that every artifact produced over a period has a record, and that a component cannot produce one through a path which emits nothing? (This question is proposed, derived from the row it cites.)",
+    "target": "The two counts reconcile with no unattested artifact; emission is wired where every producing path passes, so a component that attests nothing itself still yields a record; the attempt to write outside that path is refused or is structurally impossible."
+   },
+   "mechanism": "A mature build wires attestation emission into the one execution boundary every artifact-producing action must pass through, so a component that itself calls no attestation API still yields a record -- emission is a property of the path, not of the producer's cooperation. A reconciliation job counts artifacts produced against attestations issued for the same period and treats any mismatch as a defect; the attempt to write an artifact outside the wired path is refused by the platform (e.g. no credential to publish through any other route) rather than merely discouraged by convention. Because an attestation alone is only a linkage claim, the guarantee is enforced a second time at deployment/consumption via admission policy that refuses anything unattested.",
+   "standard": "in-toto Attestation Framework plus SLSA provenance (build platform attests at Level 2+ with signed provenance); no single standard mandates the coverage guarantee itself, which is implemented as pipeline and admission-policy design.",
+   "check": "a count reconciliation: number of artifacts recorded in the artifact store equals the number of valid, matching attestations issued in the same window, enforced by an admission-time policy check (e.g. a ValidatingImagePolicy-equivalent) that structurally refuses any artifact without one.",
+   "direction": "Settling: attestation generation is moving from opt-in to default for public/production pipelines through 2025-2026, and enforcement is moving from \"attestation exists\" to \"attestation is evaluated at admission time,\" since attestations alone were shown not to guarantee security by themselves.",
+   "cites": [
+    "X-maturity-a-005",
+    "X-maturity-a-006"
+   ],
+   "origin": "sourced",
+   "quote": "for public repositories, attestation generation is shifting from opt-in to default behavior",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "conformance",
+    "qid": "C11-F",
+    "verdict": "DEVIATES",
+    "evidence": "harness/provenance/conformance.py VERIFIER constant, the string a caller sees as external_verifier in every conformance report: \"(written in this repository; a verifier we did not write is not available here)\", following the path harness/provenance/conformance.py --verify-bundle, run as a separate p"
+   },
+   "mechanism": "A mature build verifies its own provenance/attestation claims with a verifier that shares no codebase or authorship with the system under verification -- an externally maintained, widely used tool run as a separate process against the signed statement and a trust root the verifier does not itself issue. Where no such external verifier is wired in yet, the honest state is to say so explicitly in the conformance output (naming the gap) rather than to substitute a verifier written inside the repository being verified, which cannot prove independence of the claim it is checking.",
+   "standard": "in-toto Attestation Framework (ITE-10/ITE-11 layout) for the statement shape; Sigstore/cosign as the practical, production-grade external verification toolchain (cosign v3, keyless verification against a trusted root).",
+   "check": "run `cosign verify-attestation` (or an equivalent independent verifier) as a separate process/binary from the build, exiting non-zero on any signature-chain or trust-root failure; a conformance report is non-conformant if the verifier's source history overlaps the artifact producer's.",
+   "direction": "Settling: cosign/Sigstore's keyless, trusted-root verification is the practical default external verifier for in-toto-shaped attestations; the in-toto project's own prototype verifier is explicitly marked unfit for production, reinforcing that an in-repo or reference verifier is not a substitute for an external one. This is a genuine gap this platform has (VERIFIER: \"a verifier we did not write is not available here\"), not a difference of philosophy.",
+   "cites": [
+    "X-maturity-a-007",
+    "X-maturity-a-008"
+   ],
+   "origin": "sourced",
+   "quote": "this verifier must not be used in production systems",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "conformance",
+    "qid": "A2-F",
+    "verdict": "DEVIATES",
+    "evidence": "docs/decomposition.md records the search as issued queries, and records the one fetch attempt failing: \"returned `EGRESS_BLOCKED` from the network egress proxy\". kb/research.jsonl holds 660 research records; I counted status and read fields with python3 (json load over the file): 660 of 660 are stat"
+   },
+   "mechanism": "A mature build enforces default-deny network egress for any sandbox doing research or executing agent-directed code, routed through a proxy the agent cannot bypass, with a narrow allowlist for the hosts a given task actually needs; every blocked attempt is itself written as a typed record (not dropped silently), so a downstream count of research citations can be reconciled against the proxy's own access log. When a fetch is blocked, the mature response is to route the same request through a permitted path (an allowlisted search/fetch tool) and record the substitution, rather than leave a claim uncorroborated by a live fetch.",
+   "standard": "none formally normative -- egress control for agent sandboxes is an emerging best-practice pattern (default-deny proxy allowlisting), not governed by a standards body; vendor-specific allowlist configuration mechanisms exist.",
+   "check": "reconcile the proxy's access-decision log against the research-record file: every URL cited with status \"search-only\" has a matching allow decision in the log, and every EGRESS_BLOCKED event has a corresponding record rather than being silently dropped.",
+   "direction": "Settling: default-deny egress at an unavoidable proxy is treated as the single highest-leverage agent-security control, and disclosed 2026 sandbox-escape incidents that exploited proxy vulnerabilities to gain unrestricted egress are reinforcing that direction, not weakening it. EGRESS_BLOCKED as a broad, sometimes over-aggressive failure mode is a known current pain point across tooling, not unique to this platform.",
+   "cites": [
+    "X-maturity-a-009",
+    "X-maturity-a-010"
+   ],
+   "origin": "sourced",
+   "quote": "Default-deny egress at a proxy the agent cannot route around is the highest-leverage single control for agent security.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "isolation",
+    "claim": "Which isolation class operators running hundreds of concurrent agent units actually default to, with measured cost per resident sandbox.",
+    "research_query": "operators running hundreds of concurrent agent sandboxes 2026 default isolation class measured cost per resident sandbox"
+   },
+   "mechanism": "Operators running large fleets of concurrent agent sandboxes do not pick one isolation class uniformly: gVisor's user-space kernel is the default for cost-sensitive, high-concurrency, trusted-enough workloads (one major operator names 20,000+ concurrent gVisor-isolated containers and 50,000+ concurrent sandboxed sessions), while microVMs (Firecracker-class, dedicated guest kernel) are reserved for workloads needing the stronger isolation boundary against untrusted agent-generated code, at a measured per-vCPU-hour/GB-hour cost. Past a measured volume threshold, operators shift from a managed sandbox provider to self-hosting the microVM layer because the unit economics cross over.",
+   "standard": "none -- no standard sets a default isolation class; the OCI Runtime Spec defines the interface, not the choice of implementation.",
+   "check": "a per-resident-sandbox cost dashboard (actual vCPU-hr + GiB-hr billed per second) reconciled monthly against the measured self-host crossover point (roughly 500 sandbox-hours/month in one measured case), driving an explicit build-vs-buy decision at that line rather than a fixed policy.",
+   "direction": "Settling: gVisor as the higher-concurrency, lower-cost default with microVMs reserved for stronger isolation needs; self-hosting the microVM layer once volume clears a measured hundreds-of-sandbox-hours-per-month threshold. Being abandoned: plain shared-kernel containers as the isolation boundary for untrusted, agent-generated code.",
+   "cites": [
+    "X-maturity-a-011",
+    "X-maturity-a-012",
+    "X-maturity-a-013"
+   ],
+   "origin": "sourced",
+   "quote": "Self-hosting the Firecracker layer cuts per-execution cost 60-80% once you clear roughly 500 sandbox-hours a month.",
+   "gap": "the exact measured cost per resident sandbox specifically at a \"hundreds of concurrent agents\" scale (as opposed to the thousands/tens-of-thousands figures the search surfaced) was not isolated in any single source; the $0.017/vCPU-hr and $0.008/GB-hr managed-provider figures and the 500-sandbox-hour self-host crossover are the closest measured data points found. Query used: \"operators running hundreds of concurrent agent sandboxes 2026 default isolation class measured cost per resident sandbox\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "durable-execution",
+    "claim": "That any cross-engine specification or portable journal format for durable execution exists or is being drafted inside the window.",
+    "research_query": "cross-engine durable execution specification portable workflow journal format working group 2026"
+   },
+   "mechanism": "A mature build treats durable execution as a journal of completed execution boundaries -- tool calls, external mutations, human approvals, outbound messages -- persisted before their result is returned to the calling function, so a crash recovers by replaying the journal without repeating any side effect. No cross-engine specification or portable journal wire format exists inside the window (each engine journals in its own format: Temporal's history, Restate's journal, DBOS's Postgres-backed log), so portability is achieved tool-agnostically at the capability interface -- a build codes to the durable-execution contract, keeping any given engine's journal format an internal implementation detail, so a second engine can be substituted behind that interface without the format itself needing to be shared.",
+   "standard": "none -- durable execution as a category is settling (Temporal, Restate, DBOS and others converging on the journal-before-return mechanism), but no cross-engine journal-format standard or working group was found in the window; one academic proposal names a five-plane interoperability taxonomy without a ratified spec.",
+   "check": "a resume test: kill the process mid-workflow at a marked step and assert the resumed run neither repeats the completed side effect nor loses state -- validated per-engine against its own journal, since no cross-engine assertion is currently possible.",
+   "direction": "Emerging: cross-language client interoperability within one engine (DBOS shipped multi-language clients against one workflow in April 2026) is happening; a shared cross-engine journal format is not. Abandoned: expecting one canonical durable-execution wire format to emerge and be adopted across engines inside this window.",
+   "cites": [
+    "X-maturity-a-014",
+    "X-maturity-a-015"
+   ],
+   "origin": "sourced",
+   "quote": "A durable execution engine works by journaling progress as code runs, with every meaningful step recorded to a persistent log before its result is returned to the function.",
+   "gap": "no cross-engine durable-execution journal specification or working group was found; only single-vendor cross-language interoperability (DBOS) surfaced. Query used: \"cross-engine durable execution specification portable workflow journal format working group 2026\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "agent-runtime",
+    "claim": "Whether a conformance test suite published by the protocol's stewards exists that an adapter can be run against.",
+    "research_query": "Agent Client Protocol official conformance test suite certification 2026"
+   },
+   "mechanism": "A mature agent protocol's stewards publish an official, steward-authored conformance test suite -- a reference client and/or server pair that any implementation runs against for certification, ideally on a re-validation cadence tied to protocol versions -- so conformance is a mechanical, third-party-verifiable claim rather than a self-report. Where stewards have not yet published one, the interim, weaker substitute is a community-built inspector/validator that checks wire traffic against the published schema, which catches structural non-conformance but cannot certify behavioral conformance the way a steward-authored suite can.",
+   "standard": "Agent Client Protocol (agentclientprotocol.com / github.com/agentclientprotocol), an open protocol for connecting editors to coding agents; no version-specific conformance-suite normative text was found.",
+   "check": "none official exists for ACP; the closest mechanical check available is running an implementation's traffic through a third-party inspector (e.g. acp-inspector) for schema-conformance validation -- not a certification against a steward-defined pass/fail suite.",
+   "direction": "Emerging: the adjacent MCP ecosystem shipped an official, steward-authored conformance-test repository in 2026, setting the expected pattern for agent protocols generally; ACP's stewards have not followed with an equivalent suite in this window, leaving only third-party tooling.",
+   "cites": [
+    "X-maturity-a-016",
+    "X-maturity-a-017"
+   ],
+   "origin": "sourced",
+   "quote": "ACP Inspector is a tool for debugging and validating Agent Client Protocol (ACP) traffic through protocol conformance testing for AI coding agents",
+   "gap": "no steward-published, official ACP conformance test suite was found; only third-party community inspector/validator tools (ACP-inspector, acp-inspector) exist, which check spec-schema conformance of traffic but are not an official certification suite. Query used: \"Agent Client Protocol official conformance test suite certification 2026\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "capability-packaging",
+    "claim": "Whether the packaging specification itself defines a version field, a digest or a signature mechanism, as opposed to registries and runtimes adding these around it.",
+    "research_query": "Agent Skills specification manifest fields version integrity digest signature normative requirements 2026"
+   },
+   "mechanism": "The base packaging specification for a portable skill/capability defines only the minimal manifest needed for discovery and instruction (in the Agent Skills spec's case: YAML frontmatter with name and description, plus a Markdown body) and leaves version, digest and signature as non-normative additions. Where integrity matters, a mature ecosystem layers a signing mechanism around the base spec rather than waiting for the spec itself to grow one -- a root certificate plus a verifier tool (e.g. an external, OpenSSF-aligned model-signing verifier) covering every file in the package -- while a v1 packaging spec may explicitly defer the trust decision to install-time human review instead of a cryptographic layer.",
+   "standard": "Agent Skills specification v1 (agentskills.io, originated by Anthropic, published as an open standard 2025-12-18) -- normative surface is two required frontmatter fields plus a Markdown body; no normative digest or signature mechanism.",
+   "check": "a schema check confirming SKILL.md frontmatter contains only the spec-required fields (name, description) and that any version/digest/signature field present is a vendor extension, cross-checked against whether the package is separately signed by an external verifier (e.g. an OpenSSF Model Signing check) rather than the manifest schema enforcing integrity itself.",
+   "direction": "Settling: third-party signing layers (root certificate plus an external verifier) are being bolted onto the unsigned base spec rather than the base spec itself growing a normative integrity layer inside the window; a closely related packaging spec (Agent Plugins 1.0) explicitly chose install-time human review over a signing layer for v1. Abandoned: waiting for the Agent Skills spec itself to define version/digest/signature fields before shipping integrity tooling.",
+   "cites": [
+    "X-maturity-a-018",
+    "X-maturity-a-019",
+    "X-maturity-a-020"
+   ],
+   "origin": "sourced",
+   "quote": "Version 1 defines no provenance or permissions layer, and no signing layer either -- the trust decision moves entirely to your install-time review",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "work-intake",
+    "claim": "Whether the agent messaging standard's extension mechanism is in practice used to carry idempotency keys and budget ceilings, or whether implementers put them in the payload.",
+    "research_query": "A2A extension mechanism 1.0.1 examples idempotency key budget metadata extension registry usage 2026"
+   },
+   "mechanism": "A2A's extension mechanism is used in practice for cross-cutting concerns generally -- an agent declares support for an extension as an AgentExtension entry in its AgentCard, a caller activates it via the A2A-Extensions request header, and extension-specific data rides in the message's arbitrary key-value metadata keyed by the extension's URI. Idempotency itself is handled today mostly through the base spec's own messageId-based duplicate detection rather than through a dedicated extension; a normative idempotency-key extension (A2A-SAGA) exists only as an open community proposal, and no budget-ceiling extension of any kind was found, official or proposed.",
+   "standard": "Agent2Agent (A2A) Protocol, contributed to the Linux Foundation in 2026; the extension mechanism (AgentCard AgentExtension objects, A2A-Extensions header, metadata) is part of the core specification, but no specific extension for idempotency keys or budget ceilings has been ratified.",
+   "check": "scan an AgentCard's declared capabilities for an AgentExtension URI in a recognized idempotency/budget namespace, cross-checked against actual A2A-Extensions header usage on requests -- expected to return none for most implementers today, since no official extension exists yet.",
+   "direction": "Emerging: the extension mechanism itself is settled and actively used for other concerns (tracing, credential passports); idempotency-key and budget-ceiling usage specifically remains at the community-proposal stage inside this window, with implementers more likely to rely on the base spec's messageId field or put such data directly in the message payload.",
+   "cites": [
+    "X-maturity-a-021",
+    "X-maturity-a-022"
+   ],
+   "origin": "sourced",
+   "quote": "The A2A-SAGA extension introduces normative requirements for idempotency_key propagation to ensure safe retries.",
+   "gap": "no ratified or widely-implemented A2A extension for idempotency keys or budget ceilings was found; only a community discussion/proposal (A2A-SAGA, GitHub discussion #1324) surfaced for idempotency_key, and nothing at all for budget metadata specifically. Query used: \"A2A extension mechanism 1.0.1 examples idempotency key budget metadata extension registry usage 2026\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "telemetry",
+    "claim": "Whether the CloudEvents distributed-tracing extension and explicit correlation attributes are used together in practice, or whether implementers choose one and lose the other.",
+    "research_query": "CloudEvents distributed tracing extension plus explicit correlation attributes agent workflow 2026 implementation guidance conflict"
+   },
+   "mechanism": "A mature build carries both together, because they serve different jobs rather than competing: the CloudEvents distributed-tracing extension embeds a W3C Trace Context traceparent/tracestate pair for cross-system trace correlation with OpenTelemetry, while a separate, explicit business-correlation attribute (a run id or workflow id) rides alongside as an ordinary CloudEvents extension attribute, carrying a domain-level identifier a trace ID alone does not (e.g. one that survives a re-fired trigger spanning multiple traces). The specification's own conflict rule -- general CloudEvents attribute serialization takes precedence over any secondary encoding the tracing extension defines -- is what keeps the two from silently disagreeing when both are present.",
+   "standard": "CloudEvents v1.0 distributed-tracing extension (CNCF) embedding W3C Trace Context (a W3C Recommendation); both are used together by design, not as alternatives.",
+   "check": "a schema check on emitted events asserting both a traceparent-carrying field and a distinct business-correlation attribute are present and non-empty on every event, with an equality assertion enforcing the spec's own precedence rule if the two encodings could otherwise disagree.",
+   "direction": "Settling: W3C Trace Context as the baseline propagation format, carried via the CloudEvents tracing extension, used concurrently with an explicit correlation attribute for business-level identity -- this is documented spec behavior, not an unresolved implementer choice. Nothing in the window is displacing this pairing.",
+   "cites": [
+    "X-maturity-a-023",
+    "X-maturity-a-024"
+   ],
+   "origin": "sourced",
+   "quote": "the values of these two could differ by the time the event is received at a destination. In those cases, the serialization that followed the 'general CloudEvents serialization rules' MUST be used.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "policy",
+    "claim": "How decision latency behaves when the input document must be assembled from remote state per call at agent scale.",
+    "research_query": "policy decision point latency input document assembly remote data agent tool call rate 2026 benchmark production"
+   },
+   "mechanism": "Proposed, since no single benchmark sources it directly: a mature build keeps the policy decision itself in the sub-millisecond range by keeping remote-state fetches off the decision's hot path: the input document a policy evaluates is assembled from data that is pre-fetched, cached, or pushed via streaming bundle updates ahead of the call, so the measured evaluation latency (on the order of 0.2ms average, under 1ms p95 in published sidecar benchmarks) does not include a synchronous remote lookup. Where a decision genuinely needs fresh remote state, that fetch is budgeted and measured as a separate, named cost from evaluation, because no published benchmark found in the window reports the combined cost -- implying it is treated as a data-freshness/caching problem, not folded into the policy engine's own latency number.",
+   "standard": "none specific to this question; OPA and Cedar are the two live implementations (contested), with no shared standard for measuring or bounding remote-document-assembly latency.",
+   "check": "an end-to-end p95 decision-latency SLO measured at the tool-call gateway (not just engine-internal evaluation), reported as two distinct metrics -- policy evaluation time and input-document assembly time -- so a latency regression can be attributed to the right cause.",
+   "direction": "Settling: policy evaluation moving to the gateway boundary in front of every tool call (e.g. Cedar inside a major agent platform's policy service as of March 2026), with engine evaluation itself optimized into the sub-millisecond range. Still emerging/unsettled: a published benchmark that isolates remote-document-assembly cost from evaluation cost at agent tool-call rates.",
+   "cites": [
+    "X-maturity-a-025",
+    "X-maturity-a-026"
+   ],
+   "origin": "proposed",
+   "quote": null,
+   "gap": "no benchmark was found that isolates remote-document-assembly latency from policy-evaluation latency specifically; published figures (roughly 0.2ms average / under 1ms p95, or as low as 0.006-0.03ms in another measurement) report engine evaluation only, and separate agent-latency-budget research shows real multi-hop turns compounding 3-10x beyond single-call benchmarks without attributing that compounding to input assembly versus evaluation. Query used: \"policy decision point latency input document assembly remote data agent tool call rate 2026 benchmark production\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "errors",
+    "claim": "Whether a convention has emerged for carrying problem details over non-HTTP agent transports, so an agent-to-agent or event failure uses the same object rather than a transport-native error code.",
+    "research_query": "RFC 9457 problem details over JSON-RPC gRPC messaging non-HTTP transport convention 2026 agent protocol error mapping"
+   },
+   "mechanism": "Proposed, extrapolating from an informal adaptation pattern rather than a ratified convention: a mature build reuses the RFC 9457 JSON object unchanged as the payload embedded in whatever error-carrying field the non-HTTP transport already provides -- for example packed as a typed value inside gRPC's `google.rpc.Status.details`, or as the `error.data` member of a JSON-RPC error response -- so the same problem-detail body (type, title, status, detail, instance, plus extension members) crosses transports, and only the outer envelope (HTTP status code vs. gRPC status code vs. JSON-RPC error code) differs by transport.",
+   "standard": "none -- RFC 9457 (RFC Editor, July 2023) is scoped to HTTP; no companion RFC, draft, or agent-protocol convention was found governing its use over JSON-RPC or gRPC specifically.",
+   "check": "a schema check that every non-HTTP error payload embeds a valid RFC 9457 object inside the transport's designated error-details field, validated against the same JSON Schema used to validate the HTTP path's problem+json bodies.",
+   "direction": "Emerging: ad hoc adaptation (\"embed a similar structure in gRPC status details\") is discussed at the blog/tutorial level, not standardized or adopted by any named agent protocol in the window. Abandoned: defining a wholly separate, transport-specific error shape per protocol rather than reusing the one problem-object schema.",
+   "cites": [
+    "X-maturity-a-027"
+   ],
+   "origin": "proposed",
+   "quote": "The RFC 9457 model can be adapted for gRPC by embedding a similar structure in the gRPC status details, creating a single source of truth for all errors.",
+   "gap": "no ratified or de facto convention was found for carrying RFC 9457 over JSON-RPC or agent-to-agent transports specifically (A2A, MCP); only an informal, non-normative gRPC-embedding pattern surfaced, with no evidence of adoption by a named agent protocol. Query used: \"RFC 9457 problem details over JSON-RPC gRPC messaging non-HTTP transport convention 2026 agent protocol error mapping\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "identity",
+    "claim": "That revocation of an agent credential reliably halts work already in flight rather than only preventing new calls.",
+    "research_query": "revoke short-lived agent credential in-flight task termination 2026 token revocation propagation latency"
+   },
+   "mechanism": "A mature build does not rely on a self-contained, offline-verifiable credential (a signed token nothing checks back against) for anything that must halt reliably mid-task, because such a token structurally cannot be revoked -- it can only be outlived. Instead it uses a broker-checked design where every action re-validates against a live revocation signal (an epoch, a revocation list, or introspection), accepting a bounded, measured propagation delay between the revoke call and 100% in-flight rejection (on the order of a few seconds in one production measurement using short polling and cache intervals), or a heartbeat-bound design where a delegated credential's validity is tied to periodic liveness proof from its issuer, so revocation is enforced by heartbeat cessation within a bounded window rather than a push notification that might not arrive.",
+   "standard": "none normative for the general case; OAuth 2.0 Token Introspection (RFC 7662) is the closest standard underpinning the broker-checked approach; heartbeat-bound credentialing is pre-standard research.",
+   "check": "a chaos test: revoke a credential mid-task and measure wall-clock time from the revoke call to the in-flight tool call actually being rejected; the build passes only if that time is bounded and the bound is published, not merely \"eventually\".",
+   "direction": "Settling: short-lived, broker-checked or introspected tokens over long-lived self-contained JWTs for anything needing mid-task revocation, with propagation delay treated as a measured, bounded, published number rather than assumed to be zero. Emerging: heartbeat-bound cryptographic revocation as a research direction (not yet production-standard) that would tighten the bound further. Abandoned: treating a signed, self-contained token as revocable at all.",
+   "cites": [
+    "X-maturity-a-028",
+    "X-maturity-a-029"
+   ],
+   "origin": "sourced",
+   "quote": "Self-contained tokens cannot be revoked -- you can only outlive them.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "idempotency",
+    "claim": "Whether the header draft was revived, replaced or formally abandoned after its April 2026 expiry - the search returned the expired revision but no later working-group action.",
+    "research_query": "httpapi working group idempotency key header draft 08 status 2026 revived expired abandoned"
+   },
+   "mechanism": "Regardless of the header's own standardization status, a mature build implements idempotency as a de facto client-supplied key (the Stripe-popularized Idempotency-Key convention) checked at the application or gateway layer against a server-side dedup store keyed on the (key, request-fingerprint) pair, replaying the original result for a matching retry and rejecting a reused key with a different payload -- because production idempotency has never waited on IETF ratification to work.",
+   "standard": "draft-ietf-httpapi-idempotency-key-header (IETF httpapi working group); latest version found is draft-07 (dated 2025-10-15, expiring 2026-04-18); no draft-08 or successor found, and no working-group action after expiry was located.",
+   "check": "a dedup-store test: replaying an identical Idempotency-Key plus payload digest within the store's retention window returns the original result without re-executing; a reused key with a differing payload digest is rejected (e.g. 409/422) rather than silently executed.",
+   "direction": "Settling: the de facto convention itself (application/gateway-layer dedup keyed on a client-supplied header) continues in production use regardless of IETF status. Unsettled inside the window: whether the IETF draft itself will be revived, replaced, or is being allowed to lapse permanently -- no working-group action after the April 2026 expiry was found in either direction.",
+   "cites": [
+    "X-maturity-a-030",
+    "X-maturity-a-031"
+   ],
+   "origin": "sourced",
+   "quote": "The IETF draft has expired without becoming an RFC.",
+   "gap": "no evidence was found of httpapi working-group action (revival, replacement, or formal abandonment) after the draft's 2026-04-18 expiry; searches surfaced only draft-07 (dated 2025-10-15) and a third-party note that it \"expired without becoming an RFC,\" with no draft-08 or successor document located. Query used: \"httpapi working group idempotency key header draft 08 status 2026 revived expired abandoned\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "state-persistence",
+    "claim": "That a single read surface of record-by-identity, stream-from-version and projection is sufficient for cost planning over a typed dependency structure - this is my synthesis, not a sourced finding.",
+    "research_query": "event sourced graph query surface projections planning cost estimation read model design 2026"
+   },
+   "mechanism": "Proposed, as this platform's own synthesis rather than a sourced sufficiency claim: the settled event-sourcing pattern derives every read surface -- a record fetched by identity, a stream replayed from a version, and a materialized projection for querying -- from the one append-only event log, treating the log as sole source of truth and every read surface as a regenerable view of it; production guidance names projection lag, projection failures, and event-log growth as the operational costs to plan for explicitly. Whether one such surface is *sufficient* for cost-planning purposes specifically over a typed dependency structure, as opposed to just being the standard read-model architecture, is this section's own synthesis and was not confirmed by any source found.",
+   "standard": "none named; CQRS plus Event Sourcing is a settled architectural pattern within its niche, not a ratified standard.",
+   "check": "a rebuild test: delete a projection and rebuild it from the log alone, asserting the result is byte-identical to the original; a cost dial (events replayed times average per-event processing time) predicts rebuild time within a measured tolerance, validating the log-as-source-of-truth assumption the sufficiency claim rests on.",
+   "direction": "Settling: read models/projections as the standard answer to query performance in event-sourced systems, with the log as sole write-side truth. Unsettled: no source ties this pattern to cost-planning sufficiency over a typed dependency structure specifically -- that remains this platform's inference, not an externally sourced claim.",
+   "cites": [
+    "X-maturity-a-032",
+    "X-maturity-a-033"
+   ],
+   "origin": "proposed",
+   "quote": "Events are projected and stored in one or more read models, so they can be queried instead of the event streams.",
+   "gap": "no source was found addressing whether a single read surface (record-by-identity, stream-from-version, projection) is sufficient for cost planning over a typed dependency structure specifically; general event-sourcing/CQRS guidance covers read-model design and names operational concerns (projection lag, event-store growth) but not this planning-cost sufficiency claim. Query used: \"event sourced graph query surface projections planning cost estimation read model design 2026\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "concern-identity",
+    "claim": "That a maximum delegation depth, or a rule for refusing a chain that has grown too long, is established practice - sources describe accumulating chains but none names a bound.",
+    "research_query": "maximum delegation chain depth limit agent to agent act claim nesting bound policy 2026"
+   },
+   "mechanism": "A mature build enforces a maximum act-claim delegation-chain depth as an explicit, published policy check at the token-exchange point, rejecting any chain that would exceed the bound rather than defaulting to unbounded depth (which the field treats as an unintended default, not a deliberate choice). Production identity platforms have converged informally on a practical range: one major platform enforces a hard limit of 4 (supporting up to five levels of nesting), and the wider guidance names 3-5 as the typical bound -- established, if not standardized, practice.",
+   "standard": "OAuth 2.0 Token Exchange (RFC 8693) defines the nested act-claim delegation mechanism itself; the depth bound is vendor/deployment policy layered on top, not part of RFC 8693's normative text.",
+   "check": "a token-exchange test that constructs a chain of N nested act claims and asserts the exchange request is rejected once N exceeds the configured bound, and accepted at or below it.",
+   "direction": "Settling: a bounded depth in the 3-5 range as established production practice (a named platform enforces 4), even without a normative RFC-level number. Abandoned: unbounded or undeclared delegation depth, explicitly characterized in the field as a default nobody actually intended.",
+   "cites": [
+    "X-maturity-a-034",
+    "X-maturity-a-035"
+   ],
+   "origin": "sourced",
+   "quote": "Auth0 enforces a maximum allowed delegation chain (act claim) depth limit of 4, and Auth0 supports up to five levels of delegation chain nesting.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "concern-policy",
+    "claim": "That there is a portable request and response shape for a policy decision that survives a change of engine (so a second engine can be proven against the same suite) is asserted without a source.",
+    "research_query": "portable policy decision request response schema across policy engines interoperability 2026"
+   },
+   "mechanism": "No live, portable request/response schema for a policy decision exists across policy engines in this window. The one historical attempt at this (XACML's standardized authorization request/response schema) predates the current generation of engines and neither Open Policy Agent/Rego nor AWS's Cedar has adopted it or a successor; each defines its own native input and decision shape (OPA's JSON input document plus a data document; Cedar's typed entities/actions/resources schema). A build that must survive an engine swap therefore achieves portability at its own boundary -- an adapter that maps the build's own typed request into whichever engine's native shape -- rather than relying on an externally shared wire format that does not currently exist.",
+   "standard": "XACML (OASIS) is the only historical standard for a portable policy-decision schema, and it is not in active use by either OPA/Rego or Cedar; no successor standard was found.",
+   "check": "a contract test suite run unmodified against two engines behind the build's own adapter interface -- both fed through the same request/response mapping layer -- proving portability is achieved at the adapter, not at a shared wire format that does not exist.",
+   "direction": "Contested and not converging: OPA/Rego and Cedar remain schema-incompatible with each other, and neither traces to a shared successor of XACML; this is a live two-engine field with no shared portable schema on the table in this window.",
+   "cites": [
+    "X-maturity-a-036",
+    "X-maturity-a-037"
+   ],
+   "origin": "sourced",
+   "quote": "Cedar is a declarative open-source authorization language and engine developed by AWS, while Rego is a high-level, declarative query language created by Styra, extends Datalog, and is used with the Open Policy Agent (OPA) to write policies for decision-making in applications.",
+   "gap": "no portable request/response schema across live policy engines (OPA/Rego, Cedar) was found for this window; only the legacy, unused-by-either-engine XACML standard surfaced, and no successor spec was located. Query used: \"portable policy decision request response schema across policy engines interoperability 2026\"."
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "concern-telemetry",
+    "claim": "Which specific generative-AI attribute names are safe to depend on inside the window, given every one of them still carries a development stability badge, is not resolved by the sources found.",
+    "research_query": "which gen_ai semantic convention attributes are considered safe to depend on production 2026 stability roadmap"
+   },
+   "mechanism": "A mature build treats every gen_ai.*-namespaced attribute as unstable by the standard's own declaration and depends, with a compatibility guarantee, only on the small set of genuinely Stable shared attributes (error.type, server.address, server.port as of this window). Where gen_ai.* attributes are used anyway -- a pragmatic bet, since the shape is already widely emitted across the ecosystem -- the build pins the exact semantic-convention schema version or commit it targets and sets the stability opt-in flag explicitly, so a convention rename upstream does not silently break dashboards or alerts built on the unpinned name.",
+   "standard": "OpenTelemetry Semantic Conventions, GenAI conventions specifically (moved to a dedicated repository as of v1.42.0, 2026-06-12); status Development, no 1.0 release, no versioned schema URL published in this window.",
+   "check": "a CI check that fails the build if a telemetry emitter references a gen_ai.* attribute name not pinned to the schema version recorded in project config, while passing error.type/server.address/server.port as depended-on without requiring a pin.",
+   "direction": "Settling: dual-emission via an explicit stability opt-in as the transition mechanism for churn in these conventions. Unsettled inside the window: the GenAI conventions themselves remain Development with no 1.0 release, and the newly split-out dedicated repository has no versioned release yet to pin against.",
+   "cites": [
+    "X-maturity-a-038",
+    "X-maturity-a-039"
+   ],
+   "origin": "sourced",
+   "quote": "no GenAI-specific span, event, metric, or attribute in the dedicated repository is marked Stable; the GenAI conventions remain Development.",
+   "gap": null
+  },
+  {
+   "item": {
+    "kind": "gap",
+    "section": "concern-errors",
+    "claim": "That retry semantics belong in extension members of the failure body, rather than in transport headers, is this section's position and was not sourced.",
+    "research_query": "retryable flag retry-after in problem details extension members versus HTTP headers API guidance 2026"
+   },
+   "mechanism": "A mature build carries retry semantics in both places for different purposes rather than choosing one over the other: the HTTP Retry-After header remains authoritative for a synchronous response a client is reading right now (an agent can back off without parsing the body), while a retryable/retry_after (or retryAfter) pair as RFC 9457 extension members makes the problem object self-contained for asynchronous processing, logging, and relay over non-HTTP transports where no header exists. A draft specifically for asynchronous job failures formalizes this exact pattern, naming retryable and retryAfter among its extension members alongside job-tracking fields.",
+   "standard": "RFC 9457 §3 permits extension members generally; draft-ratnawat-httpapi-async-problem-details-00 (IETF, not yet adopted by a working group) is the specific draft naming retryable/retryAfter as extension members for async job failures.",
+   "check": "a response-shape test asserting that any retryable 429/503-equivalent response carries both the Retry-After header (for synchronous clients) and, when the body is a problem+json object, matching retryable/retry_after extension-member values -- flagging any response where the header and body disagree.",
+   "direction": "Settling: extension-member retry fields for the self-contained/async/log use case, used alongside (not replacing) the Retry-After header for the synchronous case. This section's own stated position -- that retry semantics belong in extension members rather than in headers -- is only partly borne out by sources: production guidance shows both coexisting for different consumers, not one supplanting the other.",
+   "cites": [
+    "X-maturity-a-040",
+    "X-maturity-a-041"
+   ],
+   "origin": "sourced",
+   "quote": "Eight extension members are specified: \"jobId\", \"jobStatus\", \"submittedAt\", \"completedAt\", \"retryable\", \"retryAfter\", \"processingStage\", and \"correlationId\".",
+   "gap": null
+  }
+ ]
+}

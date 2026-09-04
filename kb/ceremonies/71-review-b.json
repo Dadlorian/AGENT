@@ -1,0 +1,172 @@
+{
+  "status_row": 71,
+  "label": "71-review-b",
+  "date": "2026-09-04",
+  "step": "review",
+  "reviewer": "71-review-b (claude-opus-5[1m])",
+  "skills": ["cap-isolation", "cap-agent-runtime", "cap-tool-access", "cap-telemetry"],
+  "method": "Independent review of the four folded skills against state/briefs/review.md and state/briefs/context-71.md points 1-6, in that order, for every skill. Quote verification: every row carrying an origin (body plus the folded object) checked so its quote is a verbatim substring of a cited kb record (all kb/*.jsonl string fields). Lost content: each target's skill.json compared row-by-row against git show c468ad2^:.claude/skills/<former>/skill.json for every source named in docs/fold/plan.json, keyed by row text (invariants, not_exposed, instructions, best_practices), by name (operations, shapes), by entity (adapters) and by question (open_questions), with field-level comparison of every surviving row. Rendering: python3 tools/render_skill.py --check on each skill (SKILL.md and every references/<former>.md). Reference links: every references/*.md path named anywhere in skill.json resolved on disk. Criteria: each definition_of_done criterion run once at HEAD; cap-isolation's breakage A additionally applied and reverted (git checkout -- harness/containment/binding.json; tree left clean).",
+  "findings": [
+    {
+      "id": "R71B-001",
+      "skill": "cap-isolation",
+      "location": "folded.cap-isolation-implement.adapters[1] (rendered: references/cap-isolation-implement.md, Adapters, second row)",
+      "severity": "block",
+      "kind": "adapter",
+      "evidence": "One skill now names two different second adapters for the same boundary. Body adapters[1] is `E-swap-candidate-gvisor` ('a container sandbox that intercepts syscalls in userspace rather than booting a guest kernel'); the folded implement facet's adapters[1] is `E-swap-candidate-hosted-sandbox-services` ('the same declaration served by a WebAssembly component sandbox run through an OCI-conformant shim'). The skill's own open_questions[1] records the resolution that produced the body row: 'Resolved during reconciliation ceremony reconcile-01 (RP-005) ... the earlier component-sandbox description named in the Adapters row was found unsupported by any cited source'. The superseded row is still shipped inside this skill as a reference, and the definition of done ('run the containment conformance suite over both adapters', criterion `--adapter dryrun --adapter second`) does not say which second adapter is meant. This was tolerable while the two facets were separate skills; the fold put the contradiction inside one skill. The other three skills' body and folded adapter entities agree exactly.",
+      "fix": "Apply RP-005 to the folded copy: replace folded.cap-isolation-implement.adapters[1] with the gVisor row the body carries (its `cannot` and `swap_procedure` rewritten for userspace syscall interception), or keep the row only as an explicitly superseded candidate that names RP-005 and states it is not the recorded second adapter. Then re-render."
+    },
+    {
+      "id": "R71B-002",
+      "skill": "cap-isolation",
+      "location": "folded.cap-isolation-implement.adapters[1].quote",
+      "severity": "fix",
+      "kind": "misquote",
+      "evidence": "The quote 'gVisor improves container security by intercepting syscalls in userspace, but it does not provide hardware-level isolation.' is a verbatim substring of X-cap-isolation-004's snippet, but the row it anchors describes 'a WebAssembly component sandbox run through an OCI-conformant shim'. The record describes gVisor and says nothing about a WebAssembly component sandbox, so the cited record does not support the row's claim (review.md check (a), second half).",
+      "fix": "Removed by R71B-001 if the row is replaced by the gVisor row. If the row is kept as a superseded candidate, cite a record that describes the technology the row actually names, or mark the row proposed with a research query for one."
+    },
+    {
+      "id": "R71B-003",
+      "skill": "cap-isolation",
+      "location": "definition_of_done.expected_failure_design (same text in folded.cap-isolation-implement.definition_of_done)",
+      "severity": "fix",
+      "kind": "dod",
+      "evidence": "The recorded design of the deliberate breakage does not match the recorded (and reproduced) failure. Text: 'Both adapters' egress-attempt assertions fail (egress_blocked drops below egress_made) and the conformance run exits non-zero naming both adapters; the jail mode, digest and containment-marker assertions still pass, so the report is green on everything except the one property the breakage removed.' Applying breakage A at HEAD (0.0.0.0/0 in binding.json default_declaration egress_allowlist, egress: allowlist) and running `bash harness/containment/test.sh` reproduces the recorded exit 1 and 'passed 19, failed 6' exactly, but the six failures are: 'dryrun conformance exits 0', 'no check failed', 'before the swap, conformance passes', 'after the swap, conformance passes', 'both technologies in one run', and 'a runtime that claimed cancellation and missed it is told apart from one that never claimed it'. No line reports egress_blocked dropping below egress_made, and a cancellation assertion fails, so the run is not 'green on everything except the one property the breakage removed' (the harness README's breakage-A row makes the same claim). The criterion itself is genuine: it passes clean and fails under the breakage.",
+      "fix": "Rewrite expected_failure_design from the recorded breakage_output: name the five conformance-gate checks that fail and the cancellation-discrimination check, or make the egress counters the assertion that actually reports the loss (assert egress_blocked == egress_made per adapter in conformance.py) so the described failure and the observed one are the same. Correct the harness README row 4 in the same pass."
+    },
+    {
+      "id": "R71B-004",
+      "skill": "cap-isolation",
+      "location": "instructions[5], instructions[7], best_practices[0], best_practices[4]; folded.cap-isolation-implement.composes_with.builds_on; references/usage.md line 5",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "The prose still sends readers to skills the fold removed, while composes_with was remapped. instructions[5]: 'build-adapter-pair carries the rule that a second adapter is chosen...'; instructions[7]: 'agentic-stack and build-definition-of-done carry the rule that a criterion nothing can fail is not a criterion'; best_practices[0]: '...and build-adapter-pair applies to adapter selection'; best_practices[4] names build-adapter-pair. Neither build-adapter-pair nor build-definition-of-done exists under .claude/skills after the fold (both are sources of build-evidence in docs/fold/plan.json), and composes_with.builds_on already reads ['agentic-stack','build-evidence','build-skill-authoring','cap-errors']. The folded copy's builds_on still lists build-adapter-pair, build-definition-of-done and build-evidence-record, and references/usage.md states the caller doctrine 'is stated once in `cap-consumption` and is not repeated here' - cap-consumption folded into agentic-stack.",
+      "fix": "Rewrite each prose pointer to the surviving skill and say which part it owns ('build-evidence carries the adapter-pair rule (F-b1-04)', 'build-evidence states that a criterion nothing can fail is not a criterion (F-part-c-04)', 'agentic-stack states the caller doctrine'). Remap the folded copies' composes_with through docs/fold/plan.json the way the target's was, or state in the Folded skills preamble that folded composes_with is historical. Same class of edit in the other three skills (R71B-007, R71B-009, R71B-012)."
+    },
+    {
+      "id": "R71B-005",
+      "skill": "cap-isolation",
+      "location": "description (trigger clause 'where the real credential lives')",
+      "severity": "nit",
+      "kind": "trigger",
+      "evidence": "The description fires correctly for the folded former (cap-isolation-implement is reachable through 'plus how a sandbox is built and swapped') and for the skill's own subject. The credential clause over-fires: cap-identity's description claims 'brokered short-lived mandates instead of hand-issued credentials ... when a unit needs a credential nobody issued', so a task about where a credential is issued or held lands on two skills. This skill only states the credential mode (broker_only) and that no real secret enters the unit.",
+      "fix": "Narrow to the containment claim, e.g. 'why no real secret enters the unit', leaving issuance and delegation to cap-identity."
+    },
+    {
+      "id": "R71B-006",
+      "skill": "cap-agent-runtime",
+      "location": "definition_of_done.criterion / .expected / .expected_failure",
+      "severity": "fix",
+      "kind": "dod",
+      "evidence": "The criterion is character-for-character cap-isolation's ('bash harness/containment/test.sh && python3 harness/containment/conformance.py --adapter dryrun --adapter second'), and so is Expected ('adapters_run=2 | conformance: pass report=.../containment-conformance.json'). The Expected failure line ends 'ok typed as isolation-unavailable (503) | passed 20, failed 5'. Nothing a reader can see in the criterion or in either expected line asserts the property this skill gates on - instructions[7] says 'Judge a candidate runtime by the cancellation criterion in this skill's definition of done'. The evidence exists but only inside measured_run.clean_output ('stop_reason=cancelled ... stop_reason=cancel_timeout ... declared_gap_honoured=true'), which the rendered Definition of done table does not show. Criterion run at HEAD: test.sh exit 0, 'passed 25, failed 0'; conformance exit 0, 'adapters_run=2 | conformance: pass'.",
+      "fix": "Quote the two per-adapter lines that carry stop_reason and declared_gap_honoured in `expected`, and quote the cancellation line ('a runtime that claimed cancellation and missed it is told apart from one that never claimed it') in `expected_failure`, so the rendered table shows a criterion that is about this skill rather than about containment."
+    },
+    {
+      "id": "R71B-007",
+      "skill": "cap-agent-runtime",
+      "location": "contract.invariants[2], instructions[0], instructions[4], instructions[7]; folded.cap-agent-runtime-implement.composes_with.builds_on; references/usage.md line 5",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "Same stale-sibling class as R71B-004. contract.invariants[2]: 'which is exactly what build-adapter-pair's design rule 3 (F-b1-04) exists to catch'; instructions[0]: 'build-adapter-pair already states that the interface survives the swap'; instructions[4]: 'record the axes on which the pair differs the way build-adapter-pair requires'; instructions[7]: 'agentic-stack and build-definition-of-done already state that a criterion nothing can fail is not a criterion'. Neither skill exists post-fold; composes_with.builds_on already reads build-evidence. references/usage.md points at cap-consumption, and the folded builds_on still lists all three removed names.",
+      "fix": "As R71B-004: rewrite the pointers to build-evidence (and agentic-stack for the caller doctrine), and remap or annotate the folded composes_with."
+    },
+    {
+      "id": "R71B-008",
+      "skill": "cap-agent-runtime",
+      "location": "contract.operations[0], [1], [3], [4]",
+      "severity": "nit",
+      "kind": "unsupported",
+      "evidence": "Four operations (open_session, prompt, receive_updates, answer_permission_request) are all marked origin 'sourced' on one search-only snippet, X-cap-agent-runtime-002: 'ACP standardizes AI agent interaction (prompts, sessions, file permissions, streaming) between editors and coding agents.' The quote is verbatim and supports that the protocol standardizes those four areas; it does not support the call names, the inputs or the outputs the rows state, which is why each row parenthesises 'call name is ours' and marks its output '(proposed)'. The standard's own row carries version_status unverified, so no specification text has been read.",
+      "fix": "Mark the four operation rows proposed with X-cap-agent-runtime-002 as the anchor for the operation set (the pattern cap-tool-access uses: its four operations are origin 'proposed' on the same kind of evidence), or split each row so the sourced half is the area the snippet names and the proposed half is the call."
+    },
+    {
+      "id": "R71B-009",
+      "skill": "cap-tool-access",
+      "location": "instructions[0], instructions[6]; folded.cap-tool-access-implement.composes_with.builds_on; references/usage.md line 5",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "Same stale-sibling class as R71B-004. instructions[0]: 'build-adapter-pair already states that the interface survives the swap and the implementation does not (F-b3-18), and cap-document-validation reads that same line for its checker'; instructions[6]: 'build-adapter-pair owns the test (F-b1-04, F-part-c-05)'. build-adapter-pair does not exist post-fold and composes_with.builds_on already reads build-evidence; cap-document-validation, named in the same row, does exist, so the row half-updates. The folded copy's builds_on lists build-adapter-pair, build-definition-of-done and build-evidence-record; references/usage.md points at cap-consumption.",
+      "fix": "As R71B-004."
+    },
+    {
+      "id": "R71B-010",
+      "skill": "cap-tool-access",
+      "location": "adapters[0] and adapters[1] (swap_procedure axes)",
+      "severity": "nit",
+      "kind": "adapter",
+      "evidence": "The pair is 'the endpoint this platform runs and registers tools into itself' against 'a conformant server published by someone else ... reached over the same client', and the declared axes are catalogue_authority and call_locality. Both adapters speak the same protocol through the same client and execute a call the same way, so what the swap proves is a change of ownership and network position, not a change of execution model - the test the other three skills' pairs meet (hardware VM vs userspace syscall interception; live session vs single-shot; hosted semantic service vs local pipeline stage). The rows argue the case honestly, and the harness does exercise both bindings (34/34 cases, adapters_run=2), so this is a weakness of the pair rather than an unsupported claim.",
+      "fix": "State in adapters[1].swap_procedure why authority over the catalogue is the execution-model axis for this boundary (what code path differs, not only who owns the list), or open a question naming a genuinely different execution model for the second adapter (e.g. an in-process tool registry reached without the protocol client) and record why it was not taken."
+    },
+    {
+      "id": "R71B-011",
+      "skill": "cap-telemetry",
+      "location": "folded.cap-telemetry-implement.instructions[8], folded.xc-correlation.instructions[7], folded.xc-correlation-implement.instructions[7] (rendered: references/cap-telemetry-implement.md, references/xc-correlation.md, references/xc-correlation-implement.md)",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "Three progressive-disclosure rows survived the fold pointing at paths that do not exist. They say 'open references/telemetry-implementation.md', 'open references/correlation-audit.md' and 'open references/migration-and-wiring.md'. Those files existed pre-fold under their own skills (git ls-tree c468ad2^ shows .claude/skills/cap-telemetry/references/telemetry-attribute-mapping.md, .claude/skills/xc-correlation/references/correlation-audit.md, .claude/skills/xc-correlation-implement/references/migration-and-wiring.md); the fold moved them into cap-telemetry/references/ under prefixed names (cap-telemetry-implement-telemetry-implementation.md, xc-correlation-correlation-audit.md, xc-correlation-implement-migration-and-wiring.md) without rewriting the rows that name them. Every reference path named in cap-isolation, cap-agent-runtime and cap-tool-access resolves; only cap-telemetry has dangling links. tools/validate_skills.py does not check reference paths, so all four skills still report 0 errors, 0 warnings.",
+      "fix": "Rewrite the three rows to the prefixed filenames and re-render. Worth adding a reference-path existence check to tools/validate_skills.py, since the fold renamed reference files in every multi-source target."
+    },
+    {
+      "id": "R71B-012",
+      "skill": "cap-telemetry",
+      "location": "contract.invariants[3], contract.invariants[4], adapters[0].swap_procedure; references/usage.md line 5",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "Stale sibling names, as R71B-004. contract.invariants[3]: 'build-interface-versioning reads the same record as the model for a frozen field set'; contract.invariants[4]: 'build-interface-versioning states the general discipline and names this interface as its first application' - build-interface-versioning folded into build-evidence and composes_with.builds_on already reads build-evidence. adapters[0].swap_procedure: 'cap-telemetry-implement owns the migration, the per-adapter conformance subsets and the full procedure' - cap-telemetry-implement is now this skill's own reference, not a sibling; references/cap-telemetry-implement.md does carry that material (migration order at instruction 6, the conformance-subset row at best_practices), so only the pointer is wrong. references/usage.md points at cap-consumption.",
+      "fix": "Name build-evidence for the versioning discipline and 'references/cap-telemetry-implement.md' for the migration, so each pointer resolves to something a reader can open."
+    },
+    {
+      "id": "R71B-013",
+      "skill": "cap-telemetry",
+      "location": "instructions[8] (rendered step 9, the progressive-disclosure row)",
+      "severity": "nit",
+      "kind": "coherence",
+      "evidence": "The body's one row that tells a reader which reference to open names only references/telemetry-attribute-mapping.md and references/usage.md. Nothing in the body sends a reader to references/xc-correlation.md or references/xc-correlation-implement.md, which is where the material xc-correlation contributed now lives: the stamp / derive_child / audit / reassemble operations, the zero-omission audit over a run's whole population, and the re-stamping-at-every-boundary invariant. The Folded skills table lists them, but the body's invariants on correlation (invariants[1], [2]) never point at the depth they summarise.",
+      "fix": "Add both files to instructions[8] with one clause each saying what they carry (the audit and its zero-omission criterion; the migration off inherited trace context)."
+    },
+    {
+      "id": "R71B-014",
+      "skill": "cap-telemetry",
+      "location": "description",
+      "severity": "nit",
+      "kind": "trigger",
+      "evidence": "'Traces and metrics any collector can ingest, plus correlation ...' names two signals, but the skill's scope is three plus problem objects: best_practices[2] is about joining 'metrics, logs and traces', the standards note records OTLP 'stable for the trace, metric and log signals', and folded xc-correlation binds 'every span, every log record and every problem object a run emits'. The load clauses cover the correlation subject well ('where a run id lives', 'when one run appears as several unrelated trees'), but a task phrased as an audit ('does every log record and error carry the run id') has no clause to catch it.",
+      "fix": "Say 'traces, metrics and logs' and add a clause for the audit, e.g. 'or when auditing that every record of a run carries the identifiers stamped at entry'."
+    }
+  ],
+  "counts": {"block": 1, "fix": 8, "nit": 5, "total": 14},
+  "by_skill": {"cap-isolation": 5, "cap-agent-runtime": 3, "cap-tool-access": 2, "cap-telemetry": 4},
+  "metrics": {
+    "rows_checked": 280,
+    "sourced": 199,
+    "proposed": 81,
+    "quotes_verified": 206,
+    "harness_runs": 9,
+    "criteria_run": 4,
+    "criteria_passing": 4,
+    "breakages_run": 1
+  },
+  "validate_skills_output": {
+    "cap-isolation": "cap-isolation: 0 errors, 0 warnings",
+    "cap-agent-runtime": "cap-agent-runtime: 0 errors, 0 warnings",
+    "cap-tool-access": "cap-tool-access: 0 errors, 0 warnings",
+    "cap-telemetry": "cap-telemetry: 0 errors, 0 warnings"
+  },
+  "harness_confirmations": {
+    "cap-isolation": "bash harness/containment/test.sh -> exit 0, 'passed 25, failed 0'; python3 harness/containment/conformance.py --adapter dryrun --adapter second -> exit 0, 'adapters_run=2 | conformance: pass  report=/home/user/AGENT/harness/containment/out/containment-conformance.json', matching definition_of_done.expected verbatim. Breakage A applied and reverted: exit 1, 'passed 19, failed 6' matching expected_failure verbatim but not expected_failure_design (R71B-003). binding.json restored, git status clean under harness/.",
+    "cap-agent-runtime": "Same criterion as cap-isolation (identical string); run once -> exit 0, 'adapters_run=2 | conformance: pass', matching definition_of_done.expected verbatim (R71B-006 is about what that line asserts, not whether it runs).",
+    "cap-tool-access": "bash harness/tool-access/test.sh -> exit 0, 'passed 36, failed 0'; python3 harness/tool-access/conformance.py --adapter dryrun --adapter second -> exit 0, 'adapters_run=2 | conformance PASSED: 34/34 cases, 2 binding(s)', matching definition_of_done.expected verbatim.",
+    "cap-telemetry": "cd harness/observability && bash test.sh -> exit 0, 'passed 37, failed 0'; conformance.py --adapter dryrun, ADAPTER=second conformance.py, then --merge -> all exit 0, final line 'conformance: PASS adapter=['dryrun', 'second']', matching definition_of_done.expected verbatim."
+  },
+  "fold_checks": {
+    "lost_content": "No sourced row was lost in any of the four skills. Row-by-row comparison against c468ad2^ for all six sources named in docs/fold/plan.json found 11 rows absent, every one origin 'proposed' (cap-isolation 2, cap-agent-runtime 2, cap-tool-access 3, cap-telemetry 4), and every one recorded with a location and a reason in kb/ceremonies/71-source-a.json, whose per-skill counts (deleted 2/2/3/4) match exactly. No row's text, origin, sources or quote was altered relative to the pre-fold file; the only other differences are the three the plan prescribes - the description rewritten, composes_with remapped, and the definition of done taken from the implement facet (each of the four now carries its implement facet's definition_of_done byte-for-byte).",
+    "rendering": "python3 tools/render_skill.py --check exits 0 for all four: SKILL.md and every references/<former>.md are the current render of skill.json.",
+    "quotes": "All 206 quote-bearing rows (body and folded) verified as verbatim substrings of a cited record. One quote is drawn from a record's title rather than its snippet (cap-tool-access open_questions[0], 'The 2026-07-28 MCP Specification Release Candidate', X-cap-tool-access-002) - verbatim and correctly attributed, recorded here rather than as a finding.",
+    "product_purity": "No product name outside an Adapters section, in SKILL.md or in any references/*.md, for all four skills (validate_skills.PRODUCTS applied to the rendered references as well as the bodies, which the validator itself does not do).",
+    "proposed_share": "cap-isolation 17/60 (28.3%), cap-agent-runtime 17/58 (29.3%), cap-tool-access 16/56 (28.6%), cap-telemetry 31/106 (29.2%) - all under 30 percent.",
+    "duplication": "No body row duplicates a folded reference row above a 0.62 text-similarity threshold, and no intra-skill row pair above 0.50. The folded xc-correlation rows that overlap the body name cap-telemetry explicitly ('cap-telemetry owns the concern's one-sentence contract'), so the duplication check passes; the gap is the other direction (R71B-013).",
+    "planted_defects": "The two planted defects are not in this reviewer's four skills. The working tree at HEAD (36f2ef6) carries uncommitted additions only in .claude/skills/cap-idempotency (SKILL.md +2, skill.json +16), and the four skills reviewed here are byte-identical to their committed state and carry no row that is not traceable to a pre-fold source or to a recorded deletion."
+  },
+  "summary": "14 findings over four folded skills: 1 block, 8 fix, 5 nit (cap-isolation 5, cap-agent-runtime 3, cap-tool-access 2, cap-telemetry 4). The block is cap-isolation shipping two different second adapters - the body's gVisor row and, inside references/cap-isolation-implement.md, the component-sandbox row that the skill's own open question records as found unsupported by any cited source (RP-005) - which leaves the definition of done ambiguous about which second adapter it runs over. The fold itself is sound: every one of the 11 absent rows is proposed and recorded in 71-source-a.json, no sourced row was lost, no quote or citation was altered, all four renders are current, all 206 quotes verify verbatim, and all four definition_of_done criteria run once at HEAD and pass with the recorded output. The remaining fixes are coherence debt the fold left in the prose rather than in the fields: every skill still sends readers to build-adapter-pair, build-definition-of-done, build-interface-versioning or cap-consumption, all of which the fold removed while composes_with was correctly remapped; cap-telemetry carries three reference links to files the fold renamed; cap-isolation's breakage design does not describe the failure it reproducibly produces; and cap-agent-runtime's definition of done is cap-isolation's criterion with no line in the expected output about the cancellation property it exists to gate.",
+  "status": "measured"
+}

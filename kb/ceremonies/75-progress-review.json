@@ -1,0 +1,168 @@
+{
+ "status_row": 75,
+ "ledger_name": "75-progress-review",
+ "ceremony": "75-progress",
+ "section": "examples/progress",
+ "reviewer": "75-progress-review",
+ "date": "2026-09-04",
+ "area": "progress",
+ "scope_note": "examples/progress/ read in full (README.md, run.py, test.sh, harnesses.py, provenance.json, pipelines/, entries/, cases/, schemas/) plus the records and files its rows cite: docs/litmus/questionnaire.json (durable-execution, scheduling, concern-budget), docs/maturity/closures.md, docs/reference/ontology.md, docs/consumption/unit-design.md, examples/end-to-end/schemas/entry.schema.json and run.py, examples/run/harnesses.py, harness/workflow, harness/xc-compensation, harness/evaluation, harness/scheduling and harness/errors, kb/facts.jsonl, kb/target-facts.jsonl, kb/research.jsonl, kb/reference-facts.jsonl, STATUS.md, OWNER.md, state/briefs/context-75.md. Nothing the author wrote about the example was read. A repository-wide grep for the suspect wording in R75PROGRESS-001 incidentally printed the path state/plants-progress.json; that file was not opened and no finding below comes from it. Files touched: kb/ceremonies/75-progress-review.json and docs/night/hidden/progress.sh only. Running the example and its gate rewrote examples/progress/out/, which test.sh deletes and regenerates on every run; the whole directory is untracked in git.",
+ "test_results": {
+  "visible": "passed 111, failed 0 (bash examples/progress/test.sh, exit 0)",
+  "hidden": "hidden passed 10, failed 5 (bash docs/night/hidden/progress.sh, exit 1)"
+ },
+ "hidden_check": {
+  "path": "docs/night/hidden/progress.sh",
+  "assertions": 15,
+  "last_line": "hidden passed 10, failed 5",
+  "exit_status": 1,
+  "what_it_decides": [
+   "h-01 the README carries exactly the six example-readme headings, in order (pass)",
+   "h-02 all four entry documents validate against examples/end-to-end/schemas/entry.schema.json and all four payload.progress declarations against schemas/progress.schema.json, with that example's own validator, and the four are one envelope shape (pass)",
+   "h-03 four doors run from outside the suite into their own ledgers and state: one report shape, one unit_ref, one workflow_ref, four actors, four run ids, four correlation ids (pass)",
+   "h-04 the exit-code rule the README calls measured, measured: exit 0 means completed with spend, exit 2 means a problem body with zero spend, exit 3 means failed with spend, over five runs including a below-floor ceiling, and all three codes are exercised (pass; nothing in test.sh reads an exit status beside a report - see R75PROGRESS-007)",
+   "h-05 the human door's receipt carries all thirteen named record kinds, every record names run id, correlation id, actor, entry kind, idempotency key and unit, and --verify-ledger verifies the chain (pass)",
+   "h-06 every disposition on every report is one of the four words parsed out of docs/reference/ontology.md's Disposition row, and at least two are reached (pass; the closed set is asserted here because nothing in the example asserts it - see R75PROGRESS-010)",
+   "h-07 every quoted string of twelve characters or more in README.md is verbatim, whitespace-collapsed, in one of the records its own table row cites - not only the quotes that sit immediately after a backticked id (FAIL: README.md:21, the Ideal row for durable-execution)",
+   "h-08 a declared value with no differential in the visible suite, stages.develop.on_cap, is varied: two runs identical but for that member must differ in something that is not prose (FAIL: identical disposition, identical loop record, identical typed refusal)",
+   "h-09 extension point E1: a stage row added to the declaration is walked in declared order, or at worst refused with a typed body - never an uncaught exception (FAIL: KeyError 'canary', exit 1, traceback, no problem body)",
+   "h-10 the same envelope submitted twice against its own state directory returns the same RESULT line, the same disposition and the same reported lifecycle (FAIL: escalate then reject)",
+   "h-11 the counts provenance.json spells out in words equal the ones read back out of the artifacts a full suite wrote (FAIL: 'six failure types' against seven)",
+   "h-12 no criterion or rubric body member (must_contain, required_steps, required_tools, answer_contains) appears in any artifact of any run this script started, executor state directories included, over at least twenty files (pass)",
+   "h-13 no product or vendor name, word-anchored against a list this script owns, in any .md, .py, .sh or .json source file of the example (pass)",
+   "h-14 the visible check counts at least forty checks, fails none, and its FLOOR equals both provenance.visible_checks_counted and the count it printed, with the floor half of the gate present (pass)",
+   "h-15 the visible check exits 0 (pass)"
+  ],
+  "note": "Every assertion reads a report, a ledger record, an executor state directory, a kb record or a process exit status. No assertion reads a log line the example wrote about itself, and no count is taken from the example's own prose."
+ },
+ "findings": [
+  {
+   "id": "R75PROGRESS-001",
+   "location": "examples/progress/README.md:21",
+   "severity": "block",
+   "kind": "misquote",
+   "evidence": "The Ideal table's `durable-execution` row - the row the area's first litmus section is scored against - opens with the quotation \"a multi-stage contract for durable operations using platform-defined steps and recovery checkpoints\" attributed to `REF-docs/litmus/questionnaire.json#durable-execution.future_state`. That record's future_state.text begins \"one contract for a multi-step unit of work, written in the platform's own vocabulary of step, idempotency key, checkpoint and resume point, and specifying the request shape...\". `grep -rn 'multi-stage contract'` over the repository returns this README line and nothing else, so the wording is not a variant of any record on file. The same cell's two other quotations (\"Every non-deterministic result...\" and \"A restart resumes at the first incomplete step...\") are byte-exact from the same record, and the same file quotes the same questionnaire correctly everywhere else it draws on it - the scheduling future_state at line 22 and the concern-budget future_state at lines 23, 125 and 137 are all byte-exact. The substitution also removes the thing the row exists to assert: the record's point is the platform's own vocabulary of step, idempotency key, checkpoint and resume point (which is why section 2 can say the contract is original design against F-b5-01/F-b5-03), and 'platform-defined steps and recovery checkpoints' asserts the opposite of what F-b5-01 is cited for two rows below.",
+   "fix": "Replace the first quoted fragment with the record's own opening - \"one contract for a multi-step unit of work, written in the platform's own vocabulary of step, idempotency key, checkpoint and resume point\" - or drop it; the two verbatim fragments already in the cell carry the row. Then close R75PROGRESS-002 so the check would have caught it."
+  },
+  {
+   "id": "R75PROGRESS-002",
+   "location": "examples/progress/test.sh:1020, backing examples/progress/README.md:13-15",
+   "severity": "block",
+   "kind": "proof-not-of-the-claim",
+   "evidence": "README lines 13-15 promise \"Every quoted string here is pasted out of the record it names and grepped back into it verbatim by the same section: a byte difference is a failure, not a note\", and section 13's check is labelled \"every quote is verbatim in the record it names, by lookup not by memory\". The check is `PAIR = re.compile(r'`((?:F|T|E|R|X|REF)-[^`]+)`\\s+\"([^\"]+)\"')` - it only sees a quotation that immediately follows a backticked id. Every quotation in the Ideal table (section 1) sits in the middle column, with the ids in the Evidence column to its right, so none of them is checked; the same is true of the questionnaire quotations in section 4's rows. Sixty-one id-adjacent pairs are checked and pass; the row-level check (docs/night/hidden/progress.sh h-07, which resolves the ids on the row and requires each quotation on that row to be verbatim in one of them) fails on the first pass over the file. `assert checked >= 40` is a floor on the wrong population, so it cannot notice the gap either.",
+   "fix": "Match quotations per table row rather than per adjacent id: collect the row's backticked ids, collect the row's quoted strings, and require each quotation to be verbatim (whitespace-collapsed) in at least one of the row's records. Then assert a floor on the number of quotations checked that is at least the number of quoted strings the file contains, so a narrowing of the regex fails the check instead of shrinking its population."
+  },
+  {
+   "id": "R75PROGRESS-003",
+   "location": "examples/progress/run.py:551, claimed at examples/progress/README.md:200 (E1) and 144",
+   "severity": "block",
+   "kind": "not-composable",
+   "evidence": "Extension point E1 promises \"A stage: add a row to `stages` with its operator and its `enter_when`, and the walk enters it in declared order\", and README:144 says of the unit declaration \"data, read at every point of decision; nothing in `run.py` re-types a bound, a width, a class or a decision set\". The walk dispatches on the stage's *id*: `outcome = {\"plan\": self.stage_plan, \"develop\": self.stage_develop, \"test\": self.stage_test, \"release\": self.stage_release, \"production\": self.stage_production}[st[\"id\"]](st)`. Adding the declared row `{\"id\": \"canary\", \"op\": \"sequence\", \"enter_when\": {\"stage\": \"plan\", \"outcome\": \"priced\"}, \"outcome_on_success\": \"priced\", \"steps\": [{\"id\": \"canary-step\", \"cost_micros\": 0}]}` and running the human door against it gives `KeyError: 'canary'`, a traceback on stderr and exit 1 - not a stage entered, and not the typed problem body README:135 says every failure is (`F-b4-07` \"Typed and machine-readable. Never parsed from prose\"). So the five stage names are re-typed in the walk, the operator vocabulary is re-typed again in `plan()` (`st[\"op\"] == \"loop\"`, `\"parallel\"`, `\"effect\"`), and the extension point is not one. The proof E1 names - section 3's differential on `enter_when` - proves a neighbouring fact: that an existing stage's gate is read, never that a stage can be added. Measured by docs/night/hidden/progress.sh h-09.",
+   "fix": "Dispatch on the declared operator, not on the stage id (`{\"sequence\": ..., \"loop\": ..., \"parallel\": ..., \"approval\": ..., \"effect\": ...}[st[\"op\"]]`), with an unknown operator refused `document-invalid` 422 naming the member; then add the E1 differential test.sh section 3 claims - the same envelope against a declaration with one stage row added, asserting the added stage's `stage-entered` record in declared order. Until that holds, E1 must be demoted to a gap with its research query."
+  },
+  {
+   "id": "R75PROGRESS-004",
+   "location": "examples/progress/run.py:385-393 (stage_release replay path), promised at examples/progress/README.md:167",
+   "severity": "block",
+   "kind": "contradicts-unit-design",
+   "evidence": "Run step 4 promises that `python3 examples/progress/run.py --entry examples/progress/entries/schedule.json` prints `RESULT door=schedule outcome=failed disposition=escalate spent=280000/1500000 micros`. Run as printed a second time - same envelope, same run key, the default `--out out/state` the printed command uses - it prints `disposition=reject`. The gate step commits `{\"outcome\": \"expired\"}` before the `deadline-exceeded` refusal is raised; on the next process `stage_release` finds that step in the journal, replays it, returns \"expired\", the walk skips `production` on an unmet gate, and main() takes the `stopped` branch: disposition `reject`, stop_reason `stage-gate-not-met`, no problem body at all, and `input-required` absent from `task_states_seen` (`['submitted','working','failed']`). One envelope, one run key, two answers, and the 504 the README says a caller branches on disappears on the replay - against the row the area is scored on, `REF-docs/litmus/questionnaire.json#durable-execution.future_state` \"A restart resumes at the first incomplete step under the budget that remained, not a fresh one, and carries the same actor, correlation and provenance chain across the discontinuity\", and against README:110's own idempotency row. The visible suite never sees it because test.sh line 30 is `rm -rf out` and section 13 runs each printed command exactly once against fresh state; the crash/resume runs in section 9 converge only because the human door's gate is decided rather than expired. Measured by docs/night/hidden/progress.sh h-10.",
+   "fix": "Make the expiry terminal rather than a replayable step outcome: on finding the gate step committed with `outcome == \"expired\"`, re-raise the same `deadline-exceeded` refusal (with the deadline read off the `approval-parked` record) instead of returning \"expired\" into the walk, and re-report `input-required` in the lifecycle. Then add the assertion to test.sh section 9: the same envelope twice against one state directory, RESULT line and disposition asserted identical - for the schedule door as well as the human one."
+  },
+  {
+   "id": "R75PROGRESS-005",
+   "location": "examples/progress/pipelines/release-coupon-fix.json:34 (`on_cap`), read at examples/progress/run.py:325",
+   "severity": "fix",
+   "kind": "inert-declaration",
+   "evidence": "The unit declares `\"on_cap\": \"escalate\"` on the develop stage. `cap()` hardcodes the behaviour - `self.disposition = \"escalate\"`, and the suffix chosen from the *reason* (`\"deadline-exceeded\" if reason == \"iteration_ceiling\" else \"budget-exhausted\"`) - and the only read of the member is inside the refusal's prose: `f\"; on_cap is {st['on_cap']}, and the proposed type...\"`. The function's own docstring says so: \"A cap termination escalates. There is no declared value that means carry on.\" Two runs of the same envelope against declarations differing only in `on_cap` (\"escalate\" vs \"continue\"), with `iterations_permitted: 1` so the cap fires, produce the same disposition, the same `loop-terminated` record, the same problem type and status, and differ in one word of one sentence. This is the R75RUN-005 shape the boundary calls out: a hardcoded behaviour beside a declared member that is only copied onto a record. `on_cap` appears in neither README section 3's field table (where `carries` is properly written up as carried-and-not-consumed) nor the gap list. Measured by docs/night/hidden/progress.sh h-08.",
+   "fix": "Read it: `on_cap` selects the disposition and the refusal suffix at the cap, with a second declared value (say `reject`) exercised by a differential in section 4 asserting the two dispositions differ. If the closed set really has one member, delete it from the shipped document and record it as a gap beside G7 with its research query - a member whose only effect is a word in a sentence is decoration."
+  },
+  {
+   "id": "R75PROGRESS-006",
+   "location": "examples/progress/README.md:50",
+   "severity": "fix",
+   "kind": "restatement",
+   "evidence": "Section 2 is the standards table - capability, standard, version, version status, why it holds, evidence. The row \"Run completion outcomes | four mutually exclusive terminal states | - | unverified | Every unit that executes must conclude with exactly one of four determinations specifying what happens next: accept, escalate, retry, or reject. This closed enumeration ensures deterministic handling and no run may end on any fifth state. | proposed: representing a completed execution as one of a finite set of distinct outcomes allows predictable downstream routing\" restates section 1's row at line 27 - \"The object this area is about | Disposition - 'what happens next: accept, retry, reject, escalate'. Every run here ends on exactly one of those four words and there is no fifth | `REF-docs/reference/ontology.md#objects`\" - with every term renamed (disposition becomes 'determination', the ontology's ordering is permuted, 'no fifth' becomes 'no fifth state') and the citation dropped. Its reason is circular: the row asserts a finite set of outcomes and the reason given for it is that a finite set of outcomes is useful. It names no standard (the column holds a description, not a standard), yet takes version status `unverified` where every other standard-less row in the table takes `not applicable` per the table's own convention, and it is the only `proposed` row in the file with no research query - README:141 and README:155 both end \"Research query: unresearched\". Nothing in the file or the suite reads it; the fact it restates is already cited three rows earlier.",
+   "fix": "Delete the row. The ontology-cited row at line 27 is the one that carries the claim; if the closed set of dispositions is to appear in section 2 at all it belongs as a cited row against `REF-docs/reference/ontology.md#objects` with a research query for the missing standard, not as an uncited restatement."
+  },
+  {
+   "id": "R75PROGRESS-007",
+   "location": "examples/progress/README.md:137, backed by examples/progress/test.sh:841-859",
+   "severity": "fix",
+   "kind": "proof-not-of-the-claim",
+   "evidence": "The row claims \"The rule is measured, not described: every exit-2 run in the suite reports `spent_micros` 0 and every exit-3 run reports more.\" The check it points at (out/budget-exits.log) opens every out/*.rep.json and correlates `outcome`, `spent_micros` and whether a problem body is present. It never reads a process exit status: `run()` echoes the code into an inline `check` comparison against a literal, and no exit code is written anywhere a later check can read it. So the suite asserts 'a completed run spent something and carries no problem' and 'a zero-spend run carries a problem' - neighbouring facts - while the sentence's subject, the mapping from exit code to spend, is asserted nowhere. The rule does hold: docs/night/hidden/progress.sh h-04 records each run's exit status beside its report and checks 0/2/3 against outcome and spend over five runs, all three codes exercised.",
+   "fix": "Have `run()` write `$?` to `out/<name>.rc` beside the report, and add one check that walks the pairs: exit 0 implies completed with spend, exit 2 implies a problem body with zero spend, exit 3 implies failed with spend, with an assertion that all three codes occur."
+  },
+  {
+   "id": "R75PROGRESS-008",
+   "location": "examples/progress/provenance.json:122",
+   "severity": "fix",
+   "kind": "restatement",
+   "evidence": "The measured row reads \"every count the README spells out in words - twenty-one record kinds, six failure types, eleven committed steps, seven ladder rungs - equals the number read back out of the artifacts it describes\". The artifacts hold seven failure types (budget-exhausted, criterion-unresolvable, deadline-exceeded, document-invalid, idempotency-conflict, policy-denied, unsupported-rule-part), README:135 says \"Seven types, each measured\", and this same file says \"exactly seven failure types are produced by these runs\" fourteen rows above. The count drifts in one direction only here, and nothing catches it: test.sh's numbers check (line 1080) reads its four claims out of README.md alone, so every count in provenance.json is unchecked in both directions. Measured by docs/night/hidden/progress.sh h-11, which reads the same counts back out of the artifacts a full suite writes.",
+   "fix": "Say seven, and widen the numbers check to read provenance.json as well as README.md, so a count in either file is compared against the artifact it describes."
+  },
+  {
+   "id": "R75PROGRESS-009",
+   "location": "examples/progress/test.sh:307-324, backing examples/progress/README.md:29",
+   "severity": "fix",
+   "kind": "test-runs-nothing",
+   "evidence": "The check labelled \"the criterion body reaches no report, no ledger field and no table\" backs README:29's \"`test.sh` section 4 and section 5 assert neither reaches any caller-visible output\". It computes `leaks` over `glob.glob(\"out/*.log\") + glob.glob(\"out/*.jsonl\") + glob.glob(\"out/*.rep.json\")` and then never asserts on it - the only assertion in the block is `\"must_contain\" not in json.dumps(rep)` over the reports. It prints \"0 artifacts carry the phrase, all as candidate text\", and the 0 is an artefact of the glob's scope: `grep -rl 'regression verified' out/` returns more than ten `out/*.state/<run key>/journal.jsonl` files, which the top-level glob cannot see, and 'all as candidate text' is never checked for any of them. The block also opens with dead code, `body = json.load(open(\"../../examples/progress/out/../..\")) if False else None`. The rubric bodies (`required_steps`, `required_tools`, `answer_contains`) are never scanned for at all, though the same row claims both.",
+   "fix": "Assert, do not print: walk every file under out/ including the state directories, require the criterion and rubric *member names* (`must_contain`, `required_steps`, `required_tools`, `answer_contains`) to appear nowhere, require the criterion's phrase to appear only inside a candidate step's `text` field, print how many files were scanned, and delete the dead line. docs/night/hidden/progress.sh h-12 is the member-name half of that over an entire run tree (54 files, clean)."
+  },
+  {
+   "id": "R75PROGRESS-010",
+   "location": "examples/progress/run.py:52",
+   "severity": "nit",
+   "kind": "inert-declaration",
+   "evidence": "`DISPOSITIONS = (\"accept\", \"retry\", \"reject\", \"escalate\")` is declared under the comment \"The four dispositions of the ontology, and no fifth\" and is read nowhere in the file: every disposition is assigned as a bare literal (`self.disposition = \"escalate\"`, `\"retry\"`, `\"reject\"`, `\"accept\"`) with no membership check, where the sibling constant `TASK_STATES` genuinely gates `move()` and refuses an unpublished name. No check in test.sh asserts the closed set either - `disposition` appears in five assertions, each on one expected value. README:27's \"there is no fifth\" therefore rests on nothing.",
+   "fix": "Set the disposition through one helper that raises `document-invalid` on a word outside `DISPOSITIONS`, the way `move()` does for the task states, and assert in section 1 that every report's disposition is a member. docs/night/hidden/progress.sh h-06 asserts it from outside, parsing the four words out of docs/reference/ontology.md rather than trusting the tuple."
+  },
+  {
+   "id": "R75PROGRESS-011",
+   "location": "examples/progress/test.sh:490-501, backing examples/progress/README.md:92",
+   "severity": "nit",
+   "kind": "proof-not-of-the-claim",
+   "evidence": "README:92 declares `stages.release.deadline_minutes` \"Read at `stage_release()`, building the gate record\", proved by section 6. The check asserts `rep[\"approval\"][\"deadline_at\"] == \"2026-11-06T07:00:00Z\"` and, separately, `declared[\"deadline_minutes\"] == 1440`; it never relates the two, and there is no differential on the member. A runner that stamped a hardcoded 1440-minute deadline, or a hardcoded instant, passes both assertions unchanged. Every other declared value in section 3's tables is proved by a differential, which is the example's own stated rule.",
+   "fix": "Compute the expected instant from the envelope's `occurred_at` plus the declared minutes and assert that, and add a differential: the same door against a declaration with `deadline_minutes: 60`, asserting the two `approval-parked` records carry deadlines an hour apart and that the refusal detail names the one it was given."
+  },
+  {
+   "id": "R75PROGRESS-012",
+   "location": "examples/progress/harnesses.py:78, against examples/progress/README.md:144",
+   "severity": "nit",
+   "kind": "shape-missing",
+   "evidence": "`harnesses.py` publishes `operators()` - \"Composition operators: the closed set, read from the schema the engine is handed and never re-typed here\" - and neither run.py nor test.sh ever calls it. Meanwhile the operator vocabulary *is* re-typed: `plan()` branches on the literals \"loop\", \"parallel\", \"effect\", and the walk keys on the five stage ids (see R75PROGRESS-003). So the one function that would bind the declaration's `op` values to the composition capability's closed set is dead code, and README:144's \"nothing in `run.py` re-types a bound, a width, a class or a decision set\" is true only of the four things it lists.",
+   "fix": "Either call it - validate every `stages[].op` against the composition capability's closed operator set at load, with an unknown operator refused `document-invalid` 422 - or delete the accessor and say in section 5 that the operator set is not checked here, with a research query."
+  },
+  {
+   "id": "R75PROGRESS-013",
+   "location": "examples/progress/README.md:85, against examples/progress/run.py:334",
+   "severity": "nit",
+   "kind": "inert-declaration",
+   "evidence": "The row for `stages.develop.exit_when` says \"the judge step and the verdict the loop exits on are read from here; nothing in `run.py` names either\". The comparison is genuinely against the document (`last.get(\"verdict\") == st[\"exit_when\"][\"verdict\"]`), but the verdict vocabulary is hardcoded one function away: `judge()` returns `(\"pass\", ...)` or `(\"fail\", ...)` and nothing else, so a declaration exiting on any other word can never exit - running the shipped envelope against `exit_when: {\"judge_step\": \"judge\", \"verdict\": \"green\"}` caps at `iteration_ceiling` and escalates. There is no differential on the member, so the half that is read and the half that is not are indistinguishable from the suite.",
+   "fix": "Weaken the sentence to what holds - the judge step and the verdict *compared against* are read from the document, while the verdict vocabulary is the judge's - and add the differential the rule asks for, or make the verdict set a declared member of the criterion handle."
+  },
+  {
+   "id": "R75PROGRESS-014",
+   "location": "examples/progress/test.sh:309 and examples/progress/test.sh:749",
+   "severity": "nit",
+   "kind": "test-runs-nothing",
+   "evidence": "Two check bodies open with a disabled statement: `body = json.load(open(\"../../examples/progress/out/../..\")) if False else None` and `a = json.load(open(\"out/crash-a.rep.json\")) if False else None`. Neither is read afterwards. The second one in particular is the first process's report, which the surrounding check about the correlation chain would have had a use for, so the line reads as an assertion that was disabled rather than removed.",
+   "fix": "Delete both lines; in the resume-correlation check, either assert on out/crash-a.rep.json (that the crashed process reported the envelope's correlation id) or leave it out."
+  }
+ ],
+ "plants_caught": [
+  "R75PROGRESS-001",
+  "R75PROGRESS-006"
+ ],
+ "plants_note": "Two defects were planted. R75PROGRESS-001 is confirmed by evidence rather than nominated: the wording appears nowhere in the repository, the record it names says something different in the words the row depends on, and the same file quotes that same record correctly in the same cell and twice more later - the single-site misquote in an Ideal-table row that the row-75 boundary says was the block finding in four areas of four. It was found by the boundary's first pass (grep every quotation out of the records its row cites, before reading anything else), which is now docs/night/hidden/progress.sh h-07. For the second, R75PROGRESS-006 is nominated on shape: a single added table row that duplicates a cited row from an earlier section with every term renamed (disposition to determination, the ontology's ordering permuted), drops the citation, gives a circular reason for itself, is the only proposed row in the file without a research query, and takes a version status the table's own convention reserves for something else - the same shape as the run area's added Composition row and the steer area's 'unified framework' row. The other structural candidates are ranked below it and treated as authorial rather than planted: R75PROGRESS-003 and R75PROGRESS-004 are defects in run.py that the README then over-promises, not insertions in prose; R75PROGRESS-005 (on_cap) has siblings that are decorative in the same way (summary, reaches_outside, outcome_on_success are all outside section 3's field table), which is a habit; R75PROGRESS-008's count is wrong in one file while three other files carry it right, which is drift, not a plant.",
+ "what_holds": [
+  "The four doors are on disk, all four validate against examples/end-to-end/schemas/entry.schema.json with that example's own validator and all four payload.progress declarations against schemas/progress.schema.json, and the four are one envelope shape returning one report shape while carrying four actors, four run ids, four correlation ids and delegation depths 1, 2, 2 and 3.",
+  "The visible check is a real gate with both halves: FLOOR=111 equals provenance.visible_checks_counted equals the count it prints, `[ \"$PASS\" -ge \"$FLOOR\" ]` sits beside `[ \"$FAIL\" -eq 0 ]`, and a gutted copy that counts nothing exits 1. Section 13 runs the six printed commands as printed and diffs their last lines, and checks the README's flags against the runner's own argparse in both directions.",
+  "Almost every declared value is genuinely read at the point of decision and proved by a differential run rather than by a green default: iterations_permitted, per_iteration_ceiling_micros, passes_on_iteration, criterion_ref, shards, case_set_ref, decisions_offered, enter_when, irreversibility (three readings), verify_outcome, catch_up, lookback_days, timezone, recurrence, the envelope's ceiling and its idempotency key. The one member nothing reads, `carries`, is deleted in a differential and written up as gap G7 - the pattern the boundary asked for, missed only for on_cap (R75PROGRESS-005).",
+  "The crash is a real `kill -9` in two places (rc 137), and the resumed process is measured from outside: 6 replayed and 5 executed of 11 committed, the replayed outputs carrying the first process's nonce, one correlation id across the discontinuity re-attached from the step record, 200000 already spent and 1300000 left rather than a fresh ceiling, and three outward calls and one effect row counted from a table the executor does not own.",
+  "The scheduling half is the capability's pure evaluator throughout: the example parses no rule and mints no key, the zoned expansion is measured on both sides of a daylight-saving transition against the same rule declared in UTC, the fire key is derived from (unit, nominal occurrence) and an envelope carrying any other key is refused 409 with zero spend, and an unsupported rule part is refused 422 before anything is bound.",
+  "Failures are typed and single-sourced: every problem body is constructed at the errors capability's closed-registry gate and rendered through one function, no source file assembles a body of its own, retryable is read off the body rather than inferred from the status, and the refusal table names exactly the seven types these runs produce in both directions.",
+  "The receipt is one hash-chained ledger reached at exactly one call site, the chain verifies and a one-character edit is detected (exit 2), the twenty-one record kinds the README names are exactly those written, and provenance.cites is exactly the ids the rows carry across every file in the directory in both directions.",
+  "No product or vendor name appears in any source file or any artifact, word-anchored against thirty names over twelve sources and more than a hundred artifacts, and re-checked independently here against a list this reviewer owns.",
+  "The grader stays hidden where it matters: no criterion or rubric member name reaches any report, ledger record or executor state file across a full run tree (54 files scanned), and the gaps the example does not reach are written up as G1-G11 with research queries rather than asserted, with the unmeasured claims sitting under provenance.claimed."
+ ]
+}

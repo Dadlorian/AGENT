@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:example:progress:0.1",
+  "title": "progress declaration",
+  "description": "What a caller declares inside payload.progress at any of the four doors. Every member here is read at a point of decision in run.py; the pipeline document named by intent.workflow_ref carries what belongs to the unit rather than to this arrival of it. There is deliberately no member by which a caller may raise its own ceiling, choose its executor, name a model or see a criterion.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["decision", "decider", "passes_on_iteration", "verify_outcome"],
+  "properties": {
+    "decision": {
+      "enum": ["approve", "edit", "reject", "none"],
+      "description": "What the person or system in front of the release gate returns. 'none' means nobody answers and the gate reaches its deadline."
+    },
+    "decision_body": {
+      "type": "object",
+      "description": "Present on edit: the artifact the decider substitutes for the proposed one."
+    },
+    "decider": {
+      "type": "string",
+      "pattern": "^(user|service|agent|schedule):[a-z0-9][a-z0-9._@-]*$"
+    },
+    "passes_on_iteration": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "The iteration at which the candidate first satisfies the criterion. It stands for what the world returns, not for what the unit declares: the loop's own bound is stages.develop.iterations_permitted in the pipeline document."
+    },
+    "verify_outcome": {
+      "enum": ["pass", "fail"],
+      "description": "What post-release verification returns. fail is what walks the compensation register backwards."
+    },
+    "schedule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unit_ref", "recurrence", "starts_at", "timezone", "catch_up",
+                   "lookback_days", "occurrence", "last_fire_at", "now"],
+      "description": "Present at the schedule door only. unit_ref, recurrence, starts_at, timezone and catch_up are the scheduling capability's own ScheduleDeclaration members.",
+      "properties": {
+        "unit_ref": {"type": "string", "minLength": 1},
+        "recurrence": {"type": "string", "pattern": "^FREQ=[A-Z]+(;[A-Z]+=[^;]+)*$"},
+        "starts_at": {"type": "string"},
+        "timezone": {"type": "string", "minLength": 1},
+        "catch_up": {"enum": ["skip", "fire_once", "fire_all"]},
+        "lookback_days": {"type": "integer", "minimum": 0},
+        "occurrence": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+        "last_fire_at": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"},
+        "now": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$"}
+      }
+    }
+  }
+}

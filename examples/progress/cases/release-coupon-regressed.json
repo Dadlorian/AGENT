@@ -1,0 +1,118 @@
+{
+  "case_set_id": "cs-release-coupon-regressed",
+  "version": "1.3.0",
+  "note": "The same four scenarios with one regression: c-checkout-500's recorded trajectory no longer calls run_tests, so its tool_use dimension fails while its final answer still reads correct. The ordered trace is what is scored.",
+  "cases": [
+    {
+      "case_id": "c-tier-missing",
+      "corpus_half": "recorded",
+      "recorded_run_ref": "rr-2026-08-30-tier",
+      "input": {
+        "request": "POST /checkout/coupon with a customer that has no tier"
+      },
+      "rubric_ref": "rubric://release-coupon/v1",
+      "recorded_steps": [
+        {
+          "kind": "plan",
+          "detail": "read the diff, then run the suite"
+        },
+        {
+          "kind": "tool_call",
+          "tool": "read_diff",
+          "detail": "pricing/coupon.py"
+        },
+        {
+          "kind": "tool_call",
+          "tool": "run_tests",
+          "detail": "tests/test_coupon.py"
+        },
+        {
+          "kind": "answer",
+          "detail": "coupon tier fix applied; default tier restored"
+        }
+      ]
+    },
+    {
+      "case_id": "c-null-coupon",
+      "corpus_half": "recorded",
+      "recorded_run_ref": "rr-2026-08-30-null",
+      "input": {
+        "request": "POST /checkout/coupon with coupon=null"
+      },
+      "rubric_ref": "rubric://release-coupon/v1",
+      "recorded_steps": [
+        {
+          "kind": "plan",
+          "detail": "reproduce, then patch"
+        },
+        {
+          "kind": "tool_call",
+          "tool": "read_diff",
+          "detail": "pricing/coupon.py"
+        },
+        {
+          "kind": "tool_call",
+          "tool": "run_tests",
+          "detail": "tests/test_coupon.py"
+        },
+        {
+          "kind": "answer",
+          "detail": "coupon tier fix applied; null coupon short-circuits"
+        }
+      ]
+    },
+    {
+      "case_id": "c-checkout-500",
+      "corpus_half": "synthetic",
+      "recorded_run_ref": null,
+      "input": {
+        "request": "the reported 500 on coupon apply"
+      },
+      "rubric_ref": "rubric://release-coupon/v1",
+      "recorded_steps": [
+        {
+          "kind": "plan",
+          "detail": "confirm the traceback line"
+        },
+        {
+          "kind": "tool_call",
+          "tool": "read_diff",
+          "detail": "pricing/coupon.py:88"
+        },
+        {
+          "kind": "answer",
+          "detail": "coupon tier fix removes the KeyError"
+        }
+      ]
+    },
+    {
+      "case_id": "c-schema-drift",
+      "corpus_half": "synthetic",
+      "recorded_run_ref": null,
+      "input": {
+        "request": "the coupon response contract"
+      },
+      "rubric_ref": "rubric://release-coupon/v1",
+      "recorded_steps": [
+        {
+          "kind": "plan",
+          "detail": "compare the response against the published contract"
+        },
+        {
+          "kind": "tool_call",
+          "tool": "read_diff",
+          "detail": "contracts/coupon.json"
+        },
+        {
+          "kind": "tool_call",
+          "tool": "run_tests",
+          "detail": "tests/test_contract.py"
+        },
+        {
+          "kind": "answer",
+          "detail": "coupon tier fix leaves the contract unchanged"
+        }
+      ]
+    }
+  ]
+}

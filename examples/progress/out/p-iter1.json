@@ -1,0 +1,133 @@
+{
+ "unit_ref": "release-coupon-fix",
+ "sequence_id": "progress-release/0.1",
+ "tenant": "checkout",
+ "summary": "Take the coupon-tier fix from plan to production through five gated stages.",
+ "carries": [
+  "correlation",
+  "budget",
+  "actor",
+  "idempotency"
+ ],
+ "stages": [
+  {
+   "id": "plan",
+   "op": "sequence",
+   "enter_when": null,
+   "outcome_on_success": "priced",
+   "steps": [
+    {
+     "id": "price",
+     "cost_micros": 0
+    }
+   ]
+  },
+  {
+   "id": "develop",
+   "op": "loop",
+   "enter_when": {
+    "stage": "plan",
+    "outcome": "priced"
+   },
+   "iterations_permitted": 1,
+   "per_iteration_ceiling_micros": 200000,
+   "on_cap": "escalate",
+   "exit_when": {
+    "judge_step": "judge",
+    "verdict": "pass"
+   },
+   "body": [
+    {
+     "id": "draft",
+     "op": "step",
+     "cost_micros": 80000,
+     "reaches_outside": true
+    },
+    {
+     "id": "judge",
+     "op": "judge",
+     "of": "draft",
+     "cost_micros": 0,
+     "criterion_ref": "criterion://coupon-fix/v1"
+    }
+   ]
+  },
+  {
+   "id": "test",
+   "op": "parallel",
+   "enter_when": {
+    "stage": "develop",
+    "outcome": "verdict_pass"
+   },
+   "shard_cost_micros": 40000,
+   "shards": [
+    {
+     "id": "unit",
+     "cases": [
+      "c-tier-missing",
+      "c-null-coupon"
+     ]
+    },
+    {
+     "id": "integration",
+     "cases": [
+      "c-checkout-500"
+     ]
+    },
+    {
+     "id": "contract",
+     "cases": [
+      "c-schema-drift"
+     ]
+    }
+   ],
+   "evaluation": {
+    "case_set_ref": "cases/release-coupon.json",
+    "baseline_ref": "cases/baseline.json",
+    "unit_ref": "release-coupon-fix",
+    "unit_version": "1.4.0"
+   }
+  },
+  {
+   "id": "release",
+   "op": "approval",
+   "enter_when": {
+    "stage": "test",
+    "outcome": "passed"
+   },
+   "view": "release-brief",
+   "deadline_minutes": 1440,
+   "decisions_offered": [
+    "approve",
+    "edit",
+    "reject"
+   ],
+   "return_to_stage": "develop",
+   "cost_micros": 0
+  },
+  {
+   "id": "production",
+   "op": "effect",
+   "enter_when": {
+    "stage": "release",
+    "outcome_in": [
+     "approve",
+     "edit"
+    ]
+   },
+   "cost_micros": 60000,
+   "compensation": {
+    "irreversibility": "compensable",
+    "compensating_action": {
+     "operator": "roll-back-release",
+     "input_ref": "release://coupon-fix/1.4.0",
+     "timeout_s": 60
+    }
+   },
+   "verify": {
+    "id": "verify-in-production",
+    "cost_micros": 30000
+   }
+  }
+ ]
+}

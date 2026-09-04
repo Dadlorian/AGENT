@@ -299,10 +299,10 @@ class CapabilityRegistryAdapter(ABC):
             self.refusals += 1
             reason = ("carries no signature that verifies" if not verification.signature_verified
                       else "digest no longer matches the package tree it names")
-            last_problem = {"type": PROBLEM_BASE + "identity-untrusted",
-                            "title": REGISTRY["identity-untrusted"][1], "status": 401,
-                            "detail": f"{query.name} {version} {reason}", "retryable": False,
-                            "proposed_type": PROPOSED_TYPE if not verification.signature_verified else None}
+            last_problem = render_body(
+                PROBLEM_BASE + "identity-untrusted", REGISTRY["identity-untrusted"][1], 401,
+                f"{query.name} {version} {reason}", False,
+                {"proposed_type": PROPOSED_TYPE if not verification.signature_verified else None})
             self.refusal_log.append(last_problem)
             last_verification = verification
         return ResolutionOutcome(asdict(query), False, last_verification, None, last_problem)

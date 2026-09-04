@@ -265,9 +265,10 @@ class VerifyResult:
 
     def problem(self) -> dict:
         """The failure body a caller gets. The registered type, not the proposed one."""
-        return {"type": PROBLEM_BASE + "document-invalid", "title": REGISTRY["document-invalid"][1],
-                "status": 422, "detail": self.reason, "retryable": False,
-                "proposed_type": PROPOSED_TYPE, "proposed_type_status": "not yet in the registry cap-errors owns"}
+        return render_body(PROBLEM_BASE + "document-invalid", REGISTRY["document-invalid"][1], 422,
+                           self.reason, False,
+                           {"proposed_type": PROPOSED_TYPE,
+                            "proposed_type_status": "not yet in the registry cap-errors owns"})
 
 
 # --- Verification: a function, not a service --------------------------------

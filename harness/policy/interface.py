@@ -307,9 +307,8 @@ class PolicyAdapter(ABC):
         problem = None
         if effect == "deny":
             self.denies += 1
-            problem = {"type": PROBLEM_BASE + "policy-denied", "title": REGISTRY["policy-denied"][1],
-                       "status": 403, "detail": detail, "rule_id": rule_id, "retryable": False,
-                       "spend_delta_micros": 0}
+            problem = render_body(PROBLEM_BASE + "policy-denied", REGISTRY["policy-denied"][1], 403,
+                                  detail, False, {"rule_id": rule_id, "spend_delta_micros": 0})
         decision = Decision(effect, rule_id, request.policy_version, request.decision_point,
                             input_digest, self._now(), problem)
         # The record is written before the call is issued, not after the outcome is known.

@@ -78,6 +78,39 @@ grep -q "^owner=problem.py:" out/construction-scan.log \
 grep -q "^stray_construction_hits=0$" out/construction-scan.log \
   && ok "0 Problem(...) constructions outside problem.py" || bad "a second construction path exists"
 
+echo "2c. platform-wide: the same property held over harness/errors alone is now checked over all of harness/ (errors-q5's own gap: 'the scan covers only that directory')"
+python3 platform_conformance.py --construction-scan .. > out/platform-scan.log 2>&1
+check "the platform-wide construction scan exits 0" "$?" "0"
+grep -q "^platform_stray_construction_hits=0$" out/platform-scan.log \
+  && ok "0 hand-built RFC 9457 dicts anywhere under harness/, outside problem.py" || bad "a stray construction exists somewhere under harness/"
+python3 platform_conformance.py --raise-all .. > out/platform-raise.log 2>&1
+check "raising every typed condition of every harness under harness/ exits 0" "$?" "0"
+grep -q "^conditions_raised=" out/platform-raise.log \
+  && ok "$(grep '^conditions_raised=' out/platform-raise.log)" || bad "raise-all did not report a count"
+
+echo "2d. deliberate breakage: a capability's own registry gate builds its own body by hand instead of calling render_body (the exact defect errors-q5's re-answer found: nine registries, eight titles, a stray content_type member, a composition layer building a 28th body)"
+rm -rf out/platform-breakage && mkdir -p out/platform-breakage/harness/errors out/platform-breakage/harness/idempotency
+cp problem.py out/platform-breakage/harness/errors/
+cp ../idempotency/interface.py out/platform-breakage/harness/idempotency/interface.py
+python3 - <<'PY'
+path = "out/platform-breakage/harness/idempotency/interface.py"
+src = open(path).read().replace(
+    '        self.body = render_body(PROBLEM_BASE + suffix, title, status, detail, retryable, ext)\n',
+    '        # the breakage: this adapter invents its own failure shape instead of\n'
+    '        # rendering through the one shared point (errors-q5)\n'
+    '        self.body = {"type": PROBLEM_BASE + suffix, "title": title, "status": status,\n'
+    '                     "detail": detail, "retryable": retryable, **ext}\n')
+assert src != open(path).read(), "the breakage pattern was not found; test.sh is out of sync with the migrated body-construction line"
+open(path, "w").write(src)
+PY
+python3 platform_conformance.py --construction-scan out/platform-breakage > out/platform-breakage-scan.log 2>&1
+check "the breakage run exits non-zero (construction scan)" "$?" "1"
+grep -q "idempotency/interface.py" out/platform-breakage-scan.log && ok "the scan names the file the breakage broke" || bad "file not named"
+python3 platform_conformance.py --raise-all out/platform-breakage > out/platform-breakage-raise.log 2>&1
+check "the breakage run exits non-zero (raise-all)" "$?" "1"
+grep -q "render_body() ran 0 times" out/platform-breakage-raise.log \
+  && ok "raise-all independently catches the same defect at runtime, not just by grepping source" || bad "raise-all missed it"
+
 echo "3. no product name anywhere in this harness"
 python3 conformance.py --product-scan . > out/scan.log 2>&1
 check "product scan over the shipped tree exits 0" "$?" "0"

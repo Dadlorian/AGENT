@@ -41,6 +41,11 @@ try:                                   # guarded: absence is a typed failure, ne
 except Exception:                      # pragma: no cover
     URLLIB = None
 
+try:                                   # guarded the same way: optional, lazily used
+    from . import auth_exchange
+except Exception:                      # pragma: no cover
+    auth_exchange = None
+
 METHOD_LIST = os.environ.get("TOOL_METHOD_LIST", "tools/list")          # proposed, unverified
 METHOD_CALL = os.environ.get("TOOL_METHOD_CALL", "tools/call")          # proposed, unverified
 METHOD_READ = os.environ.get("TOOL_METHOD_READ", "resources/read")      # proposed, unverified
@@ -102,9 +107,42 @@ class LiveEndpointAdapter(ToolAccessAdapter):
         return ResourceRead(uri, doc.get("contents", []))
 
     # --- transport ----------------------------------------------------------
+    def _token(self) -> str:
+        """A static bearer token by default (`TOOL_ENDPOINT_TOKEN`), the same
+        as before. With `TOOL_OAUTH_DISCOVER=1` the token instead comes from
+        `auth_exchange.obtain_access_token` - the probe, RFC 9728 and RFC 8414
+        discovery, PKCE, the resource-bound authorization code grant and the
+        resource-bound refresh - run once per bound adapter and cached, so
+        this adapter's own OAuth 2.1 client is the exact code path
+        harness/tool-access/adapters/auth_exchange.py --check verifies rather
+        than a second, unverified implementation of the same flow."""
+        if os.environ.get("TOOL_OAUTH_DISCOVER") != "1":
+            return self._env("TOOL_ENDPOINT_TOKEN")
+        cached = getattr(self, "_oauth_token_cache", None)
+        if cached is not None:
+            return cached
+        if auth_exchange is None:
+            raise Problem("adapter-unavailable",
+                          "TOOL_OAUTH_DISCOVER=1 but the OAuth exchange module is unavailable",
+                          retry_after_s=30)
+        resource_base = os.environ.get("TOOL_OAUTH_RESOURCE")
+        if not resource_base:
+            url = self._env("TOOL_ENDPOINT_URL")
+            resource_base = url[:-len("/mcp")] if url.endswith("/mcp") else url
+        transcript: list = []
+        token = auth_exchange.obtain_access_token(resource_base, transcript=transcript)
+        if "access_token" not in token:
+            raise Problem("policy-denied",
+                          f"the OAuth 2.1 token exchange against {resource_base!r} did not "
+                          f"produce a token: {token.get('error', token)}",
+                          rule_id="oauth-exchange", enforcement_point="client-side")
+        self._oauth_token_cache = token["access_token"]
+        self._oauth_transcript = transcript
+        return self._oauth_token_cache
+
     def _headers(self, ctx: CallContext | None = None) -> dict:
         headers = {"content-type": "application/json",
-                   "authorization": "Bearer " + self._env("TOOL_ENDPOINT_TOKEN")}
+                   "authorization": "Bearer " + self._token()}
         if ctx is not None:
             headers[REVISION_HEADER] = ctx.protocol_revision       # declared per request
             headers["x-correlation-id"] = ctx.correlation_id       # explicit, never trace parentage

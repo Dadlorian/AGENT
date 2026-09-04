@@ -1,0 +1,72 @@
+{
+  "status_row": 75,
+  "ledger_name": "75-steer-improve",
+  "ceremony": "75-steer",
+  "section": "examples/steer",
+  "improver": "75-steer-improve",
+  "date": "2026-09-04",
+  "area": "steer",
+  "scope_note": "Read OWNER.md, state/briefs/context-75.md, state/briefs/example-improve.md, kb/ceremonies/75-steer-review.json and examples/steer/ in full, plus the harness code the fixes touch (harness/policy/interface.py and adapters/dryrun.py and adapters/second.py, harness/human-interaction/store.py, harness/containment/adapters/dryrun.py) and kb/facts.jsonl for F-b1-03. docs/night/hidden/ was not read. Files changed: examples/steer/README.md, examples/steer/run.py, examples/steer/test.sh, examples/steer/provenance.json and this record. Nothing committed or pushed. Running the example rewrote examples/steer/out/, which is gitignored and cleared by test.sh.",
+  "test_last_line": "passed 96, failed 0",
+  "visible_checks_before": 90,
+  "visible_checks_after": 96,
+  "applied": [
+    {
+      "finding": "R75STEER-002",
+      "change": "ask_and_decide's expire call is wrapped the way the decide call below it already was: hi.Problem is caught, rendered through render_problem, recorded as a refusal that ends the unit, emitted as human.refused on the stream, and returned as outcome 'sweep-refused' with decision None - so a schedule-door run with decision 'none' and a delay inside gate.deadline_seconds now exits 3 with a typed 422 in the refusal table instead of exiting 1 on an uncaught interface.Problem traceback. The deadline stays the store's to enforce; the runner no longer assumes it has passed. The missing half of the differential is in test.sh section 5: the same door at delay 10 against the shipped 400, asserted 504 with one ask.expired event on one side and 422 with no ask.expired event, no ask-expired ledger record and no 'Traceback' in the log on the other. README's payload.steer table row for decision_delay_seconds and the 'refusal that ends the unit' row now name both sides.",
+      "files": ["examples/steer/run.py", "examples/steer/test.sh", "examples/steer/README.md", "examples/steer/provenance.json"]
+    },
+    {
+      "finding": "R75STEER-004",
+      "change": "Every command in the README's run-steps table now carries the --ledger examples/steer/out/<name>.jsonl that test.sh already gives that run (human, event, schedule, external, revise, carry, bypass, down-dispatch-tool-call, engine2-human, cell2), and step 12 verifies out/human.jsonl, which step 2 now writes. The note above the table says why: the parked-ask store's path is derived from the ledger name, so two steps sharing one name park one ask and the second is a replay refused at 409. Run in order from the repository root from a clean out/, steps 2-12 now exit 0, 0, 3, 3, 3, 0, 2, 3, 0, 3 and 0 with no idempotency-conflict ending any unit and no traceback; the only 409s left are the designed second-decision refusals folded into the record with ends_unit false. Step 1's expected line and step 7's 'What it shows' were updated with them.",
+      "files": ["examples/steer/README.md"]
+    },
+    {
+      "finding": "R75STEER-005",
+      "change": "correlation.depth is written up as carried and not consumed, and the write-up is measured rather than asserted. test.sh section 1b now runs the external door twice from derived envelopes - out/entry-depth99.json with correlation.depth 99 and out/entry-nodepth.json with the member deleted - and asserts the two agree on status, on all nine decisions in point, action, effect, rule and resource, on the event stream, on the refusal types and on disposition, effect_fired, retries, escalations and cost, while every ledger record of both carries the depth derived from the delegation chain (3), which neither run declared. The minted unit id is normalised out of the resource comparison and the per-frame step.progress events are collapsed, because both are the boundary's clock rather than the declaration. envelope_version got a row of the same kind, alongside budget.on_exceed's, since the shared schema fixes it as a const. README's external-door row no longer sells depth as something the door reads.",
+      "files": ["examples/steer/test.sh", "examples/steer/README.md", "examples/steer/provenance.json"]
+    },
+    {
+      "finding": "R75STEER-006",
+      "change": "The hand-counted 'sixteen record kinds' is gone from both places. provenance.json now says the thirteen kinds the run the receipt check reads actually writes, and test.sh asserts that 13 out of out/external.jsonl. policy-activated is named in the README's receipt row and asserted on out/revise.jsonl, the ledger that has one. A new check reads the union of record kinds across every out/*.jsonl the visible run writes (19) and asserts the README receipt row names exactly those, in both directions, so a kind that is emitted and never enumerated - or enumerated and never emitted - now fails. Removing policy-activated from the row fails it.",
+      "files": ["examples/steer/test.sh", "examples/steer/README.md", "examples/steer/provenance.json"]
+    },
+    {
+      "finding": "R75STEER-007",
+      "change": "Section 7 now proves what its README row claims instead of only re-proving fail-closed. One request at a sixth point, dispatch.data_query, is taken twice against a bundle derived from v1 plus one rule at that point (written to out/bundle.six.json, so no shipped bundle digest moves): with the point registered through register_decision_point it is allowed by allow-data-query-in-tenant with the work run and 500 micros metered and one journal row; with the shipped five-point registry it is refused decision-point-unregistered 422 with work_ran false, nothing spent and no journal row. A second check closes the declared_subset half: that rule reads resource.query, which the bundle's entity model does not declare, so the typed-entity engine puts the point in conformance_subset and refuses adapter-unavailable naming the subset rather than answering allow, while the same engine on the shipped bundle declares an empty subset - as the four shipped runs' journal.declared_subset also does. Skipping the registration call, or adding resource.query to the entity model, each fails one of the two.",
+      "files": ["examples/steer/test.sh", "examples/steer/README.md", "examples/steer/provenance.json"]
+    },
+    {
+      "finding": "R75STEER-008",
+      "change": "The 2-to-1 is counted out of the decision rows that carry the fact - len([r for r in rep['decisions'] if r['decision_point'] == 'dispatch.tool_call']) - at both sites (the pause check and the breakage check), and the runner's own decisions_at_effect field is then asserted to equal that count rather than being the thing asserted. A fire_effect that decided once and still wrote 2 now fails; before, it passed. provenance.json's breakage entry says where the number comes from.",
+      "files": ["examples/steer/test.sh", "examples/steer/provenance.json"]
+    },
+    {
+      "finding": "R75STEER-009",
+      "change": "The headline sentence now reads 'the effect decision is identical in point, action, effect, rule and resource at every one of them', as provenance.json already did, and adds the reason it is not byte-identical: the four inputs carry four run ids, four correlation ids and four entry kinds, so they hash to four digests - which is what the next sentence about the door being an attribute of the input relies on.",
+      "files": ["examples/steer/README.md"]
+    },
+    {
+      "finding": "R75STEER-010",
+      "change": "The one-log grep is replaced by a scan over every file in the directory and every artefact a run of it writes (16 source files and 213 artefacts on the last run), skipping only the lines that carry the forbidden list itself, marked with a trailing '# namecheck' comment. README.md is scanned outside the two line ranges where a product may be named - the standards table and the adapters table, located by their headings rather than by line number. The name list gained styra and openfga; 'vendor' is kept as a caller-visible-only rule and applied to everything under out/, since a source file that forbids naming a vendor is not a source file that names one. Inserting a comment naming a policy language in run.py fails it; the one-log grep it replaces did not.",
+      "files": ["examples/steer/test.sh", "examples/steer/provenance.json"]
+    }
+  ],
+  "declined": [
+    {
+      "finding": "R75STEER-001",
+      "why": "Already true: the misquote is not in the tree the improve pass was given. examples/steer/README.md:21 carries `F-b1-03` \"Each interface names the standard that governs it. Where a standard exists, adopt it whole rather than modelling our own shape.\", which is F-b1-03's text verbatim in kb/facts.jsonl:54 (source PASS.md:114). `grep -rn 'creating our own framework' examples/steer/` returns nothing (exit 1), and test.sh's own citation check passes over all 59 ids. Same shape as R75RUN-001: a planted defect reverted before the improve brief ran, so there is nothing to apply."
+    },
+    {
+      "finding": "R75STEER-003",
+      "why": "Already true: the 'unified framework' row is not in the tree. Section 3's call table now ends at README.md:63, 'the unit behind all four', and line 64 is blank - there is no sixth row. `grep -rn 'unified framework|submission wrapper|authorization junction|rule framework|task structure' examples/steer/` returns nothing (exit 1), so the four renamed terms the finding names are absent from the area entirely. Same shape as R75RUN-003."
+    }
+  ],
+  "notes": [
+    "The schedule door's honest path is unchanged - decision 'none' with the shipped 400-second delay against a 300-second deadline still expires the ask, emits ask.expired and ends the unit failed with a 504. What changed is the path nothing had ever run: an early sweep now ends the unit failed with a 422 and no ask.expired event, so the task-status projection reaches failed by way of run.finished rather than by way of ask.expired. An outside check that counted ask.expired as the signature of 'nobody decided' will now miss that case; the refusal type is the thing to read.",
+    "test.sh runs are not safe to run concurrently in one working tree: every run writes into the same out/, and two overlapping invocations produce a dozen spurious failures. Serially it is stable - five consecutive clean runs printed passed 96, failed 0.",
+    "The frame count of a turn is wall-clock dependent (the containment adapter emits one step.progress per poll interval until op_seconds elapses), so any check comparing two runs' event streams has to collapse step.progress or it is flaky. The new correlation.depth differential does; this was caught by a run that failed twice in six.",
+    "The sixth-enforcement-point differential builds its bundle in the check and writes it to out/bundle.six.json rather than adding a rule to policy/bundle.v1.json, so the shipped digests, the 'v2 is v1 plus exactly one rule' assertion and the twenty-four-decision corpus are all untouched. The bundle it derives is the first of its kind in this area to declare a decision point the shipped points.json does not register - that is the declared value the differential moves.",
+    "The record-kind check pins the union at 19 as well as asserting set equality, so a future change that adds a record kind fails twice: once on the enumeration and once on the count. That is deliberate - the brief's rule is that no number is written that was not read back out of the artifact it describes, and this one is."
+  ]
+}

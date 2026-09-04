@@ -1,0 +1,206 @@
+{
+  "_note": "bundle.v1.json plus exactly one rule, at index 1: the change freeze declared while a unit is parked. Nothing else differs, so the flip from allow to deny on a resumed effect is attributable to one rule and to one policy version. test.sh asserts this file equals v1 with that single rule inserted, rather than trusting two hand-kept copies to have stayed in step. Proposed: the rules are this example's fixtures.",
+  "bundle_id": "steer-example-fixtures",
+  "bundle_version_label": "v2",
+  "entity_model": {
+    "_note": "The declared attribute types a typed-entity engine can express a decision over. A rule that reads a path outside this model cannot be translated, and that engine declares the decision point as a subset it cannot serve rather than answering allow.",
+    "Principal": {
+      "subject.id": "string",
+      "subject.tenant": "string",
+      "subject.mandates": "set"
+    },
+    "Action": {
+      "action": "string"
+    },
+    "Resource": {
+      "resource.tenant": "string",
+      "resource.scope": "string",
+      "resource.tool": "string",
+      "resource.workflow_ref": "string",
+      "resource.model_class": "string",
+      "resource.decision": "string",
+      "resource.authority": "string",
+      "resource.operation": "string",
+      "resource.unit_id": "string",
+      "resource.ask_id": "string"
+    },
+    "Context": {
+      "context.budget_exhausted": "boolean"
+    }
+  },
+  "rules": [
+    {
+      "rule_id": "deny-cross-tenant-resource",
+      "decision_point": "*",
+      "effect": "deny",
+      "detail": "the resource belongs to another tenant; refused before execution like any other decision, at every point and through every door",
+      "when": [
+        {
+          "path": "resource.tenant",
+          "op": "ne_field",
+          "value": "subject.tenant"
+        }
+      ]
+    },
+    {
+      "rule_id": "deny-effect-under-change-freeze",
+      "decision_point": "dispatch.tool_call",
+      "effect": "deny",
+      "detail": "a change freeze was declared while this unit was parked; the effect it was admitted to fire is refused on resume, under the rule set in force now and not the one in force at admission",
+      "when": [
+        {
+          "path": "resource.tool",
+          "op": "eq",
+          "value": "deploy.apply"
+        }
+      ]
+    },
+    {
+      "rule_id": "deny-effect-with-no-budget-left",
+      "decision_point": "dispatch.tool_call",
+      "effect": "deny",
+      "detail": "the ceiling the unit carries no longer covers this effect; the ceiling is a rule the platform evaluates, not an alert it raises",
+      "when": [
+        {
+          "path": "context.budget_exhausted",
+          "op": "eq",
+          "value": true
+        }
+      ]
+    },
+    {
+      "rule_id": "deny-external-effect-without-mandate",
+      "decision_point": "dispatch.tool_call",
+      "effect": "deny",
+      "detail": "an effect outside the tenant's own systems requires a mandate; this delegation chain carries none",
+      "when": [
+        {
+          "path": "resource.scope",
+          "op": "eq",
+          "value": "external"
+        },
+        {
+          "path": "subject.mandates",
+          "op": "empty"
+        }
+      ]
+    },
+    {
+      "rule_id": "allow-external-effect-under-mandate",
+      "decision_point": "dispatch.tool_call",
+      "effect": "allow",
+      "detail": "the delegation chain carries a mandate for this scope",
+      "when": [
+        {
+          "path": "resource.scope",
+          "op": "eq",
+          "value": "external"
+        },
+        {
+          "path": "subject.mandates",
+          "op": "nonempty"
+        }
+      ]
+    },
+    {
+      "rule_id": "allow-internal-effect",
+      "decision_point": "dispatch.tool_call",
+      "effect": "allow",
+      "detail": "an effect inside the subject's own tenant",
+      "when": [
+        {
+          "path": "resource.scope",
+          "op": "eq",
+          "value": "internal"
+        }
+      ]
+    },
+    {
+      "rule_id": "allow-entry-in-tenant",
+      "decision_point": "admission.entry",
+      "effect": "allow",
+      "detail": "the entry names a unit inside the subject's own tenant",
+      "when": [
+        {
+          "path": "resource.workflow_ref",
+          "op": "exists"
+        }
+      ]
+    },
+    {
+      "rule_id": "allow-model-call-in-tenant",
+      "decision_point": "dispatch.model_call",
+      "effect": "allow",
+      "detail": "a completion by class inside the subject's own tenant",
+      "when": [
+        {
+          "path": "resource.model_class",
+          "op": "exists"
+        }
+      ]
+    },
+    {
+      "rule_id": "deny-decision-outside-named-authority",
+      "decision_point": "steer.decision",
+      "effect": "deny",
+      "detail": "this ask names the authority permitted to decide it, and the deciding subject is not that authority",
+      "when": [
+        {
+          "path": "resource.authority",
+          "op": "nonempty"
+        },
+        {
+          "path": "subject.id",
+          "op": "ne_field",
+          "value": "resource.authority"
+        }
+      ]
+    },
+    {
+      "rule_id": "allow-steer-decision",
+      "decision_point": "steer.decision",
+      "effect": "allow",
+      "detail": "a decision on an ask this subject may decide",
+      "when": [
+        {
+          "path": "resource.decision",
+          "op": "exists"
+        }
+      ]
+    },
+    {
+      "rule_id": "deny-replace-without-mandate",
+      "decision_point": "steer.intervention",
+      "effect": "deny",
+      "detail": "replacing a unit discards the machine an investigation would read; it requires a mandate, and this delegation chain carries none",
+      "when": [
+        {
+          "path": "resource.operation",
+          "op": "eq",
+          "value": "replace"
+        },
+        {
+          "path": "subject.mandates",
+          "op": "empty"
+        }
+      ]
+    },
+    {
+      "rule_id": "allow-intervention",
+      "decision_point": "steer.intervention",
+      "effect": "allow",
+      "detail": "a machine-state lifecycle operation on a unit inside the subject's own tenant",
+      "when": [
+        {
+          "path": "resource.operation",
+          "op": "exists"
+        }
+      ]
+    }
+  ],
+  "default": {
+    "effect": "deny",
+    "rule_id": "deny-by-default-no-rule-matched",
+    "detail": "no rule of the pinned bundle matched this request, and the default is deny"
+  }
+}

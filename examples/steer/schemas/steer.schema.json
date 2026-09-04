@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:example:steer-declaration:0.1",
+  "title": "Steer declaration",
+  "description": "What a caller declares about how this run will be steered, carried in payload.steer of the one entry envelope (examples/end-to-end/schemas/entry.schema.json) and validated with that example's own validator, so there is one validator and two documents. Every member is read at the point of decision in run.py. What a caller may NOT declare is as load-bearing as what it may: there is no member here that names a policy version, an engine, a rule, or a bundle, so a caller cannot pin, choose or soften the rules its own action will be judged by, and an entry that adds one is refused at 422 rather than honoured (F-b1-08). The decision engine and the containment class are configuration, not a caller's declaration.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["surface", "decision", "decision_body", "decision_delay_seconds", "intervention", "stall_first_turn"],
+  "properties": {
+    "surface": {
+      "enum": ["stream", "parked-item"],
+      "description": "Where the decider works. stream: a subscription that shows the run in flight and carries the ask inline. parked-item: one queued item, request and response. Both are human-interaction adapters selected by this declaration; neither is named in the caller's line."
+    },
+    "decision": {
+      "enum": ["approve", "edit", "reject", "none"],
+      "description": "What the decider does at the gate. approve, edit and reject are three of the four decisions the capability publishes; none means nobody decides, and the ask reaches its deadline. The fourth published decision, respond, is not exercised by this example."
+    },
+    "decision_body": {
+      "type": "object",
+      "description": "The reviewer's own body, checked against the ask's response schema before it is applied. On edit this is the artifact the run continues with - the agent proposes and the human publishes - so it is not a comment on the proposal."
+    },
+    "decision_delay_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "How long the ask waits before the decision arrives, against the deadline the unit declares. Past the deadline the ask is terminal and a late decision is refused rather than applied."
+    },
+    "intervention": {
+      "enum": ["none", "reconnect", "restart", "replace"],
+      "description": "The operator's verb on a cell whose turn did not finish. reconnect re-attaches to the unit the platform still holds; restart restores it from the checkpoint taken before the turn; replace clones its current state into a new unit. Each is a capability operation on the isolation adapter, decided by policy before it acts, and refused with a typed unsupported result where the containment class cannot serve it."
+    },
+    "stall_first_turn": {
+      "type": "boolean",
+      "description": "Run the first turn against an operation longer than the unit's wall ceiling, so the boundary ends it and there is a stuck cell for the operator to steer. The ceiling is enforced outside the unit either way."
+    }
+  }
+}

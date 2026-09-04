@@ -1,0 +1,59 @@
+{
+  "_": "The task specification (docs/reference/ontology.md). Every field below is read at the point of decision by run.py, and README section 6 proves each one by a differential run: the same door twice, one declared value changed, the two records different in the named way. A field the runner would behave identically without is named in section 6 as carried and not consumed, with the query that would settle it.",
+  "unit": "unit-steer-checkout-coupon-fix",
+  "task": "Repair the coupon rounding fault behind the checkout 500s and propose the change for review.",
+  "tenant": "tenant-acme",
+  "isolation": {
+    "profile": "small",
+    "egress": "none",
+    "egress_allowlist": [],
+    "credentials": "broker_only"
+  },
+  "attempt_class": "i-fast",
+  "ceilings": {
+    "wall_seconds": 0.5,
+    "turn_op_seconds": 0.05,
+    "stall_op_seconds": 1.5,
+    "cancel_grace_s": 0.5
+  },
+  "steering": {
+    "retries_permitted": 1,
+    "decisions_offered": ["approve", "edit", "reject"],
+    "escalation": {
+      "steps_permitted": 1,
+      "authority": "user:sre-lead",
+      "trigger": "the gate rejected the proposal on every attempt the unit permitted"
+    }
+  },
+  "gate": {
+    "prompt": "The unit proposes a coupon rounding fix and a deploy of it. Approve it, edit the component and the note, or reject it.",
+    "response_schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["component", "note"],
+      "properties": {
+        "component": {"type": "string", "minLength": 1},
+        "note": {"type": "string", "minLength": 1}
+      }
+    },
+    "proposed": {
+      "action": "deploy the coupon rounding fix to the checkout service",
+      "diff": "pricing/coupon.py: round half-up on the discounted subtotal",
+      "irreversibility": "compensatable",
+      "artifact": {"component": "pricing/coupon.py", "note": "round half-up on the discounted subtotal"}
+    },
+    "deadline_seconds": 300
+  },
+  "effect": {
+    "tool": "deploy.apply",
+    "scope": "internal",
+    "decision_point": "dispatch.tool_call",
+    "_": "The side-effecting step the gate stands in front of. It is decided once before the pause and once again after the resume, because an allow names the single action it admits and the moment it was taken."
+  },
+  "intervention_policy": {
+    "decision_point": "steer.intervention",
+    "permitted": ["reconnect", "restart", "replace"],
+    "checkpoint_before_turn": true,
+    "_": "The operator's verbs on a stuck cell. An operation this unit does not permit is refused by name before the decision point is even reached; an operation the containment class cannot serve is refused by the adapter with a typed unsupported result, never emulated."
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "envelope_version": "0.1",
+  "kind": "event",
+  "occurred_at": "2026-09-04T03:41:00Z",
+  "entry_id": "steer-event-checkout-alert",
+  "actor": {
+    "subject": "service:checkout-alerting",
+    "delegation_chain": [
+      {"actor": "service:checkout-alerting", "obtained_via": "workload_attestation"},
+      {"actor": "user:corey", "obtained_via": "token_exchange"}
+    ]
+  },
+  "intent": {
+    "workflow_ref": "units/steer-checkout-coupon-fix.json",
+    "summary": "An alert opened the unit; the reviewer edits the component before it deploys."
+  },
+  "correlation": {"run_id": "run-steer-event-0001", "correlation_id": "corr-steer-event-0001", "depth": 0},
+  "budget": {"ceiling_micros": 1500000, "currency": "USD", "on_exceed": "terminate_unit"},
+  "idempotency_key": "steer-event-checkout-alert-2026-09-04",
+  "payload": {
+    "subject": "alert CHK-2210: checkout 5xx rate above threshold for 6 minutes, coupon path implicated",
+    "steer": {
+      "surface": "parked-item",
+      "decision": "edit",
+      "decision_body": {"component": "pricing/discount.py", "note": "the rounding is in discount, not coupon"},
+      "decision_delay_seconds": 45,
+      "intervention": "reconnect",
+      "stall_first_turn": true
+    }
+  }
+}

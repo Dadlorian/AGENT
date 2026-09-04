@@ -42,6 +42,9 @@ runnable: yes
 | 3. Swap the server | `ADAPTER=second python3 harness/tool-access/call.py` |
 | 4. Prove the interface held | `python3 harness/tool-access/conformance.py --adapter dryrun --adapter second` |
 | 5. Run against the host | `bash harness/tool-access/test.sh --live` |
+| 6. Check the authorization and transport mechanisms (tool-access-q2), over real loopback sockets | `python3 harness/tool-access/adapters/auth_exchange.py --check` |
+| 7. Reproduce the real refresh gap (X-maturity-c-002) | `AUTH_BREAK=refresh-omit-resource python3 harness/tool-access/adapters/auth_exchange.py --check` |
+| 8. Point adapters/live.py, unmodified, at a real local endpoint with its token sourced via the same OAuth exchange | `python3 harness/tool-access/adapters/auth_exchange.py --live-demo` |
 
 From `harness/tool-access/README.md`. Every command runs here in dry-run mode; live mode needs the env vars in that README.
 

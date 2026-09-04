@@ -2,7 +2,7 @@
   "name": "cap-durable-execution",
   "layer": "cap",
   "wave": 3,
-  "description": "The ideal state of the Durable execution capability: a multi-step unit of work survives a crash and resumes at the first incomplete step, expressed as step, idempotency key, checkpoint and resume point and nothing more. Load it when deciding how a long piece of work is broken into steps that survive a restart, when asking 'what happens to this run if the machine dies at step 11', 'how do we not do that side effect twice', or 'can we run this without a workflow server at all', when a design starts to assume replayable deterministic code, worker registration or a task queue, and whenever a checkpointing contract is about to be written in the vocabulary of whichever engine happens to be installed.",
+  "description": "Multi-step work that survives a crash and resumes at the first incomplete step: step, idempotency key, checkpoint, resume point, and how an executor is built and swapped. Also compensation: an effect's irreversibility class and its undo, declared before it commits. Load it when asking what happens if the machine dies at step 11, or how not to do that twice.",
   "purpose": {
     "text": "Fix one contract for making a multi-step unit of work survive a crash and continue at the first incomplete step, so what the core imports is step, key, checkpoint and resume point rather than the feature list of whatever engine runs the steps today.",
     "origin": "sourced",
@@ -33,7 +33,7 @@
       {
         "name": "checkpoint_step (call name is ours; the replay-safety obligation on the commit is the platform's own)",
         "input": "a run handle, the step's own idempotency key, the digest of what the step produced, and the record of the effect it committed",
-        "output": "a committed checkpoint, or nothing: the checkpoint and the step's effect become durable together, so a step is complete only when both are (proposed)",
+        "output": "a committed checkpoint, or nothing: the checkpoint and the step's effect become durable together, so a step is complete only when both are, and the key the step commits under is a cap-idempotency claim (proposed)",
         "origin": "sourced",
         "sources": [
           "F-b4-08"
@@ -199,7 +199,7 @@
         "origin": "proposed"
       },
       {
-        "text": "Every externally-triggered action is safe to replay, and here that obligation lands per step rather than per run: a run key alone deduplicates whole submissions, while a restart in the middle needs each step to carry its own key.",
+        "text": "Every externally-triggered action is safe to replay, and here that obligation lands per step rather than per run: a run key alone deduplicates whole submissions, while a restart in the middle needs each step to carry its own key, each one a cap-idempotency claim.",
         "origin": "sourced",
         "sources": [
           "F-b4-08",
@@ -226,7 +226,7 @@
         "quote": "Durable execution is a class of workflow engine that journals every step so an agent can resume from exactly where it stopped, regardless of what crashed."
       },
       {
-        "text": "agentic-stack states design rule 3 (F-b1-04). Its consequence here is that the second adapter must break the assumption the first one rests on - a separate server holding history - rather than being another engine of the same shape, or the pair proves nothing about this interface.",
+        "text": "agentic-stack states design rule 3 (F-b1-04). cap-idempotency cites the same rule for its own pair; its consequence here is that the second adapter must break the assumption the first one rests on - a separate server holding history - rather than being another engine of the same shape, or the pair proves nothing about this interface.",
         "origin": "sourced",
         "sources": [
           "F-b1-04"
@@ -274,7 +274,7 @@
         "origin": "proposed"
       },
       {
-        "text": "The criterion a unit's result will be judged against never travels in a step input, a checkpoint, or an event history the resumed unit can read back: an agent sees its outcome, never the criterion it is judged against. agentic-stack states design rule 6 (F-b1-07); the consequence here (proposed) is that resume replays what the unit already did, and a replayed input is still an input, so anything hidden from the unit on the first attempt stays hidden on every later one.",
+        "text": "The criterion a unit's result will be judged against never travels in a step input, a checkpoint, or an event history the resumed unit can read back: an agent sees its outcome, never the criterion it is judged against. agentic-stack states design rule 6 (F-b1-07), as cap-idempotency does for a repeated request; the consequence here (proposed) is that resume replays what the unit already did, and a replayed input is still an input, so anything hidden from the unit on the first attempt stays hidden on every later one.",
         "origin": "sourced",
         "sources": [
           "F-b1-07"
@@ -298,7 +298,7 @@
     {
       "step": 2,
       "action": "Give every step its own idempotency key, derived from the run key and the step id, and record it on the step record before the step's effect is attempted.",
-      "why": "Replay safety is an obligation on every externally-triggered action, and a run-level key only protects the resubmission case; the crash-at-step-11 case is protected by the per-step key and by nothing else.",
+      "why": "Replay safety is an obligation on every externally-triggered action, and cap-idempotency defines what a key plus a payload digest claims, and a run-level key only protects the resubmission case; the crash-at-step-11 case is protected by the per-step key and by nothing else.",
       "origin": "sourced",
       "sources": [
         "F-b4-08"
@@ -350,7 +350,7 @@
     {
       "step": 7,
       "action": "Send a run key you can reproduce and the steps in order. Take every default. Do not send a resume flag, an attempt number or a starting index - there is no field for them and you would not want to own the decision.",
-      "why": "It has to be simple to use, and every field you fill in is a decision you now own; the resume point is derived from what is already committed, which is a fact the platform has and you do not.",
+      "why": "It has to be simple to use - core-components carries that requirement for what a caller declares - and every field you fill in is a decision you now own; the resume point is derived from what is already committed, which is a fact the platform has and you do not.",
       "origin": "sourced",
       "sources": [
         "T-t3-01"

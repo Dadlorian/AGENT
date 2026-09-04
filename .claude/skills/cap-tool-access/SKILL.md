@@ -210,18 +210,26 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | python3 tools/conformance_tool_access.py --adapter today --adapter second --revision 2026-07-28 --report out/tool-access-conformance.json |
-| Expected | Proposed tool, built with the first implementation of this interface: that command. Per adapter it asserts conformance_failures == 0, tools_listed > 0, every listed tool's input schema valid against the JSON Schema 2020-12 meta-schema with schemas_invalid == 0, and a call to a name outside the unit's declared surface refused before dispatch; across adapters it asserts adapters_run >= 2. exit 0 and one report line per adapter of the form `adapter=<role> conformance_failures=0 tools_listed=<greater than 0> schemas_checked=<equal to tools_listed> schemas_invalid=0 undeclared_refused=1`, followed by `adapters_run=2`. |
-| Deliberate breakage | Unregister every tool from the adapter under test, leaving the endpoint live and authenticated, and re-run without changing anything else. |
-| Expected failure | conformance_failures stays 0 and the suite still exits its protocol phase clean, while tools_listed becomes 0, schemas_checked becomes 0, and the non-zero-catalogue assertion fails, so the run exits non-zero naming that adapter. This is the exact state PASS.md A6 records for this capability, and a conformance-only check would have called it green. |
-| Status | claimed |
-| Evidence | `F-part-c-04`, `F-a6-03` "Live and authenticated, **zero tools registered**" |
+| Criterion | bash harness/tool-access/test.sh && python3 harness/tool-access/conformance.py --adapter dryrun --adapter second |
+| Expected | Measured by tools/measure.py at 372cdc1: exit 0; last lines: adapters_run=2 \| conformance PASSED: 34/34 cases, 2 binding(s) |
+| Deliberate breakage | Append a product-name comment (`# breakage: litellm`) to the end of harness/tool-access/call.py, outside adapters/. Restored with `git checkout -- harness/tool-access/call.py`. |
+| Expected failure | Measured by tools/measure.py at 372cdc1: exit 1; last lines:   ok   11 cases reported NOT EXERCISED rather than passing \| passed 30, failed 6 |
+| Status | measured |
+| Evidence | `F-part-c-04`, `F-a6-03` "MCP endpoint \| Live and authenticated" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-tool-access-implement` | Turn the contract in cap-tool-access into something that runs here: two catalogues behind one client, the endpoint that is live with zero tools registered filled one tool at a time and counted, and every cross-cutting guarantee attached around the call rather than inside the server. | `references/cap-tool-access-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-document-validation`, `cap-errors`
+Builds on: `agentic-stack`, `build-evidence`, `build-skill-authoring`, `cap-document-validation`, `cap-errors`
 
-Used by: `cap-tool-access-implement`, `compose-agent`
+Used by: `compose-workflow`
 
 ## Open questions
 

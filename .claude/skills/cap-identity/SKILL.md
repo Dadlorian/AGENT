@@ -167,18 +167,30 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | bash harness/identity/test.sh |
-| Expected | docs/decomposition.md section 3.2 row P13, made precise: `python3 tools/conformance/identity_chain.py --corpus <ledger> --min-actions 50 --report out/identity.json` (proposed tool, built with the first Identity adapter). Over a corpus of at least 50 recorded actions it asserts that every action carries a non-empty `actor.subject`, that every action whose current actor differs from its subject carries a `delegation_chain` of at least two hops, that every chain is acyclic and ordered current actor first, and that the hop naming the current actor matches the workload identity of the unit that executed the action. P13 words that last assertion as the final hop, under the opposite chain ordering; see the open question below. exit 0 with `actions_checked >= 50`, `missing_subject == 0`, `short_chains == 0`, `cyclic == 0`, `executing_unit_mismatch == 0` Until that proposed tool exists, `bash harness/identity/test.sh` (owned by cap-identity-implement) is the running gate: every check line reads ok and the script exits 0. |
-| Deliberate breakage | Dispatch one agent action without performing the token exchange for the agent actor, so that action reaches the ledger with the human subject and a one-hop chain. Change nothing else. |
-| Expected failure | exit 1 with `short_chains == 1` and `executing_unit_mismatch == 1`, the report naming that action's identifier, while every other action still passes. Claimed: PASS.md A6 records no identity field anywhere in the system, so neither the field, the exchange nor the tool exists here and this check starts red by construction, which is the correct starting state rather than a defect to hide. |
-| Status | claimed |
-| Evidence | `F-a6-05`, `F-b4-03` "No identity field anywhere in the system" |
+| Criterion | bash harness/identity/test.sh && python3 harness/identity/conformance.py --adapter dryrun --adapter second |
+| Expected | Measured by tools/measure.py at b923246: exit 0; last lines:   adapter=attested workload identity with a local trust bundle cases=16 passed=16 actions_checked=50 short_chains=0 cyclic=0 executing_unit_mismatch=0 authority_calls=0 marker=workload-attestor product_hits=0 \| conformance PASSED: 32/32 cases, 2 binding(s), selected_by=configuration |
+| Deliberate breakage | In harness/identity/adapters/dryrun.py, make _break_this_hop() always forward the incoming credential unchanged on an agent actor's first hop, instead of only under IDENTITY_BREAK=forward-token (the harness README's breakage, made the default rather than env-gated so the criterion needs no extra variable) and change nothing else; restore with git checkout -- harness/identity/adapters/dryrun.py. |
+| Expected failure | Measured by tools/measure.py at b923246: exit 1; last lines:   FAIL the same suite passes again once the hop is restored (expected 0, got 1) \| passed 36, failed 10 |
+| Status | measured |
+| Evidence | `F-a6-05`, `F-b1-04` "No identity field anywhere in the system" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-identity-implement` | Turn the contract in cap-identity into something that runs here: two operations, two adapters whose execution models differ, and every entry and every dispatch hop carrying an actor that was verified rather than asserted. | `references/cap-identity-implement.md` |
+| `xc-identity-delegation` | Fix the identity guarantee as a placement: the actor and the delegation chain are bound at entry by each driving adapter, before any planning or spend, and every recorded action is then checkable for a non-null actor, an acyclic chain, and a chain that terminates at a root nobody asserted for themselves. | `references/xc-identity-delegation.md` |
+| `xc-identity-delegation-implement` | Turn the placement in xc-identity-delegation into something that runs here: two enforcement points behind one guarantee, the same corpus replayed through both, and a migration that starts red because there is no actor field on this host to migrate from. | `references/xc-identity-delegation-implement.md` |
+| `cap-mandate-broker` | Fix one contract for minting authority: a short-lived, destination-bound credential for reaching something, and a signed, expiring, scope-limited mandate for doing something irreversible, so the core imports minting and verification while the key store, the token service and the credential format stay adapter detail. | `references/cap-mandate-broker.md` |
+| `cap-mandate-broker-implement` | Build what cap-mandate-broker specifies: two authority bindings selected by configuration, one conformance run that drives both over the same fixtures and diffs acceptances and typed refusals, and the wiring that makes a mint and a mandate verification recorded steps rather than an unobserved call to a key store. build-adapter-pair owns why there are two. | `references/cap-mandate-broker-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors`
+Builds on: `agentic-stack`, `build-ceremony`, `build-evidence`, `build-skill-authoring`, `cap-errors`, `cap-policy`, `cap-provenance`
 
-Used by: `cap-human-interaction`, `cap-identity-implement`, `cap-mandate-broker`, `cap-memory`, `xc-identity-delegation`, `xc-tenancy`
+Used by: `cap-human-interaction`, `cap-state-persistence`, `seam-dispatch`, `xc-guarantees`
 
 ## Open questions
 

@@ -1,7 +1,7 @@
 {
   "name": "cap-errors",
   "layer": "cap",
-  "wave": 2,
+  "wave": 3,
   "description": "The ideal state of the Errors capability: one typed, machine-readable failure object for every boundary in the platform, governed by RFC 9457 problem details and a closed registry of problem types. Load it when deciding what a failure returns, when adding a failure mode or a new type URI, when judging whether an implementation's failure paths are conformant, or when a review asks why an error carries the fields it does. Also load it when a component is about to define its own error object, when a caller would have to read a message to learn what went wrong, when a status code alone is being used to decide whether to retry, or when someone proposes handing a stack trace, a log line or free text back to whoever called.",
   "purpose": {
     "text": "Give every failure in the platform one typed, machine-readable shape so no caller ever parses prose, by adopting the standard named for this capability whole instead of designing an error object of our own.",
@@ -420,37 +420,43 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "bash harness/errors/test.sh",
-    "expected": "docs/decomposition.md section 3.2 row P12, made precise: `python3 tools/conformance/errors_fuzz.py --adapters all --iterations 250 --report out/errors.json` (proposed tool, built with the first Errors adapter). It fuzzes every adapter's failure paths and asserts that every failure response carries the media type application/problem+json, that every type value has a row in the registry in docs/decomposition.md section 2.1.6, that `responses_checked > 200`, and that `untyped == 0`. exit 0 with `responses_checked > 200`, `untyped == 0`, `unregistered_types == 0`, `adapters_run >= 2` Until that proposed tool exists, `bash harness/errors/test.sh` (owned by cap-errors-implement) is the running gate: every check line reads ok and the script exits 0.",
-    "breakage": "Have one adapter return a plain-text HTTP 500 on one failure path, leaving every other adapter untouched.",
-    "expected_failure": "exit 1 with `untyped == 1`, the report naming the adapter and the path, while the other adapters still report zero. Claimed: typed errors are absent today and the fuzz tool is not written, so neither run has been performed here.",
-    "status": "claimed",
+    "criterion": "bash harness/errors/test.sh && python3 harness/errors/conformance.py --adapter dryrun --adapter second",
+    "expected": "Measured by tools/measure.py at 6dee0cd: exit 0; last lines:   adapter=edge component that answers on behalf of a service cases=9 passed=9 responses_checked=14 untyped=1 unregistered_types=0 wrong_media_type=1 product_hits=0 | conformance PASSED: 18/18 cases, 2 binding(s)",
+    "breakage": "Open the closed registry gate in `harness/errors/interface.py` so an unregistered suffix can reach a wire body, with exactly this command and nothing else: `sed -i 's/^    row = REGISTRY.get(suffix)$/    row = REGISTRY.get(suffix, (500, \"Unregistered\", True, ()))/' harness/errors/interface.py`. Restore with `git checkout -- harness/errors/interface.py`. Do not hand-edit `harness/errors/adapters/second.py` for this: test.sh section 4 already applies that edit itself, to a copy under out/breakage/, and a hand edit to the shipped file makes its internal string replace miss, so the harness's own self-check throws and the run reports a harness desynchronisation instead of the failure under test (ceremony 60, finding R60A-001).",
+    "expected_failure": "Measured by tools/measure.py at 6dee0cd: exit 1; last lines:   ok   an untyped upstream body is no longer converted; the check catches it | passed 16, failed 7",
+    "status": "measured",
     "sources": [
-      "F-b4-07",
+      "F-part-c-04",
+      "F-b1-04",
       "F-a6-06"
     ],
-    "quote": "Typed and machine-readable. Never parsed from prose"
+    "quote": "A criterion nothing can fail is not a criterion",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "6dee0cd",
+      "clean_exit": 0,
+      "clean_output": "d, counted, and never crashes the caller: classified to urn:agentic:problem:adapter-unavailable, untyped=1\n  ok   the edge adapter's own failure path: wrong media type is counted: text/plain body counted as untyped and wrong_media_type, never forwarded unchanged\n  ok   byte-identical problem bodies from both adapters: 7 members, canonical JSON identical byte for byte across both adapters\n  adapter=edge component that answers on behalf of a service cases=9 passed=9 responses_checked=14 untyped=1 unregistered_types=0 wrong_media_type=1 product_hits=0\nconformance PASSED: 18/18 cases, 2 binding(s)",
+      "breakage_exit": 1,
+      "breakage_output": "same caller code runs on the second adapter (0)\n  FAIL the two adapters differ in execution model on 2 or more axes (expected 0, got 1)\n  FAIL axes did not differ\n3. no product name anywhere in this harness\n  ok   product scan over the shipped tree exits 0 (0)\n  ok   0 hits (PASS.md B3 records no component for this element)\n4. deliberate breakage: the edge adapter forwards an untyped upstream body unchanged\n  ok   the breakage run exits non-zero (1)\n  ok   the run names the file the breakage broke\n  ok   an untyped upstream body is no longer converted; the check catches it\n\npassed 16, failed 7"
+    },
+    "expected_design": "The gate (23 checks) and the conformance run together prove one typed RFC 9457 problem for every registered failure mode under an in-process raise-site adapter and an edge-filter adapter that sees only a wire response: the retry decision reads from retryable alone, never from detail text, an unregistered type is refused before a body is built, the edge adapter never forwards an untyped body unchanged, and no product name appears outside adapters/ (adapters_run=2, product_hits=0). Earlier criterion named tools/conformance/errors_fuzz.py, replaced by the harness on 2026-09-03.",
+    "expected_failure_design": "The gate exits 1 and prints `passed 16, failed 7`. Both bindings fail the same case - `a type with no row in the closed registry is refused at construction` - so section 1 reports `FAIL 9 cases exit 0 (expected 0, got 1)` and `FAIL not 9/9`, section 1b reports `FAIL not rejected` where call.py expected an unregistered suffix to be rejected before a body was ever built, and section 2 fails the same way after the swap. Section 4, the harness's own internal breakage, still passes: it patches a copy, so it is unaffected. The failure is the property this capability exists to hold - the registry is closed and a type outside it never reaches a body - and it is caught identically on the in-process and the edge adapter, which is what makes the two a single interface rather than two code paths."
   },
   "composes_with": {
     "builds_on": [
       "agentic-stack",
-      "build-adapter-pair",
-      "build-definition-of-done",
+      "build-evidence",
       "build-skill-authoring"
     ],
     "used_by": [
       "cap-agent-runtime",
       "cap-capability-packaging",
-      "cap-capability-registry",
       "cap-durable-execution",
-      "cap-errors-implement",
       "cap-evaluation",
       "cap-human-interaction",
       "cap-idempotency",
       "cap-identity",
       "cap-isolation",
-      "cap-mandate-broker",
-      "cap-memory",
       "cap-model-access",
       "cap-policy",
       "cap-provenance",
@@ -459,15 +465,10 @@
       "cap-telemetry",
       "cap-tool-access",
       "cap-work-intake",
-      "core-document",
-      "core-graph",
-      "core-judge",
-      "core-ledger",
+      "core-components",
       "seam-dispatch",
       "seam-state",
-      "xc-budget",
-      "xc-policy-gate",
-      "xc-typed-errors"
+      "xc-guarantees"
     ]
   },
   "open_questions": [
@@ -510,5 +511,1298 @@
       "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
     },
     "author": "session cap-errors 2831cb4f, 2026-09-03"
+  },
+  "folded": {
+    "cap-errors-implement": {
+      "name": "cap-errors-implement",
+      "layer": "cap",
+      "wave": 3,
+      "description": "How to build the Errors capability on this stack: the first adapter, a second one with a different execution model, what to do when there is nothing to migrate from, how the budget, policy, identity, idempotency and correlation guarantees land in a failure body, and a definition of done with the breakage that makes it fail. Load it when you are writing or reviewing the code that produces a failure, when wiring a capability adapter's failure path, when adding an edge component that answers on behalf of a service, when a cross-cutting concern needs somewhere to report a refusal, or when a conformance run reports untyped failures and you have to find which adapter produced them.",
+      "purpose": {
+        "text": "Turn the contract in cap-errors into something that runs here: two adapters behind one failure shape, every untyped failure path converted, and every cross-cutting refusal landing on a registered problem type rather than in a log line.",
+        "origin": "sourced",
+        "sources": [
+          "F-b4-07",
+          "F-a6-06",
+          "E-adapter-errors-absent"
+        ],
+        "quote": "Typed and machine-readable. Never parsed from prose"
+      },
+      "entities": [
+        "E-capability-errors",
+        "E-concern-errors",
+        "E-standard-rfc-9457-problem-details",
+        "E-adapter-errors-absent",
+        "E-not-running-typed-errors"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "ErrorsConformanceReport (proposed shape; the counters that the definition of done below asserts on)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:errors:conformance-report:0.1",
+              "title": "ErrorsConformanceReport",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "adapters_run",
+                "per_adapter"
+              ],
+              "properties": {
+                "adapters_run": {
+                  "type": "integer",
+                  "minimum": 2,
+                  "description": "Distinct adapters exercised. Fewer than two means the swap was not tested."
+                },
+                "per_adapter": {
+                  "type": "array",
+                  "minItems": 2,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "adapter",
+                      "responses_checked",
+                      "untyped",
+                      "unregistered_types",
+                      "wrong_media_type"
+                    ],
+                    "properties": {
+                      "adapter": {
+                        "type": "string",
+                        "description": "Adapter entity id, so a failure names one implementation and not the capability."
+                      },
+                      "responses_checked": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "untyped": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Failures the adapter could not type. Non-zero means this adapter is not conformant."
+                      },
+                      "unregistered_types": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "wrong_media_type": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "origin": "proposed"
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Proposed: the two adapters differ on processes_required_for_progress, in the sense build-adapter-pair defines. The first raises and renders the problem inside the failing process; the second is a separate process on the response path that never enters the service. A pair that agrees on that axis proves nothing and is rejected. Research query: is there a recorded conformance run distinguishing the two adapters' process counts on this axis, which would turn this claim from an assertion into a measured finding?",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04"
+            ]
+          },
+          {
+            "text": "Proposed: the swap is configuration. No caller, and no code in the core, selects between the adapters or branches on which one answered; agentic-stack states design rule 1 (F-b1-02) and this is its consequence for the failure path.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-02"
+            ],
+            "quote": "The core imports interfaces, never implementations."
+          },
+          {
+            "text": "Proposed: there is nothing to migrate. cap-errors carries the row recording typed errors as Absent (F-a6-06), so the work is conversion of untyped failure paths rather than translation of an existing error object, and the count of converted paths is the progress measure.",
+            "origin": "sourced",
+            "sources": [
+              "F-a6-06"
+            ],
+            "quote": "Typed errors | Absent"
+          },
+          {
+            "text": "A budget refusal lands on the budget-exhausted row because exceeding a ceiling terminates the unit, not the platform: the problem body is what tells the caller which of the two happened.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-02"
+            ],
+            "quote": "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform"
+          },
+          {
+            "text": "A policy refusal lands on the policy-denied row carrying rule_id, and it is emitted before any spend, because refusal is deterministic and happens before execution, not after spend.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-04"
+            ],
+            "quote": "Refusal is deterministic and happens before execution, not after spend"
+          },
+          {
+            "text": "A replayed externally-triggered action with the same key and a different body lands on the idempotency-conflict row, because every externally-triggered action is safe to replay and a conflict is the one case where that promise cannot be kept silently.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-08"
+            ],
+            "quote": "Every externally-triggered action is safe to replay"
+          },
+          {
+            "text": "Proposed: none of these wirings is optional and none is requested by the caller. agentic-stack states the no-opt-out rule (F-b1-08, F-b4-01); what this adds is that the failure body is where a caller would first notice an opt-out, because a declined guarantee has no registered type to report under.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-01",
+              "F-b1-08"
+            ],
+            "quote": "The platform applies each; a caller cannot decline them"
+          },
+          {
+            "text": "Proposed: every claim in this skill is claimed until the conformance report exists, recorded the way build-evidence-record requires. No adapter here has been run, so nothing about their behaviour may be labelled measured.",
+            "origin": "proposed",
+            "sources": [
+              "F-part-c-08"
+            ]
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Build the first adapter in-process: one library that owns the closed registry, constructs a Problem only from a registered suffix, and refuses construction otherwise. Do not let handlers assemble the object field by field.",
+          "why": "Proposed. If the registry is data the library enforces rather than a table in a document, an unregistered type cannot reach a client at all, which turns the registry invariant in cap-errors into a compile- or construct-time failure instead of a conformance-run finding. Research query: is there a recorded conformance run in this repository proving that an unregistered problem type actually fails to construct, rather than this being an asserted design intention?",
+          "origin": "proposed"
+        },
+        {
+          "step": 2,
+          "action": "Enumerate every failure path in what runs, map each to a registry row, and convert them one at a time. Where the failure has no row, route it through classify to adapter-unavailable and increment the untyped counter rather than inventing a suffix.",
+          "why": "cap-errors carries the row recording typed errors as Absent (F-a6-06, E-not-running-typed-errors), so this is conversion from nothing rather than migration from an existing shape; the counter is what stops an unconverted path from looking finished.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-06",
+            "E-not-running-typed-errors"
+          ],
+          "quote": "Typed errors | Absent"
+        },
+        {
+          "step": 3,
+          "action": "Build the second adapter as a filter at the edge that maps an upstream failure into the problem-details body without the service being touched, and record its execution-model difference against the first as build-adapter-pair requires.",
+          "why": "The second exists to prove the first is not load-bearing: an in-process library and an edge filter disagree about how many processes must run for a failure to be produced and about how much context is available at the point of production, which is what makes the pair evidence rather than a spare.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-04"
+          ],
+          "quote": "the second exists to prove the first is not load-bearing"
+        },
+        {
+          "step": 4,
+          "action": "Give the second adapter the failing case honestly: it can only see the wire response, so it cannot populate rule_id, causes or the raise-site detail unless the service already emitted them. Declare that gap in the pair's record instead of widening the interface to close it.",
+          "why": "build-adapter-pair (F-meta-04) is explicit that a boundary needing a core change to complete a swap is drawn wrong; widening the contract so both adapters can satisfy every member is that failure applied to the failure path, so the honest alternative is a declared gap that the conformance suite asserts on.",
+          "origin": "sourced",
+          "sources": [
+            "F-meta-04"
+          ],
+          "quote": "If Part B cannot swap an implementation without touching the core, the boundary is drawn wrong"
+        },
+        {
+          "step": 5,
+          "action": "Wire the cross-cutting refusals to their rows: budget to budget-exhausted with the spend that would have crossed the ceiling, policy to policy-denied carrying rule_id and emitted before any spend, identity to identity-untrusted, idempotency to idempotency-conflict.",
+          "why": "Each concern already has a contract; the failure body is where a caller observes it. Refusal is deterministic and happens before execution, not after spend, so a policy problem emitted after a metered call is the wrong object at the wrong time.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-04",
+            "F-b4-02",
+            "F-b4-03",
+            "F-b4-08"
+          ],
+          "quote": "Refusal is deterministic and happens before execution, not after spend"
+        },
+        {
+          "step": 6,
+          "action": "Proposed: copy the explicit correlation attribute set at dispatch onto every problem body, and assert in the conformance suite that it survives both adapters.",
+          "why": "Proposed wiring. agentic-stack states the correlation finding (F-a7-02); the consequence here is that the edge-filter adapter mints its response outside the failing process, so a body that inherits nothing is exactly the case that finding predicts.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-02",
+            "F-b4-06"
+          ],
+          "quote": "Correlation must ride on an explicit resource attribute set at dispatch."
+        },
+        {
+          "step": 7,
+          "action": "Write one conformance suite against the capability and parameterise it over adapters, selecting the adapter by configuration with no code edit between runs, and emit the report shape defined above.",
+          "why": "Per design rule 1 as agentic-stack and build-adapter-pair state it (F-b1-02), the core imports interfaces, never implementations, so the suite must import the capability and never an adapter type; a per-adapter branch inside the suite would test two things and prove neither swappable.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-02"
+          ],
+          "quote": "The core imports interfaces, never implementations"
+        },
+        {
+          "step": 8,
+          "action": "Verify at runtime which adapter actually answered, rather than trusting the configuration that selected it, by asserting the report's adapter field against a marker the running adapter emits.",
+          "why": "agentic-stack already states the configuration finding (F-a7-04): values written to the documented place validated, reviewed correctly, and had no runtime effect. What this step adds, as this skill's own consequence and proposed: assert the report's adapter field against a marker the running adapter emits rather than against the binding record, because a swap job that never left the first adapter reports two green runs of the same code.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+        },
+        {
+          "step": 9,
+          "action": "Apply build-definition-of-done: run the definition of done below and then its deliberate breakage, and record both outputs as an evidence record the way build-evidence-record fixes, before calling this facet done; proposed pointer, see those skills.",
+          "why": "build-definition-of-done owns criterion plus deliberate breakage plus both recorded outputs, and build-evidence-record owns what the record names, so this row points at them instead of restating the sentence six sibling -implement skills had copied (consolidation part B, kb/ceremonies/implement-clusters.json).",
+          "origin": "proposed",
+          "sources": [
+            "F-part-c-04"
+          ],
+          "quote": "A criterion nothing can fail is not a criterion."
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Proposed: convert the failure paths of the noisiest adapter first. The untyped counter is a whole number, so the fastest route to a meaningful conformance number is the component that produces the most untyped failures, not the one that is easiest to edit. Research query: is there a recorded count of untyped failure paths per component on this substrate that would let this row name the actual noisiest adapter instead of describing the strategy in the abstract?",
+          "origin": "proposed"
+        },
+        {
+          "text": "Proposed: keep the registry in one place that both adapters read. An edge filter with its own copy of the type list is a second registry, and two registries drift in the direction of whichever one is easier to edit. Research query: is there a recorded case of an edge adapter drifting from the core registry on this stack or a comparable platform, which would source this as a known failure mode rather than a precaution?",
+          "origin": "proposed",
+          "sources": []
+        },
+        {
+          "text": "cap-errors names RFC 7807 as succeeded by RFC 9457 and directs citing the current RFC rather than an older one a dependency's documentation names; applied here: when an existing library speaks the older RFC 7807 member set, treat it as an adapter detail and normalise on the way out rather than accepting the older shape into this facet's contract.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-errors-005"
+          ],
+          "quote": "RFC 7807 has been succeeded by RFC 9457"
+        },
+        {
+          "text": "Proposed: give the edge filter a deliberate pass-through test. Its most likely defect is silently forwarding an upstream body it did not understand, which is indistinguishable from success unless a fixture upstream returns something untyped on purpose. Research query: is there a recorded fixture or conformance case on this stack exercising an untyped pass-through response, confirming this test was actually built rather than only recommended?",
+          "origin": "proposed"
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-errors-absent",
+          "role": "today",
+          "maps_to": "Nothing yet: the recorded adapter for this capability is absent, so the in-process problem-details library described in this skill is the first adapter to exist rather than an incumbent to replace.",
+          "cannot": "Cannot be cited as evidence of anything running; there is no measured behaviour to inherit, and every failure path in the current system is untyped by default.",
+          "swap_procedure": "Introduce the in-process library behind the capability, convert failure paths to registry rows one at a time, and count the remainder as untyped until conversion completes.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-13",
+            "F-a6-06"
+          ],
+          "quote": "RFC 9457 problem details | *absent*"
+        },
+        {
+          "entity": "E-swap-candidate-gateway-problem-filter",
+          "role": "second",
+          "maps_to": "Proposed adapter, and a proposed entity id: no swap-candidate entity exists for this capability because the recorded swap-candidate column is the instruction to adopt the RFC directly. It is a filter at the edge that maps an upstream failure into the problem-details body and media type without the service being touched.",
+          "cannot": "Cannot see raise-site context: it holds only the wire response, so rule_id, causes and a detail written at the point of failure are unavailable unless the service already emitted them. It also needs a separate process on the response path, where the first adapter needs none.",
+          "swap_procedure": "cap-errors carries the recorded swap-candidate row for this capability (F-b3-13). Select the adapter by configuration only, run the same conformance suite against each, and assert adapters_run is at least two with a runtime marker proving the second actually served.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-13",
+            "F-b1-04"
+          ],
+          "quote": "— adopt the RFC directly"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/errors/test.sh && python3 harness/errors/conformance.py --adapter dryrun --adapter second",
+        "expected": "Measured by tools/measure.py at 6dee0cd: exit 0; last lines:   adapter=edge component that answers on behalf of a service cases=9 passed=9 responses_checked=14 untyped=1 unregistered_types=0 wrong_media_type=1 product_hits=0 | conformance PASSED: 18/18 cases, 2 binding(s)",
+        "breakage": "Open the closed registry gate in `harness/errors/interface.py` so an unregistered suffix can reach a wire body, with exactly this command and nothing else: `sed -i 's/^    row = REGISTRY.get(suffix)$/    row = REGISTRY.get(suffix, (500, \"Unregistered\", True, ()))/' harness/errors/interface.py`. Restore with `git checkout -- harness/errors/interface.py`. Do not hand-edit `harness/errors/adapters/second.py` for this: test.sh section 4 already applies that edit itself, to a copy under out/breakage/, and a hand edit to the shipped file makes its internal string replace miss, so the harness's own self-check throws and the run reports a harness desynchronisation instead of the failure under test (ceremony 60, finding R60A-001).",
+        "expected_failure": "Measured by tools/measure.py at 6dee0cd: exit 1; last lines:   ok   an untyped upstream body is no longer converted; the check catches it | passed 16, failed 7",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04",
+          "F-b1-04",
+          "F-a6-06"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "6dee0cd",
+          "clean_exit": 0,
+          "clean_output": "d, counted, and never crashes the caller: classified to urn:agentic:problem:adapter-unavailable, untyped=1\n  ok   the edge adapter's own failure path: wrong media type is counted: text/plain body counted as untyped and wrong_media_type, never forwarded unchanged\n  ok   byte-identical problem bodies from both adapters: 7 members, canonical JSON identical byte for byte across both adapters\n  adapter=edge component that answers on behalf of a service cases=9 passed=9 responses_checked=14 untyped=1 unregistered_types=0 wrong_media_type=1 product_hits=0\nconformance PASSED: 18/18 cases, 2 binding(s)",
+          "breakage_exit": 1,
+          "breakage_output": "same caller code runs on the second adapter (0)\n  FAIL the two adapters differ in execution model on 2 or more axes (expected 0, got 1)\n  FAIL axes did not differ\n3. no product name anywhere in this harness\n  ok   product scan over the shipped tree exits 0 (0)\n  ok   0 hits (PASS.md B3 records no component for this element)\n4. deliberate breakage: the edge adapter forwards an untyped upstream body unchanged\n  ok   the breakage run exits non-zero (1)\n  ok   the run names the file the breakage broke\n  ok   an untyped upstream body is no longer converted; the check catches it\n\npassed 16, failed 7"
+        },
+        "expected_design": "The gate (23 checks) and the conformance run together prove one typed RFC 9457 problem for every registered failure mode under an in-process raise-site adapter and an edge-filter adapter that sees only a wire response: the retry decision reads from retryable alone, never from detail text, an unregistered type is refused before a body is built, the edge adapter never forwards an untyped body unchanged, and no product name appears outside adapters/ (adapters_run=2, product_hits=0). Earlier criterion named tools/conformance/errors_fuzz.py, replaced by the harness on 2026-09-03.",
+        "expected_failure_design": "The gate exits 1 and prints `passed 16, failed 7`. Both bindings fail the same case - `a type with no row in the closed registry is refused at construction` - so section 1 reports `FAIL 9 cases exit 0 (expected 0, got 1)` and `FAIL not 9/9`, section 1b reports `FAIL not rejected` where call.py expected an unregistered suffix to be rejected before a body was ever built, and section 2 fails the same way after the swap. Section 4, the harness's own internal breakage, still passes: it patches a copy, so it is unaffected. The failure is the property this capability exists to hold - the registry is closed and a type outside it never reaches a body - and it is caught identically on the in-process and the edge adapter, which is what makes the two a single interface rather than two code paths."
+      },
+      "composes_with": {
+        "builds_on": [
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record",
+          "cap-errors"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "The second adapter has no entity in the knowledge base. E-swap-candidate-gateway-problem-filter is a proposed id minted here because the schema requires an adapter entity and the recorded swap-candidate column for Errors is an instruction rather than a candidate list. Should it become a real entity?",
+          "evidence": "cap-errors carries the recorded swap-candidate row this reads from (F-b3-13). Whether a knowledge-base rebuild that derives swap candidates from sources other than the B3 table produces an entity for this filter. Until then the id resolves nowhere and a reader must take this row as proposed.",
+          "default": "Keep the proposed id, keep the row marked claimed, and do not list the id under entities so the validator's entity check is not silently satisfied by an invented record.",
+          "sources": [
+            "F-b3-13"
+          ],
+          "quote": "— adopt the RFC directly"
+        },
+        {
+          "question": "Can the edge-filter adapter reach `untyped == 0` at all, given that it cannot type what an upstream never described?",
+          "evidence": "agentic-stack, build-definition-of-done and build-evidence-record hold the claimed-versus-measured rule this answers under (F-part-c-08). Run the fuzz suite against a fixture upstream that returns a known mix of typed and untyped failures, and measure how many the filter can classify from status code and body alone. If a residue remains, the honest answer is a declared conformance subset rather than a claim of parity.",
+          "default": "Require parity and let the suite fail. A declared subset is available if the measurement shows the residue is small and unrelated to the paths the platform actually uses, but overclaiming parity is worse than documenting the subset.",
+          "sources": [
+            "F-part-c-08"
+          ],
+          "quote": "Distinguish **claimed** from **measured** throughout"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session cap-errors 2831cb4f, 2026-09-03"
+      }
+    },
+    "xc-typed-errors": {
+      "name": "xc-typed-errors",
+      "layer": "xc",
+      "wave": 4,
+      "description": "The cross-cutting guarantee that no failure anywhere in this platform is discovered by matching strings: every failure-producing site returns one typed problem object drawn from one shared closed registry, whichever way the caller entered, and no caller, adapter or fast path can decline it. Load it when a component is about to inspect a message, a log line or a response body to work out what went wrong, when a retry heuristic keys on a substring such as rate limit or timed out, when a new failure-producing site or a new way into the system is added, when a refusal has a different shape depending on whether a person, another system or a timer triggered the work, when an implementation reports an untyped failure and someone proposes recording it as a known gap, and when auditing that the ban on string matching is enforced rather than agreed.",
+      "purpose": {
+        "text": "Make it a checked property of the whole tree that failure information is never extracted by matching a string: every codepath that can fail returns the typed object cap-errors defines, every driving adapter reads the same closed type registry, and the count of sites that still read prose is asserted to zero rather than tracked.",
+        "origin": "sourced",
+        "sources": [
+          "F-b4-07",
+          "F-a6-06",
+          "E-concern-errors",
+          "X-xc-typed-errors-006"
+        ],
+        "quote": "Never parsed from prose"
+      },
+      "entities": [
+        "E-concern-errors",
+        "E-capability-errors",
+        "E-standard-rfc-9457-problem-details",
+        "E-not-running-typed-errors",
+        "E-adapter-errors-absent",
+        "E-rule-b1-7",
+        "E-seam-dispatch"
+      ],
+      "contract": {
+        "standards": [
+          {
+            "entity": "E-standard-rfc-9457-problem-details",
+            "version": "unverified",
+            "version_note": "cap-errors owns the standards row for this capability and records the version a search-only record names; no specification was fetched from this environment, and this layer places the object rather than defining it",
+            "version_status": "unverified",
+            "url": null,
+            "sources": [
+              "F-b3-13",
+              "X-entry-composition-046"
+            ]
+          }
+        ],
+        "operations": [
+          {
+            "name": "type_or_count (proposed; the platform's call at every boundary, not a caller's)",
+            "input": "any failure crossing any boundary of the platform, including one the code beneath it raised as a message, an exception or a non-2xx body",
+            "output": "a problem object whose type has a row in the closed registry, or the registered adapter-unavailable type carrying the untyped payload in detail and incrementing that boundary's untyped counter; there is no third outcome and no pass-through",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-07",
+              "X-xc-typed-errors-006"
+            ]
+          },
+          {
+            "name": "branch (proposed; what a caller is given instead of a message)",
+            "input": "a problem object",
+            "output": "the type member and the declared extension members the registry row names for that type; the operation exposes no message string as a branch key, so a caller that wanted to match on prose has nothing to match against",
+            "origin": "proposed",
+            "sources": [
+              "X-xc-typed-errors-006",
+              "F-b4-07"
+            ]
+          },
+          {
+            "name": "resolve_type (proposed; one registry behind every way in)",
+            "input": "a failure condition raised anywhere beneath any driving adapter, plus the entry kind the work arrived through",
+            "output": "the same registry row whichever entry kind was supplied; the entry kind is recorded on the problem and is never an input to the type decision, so one refusal cannot become two types",
+            "origin": "proposed",
+            "sources": [
+              "T-t2-03",
+              "X-entry-composition-042"
+            ]
+          },
+          {
+            "name": "audit_string_matching (proposed)",
+            "input": "the whole source tree and the single path that holds the problem-details parser",
+            "output": "the count of sites outside that path that extract failure information by matching a string, plus the untyped-failure count per boundary; zero is the only conformant value for both, counted over the population and never sampled",
+            "origin": "proposed",
+            "sources": [
+              "F-part-c-04"
+            ]
+          }
+        ],
+        "shapes": [
+          {
+            "name": "TypedErrorAudit (proposed): the machine-readable report the definition of done asserts on; the per-boundary mapping and the audit's blind spots are in references/typed-errors-audit.md",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:typed-errors:audit:0.1",
+              "title": "TypedErrorAudit",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "parser_path",
+                "string_match_sites",
+                "failures_checked",
+                "untyped",
+                "unregistered_types",
+                "per_entry"
+              ],
+              "properties": {
+                "parser_path": {
+                  "type": "string",
+                  "description": "The one path the string-match audit excludes, because parsing prose into a type is that path's job and nowhere else's."
+                },
+                "string_match_sites": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Sites outside parser_path that read failure information out of a string. Zero is the only conformant value."
+                },
+                "failures_checked": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Non-zero by construction: an audit that observed no failure cannot report that every failure was typed."
+                },
+                "untyped": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "unregistered_types": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "shared_refusal_type": {
+                  "type": "string",
+                  "description": "The type returned for one refusal condition raised under every entry kind. One value, or the guarantee has already failed."
+                },
+                "per_entry": {
+                  "type": "array",
+                  "minItems": 3,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "entry_kind",
+                      "failures_checked",
+                      "untyped"
+                    ],
+                    "properties": {
+                      "entry_kind": {
+                        "type": "string"
+                      },
+                      "failures_checked": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "untyped": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "unregistered_types": {
+                        "type": "integer",
+                        "minimum": 0
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-part-c-04",
+              "F-b4-07"
+            ]
+          },
+          {
+            "name": "FailureAtEveryEntry (worked instances: what comes back to a human, an event, a schedule, and an external system or agent, which are T6.2's four doors; each is an actual problem object with a registered type, and the caller supplies nothing to get it)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:typed-errors:failure-at-entry:0.1",
+              "title": "FailureAtEveryEntry",
+              "type": "object",
+              "required": [
+                "actor_subject",
+                "entry_kind",
+                "problem"
+              ],
+              "properties": {
+                "actor_subject": {
+                  "type": "string"
+                },
+                "entry_kind": {
+                  "type": "string"
+                },
+                "problem": {
+                  "type": "object",
+                  "description": "The failure object cap-errors defines. Only the members a caller branches on are shown here; the full schema and the closed registry belong to that skill."
+                }
+              },
+              "examples": [
+                {
+                  "actor_subject": "user:corey",
+                  "entry_kind": "human",
+                  "problem": {
+                    "type": "urn:agentic:problem:policy-denied",
+                    "title": "A policy rule refused this dispatch",
+                    "status": 403,
+                    "detail": "rule egress.external-http refused the step; no metered call was made",
+                    "retryable": false,
+                    "rule_id": "egress.external-http"
+                  }
+                },
+                {
+                  "actor_subject": "agent:partner-sre-bot",
+                  "entry_kind": "external",
+                  "problem": {
+                    "type": "urn:agentic:problem:budget-exhausted",
+                    "title": "A metered call would cross the ceiling",
+                    "status": 402,
+                    "detail": "ceiling reached at step 4; the unit was terminated and the run was not",
+                    "retryable": false
+                  }
+                },
+                {
+                  "actor_subject": "service:alerting",
+                  "entry_kind": "event",
+                  "problem": {
+                    "type": "urn:agentic:problem:document-invalid",
+                    "title": "Envelope failed schema validation",
+                    "status": 422,
+                    "detail": "intent.workflow_ref is required and was absent",
+                    "retryable": false
+                  }
+                },
+                {
+                  "actor_subject": "schedule:nightly-fault-sweep",
+                  "entry_kind": "schedule",
+                  "problem": {
+                    "type": "urn:agentic:problem:adapter-unavailable",
+                    "title": "A capability adapter answered without a type",
+                    "status": 503,
+                    "detail": "the untyped payload is carried here and the boundary's untyped counter was incremented",
+                    "retryable": true,
+                    "retry_after_s": 30
+                  }
+                }
+              ]
+            },
+            "origin": "sourced",
+            "sources": [
+              "T-t6-02",
+              "T-t2-03"
+            ],
+            "quote": "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent."
+          }
+        ],
+        "invariants": [
+          {
+            "text": "cap-errors owns the failure object, its members and the closed type registry (F-b4-07). What this layer adds is the placement and the count: the rule binds every failure-producing site in the tree, not only the sites a client library happens to cover, and it is asserted as a number rather than agreed as a convention.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-07",
+              "E-concern-errors"
+            ],
+            "quote": "Never parsed from prose"
+          },
+          {
+            "text": "Every codepath that can fail must produce a typed, machine-readable error with consistent schema, and the scope is both kinds of failure at once: structural failures such as network, authentication and resource exhaustion, and behavioural failures such as a policy refusal, a validation failure or a state conflict.",
+            "origin": "sourced",
+            "sources": [
+              "X-xc-typed-errors-006"
+            ],
+            "quote": "Every codepath that can fail must produce a typed, machine-readable error with consistent schema."
+          },
+          {
+            "text": "One shared type registry sits behind every driving adapter, so a policy refusal, a budget termination and a validation failure carry the same type whichever way the work entered. The driving side is the several adapters that initiate actions into one core, and a registry held per adapter would give one refusal as many names as there are ways in.",
+            "origin": "sourced",
+            "sources": [
+              "X-entry-composition-042",
+              "T-t2-03"
+            ],
+            "quote": "The driving (primary) side consists of actors and adapters that initiate actions into the application core"
+          },
+          {
+            "text": "The guarantee holds across the whole structure and not per entry point: state, telemetry, and every cross-cutting concern are managed across the entire structure, so an audit that exercised one way in has proved the property for that one and asserted it for the rest.",
+            "origin": "sourced",
+            "sources": [
+              "T-t2-03"
+            ],
+            "quote": "State, telemetry, and every cross-cutting concern are managed across the entire structure"
+          },
+          {
+            "text": "A caller cannot decline it. agentic-stack states design rule 7 (F-b1-08), that the four cross-cutting guarantees are applied by the platform rather than requested; the consequence here is that the platform applies each; a caller cannot decline them extends to the failure return type, so there is no request field, no configuration key and no legacy mode that returns prose instead. Proposed consequence: declining is therefore inexpressible rather than merely forbidden - the typed object is the only failure return type declared on every seam and capability shape, so a component that wanted to hand back a sentence has nowhere in the contract to put it, and a failure that cannot be typed is returned as the registered adapter-unavailable type with the untyped payload in detail and counted.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-01",
+              "F-b1-08",
+              "F-b4-07"
+            ],
+            "quote": "The platform applies each; a caller cannot decline them."
+          },
+          {
+            "text": "Retryability is read from the declared member, never inferred from a status code and never from the words: only transient errors should be retried; others require different handling, and a heuristic that keys on a substring cannot tell a transient failure from a refusal that will never clear.",
+            "origin": "sourced",
+            "sources": [
+              "X-xc-typed-errors-003"
+            ],
+            "quote": "Only transient errors should be retried; others require different handling."
+          },
+          {
+            "text": "The dispatch seam is where the guarantee is specified rather than assumed: the seam must specify what a failure returns, so a second execution path added later inherits the type registry instead of choosing its own.",
+            "origin": "sourced",
+            "sources": [
+              "F-b5-03",
+              "E-seam-dispatch"
+            ],
+            "quote": "what a failure returns"
+          },
+          {
+            "text": "The check lives inside the enforcement path or it is not this guarantee. What runs today already has the other arrangement recorded against it, conformance checks exist; not wired into the enforcement path, and a string-match audit that only reports is the same arrangement under a new name.",
+            "origin": "sourced",
+            "sources": [
+              "F-a6-04",
+              "F-part-c-04"
+            ],
+            "quote": "Conformance checks exist; not wired into the enforcement path"
+          },
+          {
+            "text": "The starting state is red and that is correct. cap-errors states that this capability is adopted rather than migrated because what runs today records Typed errors | Absent (F-a6-06); the consequence for this layer is that the first audit run reports every failure site as untyped, and a green first run means the audit found no failures rather than no untyped ones.",
+            "origin": "sourced",
+            "sources": [
+              "F-a6-06",
+              "E-not-running-typed-errors"
+            ],
+            "quote": "Typed errors | Absent"
+          },
+          {
+            "text": "Proposed: this guarantee owns no state type of its own. cap-errors owns the problem object's shape and the closed type registry (F-b4-07); what this layer adds is only the placement rule that every boundary produces one, never a string match, so there is no persisted record here beyond the failure body cap-errors already defines, and a blueprint search for a state row owned by xc-typed-errors correctly finds none. Research query: has a blueprint search actually been re-run to confirm no state row is owned by this skill, or is 'correctly finds none' asserted without re-running the search?",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-07"
+            ],
+            "quote": "Typed and machine-readable. Never parsed from prose"
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "Proposed: the detail member is not a branch key and is never part of the contract a caller may depend on. Its wording may change in any release; the type member and the declared extension members may not, which is what makes a caller that reads prose the party at fault rather than the party inconvenienced. Research query: does RFC 9457 itself state that the detail member's wording is unstable across releases while type stays fixed, or is that this row's own reading of the standard's extension-member design?",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-07"
+            ]
+          },
+          {
+            "text": "Consequence of design rule 6, which agentic-stack states under F-b1-07: the criterion a result is judged against never appears in a problem body, in detail, in an extension member or in a cause. The failure path is the path most tempted to explain why something did not pass, and it is the path a graded agent is most likely to read.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-07",
+              "E-rule-b1-7"
+            ],
+            "quote": "The grader is never visible to the graded."
+          },
+          {
+            "text": "Proposed: no per-deployment, per-environment or per-fast-path switch turns the typing off, and no allow-list exempts a site from the string-match audit. A tolerated site is a permanent hole with a comment on it, and the count is the only thing separating this guarantee from a convention. Research query: is there a fetched source naming a per-deployment or per-fast-path typing switch as a specific anti-pattern to close, or is that this row's own extension of design rule 7's general non-optionality?",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-08"
+            ]
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Take the failure object, its members and the closed type registry from cap-errors and add no shape here. This layer decides only three things: which sites must produce that object, where the count is taken, and what a non-zero count means.",
+          "why": "cap-errors states that the recorded instruction for this capability is to adopt the RFC directly (F-b3-13), so a second definition of the object in this skill would be a second thing to keep in step with the first.",
+          "origin": "sourced",
+          "sources": [
+            "F-b3-13"
+          ],
+          "quote": "— adopt the RFC directly"
+        },
+        {
+          "step": 2,
+          "action": "Put one registry instance behind every driving adapter and pass the entry kind to the problem as a recorded field, never as an input to the type decision. Assert that one refusal condition raised under each of TARGET T1's three ways in returns one identical type value.",
+          "why": "Each way in is a driving adapter into one core, and adapters that initiate actions into the application core will each grow their own error vocabulary unless one registry is the only place a type can come from. The worked instances in the shapes above are the fixtures for that assertion.",
+          "origin": "sourced",
+          "sources": [
+            "X-entry-composition-042",
+            "T-t1-01"
+          ],
+          "quote": "such as user interfaces, HTTP/gRPC requests, CLI commands, or test scripts"
+        },
+        {
+          "step": 3,
+          "action": "Give consumers a branch on the type member and give them no access to a message as a branch key: the caller reads type, then the extension members that type's registry row declares, and nothing else is contractual.",
+          "why": "A deterministic error response contract ensures every failure can be programmatically identified without string parsing. A contract that leaves a readable message in reach will be read, because reading it is cheaper than adding a registry row.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-typed-errors-006"
+          ],
+          "quote": "every failure can be programmatically identified without string parsing"
+        },
+        {
+          "step": 4,
+          "action": "Convert failure-producing sites one boundary at a time and count the remainder as untyped at each step. Never record a boundary that still returns prose as a known gap: it is the number the guarantee is defined against.",
+          "why": "Proposed. cap-errors states that an untyped failure is a conformance failure of the adapter that raised it; the consequence for this layer is that the exemption is where the guarantee dies, because an adapter answering with something rather than nothing is invisible to every check except this count. Research query: is there a fetched source recommending against a 'known gap' exemption list for untyped failures specifically, or is that this row's own extension of cap-errors' adapter-conformance rule?",
+          "origin": "proposed",
+          "sources": [
+            "F-b4-07",
+            "F-part-c-04"
+          ]
+        },
+        {
+          "step": 5,
+          "action": "Gate the tree with the string-match audit: assert zero occurrences of failure information being extracted by matching a string anywhere outside the one path that holds the problem-details parser, and name that path in the report rather than in a comment.",
+          "why": "Proposed. Parsing prose into a type is exactly one component's job. Naming the exempt path in the machine-readable report is what stops the exemption spreading, because a second path added to the exclusion list is then a visible change to the report rather than an edit to a build script. Research query: is there a fetched source recommending a machine-readable report (versus a code comment) as the place to name an audit's excluded path, or is that this row's own mechanism choice?",
+          "origin": "proposed",
+          "sources": [
+            "F-part-c-04",
+            "F-b4-07"
+          ]
+        },
+        {
+          "step": 6,
+          "action": "Read retryability and any wait from the declared members, and forbid a retry policy that keys on a status code alone or on a substring of a body. Where a retry loop exists, bound it by both a maximum attempt count and a retry budget.",
+          "why": "Both maximum attempt count and retry budget should be set; workflow stops when either limit is reached. Attempts alone do not bound cost and a budget alone does not bound latency, and the failure this guarantee removes, a heuristic matching on the words in a body, is usually found inside a retry loop.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-typed-errors-005",
+            "X-xc-typed-errors-003"
+          ],
+          "quote": "Both maximum attempt count and retry budget should be set; workflow stops when either limit is reached."
+        },
+        {
+          "step": 7,
+          "action": "Audit the paths that answer successfully as well as the paths that answer with an error, and count a result that reports completion while carrying no usable output as a failure that was never typed.",
+          "why": "The worst failures in AI systems don't look like failures—they arrive with a 200 status code. An audit scoped to error paths reports zero on exactly the arrangement this guarantee is least able to survive.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-typed-errors-004"
+          ],
+          "quote": "The worst failures in AI systems don't look like failures"
+        },
+        {
+          "step": 8,
+          "action": "Judge a candidate on four questions: does every failure-producing site return the typed object; is the string-match count zero outside the named parser path; does one refusal condition return one identical type under all three ways in; and is there no field, key or mode a caller could set to get prose back instead.",
+          "why": "These four are what the definition of done below mechanises, and the fourth is the one that separates a guarantee from a default, since a concern a caller can switch off is a feature.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-08",
+            "F-b4-01"
+          ],
+          "quote": "Cross-cutting guarantees are not optional."
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Carry machine-readable context as declared extension members rather than as words inside detail: the standard explicitly allows extension members, so the context a caller needs to act has a typed home and does not have to be recovered from a sentence.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-typed-errors-002"
+          ],
+          "quote": "RFC 9457 explicitly allows Extension Members."
+        },
+        {
+          "text": "Name the failure categories that need different handling and make each a registry row, rather than leaving the distinction implicit: failures can be classified into categories including transient, contract, authentication, approval, budget-exceeded and state-conflict, and a category that no type distinguishes is a category a caller must guess at.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-typed-errors-003"
+          ],
+          "quote": "Failures can be classified into categories: transient (connection issues, 429 throttling, temporary server failures), contract (invalid request format), authentication, approval, budget-exceeded, state-conflict, and ambiguous-completion."
+        },
+        {
+          "text": "The reason to adopt one shape rather than accumulate several is stated by the standard itself: it exists to avoid the need to define new error response formats for HTTP APIs, and every locally invented failure format is one more thing that a caller learns by reading rather than by branching.",
+          "origin": "sourced",
+          "sources": [
+            "X-entry-composition-046"
+          ],
+          "quote": "to avoid the need to define new error response formats for HTTP APIs"
+        },
+        {
+          "text": "Proposed: when the audit finds a site that reads prose, fix the site that produced the untyped failure rather than widening the parser's tolerance. Teaching the parser one more phrase converts a countable defect into a permanent behaviour that no later run will report. Research query: is there a fetched source recommending fix-the-site over widen-the-parser as a remediation policy specifically, or is that this row's own extension of the audit's own design?",
+          "origin": "proposed",
+          "sources": [
+            "F-part-c-04"
+          ]
+        },
+        {
+          "text": "Do not read a green audit as a typed system until the failure population is non-zero. agentic-stack and build-definition-of-done both state the rule that a criterion nothing can fail is not a criterion (F-part-c-04); the consequence specific to this guarantee is that the cheapest way to report zero untyped failures is to observe no failures at all.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-04",
+            "F-a7-03"
+          ],
+          "quote": "A criterion nothing can fail is not a criterion"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "python3 harness/errors/conformance.py --adapter dryrun --adapter second",
+        "expected": "exit 0, last line `conformance PASSED: 18/18 cases, 2 binding(s)`, with one line per binding reading `adapter=<entity> cases=9 passed=9 responses_checked=<n> unregistered_types=0 product_hits=0`: the raise-site binding and the edge binding both answer with the same registered types, and a caller decides retry from the type rather than from the message. What this run stands in for: the criterion this facet carried before ceremony 61 (finding R61B-018) moved its prose out of the criterion field, which is the check this guarantee ultimately needs and which nothing on disk runs yet - docs/decomposition.md section 3.4 row X6, made precise: `python3 tools/conformance/typed_errors_audit.py --entry human --entry agent --entry event --entry schedule --report out/x6.json` (proposed tool). It runs row X6's tree check, `grep -rn -E 'match.*(error|failed|timeout)' src/ --include='*.py'` excluding `src/problem/`, and asserts the match set is empty; it then raises one shared refusal condition under each of T6.2's four doors using the FailureAtEveryEntry fixtures above, validates every failure body against the problem shape cap-errors owns, and asserts, in a report validating against the TypedErrorAudit shape above, `string_match_sites == 0`, `untyped == 0`, `unregistered_types == 0`, `failures_checked > 0` per entry, `per_entry` length 4, and exactly one distinct `shared_refusal_type` across the four. Expected of that check: exit 0 with `string_match_sites == 0`, `parser_path == \"src/problem/\"`, `untyped == 0`, `unregistered_types == 0`, `failures_checked > 0` for each of the four entries, and one distinct `shared_refusal_type`.",
+        "breakage": "sed -i 's/extra = sorted(set(ext) - set(declared))/extra = []/' harness/errors/interface.py -- construct() accepts an extension member no registry row declares, so the closed registry stops being closed and a caller can no longer know what a type carries. Restore with git checkout harness/errors/interface.py.",
+        "expected_failure": "exit 1 on both bindings at the case that asserts an undeclared extension member is refused: construction succeeds where UnregisteredType was expected, while the unregistered-suffix case stays green - the two fail independently, which locates the defect in the member check rather than in the registry lookup. Status claimed: tools/measure.py has recorded neither run for this pair here. The breakage the prose criterion above stood for, and what it expected: Add a retry heuristic that matches on the substring \"rate limit\" in a response body, in a module outside `src/problem/`, leaving the audit command, the fixtures and every failure site untouched. exit 1 with `string_match_sites == 1`, the report naming that file and line, while `untyped` stays 0: the two counts fail independently, which is what locates the defect in the consumer rather than in a producer. A run that still exits 0 means the audit excluded more than the parser path, and the audit is then the defect. Claimed: typed errors are absent today, no failure site returns the object, `src/` and the audit tool do not exist, so neither run has been performed here and the check starts red by construction.",
+        "status": "claimed",
+        "sources": [
+          "F-part-c-04",
+          "F-a6-06",
+          "F-b4-07"
+        ],
+        "quote": "Per piece: a machine-checkable definition of done, plus the deliberate breakage that proves the check can fail."
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-definition-of-done",
+          "build-skill-authoring",
+          "cap-errors"
+        ],
+        "used_by": [
+          "seam-dispatch",
+          "xc-enforcement-chain",
+          "xc-typed-errors-implement"
+        ]
+      },
+      "open_questions": [
+        {
+          "question": "Which list of problem types is normative for this guarantee, given that a research record on file describes a closed registry of eight types including cancelled, timeout, partial-result and schema-invalid, while the closed registry in docs/decomposition.md section 2.1.6 has ten rows and none of those four names?",
+          "evidence": "An edit to docs/decomposition.md section 2.1.6, which is the only sanctioned way to change a closed registry. The research record is search-only, its URL is not a fetched specification, and its type list matches no other record on file, so it is not evidence for a registry change.",
+          "default": "1-3-1 applied and recorded on 2026-09-03. Options considered: (a) adopt the research record's eight types; (b) treat the decomposition registry as normative and the record as an unverified restatement; (c) merge both lists into a wider registry. Recommendation and default: (b). Option (a) would replace a design-doc registry with a search-only snippet, option (c) doubles the vocabulary this guarantee exists to keep single, and cap-errors already resolved the same collision the same way for the manifest's fold-in spellings.",
+          "sources": [
+            "T-t5-02",
+            "X-xc-typed-errors-007"
+          ],
+          "quote": "The registry is closed to prevent accumulation of synonymous types across the codebase."
+        },
+        {
+          "question": "Is a grep over the source tree a sufficient enforcement point, given it cannot see string matching inside a compiled dependency, inside a prompt an agent writes at runtime, or in a language the pattern does not cover?",
+          "evidence": "Count, over one week of real traffic, how many failures were classified correctly by type versus how many callers still changed behaviour after a body's wording changed. If the second number is non-zero while the grep reports zero, the tree check is a floor and not the enforcement point.",
+          "default": "Keep the tree check as the floor because it is cheap and it fails loudly, and pair it with the untyped counter at each boundary, which is the runtime half. Reversible by adding the counter's threshold to the same report at no interface cost.",
+          "sources": [
+            "F-part-c-04",
+            "X-xc-typed-errors-006"
+          ],
+          "quote": "This contract must cover both structural failures"
+        },
+        {
+          "question": "Where is the untyped-failure counter kept, and who is accountable for a non-zero value: the boundary that raised the untyped failure, or the adapter that failed to type it?",
+          "evidence": "Whether a non-zero count can be attributed to one component from the report alone. If two boundaries share a counter, the report names a number and no owner.",
+          "default": "One counter per boundary, labelled with the boundary and the adapter beneath it, and the adapter is accountable, since cap-errors states that an untyped failure is a conformance failure of the adapter that raised it. Reversible by aggregating labelled counters, which no report consumer can do in reverse.",
+          "sources": [
+            "F-b4-07"
+          ],
+          "quote": "Typed and machine-readable"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session xc-typed-errors 2831cb4f, 2026-09-03"
+      }
+    },
+    "xc-typed-errors-implement": {
+      "name": "xc-typed-errors-implement",
+      "layer": "xc",
+      "wave": 5,
+      "description": "How to build the typed-error guarantee on the stack that actually runs: why there is no incumbent to migrate from, what the first implementation is when the enforcement machinery available today is a check that sits outside the enforcement path, the second implementation that moves the check from build time over the tree to run time over live responses, the three-step migration that can each ship alone, where the budget, policy, identity, correlation and idempotency guarantees land as declared members of a failure body, and the definition of done that fails when a retry heuristic starts reading words again. Load it when converting a real failure site to the typed object, when wiring the string-match gate or the per-boundary untyped counter, when deciding which of the two checks a green run has actually exercised, when a refusal has to carry a policy rule or a budget figure, or when an audit reports zero and you need to know whether anything failed at all.",
+      "purpose": {
+        "text": "Turn the guarantee stated in xc-typed-errors into a build on what runs here: nothing types failures today and the only verification machinery on hand runs outside the path it checks, so this facet is an adoption over call sites plus a second implementation that proves the check is not tuned to the moment it happens to run.",
+        "origin": "sourced",
+        "sources": [
+          "F-b3-13",
+          "F-a6-06",
+          "F-a6-04",
+          "E-adapter-errors-absent"
+        ],
+        "quote": "RFC 9457 problem details | *absent*"
+      },
+      "entities": [
+        "E-concern-errors",
+        "E-capability-errors",
+        "E-adapter-errors-absent",
+        "E-not-running-typed-errors",
+        "E-seam-dispatch"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "TypedErrorsConformanceReport (proposed): the machine-readable output the definition of done asserts on, one object per implementation run; it extends the TypedErrorAudit shape xc-typed-errors owns with the fields that identify which implementation produced it",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:typed-errors:conformance-report:0.1",
+              "title": "TypedErrorsConformanceReport",
+              "type": "object",
+              "required": [
+                "implementation",
+                "selected_by",
+                "checks_at",
+                "audit",
+                "evidence_record_ref"
+              ],
+              "properties": {
+                "implementation": {
+                  "type": "string",
+                  "description": "Which of the two produced this report. A label only; no assertion branches on it."
+                },
+                "selected_by": {
+                  "const": "configuration",
+                  "description": "A code edit between the two runs is the finding, not the setup."
+                },
+                "checks_at": {
+                  "enum": [
+                    "build_time",
+                    "run_time"
+                  ],
+                  "description": "The axis the pair differs on: the whole tree before anything runs, or live responses as they leave a boundary."
+                },
+                "audit": {
+                  "$ref": "urn:agentic:typed-errors:audit:0.1",
+                  "description": "The report shape xc-typed-errors defines: parser_path, string_match_sites, failures_checked, untyped, unregistered_types, per_entry."
+                },
+                "observed_population": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "What this implementation could actually see. A build-time run sees code paths that never execute; a run-time run sees only what did."
+                },
+                "evidence_record_ref": {
+                  "type": "string",
+                  "description": "The evidence record this run was written into: script digest, commit, tree hash under test, dirty flag, and the claimed-or-measured label."
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-part-c-04",
+              "F-a5-04"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "xc-typed-errors owns the guarantee, its scope over every failure-producing site, the one shared registry behind every driving adapter, and the audit report shape (F-b4-07). Nothing here restates it. This facet owns three things only: when the check executes, how the two implementations are selected, and how a run is recorded.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-07"
+            ],
+            "quote": "Typed and machine-readable"
+          },
+          {
+            "text": "There is no incumbent to migrate from. The recorded adapter for this capability is absent, so the migration is over call sites rather than over an implementation, and no measured behaviour is inherited from anything running today.",
+            "origin": "sourced",
+            "sources": [
+              "F-b3-13",
+              "E-adapter-errors-absent"
+            ],
+            "quote": "RFC 9457 problem details | *absent*"
+          },
+          {
+            "text": "The failure this build has to avoid is already on file in the same inventory that records typed errors as missing: conformance checks exist; not wired into the enforcement path. xc-typed-errors states that a check outside the enforcement path is not this guarantee; the consequence for the build is that a string-match audit which runs and reports without blocking reproduces that arrangement exactly, under a new name.",
+            "origin": "sourced",
+            "sources": [
+              "F-a6-04",
+              "F-a6-06"
+            ],
+            "quote": "Conformance checks exist; not wired into the enforcement path"
+          },
+          {
+            "text": "The two implementations differ in when the check executes and therefore in what it can see, not in which product supplies it. build-adapter-pair owns the rule and the axis test (F-b1-04); what this facet adds is that swappability is a tested property, not an intention has a specific meaning here, namely that a build-time tree scan and a run-time response interceptor must report the same counts over the same conversion state.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-04",
+              "F-part-c-05"
+            ],
+            "quote": "Swappability is a tested property, not an intention."
+          },
+          {
+            "text": "Neither implementation may invent a type it was not given. xc-typed-errors states the placement rule: 'Never parsed from prose' (F-b4-07); an interceptor that guesses a type from the words in a body is exactly the string matching that rule bans, relocated into the enforcement layer, where it is harder to see and impossible for the tree scan to find.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-07",
+              "F-b1-04"
+            ],
+            "quote": "Never parsed from prose"
+          },
+          {
+            "text": "Every audit run is written into an evidence record before its numbers are read, and a run from a dirty tree is never labelled measured. build-evidence-record owns the record's fields and agentic-stack owns the labelling rule; the consequence here is that untyped and string_match_sites are exactly the kind of number that gets repeated later, and an unlabelled zero becomes a measurement the moment someone quotes it.",
+            "origin": "sourced",
+            "sources": [
+              "F-a5-04",
+              "F-part-c-08"
+            ],
+            "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "No configuration key, environment flag or fast-path exemption disables the audit or the counters for a deployment. xc-typed-errors states why a caller cannot decline the guarantee - 'Cross-cutting guarantees are not optional.' (F-b1-08); the consequence for the build is that the off switch must not exist in the configuration surface either, or a zero becomes a statement about how one environment was set up.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-08"
+            ],
+            "quote": "Cross-cutting guarantees are not optional."
+          },
+          {
+            "text": "Proposed: the untyped payload an adapter-unavailable problem carries in detail is not a branch key and is scrubbed of hostnames, credentials and adapter identities before it is carried. It exists so a human can find the site that failed to type, not so a caller can resume parsing prose from a new place.",
+            "origin": "proposed",
+            "sources": [
+              "F-part-c-09"
+            ]
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Start by narrowing the return type, not by converting sites: make the typed object the only failure return declared on the dispatch seam's result shape, before a single failure site is rewritten.",
+          "why": "The seam is where the contract has to say what a failure returns, and narrowing the type first turns every unconverted site into a compile-or-validation error that names itself, instead of a search someone has to remember to run.",
+          "origin": "sourced",
+          "sources": [
+            "F-b5-03",
+            "E-seam-dispatch"
+          ],
+          "quote": "It must specify: the request shape, the result shape, cancellation semantics, timeout and budget enforcement, partial-result handling, and what a failure returns."
+        },
+        {
+          "step": 2,
+          "action": "Migrate in three steps that can each ship alone: first add the object and the shared registry and convert the seam; second run the tree audit and the per-boundary untyped counters read-only and record the counts as claimed; third turn both into gates. Do not merge steps two and three.",
+          "why": "Proposed. A gate switched on over a population nobody has counted turns a migration into an outage on its first run, and the read-only pass is also the only way to learn which failure sites exist rather than which ones were remembered.",
+          "origin": "proposed",
+          "sources": [
+            "F-part-c-04"
+          ]
+        },
+        {
+          "step": 3,
+          "action": "Convert boundaries in the order of the enforcement table in xc-typed-errors' references: the policy refusal, the budget termination and the envelope validation failure first, and assert their type agreement across the three ways in before converting anything else.",
+          "why": "Proposed. Those three are the refusals the fold-in requires to carry the same machine-readable type whichever way the caller entered, so they are the ones whose disagreement would be designed in if they were converted last, each by whoever owned that path.",
+          "origin": "proposed",
+          "sources": [
+            "T-t2-03"
+          ]
+        },
+        {
+          "step": 4,
+          "action": "Add the second implementation as an interceptor in each boundary's response path, counting and refusing untyped bodies as they leave, and change no failure site to get it.",
+          "why": "This is composability doing the work the target asks of it: enhancing particular aspects of any element without touching the rest. Enforcement moves to run time, no producer is edited, and the check now runs where a compiled dependency's untyped failure is visible, which the tree scan can never read.",
+          "origin": "sourced",
+          "sources": [
+            "T-t2-02",
+            "F-b1-04"
+          ],
+          "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
+        },
+        {
+          "step": 5,
+          "action": "Wire the cross-cutting guarantees onto the failure body as declared extension members, adding them to the problem shape rather than to a logging helper: the correlation identifiers, the actor and its delegation chain, the spend at the moment a budget terminated a unit, the policy rule identifier on a refusal, and the idempotency key the attempt was made under.",
+          "why": "Proposed. Every action already names an actor including delegated agent actors, and the failure body is often the only artifact that crosses the boundary and survives the process, so a guarantee that lives only in a log line is absent from the one record the caller actually holds.",
+          "origin": "proposed",
+          "sources": [
+            "F-b4-03",
+            "F-b4-01"
+          ]
+        },
+        {
+          "step": 6,
+          "action": "Convert the consumers before the producers where you have a choice: rewrite each retry loop and each error-handling branch to key on the type member first, then narrow the producer that feeds it.",
+          "why": "Proposed. A producer converted under a consumer that still matches on words changes behaviour silently, because the words moved and the match stopped firing; a consumer converted first fails loudly on the type it has not been given yet.",
+          "origin": "proposed",
+          "sources": [
+            "F-b4-07"
+          ]
+        },
+        {
+          "step": 7,
+          "action": "Write every audit run into an evidence record before reading its numbers: the script digest, the commit, the tree hash under test, whether the tree was dirty, and the claimed-or-measured label. Record the observed population alongside each count.",
+          "why": "build-evidence-record owns the record's fields and agentic-stack owns the labelling rule (F-part-c-08); what this step adds is the population, because a build-time run and a run-time run over the same tree legitimately see different denominators, and two zeros with no denominators cannot be compared.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-08"
+          ],
+          "quote": "Distinguish **claimed** from **measured** throughout"
+        },
+        {
+          "step": 8,
+          "action": "Run the identical audit against both implementations with the choice made in configuration only, and treat any code edit needed between the two runs as the finding rather than as setup.",
+          "why": "build-adapter-pair states the discipline and the axis test; the failure mode specific to this guarantee is a check written as a grep invocation, which cannot run at all against an interceptor that has no source tree to read, so the report shape rather than the command has to be what the assertions are written against.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-05",
+            "F-b1-04"
+          ],
+          "quote": "chosen to prove the interface is not shaped around its current implementation"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Do not read the first green run as a typed system. agentic-stack, build-definition-of-done and build-evidence-record all build on the finding that a gate can be structurally green because the work contained nothing the tools apply to, and those establish well-formedness, not correctness; the version of it here is an audit over a tree where nothing has been converted, which reports zero string matches and zero untyped failures, both true and both meaningless.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        },
+        {
+          "text": "Verify that the interceptor actually saw the response rather than that it was configured to. agentic-stack states the finding that configuration written in the documented place can be silently overridden and build-evidence-record and build-adapter-pair both build on it (F-a7-04); the version here is an interceptor registered in the right file and bypassed by one boundary that writes its response directly, which is invisible unless the report counts what it observed.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "had no runtime effect"
+        },
+        {
+          "text": "Proposed: count non-conformant bodies in the interceptor and never drop them. A stage that silently discards what it cannot verify produces a clean report from a broken system, which is the same shape of green that this platform has already measured once.",
+          "origin": "proposed",
+          "sources": [
+            "F-a7-03"
+          ]
+        },
+        {
+          "text": "Proposed: when the two implementations disagree, believe the one that saw more. A build-time scan finding a string-matching site the interceptor never reported means that path did not execute, not that the site is acceptable; an interceptor counting an untyped body the scan never flagged means the failure came from beneath the source tree, which is why the pair exists.",
+          "origin": "proposed",
+          "sources": [
+            "F-b1-04"
+          ]
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-errors-absent",
+          "role": "today",
+          "maps_to": "Nothing types failures today: the recorded adapter for this capability is absent, so the first implementation of this guarantee is a build-time audit over the source tree, run as one more automated verification stage beside the deployment phases that already exist, plus the in-process typing layer it checks. Its execution model is a whole-tree static scan that runs before anything executes and needs no traffic and no running system.",
+          "cannot": "Cannot see a string match inside a compiled or vendored dependency, inside a prompt written at run time, or in a language its pattern does not cover; and cannot see an untyped failure at all, because it reads code rather than responses. It also cannot block anything by itself, which is precisely the arrangement PASS.md A6 already records against this platform, so it must be wired into the path rather than reported beside it.",
+          "swap_procedure": "Select the implementation by configuration only, run the same assertions against the report shape rather than against the command, and require the merged report to show two implementations and selected_by configuration. xc-typed-errors owns the guarantee and cap-errors owns the failure object; what this row adds is that the audit's assertions are written against TypedErrorsConformanceReport so a scan and an interceptor can both satisfy them.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-13",
+            "F-a6-06",
+            "F-a6-04"
+          ],
+          "quote": "Conformance checks exist; not wired into the enforcement path"
+        },
+        {
+          "entity": "E-swap-candidate-runtime-boundary-interceptor",
+          "role": "second",
+          "maps_to": "Proposed implementation, and a proposed entity id: no swap-candidate entity exists for this capability because, as cap-errors and xc-typed-errors both state, the recorded swap-candidate column is the instruction to adopt the RFC directly. It is an interceptor sitting in each boundary's response path at run time, which validates every outgoing failure body against the problem shape, increments that boundary's untyped counter when it does not conform, and refuses to pass the body on.",
+          "cannot": "Cannot see a code path that did not execute, so a dormant string-matching retry heuristic is invisible to it until the day it fires; cannot read source at all; and must never infer a type from the words in a body it was handed, which would move the banned string matching into the enforcement layer. It needs a process on the response path where the first implementation needs none. The axis is when the check runs and what it can therefore see - the whole tree before execution against live responses during it - which is a different execution model rather than a different product of the same shape, and it is the axis that matters because each of the two is blind to exactly what the other sees.",
+          "swap_procedure": "Select by configuration only, with no code edit between runs, and require both reports to validate against TypedErrorsConformanceReport and to carry distinct checks_at values with identical audit assertions. build-adapter-pair owns the rule that the second exists to prove the first is not load-bearing (F-b1-04); what this row adds is the observed_population the run-time implementation must publish, without which its zero cannot be compared with the scan's.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-13",
+            "F-b1-04"
+          ],
+          "quote": "— adopt the RFC directly"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/errors/test.sh && python3 harness/errors/conformance.py --adapter dryrun --adapter second",
+        "expected": "Measured by tools/measure.py at f037f65: exit 0; last lines:   adapter=edge component that answers on behalf of a service cases=9 passed=9 responses_checked=14 untyped=1 unregistered_types=0 wrong_media_type=1 product_hits=0 | conformance PASSED: 18/18 cases, 2 binding(s)",
+        "breakage": "sed -i '98a\\    retryable = True' harness/errors/interface.py -- construct() forces every registered problem to report retryable=True regardless of its registry row, so a caller can no longer decide retry from the type alone. Restore: git checkout harness/errors/interface.py",
+        "expected_failure": "Measured by tools/measure.py at f037f65: exit 1; last lines:   ok   an untyped upstream body is no longer converted; the check catches it | passed 16, failed 7",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04",
+          "F-b1-04",
+          "F-a6-06"
+        ],
+        "quote": "plus the deliberate breakage that proves the check can fail",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "f037f65",
+          "clean_exit": 0,
+          "clean_output": "d, counted, and never crashes the caller: classified to urn:agentic:problem:adapter-unavailable, untyped=1\n  ok   the edge adapter's own failure path: wrong media type is counted: text/plain body counted as untyped and wrong_media_type, never forwarded unchanged\n  ok   byte-identical problem bodies from both adapters: 7 members, canonical JSON identical byte for byte across both adapters\n  adapter=edge component that answers on behalf of a service cases=9 passed=9 responses_checked=14 untyped=1 unregistered_types=0 wrong_media_type=1 product_hits=0\nconformance PASSED: 18/18 cases, 2 binding(s)",
+          "breakage_exit": 1,
+          "breakage_output": "same caller code runs on the second adapter (0)\n  FAIL the two adapters differ in execution model on 2 or more axes (expected 0, got 1)\n  FAIL axes did not differ\n3. no product name anywhere in this harness\n  ok   product scan over the shipped tree exits 0 (0)\n  ok   0 hits (PASS.md B3 records no component for this element)\n4. deliberate breakage: the edge adapter forwards an untyped upstream body unchanged\n  ok   the breakage run exits non-zero (1)\n  ok   the run names the file the breakage broke\n  ok   an untyped upstream body is no longer converted; the check catches it\n\npassed 16, failed 7",
+          "restored": true
+        },
+        "expected_design": "docs/decomposition.md section 3.4 row X6: test.sh exits 0 (23 checks in dry run: 9/9 conformance, the caller-line count, the retryable-from-type-not-message pair, the live binding's own typed refusal, the swap proof, the product scan, one deliberate breakage restoring clean); conformance.py --adapter dryrun --adapter second then exits 0 with 18/18 cases across 2 bindings.",
+        "expected_failure_design": "test.sh exits 1 (16 passed, 7 failed): the swap proof's own conformance run fails 9/9 with the two adapters no longer differing on retryable-derived behaviour, so the axis-difference and case counts fail together while the earlier dry-run and live-refusal checks still pass. Restoring the file with git checkout returns the tree to a clean run."
+      },
+      "composes_with": {
+        "builds_on": [
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record",
+          "xc-typed-errors"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "When both implementations are deployed, which one enforces: the build-time scan, the run-time interceptor, or both?",
+          "evidence": "Run both read-only for one week over the same traffic and the same tree, and compare what each saw. If the interceptor counts untyped bodies the scan never flagged, enforcement belongs where the wider view is; if the counts agree, the cheaper one wins and the other stays a reporter.",
+          "default": "Both enforce, on different failures: the scan blocks a merge that introduces a string-matching site, the interceptor blocks an untyped body from leaving. Neither is allowed to invent a type. build-adapter-pair owns the two-adapter rule this question sits inside (F-b1-04); what is open is only which of the two enforces. Reversible by demoting one to reporting, which costs one configuration change and no producer change.",
+          "sources": [
+            "F-b1-04"
+          ],
+          "quote": "Every interface ships with at least two adapters"
+        },
+        {
+          "question": "Can this definition of done be run at all before any failure site is converted, given `failures_checked > 0` and `observed_population > 0` cannot be satisfied by a system that returns no typed failures?",
+          "evidence": "Whether any code path returns a problem object yet. The recorded state is that typed errors are absent, so today the answer is no for the typed half and yes for the string-match half.",
+          "default": "Run it and let it stay red, labelled claimed, rather than dropping the assertions that cannot yet pass. xc-typed-errors states that the starting state is red and correct (F-a6-06); dropping the population assertion is how a guarantee turns into a claim about the half that was easy.",
+          "sources": [
+            "F-a6-06",
+            "F-part-c-04"
+          ],
+          "quote": "A criterion nothing can fail is not a criterion"
+        },
+        {
+          "question": "Does the interceptor sit inside each boundary's own process or in a separate process on the response path, given that the first arrangement shares the failure mode it is meant to catch and the second cannot see an in-process call that never becomes a response?",
+          "evidence": "Count, over the boundaries that exist, how many return a failure without producing a response another process could observe. If that count is large, an out-of-process interceptor is enforcing over a minority of the failures.",
+          "default": "In-process per boundary, because xc-typed-errors binds the guarantee to every failure-producing site rather than to every response (F-b4-07), and the axis the pair is chosen on is already build time against run time rather than in-process against out-of-process. Reversible by moving the same validator behind a proxy at the cost of the failures it would stop seeing.",
+          "sources": [
+            "F-b1-04",
+            "F-b4-07"
+          ],
+          "quote": "Never parsed from prose"
+        },
+        {
+          "question": "The second implementation has no swap-candidate entity in the knowledge base: E-swap-candidate-runtime-boundary-interceptor is an id minted in the adapters table here because the schema requires one and the recorded swap-candidate column for Errors is an instruction rather than a candidate list. Should it become a real entity, and what does the row cite until it is?",
+          "evidence": "1-3-1 applied on 2026-09-03 (ceremony 9, finding C9-001), the protocol the wave-4c siblings used for the same gap. Options: (a) add the id to the knowledge base, which needs a rebuild and would invalidate the provenance heads of every skill already written; (b) collapse both rows onto E-adapter-errors-absent, the only entity this capability has, which would leave the two implementations indistinguishable in the very table the swap run reads; (c) keep the minted id, say in the row itself that both the implementation and the id are proposed, and record the gap here so a reader can tell it from a knowledge-base-backed id without grepping. Recommendation followed: (c), which is also what cap-errors-implement records for the same capability row. xc-typed-errors owns the reading of F-b3-13 that this guarantee builds on; what this row adds is which id the second implementation is recorded against until the entity exists. The question closes when a ceremony rebuilds the knowledge base and the entity exists.",
+          "default": "Keep the proposed id and the row's claimed status; do not list it under entities, where an invented id would silently satisfy the validator's unknown-id check; rely instead on the adapter-entity resolution warning ceremony 9 added to tools/validate_skills.py to keep it visible to every later reader.",
+          "sources": [
+            "F-b3-13",
+            "T-t5-02"
+          ],
+          "quote": "— adopt the RFC directly"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session xc-typed-errors 2831cb4f, 2026-09-03"
+      }
+    }
   }
 }

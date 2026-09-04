@@ -1,0 +1,351 @@
+---
+name: "xc-idempotency-lease"
+description: "The replay guarantee as a placement rather than a convention: every externally-triggered action acquires a keyed lease with an owner and an expiry before any side effect, so a repeat produces one execution and one answer whichever way in it arrived. Load it when a request can arrive twice from a retry, a queue redelivery, a re-fire of a recurrence or a resumed workflow, when deciding where the claim is taken and who derives the key, when a protocol carries no key of its own and one has to be derived from the payload, when a second copy shows up while the first is still running, when a crashed owner has left a key held, when an approval or a resume path could fire more than once, or when a review asks how a human, an agent and an event all end up under the same claim."
+---
+
+# xc-idempotency-lease (folded into `cap-idempotency`)
+
+Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Source IDs resolve with `python3 tools/kb.py show <id>`.
+
+## Purpose
+
+| Statement | Origin | Evidence |
+|---|---|---|
+| Fix the idempotency guarantee as a placement: one keyed lease, derived by the platform and acquired before execution begins at every way in, carrying an owner and an expiry, so a replay attaches to the one execution instead of starting a second. | sourced | `F-b4-08`, `F-b4-01`, `E-concern-idempotency` "The platform applies each; a caller cannot decline them" |
+
+## Entities
+
+| Entity |
+|---|
+| `E-concern-idempotency` |
+| `E-capability-idempotency` |
+| `E-standard-idempotency-key-convention` |
+| `E-adapter-no-lease` |
+| `E-swap-candidate-any-keyed-lease-store` |
+| `E-capability-state-persistence` |
+| `E-not-running-policy-in-the-gate-path` |
+
+## Contract
+
+### Standards
+
+| Standard | Version | Version status | URL | Sources |
+|---|---|---|---|---|
+| `E-standard-idempotency-key-convention` | unverified | unverified | - | `F-b3-16`, `X-entry-composition-047` |
+
+- `E-standard-idempotency-key-convention` version note: cap-idempotency owns this standard row and records the draft it names, together with the finding that it expired without becoming an RFC; nothing was fetched from this environment, so no version is asserted here and the lease semantics this skill places are ours
+
+### Operations
+
+| Operation | Input | Output | Origin | Evidence |
+|---|---|---|---|---|
+| derive_key (proposed operation set; the placement layer adds derivation, attach and reclaim on top of the claim cap-idempotency defines) | an entry envelope and the entry adapter it arrived through (proposed) | the idempotency key and the scope it must be unique within, plus the derivation rule that produced it: the caller-supplied key where the protocol carries one, a fingerprint of selected payload elements where it does not (proposed) | proposed | `X-entry-composition-047`, `X-xc-idempotency-lease-004` |
+| acquire (proposed) | a derived key and scope, the payload digest, the owner about to execute, and the lease duration (proposed) | granted, meaning this owner alone may execute; attached, meaning a claim is in flight and this caller waits on its result; replayed, carrying the sealed result reference; or conflict, meaning the key is held under a different payload digest (proposed) | proposed | `F-b4-08`, `X-xc-idempotency-lease-002` |
+| renew (proposed) | a lease, the owner's fencing token, and the extension being asked for (proposed) | the expiry moved forward, or lost when the lease was already reclaimed, which is how a slow owner learns it no longer holds the key rather than discovering it at write time (proposed) | proposed | `F-b4-08` |
+| reclaim (proposed) | a key whose lease has passed its expiry without being sealed (proposed) | the lease released and the key acquirable again, with the previous owner's fencing token invalidated so a returning owner cannot seal a result it no longer owns (proposed) | proposed | `X-xc-idempotency-lease-005`, `F-b4-08` |
+
+### Shapes (JSON Schema 2020-12)
+
+**IdempotencyLease (proposed summary shape; the full schema, the per-entry key-derivation table and the attach state machine are in references/lease-placement.md)** (proposed; sources: `F-b4-08`, `X-entry-composition-047`, `X-xc-idempotency-lease-001`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:xc:idempotency:lease:0.1",
+  "title": "IdempotencyLease",
+  "type": "object",
+  "additionalProperties": false,
+  "description": "Proposed. What the platform holds while one externally-triggered action runs. There is no field here a caller may set: the key is derived, the owner is the executing unit, and the expiry is the platform's.",
+  "required": [
+    "key",
+    "scope",
+    "derivation",
+    "payload_digest",
+    "owner",
+    "acquired_at",
+    "expires_at",
+    "fencing_token",
+    "state"
+  ],
+  "properties": {
+    "key": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 255
+    },
+    "scope": {
+      "type": "string",
+      "description": "The boundary within which the key must be unique."
+    },
+    "derivation": {
+      "enum": [
+        "caller_supplied",
+        "payload_fingerprint"
+      ],
+      "description": "Which rule produced the key. Recorded because two entry adapters may derive differently for one logical action."
+    },
+    "fingerprint_fields": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Required when derivation is payload_fingerprint: the payload elements selected, in order, declared beside the entry adapter rather than chosen per request."
+    },
+    "payload_digest": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "owner": {
+      "type": "string",
+      "description": "The executing unit holding the lease, not the actor that entered."
+    },
+    "acquired_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Always set. An unbounded lease is a key a crashed owner holds forever."
+    },
+    "fencing_token": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Increases on every acquire of this key; a write bearing a stale token is refused."
+    },
+    "state": {
+      "enum": [
+        "held",
+        "sealed",
+        "reclaimed"
+      ]
+    },
+    "result_ref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "description": "Set when state is sealed; null while the one execution is still in flight."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "derivation": {
+            "const": "payload_fingerprint"
+          }
+        },
+        "required": [
+          "derivation"
+        ]
+      },
+      "then": {
+        "required": [
+          "fingerprint_fields"
+        ]
+      }
+    }
+  ]
+}
+```
+
+**reaching the lease from each of TARGET T1's three ways in (proposed worked instances; minimal inputs and outputs, taken from the shared entry envelope in examples/end-to-end)** (proposed; sources: `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t6-02`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:xc:idempotency:ways-in:0.1",
+  "title": "LeaseWaysIn",
+  "description": "Proposed. Nobody calls this guarantee. The minimal input is the envelope a caller was already sending; the minimal output is the outcome the platform hands back. Same three fields in, same one field out, whichever way in produced the envelope.",
+  "type": "array",
+  "examples": [
+    [
+      {
+        "way_in": "a human enters the system",
+        "in": {
+          "actor": {
+            "subject": "user:corey"
+          },
+          "idempotency_key": "human-checkout-500s-2026-09-03",
+          "payload_digest": "sha256:11f2c0..."
+        },
+        "derivation": "caller_supplied",
+        "out": {
+          "outcome": "granted",
+          "owner": "run-human-0001",
+          "expires_at": "2026-09-03T09:27:00Z",
+          "fencing_token": 1
+        }
+      },
+      {
+        "way_in": "an agent enters the system",
+        "in": {
+          "actor": {
+            "subject": "agent:partner-sre-bot"
+          },
+          "idempotency_key": "partner-sre-bot-task-77c1a9",
+          "payload_digest": "sha256:11f2c0..."
+        },
+        "derivation": "caller_supplied",
+        "out": {
+          "outcome": "attached",
+          "attached_to": "run-human-0001",
+          "in_flight": true,
+          "result_ref": null
+        }
+      },
+      {
+        "way_in": "an internal or external event enters the system",
+        "in": {
+          "actor": {
+            "subject": "service:alerting"
+          },
+          "idempotency_key": null,
+          "payload_digest": "sha256:11f2c0..."
+        },
+        "derivation": "payload_fingerprint",
+        "fingerprint_fields": [
+          "payload.alert",
+          "payload.service",
+          "payload.route",
+          "payload.window_hours"
+        ],
+        "out": {
+          "outcome": "replayed",
+          "result_ref": "ledger://run-human-0001/result",
+          "fencing_token": 1
+        }
+      },
+      {
+        "way_in": "a recurrence fires (the fourth entry of the consumption reference, same shape)",
+        "in": {
+          "actor": {
+            "subject": "schedule:nightly-fault-sweep"
+          },
+          "idempotency_key": "nightly-fault-sweep-2026-09-03",
+          "payload_digest": "sha256:9ac410..."
+        },
+        "derivation": "caller_supplied",
+        "out": {
+          "outcome": "granted",
+          "owner": "run-schedule-0001",
+          "expires_at": "2026-09-03T02:15:00Z",
+          "fencing_token": 1
+        }
+      }
+    ]
+  ]
+}
+```
+
+**the one rejection this guarantee returns (proposed worked instance; the type is the registered row of the closed registry in docs/decomposition.md section 2.1.6 and cap-errors owns the object)** (proposed; sources: `F-b4-07`, `X-xc-idempotency-lease-008`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:xc:idempotency:conflict-instance:0.1",
+  "title": "IdempotencyConflictInstance",
+  "description": "Proposed. Shown rather than described: the same key arriving under a different payload digest is refused with a problem object, never with a second execution and never with prose.",
+  "allOf": [
+    {
+      "$ref": "urn:agentic:problem:0.1"
+    }
+  ],
+  "examples": [
+    {
+      "type": "urn:agentic:problem:idempotency-conflict",
+      "title": "Idempotency conflict",
+      "status": 409,
+      "detail": "key human-checkout-500s-2026-09-03 is held under payload digest sha256:11f2c0 and this request carries sha256:7d0ba4",
+      "retryable": false,
+      "correlation": {
+        "run_id": "run-human-0002",
+        "correlation_id": "corr-human-0002",
+        "depth": 0
+      }
+    }
+  ]
+}
+```
+
+### Invariants
+
+| Invariant | Origin | Evidence |
+|---|---|---|
+| cap-idempotency states the capability contract (F-b4-08): every externally-triggered action is safe to replay. What this layer adds is where the claim is taken. Safe to replay is a property of a placement, not of a field: a key that rides along and is written down afterwards leaves the second copy executing. | sourced | `F-b4-08`, `F-b3-16`, `E-concern-idempotency` "Every externally-triggered action is safe to replay" |
+| The lease is acquired by the platform on the way in, not requested by the caller, so there is no entry that opts out and no adapter that may skip it. agentic-stack states the rule for the class (F-b1-08); the consequence here is that acquisition sits on the shared entry path before the workflow is planned, not inside the handler that happens to remember it. | sourced | `F-b4-01`, `F-b1-08` "The platform applies each; a caller cannot decline them" |
+| The key is derived by the platform per entry adapter under a stated rule, and the rule is recorded on the lease. The caller-supplied key is used where the protocol carries one; where it does not, the key is a fingerprint over payload elements selected in advance, and the draft the convention comes from already anticipates that pairing. | sourced | `X-entry-composition-047`, `X-xc-idempotency-lease-004` "An idempotency fingerprint MAY be used in conjunction with an idempotency key to determine the uniqueness of a request." |
+| Acquisition is one atomic act, taken before the first side effect. A check followed by a separate write is two acts with a window between them, and every concurrent copy that lands in that window is granted. | sourced | `X-xc-idempotency-lease-002`, `X-xc-idempotency-lease-004` "Race conditions between the idempotency check and the mutation must be atomic" |
+| A duplicate that arrives while the first execution is still running attaches to that claim and receives its result. It is neither refused nor queued behind a fresh execution, which is what makes a retry storm cost one execution rather than one refusal per copy. | sourced | `X-entry-composition-027`, `X-cross-structure-042` "duplicate requests will return the same result as the original request" |
+| Proposed: reclaim fences the previous owner. The returning owner's token is stale, so its seal is refused rather than overwriting a result the new owner produced; an expiry without fencing trades a stuck key for two writers. Research query: is there a fetched source on fencing tokens for a reclaimed lease specifically, rather than this row's own extension of cap-idempotency's replay contract to the reclaim path? | proposed | `F-b4-08`, `X-xc-idempotency-lease-004` |
+| Proposed: the lease needs only a keyed conditional write, so it is placed on the persistence interface cap-state-persistence defines rather than on the Ledger. Binding the guarantee to one projection of the log would make the store that serves it unswappable, and any store offering an expected-version append can serve it. Research query: is there a fetched source arguing a lease needs only a keyed conditional write (and nothing the Ledger's own log format provides), or is that this skill's own placement argument? | proposed | `X-cross-structure-049`, `F-b1-04` "Swappability is a tested property, not an intention." |
+| The one rejection is the registered conflict type carried in the platform's failure object, so a caller branches on a type rather than on words. cap-idempotency carries this rule for the replay contract and cap-errors owns the shape and the closed registry; this layer only fixes when the conflict is raised, which is a repeat key under a different payload digest. | sourced | `F-b4-07`, `X-xc-idempotency-lease-008` "Typed and machine-readable. Never parsed from prose" |
+| Consequence of TARGET T2.3, which cap-idempotency already carries for the replay claim: the claim is applied across the whole structure, not only at the door. An action that is externally triggered at a resumed step, a delivered approval or a re-fired recurrence acquires its own lease at that boundary, or replay safety stops at the first hop. | sourced | `T-t2-03`, `X-end-to-end-042` "State, telemetry, and every cross-cutting concern are managed across the entire structure" |
+
+### Deliberately not exposed
+
+| Item | Origin | Evidence |
+|---|---|---|
+| agentic-stack states design rule 7 (F-b1-08, F-b4-01): cross-cutting guarantees are not optional. For the lease, there is no header, field, role or configuration flag that skips the acquisition, sets the expiry to nothing, or turns an attach into a second execution; the only honest way to say that in a schema is to leave nothing for a caller to set. | sourced | `F-b1-08`, `F-b4-01` "Cross-cutting guarantees are not optional" |
+| Proposed: the fencing token is platform-internal and never travels to a caller, and holding a key is not authorisation to read what the first execution produced. Who may read that result stays a matter for identity and policy, so an attached duplicate is authorised like any other reader. Research query: is there a fetched source stating a fencing token must stay platform-internal and never travel to a caller, or is that this skill's own extension of cap-idempotency's replay contract? | proposed | `F-b4-08` |
+| agentic-stack states design rule 6 (F-b1-07). What it forbids here specifically: the criterion a result will be judged against never travels on a lease, on an attach answer or on a conflict detail string, which is the easy place for it to leak because the detail is written to explain a mismatch. | sourced | `F-b1-07` "An agent sees its outcome, never the criterion it is judged against" |
+
+## Instructions
+
+| Step | Action | Why | Origin | Evidence |
+|---|---|---|---|---|
+| 1 | Put acquisition on the shared entry path, before the workflow named in the envelope is planned, and run it for every entry kind rather than inside per-kind handlers. | The four entries already arrive through one shape in the consumption reference, so one acquisition point covers all of them; a check placed per handler is declinable by adding a handler. Planning is a pure function that completes before execution begins, so the claim has to be taken before planning if it is to bound anything the plan spends. | sourced | `T-t6-02`, `F-b1-06` "All four enter through the same shape." |
+| 2 | Derive the key per entry adapter under a rule published beside that adapter: use the caller-supplied key where the protocol carries one, and a fingerprint over payload elements selected in advance where it does not. Record which rule ran, and the selected fields, on the lease. | A human retry, an agent resend and a webhook redelivery are three different producers of the same logical action, and only some protocols carry a key. Selecting the fingerprint fields in advance is what stops the same action from fingerprinting differently on two arrivals because a timestamp or a delivery id moved. | sourced | `X-entry-composition-047`, `X-entry-composition-002` "An idempotency fingerprint MAY be used in conjunction with an idempotency key" |
+| 3 | Acquire as one conditional write that exactly one owner can win, and carry an owner, an expiry and a fencing token on what it returns. Do not read-then-write. | The deduplicating act is the conditional write, not the key: two copies that both read absence and then both write have both been granted. The owner and expiry are what let a later reader tell a running execution from an abandoned one without asking the owner. | sourced | `X-xc-idempotency-lease-002`, `X-xc-idempotency-lease-001` "Storage for deduplication checks needs to be durable" |
+| 4 | Answer a duplicate three ways and no more: attach to the in-flight claim and return its result when the execution is still running, replay the sealed result reference when it has finished, and raise the registered conflict when the payload digest differs. | Those are the three states a repeat can meet, and collapsing any two of them loses information the caller needs: a refusal for an in-flight duplicate turns a retry storm into an error storm, and a silent second execution for a differing payload is the case that charges twice. | sourced | `X-entry-composition-027`, `X-xc-idempotency-lease-008` "Conflict, meaning the same key with a different payload, must return a typed error" |
+| 5 | Bound every lease with an expiry, renew it from the owner while the execution is alive, and let any caller reclaim a lease that has passed its expiry unsealed, invalidating the previous owner's fencing token as it does. | Without an expiry a crashed owner blocks its key forever; without fencing, an owner that wakes up after reclaim writes over the new owner's result. The two together are what make a stuck key recoverable without making two writers possible, and this is exactly the property the breakage below removes. | sourced | `X-xc-idempotency-lease-005`, `X-end-to-end-042` "if a tool call succeeds but the agent crashes before saving state, a resumed workflow may retry the call" |
+| 6 | Take a fresh lease at every later boundary where an externally-triggered action can re-enter: a resumed step, a delivered approval, a re-fired recurrence, a redelivered message. | Entry-only placement makes replay safety a property of the door. Every cross-cutting concern is managed across the whole structure whichever entry point was used, and the expensive repeats in a long workflow happen mid-run, after the door has been passed. | sourced | `T-t2-03`, `X-end-to-end-042` "Every side-effecting node needs an idempotency story" |
+| 7 | Return the conflict as the registered problem object with status 409 and retryable false, and never as a message a caller has to read. | cap-idempotency carries this typed-failure rule for the replay contract (F-b4-07), and cap-errors owns the failure object and holds the type registry closed; this guarantee supplies one registered row of it. A second failure format minted here would be one more thing every client has to learn for a case that is not special. | sourced | `F-b4-07` "Typed and machine-readable. Never parsed from prose" |
+| 8 | Prove the placement cannot be declined by replaying one corpus through each of the three ways in - a human, an agent, and an internal or external event - and asserting a lease record exists for every action in every run. | TARGET T1 names those three ways in, and a guarantee wired only on the path someone remembered is declinable by choosing another door. Replaying one corpus through each door is what turns cannot be declined into a count rather than an intention. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03` "An internal or external event must be able to enter the system." |
+
+## Best practices
+
+| Practice | Origin | Evidence |
+|---|---|---|
+| Keep the two clocks apart: how long an owner may hold an unsealed lease is not how long a sealed answer is replayable. Published retention windows are chosen to trade deduplication coverage against storage, while a lease duration is chosen to match how long one execution can plausibly run; one number for both makes a long retention into a long outage after a crash. | sourced | `X-cap-idempotency-008` "to balance deduplication coverage with storage costs" |
+| Do not let a content hash stand in for an intent. Two genuinely separate actions can have identical payloads and a caller-supplied key is what tells them apart, so a fingerprint is the fallback for protocols that carry no key, never the default. | sourced | `X-xc-idempotency-lease-004` "Content hashing detects duplicates; an idempotency key identifies one intended operation." |
+| agentic-stack already states the structurally-green-gate finding (F-a7-03). What it adds here, as this skill's own proposed consequence: a lease check that ran over a corpus in which no request ever repeated reports the same green as one that caught a duplicate, so assert the keys actually checked and the duplicates actually attached, never the exit code alone. | sourced | `F-a7-03` "Those establish well-formedness, not correctness" |
+| agentic-stack already states the silently-discarded-configuration finding (F-a7-04). What it adds here, as this skill's own proposed consequence: a lease duration written where the documentation says is not a lease duration in force, so prove the placement by observing a second execution being prevented and an expired key being reclaimed, not by reading the setting that declares them. | sourced | `F-a7-04` "Values written to YAML validated, reviewed correctly, and had no runtime effect" |
+| Keep the acquisition in the execution path rather than beside it. The inventory of what runs today already records a concern whose conformance checks exist and are not wired into the path that enforces them, and a lease that is verified by a nightly sweep over the log is that same shape with duplicate side effects already spent. | sourced | `F-a6-04`, `E-not-running-policy-in-the-gate-path` "Conformance checks exist; not wired into the enforcement path" |
+| Proposed: treat the attach path as the interesting one and exercise it deliberately. A sequential replay passes on anything that records a key at all, so a suite that never overlaps two copies has measured the log and not the lease. Research query: is there a fetched source specifically recommending deliberate overlap-testing of the attach path (two concurrent copies), rather than this row's own extension of the atomic-acquisition requirement X-xc-idempotency-lease-002 states? | proposed | `X-xc-idempotency-lease-002` |
+
+## Definition of done
+
+| Field | Value |
+|---|---|
+| Criterion | python3 harness/idempotency/conformance.py --adapter dryrun --adapter second |
+| Expected | exit 0, last line `conformance PASSED: 16/16 cases, 2 binding(s)`, with one line per binding reading `adapter=<entity> cases=8 passed=8 supports_in_flight=<declared> overlapped=<n>`: the lease binding answers a duplicate in flight and reclaims a key past its window, and the binding that declares no lease reports overlapped=0 rather than being widened until both pass. What this run stands in for: the criterion this facet carried before ceremony 61 (finding R61B-018) moved its prose out of the criterion field, which is the check this guarantee ultimately needs and which nothing on disk runs yet - Proposed tool, built with the first implementation of this placement (docs/decomposition.md section 3.4 row X7): `python3 tools/conformance/lease_placement.py --entries examples/end-to-end/entries --corpus out/actions.jsonl --kill-owner-at 0.5 --report out/lease.json`. Over a corpus replayed through each of the three ways in it asserts that every externally-triggered action has a lease record carrying a non-null owner and a non-null expires_at, that no two executions share a key within a scope, that a duplicate answered while the first execution was still running was attached rather than executed, and that a lease whose owner was killed mid-execution is reclaimable once its expiry has passed. It reports `keys_checked`, `unleased_actions`, `owners_missing`, `expiries_missing`, `duplicate_executions`, `attached_in_flight`, `reclaimed` and `ways_in_covered`, and asserts `keys_checked > 0`, `unleased_actions == 0`, `owners_missing == 0`, `expiries_missing == 0`, `duplicate_executions == 0`, `attached_in_flight >= 1`, `reclaimed >= 1` and `ways_in_covered == 3`. Expected of that check: exit 0 and one summary line `keys_checked=<n> unleased_actions=0 owners_missing=0 expiries_missing=0 duplicate_executions=0 attached_in_flight=<k> reclaimed=<r> ways_in_covered=3`, with `k` and `r` both greater than zero so the attach assertion and the reclaim assertion each had something to assert on. |
+| Deliberate breakage | sed -i 's/entry_kind, retention_s)$/entry_kind, 0)/' harness/idempotency/interface.py -- every claim is built with a zero-length retention window, so a key is releasable the instant it is taken and a lease bounds nothing. Restore with git checkout harness/idempotency/interface.py. |
+| Expected failure | exit 1 on both bindings at the retention case with `expired before its window elapsed`, while the fresh, duplicate and conflict cases stay green - which is what shows the failure is the missing window rather than a claim path that stopped running. Status claimed: tools/measure.py has recorded neither run for this pair here. The breakage the prose criterion above stood for, and what it expected: Let the lease expiry be unbounded: set `expires_at` to null on acquisition, leave everything else including the owner and the fencing token in place, and re-run the same command. exit non-zero with `expiries_missing` equal to the number of leases taken and `reclaimed == 0`: the owner killed mid-execution never releases its key, so the reclaimability assertion fails and the key stays held forever, while `keys_checked` holds its value and `ways_in_covered` stays 3, which is what shows the failure is the missing expiry rather than a corpus that was never replayed. Claimed: no lease is taken before execution today and this tool is not written, so neither run has been performed here. |
+| Status | claimed |
+| Evidence | `F-part-c-04`, `F-b4-08` "A criterion nothing can fail is not a criterion" |
+
+## Composes with
+
+Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `cap-idempotency`, `cap-state-persistence`
+
+Used by: `compose-approval`, `seam-dispatch`, `xc-compensation`, `xc-idempotency-lease-implement`
+
+## Open questions
+
+| Question | Deciding evidence | Default until then | Evidence |
+|---|---|---|---|
+| Which payload elements does each entry adapter fingerprint, and who owns that selection when the payload shape changes underneath it? | Replay a month of recorded arrivals per entry adapter and count how many logically identical actions fingerprint differently, and how many logically distinct actions collide. A field whose movement splits a repeat into two keys is in the selection wrongly; a field whose absence merges two intents is missing from it. | Proposed: the selection is declared beside the entry adapter and versioned with the envelope, and changing it starts a new key namespace rather than silently re-deriving old keys, so a change cannot make yesterday's action look fresh. | `X-entry-composition-047`, `X-entry-composition-002` "An idempotency fingerprint MAY be used in conjunction with an idempotency key" |
+| Does an attached duplicate receive only the final result reference, or does it also follow the first execution's partial output while it runs? | Measure how long the first execution runs at the boundaries that actually see duplicates, and how many attached callers time out waiting. If duplicates routinely wait longer than the caller's own deadline, the attach has to stream or hand back a poll handle rather than block. | Proposed: the final result reference only. It is the smaller contract, it does not make the lease a transport, and a poll handle can be added later without changing what acquire returns. | `X-entry-composition-027` |
+| This ideal facet carries no adapters[] of its own: the lease providers and the axis their execution models differ on are recorded in xc-idempotency-lease-implement. Is that the right split for an xc- skill? | 1-3-1 applied (TARGET T5): (a) carry the pair here as well, which duplicates the rows the implement facet owns and gives a reader two places to change; (b) keep the placement here and the providers there, and say so, which is what this row does; (c) leave the pair unstated until a ceremony decides, which would leave the guarantee with no named way to run. Recommendation followed: (b). The question closes if a ceremony extends the adapter-pair check from cap- ideal skills to xc- ones. | Proposed: the pair lives in xc-idempotency-lease-implement, where the definition of done runs over both providers and asserts adapters_run at least 2. | `T-t5-02`, `F-b1-04` "When a problem comes up, use 1-3-1" |
+
+## Provenance
+
+| Field | Value |
+|---|---|
+| PASS.md sha256 | cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96 |
+| kb facts head | 9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e |
+| kb entities head | 747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604 |
+| kb edges head | a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6 |
+| Author | session xc-idempotency-lease 2831cb4f, 2026-09-03 |

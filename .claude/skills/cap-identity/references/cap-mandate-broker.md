@@ -1,0 +1,309 @@
+---
+name: "cap-mandate-broker"
+description: "The mandate and credential brokering contract: an actor exchanges its identity for a short-lived authority bound to one destination, or for a signed, expiring, scope-limited mandate to take one bounded action, and neither the key nor the token ever reaches the unit of work. Load it whenever something inside a sandbox needs to reach something outside it, before any component is given an API key, a cloud credential or a database password, when an action is irreversible - money moves, a deploy lands, a message is sent - and someone has to be able to check afterwards that it was authorised, when a token has to be accepted by one destination and refused by another, when someone asks 'where does the real key live', 'what stops this token being replayed somewhere else', 'how does a partner check this without asking us', or 'who approved this spend', and before any design lets a long-lived secret into a running agent."
+---
+
+# cap-mandate-broker (folded into `cap-identity`)
+
+Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Source IDs resolve with `python3 tools/kb.py show <id>`.
+
+## Purpose
+
+| Statement | Origin | Evidence |
+|---|---|---|
+| Fix one contract for minting authority: a short-lived, destination-bound credential for reaching something, and a signed, expiring, scope-limited mandate for doing something irreversible, so the core imports minting and verification while the key store, the token service and the credential format stay adapter detail. | sourced | `F-b1-02`, `X-cap-mandate-broker-007` "ensuring the agent never holds the credential" |
+
+## Entities
+
+| Entity |
+|---|
+| `E-standard-oauth-2-0-token-exchange` |
+| `E-standard-model-context-protocol` |
+| `E-sandbox-property-guest-credential` |
+| `E-sandbox-property-model-egress` |
+| `E-sandbox-property-field-filtering` |
+
+## Contract
+
+### Standards
+
+| Standard | Version | Version status | URL | Sources |
+|---|---|---|---|---|
+| `E-standard-oauth-2-0-token-exchange` | unverified | unverified | https://www.ietf.org/rfc/rfc8693.pdf | `F-b3-14`, `X-cap-mandate-broker-001`, `X-cap-mandate-broker-002` |
+| `E-standard-model-context-protocol` | unverified | unverified | https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization | `F-b3-06`, `X-end-to-end-028`, `X-cap-mandate-broker-003` |
+| `E-standard-w3c-verifiable-credentials` | unverified | unverified | https://docs.walt.id/concepts/digital-credentials/verifiable-credentials-w3c | `X-cap-mandate-broker-005`, `X-end-to-end-070` |
+
+- `E-standard-oauth-2-0-token-exchange` version note: the record on file says the token-exchange RFC was published in January 2020, and it is search-only rather than fetched, so no version of the exchange profile this interface uses is asserted here
+- `E-standard-model-context-protocol` version note: the manifest records the authorization revision 2025-11-25 together with the resource-indicators RFC; both records on file are search-only and neither is the specification text, so no revision string is asserted here
+- `E-standard-w3c-verifiable-credentials` version note: proposed entity id and version unverified: PASS.md B3 carries no mandate or credential-brokering row, so kb/entities.jsonl holds no entity for this standard and none may be added without rewriting the entity chain every written skill pins; both records on file are search-only, so no version is asserted here
+
+### Operations
+
+| Operation | Input | Output | Origin | Evidence |
+|---|---|---|---|---|
+| mint | an actor subject with its delegation chain, exactly one destination identifier, a requested scope, and a lifetime | a handle to a credential bound to that one destination as its audience and expiring with the task; the credential bytes are never returned to the caller and never written where the unit of work can read them | sourced | `X-cap-mandate-broker-006` "Short-lived agent sessions are derived from the user session at task start with minutes in TTL and are non-refreshable by design" |
+| exchange | a token naming the delegating actor, a token naming the acting agent, and the destination and scope wanted for the next hop | a token for that destination whose scope is no wider than the input's; a request that would widen scope is refused rather than granted | sourced | `X-cap-mandate-broker-002` "Scope can be used to decrease privileges carried by the input tokens." |
+| attach | an ordinary outbound request made by a unit of work, plus the handle minted for that request's destination | the request as it leaves the host, with the real credential added outside the sandbox and with destination and model override fields dropped by name | sourced | `X-cap-mandate-broker-007`, `F-a3-08` "each proxy attaches the real token at the network layer" |
+| issue_mandate | an approving actor's signature over the bounds of one action class: a ceiling, the destinations it may be used against, and the period it is valid for | a signed, expiring, scope-limited mandate record carrying exactly those bounds and nothing about how the work will be judged | sourced | `X-end-to-end-070` "Every agent operates under a Mandate that specifies spending limits, allowed merchants, and validity periods." |
+| verify_mandate | a mandate and the single action about to be taken under it | accept, or a typed refusal naming which bound failed; the decision is reachable by a party that did not issue the mandate, without contacting the issuer | sourced | `X-cap-mandate-broker-005` "verification doesn't depend on contacting the issuer" |
+
+### Shapes (JSON Schema 2020-12)
+
+**credential-handle (proposed summary shape; the mint request, the refusal members and the full mandate record are in references/mandate-broker-shapes.md)** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:mandate-broker:handle:0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "handle_id",
+    "audience",
+    "scope",
+    "expires_at",
+    "actor"
+  ],
+  "properties": {
+    "handle_id": {
+      "type": "string",
+      "minLength": 8,
+      "description": "Proposed: what a unit of work holds instead of a credential. Opaque, useless at any destination, and safe to log."
+    },
+    "audience": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Proposed: the one destination identifier this authority is for. Exactly one; a list would make replay a configuration choice."
+    },
+    "scope": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "description": "Proposed: never wider than the scope of the identity it was exchanged from."
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "refreshable": {
+      "const": false,
+      "description": "Proposed: a const so no caller can ask for a longer-lived authority."
+    },
+    "actor": {
+      "type": "string",
+      "pattern": "^(user|service|agent|schedule):[a-z0-9][a-z0-9._@-]*$"
+    },
+    "correlation_id": {
+      "type": "string",
+      "minLength": 1
+    }
+  }
+}
+```
+
+**mandate (proposed summary shape; the signature members, the bounds vocabulary and the verification outcome are in references/mandate-broker-shapes.md)** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:mandate-broker:mandate:0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "mandate_id",
+    "approved_by",
+    "action_class",
+    "bounds",
+    "not_before",
+    "not_after",
+    "signature"
+  ],
+  "properties": {
+    "mandate_id": {
+      "type": "string",
+      "minLength": 8
+    },
+    "approved_by": {
+      "type": "string",
+      "pattern": "^(user|service|agent):[a-z0-9][a-z0-9._@-]*$"
+    },
+    "action_class": {
+      "type": "string",
+      "enum": [
+        "spend",
+        "deploy",
+        "send"
+      ],
+      "description": "Proposed: the irreversible classes this platform mandates. Anything else is a scoped credential, not a mandate."
+    },
+    "bounds": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "destinations"
+      ],
+      "properties": {
+        "ceiling_micros": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "destinations": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "not_before": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "not_after": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "signature": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Proposed: over the whole record, checkable against a published key, so a party that did not issue it can verify it standing alone."
+    }
+  }
+}
+```
+
+**Worked example 2 (proposed): an event triggers work, and a handle presented at the wrong destination is refused [caller's view, folded from cap-mandate-broker-use]** (proposed; sources: -)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:cap:mandate-broker:example:audience-refused",
+  "title": "A credential minted for one destination is worth nothing at another",
+  "description": "An alert enters as an event and the work it triggers reaches a metrics service. A later step tries to reuse the same authority against a deploy endpoint. The second destination refuses it on its own audience check, and the refusal is a problem details object with a type the caller branches on. No retry is attempted, because the answer will not change. `urn:agentic:problem:credential-audience-mismatch` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `identity-untrusted`, which is also 401 and not retryable, naming both destinations in detail, as the open question below records.",
+  "examples": [
+    {
+      "entry": {
+        "kind": "event",
+        "actor": "service:alerting",
+        "correlation_id": "corr-event-0001"
+      },
+      "first_call": {
+        "audience": "metrics.internal",
+        "handle_id": "hdl-2b8d0f61ac33",
+        "accepted": true
+      },
+      "second_call": {
+        "audience_presented_at": "deploy.internal",
+        "handle_id": "hdl-2b8d0f61ac33",
+        "accepted": false,
+        "problem": {
+          "type": "urn:agentic:problem:credential-audience-mismatch",
+          "title": "This authority was not issued for this destination",
+          "status": 401,
+          "detail": "hdl-2b8d0f61ac33 was minted for metrics.internal and was presented at deploy.internal",
+          "retryable": false,
+          "correlation_id": "corr-event-0001"
+        }
+      },
+      "what_the_caller_does": "mint a new handle for deploy.internal, which requires a mandate because a deploy is irreversible"
+    }
+  ]
+}
+```
+
+### Invariants
+
+| Invariant | Origin | Evidence |
+|---|---|---|
+| The credential never enters the unit of work. What runs today already keeps the real key on the host side of the sandbox boundary and leaves a dummy inside; on this interface that stops being a property of one sandbox and becomes the contract, because a handle a caller cannot spend is the only version of least privilege a compromised agent cannot undo. | sourced | `F-a3-05`, `X-cap-mandate-broker-007` "No real secret inside the VM" |
+| Audience binding is a refusal at the destination, not a hope at the mint. A credential minted for one destination must be rejected by every other, and the destination checks that itself rather than trusting who handed it over. | sourced | `X-end-to-end-028`, `X-cap-mandate-broker-004` "MUST validate that access tokens were issued specifically for them as the intended audience" |
+| Expiry is the revocation mechanism. Every minted authority is short-lived and non-refreshable, so the question 'has this been revoked' is answered by a clock rather than by a lookup that can be unreachable at the moment it matters. | sourced | `X-cap-mandate-broker-006` "expiring when the task completes or when the wall-clock TTL expires" |
+| Scope only ever narrows along a delegation chain, and the narrowing has to travel outside the token: the exchange standard defines no token-local mechanism for proving that a later hop stayed inside the authority the first hop was given (X-cap-mandate-broker-008), which is exactly the job of the mandate. cap-identity carries what the chain itself records (X-end-to-end-032). | sourced | `X-cap-mandate-broker-008`, `X-end-to-end-032` "RFC 8693 does not define a token-local mechanism for proving that downstream delegation intent remains consistent with the original authorization scope" |
+| Identity and secrets are two different problems, which is why this is an interface of its own and not a corner of cap-identity: a workload with a verifiable identity document still needs OAuth tokens, cloud provider credentials, API keys and database passwords for the things it must reach (cap-identity, X-end-to-end-030), so no adapter satisfies this interface by handing back an identity document. | sourced | `X-end-to-end-030` "they also need OAuth tokens, cloud provider credentials, API keys, and database passwords" |
+| A mandate is verifiable by a party that did not issue it, standing alone. That is what makes an irreversible action reviewable afterwards by someone who does not have to trust, or even reach, the platform that ran it. | sourced | `X-cap-mandate-broker-005`, `X-end-to-end-071` "cryptographically secure, privacy-preserving, and decentralised" |
+| Minting is a decision point, not a service call. cap-policy owns deterministic refusal before spend (F-b4-04); the consequence on this interface is that the broker holds no allow list of its own - it asks, and a mint that policy refuses never produces a handle, so nothing downstream has to be undone. | sourced | `F-b4-04` "Refusal is deterministic and happens before execution, not after spend" |
+| Every mint, every exchange and every mandate verification is an attributable statement. cap-provenance owns attribution (F-b4-05); the consequence here is that 'who approved this spend, under what bounds, and who acted on it' is answerable from records rather than from the memory of whoever was on call. | sourced | `F-b4-05` "Every artifact is attributable to the code version, inputs and actor that produced it" |
+| This interface adds no failure vocabulary. cap-errors owns the platform's failure shape (F-b3-13); an audience mismatch, an expired mandate, an out-of-bounds action and a refused mint all arrive as problem details, never as a destination's own exception text. | sourced | `F-b3-13` "RFC 9457 problem details" |
+| All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: shortening lifetimes, adding a destination, moving to an offline-verifiable mandate, or re-signing with a new key changes nothing in a caller that named a destination and an action class, because those are the only two things it was ever asked to write down. cap-identity states the same record (T-t1-01) for its own boundary; this row is that rule's consequence here. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t2-02` "Composability allows enhancing particular aspects of any element without touching the rest." |
+
+### Deliberately not exposed
+
+| Item | Origin | Evidence |
+|---|---|---|
+| The criterion the work done under this authority will be judged against. agentic-stack states design rule 6 (F-b1-07); on this interface it forbids exactly one thing: a mandate states bounds - a ceiling, destinations, a validity period - and neither a mint request, a credential handle, nor a mandate's bounds ever carries the criterion the outcome will be scored on. | sourced | `F-b1-07` "An agent sees its outcome, never the criterion it is judged against" |
+| The credential bytes, the signing keys, and the issuer's key store. A caller receives a handle and a mandate; anything that could be replayed by whoever reads a log line is not part of what this interface returns. | sourced | `X-cap-mandate-broker-007` "ensuring the agent never holds the credential" |
+| The token service endpoint, the transport to it, and which key signed a given mandate. A caller names a destination and an action class; where the authority came from is the adapter's business. agentic-stack and cap-errors both state the rule this follows (F-part-c-09). | sourced | `F-part-c-09` "Products belong in the adapter column only." |
+
+## Instructions
+
+| Step | Action | Why | Origin | Evidence |
+|---|---|---|---|---|
+| 1 | State the boundary as a capability plus its governing standards before any token service or key store is named: 'an actor exchanges its identity for a short-lived authority bound to one destination, or for a signed mandate bounding one irreversible action'. Record every version as unverified until a specification has actually been fetched. | agentic-stack states rule 2 as a test (F-b1-03): an interface without a cited standard is either mis-drawn or belongs in the seam layer, and this one has standards to adopt, so it is not a seam. | sourced | `F-b1-03`, `F-part-c-10` "Where a standard exists, adopt it whole rather than modelling our own shape." |
+| 2 | Mint per destination, never per agent. Require exactly one destination identifier on every mint and refuse a request that names none or names several. | An authority good at more than one place is a replay waiting for the first compromise; asking for a token explicitly intended for one destination is what lets every other destination refuse it without knowing anything about us. | sourced | `X-cap-mandate-broker-003` "the client should ask for a token explicitly intended for one MCP server, and the resource server should reject any token whose audience does not match its own identifier" |
+| 3 | Put the audience check at the destination and test it there, by presenting a credential minted for one destination at a second one. Do not accept a passing mint as evidence that binding works. | The property being bought is that a leaked or misdirected credential is useless elsewhere, and only the second destination can demonstrate that; a mint-side assertion proves the minter agrees with itself. | sourced | `X-cap-mandate-broker-004` "stops a stolen or misdirected token from being replayed against a different service" |
+| 4 | Keep the broker outside the sandbox and have it add the credential as the request leaves, so the unit of work makes an ordinary call and holds nothing. Drop destination and model override fields by name at that boundary. | What runs today already filters those overrides at the broker; keeping the attachment point outside the sandbox is what makes 'the agent never holds the credential' a structural fact rather than a rule the agent is trusted to follow. | sourced | `F-a3-08`, `X-cap-mandate-broker-007` "Model and destination overrides dropped by name at the broker" |
+| 5 | Derive the lifetime from the task and make the authority non-refreshable. Do not build a refresh path, a renewal endpoint, or a long-lived fallback for the case where a task runs longer than expected. | A refresh path turns a short-lived credential back into a long-lived one held by whoever can call it, and the task boundary is the only expiry nobody has to remember to configure. | sourced | `X-cap-mandate-broker-006` "non-refreshable by design" |
+| 6 | For anything irreversible - spend, deploy, send - require a mandate signed by the approving actor, stating the ceiling, the destinations and the validity period, and verify it at the point of action rather than at the point of planning. | Two approval modes have to work: a person approving one action now, and a person approving bounds up front for an agent that acts later on its own. A mandate covers both, and verifying at the point of action is what stops an approval from outliving the bounds it was given. | sourced | `X-end-to-end-071`, `X-end-to-end-070` "real-time purchases where the human approves a Cart Mandate with a cryptographic signature, and delegated tasks where the human signs an Intent Mandate upfront and the agent acts autonomously later" |
+| 7 | Choose the second adapter on a different verification model, not a second token service: one authority validated by its issuer, one credential a party that did not issue it can verify offline. Name that axis before writing either. | build-adapter-pair owns why there is a second adapter (F-b1-04). The consequence here is specific: two issuer-validated token services would leave the interface free to keep assuming the issuer is reachable at verification time, and only an offline-verifiable mandate forces the bounds and the signature to become part of the object rather than of the service. | sourced | `F-b1-04`, `X-cap-mandate-broker-005` "Every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing" |
+| 8 | To reach something outside the sandbox: name the one destination you are calling and use the handle you get back. Do not look for a key, an environment variable, a config file or a secret in your prompt - there is not one, and there is not meant to be. | The credential is added outside the sandbox after you have made an ordinary call, so a caller that goes looking for one is trying to rebuild a thing the platform removed on purpose. | sourced | `T-t2-01` "Composability hides the complexity." |
+| 9 | Proposed: open references/mandate-broker-shapes.md when you are implementing the mint request, the mandate record or the verification outcome. The body of this skill is enough to judge this interface and to call it without opening that file. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed: the full shapes and the bounds vocabulary are longer than the body's budget allows, and a reader deciding whether an authority is correctly scoped does not need them. | proposed | - |
+
+## Best practices
+
+| Practice | Origin | Evidence |
+|---|---|---|
+| Count what the run exercised rather than reading its exit code: agentic-stack and build-definition-of-done carry the structurally-green finding (F-a7-03), where the structural stages establish well-formedness, not correctness. A broker conformance run pointed at a single destination with no expired fixture refuses nothing, sees nothing and still exits zero, so the counts this skill's definition of done names are asserted as numbers. | sourced | `F-a7-03` "Those establish well-formedness, not correctness." |
+| Adopt the exchange standard whole rather than building a minting endpoint of our own: it is already a standardized request-and-response for obtaining a security token from an authority acting as a token service, which is precisely the operation here. | sourced | `X-cap-mandate-broker-001` "a standardized HTTP- and JSON-based mechanism for clients to request and obtain security tokens from authorization servers acting as Security Token Services" |
+| Carry the tenant on the authority itself and on everything that reasons about it, rather than deriving it later from whoever is calling. | sourced | `X-cap-mandate-broker-006` "with Org IDs encoded into every token, every log line, and every policy evaluation" |
+| Proposed: log the handle, the destination and the expiry; never the credential and never the signature material. A handle is designed to be worthless to a reader, which is what makes it safe to correlate on. Research query: does the credential-brokering pattern on file (X-cap-mandate-broker-007) or the identity-delegation guarantee say what a proxy is permitted to log about a token it attaches, which this row could cite instead of asserting a fresh logging rule? | proposed | - |
+| Keep a mandate small enough that a party outside this platform can read all of it. A mandate whose bounds only make sense next to our internal identifiers is not independently checkable, whatever it is signed with. | sourced | `X-cap-mandate-broker-005` "verification doesn't depend on contacting the issuer" |
+
+## Adapters
+
+| Adapter | Role | Maps to | Cannot | Swap procedure | Status | Evidence |
+|---|---|---|---|---|---|---|
+| `E-adapter-vsock-credential-broker` | today | Proposed adapter, and a proposed entity id: PASS.md B3 has no mandate or credential-brokering row, so no adapter entity exists for this capability. What runs is the host-side broker recorded in PASS.md A3, reached over vsock from a guest that has no network and holds a dummy key; it holds the real key, picks the endpoint, and drops model and destination overrides by name. It serves mint, exchange and attach. | Proposed: cannot produce an authority anyone else can check - a destination that did not receive the token from this broker has nothing to verify it against; cannot express a ceiling or a validity period as part of the credential, so an irreversible action gets no bounds beyond the endpoint it reached; and cannot outlive the host that holds the key. | Select the authority kind by configuration only, with no core edit, and run the identical fixture set - one credential presented at its own destination and at a second one, one mandate inside its bounds, one past expiry, one naming a destination outside its bounds - through both bindings, requiring the same acceptances and the same typed refusals. | claimed | `F-a3-07`, `F-a3-08`, `F-a3-05` "vsock → host broker, which holds the real key and picks the endpoint" |
+| `E-swap-candidate-verifiable-credential-mandate` | second | Proposed adapter, and a proposed entity id, for the same reason as the row above: a mandate expressed as a signed verifiable credential carrying spending limits, allowed destinations and a validity period, checked by a verifier that did not issue it and without contacting the issuer. It serves issue_mandate and verify_mandate, and delegates mint, exchange and attach to whatever holds the keys. | Proposed: cannot be withdrawn before its validity period ends without a separate status channel; cannot hide its bounds from the party it is shown to; and cannot attach itself to an outbound request at the network layer, so it never replaces the broker for reaching a destination - it only bounds what may be done on arrival. | The axis the two execution models differ on is where verification happens: the first adapter's authority is a token only its issuer can validate, the second's is a credential any holder can verify offline. One conformance run drives both bindings over the same fixtures and diffs acceptances, refusals and refusal types; a bound that only one binding can express is recorded as a gap rather than skipped. | claimed | `X-end-to-end-070`, `X-cap-mandate-broker-005`, `F-b1-04` "AP2's mandates are W3C Verifiable Credentials, cryptographically signed records of what the user approved." |
+
+## Definition of done
+
+| Field | Value |
+|---|---|
+| Criterion | bash harness/identity/test.sh |
+| Expected | One conformance run over both bindings, from the repository root, with a proposed tool: `python3 tools/conformance_mandate_broker.py --binding config/broker/today.json --binding config/broker/mandate.json --fixtures tests/fixtures/mandate-broker --report out/mandate-broker-conformance.json`. The fixture set holds one credential minted for destination A and presented at both A and B, and three mandates: one inside its bounds and its validity period, one past expiry, one naming a destination outside its bounds, all checked by a verifier process that does not hold the issuer's signing key. Assert adapters_run >= 2, credentials_minted > 0, accepted_at_intended == credentials_minted, accepted_at_other == 0, mandates_verified == 3, mandates_accepted == 1, refusals == 3, refusals_typed == refusals with every refusal carrying a `urn:agentic:problem:` type, and sandbox_credential_sightings == 0 from a scan of the guest filesystem and the guest environment after the run. exit 0 with one line per binding reading `binding=<role> credentials_minted=1 accepted_at_intended=1 accepted_at_other=0 mandates_verified=3 mandates_accepted=1 refusals=3 refusals_typed=3 sandbox_credential_sightings=0` followed by `adapters_run=2`. Until that proposed tool exists, `bash harness/identity/test.sh` (owned by cap-identity-implement) is the running gate: every check line reads ok and the script exits 0. |
+| Deliberate breakage | In one change, drop the audience comparison at the second destination so it accepts any well-formed credential, and widen the expiry comparison so a mandate whose validity period ended within the last hour still verifies. |
+| Expected failure | exit non-zero with `accepted_at_other=1 mandates_accepted=2 refusals=1`, naming destination B as having accepted a credential minted for A and naming the expired mandate as accepted. The out-of-bounds refusal surviving is what shows the run tells audience, expiry and bounds apart rather than passing or failing as a block. |
+| Status | claimed |
+| Evidence | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
+
+## Composes with
+
+Builds on: `agentic-stack`, `build-adapter-pair`, `build-ceremony`, `build-definition-of-done`, `build-research-record`, `build-skill-authoring`, `cap-errors`, `cap-identity`, `cap-policy`, `cap-provenance`
+
+Used by: `cap-mandate-broker-implement`
+
+## Open questions
+
+| Question | Deciding evidence | Default until then | Evidence |
+|---|---|---|---|
+| Neither the mandate credential format nor an adapter for this capability has an entity in this knowledge base, because PASS.md B3 has no mandate or credential-brokering row at all. Which of three ways closes that? | Applying 1-3-1 (T-t5-02): (1) add the entities, which rehashes the entity chain and invalidates the provenance heads every written skill pins; (2) borrow the Identity row's adapter and swap-candidate entities, which sends a reader to a row about workload identity rather than about credentials; (3) carry proposed entity ids in contract.standards and adapters[], saying in each row that the id is proposed and why. Recommendation and choice: (3). Deciding evidence would be a knowledge-base rebuild that adds the entities, taken with a re-pin of every skill's provenance in the same pass. | The two entities the knowledge base does carry are named by id; the credential format and both adapter rows carry proposed ids and say so in the row itself. | `T-t5-02`, `F-b3-14` "OAuth 2.0 Token Exchange" |
+| Should a mandate's bounds be readable by the destination it is presented at, or should the destination learn only that some bound was satisfied? | Present the same action at a destination with the full bounds and with a minimised proof, and count what each destination refuses that the other accepts; a credential model whose stated aim includes being privacy-preserving is the one to measure this against. | Proposed: the full bounds travel, because a verifier that cannot read the ceiling cannot enforce it, and a mandate nobody outside can check is the failure this capability exists to prevent. Revisit if a destination turns out to need only the answer. | `X-cap-mandate-broker-005` "privacy-preserving" |
+| Who owns the scope ceiling at mint time: this capability, or the policy decision it consults? | Run the same mint through a broker that clamps scope itself and one that refuses whatever policy refuses, and count mints that differ; if none differ, the clamp is duplicated logic and belongs in one place. | Proposed: the broker refuses, and does not clamp. Silently narrowing a request hides a policy decision inside an adapter, and cap-policy already owns deterministic refusal before spend. | `F-b4-04` "Refusal is deterministic" |
+
+## Provenance
+
+| Field | Value |
+|---|---|
+| PASS.md sha256 | cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96 |
+| kb facts head | 9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e |
+| kb entities head | 747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604 |
+| kb edges head | a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6 |
+| Author | session cap-mandate-broker 2831cb4f, 2026-09-03 |

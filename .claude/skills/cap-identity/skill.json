@@ -415,32 +415,42 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "bash harness/identity/test.sh",
-    "expected": "docs/decomposition.md section 3.2 row P13, made precise: `python3 tools/conformance/identity_chain.py --corpus <ledger> --min-actions 50 --report out/identity.json` (proposed tool, built with the first Identity adapter). Over a corpus of at least 50 recorded actions it asserts that every action carries a non-empty `actor.subject`, that every action whose current actor differs from its subject carries a `delegation_chain` of at least two hops, that every chain is acyclic and ordered current actor first, and that the hop naming the current actor matches the workload identity of the unit that executed the action. P13 words that last assertion as the final hop, under the opposite chain ordering; see the open question below. exit 0 with `actions_checked >= 50`, `missing_subject == 0`, `short_chains == 0`, `cyclic == 0`, `executing_unit_mismatch == 0` Until that proposed tool exists, `bash harness/identity/test.sh` (owned by cap-identity-implement) is the running gate: every check line reads ok and the script exits 0.",
-    "breakage": "Dispatch one agent action without performing the token exchange for the agent actor, so that action reaches the ledger with the human subject and a one-hop chain. Change nothing else.",
-    "expected_failure": "exit 1 with `short_chains == 1` and `executing_unit_mismatch == 1`, the report naming that action's identifier, while every other action still passes. Claimed: PASS.md A6 records no identity field anywhere in the system, so neither the field, the exchange nor the tool exists here and this check starts red by construction, which is the correct starting state rather than a defect to hide.",
-    "status": "claimed",
+    "criterion": "bash harness/identity/test.sh && python3 harness/identity/conformance.py --adapter dryrun --adapter second",
+    "expected": "Measured by tools/measure.py at b923246: exit 0; last lines:   adapter=attested workload identity with a local trust bundle cases=16 passed=16 actions_checked=50 short_chains=0 cyclic=0 executing_unit_mismatch=0 authority_calls=0 marker=workload-attestor product_hits=0 | conformance PASSED: 32/32 cases, 2 binding(s), selected_by=configuration",
+    "breakage": "In harness/identity/adapters/dryrun.py, make _break_this_hop() always forward the incoming credential unchanged on an agent actor's first hop, instead of only under IDENTITY_BREAK=forward-token (the harness README's breakage, made the default rather than env-gated so the criterion needs no extra variable) and change nothing else; restore with git checkout -- harness/identity/adapters/dryrun.py.",
+    "expected_failure": "Measured by tools/measure.py at b923246: exit 1; last lines:   FAIL the same suite passes again once the hop is restored (expected 0, got 1) | passed 36, failed 10",
+    "status": "measured",
     "sources": [
       "F-a6-05",
-      "F-b4-03"
+      "F-b1-04"
     ],
-    "quote": "No identity field anywhere in the system"
+    "quote": "No identity field anywhere in the system",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "b923246",
+      "clean_exit": 0,
+      "clean_output": "issued\n  ok   one hop record per hop, appended, with the enforcement point read off the answer: 9 records, enforcement_point workload-attestor\n  ok   the delegation-chain corpus (P13): every action names an actor and a whole chain: actions_checked=50 missing_subject=0 short_chains=0 cyclic=0 executing_unit_mismatch=0\n  adapter=attested workload identity with a local trust bundle cases=16 passed=16 actions_checked=50 short_chains=0 cyclic=0 executing_unit_mismatch=0 authority_calls=0 marker=workload-attestor product_hits=0\nconformance PASSED: 32/32 cases, 2 binding(s), selected_by=configuration",
+      "breakage_exit": 1,
+      "breakage_output": "exchanging it\n  ok   the breakage run exits non-zero (nonzero)\n  ok   chains shorter than the hops that occurred (1)\n  ok   actions whose current actor did not execute (1)\n  ok   still 50 actions, so this is a defect and not a missing run (50)\n  ok   the run names the action and the chain it found\n  ok   the same breakage leaves the second adapter green (0)\n  ok   its chains are still whole (0)\n  ok   the breakage singles out one binding: a document naming its attested unit cannot be forwarded\n  FAIL the same suite passes again once the hop is restored (expected 0, got 1)\n\npassed 36, failed 10"
+    },
+    "expected_design": "The gate (46 checks) and the conformance run over a 50-action corpus together prove an actor and the chain that produced its right to act, under an exchange-issuing provider and an attested workload identity with a local trust bundle: no hop widens scope or outlives the credential it came from, a widening, cyclic, unrooted or expired chain is refused as a typed problem before anything is issued, the credential names the unit that will execute it, and the swap moves authority calls from 3 to 0 while ten contract facts stay identical (adapters_run=2). Earlier criterion named tools/conformance/identity_chain.py, replaced by the harness on 2026-09-03.",
+    "expected_failure_design": "The exchange adapter's delegation hop forwards the incoming token instead of exchanging it: the 50-action corpus assertion reports short_chains=1 and executing_unit_mismatch=1, and the conformance run drops to 27/32 cases and exits non-zero naming that adapter; the attested-workload adapter, which cannot forward a credential at all, is untouched and still passes."
   },
   "composes_with": {
     "builds_on": [
       "agentic-stack",
-      "build-adapter-pair",
-      "build-definition-of-done",
+      "build-ceremony",
+      "build-evidence",
       "build-skill-authoring",
-      "cap-errors"
+      "cap-errors",
+      "cap-policy",
+      "cap-provenance"
     ],
     "used_by": [
       "cap-human-interaction",
-      "cap-identity-implement",
-      "cap-mandate-broker",
-      "cap-memory",
-      "xc-identity-delegation",
-      "xc-tenancy"
+      "cap-state-persistence",
+      "seam-dispatch",
+      "xc-guarantees"
     ]
   },
   "open_questions": [
@@ -495,5 +505,2324 @@
       "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
     },
     "author": "session cap-identity 2831cb4f, 2026-09-03"
+  },
+  "folded": {
+    "cap-identity-implement": {
+      "name": "cap-identity-implement",
+      "layer": "cap",
+      "wave": 4,
+      "description": "How to build the Identity capability on this stack from a starting point of nothing: a first adapter that issues exchanged tokens at each hop, a second whose execution model is the opposite of it, attesting units from platform facts and verifying against distributed trust material with no authority call per action, the order to migrate in, where issuance and verification are wired so no entry can skip them, and a definition of done with the breakage that makes it fail. Load it when writing the code that puts an actor on a request, when an agent hands work to another agent, when a sandboxed unit needs a name without a planted secret, when choosing where credentials are minted and verified, or when a conformance run reports actions with a one-hop chain.",
+      "purpose": {
+        "text": "Turn the contract in cap-identity into something that runs here: two operations, two adapters whose execution models differ, and every entry and every dispatch hop carrying an actor that was verified rather than asserted.",
+        "origin": "sourced",
+        "sources": [
+          "F-b3-14",
+          "F-a6-05",
+          "E-capability-identity",
+          "E-adapter-identity-absent"
+        ],
+        "quote": "OAuth 2.0 Token Exchange · workload identity"
+      },
+      "entities": [
+        "E-capability-identity",
+        "E-adapter-identity-absent",
+        "E-not-running-identity",
+        "E-swap-candidate-any-oidc-provider",
+        "E-standard-oauth-2-0-token-exchange",
+        "E-standard-workload-identity"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "IdentityConformanceReport (proposed shape; the counters the definition of done below asserts on, per adapter)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:identity:report:0.1",
+              "title": "IdentityConformanceReport",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "adapter",
+                "actions_checked",
+                "missing_subject",
+                "short_chains",
+                "cyclic",
+                "executing_unit_mismatch",
+                "adapters_run"
+              ],
+              "properties": {
+                "adapter": {
+                  "enum": [
+                    "exchange-issuing-provider",
+                    "attested-workload-identity"
+                  ]
+                },
+                "actions_checked": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "missing_subject": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "short_chains": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Delegated actions whose chain has fewer than two hops."
+                },
+                "cyclic": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "executing_unit_mismatch": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Actions whose current-actor hop is not the identity of the unit that executed them. P13 words this as the final hop, under the chain ordering cap-identity records as an open question."
+                },
+                "unsupported": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Operations this adapter declares it does not implement. A declared subset is honest; an adapter that answers an operation it cannot provide is the failure the pair exists to expose."
+                },
+                "adapters_run": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "selected_by": {
+                  "const": "configuration",
+                  "description": "Recorded at runtime. A code edit between runs would not be a swap."
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Both adapters implement the identical attest, delegate and verify from cap-identity, the running one is chosen by configuration with no code edit between runs, and the choice is recorded in the report. build-adapter-pair states that the second adapter exists to prove the first is not load-bearing (F-b1-04); what this facet adds is that an unobservable swap here is indistinguishable from running the same issuer twice.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-04"
+            ],
+            "quote": "the second exists to prove the first is not load-bearing"
+          },
+          {
+            "text": "Proposed: an adapter that cannot express an on-behalf-of chain declares delegate unsupported rather than answering it with a one-hop chain. A documented conformance subset is honest; a silently truncated chain looks exactly like an action nobody delegated. Research query: is there a recorded conformance subset declaration on this stack showing an adapter refusing an on-behalf-of chain as unsupported rather than truncating it, confirming this pattern is already used elsewhere on this platform?",
+            "origin": "proposed",
+            "sources": [
+              "X-cross-structure-034"
+            ]
+          },
+          {
+            "text": "Proposed: the actor on a request is produced by verify and never constructed in application code. A caller-supplied actor object is an assertion, and an assertion that is written into the ledger becomes indistinguishable from a verified fact once the run is over.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-03"
+            ],
+            "quote": "Every action names an actor, including delegated agent actors."
+          },
+          {
+            "text": "Proposed: the exchange happens at each hop where the acting party changes, before the downstream call, so the chain is built forward as work moves. A chain reconstructed afterwards from logs is a reconstruction, and cap-identity records that the chain has to be explicit.",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-identity-004"
+            ],
+            "quote": "each service in the middle of the chain must validate the incoming access token and then request a new access token"
+          },
+          {
+            "text": "Proposed: credentials never reach the log. What is appended is the subject, the obtained_via of each hop and a credential handle; the token or certificate stays inside the verification boundary, which is what makes the ledger safe to read widely. Research query: is there a recorded audit or provenance record schema on this stack showing a credential handle stored beside a subject with no raw token present, confirming this exclusion is enforced rather than only intended?",
+            "origin": "proposed",
+            "sources": [
+              "X-cross-structure-006"
+            ]
+          },
+          {
+            "text": "Issuance and verification sit on the platform's own entry and dispatch paths, not in each caller, and there is no flag, header or field by which a request can ask to run without an actor. TARGET T2.3, also cited by cap-identity and build-definition-of-done, states that every cross-cutting concern is managed across the entire structure, whichever entry point was used; what this facet adds is that a new entry kind inherits it by construction because it reaches execution through the same path.",
+            "origin": "sourced",
+            "sources": [
+              "T-t2-03"
+            ],
+            "quote": "managed across the entire structure, whichever entry point was used"
+          },
+          {
+            "text": "Proposed: cap-identity already fixes the identity-untrusted failure in the problem-details shape cap-errors owns, at status 401 and not retryable; this facet adds no failure object of its own.",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-07"
+            ]
+          },
+          {
+            "text": "Apply build-evidence-record: the conformance run and its breakage are written to the evidence store naming the code version and the tree hash under test, and stay claimed until they have actually been run here, against a system that has an identity field at all; proposed pointer, see that skill.",
+            "origin": "proposed",
+            "sources": [
+              "F-a5-04"
+            ],
+            "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Do not re-derive the contract: cap-identity states the concern (F-b4-03), the two governing standards (F-b3-14) and the absent starting point (F-a6-05). Begin by making the actor object required on the entry envelope and on the dispatch request, which the consumption reference in examples/end-to-end already carries and the running system does not.",
+          "why": "Proposed sequencing. There is no identity field anywhere in the system, so the first change is the field and its requiredness; every later step is enforcement of something that at least exists on the wire.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-05",
+            "F-b4-03"
+          ],
+          "quote": "Every action names an actor, including delegated agent actors."
+        },
+        {
+          "step": 2,
+          "action": "Build the first adapter as an exchange-issuing provider: it speaks the token-exchange grant, holds the platform's own actor credentials, and returns a token scoped to the audience of the next call with the act claim extended by one hop.",
+          "why": "A new grant type urn:ietf:params:oauth:grant-type:token-exchange is defined in the specification, and the grant can be used to exchange tokens to a different scope, audience or subject, which is exactly the per-hop operation the chain needs.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-identity-002"
+          ],
+          "quote": "The Token Exchange grant can be used to exchange tokens to a different scope, audience or subject."
+        },
+        {
+          "step": 3,
+          "action": "Build the second adapter on workload attestation: the platform observes where a unit runs and issues it a short-lived identity document, and peers verify one another against distributed trust material instead of asking an issuer per call.",
+          "why": "Its execution model is the opposite of the first adapter's on the axis that matters here. The first calls a central authority at every hop and hands out bearer tokens; the second attests once from platform facts and then enables trusted, peer-to-peer authentication without the need to contact a central authority for every transaction.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-identity-008",
+            "X-cap-identity-007"
+          ],
+          "quote": "verify the SVID locally, enabling trusted, peer-to-peer authentication"
+        },
+        {
+          "step": 4,
+          "action": "Give the second adapter a delegated issuance path for units the platform cannot observe in place, rather than pre-planting a credential inside the sandbox: an already-attested party obtains the identity document on the unit's behalf.",
+          "why": "A delegated workload can obtain SVIDs and bundles on behalf of workloads that cannot be attested directly, which is what makes attestation usable for isolated units; the alternative is a long-lived secret in an image, which names nobody in particular.",
+          "origin": "sourced",
+          "sources": [
+            "X-cross-structure-035",
+            "X-end-to-end-029"
+          ],
+          "quote": "A delegated workload can obtain SVIDs and bundles on behalf of workloads"
+        },
+        {
+          "step": 5,
+          "action": "Wire it at two places only: the entry path, where the presented credential is verified and the first hop is written, and the dispatch of each unit, where the exchange for the acting agent happens before the call. Give callers no way to pass a flag that skips either.",
+          "why": "Proposed wiring, following the placement cap-identity takes from TARGET T2.3. Two enforcement points cover every arrival and every hand-off inside a run; a third would be a component deciding its own actor, which is the property this concern does not have.",
+          "origin": "sourced",
+          "sources": [
+            "T-t2-03"
+          ],
+          "text": "Wire it at two places only, following the placement TARGET T2.3 states for every cross-cutting concern (a placement cap-identity and build-definition-of-done also cite): the entry path, where the presented credential is verified and the first hop is written, and the dispatch of each unit, where the exchange for the acting agent happens before the call. Give callers no way to pass a flag that skips either.",
+          "quote": "managed across the entire structure, whichever entry point was used"
+        },
+        {
+          "step": 6,
+          "action": "Record the verified subject and the chain into provenance and onto the explicit correlation attribute the platform already sets at dispatch, and record the credential only as a handle.",
+          "why": "Proposed. agentic-stack states the correlation finding (F-a7-02); the consequence here is that a delegated hop whose actor is attached later is attributable only if that hop survived in a log, and the whole point of an explicit chain is not to depend on that.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-02",
+            "F-b4-05"
+          ],
+          "text": "Record the verified subject and the chain into provenance and onto the explicit correlation attribute the platform already sets at dispatch, and record the credential only as a handle. agentic-stack, cap-identity and cap-agent-runtime-implement all record that correlation must ride on an explicit resource attribute set at dispatch (F-a7-02); a delegated hop whose actor is attached later is attributable only if that hop survived in a log, and the whole point of an explicit chain is not to depend on that.",
+          "quote": "Correlation must ride on an explicit resource attribute set at dispatch."
+        },
+        {
+          "step": 7,
+          "action": "Migrate in that order and keep both adapters live behind one call: required actor field, then verification at entry, then exchange at each hop, then attestation of the units themselves, then the second adapter selected by configuration. Do not delete the first adapter once the second exists.",
+          "why": "Proposed migration. Each step is independently revertible and each one makes the P13 counters move, and an interface with one surviving implementation drifts back into the shape of whatever issues its tokens. Research query: is there a recorded migration ledger entry from another capability in this platform where each independently-revertible step was actually rolled back once, confirming reversibility rather than only asserting it?",
+          "origin": "proposed",
+          "sources": [
+            "F-b1-04"
+          ]
+        },
+        {
+          "step": 8,
+          "action": "Apply build-adapter-pair: run one conformance run parameterised over the adapters, selected by configuration with no code edit between runs, and record `selected_by` and the adapter that actually answered in the one report shape, with each adapter's unsupported list declared; proposed pointer, see that skill's references/conformance-run-shape.md.",
+          "why": "The parameterised suite and the configuration-only swap are build-adapter-pair's step; the report shape it did not state was added there as references/conformance-run-shape.md rather than written out again in five capability skills (consolidation part B, kb/ceremonies/implement-clusters.json).",
+          "origin": "proposed",
+          "sources": [
+            "F-b1-04"
+          ],
+          "quote": "Every interface ships with at least two adapters"
+        },
+        {
+          "step": 9,
+          "action": "Open references/identity-adapters.md when you need the per-adapter operation mapping, what each adapter cannot do, or the step-by-step swap procedure. This skill body is enough to build either adapter without it.",
+          "why": "Proposed, progressive disclosure. The mapping table and the swap runbook are long material that a reader building the first adapter does not yet need.",
+          "origin": "proposed"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Make every middle hop do the full move, not half of it: each service in the middle of the chain must validate the incoming access token and then request a new access token where the scope, audience, client, issuer and role claims are such that the next service in the chain will accept it. A hop that validates but forwards has recorded nothing.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-identity-004"
+          ],
+          "quote": "request a new access token where the scope, audience, client, issuer and role claims are such that the next service in the chain will accept it"
+        },
+        {
+          "text": "Prefer the transport-level binding for service-to-service calls and keep bearer tokens for the hops that actually delegate: an attested certificate integrates directly with mutual TLS (mTLS), the standard mechanism for service-to-service authentication, so the identity of the caller is established before any token is parsed.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-identity-006"
+          ],
+          "quote": "which integrates directly with mutual TLS (mTLS) — the standard mechanism for service-to-service authentication"
+        },
+        {
+          "text": "Verify at runtime which adapter actually answered and what lifetime it actually issued, rather than trusting the configuration that selected it, the same discipline build-evidence-record and agentic-stack apply to a case where configuration written in the documented place had no runtime effect (F-a7-04); a credential lifetime is only observable by holding a credential past it and watching the call fail.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "had no runtime effect"
+        },
+        {
+          "text": "Do not let this capability grow into a secret store. A unit with a verifiable identity still needs OAuth tokens, cloud provider credentials, API keys, and database passwords, and brokering those belongs to the mandate broker with its own contract and its own audit.",
+          "origin": "sourced",
+          "sources": [
+            "X-end-to-end-030"
+          ],
+          "quote": "cloud provider credentials, API keys, and database passwords"
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-identity-absent",
+          "role": "today",
+          "maps_to": "Nothing runs: the recorded adapter for Identity is *absent* and PASS.md A6 records no identity field anywhere in the system. The first adapter to exist is therefore the exchange-issuing provider described in this skill, an OIDC provider serving the RFC 8693 token-exchange grant, and it is what the second is paired against rather than an incumbent to replace.",
+          "cannot": "Cannot be cited as evidence of anything running, and cannot name a unit it did not authenticate: a client gets a token only by presenting a credential it already holds, so an isolated unit has to be handed a secret before it can obtain an identity at all. It also puts a call to a central authority on every hop.",
+          "swap_procedure": "Introduce the required actor field, verify at entry against the provider, then exchange at each dispatch hop. The envelope shape does not change afterwards; only who fills the chain and when.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-14",
+            "F-a6-05",
+            "E-adapter-identity-absent"
+          ],
+          "quote": "SPIFFE/SPIRE · any OIDC provider"
+        },
+        {
+          "entity": "E-swap-candidate-spiffe-spire",
+          "role": "second",
+          "maps_to": "SPIFFE/SPIRE workload attestation: the agent attests a workload against platform facts and issues a short-lived X.509-SVID, peers verify presented SVIDs locally against distributed trust bundles, and the Delegated Identity API issues to workloads the agent cannot attest in place. It implements attest and verify natively.",
+          "cannot": "Cannot express an on-behalf-of chain: an SVID names one workload, so delegate is a declared conformance subset for this adapter unless the chain is carried in a JWT-SVID's claims, which is the open question below. It also needs an agent on every node, where the first adapter needs only a reachable endpoint.",
+          "swap_procedure": "Select the adapter by configuration only, run the identical P13 corpus assertion against each, and require the merged report to show adapters_run == 2 with selected_by == configuration and the unsupported list recorded for the attestation adapter.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-14",
+            "X-cross-structure-034",
+            "X-cross-structure-035"
+          ],
+          "quote": "The Secure Production Identity Framework for Everyone (SPIFFE) standard enables workload-to-workload authentication using X.509 or JWT-based service identity documents (SVIDs)."
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/identity/test.sh && python3 harness/identity/conformance.py --adapter dryrun --adapter second",
+        "expected": "Measured by tools/measure.py at b923246: exit 0; last lines:   adapter=attested workload identity with a local trust bundle cases=16 passed=16 actions_checked=50 short_chains=0 cyclic=0 executing_unit_mismatch=0 authority_calls=0 marker=workload-attestor product_hits=0 | conformance PASSED: 32/32 cases, 2 binding(s), selected_by=configuration",
+        "breakage": "In harness/identity/adapters/dryrun.py, make _break_this_hop() always forward the incoming credential unchanged on an agent actor's first hop, instead of only under IDENTITY_BREAK=forward-token (the harness README's breakage, made the default rather than env-gated so the criterion needs no extra variable) and change nothing else; restore with git checkout -- harness/identity/adapters/dryrun.py.",
+        "expected_failure": "Measured by tools/measure.py at b923246: exit 1; last lines:   FAIL the same suite passes again once the hop is restored (expected 0, got 1) | passed 36, failed 10",
+        "status": "measured",
+        "sources": [
+          "F-a6-05",
+          "F-b1-04"
+        ],
+        "quote": "No identity field anywhere in the system",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "b923246",
+          "clean_exit": 0,
+          "clean_output": "issued\n  ok   one hop record per hop, appended, with the enforcement point read off the answer: 9 records, enforcement_point workload-attestor\n  ok   the delegation-chain corpus (P13): every action names an actor and a whole chain: actions_checked=50 missing_subject=0 short_chains=0 cyclic=0 executing_unit_mismatch=0\n  adapter=attested workload identity with a local trust bundle cases=16 passed=16 actions_checked=50 short_chains=0 cyclic=0 executing_unit_mismatch=0 authority_calls=0 marker=workload-attestor product_hits=0\nconformance PASSED: 32/32 cases, 2 binding(s), selected_by=configuration",
+          "breakage_exit": 1,
+          "breakage_output": "exchanging it\n  ok   the breakage run exits non-zero (nonzero)\n  ok   chains shorter than the hops that occurred (1)\n  ok   actions whose current actor did not execute (1)\n  ok   still 50 actions, so this is a defect and not a missing run (50)\n  ok   the run names the action and the chain it found\n  ok   the same breakage leaves the second adapter green (0)\n  ok   its chains are still whole (0)\n  ok   the breakage singles out one binding: a document naming its attested unit cannot be forwarded\n  FAIL the same suite passes again once the hop is restored (expected 0, got 1)\n\npassed 36, failed 10"
+        },
+        "expected_design": "The gate (46 checks) and the conformance run over a 50-action corpus together prove an actor and the chain that produced its right to act, under an exchange-issuing provider and an attested workload identity with a local trust bundle: no hop widens scope or outlives the credential it came from, a widening, cyclic, unrooted or expired chain is refused as a typed problem before anything is issued, the credential names the unit that will execute it, and the swap moves authority calls from 3 to 0 while ten contract facts stay identical (adapters_run=2). Earlier criterion named tools/conformance/identity_chain.py, replaced by the harness on 2026-09-03.",
+        "expected_failure_design": "The exchange adapter's delegation hop forwards the incoming token instead of exchanging it: the 50-action corpus assertion reports short_chains=1 and executing_unit_mismatch=1, and the conformance run drops to 27/32 cases and exits non-zero naming that adapter; the attested-workload adapter, which cannot forward a credential at all, is untouched and still passes."
+      },
+      "composes_with": {
+        "builds_on": [
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record",
+          "cap-identity"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Can the attestation adapter carry a delegation chain at all, or is delegate permanently a declared subset for it?",
+          "evidence": "Whether an identity document in its JWT form can carry the nested act structure and still verify against a trust bundle. The research on file records that identity documents come in X.509 or JWT form but says nothing about additional claims, and nothing was fetched here.",
+          "default": "Proposed: delegate stays in the unsupported list for that adapter, and a deployment that needs both attestation and chains runs the exchange adapter in front of it. Recording the subset is what keeps the pair honest.",
+          "sources": [
+            "X-cross-structure-034"
+          ],
+          "quote": "X.509 or JWT-based service identity documents"
+        },
+        {
+          "question": "Which adapter is primary once both exist?",
+          "evidence": "Measure, per adapter over the P13 corpus: added latency per hop, how many separate processes must be running for one action to obtain an identity, and how a unit inside an isolated sandbox gets named at all. The last is decisive given how much of what is defined here is currently not running.",
+          "default": "Proposed: attestation is primary for naming units and the exchange adapter is primary for delegation between principals, both behind the one interface. That is a split by operation, not a fallback, and it is the arrangement the definition of done above measures.",
+          "sources": [
+            "F-b1-04",
+            "F-a6-05"
+          ],
+          "quote": "the second exists to prove the first is not load-bearing"
+        },
+        {
+          "question": "How is a delegated hop attenuated, given that the chain records only who acted?",
+          "evidence": "Count, across recorded runs, how many hops would have been refused by a ceiling or a rule that the chain cannot express. cap-identity records that the chain carries identity and not the constraints applied at each hop.",
+          "default": "Proposed: the budget ceiling and the policy decision travel in their own members of the envelope and the dispatch request, and this capability neither reads nor writes them.",
+          "sources": [
+            "X-end-to-end-032"
+          ],
+          "quote": "not the authorization constraints applied at each hop"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session cap-identity 2831cb4f, 2026-09-03"
+      }
+    },
+    "xc-identity-delegation": {
+      "name": "xc-identity-delegation",
+      "layer": "xc",
+      "wave": 4,
+      "description": "The identity guarantee as a placement, not a request: every action names an actor, the actor and the chain behind it are stamped onto the entry envelope by the driving adapter that received the work, and every chain is acyclic and ends at a root that was attested rather than asserted. Load it when deciding where in the call path who-asked gets decided, when an agent hands work to another agent, when a later stage is about to reconstruct a requester from logs, when an entry arrives with no caller at all because a schedule or an event produced it, when an audit cannot say which agent actually did a thing, or when a review asks how a human, an agent and an event all end up with the same actor record. Also load it when a request object is about to grow a field that omits the actor, when a hop forwards a caller's token unchanged, or when a chain loops back on a name it already contains.",
+      "purpose": {
+        "text": "Fix the identity guarantee as a placement: the actor and the delegation chain are bound at entry by each driving adapter, before any planning or spend, and every recorded action is then checkable for a non-null actor, an acyclic chain, and a chain that terminates at a root nobody asserted for themselves.",
+        "origin": "sourced",
+        "sources": [
+          "F-b4-03",
+          "F-b4-01",
+          "E-concern-identity",
+          "E-platform-platform"
+        ],
+        "quote": "Every action names an actor"
+      },
+      "entities": [
+        "E-concern-identity",
+        "E-capability-identity",
+        "E-platform-platform",
+        "E-not-running-identity",
+        "E-standard-oauth-2-0-token-exchange",
+        "E-standard-workload-identity"
+      ],
+      "contract": {
+        "standards": [
+          {
+            "entity": "E-standard-oauth-2-0-token-exchange",
+            "version": "RFC 8693",
+            "version_note": "cap-identity owns this row and records the same RFC number; a search-only research record titles it RFC 8693: OAuth 2.0 Token Exchange and the specification was not fetched from this environment, so it stays unverified here too.",
+            "version_status": "unverified",
+            "url": "https://datatracker.ietf.org/doc/html/rfc8693",
+            "sources": [
+              "F-b3-14",
+              "X-entry-composition-048",
+              "X-xc-identity-delegation-001"
+            ]
+          },
+          {
+            "entity": "E-standard-workload-identity",
+            "version": "unverified",
+            "version_note": "cap-identity owns this row: the recorded column names workload identity as a governing standard without naming a document, and nothing was fetched here. This guarantee depends on it only for what a root hop must be.",
+            "version_status": "unverified",
+            "url": null,
+            "sources": [
+              "F-b3-14",
+              "X-xc-identity-delegation-005"
+            ]
+          }
+        ],
+        "operations": [
+          {
+            "name": "bind_actor (proposed operation set; PASS.md states this concern as one sentence, not as a list of calls)",
+            "input": "an inbound request as the driving adapter that received it sees it, plus whatever credential that adapter can present or attest for the caller (proposed)",
+            "output": "the entry envelope with a non-null actor and a delegation chain whose first hop is the caller, or the registered typed refusal; there is no path in which the envelope is admitted with the actor left to a later stage (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-03",
+              "X-entry-composition-042"
+            ]
+          },
+          {
+            "name": "extend_chain (proposed)",
+            "input": "an admitted envelope's chain and the agent or service about to act on it (proposed)",
+            "output": "a chain one hop longer with the new actor as the current actor, or a refusal when that actor already appears in the chain (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-03",
+              "X-cross-structure-037"
+            ]
+          },
+          {
+            "name": "assert_chain (proposed)",
+            "input": "a recorded action read back from the append-only store at a pinned head (proposed)",
+            "output": "three decisions and nothing else - actor present, chain acyclic, chain rooted - as a pure re-runnable function of the record, so the same corpus always yields the same verdict (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-03",
+              "F-b1-06"
+            ]
+          }
+        ],
+        "shapes": [
+          {
+            "name": "EntryActorBinding (proposed summary shape; cap-identity owns the ActorIdentity object this points at, and the full chain-validity schema is in references/identity-delegation-checks.md)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:identity:entry-binding:0.1",
+              "title": "EntryActorBinding",
+              "description": "Proposed. What a driving adapter must have written onto the entry envelope before validation admits it. actor is required with no default, and bound_at names the adapter that stamped it so that no later stage can be the first to know who asked.",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "actor",
+                "bound_at",
+                "bound_before"
+              ],
+              "properties": {
+                "actor": {
+                  "$ref": "urn:agentic:identity:actor:0.1"
+                },
+                "bound_at": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The driving adapter that performed the binding."
+                },
+                "bound_before": {
+                  "const": "planning",
+                  "description": "The binding precedes planning and therefore precedes every metered call. It is a const because there is no later moment to offer."
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b4-03",
+              "T-t2-03"
+            ]
+          },
+          {
+            "name": "ChainValidity (proposed; the three decisions docs/decomposition.md section 3.4 row X2 names, as a shape a report can carry)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:identity:chain-validity:0.1",
+              "title": "ChainValidity",
+              "description": "Proposed. The verdict on one recorded action. repeated_actor is populated only when acyclic is false, and root_obtained_via records how the last hop was established rather than that it exists.",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "actor_present",
+                "acyclic",
+                "rooted"
+              ],
+              "properties": {
+                "actor_present": {
+                  "type": "boolean"
+                },
+                "acyclic": {
+                  "type": "boolean"
+                },
+                "rooted": {
+                  "type": "boolean"
+                },
+                "repeated_actor": {
+                  "type": "string"
+                },
+                "root_obtained_via": {
+                  "enum": [
+                    "workload_attestation",
+                    "direct"
+                  ]
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b4-03"
+            ]
+          },
+          {
+            "name": "ActorBindingByWayIn (proposed worked instances, one per T6.2 door)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:identity:ways-in:0.1",
+              "title": "ActorBindingByWayIn",
+              "description": "Proposed. One worked binding for each of T6.2's four doors, taken from the runnable reference in examples/end-to-end. The chain is current actor first and least recent last, the ordering cap-identity settled. Nothing downstream branches on which door produced the record.",
+              "type": "array",
+              "minItems": 4,
+              "examples": [
+                [
+                  {
+                    "way_in": "human",
+                    "actor": {
+                      "subject": "user:corey",
+                      "delegation_chain": [
+                        {
+                          "actor": "user:corey",
+                          "obtained_via": "direct"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "way_in": "agent",
+                    "actor": {
+                      "subject": "agent:partner-sre-bot",
+                      "delegation_chain": [
+                        {
+                          "actor": "agent:partner-sre-bot",
+                          "obtained_via": "workload_attestation"
+                        },
+                        {
+                          "actor": "service:intake",
+                          "obtained_via": "token_exchange"
+                        },
+                        {
+                          "actor": "user:corey",
+                          "obtained_via": "direct"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "way_in": "event",
+                    "actor": {
+                      "subject": "service:alerting",
+                      "delegation_chain": [
+                        {
+                          "actor": "service:alerting",
+                          "obtained_via": "workload_attestation"
+                        },
+                        {
+                          "actor": "service:intake",
+                          "obtained_via": "token_exchange"
+                        }
+                      ]
+                    }
+                  },
+                  {
+                    "way_in": "schedule",
+                    "actor": {
+                      "subject": "user:corey",
+                      "delegation_chain": [
+                        {
+                          "actor": "schedule:nightly-fault-sweep",
+                          "obtained_via": "workload_attestation"
+                        },
+                        {
+                          "actor": "user:corey",
+                          "obtained_via": "direct"
+                        }
+                      ]
+                    }
+                  }
+                ]
+              ]
+            },
+            "origin": "proposed",
+            "sources": [
+              "T-t6-02"
+            ]
+          },
+          {
+            "name": "IdentityUntrustedInstance (proposed worked rejection; cap-errors owns the object and the closed registry the type comes from)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:identity:untrusted-instance:0.1",
+              "title": "IdentityUntrustedInstance",
+              "description": "Proposed. The one refusal this guarantee returns, shown rather than described. retryable is false because a chain that repeats an actor does not become acyclic on a second attempt.",
+              "allOf": [
+                {
+                  "$ref": "urn:agentic:problem:0.1"
+                }
+              ],
+              "examples": [
+                {
+                  "type": "urn:agentic:problem:identity-untrusted",
+                  "title": "Identity untrusted",
+                  "status": 401,
+                  "detail": "delegation chain for entry external-partner-agent-task repeats actor service:intake at hop 1 and hop 3",
+                  "retryable": false,
+                  "correlation": {
+                    "run_id": "run-external-0001",
+                    "correlation_id": "corr-external-0001",
+                    "depth": 1
+                  }
+                }
+              ]
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b4-07",
+              "F-b4-03"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Every action names an actor, and the check is over recorded actions rather than over the schema: a corpus in which one action has a null actor fails, however well-formed the field is everywhere else.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-03",
+              "E-concern-identity"
+            ],
+            "quote": "Every action names an actor"
+          },
+          {
+            "text": "The guarantee is not declinable: there is no field, header, role or configuration value that admits an envelope with no actor or with a chain shorter than the hops that actually occurred, and an envelope missing one is refused rather than defaulted.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-01",
+              "F-b1-08"
+            ],
+            "quote": "a caller cannot decline them"
+          },
+          {
+            "text": "cap-identity settles the chain's ordering and its mechanics (F-b3-14, and its open question on ordering): current actor first, least recent last. What this guarantee adds is that the ordering is load-bearing for the rooting assertion, since the root is then the last element and a checker written against the other ordering reports every chain as assembled backwards.",
+            "origin": "sourced",
+            "sources": [
+              "X-entry-composition-048",
+              "F-b3-14"
+            ],
+            "quote": "The least recent actor is the most deeply nested."
+          },
+          {
+            "text": "The chain is a claim structure that dispatch carries and does not define. A dispatch adapter may move a chain, refuse one, and record one; it may not decide what a hop is, which is why swapping the dispatcher changes nothing about this guarantee.",
+            "origin": "sourced",
+            "sources": [
+              "F-b5-03",
+              "F-b4-03"
+            ],
+            "quote": "This is the seam that decides whether agent execution is pluggable at all."
+          },
+          {
+            "text": "cap-errors owns the failure object and the closed registry (F-b4-07). What this guarantee adds is that its one refusal is the registered identity-untrusted row at status 401, so a caller branches on a type and never on the word untrusted appearing in a message.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-07"
+            ],
+            "quote": "Never parsed from prose"
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "Proposed: nothing in the contract lets a caller supply its own chain and have it believed. A presented chain is input to verification, never the verified result, and the envelope that leaves the driving adapter carries what the adapter established rather than what the caller sent. Research query: is there a fetched source distinguishing a presented chain (input to verification) from a verified chain (the result) as a named security principle, or is that this row's own framing?",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-01",
+              "F-b4-03"
+            ]
+          },
+          {
+            "text": "cap-identity states that prior actors are informational only. What this guarantee refuses to expose is the enforcement consequence: the policy gate and every other enforcement point are handed the current actor alone, while the whole chain goes to the audit corpus, so no rule can come to depend on a hop that a future exchange might legitimately remove.",
+            "origin": "sourced",
+            "sources": [
+              "X-cross-structure-038"
+            ],
+            "quote": "the consumer of a token MUST only consider the token's top-level claims"
+          },
+          {
+            "text": "The criterion an actor's work will be judged against never appears in the actor object, in any hop of the chain, or in the refusal this guarantee returns. agentic-stack states design rule 6 (F-b1-07); what it forbids here is a detail string that explains a rejected chain by naming what the work was being graded for.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-07"
+            ],
+            "quote": "The grader is never visible to the graded."
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Bind the actor in the driving adapter that received the work, not in the core and not at dispatch: establish the caller, write actor and delegation_chain onto the entry envelope, and refuse the entry when neither a credential nor an attestation can establish one.",
+          "why": "Every cross-cutting concern has to hold whichever entry point was used, and the entry point is the only place that still has the protocol-level evidence of who called. A stage further in sees an envelope and has to guess.",
+          "origin": "sourced",
+          "sources": [
+            "T-t2-03",
+            "X-entry-composition-042"
+          ],
+          "quote": "every cross-cutting concern are managed across the entire structure"
+        },
+        {
+          "step": 2,
+          "action": "Make actor required on the envelope schema with no default and no nullable variant, so an adapter that forgets to bind produces a refusal at admission rather than a run with an empty field.",
+          "why": "A default invented at intake is an unattributable action wearing a name. The platform applies this concern rather than the caller requesting it, so the schema must offer nothing to leave out.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-01",
+            "F-b4-03"
+          ],
+          "quote": "a caller cannot decline them"
+        },
+        {
+          "step": 3,
+          "action": "Extend the chain at every hop by exchanging for a new credential and adding the acting agent as the new current actor; treat a hop that forwards the caller's credential unchanged as having added no hop at all.",
+          "why": "The chain grows as each service calls the next, so the last consumer can still see who is acting on behalf of whom with the original actor named. cap-identity owns the exchange mechanics (F-b3-14); what matters here is that a forwarded credential leaves the chain the same length as the number of hops rises.",
+          "origin": "sourced",
+          "sources": [
+            "X-cross-structure-037",
+            "X-cap-identity-004"
+          ],
+          "quote": "the delegation chain grows"
+        },
+        {
+          "step": 4,
+          "action": "Refuse a hop whose actor already appears anywhere in the chain, at the moment the hop is added, and count the same condition again over the recorded corpus.",
+          "why": "Proposed, and the reason the definition of done below breaks exactly here: a loop is cheap to create by re-exchanging back to a service that already acted, it looks like a longer and therefore better audit trail, and it destroys the one property the trail is read for. Research query: is there a fetched source recommending refusal-at-add-time for a repeated actor specifically, rather than this row's own reasoning about what a loop would do to the audit trail?",
+          "origin": "proposed",
+          "sources": [
+            "F-b4-03"
+          ]
+        },
+        {
+          "step": 5,
+          "action": "Root every chain: the last hop is either a workload attested from facts about where it runs or an authenticated human principal, and an entry that can offer neither - a schedule firing, an event with no caller - is rooted at the attested identity of the adapter that raised it.",
+          "why": "Proposed. An entry with no human behind it still has an actor, and the honest one is the workload that produced it; leaving such entries unrooted would make the rooting assertion pass only for the ways in that happen to carry a credential. Research query: is there a fetched source stating a schedule- or event-originated chain should root at the raising adapter's attested identity specifically, or is that this row's own extension of workload identity federation's general authentication mechanism?",
+          "origin": "proposed",
+          "sources": [
+            "X-xc-identity-delegation-005",
+            "T-t1-03"
+          ]
+        },
+        {
+          "step": 6,
+          "action": "Carry the chain as data on the dispatch request and keep its definition out of the dispatch seam: a dispatcher moves, refuses and records a chain, and never decides what a hop is.",
+          "why": "seam-dispatch states the row this reuses (F-b5-03): today there are three implementations and no contract between them, so a guarantee defined inside one of them would have to be redefined in the other two and would differ in all three.",
+          "origin": "sourced",
+          "sources": [
+            "F-b5-03",
+            "F-b4-03"
+          ],
+          "quote": "Today there are three implementations and no contract between them."
+        },
+        {
+          "step": 7,
+          "action": "Return the registered identity-untrusted problem object at status 401 with retryable false when a chain does not verify, and put the failing condition in detail without putting the credential in it.",
+          "why": "cap-errors owns the object and the closed registry; this guarantee supplies one registered row of it. Repeating a verification that failed on the shape of the chain returns the same answer, so retryable false is a fact about the failure and not a policy.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-07",
+            "F-b4-03"
+          ],
+          "quote": "Typed and machine-readable"
+        },
+        {
+          "step": 8,
+          "action": "Wire the identical binding on all three ways in and prove it by replaying one corpus through each: a human entering the system, an agent entering the system, and an internal or external event entering the system. The three worked bindings in contract.shapes above are what each must produce.",
+          "why": "TARGET T1 names those three ways in, and a guarantee wired only on the door someone remembered is declinable by choosing another door. Replaying one corpus through each is what turns cannot be declined into a count.",
+          "origin": "sourced",
+          "sources": [
+            "T-t1-01",
+            "T-t1-02",
+            "T-t1-03"
+          ],
+          "quote": "An internal or external event must be able to enter the system."
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Read a chain that did not grow as the defect it is. cap-identity states the validate-then-exchange rule (X-cap-identity-004); what this adds, as this skill's own proposed consequence, is the detection: compare chain length against the number of recorded hops for the same action, because a forwarded credential produces a chain that is short rather than one that is wrong.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-identity-004"
+          ],
+          "quote": "the next service in the chain will accept it"
+        },
+        {
+          "text": "Do not ask the chain to prove that a hop stayed inside the authority it was given. The records on file note that no token-local mechanism exists for proving downstream delegation intent remains consistent with the original scope, so attenuation belongs to the budget and policy concerns and is never inferred from the chain's shape.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-mandate-broker-008"
+          ],
+          "quote": "does not define a token-local mechanism for proving that downstream delegation intent remains consistent"
+        },
+        {
+          "text": "agentic-stack and build-definition-of-done both state the structurally-green-gate finding (F-a7-03). What it costs here specifically: a corpus containing no delegated action passes every assertion this guarantee makes, so report delegated actions checked as its own number and fail the run when it is zero.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        },
+        {
+          "text": "Keep the check inside the enforcement path rather than beside it. The inventory of what runs today already records a concern whose conformance checks exist and are not wired into the path that enforces them, which is the failure this layer exists to avoid repeating for identity.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-04",
+            "E-not-running-policy-in-the-gate-path"
+          ],
+          "quote": "Conformance checks exist; not wired into the enforcement path"
+        },
+        {
+          "text": "Make the binding a step every envelope crosses rather than a call every adapter author must remember: the records on file describe an admission chain that modifies a request before anything validates or persists it, which is the shape that makes a guarantee non-optional without depending on discipline.",
+          "origin": "sourced",
+          "sources": [
+            "X-cross-structure-023"
+          ],
+          "quote": "return JSON patches that modify the resource"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "python3 harness/identity/conformance.py --adapter dryrun --adapter second",
+        "expected": "exit 0, last line `conformance PASSED: 32/32 cases, 2 binding(s), selected_by=configuration`, with one line per binding reading `cases=16 passed=16 actions_checked=50 short_chains=0 cyclic=0 executing_unit_mismatch=0 authority_calls=0 product_hits=0`: a 50-action corpus, so the acyclicity and rooting assertions had multi-hop chains to assert on. What this run stands in for: the criterion this facet carried before ceremony 61 (finding R61B-018) moved its prose out of the criterion field, which is the check this guarantee ultimately needs and which nothing on disk runs yet - docs/decomposition.md section 3.4 row X2, made precise. Proposed tool, built with the first implementation of this guarantee: `python3 tools/conformance_identity_delegation.py --corpus out/actions.jsonl --min-actions 100 --report out/identity-delegation.json`. Over a corpus of at least 100 recorded actions it asserts that no action has a null `actor`, that every `delegation_chain` is acyclic, that every chain terminates at a hop whose `obtained_via` is `workload_attestation` or `direct`, and that every action's actor is the one bound on its entry envelope rather than one stamped later. It reports `actions_checked`, `delegated_actions_checked`, `null_actor`, `cyclic`, `unrooted` and `bound_at_entry`. Expected of that check: exit 0 and one summary line `actions_checked=100 delegated_actions_checked=<k> null_actor=0 cyclic=0 unrooted=0 bound_at_entry=100`, with `delegated_actions_checked` greater than zero so the acyclicity and rooting assertions had multi-hop chains to assert on.",
+        "breakage": "sed -i 's/if any(hop.actor == actor for hop in chain):/if False:/' harness/identity/interface.py -- classify_chain never reports `cyclic`, so an exchange back to an actor already in the chain is issued instead of refused. Restore with git checkout harness/identity/interface.py.",
+        "expected_failure": "exit 1 on both bindings at the cycle case, naming the action and the repeated actor, while short_chains stays 0 and actions_checked stays at 50 - which is what shows the loop went undetected rather than the corpus never being read. Status claimed: tools/measure.py has recorded neither run for this pair here. The breakage the prose criterion above stood for, and what it expected: Permit a `direct` hop to name an actor already present earlier in the chain: re-exchange one delegated action back to the intake service that already appears at hop 1, and change nothing else. The acyclicity check fails: `cyclic` becomes 1, the run exits non-zero naming that action and the repeated actor, while `null_actor` stays 0, `bound_at_entry` stays 100 and `actions_checked` stays at or above 100 - which is what shows the loop was detected rather than the corpus never being read. Claimed: PASS.md A6 records no identity field anywhere in the system, so neither the field, the binding nor the tool exists here and this check starts red by construction, which is the correct starting state rather than a defect to hide.",
+        "status": "claimed",
+        "sources": [
+          "F-a6-05",
+          "F-part-c-04"
+        ],
+        "quote": "No identity field anywhere in the system"
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-definition-of-done",
+          "build-skill-authoring",
+          "cap-identity"
+        ],
+        "used_by": [
+          "seam-dispatch",
+          "xc-identity-delegation-implement",
+          "xc-tenancy"
+        ]
+      },
+      "open_questions": [
+        {
+          "question": "docs/decomposition.md section 2.1 describes delegation_chain as oldest hop first and section 3.4 row X2 says a chain terminates at a root workload identity, while the four entry files in examples/end-to-end put the current actor first. Which end does the rooting assertion read?",
+          "evidence": "The edit cap-identity's ordering question names: one ordering holding in the runnable reference, in the dispatch shape and in the assertions. Until it lands, a checker written against either ordering reports every chain produced by the other as unrooted.",
+          "default": "cap-identity applied 1-3-1 on 2026-09-03 and adopted current-actor-first; this guarantee follows that decision rather than re-deciding it, so the rooting assertion reads the last element and row X2's terminates at means the last element under that ordering. The alternative considered and declined here was to assert on both ends, which would let a chain rooted at neither pass.",
+          "sources": [
+            "T-t5-02",
+            "X-entry-composition-048"
+          ],
+          "quote": "identify the three best possible solutions that align to the goal"
+        },
+        {
+          "question": "Row X2 says a chain terminates at a root workload identity, but the runnable human entry is a single `direct` hop naming a person, and no workload appears in it. Does a human-rooted chain satisfy the rooting assertion?",
+          "evidence": "1-3-1 applied on 2026-09-03. Options: (a) read root workload identity as a root established rather than asserted onward, covering both an attested workload and an authenticated human principal; (b) re-root every human entry at the intake workload, making the shortest chain two hops; (c) exempt human entries from the rooting assertion. Recommendation followed: (a), carried into the ChainValidity shape's root_obtained_via enum. Option (b) adds a hop that records nothing a reader did not already know, and (c) makes the assertion silent on the way in that carries the most authority.",
+          "default": "A chain is rooted when its last hop's obtained_via is workload_attestation or direct. The question closes when row X2 is reworded or the human entry is re-rooted.",
+          "sources": [
+            "T-t5-02",
+            "T-t1-01"
+          ],
+          "quote": "define the problem, identify the three best possible solutions"
+        },
+        {
+          "question": "Does a maximum chain depth belong to this guarantee or to the budget guarantee that already carries a maximum delegation depth?",
+          "evidence": "A corpus with long but acyclic chains: if the depth that hurts is a cost and fan-out problem, the existing ceiling catches it first and a second bound here would only disagree with it. If long chains fail verification before they cost anything, the bound belongs here.",
+          "default": "Depth stays with the budget ceiling and this guarantee asserts only actor presence, acyclicity and rooting. Two bounds on one number in two concerns is how they come to disagree.",
+          "sources": [
+            "F-b4-02",
+            "F-b4-03"
+          ],
+          "quote": "Every unit of work carries a ceiling"
+        },
+        {
+          "question": "Where does the adapter pair for this guarantee live, given that PASS.md B3 records the Identity adapter as absent and every identity adapter entity belongs to the capability row rather than to this concern?",
+          "evidence": "Whether a reviewer reading only this skill can say what would have to change for the enforcement point to move. If not, the pair belongs here as well as in the implement facet.",
+          "default": "The pair, the axes their execution models differ on and the swap procedure are recorded once in xc-identity-delegation-implement, which builds on build-adapter-pair. This skill states only that the enforcement point is entry and that nothing implements it today, which is cap-identity's starting-point row rather than a new observation.",
+          "sources": [
+            "F-b3-14",
+            "F-a6-05"
+          ],
+          "quote": "No identity field anywhere in the system"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session xc-identity-delegation 2831cb4f, 2026-09-03"
+      }
+    },
+    "xc-identity-delegation-implement": {
+      "name": "xc-identity-delegation-implement",
+      "layer": "xc",
+      "wave": 5,
+      "description": "How to make the identity binding real on this stack from a starting point of nothing: a first enforcement point inside each driving adapter that stamps the actor and the chain onto the envelope at entry, a second that moves the same decision out of process behind an external issuer, how to migrate when no field exists to migrate from, where the chain attaches to correlation, provenance, policy, state and typed failures, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that decides who asked, when an entry adapter is about to admit work with no caller established, when a hop forwards a credential instead of exchanging it, when choosing what the second enforcement point should be, or when a conformance run reports a chain that loops back on a name it already contains.",
+      "purpose": {
+        "text": "Turn the placement in xc-identity-delegation into something that runs here: two enforcement points behind one guarantee, the same corpus replayed through both, and a migration that starts red because there is no actor field on this host to migrate from.",
+        "origin": "sourced",
+        "sources": [
+          "F-b4-03",
+          "F-a6-05",
+          "E-not-running-identity"
+        ],
+        "quote": "No identity field anywhere in the system"
+      },
+      "entities": [
+        "E-concern-identity",
+        "E-capability-identity",
+        "E-adapter-identity-absent",
+        "E-swap-candidate-any-oidc-provider",
+        "E-not-running-identity"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "differs_in_execution_model for this pair (proposed instance of the shape build-adapter-pair defines)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:identity:pair-axes:0.1",
+              "title": "IdentityBindingPairAxes",
+              "description": "Proposed. The three axes on which the two enforcement points differ, stated as properties rather than as product names. The axis is where the binding decision is made, not which credential technology is used: cap-identity-implement owns the issuance pair. measured stays false until the swap has been executed and recorded.",
+              "type": "array",
+              "minItems": 3,
+              "examples": [
+                [
+                  {
+                    "axis": "locus_of_the_binding_decision",
+                    "today_value": "in the driving adapter's own process, one binding library per adapter",
+                    "second_value": "one out-of-process step every envelope crosses, no binding code in any adapter",
+                    "measured": false
+                  },
+                  {
+                    "axis": "who_mints_and_signs_a_hop",
+                    "today_value": "the platform mints and records each hop itself",
+                    "second_value": "an external issuer mints each hop and the platform only verifies what came back",
+                    "measured": false
+                  },
+                  {
+                    "axis": "processes_required_for_progress",
+                    "today_value": "entry binds with no network call and no second process",
+                    "second_value": "entry cannot bind at all while the issuer is unreachable",
+                    "measured": false
+                  }
+                ]
+              ]
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04"
+            ]
+          },
+          {
+            "name": "chain-of-custody record (proposed; what one hop writes through the state seam so the corpus can be checked later)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:identity:hop-record:0.1",
+              "title": "DelegationHopRecord",
+              "description": "Proposed. One record per hop, appended rather than mutated, so that the chain a corpus check reads is the chain that was actually assembled and a later edit to it is detectable.",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "run_id",
+                "action_id",
+                "hop_index",
+                "actor",
+                "obtained_via",
+                "enforcement_point",
+                "written_at"
+              ],
+              "properties": {
+                "run_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "action_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "hop_index": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "0 is the current actor. The root is the highest index for that action."
+                },
+                "actor": {
+                  "type": "string",
+                  "pattern": "^(user|service|agent|schedule):[a-z0-9][a-z0-9._@-]*$"
+                },
+                "obtained_via": {
+                  "enum": [
+                    "direct",
+                    "token_exchange",
+                    "workload_attestation"
+                  ]
+                },
+                "enforcement_point": {
+                  "type": "string",
+                  "description": "Read from the refusal or the stamp that came back, never from the configuration that selected the adapter."
+                },
+                "written_at": {
+                  "type": "string"
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b4-03",
+              "F-a5-03"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Proposed: the two enforcement points differ on three of build-adapter-pair's axes - locus_of_the_binding_decision, who_mints_and_signs_a_hop and processes_required_for_progress - recorded in the shape above. A second credential technology bound in the same place would agree with the first on all three, so swapping to it would test an issuer and not the placement.",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04"
+            ],
+            "quote": "Swappability is a tested property, not an intention."
+          },
+          {
+            "text": "build-adapter-pair and agentic-stack state design rule 1 (F-b1-02). Its consequence here: which enforcement point bound an actor is configuration, and no core code, no workflow and no policy rule branches on it; the enforcement point appears in the conformance report, never in a field a caller can read and route on.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-02"
+            ],
+            "quote": "The core imports interfaces, never implementations"
+          },
+          {
+            "text": "There is no identity field anywhere in the system to migrate from, so the first enforcement point is written rather than replaced and every assertion in the definition of done below is red until it exists (F-a6-05, E-not-running-identity; xc-identity-delegation owns the placement and the three assertions row X2 makes).",
+            "origin": "sourced",
+            "sources": [
+              "F-a6-05",
+              "E-not-running-identity"
+            ],
+            "quote": "No identity field anywhere"
+          },
+          {
+            "text": "cap-identity-implement owns the credential pair for this capability, an exchange-issuing provider against attested workload identity. What this skill pairs is where the binding decision is taken, so the two skills' adapter tables answer different questions about the same row of PASS.md B3 and neither replaces the other.",
+            "origin": "sourced",
+            "sources": [
+              "F-b3-14",
+              "E-capability-identity"
+            ],
+            "quote": "OAuth 2.0 Token Exchange"
+          },
+          {
+            "text": "Proposed: the migration never leaves an entry path that admits work with an unchecked actor. The field is introduced as stamped-and-recorded before it is required, the corpus check runs in shadow while it is optional, and only then is an envelope without an actor refused at admission.",
+            "origin": "proposed",
+            "sources": [
+              "F-a6-05",
+              "F-b4-01"
+            ]
+          },
+          {
+            "text": "Apply build-evidence-record: every statement here about how an enforcement point behaves stays claimed until the conformance run and its evidence record exist, naming the code version and the tree hash under test, and rewording a sentence never upgrades a label; proposed pointer, see that skill.",
+            "origin": "proposed",
+            "sources": [
+              "F-a5-04",
+              "F-part-c-08"
+            ],
+            "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Write the first enforcement point as one binding step called by every driving adapter at entry: establish the caller from what that protocol carries, assemble the chain current actor first, run the acyclicity and rooting walk before the envelope is admitted, and stamp the result onto the envelope.",
+          "why": "xc-identity-delegation fixes the binding point as entry; this is the smallest thing that can hold it, and one shared step is what stops four adapters from growing four spellings of the same field. Nothing runs today, so the first enforcement point is written rather than adapted.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-05",
+            "F-b4-03"
+          ],
+          "quote": "Every action names an actor"
+        },
+        {
+          "step": 2,
+          "action": "Proposed: build the second enforcement point as one out-of-process step every envelope crosses, whichever adapter produced it - the envelope is submitted, the step verifies the presented credential against an external issuer, mints or refuses the hop, and returns the envelope stamped. No driving adapter holds binding code at all.",
+          "why": "Proposed: this breaks the assumption that the party receiving the work is the party that can establish who sent it. It also fails differently - it cannot bind while the issuer is unreachable - which is what makes the pair a test of the placement rather than of an issuer.",
+          "origin": "proposed",
+          "sources": [
+            "F-b1-04",
+            "X-cross-structure-023"
+          ]
+        },
+        {
+          "step": 3,
+          "action": "Migrate in three steps from nothing: add actor to the envelope as optional and stamp it wherever an adapter can, recording how often it could not; run the corpus check in shadow over that period and reconcile what it would have refused; then make actor required, refuse an envelope without one, and keep the shadow report as the regression baseline.",
+          "why": "There is no identity field anywhere in the system today, so making it required on day one would refuse every entry the platform currently accepts. The shadow period is where the adapters that cannot establish a caller are found, and finding them is cheaper before the refusal is live.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-05",
+            "F-part-c-11"
+          ],
+          "quote": "Do not propose replacing what runs"
+        },
+        {
+          "step": 4,
+          "action": "Wire the cross-cutting attachments at both enforcement points: stamp the actor beside the run identifier on the same explicit attribute at dispatch, append one hop record per hop through the state seam, put the actor in the attestation that makes an artifact attributable, and hand the policy gate the current actor alone.",
+          "why": "agentic-stack states that correlation must ride on an explicit attribute because parentage did not survive the agent boundary (F-a7-02); an actor that rides on parentage is unattributable for the same reason. An artifact is attributable to the code version, inputs and actor that produced it, so the chain has to be written where provenance can read it.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-02",
+            "F-b4-05"
+          ],
+          "quote": "the code version, inputs and actor that produced it"
+        },
+        {
+          "step": 5,
+          "action": "Append hop records rather than rewriting a chain in place, into the chained store, so a chain read back by the corpus check is the chain that was assembled.",
+          "why": "build-evidence-record states the chaining rule (F-a5-03): the closing digest of each run is the opening digest of the next, which is what makes a later edit detectable; a mutable chain would let an unattributable action be made attributable after the fact, and the corpus check would agree.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-03"
+          ],
+          "quote": "a manual edit between runs is detectable"
+        },
+        {
+          "step": 6,
+          "action": "Read the enforcement point from the stamp or the refusal that actually came back and carry that observed value in the report, rather than the value the configuration selected.",
+          "why": "agentic-stack and build-evidence-record state the silently-discarded-configuration finding (F-a7-04), measured on this host: settings written in the documented place had no runtime effect. A binding believed to be in force because it was configured is that failure with an audit trail attached.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "had no runtime effect"
+        },
+        {
+          "step": 7,
+          "action": "Apply build-definition-of-done: run the definition of done below over both enforcement points and then its deliberate breakage, and record both outputs as an evidence record the way build-evidence-record fixes, before calling this facet done; proposed pointer, see those skills.",
+          "why": "build-definition-of-done owns criterion plus deliberate breakage plus both recorded outputs, and build-evidence-record owns what the record names, so this row points at them instead of restating the sentence six sibling -implement skills had copied (consolidation part B, kb/ceremonies/implement-clusters.json).",
+          "origin": "proposed",
+          "sources": [
+            "F-part-c-04"
+          ],
+          "quote": "A criterion nothing can fail is not a criterion."
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Expect the two enforcement points to disagree during the shadow step and treat the difference as the finding. build-adapter-pair states why a second adapter exists (F-b1-04); the gap it exposes here is concrete: the entries the in-process binding can stamp and the out-of-process step refuses are the ones whose credential nobody was actually checking.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-04"
+          ],
+          "quote": "Every interface ships with at least two adapters"
+        },
+        {
+          "text": "Assert chain length against the number of recorded dispatch hops for the same run: each service in the middle of the chain must validate the incoming access token and request a new one, so a credential forwarded unchanged leaves a chain that is valid, acyclic, rooted and one hop too short, and the join is the only assertion that catches it (X-cap-identity-004; xc-identity-delegation owns the rule that a forwarded credential adds no hop).",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-identity-004"
+          ],
+          "quote": "each service in the middle of the chain must validate the incoming access token"
+        },
+        {
+          "text": "agentic-stack and build-definition-of-done state the structurally-green-gate finding (F-a7-03). What it costs here: a corpus replayed through two enforcement points can leave one of them with no delegated action to check and still exit green, so report delegated actions checked per enforcement point and fail when either is zero.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "with every behavioural stage skipped"
+        },
+        {
+          "text": "Do not let the binding step become a place to also decide what the actor may do. The records on file describe cross-cutting middleware as composed once and applied to every agent, and a binding step that quietly grew authorisation would put policy in a component whose only conformance check counts chains.",
+          "origin": "sourced",
+          "sources": [
+            "X-cross-structure-026"
+          ],
+          "quote": "you can compose cross-cutting behaviors"
+        },
+        {
+          "text": "Keep the corpus check on the same records the enforcement path writes rather than on a copy assembled for the test. The inventory of what runs today already records a concern whose checks exist outside the path that enforces them, and a delegation checker fed its own fixtures would reproduce that exactly.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-04"
+          ],
+          "quote": "not wired into the enforcement path"
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-identity-absent",
+          "role": "today",
+          "maps_to": "Nothing runs: the recorded adapter column for Identity is absent and PASS.md A6 records no identity field anywhere in the system, so the first enforcement point to exist is the one described here - an in-process binding step called by each driving adapter at entry, assembling the chain, running the acyclicity and rooting walk, and stamping the envelope before admission. It is what the second is paired against rather than an incumbent to replace.",
+          "cannot": "Cannot be cited as evidence of anything running. Once written it still cannot bind an entry whose adapter has no way to establish a caller without an attested root, and it puts the binding code inside every driving adapter, so a bug in one adapter is a bug in the guarantee for that door only - which is the failure mode the second enforcement point removes.",
+          "swap_procedure": "Select the enforcement point by configuration with no code edit between runs, replay the identical corpus through both, and require the merged report to show enforcement_points_run == 2 with enforcement_point read from the stamp rather than from the binding.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-14",
+            "F-a6-05",
+            "E-adapter-identity-absent"
+          ],
+          "quote": "workload identity | *absent*"
+        },
+        {
+          "entity": "E-swap-candidate-any-oidc-provider",
+          "role": "second",
+          "maps_to": "The same binding served out of process: every envelope, whichever adapter produced it, crosses one step that verifies the presented credential against an external OIDC provider serving the token-exchange grant, mints or refuses the hop, and returns the envelope stamped. No driving adapter holds binding code. cap-identity-implement pairs the credential technologies for this same B3 row; this row pairs where the decision is taken.",
+          "cannot": "Proposed: cannot bind while the provider is unreachable, so an entry path that must accept work during an outage has no enforcement point at all rather than a degraded one; cannot establish a caller for an entry that presents no credential without an attested root behind it; and it puts a network call on every entry, which the in-process binding does not.",
+          "swap_procedure": "Proposed: the axes that differ are locus_of_the_binding_decision (inside each driving adapter versus one step every envelope crosses), who_mints_and_signs_a_hop (the platform versus an external issuer) and processes_required_for_progress (no network call versus an unreachable issuer stopping entry). Select by configuration, run the identical corpus assertion against each, and compare both reports against the same declared gaps.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-14",
+            "F-b1-04",
+            "E-swap-candidate-any-oidc-provider"
+          ],
+          "quote": "any OIDC provider"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/identity/test.sh && python3 harness/identity/conformance.py --adapter dryrun --adapter second",
+        "expected": "Measured by tools/measure.py at 52a1457: exit 0; last lines:   adapter=attested workload identity with a local trust bundle cases=16 passed=16 actions_checked=50 short_chains=0 cyclic=0 executing_unit_mismatch=0 authority_calls=0 marker=workload-attestor product_hits=0 | conformance PASSED: 32/32 cases, 2 binding(s), selected_by=configuration",
+        "breakage": "sed -i 's/if not wanted_set <= held_set:/if False:/' harness/identity/interface.py -- classify_scope never reports \"wider\", so the widening hop that must be refused (403 policy-denied, rule_id scope-must-narrow) is instead issued. Restore: git checkout harness/identity/interface.py",
+        "expected_failure": "Measured by tools/measure.py at 52a1457: exit 1; last lines:   FAIL the same suite passes again once the hop is restored (expected 0, got 1) | passed 35, failed 11",
+        "status": "measured",
+        "sources": [
+          "F-a6-05",
+          "F-b1-04",
+          "F-part-c-04"
+        ],
+        "quote": "No identity field anywhere in the system",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "52a1457",
+          "clean_exit": 0,
+          "clean_output": "issued\n  ok   one hop record per hop, appended, with the enforcement point read off the answer: 9 records, enforcement_point workload-attestor\n  ok   the delegation-chain corpus (P13): every action names an actor and a whole chain: actions_checked=50 missing_subject=0 short_chains=0 cyclic=0 executing_unit_mismatch=0\n  adapter=attested workload identity with a local trust bundle cases=16 passed=16 actions_checked=50 short_chains=0 cyclic=0 executing_unit_mismatch=0 authority_calls=0 marker=workload-attestor product_hits=0\nconformance PASSED: 32/32 cases, 2 binding(s), selected_by=configuration",
+          "breakage_exit": 1,
+          "breakage_output": "ok   the breakage run exits non-zero (nonzero)\n  ok   chains shorter than the hops that occurred (1)\n  ok   actions whose current actor did not execute (1)\n  ok   still 50 actions, so this is a defect and not a missing run (50)\n  ok   the run names the action and the chain it found\n  FAIL the same breakage leaves the second adapter green (expected 0, got 1)\n  ok   its chains are still whole (0)\n  ok   the breakage singles out one binding: a document naming its attested unit cannot be forwarded\n  FAIL the same suite passes again once the hop is restored (expected 0, got 1)\n\npassed 35, failed 11",
+          "restored": true
+        },
+        "expected_design": "docs/decomposition.md section 3.4 row X2: harness/identity/test.sh exits 0 (46 checks: 16 conformance cases per adapter, the 50-action delegation-chain corpus, the swap proof by configuration, the product-name scan, and its own internal deliberate breakage restoring clean); conformance.py --adapter dryrun --adapter second then exits 0 with 32/32 cases across 2 bindings, selected_by=configuration.",
+        "expected_failure_design": "test.sh exits 1 (35 passed, 11 failed): its own internal breakage/restore checks fail because scope narrowing no longer distinguishes wider from narrower, so a forwarded credential and a restored hop both misreport. Restoring the file with git checkout returns the tree to a clean run."
+      },
+      "composes_with": {
+        "builds_on": [
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record",
+          "xc-identity-delegation"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "This guarantee has no adapter or swap-candidate entity of its own: every identity adapter entity in the knowledge base belongs to the capability row, and cap-identity-implement already pairs them on credential technology. Should the enforcement-point pair get its own entities?",
+          "evidence": "1-3-1 applied on 2026-09-03, the same way xc-budget-implement records its own entity gap. Options: (a) add E-adapter-in-process-entry-binding and E-swap-candidate-out-of-process-admission, which needs a knowledge-base rebuild and would invalidate the provenance heads of every skill already written; (b) record the pair against the existing absent-adapter and provider entities of the same B3 row and say in the row which question each table answers, which is what this skill does; (c) leave the pair to a later wave, which would leave this guarantee with one enforcement point and no tested swap. Recommendation followed: (b). The question closes when a ceremony rebuilds the knowledge base and the two entities exist.",
+          "default": "Keep the pair on the existing entities of the Identity row, with the difference from cap-identity-implement's pair stated in both adapter rows so a reader is not sent to the wrong table.",
+          "sources": [
+            "F-b3-14",
+            "T-t5-02"
+          ],
+          "quote": "When a problem comes up, use 1-3-1"
+        },
+        {
+          "question": "During the shadow step, what should happen to an entry whose adapter cannot establish a caller at all - refuse it, or admit it with the adapter's own attested identity as both subject and root?",
+          "evidence": "Count, over the shadow period, how many entries per adapter have no establishable caller. If the count is small and concentrated in one adapter, refusing is cheap and the adapter is fixed. If it is spread across every event-driven door, admitting on the adapter's attested identity is the only option that does not close the way in xc-identity-delegation requires to stay open for an internal or external event.",
+          "default": "Admit on the adapter's own attested identity and mark the record so the shadow report can count it, rather than refusing during a period whose purpose is to find out what would be refused.",
+          "sources": [
+            "F-a6-05",
+            "T-t1-03"
+          ],
+          "quote": "An internal or external event must be able to enter the system."
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session xc-identity-delegation 2831cb4f, 2026-09-03"
+      }
+    },
+    "cap-mandate-broker": {
+      "name": "cap-mandate-broker",
+      "layer": "cap",
+      "wave": 4,
+      "description": "The mandate and credential brokering contract: an actor exchanges its identity for a short-lived authority bound to one destination, or for a signed, expiring, scope-limited mandate to take one bounded action, and neither the key nor the token ever reaches the unit of work. Load it whenever something inside a sandbox needs to reach something outside it, before any component is given an API key, a cloud credential or a database password, when an action is irreversible - money moves, a deploy lands, a message is sent - and someone has to be able to check afterwards that it was authorised, when a token has to be accepted by one destination and refused by another, when someone asks 'where does the real key live', 'what stops this token being replayed somewhere else', 'how does a partner check this without asking us', or 'who approved this spend', and before any design lets a long-lived secret into a running agent.",
+      "purpose": {
+        "text": "Fix one contract for minting authority: a short-lived, destination-bound credential for reaching something, and a signed, expiring, scope-limited mandate for doing something irreversible, so the core imports minting and verification while the key store, the token service and the credential format stay adapter detail.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-02",
+          "X-cap-mandate-broker-007"
+        ],
+        "quote": "ensuring the agent never holds the credential"
+      },
+      "entities": [
+        "E-standard-oauth-2-0-token-exchange",
+        "E-standard-model-context-protocol",
+        "E-sandbox-property-guest-credential",
+        "E-sandbox-property-model-egress",
+        "E-sandbox-property-field-filtering"
+      ],
+      "contract": {
+        "standards": [
+          {
+            "entity": "E-standard-oauth-2-0-token-exchange",
+            "version": "unverified",
+            "version_note": "the record on file says the token-exchange RFC was published in January 2020, and it is search-only rather than fetched, so no version of the exchange profile this interface uses is asserted here",
+            "version_status": "unverified",
+            "url": "https://www.ietf.org/rfc/rfc8693.pdf",
+            "sources": [
+              "F-b3-14",
+              "X-cap-mandate-broker-001",
+              "X-cap-mandate-broker-002"
+            ]
+          },
+          {
+            "entity": "E-standard-model-context-protocol",
+            "version": "unverified",
+            "version_note": "the manifest records the authorization revision 2025-11-25 together with the resource-indicators RFC; both records on file are search-only and neither is the specification text, so no revision string is asserted here",
+            "version_status": "unverified",
+            "url": "https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization",
+            "sources": [
+              "F-b3-06",
+              "X-end-to-end-028",
+              "X-cap-mandate-broker-003"
+            ]
+          },
+          {
+            "entity": "E-standard-w3c-verifiable-credentials",
+            "version": "unverified",
+            "version_note": "proposed entity id and version unverified: PASS.md B3 carries no mandate or credential-brokering row, so kb/entities.jsonl holds no entity for this standard and none may be added without rewriting the entity chain every written skill pins; both records on file are search-only, so no version is asserted here",
+            "version_status": "unverified",
+            "url": "https://docs.walt.id/concepts/digital-credentials/verifiable-credentials-w3c",
+            "sources": [
+              "X-cap-mandate-broker-005",
+              "X-end-to-end-070"
+            ]
+          }
+        ],
+        "operations": [
+          {
+            "name": "mint",
+            "input": "an actor subject with its delegation chain, exactly one destination identifier, a requested scope, and a lifetime",
+            "output": "a handle to a credential bound to that one destination as its audience and expiring with the task; the credential bytes are never returned to the caller and never written where the unit of work can read them",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-mandate-broker-006"
+            ],
+            "quote": "Short-lived agent sessions are derived from the user session at task start with minutes in TTL and are non-refreshable by design"
+          },
+          {
+            "name": "exchange",
+            "input": "a token naming the delegating actor, a token naming the acting agent, and the destination and scope wanted for the next hop",
+            "output": "a token for that destination whose scope is no wider than the input's; a request that would widen scope is refused rather than granted",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-mandate-broker-002"
+            ],
+            "quote": "Scope can be used to decrease privileges carried by the input tokens."
+          },
+          {
+            "name": "attach",
+            "input": "an ordinary outbound request made by a unit of work, plus the handle minted for that request's destination",
+            "output": "the request as it leaves the host, with the real credential added outside the sandbox and with destination and model override fields dropped by name",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-mandate-broker-007",
+              "F-a3-08"
+            ],
+            "quote": "each proxy attaches the real token at the network layer"
+          },
+          {
+            "name": "issue_mandate",
+            "input": "an approving actor's signature over the bounds of one action class: a ceiling, the destinations it may be used against, and the period it is valid for",
+            "output": "a signed, expiring, scope-limited mandate record carrying exactly those bounds and nothing about how the work will be judged",
+            "origin": "sourced",
+            "sources": [
+              "X-end-to-end-070"
+            ],
+            "quote": "Every agent operates under a Mandate that specifies spending limits, allowed merchants, and validity periods."
+          },
+          {
+            "name": "verify_mandate",
+            "input": "a mandate and the single action about to be taken under it",
+            "output": "accept, or a typed refusal naming which bound failed; the decision is reachable by a party that did not issue the mandate, without contacting the issuer",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-mandate-broker-005"
+            ],
+            "quote": "verification doesn't depend on contacting the issuer"
+          }
+        ],
+        "shapes": [
+          {
+            "name": "credential-handle (proposed summary shape; the mint request, the refusal members and the full mandate record are in references/mandate-broker-shapes.md)",
+            "origin": "proposed",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:cap:mandate-broker:handle:0.1",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "handle_id",
+                "audience",
+                "scope",
+                "expires_at",
+                "actor"
+              ],
+              "properties": {
+                "handle_id": {
+                  "type": "string",
+                  "minLength": 8,
+                  "description": "Proposed: what a unit of work holds instead of a credential. Opaque, useless at any destination, and safe to log."
+                },
+                "audience": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Proposed: the one destination identifier this authority is for. Exactly one; a list would make replay a configuration choice."
+                },
+                "scope": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "description": "Proposed: never wider than the scope of the identity it was exchanged from."
+                },
+                "expires_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "refreshable": {
+                  "const": false,
+                  "description": "Proposed: a const so no caller can ask for a longer-lived authority."
+                },
+                "actor": {
+                  "type": "string",
+                  "pattern": "^(user|service|agent|schedule):[a-z0-9][a-z0-9._@-]*$"
+                },
+                "correlation_id": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          {
+            "name": "mandate (proposed summary shape; the signature members, the bounds vocabulary and the verification outcome are in references/mandate-broker-shapes.md)",
+            "origin": "proposed",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:cap:mandate-broker:mandate:0.1",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "mandate_id",
+                "approved_by",
+                "action_class",
+                "bounds",
+                "not_before",
+                "not_after",
+                "signature"
+              ],
+              "properties": {
+                "mandate_id": {
+                  "type": "string",
+                  "minLength": 8
+                },
+                "approved_by": {
+                  "type": "string",
+                  "pattern": "^(user|service|agent):[a-z0-9][a-z0-9._@-]*$"
+                },
+                "action_class": {
+                  "type": "string",
+                  "enum": [
+                    "spend",
+                    "deploy",
+                    "send"
+                  ],
+                  "description": "Proposed: the irreversible classes this platform mandates. Anything else is a scoped credential, not a mandate."
+                },
+                "bounds": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "destinations"
+                  ],
+                  "properties": {
+                    "ceiling_micros": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "currency": {
+                      "type": "string",
+                      "pattern": "^[A-Z]{3}$"
+                    },
+                    "destinations": {
+                      "type": "array",
+                      "minItems": 1,
+                      "items": {
+                        "type": "string",
+                        "minLength": 1
+                      }
+                    }
+                  }
+                },
+                "not_before": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "not_after": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "signature": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Proposed: over the whole record, checkable against a published key, so a party that did not issue it can verify it standing alone."
+                }
+              }
+            }
+          },
+          {
+            "name": "Worked example 2 (proposed): an event triggers work, and a handle presented at the wrong destination is refused [caller's view, folded from cap-mandate-broker-use]",
+            "origin": "proposed",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:cap:mandate-broker:example:audience-refused",
+              "title": "A credential minted for one destination is worth nothing at another",
+              "description": "An alert enters as an event and the work it triggers reaches a metrics service. A later step tries to reuse the same authority against a deploy endpoint. The second destination refuses it on its own audience check, and the refusal is a problem details object with a type the caller branches on. No retry is attempted, because the answer will not change. `urn:agentic:problem:credential-audience-mismatch` is proposed and pending registration in docs/decomposition.md section 2.1.6, the closed registry cap-errors owns; until that row lands an implementation returns the registered `identity-untrusted`, which is also 401 and not retryable, naming both destinations in detail, as the open question below records.",
+              "examples": [
+                {
+                  "entry": {
+                    "kind": "event",
+                    "actor": "service:alerting",
+                    "correlation_id": "corr-event-0001"
+                  },
+                  "first_call": {
+                    "audience": "metrics.internal",
+                    "handle_id": "hdl-2b8d0f61ac33",
+                    "accepted": true
+                  },
+                  "second_call": {
+                    "audience_presented_at": "deploy.internal",
+                    "handle_id": "hdl-2b8d0f61ac33",
+                    "accepted": false,
+                    "problem": {
+                      "type": "urn:agentic:problem:credential-audience-mismatch",
+                      "title": "This authority was not issued for this destination",
+                      "status": 401,
+                      "detail": "hdl-2b8d0f61ac33 was minted for metrics.internal and was presented at deploy.internal",
+                      "retryable": false,
+                      "correlation_id": "corr-event-0001"
+                    }
+                  },
+                  "what_the_caller_does": "mint a new handle for deploy.internal, which requires a mandate because a deploy is irreversible"
+                }
+              ]
+            }
+          }
+        ],
+        "invariants": [
+          {
+            "text": "The credential never enters the unit of work. What runs today already keeps the real key on the host side of the sandbox boundary and leaves a dummy inside; on this interface that stops being a property of one sandbox and becomes the contract, because a handle a caller cannot spend is the only version of least privilege a compromised agent cannot undo.",
+            "origin": "sourced",
+            "sources": [
+              "F-a3-05",
+              "X-cap-mandate-broker-007"
+            ],
+            "quote": "No real secret inside the VM"
+          },
+          {
+            "text": "Audience binding is a refusal at the destination, not a hope at the mint. A credential minted for one destination must be rejected by every other, and the destination checks that itself rather than trusting who handed it over.",
+            "origin": "sourced",
+            "sources": [
+              "X-end-to-end-028",
+              "X-cap-mandate-broker-004"
+            ],
+            "quote": "MUST validate that access tokens were issued specifically for them as the intended audience"
+          },
+          {
+            "text": "Expiry is the revocation mechanism. Every minted authority is short-lived and non-refreshable, so the question 'has this been revoked' is answered by a clock rather than by a lookup that can be unreachable at the moment it matters.",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-mandate-broker-006"
+            ],
+            "quote": "expiring when the task completes or when the wall-clock TTL expires"
+          },
+          {
+            "text": "Scope only ever narrows along a delegation chain, and the narrowing has to travel outside the token: the exchange standard defines no token-local mechanism for proving that a later hop stayed inside the authority the first hop was given (X-cap-mandate-broker-008), which is exactly the job of the mandate. cap-identity carries what the chain itself records (X-end-to-end-032).",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-mandate-broker-008",
+              "X-end-to-end-032"
+            ],
+            "quote": "RFC 8693 does not define a token-local mechanism for proving that downstream delegation intent remains consistent with the original authorization scope"
+          },
+          {
+            "text": "Identity and secrets are two different problems, which is why this is an interface of its own and not a corner of cap-identity: a workload with a verifiable identity document still needs OAuth tokens, cloud provider credentials, API keys and database passwords for the things it must reach (cap-identity, X-end-to-end-030), so no adapter satisfies this interface by handing back an identity document.",
+            "origin": "sourced",
+            "sources": [
+              "X-end-to-end-030"
+            ],
+            "quote": "they also need OAuth tokens, cloud provider credentials, API keys, and database passwords"
+          },
+          {
+            "text": "A mandate is verifiable by a party that did not issue it, standing alone. That is what makes an irreversible action reviewable afterwards by someone who does not have to trust, or even reach, the platform that ran it.",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-mandate-broker-005",
+              "X-end-to-end-071"
+            ],
+            "quote": "cryptographically secure, privacy-preserving, and decentralised"
+          },
+          {
+            "text": "Minting is a decision point, not a service call. cap-policy owns deterministic refusal before spend (F-b4-04); the consequence on this interface is that the broker holds no allow list of its own - it asks, and a mint that policy refuses never produces a handle, so nothing downstream has to be undone.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-04"
+            ],
+            "quote": "Refusal is deterministic and happens before execution, not after spend"
+          },
+          {
+            "text": "Every mint, every exchange and every mandate verification is an attributable statement. cap-provenance owns attribution (F-b4-05); the consequence here is that 'who approved this spend, under what bounds, and who acted on it' is answerable from records rather than from the memory of whoever was on call.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-05"
+            ],
+            "quote": "Every artifact is attributable to the code version, inputs and actor that produced it"
+          },
+          {
+            "text": "This interface adds no failure vocabulary. cap-errors owns the platform's failure shape (F-b3-13); an audience mismatch, an expired mandate, an out-of-bounds action and a refused mint all arrive as problem details, never as a destination's own exception text.",
+            "origin": "sourced",
+            "sources": [
+              "F-b3-13"
+            ],
+            "quote": "RFC 9457 problem details"
+          },
+          {
+            "text": "All three of TARGET T1's ways in - a human, an agent, an internal or external event - reach this capability the same way, and enhancing one aspect of it leaves the rest untouched: shortening lifetimes, adding a destination, moving to an offline-verifiable mandate, or re-signing with a new key changes nothing in a caller that named a destination and an action class, because those are the only two things it was ever asked to write down. cap-identity states the same record (T-t1-01) for its own boundary; this row is that rule's consequence here.",
+            "origin": "sourced",
+            "sources": [
+              "T-t1-01",
+              "T-t1-02",
+              "T-t1-03",
+              "T-t2-02"
+            ],
+            "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "The criterion the work done under this authority will be judged against. agentic-stack states design rule 6 (F-b1-07); on this interface it forbids exactly one thing: a mandate states bounds - a ceiling, destinations, a validity period - and neither a mint request, a credential handle, nor a mandate's bounds ever carries the criterion the outcome will be scored on.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-07"
+            ],
+            "quote": "An agent sees its outcome, never the criterion it is judged against"
+          },
+          {
+            "text": "The credential bytes, the signing keys, and the issuer's key store. A caller receives a handle and a mandate; anything that could be replayed by whoever reads a log line is not part of what this interface returns.",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-mandate-broker-007"
+            ],
+            "quote": "ensuring the agent never holds the credential"
+          },
+          {
+            "text": "The token service endpoint, the transport to it, and which key signed a given mandate. A caller names a destination and an action class; where the authority came from is the adapter's business. agentic-stack and cap-errors both state the rule this follows (F-part-c-09).",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-09"
+            ],
+            "quote": "Products belong in the adapter column only."
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "State the boundary as a capability plus its governing standards before any token service or key store is named: 'an actor exchanges its identity for a short-lived authority bound to one destination, or for a signed mandate bounding one irreversible action'. Record every version as unverified until a specification has actually been fetched.",
+          "why": "agentic-stack states rule 2 as a test (F-b1-03): an interface without a cited standard is either mis-drawn or belongs in the seam layer, and this one has standards to adopt, so it is not a seam.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-03",
+            "F-part-c-10"
+          ],
+          "quote": "Where a standard exists, adopt it whole rather than modelling our own shape."
+        },
+        {
+          "step": 2,
+          "action": "Mint per destination, never per agent. Require exactly one destination identifier on every mint and refuse a request that names none or names several.",
+          "why": "An authority good at more than one place is a replay waiting for the first compromise; asking for a token explicitly intended for one destination is what lets every other destination refuse it without knowing anything about us.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-mandate-broker-003"
+          ],
+          "quote": "the client should ask for a token explicitly intended for one MCP server, and the resource server should reject any token whose audience does not match its own identifier"
+        },
+        {
+          "step": 3,
+          "action": "Put the audience check at the destination and test it there, by presenting a credential minted for one destination at a second one. Do not accept a passing mint as evidence that binding works.",
+          "why": "The property being bought is that a leaked or misdirected credential is useless elsewhere, and only the second destination can demonstrate that; a mint-side assertion proves the minter agrees with itself.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-mandate-broker-004"
+          ],
+          "quote": "stops a stolen or misdirected token from being replayed against a different service"
+        },
+        {
+          "step": 4,
+          "action": "Keep the broker outside the sandbox and have it add the credential as the request leaves, so the unit of work makes an ordinary call and holds nothing. Drop destination and model override fields by name at that boundary.",
+          "why": "What runs today already filters those overrides at the broker; keeping the attachment point outside the sandbox is what makes 'the agent never holds the credential' a structural fact rather than a rule the agent is trusted to follow.",
+          "origin": "sourced",
+          "sources": [
+            "F-a3-08",
+            "X-cap-mandate-broker-007"
+          ],
+          "quote": "Model and destination overrides dropped by name at the broker"
+        },
+        {
+          "step": 5,
+          "action": "Derive the lifetime from the task and make the authority non-refreshable. Do not build a refresh path, a renewal endpoint, or a long-lived fallback for the case where a task runs longer than expected.",
+          "why": "A refresh path turns a short-lived credential back into a long-lived one held by whoever can call it, and the task boundary is the only expiry nobody has to remember to configure.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-mandate-broker-006"
+          ],
+          "quote": "non-refreshable by design"
+        },
+        {
+          "step": 6,
+          "action": "For anything irreversible - spend, deploy, send - require a mandate signed by the approving actor, stating the ceiling, the destinations and the validity period, and verify it at the point of action rather than at the point of planning.",
+          "why": "Two approval modes have to work: a person approving one action now, and a person approving bounds up front for an agent that acts later on its own. A mandate covers both, and verifying at the point of action is what stops an approval from outliving the bounds it was given.",
+          "origin": "sourced",
+          "sources": [
+            "X-end-to-end-071",
+            "X-end-to-end-070"
+          ],
+          "quote": "real-time purchases where the human approves a Cart Mandate with a cryptographic signature, and delegated tasks where the human signs an Intent Mandate upfront and the agent acts autonomously later"
+        },
+        {
+          "step": 7,
+          "action": "Choose the second adapter on a different verification model, not a second token service: one authority validated by its issuer, one credential a party that did not issue it can verify offline. Name that axis before writing either.",
+          "why": "build-adapter-pair owns why there is a second adapter (F-b1-04). The consequence here is specific: two issuer-validated token services would leave the interface free to keep assuming the issuer is reachable at verification time, and only an offline-verifiable mandate forces the bounds and the signature to become part of the object rather than of the service.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-04",
+            "X-cap-mandate-broker-005"
+          ],
+          "quote": "Every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing"
+        },
+        {
+          "step": 8,
+          "action": "To reach something outside the sandbox: name the one destination you are calling and use the handle you get back. Do not look for a key, an environment variable, a config file or a secret in your prompt - there is not one, and there is not meant to be.",
+          "why": "The credential is added outside the sandbox after you have made an ordinary call, so a caller that goes looking for one is trying to rebuild a thing the platform removed on purpose.",
+          "origin": "sourced",
+          "sources": [
+            "T-t2-01"
+          ],
+          "quote": "Composability hides the complexity."
+        },
+        {
+          "step": 9,
+          "action": "Proposed: open references/mandate-broker-shapes.md when you are implementing the mint request, the mandate record or the verification outcome. The body of this skill is enough to judge this interface and to call it without opening that file. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
+          "why": "Proposed: the full shapes and the bounds vocabulary are longer than the body's budget allows, and a reader deciding whether an authority is correctly scoped does not need them.",
+          "origin": "proposed"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Count what the run exercised rather than reading its exit code: agentic-stack and build-definition-of-done carry the structurally-green finding (F-a7-03), where the structural stages establish well-formedness, not correctness. A broker conformance run pointed at a single destination with no expired fixture refuses nothing, sees nothing and still exits zero, so the counts this skill's definition of done names are asserted as numbers.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness."
+        },
+        {
+          "text": "Adopt the exchange standard whole rather than building a minting endpoint of our own: it is already a standardized request-and-response for obtaining a security token from an authority acting as a token service, which is precisely the operation here.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-mandate-broker-001"
+          ],
+          "quote": "a standardized HTTP- and JSON-based mechanism for clients to request and obtain security tokens from authorization servers acting as Security Token Services"
+        },
+        {
+          "text": "Carry the tenant on the authority itself and on everything that reasons about it, rather than deriving it later from whoever is calling.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-mandate-broker-006"
+          ],
+          "quote": "with Org IDs encoded into every token, every log line, and every policy evaluation"
+        },
+        {
+          "text": "Proposed: log the handle, the destination and the expiry; never the credential and never the signature material. A handle is designed to be worthless to a reader, which is what makes it safe to correlate on. Research query: does the credential-brokering pattern on file (X-cap-mandate-broker-007) or the identity-delegation guarantee say what a proxy is permitted to log about a token it attaches, which this row could cite instead of asserting a fresh logging rule?",
+          "origin": "proposed"
+        },
+        {
+          "text": "Keep a mandate small enough that a party outside this platform can read all of it. A mandate whose bounds only make sense next to our internal identifiers is not independently checkable, whatever it is signed with.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-mandate-broker-005"
+          ],
+          "quote": "verification doesn't depend on contacting the issuer"
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-vsock-credential-broker",
+          "role": "today",
+          "maps_to": "Proposed adapter, and a proposed entity id: PASS.md B3 has no mandate or credential-brokering row, so no adapter entity exists for this capability. What runs is the host-side broker recorded in PASS.md A3, reached over vsock from a guest that has no network and holds a dummy key; it holds the real key, picks the endpoint, and drops model and destination overrides by name. It serves mint, exchange and attach.",
+          "cannot": "Proposed: cannot produce an authority anyone else can check - a destination that did not receive the token from this broker has nothing to verify it against; cannot express a ceiling or a validity period as part of the credential, so an irreversible action gets no bounds beyond the endpoint it reached; and cannot outlive the host that holds the key.",
+          "swap_procedure": "Select the authority kind by configuration only, with no core edit, and run the identical fixture set - one credential presented at its own destination and at a second one, one mandate inside its bounds, one past expiry, one naming a destination outside its bounds - through both bindings, requiring the same acceptances and the same typed refusals.",
+          "status": "claimed",
+          "sources": [
+            "F-a3-07",
+            "F-a3-08",
+            "F-a3-05"
+          ],
+          "quote": "vsock → host broker, which holds the real key and picks the endpoint"
+        },
+        {
+          "entity": "E-swap-candidate-verifiable-credential-mandate",
+          "role": "second",
+          "maps_to": "Proposed adapter, and a proposed entity id, for the same reason as the row above: a mandate expressed as a signed verifiable credential carrying spending limits, allowed destinations and a validity period, checked by a verifier that did not issue it and without contacting the issuer. It serves issue_mandate and verify_mandate, and delegates mint, exchange and attach to whatever holds the keys.",
+          "cannot": "Proposed: cannot be withdrawn before its validity period ends without a separate status channel; cannot hide its bounds from the party it is shown to; and cannot attach itself to an outbound request at the network layer, so it never replaces the broker for reaching a destination - it only bounds what may be done on arrival.",
+          "swap_procedure": "The axis the two execution models differ on is where verification happens: the first adapter's authority is a token only its issuer can validate, the second's is a credential any holder can verify offline. One conformance run drives both bindings over the same fixtures and diffs acceptances, refusals and refusal types; a bound that only one binding can express is recorded as a gap rather than skipped.",
+          "status": "claimed",
+          "sources": [
+            "X-end-to-end-070",
+            "X-cap-mandate-broker-005",
+            "F-b1-04"
+          ],
+          "quote": "AP2's mandates are W3C Verifiable Credentials, cryptographically signed records of what the user approved."
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/identity/test.sh",
+        "expected": "One conformance run over both bindings, from the repository root, with a proposed tool: `python3 tools/conformance_mandate_broker.py --binding config/broker/today.json --binding config/broker/mandate.json --fixtures tests/fixtures/mandate-broker --report out/mandate-broker-conformance.json`. The fixture set holds one credential minted for destination A and presented at both A and B, and three mandates: one inside its bounds and its validity period, one past expiry, one naming a destination outside its bounds, all checked by a verifier process that does not hold the issuer's signing key. Assert adapters_run >= 2, credentials_minted > 0, accepted_at_intended == credentials_minted, accepted_at_other == 0, mandates_verified == 3, mandates_accepted == 1, refusals == 3, refusals_typed == refusals with every refusal carrying a `urn:agentic:problem:` type, and sandbox_credential_sightings == 0 from a scan of the guest filesystem and the guest environment after the run. exit 0 with one line per binding reading `binding=<role> credentials_minted=1 accepted_at_intended=1 accepted_at_other=0 mandates_verified=3 mandates_accepted=1 refusals=3 refusals_typed=3 sandbox_credential_sightings=0` followed by `adapters_run=2`. Until that proposed tool exists, `bash harness/identity/test.sh` (owned by cap-identity-implement) is the running gate: every check line reads ok and the script exits 0.",
+        "breakage": "In one change, drop the audience comparison at the second destination so it accepts any well-formed credential, and widen the expiry comparison so a mandate whose validity period ended within the last hour still verifies.",
+        "expected_failure": "exit non-zero with `accepted_at_other=1 mandates_accepted=2 refusals=1`, naming destination B as having accepted a credential minted for A and naming the expired mandate as accepted. The out-of-bounds refusal surviving is what shows the run tells audience, expiry and bounds apart rather than passing or failing as a block.",
+        "status": "claimed",
+        "sources": [
+          "F-part-c-04"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion"
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-adapter-pair",
+          "build-ceremony",
+          "build-definition-of-done",
+          "build-research-record",
+          "build-skill-authoring",
+          "cap-errors",
+          "cap-identity",
+          "cap-policy",
+          "cap-provenance"
+        ],
+        "used_by": [
+          "cap-mandate-broker-implement"
+        ]
+      },
+      "open_questions": [
+        {
+          "question": "Neither the mandate credential format nor an adapter for this capability has an entity in this knowledge base, because PASS.md B3 has no mandate or credential-brokering row at all. Which of three ways closes that?",
+          "evidence": "Applying 1-3-1 (T-t5-02): (1) add the entities, which rehashes the entity chain and invalidates the provenance heads every written skill pins; (2) borrow the Identity row's adapter and swap-candidate entities, which sends a reader to a row about workload identity rather than about credentials; (3) carry proposed entity ids in contract.standards and adapters[], saying in each row that the id is proposed and why. Recommendation and choice: (3). Deciding evidence would be a knowledge-base rebuild that adds the entities, taken with a re-pin of every skill's provenance in the same pass.",
+          "default": "The two entities the knowledge base does carry are named by id; the credential format and both adapter rows carry proposed ids and say so in the row itself.",
+          "sources": [
+            "T-t5-02",
+            "F-b3-14"
+          ],
+          "quote": "OAuth 2.0 Token Exchange"
+        },
+        {
+          "question": "Should a mandate's bounds be readable by the destination it is presented at, or should the destination learn only that some bound was satisfied?",
+          "evidence": "Present the same action at a destination with the full bounds and with a minimised proof, and count what each destination refuses that the other accepts; a credential model whose stated aim includes being privacy-preserving is the one to measure this against.",
+          "default": "Proposed: the full bounds travel, because a verifier that cannot read the ceiling cannot enforce it, and a mandate nobody outside can check is the failure this capability exists to prevent. Revisit if a destination turns out to need only the answer.",
+          "sources": [
+            "X-cap-mandate-broker-005"
+          ],
+          "quote": "privacy-preserving"
+        },
+        {
+          "question": "Who owns the scope ceiling at mint time: this capability, or the policy decision it consults?",
+          "evidence": "Run the same mint through a broker that clamps scope itself and one that refuses whatever policy refuses, and count mints that differ; if none differ, the clamp is duplicated logic and belongs in one place.",
+          "default": "Proposed: the broker refuses, and does not clamp. Silently narrowing a request hides a policy decision inside an adapter, and cap-policy already owns deterministic refusal before spend.",
+          "sources": [
+            "F-b4-04"
+          ],
+          "quote": "Refusal is deterministic"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session cap-mandate-broker 2831cb4f, 2026-09-03"
+      }
+    },
+    "cap-mandate-broker-implement": {
+      "name": "cap-mandate-broker-implement",
+      "layer": "cap",
+      "wave": 5,
+      "description": "How to build mandate and credential brokering on this stack: the host-side broker that already keeps the real key outside the sandbox, a second binding whose authority a non-issuer can verify offline, the migration from a dummy key plus one filtered egress path to a minted handle per destination and a signed mandate per irreversible action, where a mint and a verification are wired so the platform's guarantees ride on them, and the run that decides whether either binding may serve. Load it when writing or reviewing the broker, the exchange path or the mandate verifier, when a component is about to be handed a static secret, when planning the move off long-lived keys, when someone asks 'where does the mint actually happen', 'can we prove the token never got inside', or 'what did we run to know the expiry check works', and before recording any brokering result as passing.",
+      "purpose": {
+        "text": "Build what cap-mandate-broker specifies: two authority bindings selected by configuration, one conformance run that drives both over the same fixtures and diffs acceptances and typed refusals, and the wiring that makes a mint and a mandate verification recorded steps rather than an unobserved call to a key store. build-adapter-pair owns why there are two.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-04",
+          "F-part-c-05"
+        ],
+        "quote": "chosen to prove the interface is not shaped around its current implementation"
+      },
+      "entities": [
+        "E-sandbox-property-guest-credential",
+        "E-sandbox-property-guest-network",
+        "E-sandbox-property-model-egress",
+        "E-sandbox-property-field-filtering",
+        "E-standard-oauth-2-0-token-exchange"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "broker-binding (proposed): the configuration record that selects an authority binding, and the only file that changes when the pair is swapped",
+            "origin": "proposed",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:cap:mandate-broker:binding:0.1",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "binding_id",
+                "role",
+                "authority_kind",
+                "verification",
+                "operations"
+              ],
+              "properties": {
+                "binding_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "role": {
+                  "enum": [
+                    "today",
+                    "second"
+                  ]
+                },
+                "authority_kind": {
+                  "enum": [
+                    "issuer_validated_token",
+                    "offline_verifiable_credential"
+                  ],
+                  "description": "Proposed: the axis the pair differs on, stated as a field so a conformance report can group by it instead of by product name."
+                },
+                "verification": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "verifier_is_issuer",
+                    "contacts_issuer"
+                  ],
+                  "properties": {
+                    "verifier_is_issuer": {
+                      "type": "boolean"
+                    },
+                    "contacts_issuer": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "operations": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "enum": [
+                      "mint",
+                      "exchange",
+                      "attach",
+                      "issue_mandate",
+                      "verify_mandate"
+                    ]
+                  },
+                  "description": "Proposed: which of cap-mandate-broker's five operations this binding serves. A binding that serves a subset declares it here rather than failing at call time."
+                },
+                "max_lifetime_seconds": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 3600
+                }
+              }
+            }
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Proposed file boundary, under design rule 1 as agentic-stack and build-adapter-pair carry it (F-b1-02): every key store, token client, signature library and network client lives inside a binding directory, so a core module that can name a key path has made the broker load-bearing. Research query: unresearched; no prior-art search has been run for file-level boundary rules that keep credential and signing libraries out of a core module.",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-02"
+            ],
+            "quote": "The core imports interfaces, never implementations"
+          },
+          {
+            "text": "Swapping the pair is a configuration change to a broker-binding record and nothing else. build-adapter-pair states the rule (F-b1-04); the consequence here is a concrete file boundary: if a swap needs an edit anywhere but the binding record and the binding directory, the pair has not been proved and the run that says it has is wrong.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-04",
+              "F-meta-04"
+            ],
+            "quote": "If Part B cannot swap an implementation without touching the core, the boundary is drawn wrong"
+          },
+          {
+            "text": "The guest keeps no real secret and reaches nothing directly. What runs today already puts a dummy key inside and defaults egress to off; the implementation may narrow that, never widen it, so 'the credential never entered the unit of work' stays checkable by inspecting the guest rather than by trusting the broker.",
+            "origin": "sourced",
+            "sources": [
+              "F-a3-04",
+              "F-a3-05"
+            ],
+            "quote": "Egress is a flag, default off"
+          },
+          {
+            "text": "cap-mandate-broker states that expiry is the revocation mechanism (X-cap-mandate-broker-006). The consequence for the build is that there is no renewal endpoint to write: a task that outlives its authority fails and is re-dispatched with a fresh mint, and no code path exists that could hand back a longer-lived credential.",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-mandate-broker-006"
+            ],
+            "quote": "non-refreshable by design"
+          },
+          {
+            "text": "A binding that cannot express a bound records it as a gap in the conformance report rather than skipping the fixture. build-definition-of-done states why (F-a7-03): a skipped fixture is how a pair passes while only one half was ever exercised.",
+            "origin": "sourced",
+            "sources": [
+              "F-a7-03"
+            ],
+            "quote": "with every behavioural stage skipped"
+          },
+          {
+            "text": "Every conformance run is an evidence record before its result is quoted anywhere. build-evidence-record owns the record's fields (F-a5-04); the consequence here is that the brokering pair stays labelled claimed until a run on a named session and date has produced both the passing and the failing output.",
+            "origin": "sourced",
+            "sources": [
+              "F-a5-04",
+              "F-part-c-08"
+            ],
+            "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "Proposed pointer, see cap-mandate-broker's not_exposed row on the credential bytes, the signing keys and the issuer's key store: the build consequence is that both live only inside the binding directory, and a test fixture holds a throwaway key generated at run time, never a copy of a real one.",
+            "origin": "proposed"
+          },
+          {
+            "text": "Proposed pointer, see cap-mandate-broker's not_exposed row on the token service endpoint and the transport to it: the build consequence is that the conformance report names only the binding_id and the authority_kind, never the endpoint or retry policy.",
+            "origin": "proposed"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Put both bindings behind the broker-binding record and keep key paths, token clients, signature verification and network calls inside their binding directories. Select the binding by configuration at start-up; never by an import in core or seam code.",
+          "why": "build-adapter-pair states rule 3 (F-b1-04) and cap-mandate-broker fixes five operations and nothing about where a key lives; a core module that can name a key path has already decided which binding wins, and the swap the pair is supposed to prove becomes an edit rather than a setting.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-02",
+            "F-b1-04"
+          ],
+          "quote": "Every interface ships with at least two adapters"
+        },
+        {
+          "step": 2,
+          "action": "Build today's binding on what already runs: the host-side broker outside the sandbox that holds the real key, picks the endpoint and drops model and destination overrides by name. Extend it from one egress path to a mint per destination, and have it return a handle rather than a token.",
+          "why": "cap-mandate-broker's today row is this broker (F-a3-07); the work is not a new component but two changes to an existing one - one destination per authority instead of one endpoint for all, and a handle at the boundary instead of a credential.",
+          "origin": "sourced",
+          "sources": [
+            "F-a3-07",
+            "F-a3-08"
+          ],
+          "quote": "Model and destination overrides dropped by name at the broker"
+        },
+        {
+          "step": 3,
+          "action": "Build the second binding as a mandate a verifier that did not issue it can check offline: sign the whole record, publish the key, and run the verifier in a process that holds no issuer key and makes no call to the issuer. Assert both of those in the run, not in a comment.",
+          "why": "cap-mandate-broker chooses the pair on where verification happens (X-cap-mandate-broker-005). A verifier that quietly reaches the issuer passes the same fixtures while proving nothing, so the two verifier constants are the only evidence that the second execution model is real.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-mandate-broker-005",
+            "X-end-to-end-070"
+          ],
+          "quote": "cryptographically signed records of what the user approved"
+        },
+        {
+          "step": 4,
+          "action": "Proposed migration, in this order: inventory every destination a unit of work reaches today; mint and attach in shadow beside the current path and diff the requests that leave the host; flip one destination at a time to refuse an unminted request; then add mandates for the spend, deploy and send classes; then remove every remaining static credential and fail the build if one reappears.",
+          "why": "Proposed: the inventory is what stops a flip from breaking a destination nobody remembered, the shadow diff is what shows the attach point is byte-equivalent before anything depends on it, and doing mandates after destinations means each step has one observable failure mode instead of two. Research query: has this repository's host-side broker (F-a3-07/F-a3-08) recorded a destination inventory or a shadow-diff run for any prior migration, that would fix this order rather than leave it a proposal.",
+          "origin": "proposed"
+        },
+        {
+          "step": 5,
+          "action": "Wire the cross-cutting concerns onto the mint and verification paths: set the correlation attribute explicitly at dispatch and carry it on every mint, ask policy before minting rather than after, and append an evidence record for every mint, exchange and mandate verification.",
+          "why": "agentic-stack and build-adapter-pair carry the correlation finding (F-a7-02): correlation must ride on an explicit resource attribute set at dispatch, so a mint made inside a unit of work is unattributable unless the attribute was set where the work was dispatched.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-02",
+            "F-b1-08"
+          ],
+          "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+        },
+        {
+          "step": 6,
+          "action": "Have each binding report at start-up the authority kind it serves, the operations it implements, the maximum lifetime it will mint and the trust anchor it verifies against, and compare that report against its binding record. Fail start-up on a mismatch.",
+          "why": "build-evidence-record carries the silent-override finding (F-a7-04): configuration written in the documented place had no runtime effect, so a binding record that says it mints five-minute credentials proves nothing until the running process has said so, which is why the report is compared rather than the file read.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "had no runtime effect"
+        },
+        {
+          "step": 7,
+          "action": "Write one conformance run parameterised over the binding records: drive the same fixtures through every configured binding, assert the per-binding counters, and diff acceptances, refusals and refusal types across bindings. Include a scan of the guest filesystem and environment after the run.",
+          "why": "cap-mandate-broker states the replay property (X-cap-mandate-broker-004); the consequence for the run is that neither it nor 'the credential never got inside the sandbox' is visible from a mint that returned successfully, so the run needs a second destination and a post-run scan.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-mandate-broker-004",
+            "F-a3-05"
+          ],
+          "quote": "stops a stolen or misdirected token from being replayed against a different service"
+        },
+        {
+          "step": 8,
+          "action": "Record each conformance run as an evidence record naming the command, the fixture set, the code version and tree hash, and whether the tree was dirty, and leave the pair labelled claimed until a run has produced both the passing and the failing output on a named session and date.",
+          "why": "build-evidence-record owns the claimed-versus-measured distinction (F-part-c-08); the consequence here is that a brokering result is the one result nobody should take on trust, because the thing it asserts is that a secret did not leak.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-08",
+            "F-a5-04"
+          ],
+          "quote": "Distinguish **claimed** from **measured** throughout"
+        },
+        {
+          "step": 9,
+          "action": "Proposed: open cap-mandate-broker's references/mandate-broker-shapes.md when implementing the mint request, the mandate record, the verification outcome or the refusal types. The body of this skill is enough to build and wire the pair without opening that file.",
+          "why": "Proposed: the full shapes and the refusal registry belong to the contract rather than to the build, and duplicating them here would give the next author two places to change one field.",
+          "origin": "proposed"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Proposed: generate every key a test uses at run time and throw it away with the fixture. A committed test key is a long-lived credential in the repository, which is the exact thing this capability exists to remove. Research query: does this repository's own test-fixture policy (a CI secret-scan record, or a decision under kb/decisions.jsonl) already say a committed key fails the build, which would source this rather than leave it a proposed practice.",
+          "origin": "proposed"
+        },
+        {
+          "text": "Count what the run exercised, not what it exited with: build-definition-of-done carries the structurally-green finding (F-a7-03), where a run passed because the generated work contained nothing those tools apply to. Assert bindings_run, destinations_probed, mandates_verified and sandbox_credential_sightings as numbers and fail on a zero, because a brokering run pointed at one destination with no expired fixture exercises neither audience nor expiry and still exits green.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "because the generated work contained nothing those tools apply to"
+        },
+        {
+          "text": "Proposed: keep the shadow phase long enough to see the destinations that are reached rarely. The inventory finds the paths that are exercised; the diff over time finds the ones that are not, and those are where a static credential survives a migration. Research query: what is the longest observed interval between calls to a rarely-reached destination in this platform's own dispatch record, which would fix a minimum shadow-phase duration instead of leaving it a judgment call.",
+          "origin": "proposed"
+        },
+        {
+          "text": "Proposed: make an unminted outbound request fail closed at the attach point rather than being passed through unauthenticated. A request that leaves without an authority is the failure mode that looks like success until the destination happens to be permissive. Research query: does X-cap-mandate-broker-007's proxy-attaches-at-network-layer pattern, or a fetched (not search-only) read of it, state a fail-closed default at the attach point specifically, which would source this rather than leave it a proposed practice.",
+          "origin": "proposed"
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-vsock-credential-broker",
+          "role": "today",
+          "maps_to": "Proposed adapter and proposed entity id, for the reason cap-mandate-broker records: PASS.md B3 has no mandate or credential-brokering row, so no adapter entity exists for this capability. Built on the host-side broker in PASS.md A3, reached over vsock from a guest with no network and a dummy key, extended to mint one handle per destination and to serve exchange and attach; the real key, the endpoint choice and the by-name override filter stay on the host side of the boundary.",
+          "cannot": "Proposed: cannot issue an authority a third party can check, cannot express a ceiling or a validity period inside the credential, and cannot survive the host that holds the key - so it serves mint, exchange and attach, and leaves issue_mandate and verify_mandate to the second binding.",
+          "swap_procedure": "Point the runner at config/broker/mandate.json instead of config/broker/today.json and change nothing else. The same fixtures must produce the same acceptances and the same typed refusals for the operations both bindings serve, and a gap for the ones only one serves.",
+          "status": "claimed",
+          "sources": [
+            "F-a3-07",
+            "F-a3-05",
+            "F-a3-04"
+          ],
+          "quote": "vsock → host broker, which holds the real key and picks the endpoint"
+        },
+        {
+          "entity": "E-swap-candidate-verifiable-credential-mandate",
+          "role": "second",
+          "maps_to": "Proposed adapter and proposed entity id, same reason. A mandate signed as a verifiable credential, carrying the ceiling, the destinations and the validity period, verified by a process holding no issuer key and making no issuer call; it serves issue_mandate and verify_mandate over the identical fixtures.",
+          "cannot": "Proposed: cannot attach itself to an outbound request, cannot be withdrawn before its validity period ends without a separate status channel, and cannot keep its bounds from the party it is shown to.",
+          "swap_procedure": "The execution models differ on where verification happens: one authority is validated by the issuer that minted it, the other is checked offline by a holder. The conformance run groups its report by the binding record's authority_kind, so the report shows the axis rather than a pair of names.",
+          "status": "claimed",
+          "sources": [
+            "X-cap-mandate-broker-005",
+            "X-end-to-end-071",
+            "F-b1-04"
+          ],
+          "quote": "delegated tasks where the human signs an Intent Mandate upfront and the agent acts autonomously later"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/identity/test.sh",
+        "expected": "Two checks, both from the repository root. (1) Cross-binding conformance, proposed tool: `python3 tools/conformance_mandate_broker.py --binding config/broker/today.json --binding config/broker/mandate.json --fixtures tests/fixtures/mandate-broker --report out/mandate-broker-conformance.json`, over a fixture set of one credential minted for destination A and presented at A and at B, and three mandates - one within bounds and validity, one past expiry, one naming a destination outside its bounds - verified by a process with no issuer key. Assert adapters_run >= 2, credentials_minted > 0, accepted_at_intended == credentials_minted, accepted_at_other == 0, mandates_verified == 3, mandates_accepted == 1, refusals == 3, refusals_typed == refusals with every refusal carrying a `urn:agentic:problem:` type, verifier_is_issuer == false, contacts_issuer == false, and sandbox_credential_sightings == 0 from a scan of the guest filesystem and environment after the run. (2) Containment: `grep -rIlE '(BEGIN [A-Z ]*PRIVATE KEY|api[_-]?key|client_secret|/etc/broker/keys)' src/core/ src/seam/` returns no files, so key material and key paths appear only inside the binding directories. Gap: no harness covers this capability yet (STATUS row 60). harness/identity/README.md and provenance.json list cap-mandate-broker (not cap-mandate-broker-implement) as a co-skill; its delegation and single-audience-format checks (scope narrowing, lifetime shortening, acyclicity) do not run this criterion's destination-bound credential-acceptance and mandate-verification counters (credentials_minted, accepted_at_intended, accepted_at_other, mandates_verified, mandates_accepted, refusals). (1) exit 0 with one line per binding reading `binding=<role> authority_kind=<kind> credentials_minted=1 accepted_at_intended=1 accepted_at_other=0 mandates_verified=3 mandates_accepted=1 refusals=3 refusals_typed=3 sandbox_credential_sightings=0` followed by `adapters_run=2 refusal_divergence=0`. (2) grep exits 1 printing nothing. Until that proposed tool exists, `bash harness/identity/test.sh` (owned by cap-identity-implement) is the running gate: every check line reads ok and the script exits 0. Gap: no harness covers this capability yet (STATUS row 60); the nearest gate is harness/identity/test.sh, owned by cap-identity-implement. Its delegation and single-audience-format checks (scope narrowing, lifetime shortening, acyclicity) do not exercise this skill's destination-bound credential-acceptance and mandate-verification counters (credentials_minted, accepted_at_intended, accepted_at_other, mandates_verified, mandates_accepted, refusals).",
+        "breakage": "In one change, drop the audience comparison at destination B so it accepts any well-formed credential, and hard-code the broker's key path inside a core module.",
+        "expected_failure": "Check (1) exits non-zero with `accepted_at_other=1 refusals=2` on both bindings, naming destination B as having accepted a credential minted for A while the expiry and out-of-bounds refusals still stand - which is what shows the run tells audience apart from expiry rather than passing or failing as a block. Check (2) exits 0 and prints the core module that now names the key path.",
+        "status": "claimed",
+        "sources": [
+          "F-part-c-04",
+          "F-a7-03"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion"
+      },
+      "composes_with": {
+        "builds_on": [
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record",
+          "cap-mandate-broker"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Where does the attach point sit once a unit of work reaches more than one kind of destination: one broker per destination class, or one broker that routes?",
+          "evidence": "Count, over a shadow migration, how many distinct destination classes a single unit reaches and how many of the by-name override filters differ between them; one filter set for all of them argues for one broker, several argue for one per class.",
+          "default": "Proposed: one broker that routes, because what runs today already picks the endpoint at the broker, and splitting it duplicates the by-name override filter cap-mandate-broker cites (F-a3-08), which is the part most likely to drift.",
+          "sources": [
+            "F-a3-07",
+            "F-a3-08"
+          ],
+          "quote": "Model and destination overrides dropped by name at the broker"
+        },
+        {
+          "question": "How is a mandate withdrawn before its validity period ends, given the second binding is verified offline?",
+          "evidence": "Measure how often an approving actor wants to withdraw inside the validity window; if it is rare, short validity periods are cheaper than a status channel every verifier must reach, which would undo offline verification.",
+          "default": "Proposed: keep validity periods short enough that expiry is the withdrawal mechanism, and record the requirement here rather than adding a revocation lookup that would make an offline verifier reach the issuer after all.",
+          "sources": [
+            "X-cap-mandate-broker-005"
+          ],
+          "quote": "decentralised"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session cap-mandate-broker 2831cb4f, 2026-09-03"
+      }
+    }
   }
 }

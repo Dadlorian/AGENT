@@ -177,18 +177,28 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | bash harness/errors/test.sh |
-| Expected | docs/decomposition.md section 3.2 row P12, made precise: `python3 tools/conformance/errors_fuzz.py --adapters all --iterations 250 --report out/errors.json` (proposed tool, built with the first Errors adapter). It fuzzes every adapter's failure paths and asserts that every failure response carries the media type application/problem+json, that every type value has a row in the registry in docs/decomposition.md section 2.1.6, that `responses_checked > 200`, and that `untyped == 0`. exit 0 with `responses_checked > 200`, `untyped == 0`, `unregistered_types == 0`, `adapters_run >= 2` Until that proposed tool exists, `bash harness/errors/test.sh` (owned by cap-errors-implement) is the running gate: every check line reads ok and the script exits 0. |
-| Deliberate breakage | Have one adapter return a plain-text HTTP 500 on one failure path, leaving every other adapter untouched. |
-| Expected failure | exit 1 with `untyped == 1`, the report naming the adapter and the path, while the other adapters still report zero. Claimed: typed errors are absent today and the fuzz tool is not written, so neither run has been performed here. |
-| Status | claimed |
-| Evidence | `F-b4-07`, `F-a6-06` "Typed and machine-readable. Never parsed from prose" |
+| Criterion | bash harness/errors/test.sh && python3 harness/errors/conformance.py --adapter dryrun --adapter second |
+| Expected | Measured by tools/measure.py at 6dee0cd: exit 0; last lines:   adapter=edge component that answers on behalf of a service cases=9 passed=9 responses_checked=14 untyped=1 unregistered_types=0 wrong_media_type=1 product_hits=0 \| conformance PASSED: 18/18 cases, 2 binding(s) |
+| Deliberate breakage | Open the closed registry gate in `harness/errors/interface.py` so an unregistered suffix can reach a wire body, with exactly this command and nothing else: `sed -i 's/^    row = REGISTRY.get(suffix)$/    row = REGISTRY.get(suffix, (500, "Unregistered", True, ()))/' harness/errors/interface.py`. Restore with `git checkout -- harness/errors/interface.py`. Do not hand-edit `harness/errors/adapters/second.py` for this: test.sh section 4 already applies that edit itself, to a copy under out/breakage/, and a hand edit to the shipped file makes its internal string replace miss, so the harness's own self-check throws and the run reports a harness desynchronisation instead of the failure under test (ceremony 60, finding R60A-001). |
+| Expected failure | Measured by tools/measure.py at 6dee0cd: exit 1; last lines:   ok   an untyped upstream body is no longer converted; the check catches it \| passed 16, failed 7 |
+| Status | measured |
+| Evidence | `F-part-c-04`, `F-b1-04`, `F-a6-06` "A criterion nothing can fail is not a criterion" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-errors-implement` | Turn the contract in cap-errors into something that runs here: two adapters behind one failure shape, every untyped failure path converted, and every cross-cutting refusal landing on a registered problem type rather than in a log line. | `references/cap-errors-implement.md` |
+| `xc-typed-errors` | Make it a checked property of the whole tree that failure information is never extracted by matching a string: every codepath that can fail returns the typed object cap-errors defines, every driving adapter reads the same closed type registry, and the count of sites that still read prose is asserted to zero rather than tracked. | `references/xc-typed-errors.md` |
+| `xc-typed-errors-implement` | Turn the guarantee stated in xc-typed-errors into a build on what runs here: nothing types failures today and the only verification machinery on hand runs outside the path it checks, so this facet is an adoption over call sites plus a second implementation that proves the check is not tuned to the moment it happens to run. | `references/xc-typed-errors-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`
+Builds on: `agentic-stack`, `build-evidence`, `build-skill-authoring`
 
-Used by: `cap-agent-runtime`, `cap-capability-packaging`, `cap-capability-registry`, `cap-durable-execution`, `cap-errors-implement`, `cap-evaluation`, `cap-human-interaction`, `cap-idempotency`, `cap-identity`, `cap-isolation`, `cap-mandate-broker`, `cap-memory`, `cap-model-access`, `cap-policy`, `cap-provenance`, `cap-scheduling`, `cap-state-persistence`, `cap-telemetry`, `cap-tool-access`, `cap-work-intake`, `core-document`, `core-graph`, `core-judge`, `core-ledger`, `seam-dispatch`, `seam-state`, `xc-budget`, `xc-policy-gate`, `xc-typed-errors`
+Used by: `cap-agent-runtime`, `cap-capability-packaging`, `cap-durable-execution`, `cap-evaluation`, `cap-human-interaction`, `cap-idempotency`, `cap-identity`, `cap-isolation`, `cap-model-access`, `cap-policy`, `cap-provenance`, `cap-scheduling`, `cap-state-persistence`, `cap-telemetry`, `cap-tool-access`, `cap-work-intake`, `core-components`, `seam-dispatch`, `seam-state`, `xc-guarantees`
 
 ## Open questions
 

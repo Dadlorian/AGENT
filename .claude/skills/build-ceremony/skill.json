@@ -340,23 +340,22 @@
   },
   "composes_with": {
     "builds_on": [
-      "agentic-stack"
+      "agentic-stack",
+      "build-skill-authoring"
     ],
     "used_by": [
-      "build-entry-conformance",
-      "build-interface-versioning",
-      "build-simplicity-budget",
-      "cap-capability-registry",
+      "build-evidence",
+      "build-skill-authoring",
+      "cap-capability-packaging",
+      "cap-durable-execution",
       "cap-evaluation",
       "cap-human-interaction",
-      "cap-mandate-broker",
-      "cap-memory",
+      "cap-identity",
+      "cap-provenance",
+      "cap-state-persistence",
       "compose-improvement-loop",
-      "compose-operators",
-      "xc-audit-trail",
-      "xc-compensation",
-      "xc-enforcement-chain",
-      "xc-tenancy"
+      "compose-workflow",
+      "xc-guarantees"
     ]
   },
   "open_questions": [
@@ -389,5 +388,842 @@
       "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
     },
     "author": "session claude/build-ceremony-author"
+  },
+  "folded": {
+    "build-solution-architecture": {
+      "name": "build-solution-architecture",
+      "layer": "build",
+      "wave": 1,
+      "description": "The solution-architecture lens applied before a section is built: one blueprint that lists the standards at play with a version or unverified, enumerates every state type exhaustively before pruning, fills the four-door entry matrix, reads each component through its capability's adapter boundary, maps what a change breaks, is myopia-checked by an independent reviewer, turns everything uncited into a triaged gap with a research query, and counts what a builder must read. Load it before writing or revising docs/architecture/blueprint.json, before a section's skills are authored, when someone asks where does this state live, who owns it, which door reaches it, or what breaks if we swap this, when a design is about to name a component instead of a capability, when a review hands back findings on an architecture record, and when an architecture claim has no citation behind it.",
+      "purpose": {
+        "text": "Produce, before a section is built, one blueprint that shows where the impacts are, because standards, systems and components will all change.",
+        "origin": "sourced",
+        "sources": [
+          "T-t7-04"
+        ],
+        "quote": "Standards will change, systems will change, and components will change; the harness shows where the impacts are."
+      },
+      "contract": {
+        "shapes": [
+          {
+            "name": "Blueprint, top level (proposed)",
+            "origin": "proposed",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "title": "Solution architecture blueprint, top level (proposed)",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "standards_at_play",
+                "state_types",
+                "entry_matrix",
+                "tool_entries",
+                "impact_map",
+                "myopia_check",
+                "open_questions",
+                "gaps",
+                "usability",
+                "provenance"
+              ],
+              "properties": {
+                "standards_at_play": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/entry"
+                  }
+                },
+                "state_types": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/entry"
+                  }
+                },
+                "entry_matrix": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/entry"
+                  }
+                },
+                "tool_entries": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/entry"
+                  }
+                },
+                "impact_map": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/entry"
+                  }
+                },
+                "myopia_check": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/entry"
+                  }
+                },
+                "open_questions": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/entry"
+                  }
+                },
+                "gaps": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/entry"
+                  }
+                },
+                "usability": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/$defs/entry"
+                  }
+                },
+                "provenance": {
+                  "type": "object",
+                  "required": [
+                    "kb_source_sha256",
+                    "kb_heads"
+                  ],
+                  "properties": {
+                    "kb_source_sha256": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{64}$"
+                    },
+                    "kb_heads": {
+                      "type": "object"
+                    }
+                  }
+                }
+              },
+              "$defs": {
+                "entry": {
+                  "type": "object",
+                  "description": "One row. It lists resolving kb ids under \"sources\" with a \"quote\" that is a verbatim substring of one of them, or it carries \"status\": \"gap\", or its text says proposed. The per-section columns are in references/blueprint-shape.md.",
+                  "anyOf": [
+                    {
+                      "required": [
+                        "sources"
+                      ]
+                    },
+                    {
+                      "required": [
+                        "status"
+                      ]
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Every row is one of three kinds and there is no fourth: it cites kb ids that all resolve, or it carries status gap, or its text says proposed (proposed: the rule tools/blueprint_check.py enforces). Research query: JSON Schema anyOf/oneOf patterns for validating a closed three-state tagged record (cited, gap-status, or proposed) with no untagged fourth state.",
+            "origin": "proposed"
+          },
+          {
+            "text": "A row counts as sourced only when every id it cites resolves, so one unknown id makes the whole row unsourced rather than partly sourced (proposed: the rule tools/blueprint_check.py enforces). Research query: reference-integrity checking practice on treating a record with any one broken cross-reference as wholly unresolved rather than partially resolved.",
+            "origin": "proposed"
+          },
+          {
+            "text": "Every status gap row outside gaps[] is represented in gaps[], matched by its where prefix or its claim text, so a gap cannot be admitted in one section and hidden from the gap count (proposed: the rule tools/blueprint_check.py enforces). Research query: single-source-of-truth linting practice for a status recorded in two places in one document, cross-checked for consistency by a script.",
+            "origin": "proposed"
+          },
+          {
+            "text": "Every state row carries a pinning risk, because the blueprint is an overlay across components and never pins the integration to one of them.",
+            "origin": "sourced",
+            "sources": [
+              "T-t7-01"
+            ],
+            "quote": "it never pins the integration to a component"
+          },
+          {
+            "text": "Every component row is read through the capability that owns it and names the adapter boundary that hides it, never the other way round.",
+            "origin": "sourced",
+            "sources": [
+              "T-t7-02"
+            ],
+            "quote": "Every harness call goes through the capability interface, and the component sits behind an adapter."
+          },
+          {
+            "text": "As agentic-stack fixes it for skills, products belong in the adapter column only; in a blueprint that column is the component field of a tool entry, and no caller action, state row or entry-matrix cell may name one.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-09"
+            ],
+            "quote": "Products belong in the adapter column only."
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Enumerate the standards at play first: one row per standard with the capabilities it governs, what it fixes, what it leaves open, and a version or the literal word unverified. Never write a version you did not read in a record.",
+          "why": "agentic-stack holds the rule that each interface names the standard that governs it; the blueprint is where that is checked across the whole surface at once, and an unread version number is a fabrication rather than a citation.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-03",
+            "F-part-c-10"
+          ],
+          "quote": "Cite the standard and its version."
+        },
+        {
+          "step": 2,
+          "action": "Enumerate every state type exhaustively before pruning any of them, one row each with owner capability, home today taken from PASS.md or the word gap, ideal home, lifetime, the boundaries it crosses, and its pinning risk.",
+          "why": "Pruning before enumerating is how a state kind disappears without anyone deciding it should; the pinning-risk column is where the never-pin-the-integration test is applied per state, and home today is a host fact, so it is read from the inventory or recorded as absent.",
+          "origin": "sourced",
+          "sources": [
+            "T-t7-01",
+            "F-meta-02"
+          ],
+          "quote": "it never pins the integration to a component"
+        },
+        {
+          "step": 3,
+          "action": "Fill the entry matrix: the four doors, a human, an event, a schedule and an external system or agent per the work-intake contract, against every state each door touches, with the minimal caller action and what the platform stamps without being asked.",
+          "why": "One shape across four doors is only true if it is written out door by door; a state with no row under any door is a guarantee the builder has no way to learn about, and a caller action of nothing is the honest entry for a guarantee the platform applies rather than the caller requests.",
+          "origin": "sourced",
+          "sources": [
+            "T-t6-02",
+            "F-b4-01"
+          ],
+          "quote": "All four enter through the same shape."
+        },
+        {
+          "step": 4,
+          "action": "Write each component as a tool entry through its capability lens: the adapter boundary as what it exposes and what it hides, what must stay loose, what would pin the platform to it, the second adapter, and the minimal harness call.",
+          "why": "A component read through its own feature list becomes the architecture; read through the interface, it is one adapter behind a call that can be made in isolation and then linked to the others.",
+          "origin": "sourced",
+          "sources": [
+            "T-t7-02",
+            "T-t7-03"
+          ],
+          "quote": "Each component has a minimal call in isolation, and the same calls are linked across the composable elements."
+        },
+        {
+          "step": 5,
+          "action": "Build the impact map: for each change that can realistically land, list the affected adapters, the affected tests, the affected skills, and whether the core is untouched.",
+          "why": "A change whose blast radius is not written down is discovered during the change; the whether-the-core-is-untouched column is the standing check that a swap really is a swap of one adapter.",
+          "origin": "sourced",
+          "sources": [
+            "T-t7-04",
+            "T-t7-05"
+          ],
+          "quote": "Changing a component means swapping its adapter, and the conformance run proves the interface held."
+        },
+        {
+          "step": 6,
+          "action": "Hand the finished draft to an independent reviewer for a myopia check that returns findings by severity and, separately, a missing-state-types list; then apply or decline each finding in a revision record naming the rows it touched.",
+          "why": "The author of a blueprint cannot see what it never named; a target toward perfection is only reached by someone else reading it and by the revision that answers them row by row.",
+          "origin": "sourced",
+          "sources": [
+            "T-t7-06",
+            "T-t4-04"
+          ],
+          "quote": "This direction is a target toward perfection, not a fixed definition; improve on it."
+        },
+        {
+          "step": 7,
+          "action": "Turn anything uncited into a gap row with a research query, never into an invented value, and triage every gap into three classes: a standard-version gap, a does-a-standard-exist gap, and a host fact the owner decides.",
+          "why": "The two research classes are closed by real search results or recorded as none found, while a host-absent fact is design work no search can settle, so mixing them sends a researcher after an answer that does not exist.",
+          "origin": "sourced",
+          "sources": [
+            "T-t8-02",
+            "T-t8-01"
+          ],
+          "quote": "Standard-version gaps and does-a-standard-exist gaps are closed by research with real search results, or recorded as none found."
+        },
+        {
+          "step": 8,
+          "action": "Close with a usability budget: per door, count the blueprint rows and the skill files a builder must read for the simplest task, state the budget those counts are measured against, name the load path that would meet it, and mark each row met or not met.",
+          "why": "Simplicity that is asserted is not measured; a count per door separates the caller-facing claim, which the one-declaration common case meets, from the builder-facing one, which nothing had measured before the budget was written.",
+          "origin": "sourced",
+          "sources": [
+            "T-t3-02",
+            "T-t3-01"
+          ],
+          "quote": "It cannot be daunting or overly complex, or no one will use it."
+        },
+        {
+          "step": 9,
+          "action": "Run python3 tools/blueprint_check.py before and after every revision and fix every error it names; record the counts it prints (entries, sourced, gaps, listed gaps, errors) in the revision record. Research query: Not externally researchable: the checker is this repo's own script (tools/blueprint_check.py) and its printed counts are its own contract..",
+          "why": "Proposed: the checker is the definition of a well-formed blueprint, and the printed counts are the only claim about coverage that is not an impression.",
+          "origin": "proposed"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Label entries with the enumeration the blueprint actually cites and say which one it is: the four consumption entries are a human, an event, a schedule (time), and an external system or agent, which is not the same list as the three ways in, and a table whose labels match neither cannot be read against the contract it names.",
+          "origin": "sourced",
+          "sources": [
+            "T-t6-02"
+          ],
+          "quote": "a human, an event, a schedule (time), and an external system or agent"
+        },
+        {
+          "text": "A state type named in prose is not in the blueprint: a kind mentioned in a self-review paragraph carries no owner, no lifetime and no pinning risk until it is promoted to a row with the same columns as every other, so promote it or say in the row why it stays prose (proposed: from the missing-state-types list the myopia review returned). Research query: review-remediation practice on requiring a finding be promoted into the structured record rather than left standing as narrative text.",
+          "origin": "proposed"
+        },
+        {
+          "text": "Count what a builder must read per door rather than asserting the design is simple; a number can be compared against a budget and an impression cannot.",
+          "origin": "sourced",
+          "sources": [
+            "T-t3-02"
+          ],
+          "quote": "no one will use it"
+        },
+        {
+          "text": "Record what could not be decided and the evidence that would decide it as an open question in the blueprint itself, never as a silent default in a row.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-06"
+          ],
+          "quote": "What you could not decide, and what evidence would decide it."
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "python3 tools/blueprint_check.py docs/architecture/blueprint.json",
+        "expected": "Measured by tools/measure.py at 9b3f40c: exit 0; last lines: 288 entries, 276 sourced, 31 gaps, 41 listed gaps, 0 errors",
+        "breakage": "Append a knowledge-base id that does not exist to the first entry-matrix row's sources in docs/architecture/blueprint.json itself, run the criterion against the mutated file, then restore it byte for byte from a copy taken before the mutation: python3 -c \"import json;p='docs/architecture/blueprint.json';d=json.load(open(p));d['entry_matrix'][0]['sources'].append('F-none-99');json.dump(d,open(p,'w'),indent=2,ensure_ascii=False)\". The checker reads the path the criterion names, so the mutation has to be applied to that file and undone, not to a copy the criterion would never open.",
+        "expected_failure": "Measured by tools/measure.py at 9b3f40c: exit 1; last lines: error: entry_matrix[0]: unknown source F-none-99 | 288 entries, 275 sourced, 31 gaps, 41 listed gaps, 1 errors",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "9b3f40c",
+          "clean_exit": 0,
+          "clean_output": "288 entries, 276 sourced, 31 gaps, 41 listed gaps, 0 errors",
+          "breakage_exit": 1,
+          "breakage_output": "error: entry_matrix[0]: unknown source F-none-99\n288 entries, 275 sourced, 31 gaps, 41 listed gaps, 1 errors"
+        },
+        "expected_design": "`<count> entries, <count> sourced, <count> gaps, <count> listed gaps, 0 errors` and exit 0. The counts grow as the blueprint does and are not the criterion; zero errors is. The run recorded in measured_run below printed 288 entries, 276 sourced, 31 gaps, 41 listed gaps, 0 errors.",
+        "expected_failure_design": "exit 1 with `error: entry_matrix[0]: unknown source F-none-99` followed by `<count> entries, <count-1> sourced, <count> gaps, <count> listed gaps, 1 errors`. The sourced count falls by exactly one against the clean run because a row counts as sourced only when every id it cites resolves. The run recorded in measured_run below printed 288 entries, 275 sourced, 31 gaps, 41 listed gaps, 1 errors; the checked-in blueprint was restored byte for byte afterwards."
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Is the builder-facing usability budget the platform's to own, or is the simplicity requirement scoped to the caller only?",
+          "evidence": "The measured reads per door for the simplest task, against a stated budget, beside the caller-side count for the same task; the owner decides whether the builder-side number is a platform obligation or a note.",
+          "default": "Until the owner decides, record both counts, mark the builder rows not met, and treat the builder budget as proposed rather than as a gate.",
+          "sources": [
+            "T-t3-01"
+          ],
+          "quote": "It has to be simple to use."
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session session_01XDYnrM4HZbMdASzsqN4j96"
+      }
+    },
+    "build-litmus-questionnaire": {
+      "name": "build-litmus-questionnaire",
+      "layer": "build",
+      "wave": 1,
+      "description": "The discipline of writing the litmus questionnaire: one section per capability interface and per cross-cutting concern, each stating the idealistic future state a build could reach inside the window and asking about it from several angles, so an answer can be scored on a closed scale. Load it before writing or reviewing a section, when deciding a standard's settledness, when a question needs an aligned-versus-misaligned pair so the score is decidable from evidence rather than opinion, when someone asks whether a standard is really in use or merely named, when a self-assessment is about to grade the build against itself instead of against a stated future state, and when the crew writing the questions has to stay isolated from what the repository built. Also load it before answering the questionnaire, when a score looks like an opinion, or when a claim in a section has no record behind it.",
+      "purpose": {
+        "text": "The measuring sticks walk down each stack element and the standards it interoperates with: one section per capability interface in PASS.md B3, whose middle column is the contract, and one per cross-cutting concern in B4. Each section states the idealistic future state a build could reach inside the window and asks about it from several angles, so that how the element is used is what gets measured. The frame that fixes the window, the closed scale, the six angles, the settledness classes and the isolation rule is the owner's; it is proposed here and recorded in docs/litmus/frame.json.",
+        "origin": "sourced",
+        "sources": [
+          "T-t10-04",
+          "F-b3-01"
+        ],
+        "quote": "The measuring sticks walk down each stack element"
+      },
+      "entities": [
+        "E-standard-json-schema-2020-12"
+      ],
+      "contract": {
+        "standards": [
+          {
+            "entity": "E-standard-json-schema-2020-12",
+            "version": "2020-12",
+            "version_note": "The dialect PASS.md's Document validation row (F-b3-09) names; no specification was fetched from this environment, so the version stays unverified. The interface row itself is owned by cap-document-validation; this skill only declares the dialect its record shapes are written in.",
+            "version_status": "unverified",
+            "url": null,
+            "sources": [
+              "F-b3-09",
+              "E-standard-json-schema-2020-12"
+            ]
+          }
+        ],
+        "shapes": [
+          {
+            "name": "litmus-section (proposed summary of one section; the full record shape is schemas/litmus.schema.json and the frame it refers to is docs/litmus/frame.json)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "title": "litmus-section",
+              "type": "object",
+              "required": [
+                "id",
+                "kind",
+                "source",
+                "name",
+                "standard",
+                "future_state",
+                "direction",
+                "questions",
+                "gaps"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "the fixed id for this row"
+                },
+                "kind": {
+                  "enum": [
+                    "capability",
+                    "concern"
+                  ]
+                },
+                "source": {
+                  "type": "string",
+                  "pattern": "^F-b[34]-[0-9]{2}$"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "standard": {
+                  "type": "object",
+                  "required": [
+                    "name",
+                    "settledness",
+                    "why",
+                    "cites"
+                  ],
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "description": "as PASS.md names it; 'none' where the row has no standard"
+                    },
+                    "settledness": {
+                      "enum": [
+                        "baseline",
+                        "contested",
+                        "emerging",
+                        "none"
+                      ]
+                    },
+                    "why": {
+                      "type": "string",
+                      "description": "from the research; a product may be named here"
+                    },
+                    "cites": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "future_state": {
+                  "$ref": "#/$defs/cited"
+                },
+                "direction": {
+                  "$ref": "#/$defs/cited",
+                  "description": "a product may be named here as evidence"
+                },
+                "questions": {
+                  "type": "array",
+                  "minItems": 4,
+                  "maxItems": 8,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "angle",
+                      "question",
+                      "evidence_expected",
+                      "aligned_looks_like",
+                      "misaligned_looks_like",
+                      "origin",
+                      "cites"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9-]+-q[0-9]+$"
+                      },
+                      "angle": {
+                        "enum": [
+                          "presence",
+                          "depth",
+                          "boundary",
+                          "guarantees",
+                          "usage",
+                          "direction"
+                        ]
+                      },
+                      "question": {
+                        "type": "string"
+                      },
+                      "evidence_expected": {
+                        "type": "string",
+                        "description": "an artifact, a trace, a command output or a configuration, named tool-agnostically"
+                      },
+                      "aligned_looks_like": {
+                        "type": "string"
+                      },
+                      "misaligned_looks_like": {
+                        "type": "string"
+                      }
+                    },
+                    "description": "every question also carries its citation fields: an origin of sourced or proposed, a cites list, and, when sourced, a verbatim quote of one cited record"
+                  }
+                },
+                "gaps": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "claim",
+                      "research_query"
+                    ]
+                  }
+                }
+              },
+              "$defs": {
+                "cited": {
+                  "type": "object",
+                  "required": [
+                    "text",
+                    "origin",
+                    "cites"
+                  ],
+                  "description": "a statement with its citation: text, an origin of sourced or proposed, a cites list of kb ids, and, when sourced, a verbatim quote of one cited record"
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b3-09"
+            ]
+          },
+          {
+            "name": "litmus-answer (proposed shape: one answer to one question, written later by the assessor, never inside a section)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "title": "litmus-answer",
+              "type": "object",
+              "required": [
+                "question_id",
+                "score",
+                "evidence",
+                "assessor",
+                "date"
+              ],
+              "properties": {
+                "question_id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9-]+-q[0-9]+$"
+                },
+                "score": {
+                  "enum": [
+                    -1,
+                    0,
+                    1,
+                    2,
+                    3
+                  ],
+                  "description": "-1 misaligned, 0 absent, 1 exists, 2 aligned, 3 leading"
+                },
+                "evidence": {
+                  "type": "string",
+                  "description": "what was produced for this question: the artifact, trace, command output or configuration the question asked for"
+                },
+                "rationale": {
+                  "type": "string",
+                  "description": "why that evidence lands on that score, read against aligned_looks_like and misaligned_looks_like"
+                },
+                "correction": {
+                  "type": "string",
+                  "description": "required when score is -1: what to correct, since a misaligned score is an error rather than a gap"
+                },
+                "assessor": {
+                  "type": "string"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date"
+                }
+              }
+            },
+            "origin": "proposed"
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Proposed, and the owner's frame recorded in docs/litmus/frame.json: the scale is closed at five values, -1 misaligned, 0 absent, 1 exists, 2 aligned, 3 leading. A section author may not add, rename or reweight a score, and -1 is an error to correct rather than a gap to fill.",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-01"
+            ]
+          },
+          {
+            "text": "Proposed, from the same frame: six angles - presence, depth, boundary, guarantees, usage, direction - of which a section uses at least four and always depth and usage, over four to eight questions. Presence alone is never sufficient, because how a standard is used matters more than whether it is used, and the angles are consequences of the design rules rather than a checklist invented for the questionnaire.",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-01",
+              "F-b1-02"
+            ]
+          },
+          {
+            "text": "Where a standard exists it is adopted whole rather than modelled into our own shape, so the depth angle asks which of the standard's distinguishing mechanisms are in use; a section whose only evidence is that the standard is named has recorded presence, not depth.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-03"
+            ],
+            "quote": "adopt it whole rather than modelling our own shape"
+          },
+          {
+            "text": "The boundary angle asks whether the element sits behind a capability interface with a second adapter that actually runs: every external dependency sits behind such an interface, swappability is a tested property rather than an intention, and the swap is proven by the conformance run, never asserted.",
+            "origin": "sourced",
+            "sources": [
+              "T-t10-05",
+              "F-b1-02",
+              "F-b1-04"
+            ],
+            "quote": "the swap is proven by the conformance run, never asserted"
+          },
+          {
+            "text": "The guarantees angle asks which cross-cutting concerns ride on the element without the caller asking: cross-cutting guarantees are not optional, the platform applies each and a caller cannot decline them, and budget is among them because cost is knowable before commitment.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-08",
+              "F-b4-01",
+              "F-b1-06"
+            ],
+            "quote": "Cross-cutting guarantees are not optional"
+          },
+          {
+            "text": "The usage angle asks how a caller reaches the element from every entry and how it composes with the others, held to the rule that a caller needs no client library we wrote: evidence that integration works only through a library of our own is a finding against the boundary, not proof of adoption.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-05"
+            ],
+            "quote": "A caller needs no client library we wrote"
+          },
+          {
+            "text": "Proposed, and the owner's isolation rule in docs/litmus/frame.json: the crew that writes a section reads PASS.md Part B and the web and nothing this repository built from them, and the contamination check refuses any text naming a thing this repository built, or a product name outside standard.why and direction.text. It is the grader rule turned on ourselves - the grader is never visible to the graded (F-b1-07) - so the questions cannot be quietly shaped to whatever happens to exist.",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-07"
+            ]
+          },
+          {
+            "text": "Every statement in a section is either sourced with a quote that is a verbatim substring of a record it cites, or marked proposed in its own words: all information is trust-linked to the knowledge base with a source reference, and there is no third kind of statement.",
+            "origin": "sourced",
+            "sources": [
+              "T-t10-08"
+            ],
+            "quote": "All information is trust-linked to the knowledge base with a source reference"
+          },
+          {
+            "text": "Proposed, and the owner's four settledness classes in docs/litmus/frame.json: baseline, contested, emerging, none. A baseline standard is not shopped for a competitor - the question is how deeply it is used; a contested one has its future state name the property to hold rather than the winner; an emerging one names the direction and the exit if it changes; and where PASS.md records no standard, the future state is original design held to the specification Part B asks for.",
+            "origin": "proposed",
+            "sources": [
+              "F-b5-01"
+            ]
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "A section holds questions and never answers: no score, no evidence and no verdict is written into it, because the crew that was kept away from the build cannot also grade it. The answer is a separate record, written later by the assessor in the litmus-answer shape above (proposed).",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-07"
+            ]
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Read docs/litmus/frame.json before writing anything, and take from it the window, the closed five-point scale, the six angles, the four settledness classes and the rules: four to eight questions per section, at least four angles, always including depth and usage.",
+          "why": "Proposed: the frame is the owner's and fixed, so a section that invents its own scale, angle or question count cannot be scored beside the other twenty-two.",
+          "origin": "proposed"
+        },
+        {
+          "step": 2,
+          "action": "Take the sections from the fixed list rather than choosing them: one per capability interface row of PASS.md B3 (F-b3-02 to F-b3-17) and one per cross-cutting concern of B4 (F-b4-02 to F-b4-08), each with the id the checker fixes. Where the same word appears in both tables, write the capability section about the interface, its standard and its adapters, and the concern section about the guarantee riding on every unit of work.",
+          "why": "The middle column is the contract and the right two columns prove it is swappable, so a capability section asks after the contract and its adapters while a concern section asks after a guarantee that is applied rather than requested.",
+          "origin": "sourced",
+          "sources": [
+            "F-b3-01",
+            "F-b4-01"
+          ],
+          "quote": "The middle column is the contract"
+        },
+        {
+          "step": 3,
+          "action": "Research each section before writing it - at least three searches: the standard's current version and activity inside the window, the mechanisms that separate deep use from nominal use, and where the ecosystem is heading with any credible alternative - and write each result you rely on as one research record before you cite it, in the fields build-research-record fixes (lens, topic, query, url, title, verbatim snippet, read, status search-only versus fetched).",
+          "why": "Nothing is made up, and the knowledge structure controls the flow of information toward the future state; a claim about a standard's direction with no record behind it is an opinion the answerer will inherit.",
+          "origin": "sourced",
+          "sources": [
+            "T-t10-08"
+          ],
+          "quote": "nothing is made up, and the knowledge structure controls the flow of information toward the future state"
+        },
+        {
+          "step": 4,
+          "action": "Decide the standard's settledness from those records and say why in standard.why, which is one of only two fields where a product may be named; the other is direction.text. Everywhere else a section names capabilities and standards.",
+          "why": "Proposed: the future state has to survive a swap of whatever holds the element today, so naming a product in a question would date the question and pre-judge the boundary it is asking about.",
+          "origin": "proposed",
+          "sources": [
+            "T-t10-04"
+          ]
+        },
+        {
+          "step": 5,
+          "action": "Write the future state as one paragraph: the idealistic state a build could reach inside the window, stated in capabilities and standards, as modern as the window allows and no more engineered than that.",
+          "why": "The desired future state is bounded on both sides - modern to the limit of what could be developed now, and no more engineered than that - so a section that asks for a research programme is as wrong as one that asks for what already ships.",
+          "origin": "sourced",
+          "sources": [
+            "T-t10-02"
+          ],
+          "quote": "no more engineered than that"
+        },
+        {
+          "step": 6,
+          "action": "Write the direction separately from the future state: what is settling, what is being abandoned, and what would be an error to build now.",
+          "why": "Proposed: -1 on the scale is only reachable if the section has said what building toward the wrong thing would look like, so a section with no stated error case can never score misaligned and quietly loses the distinction the owner asked for.",
+          "origin": "proposed"
+        },
+        {
+          "step": 7,
+          "action": "Write four to eight questions across at least four angles, always including depth and usage, and give each one the evidence expected - an artifact, a trace, a command output, a configuration - together with what aligned and what misaligned look like.",
+          "why": "Proposed: a score is decidable only when the question says in advance what evidence would land on which value. agentic-stack carries the A7 finding that configuration written in the documented place validated, reviewed correctly and had no runtime effect (F-a7-04), so ask for the observed effect rather than the file that declared it.",
+          "origin": "proposed",
+          "sources": [
+            "F-a7-04"
+          ]
+        },
+        {
+          "step": 8,
+          "action": "Record every claim you could not source as a gap carrying the research query that would source it, instead of dropping the claim or letting it ride on a neighbouring citation.",
+          "why": "Proposed: build-research-record keeps the same rule for a search that found nothing (F-part-c-03); here the gap is what tells a later reader that the question rests on an unsourced belief rather than on a record.",
+          "origin": "proposed",
+          "sources": [
+            "F-part-c-03"
+          ]
+        },
+        {
+          "step": 9,
+          "action": "Run `python3 tools/litmus_check.py check docs/litmus/parts/<part>.json` until it prints 0 errors, then `python3 tools/litmus_check.py merge`, which re-checks every part together for coverage before it writes docs/litmus/questionnaire.json and renders the Markdown.",
+          "why": "Proposed: the per-part run checks shape, angles, citations and contamination, but only the merge can see that every B3 row and every B4 concern has exactly one section, which is the property the questionnaire as a whole has to hold.",
+          "origin": "proposed"
+        },
+        {
+          "step": 10,
+          "action": "Hand the questionnaire on to be answered rather than answering it: one isolated assessor per section, one answer per question carrying the evidence the question asked for and a score on the closed scale, and a -1 raised as a correction to make rather than a gap to fill.",
+          "why": "Proposed: separating the crew that asks from the assessor that answers is what keeps the questions independent of the build; and a misaligned score names work that is pointing the wrong way, which is a different obligation from work that is simply missing.",
+          "origin": "proposed"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Read the Isolation row as the template for the whole table when writing any section: an excellent implementation is not what is being judged, so the question is whether the architecture names the standard and whether, when the workload changes, the adapter changes and the core does not.",
+          "origin": "sourced",
+          "sources": [
+            "F-b3-18"
+          ],
+          "quote": "Read the Isolation row as the template for the whole table"
+        },
+        {
+          "text": "Two rows in B3 have no standard to adopt and are the only places original design effort is warranted: their sections score the design against the specification asked of it - the request shape, the result shape, cancellation semantics, timeout and budget enforcement, partial-result handling and what a failure returns for one; the write model, concurrency and single-writer guarantees, the integrity mechanism, retention and the query surface for the other - rather than against a standard's depth.",
+          "origin": "sourced",
+          "sources": [
+            "F-b5-01",
+            "F-b5-03",
+            "F-b5-05"
+          ],
+          "quote": "the only places original design effort is warranted"
+        },
+        {
+          "text": "Judge the future state at production scale: it is consumable, composable, and running across every layer in production with hundreds of agents, so a question whose evidence could come from a single demonstration run is asking too little of the element.",
+          "origin": "sourced",
+          "sources": [
+            "T-t10-02"
+          ],
+          "quote": "running across every layer in production with hundreds of agents"
+        },
+        {
+          "text": "Proposed: where the same word carries a capability section and a concern section, draft the pair together and delete the overlap, so one asks about the interface and its adapters and the other asks whether the guarantee rides on every unit of work through every entry without being requested.",
+          "origin": "proposed",
+          "sources": [
+            "F-b3-01",
+            "F-b4-01"
+          ]
+        },
+        {
+          "text": "Proposed: keep every question answerable by someone who has not read the section - name the mechanism, not the section's own vocabulary - because the assessor arrives with the build in front of them and only this questionnaire to read it against.",
+          "origin": "proposed"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "python3 tools/litmus_check.py check",
+        "expected": "Exit 0, last line `23 sections, <n> questions, 0 errors`: one section for each capability interface row F-b3-02 to F-b3-17 and each cross-cutting concern F-b4-02 to F-b4-08, every section carrying four to eight questions over at least four angles including depth and usage, every cited id resolving in kb/, every sourced quote a verbatim substring of a cited record, and no text naming a thing this repository built or a product outside standard.why and direction.text.",
+        "breakage": "In docs/litmus/parts/a.json, add one question line to a section that has fewer than eight questions, whose `question` text names a file this repository built under tools/ (`kb.py`), then run `python3 tools/litmus_check.py check` again and restore the file afterwards.",
+        "expected_failure": "Exit 1, with the line `ERROR isolation: questions[N].question names something this repo built: 'kb.py'` and a last line `23 sections, <n+1> questions, 1 errors`: the contamination check is what keeps the crew's isolation enforceable rather than promised.",
+        "status": "claimed",
+        "sources": [
+          "F-part-c-04"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion"
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-research-record"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Does a section with an unresolved gap block the merge, or ship with the gap recorded?",
+          "evidence": "The checker requires a claim and a research query on every gap but does not fail on the gap itself; a merge run with gaps present would show whether the owner wants the questionnaire complete or honest about what it could not source.",
+          "default": "Proposed: it ships with the gap recorded, because a gap carrying its query is more useful to the assessor than a question quietly dropped.",
+          "sources": [
+            "F-part-c-03"
+          ]
+        },
+        {
+          "question": "Is the assessor bound by an isolation rule of its own - reading the build for its section but not the other sections' answers?",
+          "evidence": "Two assessors scoring the same section independently, one having read a neighbouring section's answers and one not, and comparing the scores against the same evidence.",
+          "default": "Proposed: one isolated assessor per section, carrying the frame and nothing else across, on the same reasoning that keeps the questions independent of the build.",
+          "sources": [
+            "F-b1-07"
+          ]
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96"
+      }
+    }
   }
 }

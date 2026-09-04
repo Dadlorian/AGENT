@@ -258,7 +258,7 @@
           "F-b3-12",
           "E-capability-provenance"
         ],
-        "quote": "in-toto \u00b7 SLSA \u00b7 DSSE | JSONL evidence records"
+        "quote": "in-toto · SLSA · DSSE | JSONL evidence records"
       },
       {
         "text": "An attestation is three layers, and they stay distinct: the envelope that carries the signature, the statement that names the subjects, and the predicate that carries the payload. A verifier can check the signature and the subject digests without understanding our predicate at all, which is what makes an outside check possible.",
@@ -472,7 +472,7 @@
       "sources": [
         "X-build-definition-of-done-007"
       ],
-      "quote": "the build track has four levels (L0\u2013L3) representing increasing grades of security, from no provenance at L0 to a hardened, isolated build platform with authenticated, signed provenance at L3"
+      "quote": "the build track has four levels (L0–L3) representing increasing grades of security, from no provenance at L0 to a hardened, isolated build platform with authenticated, signed provenance at L3"
     },
     {
       "text": "Prefer signing identities that expire to keys that are held: ephemeral key signing tied to OIDC identities removes the long-lived secret that a held key makes someone responsible for, and moves the question from who has the key to who was allowed to be that identity at that moment.",
@@ -511,36 +511,48 @@
         "X-cap-provenance-004",
         "X-cross-structure-052"
       ],
-      "quote": "Sigstore \u00b7 any attestation store"
+      "quote": "Sigstore · any attestation store"
     }
   ],
   "definition_of_done": {
-    "criterion": "python3 tools/conformance/provenance_verify.py --adapter local-signed-jsonl --adapter keyless-transparency-log --artifact out/artifact.bin --report out/prov.json",
-    "expected": "docs/decomposition.md section 3.2 row P11, made precise and run over the adapter pair above: that command (proposed tool, built with the first signing adapter), the adapter selected by configuration with no code edit between runs. Per adapter it produces an artifact, emits the statement, then shells out to a third-party verifier that we did not write, with our evidence store unmounted, and asserts that the external verifier exits 0, that `attestations_verified > 0`, and that every subject digest in the statement matches the artifact on disk; across adapters it asserts `adapters_run >= 2`. exit 0 with, per adapter, `external_verifier_exit == 0`, `attestations_verified > 0`, `subject_mismatches == 0` and `store_mounted == false`, followed by `adapters_run=2`",
-    "breakage": "Rebuild the artifact from a modified input without regenerating the attestation, and re-run the same command unchanged.",
-    "expected_failure": "exit 1 with the external verifier exiting non-zero on subject digest mismatch, `subject_mismatches == 1` and `attestations_verified == 0`, under both adapters, because the mismatch is in the statement rather than in either signer; a run where the external verifier still exits 0 means the check was reading our own store and the store was not actually unmounted. Claimed: no statement is emitted anywhere today, neither signing adapter is written and the conformance tool does not exist, so neither run has been performed here. What is measured is the starting state, recorded in cap-provenance-use: the reference runner emits subject digests and zero attestations.",
-    "status": "claimed",
+    "criterion": "bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second",
+    "expected": "Measured by tools/measure.py at 372cdc1: exit 0; last lines:   cases=13 passed=13 emitted=2 verified=1 subject_mismatches=0 orphan_subjects=0 store_mounted=False verifier_exit=0 log_inclusion_proofs=1 product_hits=0 | conformance PASSED: 26/26 cases, 2 binding(s)",
+    "breakage": "Append a product-name comment (`# breakage: sigstore`) to the end of harness/provenance/call.py, outside adapters/. Restored with `git checkout -- harness/provenance/call.py`.",
+    "expected_failure": "Measured by tools/measure.py at 372cdc1: exit 1; last lines:   ok   the run names what broke it | passed 21, failed 6",
+    "status": "measured",
     "sources": [
       "F-b4-05",
       "F-b3-12"
     ],
-    "quote": "verifiable with a tool we did not write"
+    "quote": "verifiable with a tool we did not write",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "372cdc1",
+      "clean_exit": 0,
+      "clean_output": " accepts both predicates in the same envelope\n  ok   the declared subset is honest: a proof is verified or declared unsupported: inclusion proof over a log of 1 entries verified\n  ok   the store's own integrity check is not what verification rests on: append-only merkle log head f58212cacc29 over 2 entries, verified\n  entity=an identity that expires, and a public append-only log (Sigstore-shaped)\n  cases=13 passed=13 emitted=2 verified=1 subject_mismatches=0 orphan_subjects=0 store_mounted=False verifier_exit=0 log_inclusion_proofs=1 product_hits=0\nconformance PASSED: 26/26 cases, 2 binding(s)",
+      "breakage_exit": 1,
+      "breakage_output": " the interface, the caller or the conformance run\n  FAIL product scan over the shipped tree exits 0 (expected 0, got 1)\n  FAIL product names leaked\n4. deliberate breakage: the artifact is rebuilt and the statement is not\n  ok   the breakage run exits non-zero (1)\n  ok   the verifier rejected it on the subject digest, not on our store (0)\n  ..   subject_mismatches=1 attestations_verified=0 verifier_exit=1\n4b. deliberate breakage: the signature is dropped from the envelope\n  ok   the breakage run exits non-zero on the second adapter too (1)\n  ok   the run names what broke it\n\npassed 21, failed 6"
+    },
+    "expected_design": "docs/decomposition.md section 3.2 row P11, extended with the swap: `python3 tools/conformance/provenance_verify.py --adapter local-signed-jsonl --artifact out/artifact.bin --report out/prov-a.json` then the same command with `--adapter keyless-transparency-log --report out/prov-b.json`, the adapter chosen by configuration with no code edit between runs. Each run produces the artifact, emits the statement, then invokes a third-party verifier we did not write as a subprocess with our evidence store unmounted. Both reports must validate against the ProvenanceConformanceReport shape above and assert, per adapter, `external_verifier_exit == 0`, `attestations_verified > 0`, `subject_mismatches == 0`, `orphan_subjects == 0` and `store_mounted == false`; the log adapter must additionally assert `log_inclusion_proofs > 0`, and the local adapter must declare that member unsupported rather than assert it. Earlier criterion named tools/conformance/provenance_verify.py, replaced by the harness on 2026-09-03.",
+    "expected_failure_design": "test.sh's product-name scan (check 3) fails with product_hits going from 0 to 1, and `conformance.py --adapter dryrun --adapter second` also reports the same non-zero product_hits and exits non-zero, since every conformance run scans for a product name outside adapters/."
   },
   "composes_with": {
     "builds_on": [
       "agentic-stack",
-      "build-adapter-pair",
-      "build-definition-of-done",
-      "build-evidence-record",
+      "build-ceremony",
+      "build-evidence",
       "build-skill-authoring",
-      "cap-errors"
+      "cap-errors",
+      "cap-scheduling",
+      "core-components",
+      "seam-state",
+      "xc-guarantees"
     ],
     "used_by": [
-      "cap-capability-registry",
-      "cap-mandate-broker",
-      "cap-provenance-implement",
-      "xc-audit-trail",
-      "xc-provenance-chain"
+      "cap-capability-packaging",
+      "cap-identity",
+      "seam-dispatch",
+      "seam-state"
     ]
   },
   "open_questions": [
@@ -584,5 +596,2265 @@
       "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
     },
     "author": "session cap-provenance 2831cb4f, 2026-09-03"
+  },
+  "folded": {
+    "cap-provenance-implement": {
+      "name": "cap-provenance-implement",
+      "layer": "cap",
+      "wave": 4,
+      "description": "How to build the Provenance capability on this stack: what the append-only evidence records and the hash-chained store already give you and what they do not, a first adapter that wraps an existing record in a signed envelope with a held key, a second with a different execution model that signs with an ephemeral identity and publishes to a public append-only log, the migration between them, where the attest call is wired so no output can skip it, and a definition of done with the breakage that makes it fail. Load it when writing the code that emits or checks a statement, when picking where envelopes are stored, when adding signing to a pipeline that today only rehashes its own file, or when a conformance run reports an output with no statement over its digest.",
+      "purpose": {
+        "text": "Turn the contract in cap-provenance into something that runs here: one attest call, two signing adapters behind it whose execution models differ, and every artifact and agent action reaching a statement an outside verifier can check.",
+        "origin": "sourced",
+        "sources": [
+          "F-b3-12",
+          "F-b4-05",
+          "E-capability-provenance"
+        ],
+        "quote": "in-toto · SLSA · DSSE"
+      },
+      "entities": [
+        "E-capability-provenance",
+        "E-concern-provenance",
+        "E-adapter-jsonl-evidence-records",
+        "E-adapter-jsonl-hash-chain",
+        "E-swap-candidate-sigstore",
+        "E-swap-candidate-any-attestation-store"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "ProvenanceConformanceReport (the counters the definition of done below asserts on, per adapter)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:provenance:report:0.1",
+              "title": "ProvenanceConformanceReport",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "adapter",
+                "attestations_emitted",
+                "attestations_verified",
+                "subject_mismatches",
+                "external_verifier",
+                "external_verifier_exit",
+                "store_mounted",
+                "adapters_run"
+              ],
+              "properties": {
+                "adapter": {
+                  "enum": [
+                    "local-signed-jsonl",
+                    "keyless-transparency-log"
+                  ]
+                },
+                "attestations_emitted": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "attestations_verified": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Counted by the external verifier, not by us. Must be greater than 0."
+                },
+                "subject_mismatches": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "orphan_subjects": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Subject digests referenced by a result with no statement over them."
+                },
+                "external_verifier": {
+                  "type": "string",
+                  "description": "Name and version of the verifier we did not write."
+                },
+                "external_verifier_exit": {
+                  "type": "integer"
+                },
+                "store_mounted": {
+                  "const": false,
+                  "description": "Recorded at runtime. A verification run with our store reachable has not tested the property."
+                },
+                "log_inclusion_proofs": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Declared unsupported by the local adapter rather than reported as 0."
+                },
+                "adapters_run": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "selected_by": {
+                  "const": "configuration",
+                  "description": "A code edit between runs would not be a swap."
+                }
+              }
+            },
+            "origin": "sourced",
+            "sources": [
+              "T-t9-06"
+            ],
+            "quote": "Swaps proven: every harness section executes one adapter swap with the conformance run before and after."
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Proposed: the statement is emitted at the moment the artifact is produced, from the values in hand, never reconstructed later from a log. A statement assembled after the fact attests to what the log says happened, which is the claim it was supposed to be independent of. Research query: does F-b4-05's attributability contract, read in full, fix that a statement must be emitted at production time rather than reconstructed later from the log, or is the emit-not-reconstruct rule this facet's own reading of what attributability requires?",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-05"
+            ]
+          },
+          {
+            "text": "cap-provenance and build-evidence-record already fix that an artifact must be verifiable with a tool we did not write (F-b4-05). The build consequence: the verification half of the definition of done runs with our evidence store unreachable and shells out to a verifier nobody here wrote. A run with the store mounted is recorded as unsupported rather than as a pass, so store_mounted is a const in the report shape above rather than a field an implementation can set.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-05"
+            ],
+            "quote": "verifiable with a tool we did not write"
+          },
+          {
+            "text": "build-definition-of-done already names the structurally-green trap (F-a7-03): a gate can pass while asserting nothing. The build consequence here: the local adapter declares log inclusion proofs unsupported instead of reporting zero of them. A documented conformance subset is honest; an adapter that reports a property it cannot provide is exactly the failure the pair exists to expose.",
+            "origin": "sourced",
+            "sources": [
+              "F-a7-03"
+            ],
+            "quote": "A deterministic gate can be structurally green and mean nothing"
+          },
+          {
+            "text": "agentic-stack and build-evidence-record already fix the chain our own reader recomputes (F-a5-03): JSONL, hash-chained, where each run's closing digest is the next run's opening digest, so a manual edit between runs is detectable. The build consequence: that is integrity for us and evidence for nobody else, so the signed envelope is added on top of it and the chain is not removed.",
+            "origin": "sourced",
+            "sources": [
+              "F-a5-03",
+              "F-b5-05"
+            ],
+            "quote": "each run's closing digest is the next run's opening digest, so a manual edit between runs is detectable"
+          },
+          {
+            "text": "cap-provenance states design rule 7 as the reason for this placement, and agentic-stack fixes that cross-cutting guarantees are applied by the platform, not requested by the caller (F-b1-08). The build consequence: attest is wired into the platform's result emitter and its run-seal path, not into each caller, and there is no flag that skips it - a new step kind inherits attestation by construction because it reaches emission through the same path.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-08"
+            ],
+            "quote": "applied by the platform, not requested by the caller"
+          },
+          {
+            "text": "Proposed: a failure to attest, sign or publish is returned as problem details from the registry cap-errors owns, and this capability mints no failure object of its own; a new registry row is required before any new type is raised.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-07"
+            ],
+            "quote": "Typed and machine-readable. Never parsed from prose"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Start from what is already true: subject digests exist and nothing signs them. Do not re-derive the contract; cap-provenance states the recorded row (F-b3-12) and the concern's contract (F-b4-05), and this facet only builds against them.",
+          "why": "Proposed sequencing. The reference runner already stamps a digest on every produced output, so the first change is signing rather than a new record kind; treating this as a green-field capability would add a second identity for artifacts that already have one. Research query: is there a fetched (not search-only) record naming this platform's evidence store as unsigned subject digests specifically (as opposed to the general provenance row F-b3-12), which would source the starting-point claim directly rather than via this facet's own paraphrase of it?",
+          "origin": "proposed",
+          "sources": [
+            "F-b3-12",
+            "F-b4-05"
+          ]
+        },
+        {
+          "step": 2,
+          "action": "Build the first adapter by wrapping, not replacing: put the existing evidence record in a predicate, put the predicate in a statement over the output's digest, sign the envelope with a key this deployment holds, and append the envelope beside the record.",
+          "why": "Proposed. The recorded adapter today is JSONL evidence records, each naming the script SHA-256, git commit, tree hash under test, and whether the tree was dirty, which is most of a build-shaped predicate already; wrapping keeps every existing reader working while adding the one thing the concern asks for.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-04",
+            "F-b3-12"
+          ],
+          "quote": "Append-only JSONL. Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+        },
+        {
+          "step": 3,
+          "action": "Build the second adapter as keyless signing with a public append-only log, the way cap-provenance's own swap candidate names it: an ephemeral signing identity obtained per run, verified through the Rekor transparency log rather than a held key, the envelope published to a log, and an inclusion proof returned with it.",
+          "why": "Proposed second adapter, per the manifest and the recorded swap-candidate column. It breaks a different assumption than the first: the local adapter's trust comes from possession of a file our code rehashes and it works offline, while the log adapter's comes from an identity that expires and a log any third party can verify, and it cannot produce a statement at all without reaching the network. That is the axis the pair has to differ on.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-provenance-004",
+            "F-b3-12"
+          ],
+          "quote": "verified through the Rekor transparency log"
+        },
+        {
+          "step": 4,
+          "action": "Wire attest at two places only: the emitter that returns a result to a caller, and the run-seal path that closes a run. agentic-stack fixes that cross-cutting guarantees are not optional (F-b1-08); the build consequence is that callers get no flag that skips either.",
+          "why": "Proposed wiring, following cap-provenance's placement rule. Two enforcement points cover every output and every run boundary; a third would be a caller deciding for itself, which is the property a cross-cutting guarantee does not have.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-08"
+          ],
+          "quote": "Cross-cutting guarantees are not optional"
+        },
+        {
+          "step": 5,
+          "action": "Sign the sealed head as well as the individual outputs, and use the same envelope format for both so one verifier covers a run and its parts.",
+          "why": "Proposed, and it is what docs/decomposition.md section 2.2.3 already specifies for the state seam: a chain gives no way for a third party to verify one record without the whole log, so the sealed head carries the run and the per-output statements carry the parts. Research query: does F-b5-05's chain description, read in full rather than as a table row, fix that the sealed head and the individual outputs must share one envelope format, or is that unification this facet's own design choice?",
+          "origin": "proposed",
+          "sources": [
+            "F-b5-05",
+            "F-a5-03"
+          ]
+        },
+        {
+          "step": 6,
+          "action": "cap-provenance and build-evidence-record already fix that an artifact must be verifiable with a tool we did not write (F-b4-05). The build consequence: make the conformance run adapter-parameterised and store-unmounted from the start: one command, one report shape, `--adapter` selecting which implementation signs, and the external verifier invoked as a subprocess with no access to our store.",
+          "why": "Proposed. A suite written against one adapter and adapted later encodes that adapter's assumptions in its asserts, and a suite that can reach our store will eventually be satisfied by it, which is precisely the outcome the concern's contract forbids.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-05"
+          ],
+          "quote": "verifiable with a tool we did not write"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Verify the runtime effect of the signing configuration rather than the file that declares it. agentic-stack and build-definition-of-done state the configuration finding (F-a7-04): what a file declares was silently discarded at runtime before. The consequence here is that the only proof a deployment signs with the identity it meant to is an envelope read back and checked, not a settings file reviewed.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "was silently discarded"
+        },
+        {
+          "text": "Watch the log instead of trusting it once. build-definition-of-done already cites this record for gates (X-cross-structure-053): transparency logs are tamper-evident but not tamper-proof, so it becomes important to have a tool to monitor the transparency log for any evidence of tampering. Publishing without monitoring buys the ability to detect tampering and never exercises it.",
+          "origin": "sourced",
+          "sources": [
+            "X-cross-structure-053"
+          ],
+          "quote": "Transparency logs are tamper-evident but not tamper-proof, so it becomes important to have a tool to monitor the transparency log for any evidence of tampering"
+        },
+        {
+          "text": "Proposed: pin and record the external verifier's name and version in every report. A green run that does not say what checked it is a claim about our own code again, and an upgrade that silently relaxes a check is invisible without the version. Research query: does F-part-c-10's preference for an existing standard over an original design extend to pinning that standard's implementation version in every conformance report, or does it only cover choosing the standard, leaving the pin-and-record practice this facet's own?",
+          "origin": "proposed",
+          "sources": [
+            "F-part-c-10"
+          ]
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-jsonl-evidence-records",
+          "role": "today",
+          "maps_to": "cap-provenance already records this role (F-b3-12, F-a5-04): what is there today is JSONL evidence records with a hash chain, append-only local records naming the script, commit and tree under test, integrity our own reader recomputes, no signature anywhere. What this facet adds is the first adapter that discharges anything, and the one the second is paired against: the local signed envelope described in this skill, the same record in a predicate, in a statement, in an envelope signed by a held key.",
+          "cannot": "Cannot produce a signature at all in its recorded form, and even once signing is added it cannot offer an inclusion proof or a signer whose authority expires, so a third party must trust that the file it was handed is the file that was written. It declares log inclusion proofs unsupported rather than reporting zero.",
+          "swap_procedure": "Add the wrapper in front of the existing append: nothing that reads the records changes, and the envelope is written beside the record rather than in place of it, so the migration is revertible by not reading the new file.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-12",
+            "F-a5-04",
+            "E-adapter-jsonl-evidence-records"
+          ],
+          "quote": "JSONL evidence records"
+        },
+        {
+          "entity": "E-swap-candidate-sigstore",
+          "role": "second",
+          "maps_to": "Keyless signing with a public append-only log: a signing identity obtained per run and discarded, the envelope published to a log that is append-only and once entries are added they cannot be modified, and an inclusion proof returned to the caller alongside the envelope.",
+          "cannot": "Cannot sign while offline or while the identity provider is unreachable, cannot host a subject whose name must not be public, and adds a network dependency to the emission path that the local adapter does not have. Its execution model is the inverse of the local one: authority comes from an expiring identity and a public log rather than from possession of a file.",
+          "swap_procedure": "cap-provenance already records the two roles and the axis they differ on (F-b3-12, F-b1-04); what this facet adds is the procedure. Select the adapter by configuration only, run the identical store-unmounted verification suite against each, and require the merged report to show adapters_run == 2, selected_by == configuration, and the local adapter's declared subset recorded rather than asserted.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-12",
+            "F-b1-04",
+            "X-cross-structure-052"
+          ],
+          "quote": "Sigstore · any attestation store"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second",
+        "expected": "Measured by tools/measure.py at 372cdc1: exit 0; last lines:   cases=13 passed=13 emitted=2 verified=1 subject_mismatches=0 orphan_subjects=0 store_mounted=False verifier_exit=0 log_inclusion_proofs=1 product_hits=0 | conformance PASSED: 26/26 cases, 2 binding(s)",
+        "breakage": "Append a product-name comment (`# breakage: sigstore`) to the end of harness/provenance/call.py, outside adapters/. Restored with `git checkout -- harness/provenance/call.py`.",
+        "expected_failure": "Measured by tools/measure.py at 372cdc1: exit 1; last lines:   ok   the run names what broke it | passed 21, failed 6",
+        "status": "measured",
+        "sources": [
+          "F-b4-05",
+          "F-b3-12"
+        ],
+        "quote": "verifiable with a tool we did not write",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "372cdc1",
+          "clean_exit": 0,
+          "clean_output": " accepts both predicates in the same envelope\n  ok   the declared subset is honest: a proof is verified or declared unsupported: inclusion proof over a log of 1 entries verified\n  ok   the store's own integrity check is not what verification rests on: append-only merkle log head f58212cacc29 over 2 entries, verified\n  entity=an identity that expires, and a public append-only log (Sigstore-shaped)\n  cases=13 passed=13 emitted=2 verified=1 subject_mismatches=0 orphan_subjects=0 store_mounted=False verifier_exit=0 log_inclusion_proofs=1 product_hits=0\nconformance PASSED: 26/26 cases, 2 binding(s)",
+          "breakage_exit": 1,
+          "breakage_output": " the interface, the caller or the conformance run\n  FAIL product scan over the shipped tree exits 0 (expected 0, got 1)\n  FAIL product names leaked\n4. deliberate breakage: the artifact is rebuilt and the statement is not\n  ok   the breakage run exits non-zero (1)\n  ok   the verifier rejected it on the subject digest, not on our store (0)\n  ..   subject_mismatches=1 attestations_verified=0 verifier_exit=1\n4b. deliberate breakage: the signature is dropped from the envelope\n  ok   the breakage run exits non-zero on the second adapter too (1)\n  ok   the run names what broke it\n\npassed 21, failed 6"
+        },
+        "expected_design": "docs/decomposition.md section 3.2 row P11, extended with the swap: `python3 tools/conformance/provenance_verify.py --adapter local-signed-jsonl --artifact out/artifact.bin --report out/prov-a.json` then the same command with `--adapter keyless-transparency-log --report out/prov-b.json`, the adapter chosen by configuration with no code edit between runs. Each run produces the artifact, emits the statement, then invokes a third-party verifier we did not write as a subprocess with our evidence store unmounted. Both reports must validate against the ProvenanceConformanceReport shape above and assert, per adapter, `external_verifier_exit == 0`, `attestations_verified > 0`, `subject_mismatches == 0`, `orphan_subjects == 0` and `store_mounted == false`; the log adapter must additionally assert `log_inclusion_proofs > 0`, and the local adapter must declare that member unsupported rather than assert it. Earlier criterion named tools/conformance/provenance_verify.py, replaced by the harness on 2026-09-03.",
+        "expected_failure_design": "test.sh's product-name scan (check 3) fails with product_hits going from 0 to 1, and `conformance.py --adapter dryrun --adapter second` also reports the same non-zero product_hits and exits non-zero, since every conformance run scans for a product name outside adapters/."
+      },
+      "composes_with": {
+        "builds_on": [
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record",
+          "cap-provenance"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Which adapter is primary once both exist, and does a deployment with no outbound network get the local one or no provenance at all?",
+          "evidence": "Measure, per adapter: emission latency added to the result path, the number of external services that must be reachable for an output to be emitted at all, and whether an outside party who holds only the envelope can verify it. The last is the concern's contract; the second is what decides whether the log adapter can sit on the emission path.",
+          "default": "Proposed: the log adapter is primary for run seals and externally visible artifacts, the local adapter for per-step statements, both selected by configuration. A deployment with no outbound network runs the local adapter and records the reduced guarantee rather than emitting nothing.",
+          "sources": [
+            "F-b1-04"
+          ]
+        },
+        {
+          "question": "Does the envelope live beside the evidence record, in the state log as an attestation-recorded fact, or in both?",
+          "evidence": "Whether the orphan check in docs/decomposition.md row X4 can be answered from the log alone, and whether any consumer needs the envelope without also needing the record next to it.",
+          "default": "Proposed: the attestation-recorded fact in the log carries the subject digest and a reference, and the envelope bytes live in the attestation store, so the orphan check reads one place and the verifier fetches from the other.",
+          "sources": [
+            "F-b5-05"
+          ]
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session cap-provenance 2831cb4f, 2026-09-03"
+      }
+    },
+    "xc-provenance-chain": {
+      "name": "xc-provenance-chain",
+      "layer": "xc",
+      "wave": 4,
+      "description": "The provenance chain as a closure guarantee: every artifact digest a result hands back has a signed statement over exactly that digest, recorded before the result is released, so the orphan count is zero. Load it when an output is about to leave the platform, when deciding where the statement is produced and what refuses a release without one, when a sweep reports nothing wrong over a corpus that contained nothing, when someone asks how an outsider could tell that this file came from that run, when a result names a document, a file or a model output nobody can account for, when a store's own rehash is being offered as proof, and when a review asks whether a human entry, an agent entry and an event entry all leave the same trail.",
+      "purpose": {
+        "text": "Fix the closure half of provenance: cap-provenance settles what a statement is and how an outsider checks one, build-evidence-record marks the same boundary from the other side by keeping note-taking out of attestation (F-b4-05), and this guarantee settles that a statement exists for every artifact digest that leaves, applied by the platform at the point of release rather than requested by whoever produced the output.",
+        "origin": "sourced",
+        "sources": [
+          "F-b4-05",
+          "F-b1-08",
+          "E-concern-provenance"
+        ],
+        "quote": "verifiable with a tool we did not write"
+      },
+      "entities": [
+        "E-concern-provenance",
+        "E-capability-provenance",
+        "E-standard-in-toto",
+        "E-standard-dsse",
+        "E-standard-slsa"
+      ],
+      "contract": {
+        "standards": [
+          {
+            "entity": "E-standard-in-toto",
+            "version": "Statement v1 (unverified)",
+            "version_note": "cap-provenance owns this row (F-b3-12); it is repeated here because the chain guarantee's join key is the Statement's subject and nothing else. A search-only record names the Statement and its Subjects; the specification was not fetched from this environment, so the version stays unverified.",
+            "version_status": "unverified",
+            "url": "https://github.com/in-toto/attestation",
+            "sources": [
+              "F-b3-12",
+              "X-xc-provenance-chain-001",
+              "X-xc-provenance-chain-007"
+            ]
+          },
+          {
+            "entity": "E-standard-dsse",
+            "version": "unverified",
+            "version_note": "No version string appears in any record on file: the envelope format is named, not versioned. cap-provenance owns this row; it matters here only because the envelope is what lets a third party check a statement without holding our keys.",
+            "version_status": "unverified",
+            "url": "https://secure-systems-lab.org/",
+            "sources": [
+              "F-b3-12",
+              "X-xc-provenance-chain-002"
+            ]
+          },
+          {
+            "entity": "E-standard-slsa",
+            "version": "v1.0, unverified",
+            "version_note": "One search-only record on file names the v1.0 provenance predicate and the subject binding; cap-provenance's open question records a second record naming v1.1 and leaves the disagreement open. Neither specification was fetched here, so the version stays unverified and no level is claimed anywhere in this skill.",
+            "version_status": "unverified",
+            "url": "https://slsa.dev/spec/v1.0/provenance",
+            "sources": [
+              "F-b3-12",
+              "X-xc-provenance-chain-003"
+            ]
+          }
+        ],
+        "operations": [
+          {
+            "name": "bind (proposed operation set; the recorded standards fix a document format rather than a set of calls, and cap-provenance owns the attest call this one wraps)",
+            "input": "a result about to be released, the set of artifact digests it references, and the actor and code version that produced them",
+            "output": "one attestation-recorded record per subject digest, appended in the same write as the result, or a typed refusal that stops the release (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-05",
+              "X-xc-provenance-chain-003"
+            ]
+          },
+          {
+            "name": "sweep (proposed)",
+            "input": "a corpus of results read at one pinned state head (proposed)",
+            "output": "artifacts_checked, attestations_matched and orphans, where an orphan is an output digest with no statement whose subject matches it (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-05",
+              "F-a7-03"
+            ]
+          },
+          {
+            "name": "resolve (proposed)",
+            "input": "one artifact digest, held by someone who has the bytes and nothing else (proposed)",
+            "output": "the statement whose subject is that digest and the sealed head it was recorded under, fetchable without our credentials so the check can be run by a tool we did not write (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-05",
+              "X-xc-provenance-chain-002"
+            ]
+          }
+        ],
+        "shapes": [
+          {
+            "name": "attestation-recorded (proposed summary shape of the record kind named in docs/decomposition.md section 2.2.1; the full record, the sweep report and the expanded worked instances are in references/provenance-chain-shapes.md)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:provenance-chain:attestation-recorded:0.1",
+              "title": "AttestationRecorded",
+              "description": "Proposed. One record per subject digest. This is the only machine-readable field set the orphan sweep reads, which is why it carries digests and references and never payloads.",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "subject_digest",
+                "statement_ref",
+                "envelope_digest",
+                "actor",
+                "code_version",
+                "run_id",
+                "recorded_at"
+              ],
+              "properties": {
+                "subject_digest": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$",
+                  "description": "The join key between an artifact and the statement that vouches for it. Matched by digest over canonical bytes, never by name, path or timestamp."
+                },
+                "statement_ref": {
+                  "type": "string",
+                  "description": "Where a party who does not hold our credentials fetches the signed statement."
+                },
+                "envelope_digest": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                "actor": {
+                  "type": "string",
+                  "description": "The producer, spelled the way the identity capability spells it: user:, agent:, service: or schedule:."
+                },
+                "code_version": {
+                  "type": "string"
+                },
+                "run_id": {
+                  "type": "string"
+                },
+                "sealed_head": {
+                  "type": "string",
+                  "description": "The state head this record was sealed under. seam-state owns the sealing; this field only names it, so the chain guarantee and the log guarantee stay separable."
+                },
+                "recorded_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b4-05",
+              "X-xc-provenance-chain-001"
+            ]
+          },
+          {
+            "name": "worked instances, one per T6.2 door (TARGET T6.2 names four doors and the same record shape covers all four, which is the whole claim)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:provenance-chain:instances:0.1",
+              "title": "AttestationRecordedInstances",
+              "description": "Four records produced by the same binding, differing only in the actor that entered the system. Nothing in the shape, the sweep or the refusal branches on which door was used.",
+              "type": "array",
+              "items": {
+                "$ref": "urn:agentic:xc:provenance-chain:attestation-recorded:0.1"
+              },
+              "examples": [
+                [
+                  {
+                    "subject_digest": "sha256:1f0a4c2d9b7e5613a8c04f2e6d13b8a75c9e02f4a61d8b3c7e50f9a2d64b81c3",
+                    "statement_ref": "attest://run-human-0001/stmt-01",
+                    "envelope_digest": "sha256:9c31b7d0e5a24f68c1de73f0a2b95c48d6e70a13f5c92b84d0e17a36c48b9f52",
+                    "actor": "user:corey",
+                    "code_version": "git:8f3c1a2",
+                    "run_id": "run-human-0001",
+                    "sealed_head": "head:4b7e...",
+                    "recorded_at": "2026-09-03T10:14:02Z"
+                  },
+                  {
+                    "subject_digest": "sha256:2b8e01c7d4a9f36502be7c1d8a0f45e93c26b7d1058fa9e3b47c02d16e8a5f70",
+                    "statement_ref": "attest://run-agent-0042/stmt-07",
+                    "envelope_digest": "sha256:5d92c48b0e17a3f6c81de07b34a95f2c6e8017d4b93a0c5f2e64d18b70a9c3f5",
+                    "actor": "agent:planner-01",
+                    "code_version": "git:8f3c1a2",
+                    "run_id": "run-agent-0042",
+                    "sealed_head": "head:4b7e...",
+                    "recorded_at": "2026-09-03T10:16:41Z"
+                  },
+                  {
+                    "subject_digest": "sha256:3c7d19a0b6e24f85d1c0378ae59b2f46071da8c3f9e50b27a4c86d10f35b7e92",
+                    "statement_ref": "attest://run-event-0007/stmt-02",
+                    "envelope_digest": "sha256:7a05c3e91d48b60f2c7ea15d039b48c7f20e6a91d53c087b4f62a19c05d38e7b",
+                    "actor": "service:git-webhook",
+                    "code_version": "git:8f3c1a2",
+                    "run_id": "run-event-0007",
+                    "sealed_head": "head:4b7e...",
+                    "recorded_at": "2026-09-03T10:19:08Z"
+                  },
+                  {
+                    "subject_digest": "sha256:4d8e20b1c7f35a96e2d1489bf60c3a75d1e02f8b7c04d61a9e3f75b02c68d914",
+                    "statement_ref": "attest://run-schedule-0001/stmt-01",
+                    "envelope_digest": "sha256:8b13d04c7e29a5f1c60de83b04a95f2c6e7108d4b93a0c5f2e64d18b70a9c3f6",
+                    "actor": "schedule:nightly-fault-sweep",
+                    "code_version": "git:8f3c1a2",
+                    "run_id": "run-schedule-0001",
+                    "sealed_head": "head:4b7e...",
+                    "recorded_at": "2026-09-03T02:00:07Z"
+                  }
+                ]
+              ]
+            },
+            "origin": "sourced",
+            "sources": [
+              "T-t6-02",
+              "T-t2-03"
+            ],
+            "quote": "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent."
+          },
+          {
+            "name": "refused release (proposed worked rejection; the type is the registered adapter-unavailable row of the closed registry in docs/decomposition.md section 2.1.6, and cap-errors owns the object)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:provenance-chain:refusal-instance:0.1",
+              "title": "RefusedReleaseInstance",
+              "description": "Proposed. The one failure this guarantee returns, shown rather than described: no statement could be produced over the output digest, so the release was refused instead of emitted unattested. It is a problem object, never prose, and it is retryable because the signer being unreachable is a condition that clears.",
+              "allOf": [
+                {
+                  "$ref": "urn:agentic:problem:0.1"
+                }
+              ],
+              "examples": [
+                {
+                  "type": "urn:agentic:problem:adapter-unavailable",
+                  "title": "No attestation could be produced for the output",
+                  "status": 503,
+                  "detail": "result res-0007 references sha256:3c7d19a0b6e2... and no statement could be signed over it; the release was refused rather than emitted unattested",
+                  "retryable": true,
+                  "retry_after_s": 30,
+                  "correlation": {
+                    "run_id": "run-event-0007",
+                    "correlation_id": "corr-event-0007"
+                  }
+                }
+              ]
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b4-07",
+              "F-b4-05"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "docs/decomposition.md section 3.4 row X4, made precise as an operationalisation of cap-provenance's per-artifact clause - 'the code version, inputs and actor that produced it, verifiable with a tool we did not write' - applied to the whole set of a result's outputs rather than to any one of them: every artifact digest referenced by a result has an attestation-recorded record whose subject digest matches it, and the number of orphans is zero. An orphan is an output digest with no statement over it, and it is the only failure mode this guarantee exists to make impossible.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-05",
+              "T-t2-03"
+            ],
+            "quote": "code version, inputs and actor that produced it, verifiable with a tool we did not write"
+          },
+          {
+            "text": "cap-provenance owns what a statement is, what it must contain and what counts as an outside check, and build-evidence-record owns the note a reader of this repo gets instead (F-b4-05). What this guarantee adds is the closure over that contract: not that a statement can be produced for an artifact, but that one exists for every artifact, which is a property of the set of outputs rather than of any one of them.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-05",
+              "E-concern-provenance"
+            ],
+            "quote": "verifiable with a tool we did not write"
+          },
+          {
+            "text": "agentic-stack states design rule 7 (F-b1-08). Its consequence here: no request shape carries an attest flag, a skip list or an unattested mode, and a producer that would rather not be attributed has no field in which to say so. A guarantee with an off switch is a default.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-08",
+              "F-b4-01"
+            ],
+            "quote": "applied by the platform, not requested by the caller"
+          },
+          {
+            "text": "Proposed: the boundary between the three provenance skills is fixed and load-bearing. Producing and signing the statement belongs to cap-provenance; chaining a recorded attestation to a sealed log head belongs to seam-state; this guarantee owns only the completeness relation between the digests a result names and the statements that exist. Merging any two of the three is how a store's own integrity check ends up quoted as an outside check. Research query: is there a fetched source drawing this exact three-way boundary (producing/signing, chaining-to-a-log-head, completeness), or is that this skill's own decomposition of the provenance concern?",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-05",
+              "X-xc-provenance-chain-006"
+            ]
+          },
+          {
+            "text": "The subject digest is the only join key. A statement is matched to an artifact by digest, never by file name, path, run label or timestamp, because those are the fields that keep pointing at something after the bytes change. The framework this platform adopts already binds a statement to Subjects rather than to names.",
+            "origin": "sourced",
+            "sources": [
+              "X-xc-provenance-chain-003",
+              "X-xc-provenance-chain-001"
+            ],
+            "quote": "associates it with the built artifact via the subject field"
+          },
+          {
+            "text": "An artifact that has been attested is not thereby verified. What the recorded standards buy is that a check exists at all, performed automatically by tools against verifiable metadata; a chain nobody sweeps is a chain whose orphans have simply not been counted yet, and the count is the guarantee.",
+            "origin": "sourced",
+            "sources": [
+              "X-xc-provenance-chain-005"
+            ],
+            "quote": "Verification is performed automatically by tools against verifiable metadata."
+          },
+          {
+            "text": "agentic-stack already states the structurally-green-gate finding (F-a7-03). Its consequence here, as this skill's own proposed consequence: a sweep that found no mismatches over a corpus containing no artifacts reports exactly what a clean sweep reports, so artifacts_checked is asserted alongside orphans and neither number is ever inferred from an exit code.",
+            "origin": "sourced",
+            "sources": [
+              "F-a7-03"
+            ],
+            "quote": "Those establish well-formedness, not correctness"
+          },
+          {
+            "text": "When a statement cannot be produced, the release is refused and the caller receives the registered adapter-unavailable problem object shown above; cap-errors owns the object and its closed type registry (F-b4-07). Emitting the output anyway and reconciling later would make the orphan count a lagging report rather than an enforced zero.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-07",
+              "F-b4-05"
+            ],
+            "quote": "Typed and machine-readable. Never parsed from prose"
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "Proposed: the artifact bytes never enter a record or a statement, only their digest. The consequence for this guarantee specifically is that the orphan sweep needs read access to no payload at all, so the check that proves accountability is not itself a disclosure. Research query: is there a fetched source stating a provenance record must carry only digests and never payload bytes as a security property (versus a size or performance rationale), or is that this skill's own reading of cap-provenance's contract?",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-05"
+            ]
+          },
+          {
+            "text": "There is no field anywhere that names which outputs are exempt: no exemption list, no attest:false, and no per-caller policy that turns the binding off - 'the platform applies each; a caller cannot decline them' (F-b4-01) - because a guarantee whose scope a caller can edit is a request.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-01",
+              "F-b1-08"
+            ],
+            "quote": "The platform applies each; a caller cannot decline them"
+          },
+          {
+            "text": "The criterion a result was judged against never appears in a subject name, a predicate or a sweep report. agentic-stack states design rule 6 (F-b1-07); the consequence here is that a statement over a judged output records the verdict and the digests and stops there.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-07"
+            ],
+            "quote": "The grader is never visible to the graded."
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "At the moment a result is assembled, enumerate every artifact digest it references and treat that set as an obligation list: each member needs a statement before the result is released.",
+          "why": "Proposed. The orphan is created at release, not at production, so the only place the set is knowable and still changeable is where the result is put together. Enumerating later means enumerating from whatever survived. Research query: is there a fetched source recommending an obligation-list model captured at result-assembly time specifically, or is that this row's own reasoning about when the artifact set is still knowable?",
+          "origin": "proposed",
+          "sources": [
+            "F-b4-05"
+          ]
+        },
+        {
+          "step": 2,
+          "action": "Bind each digest by calling the attestation capability cap-provenance defines and appending one attestation-recorded record per subject digest in the same write as the result, never on a best-effort queue behind it.",
+          "why": "Proposed. A separate queue turns a guarantee into a race: the result is visible and the statement is not yet written, which is exactly the window in which an orphan is indistinguishable from a pending append. Research query: is there a fetched source arguing against a best-effort attestation queue specifically (versus the same-write requirement cap-provenance already states generally), or is that this row's own extension of it?",
+          "origin": "proposed",
+          "sources": [
+            "F-b4-05",
+            "X-xc-provenance-chain-003"
+          ]
+        },
+        {
+          "step": 3,
+          "action": "Wire the binding once at the boundary results leave through, not once per producer, and prove it by replaying one corpus through each of TARGET T1's three ways in: a human entering the system, an agent entering the system, and an internal or external event entering the system.",
+          "why": "A cross-cutting concern is managed across the entire structure whichever entry point was used, so a binding wired only on the door someone remembered is declinable by choosing another door. Replaying one corpus through each is what turns 'cannot be declined' into a count.",
+          "origin": "sourced",
+          "sources": [
+            "T-t2-03",
+            "T-t1-01",
+            "T-t1-02",
+            "T-t1-03"
+          ],
+          "quote": "every cross-cutting concern are managed across the entire structure, whichever entry point was used"
+        },
+        {
+          "step": 4,
+          "action": "Refuse the release with the registered adapter-unavailable problem object above when no statement can be produced, and leave the result unpublished rather than publishing it with a note that attestation is pending.",
+          "why": "Proposed. A published output with a pending statement is an orphan under a friendlier name, and every downstream consumer that copies it inherits the orphan without inheriting the note. Research query: is there a fetched source recommending refuse-rather-than-publish-pending for an unattested release specifically, or is that this row's own extension of the closure requirement?",
+          "origin": "proposed",
+          "sources": [
+            "F-b4-07",
+            "F-b4-05"
+          ]
+        },
+        {
+          "step": 5,
+          "action": "Run the sweep as a standing check at a pinned head and report artifacts_checked, attestations_matched and orphans as numbers, then assert on all three rather than on the exit status.",
+          "why": "agentic-stack already states the structurally-green-gate finding (F-a7-03); the consequence for a sweep, stated here as this skill's own and proposed, is that an empty corpus and a clean corpus produce the same green, and only the count of artifacts actually examined separates them.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        },
+        {
+          "step": 6,
+          "action": "Resolve each orphan candidate through the published statement reference rather than through our own record index, and run at least one sampled resolution with our store unreachable.",
+          "why": "cap-provenance sets the criterion that the check is performed by a tool we did not write (F-b4-05); the consequence for the sweep is that a resolution served from our index proves the index is complete, which is a different claim from the one this guarantee makes.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-05",
+            "X-xc-provenance-chain-005"
+          ],
+          "quote": "inputs and actor that produced it, verifiable with a tool we did not write"
+        },
+        {
+          "step": 7,
+          "action": "Record which sealed head each attestation-recorded record was written under, and leave the sealing itself, the inclusion proof and the consistency proof to seam-state.",
+          "why": "An append-only Merkle log supplies inclusion and consistency proofs, and those belong to the log guarantee. Naming the head here is what lets a reader move from an artifact to a proof without this guarantee growing a second copy of the log's machinery.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-provenance-chain-006"
+          ],
+          "quote": "RFC 9162 defines an append-only Merkle log with inclusion and consistency proofs."
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Monitor the store rather than trusting it. A transparency log records every signature in a non-modifiable way, and that property is worth exactly as much as the frequency with which someone checks it; schedule the sweep, do not run it on demand when a reviewer asks.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-provenance-chain-004"
+          ],
+          "quote": "transparency log recording every signature in a non-modifiable way"
+        },
+        {
+          "text": "Hash a canonical form, not a serialisation. A canonical byte form is what lets two independent writers agree that two spellings of the same object are the same subject, and without it the join key silently stops joining the moment a field order changes.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-provenance-chain-006"
+          ],
+          "quote": "RFC 8785 defines JSON Canonicalization Scheme for canonical byte form to hash."
+        },
+        {
+          "text": "Keep the statement portable enough that the check survives losing us: attestations produced by one tool can be verified by another tool, without shared infrastructure or vendor lock-in. A chain whose verification needs our reader is a chain we are asking people to take on trust.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-provenance-chain-007"
+          ],
+          "quote": "attestations produced by one tool can be verified by another tool, without shared infrastructure or vendor lock-in"
+        },
+        {
+          "text": "agentic-stack already states the silently-overridden-configuration finding (F-a7-04). What it adds here, as this skill's own proposed consequence: a binding declared in a hook file is not a binding that ran, so prove the chain by observing an attestation-recorded record for a digest you just produced, never by reading the configuration that says one should exist.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+        },
+        {
+          "text": "Say what the record claims rather than calling it proof. An attestation is a digitally signed document making claims about software artifacts, their origins, processes used to create them, and security measures applied during lifecycle; describing a run's outputs as proven because a record exists overstates every one of those clauses.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-provenance-chain-005"
+          ],
+          "quote": "digitally signed document making claims about software artifacts, their origins, processes used to create them, and security measures applied during lifecycle"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "python3 harness/provenance/conformance.py --adapter dryrun --adapter second",
+        "expected": "exit 0, last line `conformance PASSED: 26/26 cases, 2 binding(s)`, with one line per binding reading `cases=13 passed=13 emitted=2 verified=1 subject_mismatches=0 orphan_subjects=0 log_inclusion_proofs=1 product_hits=0`: an envelope whose subject digest does not match the artifact is refused, and the artifacts actually examined are counted rather than inferred from the exit code. What this run stands in for: the criterion this facet carried before ceremony 61 (finding R61B-018) moved its prose out of the criterion field, which is the check this guarantee ultimately needs and which nothing on disk runs yet - Proposed tool, built with the first implementation of this guarantee (docs/decomposition.md section 3.4 row X4): `python3 tools/conformance_provenance_chain.py --corpus out/results.jsonl --at-head <sealed head> --min-artifacts 100 --report out/provenance-chain.json`. It reads every result in the corpus at one pinned head, collects every artifact digest each result references, and asserts that each has an attestation-recorded record whose subject_digest matches it byte for byte. It reports `artifacts_checked`, `attestations_matched`, `orphans` and `entry_kinds_seen`, and asserts `artifacts_checked >= 100`, `orphans == 0` and that `entry_kinds_seen` contains all three of the ways in named in TARGET T1, so a chain closed only on one door cannot pass. Expected of that check: exit 0 and one summary line `artifacts_checked=100 attestations_matched=100 orphans=0 entry_kinds_seen=user,agent,service`, with the three entry kinds present so the wiring assertion had something to assert on.",
+        "breakage": "sed -i 's/result.subjects_matched, result.subject_mismatches = matched, mismatched/result.subjects_matched, result.subject_mismatches = matched, 0/' harness/provenance/interface.py -- verify() never reports a subject mismatch, so an artifact whose digest differs from the attested subject verifies clean. Restore with git checkout harness/provenance/interface.py.",
+        "expected_failure": "exit 1 on both bindings at the tampered-subject case, which asserts subject_mismatches == 1 and gets 0, while emitted, verified and orphan_subjects hold their values - which is what shows the failure is the lost mismatch rather than a corpus that was never read. Status claimed: tools/measure.py has recorded neither run for this pair here. The breakage the prose criterion above stood for, and what it expected: Emit one output without recording an attestation: remove the attestation-recorded append from a single release path, run the same corpus through it unchanged, and re-run the command exactly as written. The orphan count becomes non-zero: `orphans` becomes 1, the run exits non-zero naming the unattested subject digest and the result that referenced it, and `artifacts_checked` stays at or above 100 - which is what shows the failure is a missing statement rather than a corpus that was never read. Claimed: no attestation-recorded record is written anywhere today, the release path this would attach to is the dispatch boundary that does not yet exist, and the conformance tool is not written, so neither run has been performed here.",
+        "status": "claimed",
+        "sources": [
+          "F-part-c-04",
+          "F-b4-05"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion"
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-definition-of-done",
+          "build-evidence-record",
+          "build-skill-authoring",
+          "cap-provenance"
+        ],
+        "used_by": [
+          "seam-dispatch",
+          "seam-state",
+          "xc-audit-trail",
+          "xc-provenance-chain-implement"
+        ]
+      },
+      "open_questions": [
+        {
+          "question": "The append-only Merkle log specification and the canonicalization scheme this guarantee leans on have no E-standard- entity in the knowledge base, so neither can be entered in contract.standards without a knowledge-base rebuild, which would invalidate the provenance heads of every skill already written. How should they be recorded until then?",
+          "evidence": "1-3-1 applied (TARGET T5): (a) add both entities and rebuild the knowledge base, which breaks every written skill's provenance; (b) name both in capability terms in an invariant, an instruction and a best practice, citing the research record that names them, and record the missing entities here; (c) leave them unnamed until a later wave, which would leave the join key and the proof mechanism unstated. Recommendation followed: (b). The question closes at a ceremony that adds the entities as part of a rebuild, at which point each becomes a contract.standards row with version_status unverified until the specification is actually fetched.",
+          "default": "Both are named in capability terms only, with no version asserted, because the record naming them is a search result rather than a page that was read.",
+          "sources": [
+            "X-xc-provenance-chain-006",
+            "T-t5-02"
+          ],
+          "quote": "When a problem comes up, use 1-3-1"
+        },
+        {
+          "question": "Is one statement emitted per artifact digest, or one statement carrying many subjects per result?",
+          "evidence": "Measure statement volume and signing latency for a representative run against the cost of the coarser grain: a multi-subject statement cannot be published for one subject without publishing the digests of its siblings, which is a disclosure question rather than a performance one. The framework permits either, since a Statement applies to one or more subjects.",
+          "default": "Proposed: one statement per result carrying every subject digest it produced, with the per-digest record above as the index into it, because that keeps one signing operation per release while the orphan sweep still reads a row per digest. Reversible: splitting later changes statement_ref and nothing the sweep asserts on.",
+          "sources": [
+            "X-xc-provenance-chain-001"
+          ],
+          "quote": "applying to one or more software supply chain Subjects"
+        },
+        {
+          "question": "What is an artifact for the purposes of this guarantee: only the outputs a result names, or also every intermediate a step produced and discarded?",
+          "evidence": "cap-provenance owns the contract sentence this question cites (F-b4-05); what is open here is which artifacts fall inside it. Count the intermediates a representative workflow produces and ask which of them another party could ever hold. An intermediate nobody can obtain cannot be presented as evidence of anything, so attesting it buys nothing; an intermediate a step wrote to a shared store can be.",
+          "default": "Proposed: every digest a released result references, plus every artifact written to a store outside the unit that produced it. Intermediates confined to a unit's own filesystem are out of scope until one of them is observed leaving.",
+          "sources": [
+            "F-b4-05"
+          ],
+          "quote": "Every artifact is attributable to the code version, inputs and actor that produced it"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session xc-provenance-chain 2831cb4f, 2026-09-03"
+      }
+    },
+    "xc-provenance-chain-implement": {
+      "name": "xc-provenance-chain-implement",
+      "layer": "xc",
+      "wave": 5,
+      "description": "How to close the provenance chain on this stack: a first enforcement point that binds a statement at release and sweeps for orphans over the append-only records that already exist, a second that moves the refusal out of our process to the store that accepts the result, the migration from a tree where nothing is attested and nothing is counted, where correlation, identity, policy, budget and typed failures attach to a binding, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that records an attestation for an output, when a result can be published while its statement is still queued, when deciding what the second enforcement point should be, when an orphan sweep passes on one enforcement point and fails on the other, or when a report says zero orphans and nobody can say over how many artifacts.",
+      "purpose": {
+        "text": "Turn the closure guarantee xc-provenance-chain states into two enforcement points on this stack, chosen the way build-adapter-pair requires, selectable by configuration, with a migration that never leaves a window in which an output can be released unattested, and a run that can actually fail.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-04",
+          "F-b4-05"
+        ],
+        "quote": "Every interface ships with at least two adapters"
+      },
+      "entities": [
+        "E-concern-provenance",
+        "E-capability-provenance",
+        "E-adapter-jsonl-evidence-records",
+        "E-swap-candidate-any-attestation-store"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "differs_in_execution_model for this pair (proposed instance of the shape build-adapter-pair defines; the axis names are its closed enum)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:provenance-chain:pair-axes:0.1",
+              "title": "ProvenanceChainPairAxes",
+              "description": "Proposed. The three axes on which the two enforcement points differ, stated as properties rather than as product names. measured stays false until the swap has been executed and recorded as evidence.",
+              "type": "array",
+              "minItems": 3,
+              "examples": [
+                [
+                  {
+                    "axis": "locus_of_durability_and_verification",
+                    "today_value": "a local append-only file whose integrity our own reader recomputes",
+                    "second_value": "a store outside the writing process, queried and checked by a party holding none of our credentials",
+                    "measured": false
+                  },
+                  {
+                    "axis": "processes_required_for_progress",
+                    "today_value": "none beyond the writer; the sweep reads records that are already on disk and can run long after the release",
+                    "second_value": "the store must be reachable at release, and an unreachable store refuses the release rather than deferring it",
+                    "measured": false
+                  },
+                  {
+                    "axis": "result_or_claim_ticket",
+                    "today_value": "a completed orphan count over a corpus that was already written, so an orphan is detected after it exists",
+                    "second_value": "an accepted write returned at release, so the orphan is never created in the first place",
+                    "measured": false
+                  }
+                ]
+              ]
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04"
+            ]
+          },
+          {
+            "name": "provenance-chain conformance report (proposed; written once per enforcement point and once across them, and the fields the definition of done asserts on)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:provenance-chain:conformance-report:0.1",
+              "title": "ProvenanceChainConformanceReport",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Proposed. The sweep report of xc-provenance-chain plus the two fields only a pair run can carry, so a green run names what it checked and on which enforcement point rather than only its exit code.",
+              "required": [
+                "adapter",
+                "artifacts_checked",
+                "attestations_matched",
+                "orphans",
+                "entry_kinds_seen",
+                "enforcement_point_observed"
+              ],
+              "properties": {
+                "adapter": {
+                  "type": "string",
+                  "description": "The entity id of the enforcement point under test."
+                },
+                "at_head": {
+                  "type": "string"
+                },
+                "artifacts_checked": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "attestations_matched": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "orphans": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "orphan_digests": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "external_resolutions": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Resolutions served from the published statement with our own store unreachable."
+                },
+                "entry_kinds_seen": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "user",
+                      "agent",
+                      "service",
+                      "schedule"
+                    ]
+                  }
+                },
+                "enforcement_point_observed": {
+                  "type": "string",
+                  "description": "Read from what actually refused or accepted the release, never from the binding that selected the adapter."
+                },
+                "adapters_run": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-a7-03",
+              "F-b1-04"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Proposed: the two enforcement points differ on three of build-adapter-pair's axes, per the shape above, and the difference that matters is when the orphan can exist at all: the first counts orphans that were already created, the second refuses the write that would create one. A second store of the same shape, swept the same way, would prove nothing.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-04"
+            ],
+            "quote": "the second exists to prove the first is not load-bearing"
+          },
+          {
+            "text": "xc-provenance-chain states the guarantee, the record shape and the zero-orphan criterion (F-b4-05), and build-adapter-pair states the rule this pair is built under (F-b1-04). What this skill adds on this stack is that neither enforcement point is the guarantee: the guarantee is the assertion that runs over both, and a chain closed only where the sweep happens to run is a chain that has not been shown to close.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-05",
+              "F-b1-04"
+            ],
+            "quote": "Swappability is a tested property, not an intention."
+          },
+          {
+            "text": "agentic-stack states that Part A is substrate (F-part-c-11). Its consequence here: the append-only records that already exist are not replaced, they become the payload the first enforcement point signs over, so the migration adds a statement and a sweep rather than a second store.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-11"
+            ],
+            "quote": "Part A is substrate, not scope. Do not propose replacing what runs."
+          },
+          {
+            "text": "Proposed: the migration has no window in which an output can be released unattested. The sweep runs in shadow and reports orphans while nothing yet refuses; the release path begins refusing only once the shadow sweep has reported zero orphans over a full corpus; the store admission is turned on last, with the release-path refusal still in place. At no step is the only thing standing between an output and an orphan a check that was just switched off.",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-05",
+              "T-t2-03"
+            ]
+          },
+          {
+            "text": "agentic-stack states design rule 1 (F-b1-02). Its consequence here: which enforcement point refused a release is configuration, and no component above the release path may branch on it. The conformance report carries enforcement_point_observed precisely so that the branch lives in a test rather than in the platform.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-02"
+            ],
+            "quote": "The core imports interfaces, never implementations"
+          },
+          {
+            "text": "Every statement in this skill about how an enforcement point behaves is claimed until a record exists for it naming the script SHA-256, git commit, tree hash under test and whether the tree was dirty, and a claim is never upgraded to a measurement by rewording the sentence that makes it (F-a5-04; build-evidence-record owns what a record of a run must contain).",
+            "origin": "sourced",
+            "sources": [
+              "F-a5-04"
+            ],
+            "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Build the first enforcement point inside the release path: at the moment a result is assembled, collect its artifact digests, obtain a statement for each through the attestation capability, append one attestation-recorded record per subject digest into the append-only store that already exists, and only then publish the result.",
+          "why": "The store that runs today is append-only and already records the code version and tree under test for every run - build-evidence-record owns what that record contains (F-a5-04) - so the record this guarantee needs is a new kind in a writer that exists rather than a new store. Binding inside the release path is what makes the sweep an audit of something enforced rather than the enforcement itself.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-04",
+            "F-b3-12"
+          ],
+          "quote": "Append-only JSONL"
+        },
+        {
+          "step": 2,
+          "action": "Proposed: build the second enforcement point at the store that accepts the result. Offer the result together with the subject digests it references; the store refuses the write unless a statement is already resolvable for every one of them, and returns the registered adapter-unavailable problem when it cannot check.",
+          "why": "Proposed. Moving the refusal outside our writing process is what breaks the first enforcement point's assumption that the same code both creates the obligation and decides whether it was met. It also changes when an orphan can exist: under the first it exists until the sweep finds it, under the second it is never written.",
+          "origin": "proposed",
+          "sources": [
+            "F-b1-04",
+            "F-b3-12"
+          ]
+        },
+        {
+          "step": 3,
+          "action": "Proposed: migrate in four steps with no gap - wrap what the append-only store already writes into a statement without changing the release path; run the sweep in shadow and report orphans while nothing refuses; switch the release path to refuse once a full corpus reports zero; enable the store admission last, leaving the release-path refusal in place.",
+          "why": "Nothing is attested and nothing is counted today, so the first two steps buy the number that tells you whether the third is safe. Turning refusal on before the count exists means discovering the corpus's real orphan rate as a wave of refused releases.",
+          "origin": "proposed",
+          "sources": [
+            "F-part-c-11",
+            "F-b4-05"
+          ]
+        },
+        {
+          "step": 4,
+          "action": "Wire the cross-cutting attachments identically at both enforcement points: stamp the run identifier and the root dispatch identifier onto every attestation-recorded record as explicit attributes, carry the actor and a reference to its delegation chain, key the binding by subject digest so a replayed release produces no second statement, and count the signing cost against the root unit's ceiling.",
+          "why": "xc-provenance-chain states the same wiring rule for the guarantee (T-t2-03): every cross-cutting concern is managed across the entire structure whichever entry point was used. Its consequence at the enforcement points is concrete - a record that carries the digest but not the run cannot be joined to anything, and a replayed release that mints a second statement turns one artifact into two attributions.",
+          "origin": "sourced",
+          "sources": [
+            "T-t2-03"
+          ],
+          "quote": "every cross-cutting concern are managed across the entire structure, whichever entry point was used"
+        },
+        {
+          "step": 5,
+          "action": "Read enforcement_point_observed from what actually accepted or refused the release rather than from the configuration that selected it, and put that observed value in the conformance report.",
+          "why": "agentic-stack's silently-discarded-configuration finding, measured on this host: 'configuration written in the documented place was silently discarded.' A report that names the enforcement point it was told to use cannot tell a real swap from a configuration that silently fell back, which is the one thing a pair run exists to establish.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "Configuration written in the documented place was silently discarded"
+        },
+        {
+          "step": 6,
+          "action": "Apply build-definition-of-done: run the definition of done below over both enforcement points with the same corpus and then its deliberate breakage, and record both outputs as an evidence record the way build-evidence-record fixes, before calling this facet done; proposed pointer, see those skills.",
+          "why": "build-definition-of-done owns criterion plus deliberate breakage plus both recorded outputs, and build-evidence-record owns what the record names, so this row points at them instead of restating the sentence six sibling -implement skills had copied (consolidation part B, kb/ceremonies/implement-clusters.json).",
+          "origin": "proposed",
+          "sources": [
+            "F-part-c-04"
+          ],
+          "quote": "A criterion nothing can fail is not a criterion."
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Assert artifacts_checked and adapters_run before reading an orphan count as good news: a pair run over a corpus containing no artifacts reports zero orphans twice and looks like proof of a swap, the way a nine-stage pipeline ran green because the generated work contained nothing those tools apply to (F-a7-03, agentic-stack's finding, whose gate-level consequence build-definition-of-done owns).",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "because the generated work contained nothing those tools apply to"
+        },
+        {
+          "text": "An enforcement point selected in a configuration file is not the enforcement point that ran, so read it back from the refusal, which is what enforcement_point_observed is for: values written to YAML validated, reviewed correctly, and had no runtime effect (F-a7-04, agentic-stack's silently-overridden-configuration finding).",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+        },
+        {
+          "text": "xc-provenance-chain's closure line is cap-provenance's contract, 'verifiable with a tool we did not write' (F-b4-05), which a queued-but-unwritten statement cannot yet satisfy: do not let a queued binding become an accepted design. A statement that is promised and not yet written is indistinguishable from a missing one to everyone downstream, and the queue is where a chain quietly stops closing under load rather than under a bug.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-05"
+          ],
+          "quote": "verifiable with a tool we did not write"
+        },
+        {
+          "text": "agentic-stack's structurally-green-gate finding (F-a7-03) applies to a pair run as much as to a single sweep: 'Those establish well-formedness, not correctness' when a corpus contains nothing to check against. Prefer widening the corpus over widening the assertion - the cheapest way to make a chain look closed is to sweep only the artifacts the release path already attests; sample from what consumers actually hold instead, and let the orphan count be a surprise while surprises are still cheap.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-jsonl-evidence-records",
+          "role": "today",
+          "maps_to": "The adapter PASS.md B3 records for this capability is JSONL evidence records, and PASS.md A5 records that store as append-only with each record naming the script hash, the commit and the tree under test. The first enforcement point binds inside the release path and writes one attestation-recorded record per subject digest into that store, then sweeps it at a pinned head to count orphans. cap-provenance owns the statement itself; this row records only where the closure is enforced.",
+          "cannot": "Cannot stop an orphan from existing: the sweep runs over records already written, so between a release and the next sweep an unattested output is indistinguishable from an attested one. Its integrity is a rehash by our own reader over a file we hold, so it also cannot answer the question a third party is asking.",
+          "swap_procedure": "Select the enforcement point by configuration with no code edit between runs, replay the identical corpus through each, and merge the per-adapter reports; the merged report must show adapters_run >= 2 and enforcement_point_observed read from the refusal rather than the binding. xc-provenance-chain owns the criterion; this row records the roles PASS.md B3 fixes.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-12",
+            "F-a5-04",
+            "E-adapter-jsonl-evidence-records"
+          ],
+          "quote": "JSONL evidence records"
+        },
+        {
+          "entity": "E-swap-candidate-any-attestation-store",
+          "role": "second",
+          "maps_to": "The recorded swap candidates for this capability are a keyless-signing service or any attestation store. The second enforcement point takes the second of those and puts the refusal in it: the store accepts a result only when a statement is already resolvable for every subject digest the result references, so the closure is checked by a process that did not produce the output.",
+          "cannot": "Cannot admit a release while it is unreachable, where the first enforcement point needs nothing beyond the local writer and can bind offline; and it cannot see an artifact that never reaches it, so it bounds what is written to it rather than everything a unit produced. The axis the pair is chosen for is when an orphan can exist at all: detected after the fact by our own sweep, against refused at the moment of the write by a process outside ours. That is a different execution model, not a different product of the same shape.",
+          "swap_procedure": "Run the identical conformance corpus against it with the store standing in for the release-path check, and assert the same three numbers plus external_resolutions greater than zero with our own store unmounted. Design rule 3 is stated by agentic-stack and by build-adapter-pair (F-b1-04); what is new here is the axis, not the rule.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-12",
+            "F-b1-04",
+            "E-swap-candidate-any-attestation-store"
+          ],
+          "quote": "Sigstore · any attestation store"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second",
+        "expected": "Measured by tools/measure.py at f037f65: exit 0; last lines:   cases=13 passed=13 emitted=2 verified=1 subject_mismatches=0 orphan_subjects=0 store_mounted=False verifier_exit=0 log_inclusion_proofs=1 product_hits=0 | conformance PASSED: 26/26 cases, 2 binding(s)",
+        "breakage": "sed -i 's/{64}\\$\"/{65}$\"/' harness/provenance/interface.py -- widens the DIGEST regex by one hex character so no real sha256 digest matches, and every attest request is refused document-invalid before a statement is ever produced. Restore: git checkout harness/provenance/interface.py",
+        "expected_failure": "Measured by tools/measure.py at f037f65: exit 1; last lines:   FAIL no reason given | passed 10, failed 17",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04",
+          "F-b4-05"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "f037f65",
+          "clean_exit": 0,
+          "clean_output": " accepts both predicates in the same envelope\n  ok   the declared subset is honest: a proof is verified or declared unsupported: inclusion proof over a log of 1 entries verified\n  ok   the store's own integrity check is not what verification rests on: append-only merkle log head f58212cacc29 over 2 entries, verified\n  entity=an identity that expires, and a public append-only log (Sigstore-shaped)\n  cases=13 passed=13 emitted=2 verified=1 subject_mismatches=0 orphan_subjects=0 store_mounted=False verifier_exit=0 log_inclusion_proofs=1 product_hits=0\nconformance PASSED: 26/26 cases, 2 binding(s)",
+          "breakage_exit": 1,
+          "breakage_output": "its 0 (0)\n  ok   0 hits outside adapters/\n4. deliberate breakage: the artifact is rebuilt and the statement is not\n  ok   the breakage run exits non-zero (1)\n  FAIL the verifier rejected it on the subject digest, not on our store (expected 0, got 1)\n  ..   Traceback (most recent call last):\n  ..     File \"<stdin>\", line 2, in <module>\n  ..   FileNotFoundError: [Errno 2] No such file or directory: 'out/break-1.json'\n4b. deliberate breakage: the signature is dropped from the envelope\n  ok   the breakage run exits non-zero on the second adapter too (1)\n  FAIL no reason given\n\npassed 10, failed 17",
+          "restored": true
+        },
+        "expected_design": "docs/decomposition.md section 3.4 row X4: test.sh exits 0 (27 checks: conformance against the dry-run adapter, the caller-region check, the swap proof, the product scan, two deliberate breakages restoring clean); conformance.py --adapter dryrun --adapter second then exits 0 with 26/26 cases across 2 bindings.",
+        "expected_failure_design": "test.sh exits 1 (10 passed, 17 failed): attestation fails on both adapters before verification is reached, so the swap proof, the caller-region round trip, and both deliberate-breakage checks fail in turn (one surfaces as a missing out/break-1.json rather than a rejected verification, because the run that would write it never got that far). Restoring the file with git checkout returns the tree to a clean run."
+      },
+      "composes_with": {
+        "builds_on": [
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record",
+          "xc-provenance-chain"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Does the release-path refusal stay on once the store admission is enabled, or does it become redundant?",
+          "evidence": "Measure how many releases never reach the store at all: an artifact written to a unit's own filesystem and referenced by a result never crosses the store boundary, so the store admission cannot see it. If that count is non-zero on a representative workload, the release-path check is the only one covering those and stays.",
+          "default": "Proposed: both stay on. The store admission is the stronger check where it applies and the release-path check is the wider one, and build-adapter-pair's rule (F-b1-04) cuts the other way here - removing either before the count exists would be removing a check because a newer one looked better.",
+          "sources": [
+            "F-b4-05",
+            "F-b1-04"
+          ],
+          "quote": "the second exists to prove the first is not load-bearing"
+        },
+        {
+          "question": "How does a sweep prove zero orphans over artifacts that have been retained past the point where their bodies were deleted?",
+          "evidence": "Whether the digest and the statement reference survive a retention tombstone while the body does not; the retention classes in docs/decomposition.md section 2.2.4 keep chain headers forever and delete bodies, which would leave the digest resolvable and the payload gone. Confirm that against a real tombstoned record before relying on it. xc-provenance-chain applies the same 1-3-1 protocol to its own missing standard entities (T-t5-02).",
+          "default": "Proposed: the sweep asserts on digests and statement references only, so a tombstoned body leaves the orphan count unchanged. Recorded here rather than assumed, because a sweep that needs the body would start failing at day 401 for reasons no reader would connect to retention.",
+          "sources": [
+            "F-b4-05",
+            "T-t5-02"
+          ],
+          "quote": "When a problem comes up, use 1-3-1"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session xc-provenance-chain 2831cb4f, 2026-09-03"
+      }
+    },
+    "xc-audit-trail": {
+      "name": "xc-audit-trail",
+      "layer": "xc",
+      "wave": 6,
+      "description": "The audit trail as a guarantee rather than a habit: every action attributable to an actor and its delegation chain, the whole run reachable by one correlation id, the record chained so interference shows, and kept for a stated period - all of it applied by the platform from records it already writes, never logged by the caller. Load it when someone asks who did this and under whose authority, when a reviewer needs everything that happened under one identifier, when an integrity check is only ever run by the same process that writes, when a retention period is about to be picked with no obligation named, when an outsider has to be able to check the record without our credentials, and when a system of record is being confused with the operational signal that watches it.",
+      "purpose": {
+        "text": "Fix what makes a record of what happened evidence rather than a log: attributable to an actor and a delegation chain, reachable by correlation id, chained so that interference is detectable, retained for a stated period, and produced by the platform from the ledger, identity, provenance and correlation guarantees it already applies. cap-provenance settles what a signed statement is, xc-provenance-chain settles that one exists for every artifact, seam-state settles how the log is written and sealed; this guarantee settles that the resulting record answers who, under whose authority, in which run, and that someone other than us can check it.",
+        "origin": "sourced",
+        "sources": [
+          "F-b4-03",
+          "F-b4-05",
+          "T-t2-03",
+          "E-concern-identity"
+        ],
+        "quote": "Every action names an actor, including delegated agent actors. Delegation chains are explicit"
+      },
+      "entities": [
+        "E-concern-identity",
+        "E-concern-telemetry",
+        "E-concern-provenance",
+        "E-provisioning-concern-task-store",
+        "E-provisioning-concern-evidence-store",
+        "E-standard-in-toto",
+        "E-standard-dsse",
+        "E-standard-slsa"
+      ],
+      "contract": {
+        "standards": [
+          {
+            "entity": "E-standard-in-toto",
+            "version": "Statement v1 (unverified)",
+            "version_status": "unverified",
+            "version_note": "cap-provenance owns this row (F-b3-12) and this skill repeats it only because the retained evidence an outsider checks is a statement in this format; a search-only record names the statement type and the specification was not fetched from this environment, so the version stays unverified.",
+            "url": "https://github.com/in-toto/attestation",
+            "sources": [
+              "F-b3-12",
+              "X-cross-structure-050",
+              "X-end-to-end-052"
+            ]
+          },
+          {
+            "entity": "E-standard-dsse",
+            "version": "unverified",
+            "version_status": "unverified",
+            "version_note": "cap-provenance owns this row; no record on file names a version, the envelope format is named rather than versioned. It matters here because the envelope is what lets a third party check a retained statement without holding our keys.",
+            "url": null,
+            "sources": [
+              "F-b3-12",
+              "X-cross-structure-050"
+            ]
+          },
+          {
+            "entity": "E-standard-slsa",
+            "version": "v1.1, unverified",
+            "version_status": "unverified",
+            "version_note": "One search-only record on file names v1.1; cap-provenance's open question records the disagreement with v1.0 and owns the row. Nothing was fetched here, so no level is claimed anywhere in this skill.",
+            "url": "https://slsa.dev/spec/v1.1/",
+            "sources": [
+              "F-b3-12",
+              "X-end-to-end-051"
+            ]
+          }
+        ],
+        "operations": [
+          {
+            "name": "trail (proposed operation set; the recorded standards fix document and envelope formats rather than a set of calls, and seam-state owns the log these operations read)",
+            "input": "a selector - one correlation id, run id or actor - and a pinned head (proposed)",
+            "output": "the ordered audit entries matching the selector, each naming its actor, delegation chain, action, outcome and the sealed head it falls under; deterministic at that head, so the same selector and head always give the same answer (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-03",
+              "F-b4-06"
+            ]
+          },
+          {
+            "name": "scan (proposed; the independent monitor, run on a schedule rather than on request)",
+            "input": "two heads bounding a window, and the identity the monitor runs under, which is not the identity that appends (proposed)",
+            "output": "a monitor report carrying entries_checked, chain_breaks, inclusion_proofs_checked, consistency_proofs_checked, oldest_retained_entry_age_days and the problem documents raised; the report is itself appended, so a monitor that did not run is visible as a gap (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "X-cross-structure-053",
+              "F-a7-03"
+            ]
+          },
+          {
+            "name": "evidence (proposed; what leaves the platform for someone who holds none of our credentials)",
+            "input": "one entry id, held by a party who has the entry and nothing else (proposed)",
+            "output": "the entry, its inclusion proof, and the signed sealed head covering it, fetchable and checkable with a verifier we did not write; no payload body and no criterion travels with it (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-05",
+              "X-end-to-end-052"
+            ]
+          }
+        ],
+        "shapes": [
+          {
+            "name": "audit-entry (proposed summary shape; the full entry, the monitor report, the three worked entries and the worked rejection are in references/usage.md)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:audit-trail:entry:0.1",
+              "title": "AuditEntry",
+              "description": "Proposed. A projection of records the platform already writes, never a second thing a caller logs. It carries identifiers, digests and decisions; it never carries a payload body or a grading criterion.",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "entry_id",
+                "prev_entry_id",
+                "chain_digest",
+                "occurred_at",
+                "actor",
+                "delegation_chain",
+                "action",
+                "outcome",
+                "correlation",
+                "retention_class"
+              ],
+              "properties": {
+                "entry_id": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                "prev_entry_id": {
+                  "type": [
+                    "string",
+                    "null"
+                  ],
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                "chain_digest": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                "occurred_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "actor": {
+                  "type": "string",
+                  "description": "user:, agent:, service: or schedule:, spelled the way the identity capability spells it."
+                },
+                "delegation_chain": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Explicit hops, root workload identity last. Empty is not a valid value; a direct action is a chain of one."
+                },
+                "action": {
+                  "type": "object",
+                  "description": "What was attempted: kind, the target named by digest or id, and the policy decision that admitted or refused it."
+                },
+                "outcome": {
+                  "enum": [
+                    "allowed",
+                    "denied",
+                    "succeeded",
+                    "failed"
+                  ]
+                },
+                "correlation": {
+                  "type": "object",
+                  "required": [
+                    "run_id",
+                    "root_dispatch_id",
+                    "correlation_id"
+                  ]
+                },
+                "sealed_head": {
+                  "type": "string",
+                  "description": "The sealed head this entry falls under. seam-state owns the sealing; this field only names it."
+                },
+                "retention_class": {
+                  "enum": [
+                    "chain",
+                    "body",
+                    "payload"
+                  ]
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b4-03",
+              "X-xc-audit-trail-002",
+              "X-xc-audit-trail-005"
+            ]
+          },
+          {
+            "name": "monitor-report (proposed summary shape; the fields the definition of done asserts on, expanded in references/usage.md)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:audit-trail:monitor-report:0.1",
+              "title": "AuditMonitorReport",
+              "description": "Proposed. One report per scheduled scan, appended to the same trail it scans. Counts are asserted on directly, because an empty window and a clean window produce the same exit code.",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "scanned_at",
+                "from_head",
+                "to_head",
+                "entries_checked",
+                "chain_breaks",
+                "independent",
+                "scheduled"
+              ],
+              "properties": {
+                "scanned_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "from_head": {
+                  "type": "string"
+                },
+                "to_head": {
+                  "type": "string"
+                },
+                "entries_checked": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "actors_missing": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "correlation_missing": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "chain_breaks": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "inclusion_proofs_checked": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "consistency_proofs_checked": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "external_verifications": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Checks completed by a verifier we did not write, with our own reader unavailable."
+                },
+                "oldest_retained_entry_age_days": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "retention_floor_days": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "entry_kinds_seen": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "user",
+                      "agent",
+                      "service",
+                      "schedule"
+                    ]
+                  },
+                  "description": "TARGET T6.2's four entries as the identity capability spells the actor prefix, not T1's three ways in: a window with no schedule-originated entry has not been checked over a door that starts root work."
+                },
+                "independent": {
+                  "type": "boolean",
+                  "description": "Read from the identity and credentials the scan actually ran under, never from the configuration that selected them."
+                },
+                "scheduled": {
+                  "type": "boolean",
+                  "description": "True only when the scan was started by a schedule entry rather than by a request."
+                },
+                "problems": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  },
+                  "description": "Typed problem documents raised by this scan; cap-errors owns the object."
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "X-cross-structure-053",
+              "F-a7-03"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Every entry names an actor, including delegated agent actors, and its delegation chain is explicit rather than implied by nesting. An entry whose actor is null is not a weak entry, it is a hole: nothing downstream can attribute the action, and no retention or proof machinery repairs it later.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-03",
+              "E-concern-identity"
+            ],
+            "quote": "Every action names an actor, including delegated agent actors. Delegation chains are explicit"
+          },
+          {
+            "text": "The trail is queryable by correlation id because correlation rides on explicit attributes, not trace parentage, stamped on every entry at the point the platform writes it. A trail that can only be read by walking parent links reproduces the failure A7 finding 1 records, one level down: the entries exist and cannot be gathered.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-06",
+              "E-concern-telemetry"
+            ],
+            "quote": "Correlation rides on explicit attributes, not trace parentage"
+          },
+          {
+            "text": "Tamper-evidence is a property of the record plus something that reads it, never of the writer alone. build-definition-of-done states the sentence that a transparency log is tamper-evident but not tamper-proof (X-cross-structure-053); the consequence here is that the scheduled independent scan is part of this guarantee rather than an operational extra, since the point of monitoring is ensuring that the transparency log satisfies the desired properties of immutability and being append-only.",
+            "origin": "sourced",
+            "sources": [
+              "X-cross-structure-053"
+            ],
+            "quote": "ensuring that the transparency log satisfies the desired properties of immutability and being append-only"
+          },
+          {
+            "text": "agentic-stack states design rule 7: telemetry, policy, provenance and budget are applied by the platform, not requested by the caller. xc-enforcement-chain names the structure that carries this at admission, dispatch and call: an entry has no field for an audit call, an audit flag or an exempt list because there is no field for a bypass of any slot at all. This guarantee's consequence is narrower and specific - the trail is a projection over what four of those six slots already wrote (`identity.resolve` for the actor and delegation chain, `policy.decide` for the outcome, `provenance.open` for the sealed head, `telemetry.open` for the correlation triple), never a second logging call bolted beside them.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-08",
+              "F-b4-01"
+            ],
+            "quote": "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller"
+          },
+          {
+            "text": "An audit trail is not telemetry, and the difference is stated rather than assumed: an audit trail can be complete yet still be easy to alter, while a tamper-evident trail is designed to reveal interference. One prior-art record on file describes such a trail as capturing who invoked an AI agent, which tool it called, what policy decision was made, and when it happened, for forensic reconstruction, compliance review, and incident response.",
+            "origin": "sourced",
+            "sources": [
+              "X-xc-audit-trail-003",
+              "X-xc-audit-trail-001"
+            ],
+            "quote": "An audit trail can be complete yet still be easy to alter, while a tamper-evident trail is designed to reveal interference."
+          },
+          {
+            "text": "Proposed, the operational consequence of that difference: telemetry may sample, may drop under load, may expire on a short window and may be exported best-effort, because a missing span degrades a signal. The trail may do none of those, because a missing entry is itself the finding. Where the two disagree the trail wins, and a run that could not append an entry does not proceed as though it had. Research query: is there a record contrasting telemetry's sampling/best-effort export behaviour against an audit trail's no-loss requirement, rather than this skill inferring the contrast from telemetry's own correlation clause (F-b4-06)?",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-06",
+              "X-xc-audit-trail-003"
+            ]
+          },
+          {
+            "text": "Retention is stated per class with a named obligation behind it, never inherited from whatever the store defaults to. One record on file names a concrete floor in one regime: under the EU AI Act, high-risk AI systems must automatically log events across their entire lifetime, and deployers must retain those logs for at least six months. Which regime a deployment falls under is a question this skill records rather than answers, and seam-state owns the three retention classes the floor is applied to.",
+            "origin": "sourced",
+            "sources": [
+              "X-end-to-end-049",
+              "X-end-to-end-050"
+            ],
+            "quote": "high-risk AI systems must automatically log events across their entire lifetime, and deployers must retain those logs for at least six months"
+          },
+          {
+            "text": "What an outsider can verify is the whole point, and it is narrower than what we can verify. cap-provenance fixes the criterion and xc-provenance-chain applies it artifact by artifact, both resting on the same clause (F-b4-05) that a record is verifiable with a tool we did not write; what this guarantee adds is that the object checked is an inclusion proof against a signed sealed head, not our own reader rehashing our own file. A rehash by our reader is a claim about our copy, and it is exactly the evidence a party who distrusts us cannot use.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-05",
+              "E-concern-provenance"
+            ],
+            "quote": "verifiable with a tool we did not write"
+          },
+          {
+            "text": "Proposed: this guarantee owns two persisted artifacts beyond the ledger it reads, neither of which the blueprint's state inventory names today - the scan operation's monitor report (entries_checked, chain_breaks, inclusion_proofs_checked, consistency_proofs_checked, oldest_retained_entry_age_days, appended on its own schedule) and the evidence operation's evidence bundle (one entry, its inclusion proof and the signed sealed head, handed to a party who holds none of our credentials). Recorded here as a row the blueprint's own review should carry too, since enumeration before pruning is the first rule of that lens. Research query: has the blueprint's state inventory actually been re-run since this row was written to confirm the monitor report and evidence bundle are still absent from it, or is the gap only asserted here?",
+            "origin": "proposed",
+            "sources": [
+              "X-cross-structure-053",
+              "F-a7-03",
+              "F-b4-05"
+            ]
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "Proposed: there is no write operation on this interface. Nothing a caller, an agent or a workflow can call appends an entry, edits one, marks one as not audit-relevant or suppresses one, because an interface that lets the audited party write the audit is a formatting convention rather than a guarantee. Research query: does any fetched (not search-only) audit-log specification state read-only-to-callers as an explicit requirement, rather than this row deriving it from design rule 7's general non-optionality?",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-08",
+              "F-b4-01"
+            ]
+          },
+          {
+            "text": "The criterion a result is judged against never appears in an entry, a monitor report or an evidence bundle. agentic-stack states design rule 6 (F-b1-07), and cap-provenance and cap-scheduling carry the same sentence for their own records; the consequence here is that an entry over a judged action records the actor, the action and the verdict and stops there, so reading one's own audit trail is not a way around the grader rule.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-07"
+            ],
+            "quote": "An agent sees its outcome, never the criterion it is judged against."
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Derive the trail from records the platform already writes - ledger entries, policy decisions, dispatch observations, attestations - rather than adding a logging call anywhere. If a kind of action is missing from the trail, add it to what the platform records, never to what the caller is asked to remember.",
+          "why": "agentic-stack states design rule 7 (F-b1-08): guarantees are applied, not requested. A trail assembled from caller-side logging is complete exactly where callers were diligent, which is the one property an audit trail cannot be allowed to have.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-08",
+            "F-b4-01"
+          ],
+          "quote": "The platform applies each; a caller cannot decline them."
+        },
+        {
+          "step": 2,
+          "action": "Stamp actor, delegation chain and the correlation triple onto every entry at the moment the platform writes the underlying record, and index by correlation id so one identifier gathers the whole run across components.",
+          "why": "Correlation rides on explicit attributes, not trace parentage, and identity requires the delegation chain to be explicit. Stamping later means stamping from whatever context survived, which is where a sub-agent's actions become unattributable.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-06",
+            "F-b4-03"
+          ],
+          "quote": "Correlation rides on explicit attributes, not trace parentage"
+        },
+        {
+          "step": 3,
+          "action": "Fix the entry field set against prior art before inventing one: the minimum operational fields a log-management guide names, plus the agent-specific fields the audit-trail draft on file names, plus this platform's correlation triple and delegation chain.",
+          "why": "One record on file says at minimum each event should capture timestamp, event, status, and/or error codes, service/command/application name, user or system account associated with an event; another describes a format with explicit fields for agent identity, action classification, outcome tracking, and trust level reporting. Between them they cover what a reviewer asks for, and neither had to be guessed.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-audit-trail-005",
+            "X-xc-audit-trail-002"
+          ],
+          "quote": "explicit fields for agent identity, action classification, outcome tracking, and trust level reporting"
+        },
+        {
+          "step": 4,
+          "action": "Chain each entry to its predecessor and record which sealed head it falls under; leave the write model, the sealing, the inclusion and consistency proofs and the retention classes to seam-state and name them rather than restating them here.",
+          "why": "agentic-stack states the property the chained store that runs today already gives (F-a5-03), where each run's closing digest is the next run's opening digest, so a manual edit between runs is detectable. The consequence here is that reimplementing the chain inside the audit layer would give the platform two integrity mechanisms that can disagree, and a reviewer no way to tell which one to believe.",
+          "origin": "sourced",
+          "sources": [
+            "E-provisioning-concern-task-store",
+            "F-a5-03"
+          ],
+          "quote": "each run's closing digest is the next run's opening digest, so a manual edit between runs is detectable"
+        },
+        {
+          "step": 5,
+          "action": "Run the scan as a scheduled entry under its own identity and read-only credentials, not as a function the writer calls at the end of an append, and have it read a window between two heads rather than the current state.",
+          "why": "cap-scheduling owns the recurrence declaration and the schedule entry this uses. What is new here is why it must be a schedule: the guarantee is that something other than the writer looks, and a check invoked by the writer inherits every failure the writer has.",
+          "origin": "sourced",
+          "sources": [
+            "X-cross-structure-053",
+            "F-b3-15"
+          ],
+          "quote": "it becomes important to have a tool to monitor the transparency log for any evidence of tampering"
+        },
+        {
+          "step": 6,
+          "action": "Append the monitor report itself to the trail, and assert on its counts - entries_checked, actors_missing, correlation_missing, chain_breaks, consistency_proofs_checked - rather than on the scan's exit status.",
+          "why": "agentic-stack states the structurally-green-gate finding (F-a7-03): those establish well-formedness, not correctness. What this guarantee adds, as its own consequence and proposed: a scan over an empty window reports exactly what a clean window reports, and a monitor whose runs are not themselves recorded cannot be shown to have run at all.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03",
+            "F-a5-04"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        },
+        {
+          "step": 7,
+          "action": "On a detected break, emit a typed problem document naming the entry and the two heads, and stop treating the window as verified; do not repair the chain, and do not let a scan that failed be retried until it passes.",
+          "why": "Proposed. A break is a finding about the record, not a transient condition, so the honest response is a typed refusal that a machine can route rather than a retry that eventually produces a green line. The suffix urn:agentic:problem:audit-chain-broken is proposed and pending registration in the closed registry; until it has a row, the scan returns the registered adapter-unavailable problem and names the break in detail, because a store whose chain does not verify cannot be relied on to serve. Research query: is there a fetched source recommending stop-scanning-until-fixed over retry-until-green for a detected chain break specifically, or is that this row's own reasoning about what a break means?",
+          "origin": "proposed",
+          "sources": [
+            "F-b4-07",
+            "X-cross-structure-053"
+          ]
+        },
+        {
+          "step": 8,
+          "action": "Publish sealed heads and retained statements where a party holding none of our credentials can fetch them, and prove the path by running at least one check with our own reader unavailable.",
+          "why": "cap-provenance sets the criterion and xc-provenance-chain states it for artifact digests (F-b4-05): every artifact is attributable to the code version, inputs and actor that produced it, verifiable with a tool we did not write. Its consequence for a trail, proposed here, is sharper than for a single artifact - a verification served from our own index proves our index is self-consistent, which is precisely the claim a party investigating us would not accept.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-05",
+            "X-end-to-end-052"
+          ],
+          "quote": "Every artifact is attributable to the code version, inputs and actor that produced it, verifiable with a tool we did not write"
+        },
+        {
+          "step": 9,
+          "action": "State the retention floor per class in one place, name the obligation it comes from, and have the scan assert the oldest retained entry is at least that old rather than assuming expiry never ran.",
+          "why": "A floor with no named obligation is a guess that nobody can review; one record on file names a management-system standard whose obligations map closely to record-keeping (Article 12) and the other regulation articles around it, which is the kind of citation a retention number needs. Asserting the age turns the policy into something a run can fail.",
+          "origin": "sourced",
+          "sources": [
+            "X-end-to-end-050",
+            "X-end-to-end-049"
+          ],
+          "quote": "record-keeping (Article 12)"
+        },
+        {
+          "step": 10,
+          "action": "Proposed: open references/usage.md when you need the full entry schema, the three worked entries showing a human, an agent and an event reaching the trail, the minimal call each way in makes, or the worked rejection. The body of this skill is enough to judge whether a trail is attributable, queryable, tamper-evident and retained, and cap-consumption owns the caller doctrine those examples follow.",
+          "why": "Proposed, progressive disclosure. The full schema and four worked instances run past the length at which a contract stops being readable, and a reader deciding whether the guarantee holds does not need them open.",
+          "origin": "proposed",
+          "sources": []
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Give the monitor its own identity and its own schedule, and check both from the report rather than from the configuration. agentic-stack states the silently-overridden-configuration finding (F-a7-04): a monitor declared as independent in a file is not a monitor that ran independently. What it adds here, as this guarantee's own consequence and proposed: independence is the one property this guarantee cannot verify after the fact.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04",
+            "X-cross-structure-053"
+          ],
+          "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+        },
+        {
+          "text": "Do not describe the trail as tamper-proof. What is on file is that such records are engineered so that post-event changes, deletions, or gaps are detectable, preserving evidentiary value; detectable is a smaller and more defensible claim than prevented, and the smaller claim is the one the mechanism actually supports.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-audit-trail-001"
+          ],
+          "quote": "post-event changes, deletions, or gaps are detectable, preserving evidentiary value"
+        },
+        {
+          "text": "Retain the verifier alongside the evidence. Proposed: a statement kept for six months whose verification tool, key material or format reader has moved on in the meantime is retained rather than verifiable, so record the verifier version in the monitor report and re-run one historical verification on every scan. Research query: is there a fetched record on verifier/key-material obsolescence for long-retained signed evidence (e.g. in-toto or DSSE key-rotation guidance), rather than this row reasoning from the general six-month retention floor alone?",
+          "origin": "proposed",
+          "sources": [
+            "X-end-to-end-049",
+            "F-b4-05"
+          ]
+        },
+        {
+          "text": "Keep claimed and measured apart when talking about your own chain, the way build-evidence-record fixes it: our reader recomputing our own digests is a measurement of our file and a claim about everything else. Say which of the two a green line is before offering it to anyone outside.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-08"
+          ],
+          "quote": "Distinguish **claimed** from **measured** throughout"
+        },
+        {
+          "text": "Watch for the gap rather than the edit. A chain makes an alteration detectable, but the cheapest attack on a trail is a run that never wrote an entry at all, so pair the chain check with a coverage check - actions observed against entries present - and treat an unexplained absence as the same severity as a broken digest.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-audit-trail-001",
+            "F-a7-03"
+          ],
+          "quote": "post-event changes, deletions, or gaps are detectable"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/xc-audit-trail/test.sh",
+        "expected": "exit 0, `passed 18, failed 0`, and the scan line `chain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False`. The gate reads every entry in the window, asserts on the counters rather than on an exit code, and its tamper case shows a chain break being named rather than passed over. Claimed, and the counters themselves state the gap: `entries_checked=24` against the 100 this facet asserts, `independent=False` and `scheduled=False` because no monitor identity and no schedule exist here, no retention floor is measured (`oldest_retained_entry_age_days >= 180` is asserted nowhere), no third-party in-toto/DSSE verifier is invoked with our own reader unavailable, and `entry_kinds_seen` covering user, agent, service and schedule is not checked. `tools/conformance_audit_trail.py` does not exist; this gate, which xc-audit-trail-implement owns, is the nearest thing that runs. The criterion above was run on 2026-09-03 and exited 0.",
+        "breakage": "Flip one byte inside a historical entry that the window covers - one character of an actor name is enough - leave every other entry untouched, and let the monitor reach its next scheduled run.",
+        "expected_failure": "`chain_breaks` becomes 1, the scan names the entry whose chain digest no longer verifies, exits non-zero and emits the typed problem document, while `entries_checked` stays at or above 100 and `actors_missing` stays 0 - which is what shows the failure is the altered record rather than a window that was never read. Claimed: no audit entry, monitor, schedule or conformance tool exists on this stack today. The nearest analogue that does run here was measured separately over this repository's own chained run ledger and is recorded in the adapter row of xc-audit-trail-implement.",
+        "status": "claimed",
+        "sources": [
+          "F-part-c-04",
+          "X-cross-structure-053"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion"
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-definition-of-done",
+          "build-skill-authoring",
+          "build-evidence-record",
+          "build-research-record",
+          "build-ceremony",
+          "cap-provenance",
+          "cap-scheduling",
+          "core-ledger",
+          "xc-provenance-chain",
+          "seam-state",
+          "xc-enforcement-chain"
+        ],
+        "used_by": [
+          "xc-audit-trail-implement"
+        ]
+      },
+      "open_questions": [
+        {
+          "question": "The append-only Merkle log specification whose inclusion and consistency proofs this guarantee leans on, the management-system standard behind the retention floor and the regulation that sets it have no E-standard- entity in the knowledge base, so none can be entered in contract.standards. How should they be recorded until then?",
+          "evidence": "1-3-1 applied (TARGET T5), the same protocol xc-provenance-chain applied to the same gap for the log specification: (a) add the entities and rebuild the knowledge base, which invalidates the provenance heads of every skill already written; (b) name each in capability and regime terms in the invariants and instructions, citing the search-only records that name them, and record the missing entities here; (c) leave them unnamed, which would leave the retention floor with no stated source. Recommendation followed: (b).",
+          "default": "Each is named in capability or regime terms with no version asserted, because every record naming them is a search result rather than a page that was read. The question closes at a ceremony that adds the entities during a rebuild.",
+          "sources": [
+            "T-t5-02",
+            "X-end-to-end-050"
+          ],
+          "quote": "When a problem comes up, use 1-3-1"
+        },
+        {
+          "question": "The closed problem-type registry in docs/decomposition.md section 2.1.6 has no row for an integrity failure found in the record itself. What type does a detected chain break return?",
+          "evidence": "The row this skill would add is `| audit-chain-broken | 500 | no | The audit monitor found an entry whose chain digest does not verify |`: not retryable, because rescanning the same window returns the same break, and not a policy refusal, because nothing was denied. cap-errors owns the registry and the object, and core-ledger already states the clause it rests on (F-b4-07, F-b3-13) that failures are typed and machine-readable, never parsed from prose; the suffix here is proposed and pending registration until a row exists.",
+          "default": "The scan returns the registered adapter-unavailable problem with the break named in detail, which is the closest registered row: a store whose chain does not verify cannot be relied on to serve. The cost of that fallback is that it reads as retryable, which this failure is not, and that is the argument for the row.",
+          "sources": [
+            "F-b4-07",
+            "F-b3-13"
+          ],
+          "quote": "Typed and machine-readable. Never parsed from prose"
+        },
+        {
+          "question": "Does the trail need a copy outside our control, or is a signed sealed head published to a third party enough?",
+          "evidence": "Prior art on file describes a distributed ledger system that creates an immutable record of transactions across a network of computers, which removes our ability to withhold the record entirely, at the cost of publishing what we hold. Decide by counting how many entries could be published at all once payload bodies and correlation identifiers are excluded, and whether any party actually needs the entries rather than the proof.",
+          "default": "Proposed: publish signed sealed heads and serve entries on request against them, rather than replicating the trail. Reversible: replicating later changes where an entry is fetched from and nothing the scan asserts on.",
+          "sources": [
+            "X-xc-audit-trail-004",
+            "F-b4-05"
+          ],
+          "quote": "an immutable record of transactions across a network of computers"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session xc-audit-trail 2831cb4f, 2026-09-03"
+      }
+    },
+    "xc-audit-trail-implement": {
+      "name": "xc-audit-trail-implement",
+      "layer": "xc",
+      "wave": 7,
+      "description": "How to build the audit trail on this stack: a first store that is the chained append-only file we already write and check ourselves, a second that puts the record where a party holding none of our credentials can check it, the migration from a tree with no actor, no correlation index, no monitor and no stated retention floor, where identity, correlation, policy, budget, idempotency and typed failures attach to an entry and to a scan, and a definition of done with the wiring fault that makes it fail. Load it when writing or reviewing the code that projects records into a trail, when the integrity check is about to be called from the process that appends, when deciding what the second store should be, when a scan reports zero breaks and nobody can say over how many entries or how far back, or when a history that predates the actor field is about to be presented as attributable.",
+      "purpose": {
+        "text": "Turn the guarantee xc-audit-trail states into two stores behind one trail contract, chosen the way build-adapter-pair requires so that the second breaks the assumption that we hold the only copy of our own record, with a migration that never claims coverage it does not have, and a run that can actually fail.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-04",
+          "F-b4-03"
+        ],
+        "quote": "Every interface ships with at least two adapters"
+      },
+      "entities": [
+        "E-adapter-jsonl-hash-chain",
+        "E-swap-candidate-any-attestation-store",
+        "E-provisioning-concern-task-store",
+        "E-provisioning-concern-evidence-store",
+        "E-capability-state-persistence"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "differs_in_execution_model for this pair (proposed instance of the shape build-adapter-pair defines; the axis names are its closed enum)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:audit-trail:pair-axes:0.1",
+              "title": "AuditTrailPairAxes",
+              "description": "Proposed. The three axes on which the two stores differ, stated as properties rather than product names. measured stays false until the swap itself has been executed and recorded.",
+              "type": "array",
+              "minItems": 3,
+              "examples": [
+                [
+                  {
+                    "axis": "who_can_check_the_record",
+                    "today_value": "our own reader recomputes digests over a file we hold; the check is convincing only to someone who already trusts the holder",
+                    "second_value": "a party holding none of our credentials verifies an inclusion proof against a signed head, with our reader unavailable",
+                    "measured": false
+                  },
+                  {
+                    "axis": "who_holds_the_only_copy",
+                    "today_value": "the platform holds the only copy of its own chain, so deleting a window and the check that would notice it is one action",
+                    "second_value": "a copy exists that we did not write and cannot rewrite, so a deleted window is visible as a gap to someone else",
+                    "measured": false
+                  },
+                  {
+                    "axis": "processes_required_for_progress",
+                    "today_value": "none beyond the writer; entries append and verify offline, and a scan can run long after the fact",
+                    "second_value": "the external store must be reachable to seal, and an unreachable store refuses the seal rather than deferring it",
+                    "measured": false
+                  }
+                ]
+              ]
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04"
+            ]
+          },
+          {
+            "name": "audit-trail conformance report (proposed; written once per store and once across them, and the fields the definition of done asserts on)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:audit-trail:conformance-report:0.1",
+              "title": "AuditTrailConformanceReport",
+              "description": "Proposed. The monitor report of xc-audit-trail plus the three fields only a pair run can carry, so a green run names what it checked, on which store, and under whose identity, rather than only its exit code.",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "store",
+                "entries_checked",
+                "chain_breaks",
+                "independent",
+                "scheduled",
+                "store_observed"
+              ],
+              "properties": {
+                "store": {
+                  "type": "string",
+                  "description": "The entity id of the store under test."
+                },
+                "store_observed": {
+                  "type": "string",
+                  "description": "Read from what actually answered the query, never from the configuration that selected it."
+                },
+                "from_head": {
+                  "type": "string"
+                },
+                "to_head": {
+                  "type": "string"
+                },
+                "entries_checked": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "actors_missing": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "correlation_missing": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "chain_breaks": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "coverage_start": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "The instant from which the trail is attributable. Records before it are in the chain and are not claimed as audit entries."
+                },
+                "external_verifications": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "oldest_retained_entry_age_days": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "scheduled_runs_observed": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "independent": {
+                  "type": "boolean",
+                  "description": "Read from the identity and credentials the scan ran under."
+                },
+                "scheduled": {
+                  "type": "boolean"
+                },
+                "entry_kinds_seen": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "user",
+                      "agent",
+                      "service",
+                      "schedule"
+                    ]
+                  }
+                },
+                "adapters_run": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-a7-03",
+              "F-b1-04"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Proposed: the two stores differ on three of build-adapter-pair's axes, per the shape above, and the difference that matters is who can check the record. A second file of the same shape in a second directory, scanned by the same reader, would leave the guarantee resting on exactly the assumption it exists to remove.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-04"
+            ],
+            "quote": "the second exists to prove the first is not load-bearing"
+          },
+          {
+            "text": "xc-audit-trail states the guarantee, the entry shape, the monitor report and the criterion; build-adapter-pair states the rule this pair is built under (F-b1-04). What this skill adds on this stack is that neither store is the guarantee: the guarantee is the assertion that runs over both, and a trail checkable only where our own reader happens to run has not been shown to be checkable at all.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-04",
+              "F-b4-03"
+            ],
+            "quote": "Swappability is a tested property, not an intention."
+          },
+          {
+            "text": "agentic-stack states that Part A is substrate (F-part-c-11). Its consequence here: the chained append-only file that runs today is not replaced. It becomes the first store, the trail is a projection over it, and the migration adds an actor, a correlation index, a scheduled scan and a stated retention floor rather than a second log.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-11",
+              "F-meta-03"
+            ],
+            "quote": "Part A is substrate, not scope. Do not propose replacing what runs."
+          },
+          {
+            "text": "agentic-stack states design rule 1 (F-b1-02). Its consequence here: which store answered a query is configuration, and nothing above the trail interface may branch on it. The conformance report carries store_observed precisely so that the branch lives in a test rather than in the platform.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-02"
+            ],
+            "quote": "The core imports interfaces, never implementations"
+          },
+          {
+            "text": "What a record of a run must contain is build-evidence-record's (F-a5-04). Every claim in this skill about how a store behaves is claimed until such a record exists for it, with one exception that is labelled measured in the adapter row below and is narrower than the guarantee - it shows a byte-level alteration is detectable in one chained file by its own reader, and nothing about independence, scheduling, retention or outside verification.",
+            "origin": "sourced",
+            "sources": [
+              "F-a5-04",
+              "F-part-c-08"
+            ],
+            "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Build the first store as a projection over the chained append-only file that already runs: read its records, emit one audit entry per action-bearing record, and add the actor, delegation chain and correlation triple at the writer rather than in the projection.",
+          "why": "What the append-only store on this stack records per run is build-evidence-record's (F-a5-04). Its consequence here: what is missing from that store is not durability but attribution and an index, so the projection adds neither. Adding the actor in the projection would make it derived rather than recorded, and a derived actor is a guess with a timestamp on it.",
+          "origin": "sourced",
+          "sources": [
+            "E-provisioning-concern-evidence-store",
+            "F-a5-04"
+          ],
+          "quote": "Append-only JSONL"
+        },
+        {
+          "step": 2,
+          "action": "Proposed: build the second store as an external, third-party-checkable log. Seal each window and publish the signed head there; serve entries against it, so a party holding none of our credentials can check an inclusion proof without asking us for the file.",
+          "why": "Proposed. This is what breaks the first store's assumption that we hold the only copy of our own record: under the first, deleting a window and deleting the reader that would notice are the same action, and under the second the gap is visible to someone we cannot reach.",
+          "origin": "proposed",
+          "sources": [
+            "F-b1-04",
+            "F-b4-05"
+          ]
+        },
+        {
+          "step": 4,
+          "action": "Proposed: migrate in five stages with no retroactive claim - project existing records into the entry shape read-only; add actor, delegation chain and correlation at the writer and stamp coverage_start; stand the scan up on a schedule under its own read-only identity, reporting counts and refusing nothing; seal and publish heads to the external store; state the retention floor per class and enable holds last.",
+          "why": "Proposed. Nothing today is attributable, indexed, scanned or retained to a stated floor, so the early stages buy the counts that tell you whether the later ones are safe. Publishing heads before the actor exists would put a signed statement over a record that cannot answer who, which is a stronger-looking claim than the one the trail can support.",
+          "origin": "proposed",
+          "sources": [
+            "F-b4-03",
+            "F-part-c-08"
+          ]
+        },
+        {
+          "step": 5,
+          "action": "Wire the cross-cutting attachments identically at both stores, as a projection of the same four slots xc-enforcement-chain names rather than a parallel set of fields: the actor and delegation chain from `identity.resolve`, the policy decision that admitted the action from `policy.decide`, the run and root dispatch identifiers as explicit attributes from `telemetry.open` rather than parentage, and an idempotency key over the head range from `idempotency.claim` so a re-run of the same window appends one report rather than two. The scan's own cost is drawn against a ceiling through the same `budget.reserve` slot every other unit crosses.",
+          "why": "xc-audit-trail states the wiring rule (T-t2-03): state, telemetry and every cross-cutting concern are managed across the entire structure, whichever entry point was used. xc-enforcement-chain names the six slots and their order; this build's consequence is concrete - an entry carrying a digest but no run identifier joins to nothing, and a re-scanned window that appends a second report makes the trail's own coverage ambiguous.",
+          "origin": "sourced",
+          "sources": [
+            "T-t2-03",
+            "F-b4-06"
+          ],
+          "quote": "every cross-cutting concern are managed across the entire structure, whichever entry point was used"
+        },
+        {
+          "step": 6,
+          "action": "Read independent, scheduled and store_observed from what actually ran and answered - the identity the scan authenticated as, the entry kind that started it, the store that served the query - and put those observed values in the conformance report.",
+          "why": "The silently-overridden-configuration finding is agentic-stack's (F-a7-04): a report that names the store and the identity it was told to use cannot tell a real swap from a configuration that quietly fell back, which is the one thing a pair run exists to establish.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+        },
+        {
+          "step": 8,
+          "action": "Keep every statement in this skill labelled claimed except the one measurement recorded in the adapter row below, and state what that measurement does not cover whenever it is cited.",
+          "why": "agentic-stack states the rule that claimed and measured are distinguished throughout (F-a7-01, F-part-c-08), and build-evidence-record owns what upgrading one to the other requires. Its consequence here: a byte-level alteration detected in one chained file by its own reader is evidence for one clause of this guarantee and for none of the others, and letting it stand for the guarantee is exactly that unearned upgrade.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-08",
+            "F-a7-01"
+          ],
+          "quote": "Distinguish **claimed** from **measured** throughout"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Assert entries_checked and adapters_run before reading chain_breaks as good news. A pair run over a window containing no entries reports zero breaks twice and looks like proof of a swap - the structurally-green-gate finding is agentic-stack's (F-a7-03), and this is its shape for a trail.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        },
+        {
+          "text": "Proposed: give the scan its own credentials before giving it its own schedule. A scan that runs on a timer but authenticates as the writer is independent in the calendar and not in the way that matters, and the calendar is the half a reviewer can see.",
+          "origin": "proposed",
+          "sources": [
+            "F-b4-03"
+          ]
+        },
+        {
+          "text": "Proposed: prefer widening the window over widening the assertion. The cheapest way to make a trail look sound is to scan only the recent window the writer has not left, so scan across at least one sealed boundary and let a surprise arrive while surprises are still cheap.",
+          "origin": "proposed",
+          "sources": [
+            "F-a7-03"
+          ]
+        },
+        {
+          "text": "Do not let the first store's self-check be quoted as outside verification. cap-provenance sets the criterion and xc-audit-trail states it for the trail (F-b4-05): the record has to be verifiable with a tool we did not write. On this stack the tool that verifies the chain today is one we wrote, so its green line is a measurement of our file and a claim about everything else.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-05",
+            "F-part-c-08"
+          ],
+          "quote": "verifiable with a tool we did not write"
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-jsonl-hash-chain",
+          "role": "today",
+          "maps_to": "The adapter PASS.md B3 records for state persistence is a JSONL file plus a hash chain, and PASS.md A5 records the task store as JSONL, hash-chained. The first store is that file: entries are appended, each linked to its predecessor, and a reader we wrote recomputes the digests. This repository runs a working instance of exactly that shape in kb/ledger.jsonl, where each record carries the actor, the inputs and outputs, the code commit, the tree hash, a dirty flag and a claimed-or-measured label, chained by prev and hash.",
+          "cannot": "Cannot be checked by anyone who does not hold the file, so it answers our question and not an outsider's. Cannot notice a window that was removed together with the reader, since we hold the only copy. Has no actor-plus-correlation index, no schedule and no stated retention floor today, so three of the four clauses of this guarantee are absent rather than weak.",
+          "swap_procedure": "Select the store by configuration with no code edit between runs, replay the identical window through each, and merge the per-store reports; the merged report must show adapters_run >= 2 and store_observed read from what answered rather than from the binding. Measured here, and only this far: `python3 tools/kb.py ledger-verify` over kb/ledger.jsonl printed `ledger verified: 16 records, chain intact` and exited 0; flipping one character inside the eighth historical record (the `agent` field, opus-improver to opus-improvor) printed `FAIL: ledger chain broken at L-00008` and exited 1; restoring the file byte for byte (sha256 8a339bce41368f70268908b456dab11f1a67ea7fc4e07665b9d76ddd4f7e2a25) reproduced the clean run. Session xc-audit-trail 2831cb4f, 2026-09-03. What that does not show: 16 records rather than 100, no actor index, no schedule, no independent identity, no retention floor and no outside verifier - the check was run by the same session that can write the file.",
+          "status": "measured",
+          "sources": [
+            "F-b3-17",
+            "F-a5-03",
+            "E-provisioning-concern-task-store",
+            "E-adapter-jsonl-hash-chain"
+          ],
+          "quote": "JSONL, hash-chained"
+        },
+        {
+          "entity": "E-swap-candidate-any-attestation-store",
+          "role": "second",
+          "maps_to": "The recorded swap candidates for the provenance row are a keyless-signing service or any attestation store, and the second store takes the latter: sealed heads are published to an append-only log outside our process, where a valid log can be cryptographically verified by any third-party. The trail interface is unchanged; what changes is where the head that anchors an entry lives and who is able to check it.",
+          "cannot": "Cannot seal while it is unreachable, where the first store appends and verifies offline. Cannot hold what we decline to publish, so it bounds the entries whose heads reach it rather than everything the platform recorded. The axis the pair is chosen for is who can check the record and who holds the only copy: our reader over our file, against a party holding none of our credentials checking a proof. That is a different execution model, not a different product of the same shape. Note that this row and the row above sit on two different PASS.md B3 capability rows - state persistence for the chain, provenance for the published statement - because an audit trail is a guarantee assembled from both rather than one capability of its own; the open question below records that.",
+          "swap_procedure": "Run the identical conformance window against it with the external log standing in for our reader, and assert the same counts plus external_verifications greater than zero with our own reader unmounted. Design rule 3 is stated by agentic-stack and by build-adapter-pair (F-b1-04); what is new here is the axis, not the rule.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-12",
+            "F-b1-04",
+            "X-cross-structure-052",
+            "E-swap-candidate-any-attestation-store"
+          ],
+          "quote": "a valid log can be cryptographically verified by any third-party"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/xc-audit-trail/test.sh",
+        "expected": "Measured by tools/measure.py at f037f65: exit 0; last lines: chain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False | passed 18, failed 0",
+        "breakage": "sed -i '206s@.*@            if False:  # BREAKAGE@' harness/xc-audit-trail/interface.py -- the scan's chain comparison (each entry's prev and hash against the recomputed values, interface.py:206) never fires, so the tampered entry the conformance corpus plants goes unreported and the binding stops passing the case that catches it. Restore with git checkout -- harness/xc-audit-trail/interface.py.",
+        "expected_failure": "Measured by tools/measure.py at f037f65: exit 1; last lines: chain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False | passed 12, failed 6",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04",
+          "F-a7-03"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "f037f65",
+          "clean_exit": 0,
+          "clean_output": "620412662fe15e1c07abe7a6818f5a3)\n  ok   the same caller code runs on the second adapter (0)\n  ok   the two adapters differ in execution model on 3 or more axes (0)\n  ok   3 axes differ; only the second store is externally checkable\n3. deliberate breakage: the scan's schedule declaration is gone, called inline from the writer\n  ok   the broken wiring exits non-zero (1)\n  ok   the failure names the identity: the writer's, not a scanner's\n  ok   the record itself held: only the wiring broke (0)\nchain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False\n\npassed 18, failed 0",
+          "breakage_exit": 1,
+          "breakage_output": "bc60c7443871d4f8)\n  ok   the same caller code runs on the second adapter (0)\n  FAIL the two adapters differ in execution model on 3 or more axes (expected 0, got 1)\n  FAIL AssertionError: the dry-run binding must pass all its cases\n3. deliberate breakage: the scan's schedule declaration is gone, called inline from the writer\n  ok   the broken wiring exits non-zero (1)\n  ok   the failure names the identity: the writer's, not a scanner's\n  ok   the record itself held: only the wiring broke (0)\nchain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False\n\npassed 12, failed 6",
+          "restored": true
+        },
+        "expected_design": "bash harness/xc-audit-trail/test.sh is the whole criterion and it prints one scan line, not one per store: exit 0, `chain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False`, then `passed 18, failed 0`. Those values are the harness's own embedded wiring fault (step 3), where the scan is called inline from the writer, which is why independent and scheduled are False in a passing run; the two bindings are exercised as separate reports (6/6 and 7/7 cases) rather than in one line. Everything that follows is the proposed tool and is not run: `python3 tools/conformance_audit_trail.py --adapter today --adapter second --trail <trail> --from-head <h0> --to-head <h1> --min-entries 100 --retention-floor-days 180 --report out/audit-trail.json`, the store selected by configuration with no code edit between runs. Per store it would assert `entries_checked >= 100`, `actors_missing == 0`, `correlation_missing == 0`, `chain_breaks == 0`, `oldest_retained_entry_age_days >= 180`, `external_verifications > 0` with our own reader unmounted, `scheduled_runs_observed >= 1`, that `entry_kinds_seen` contains all four of TARGET T6.2's entries (user, agent, service, schedule), and that `independent`, `scheduled` and `store_observed` were read from the identity, the entry kind and the store that actually ran; across stores `adapters_run >= 2`.",
+        "expected_failure_design": "The scan stops reporting the tampered entry, so the dry-run binding no longer passes all its cases and the swap proof fails with it: test.sh prints `FAIL conformance after the swap exits 0 (expected 0, got 1)`, `FAIL not 7/7`, `FAIL the two adapters differ in execution model on 3 or more axes` and `AssertionError: the dry-run binding must pass all its cases`, ending `passed 12, failed 6` at exit 1. The scan line itself is unchanged from the passing run - `chain_breaks=0 entries_checked=24 adapters_run=1 independent=False scheduled=False`, since adapters_run is 1 per report and the embedded wiring fault is what sets independent and scheduled False in both runs - so the failing signal is the refused case count, never that line. Claimed: tools/conformance_audit_trail.py named above is not written and no projection, monitor, schedule or outside verifier runs on this stack, so nothing has been measured over 100 entries, two stores or a retention floor; the measured run is this harness's 24-entry projection and its byte-level tamper case alone."
+      },
+      "composes_with": {
+        "builds_on": [
+          "xc-audit-trail",
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record",
+          "xc-enforcement-chain"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "The pair above spans two PASS.md B3 capability rows - state persistence for the chained file, provenance for the published statement - because the knowledge base has no capability row for an audit trail. Is that the right way to record it, or should the trail be given a row of its own?",
+          "evidence": "1-3-1 applied (TARGET T5): (a) pair the chained file with the other swap candidate on its own row, an event log, which is a different store and breaks no assumption about who can check it; (b) pair across the two rows as done here and say so in the row; (c) propose a new capability row, which needs a knowledge-base rebuild and invalidates the provenance heads of every skill already written. Recommendation followed: (b), because the axis the pair must demonstrate is who can check the record, and only the provenance row's candidates supply it.",
+          "default": "The pair spans the two rows and the second adapter row says so. The question closes at a ceremony that adds an audit-trail capability row during a rebuild, at which point both rows move.",
+          "sources": [
+            "T-t5-02",
+            "F-b3-17"
+          ],
+          "quote": "identify the three best possible solutions that align to the goal"
+        },
+        {
+          "question": "Does the first store stay in place once heads are published to the external log, or does the external log become the trail?",
+          "evidence": "Measure how many entries never have their head published at all - anything below the sealing granularity, anything held back because publishing the entry would disclose a caller's identifiers - and whether an inclusion proof can be served for them. If that count is non-zero on a representative workload, the local chain is the only thing covering those entries and stays.",
+          "default": "Proposed: both stay. The external log is the stronger check where it applies and the local chain is the wider one, and build-adapter-pair's rule (F-b1-04) cuts against removing either before the count exists.",
+          "sources": [
+            "F-b1-04",
+            "F-b4-05"
+          ],
+          "quote": "the second exists to prove the first is not load-bearing"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session xc-audit-trail 2831cb4f, 2026-09-03"
+      }
+    }
   }
 }

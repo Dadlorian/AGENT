@@ -1,0 +1,2207 @@
+{
+  "name": "compose-workflow",
+  "layer": "compose",
+  "wave": 6,
+  "description": "The closed set of composition operators a caller may write - sequence, parallel with fan-out and tolerate, bounded loop, approval gate, agent call, judge - each with its shape as JSON Schema 2020-12, how they nest because a step is itself a document, and the rule that new capability widens what a field may say and never what syntax a caller must learn. Load it before you add a control structure, a branch, a retry, a gate or a seventh operator to a plan; when someone asks 'how do I express this workflow', 'where does the loop bound live', 'why is there no goto', 'can this definition run on a different engine', or 'what stops a nested plan lying about its cost'; and whenever a criterion, a record of earlier attempts, or the thing a result is compared against is about to travel down a tree with the work.",
+  "purpose": {
+    "text": "Proposed: fix one closed set of six deterministic operators - sequence, parallel, loop, approval, agent, judge - as the entire step vocabulary a caller may write, so that composability hides the complexity and every later capability arrives as a wider set of legal values rather than as new syntax to learn.",
+    "origin": "proposed",
+    "sources": [
+      "T-t2-01",
+      "X-entry-composition-030"
+    ],
+    "quote": "Composability hides the complexity."
+  },
+  "entities": [
+    "E-core-component-document",
+    "E-core-component-graph",
+    "E-core-component-planner",
+    "E-core-component-judge",
+    "E-capability-document-validation",
+    "E-capability-durable-execution",
+    "E-standard-json-schema-2020-12",
+    "E-rule-b1-6",
+    "E-rule-b1-7"
+  ],
+  "contract": {
+    "standards": [
+      {
+        "entity": "E-standard-json-schema-2020-12",
+        "version": "2020-12",
+        "version_status": "unverified",
+        "version_note": "The dialect the operator shapes below are written in, named by the document-validation row of PASS.md B3 and owned by cap-document-validation, which records it unverified because the specification was not fetched. It governs the shape of the document, not the operator vocabulary: no published standard governs the set of operators itself, and the nearest declarative prior art is recorded as an open question rather than adopted.",
+        "url": "https://json-schema.org/draft/2020-12",
+        "sources": [
+          "F-b3-09"
+        ]
+      }
+    ],
+    "shapes": [
+      {
+        "name": "step (proposed summary shape; the six operator schemas in full, the fan-out tolerance member and the worked nesting are in references/operator-shapes.md)",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:compose:step:0.1",
+          "title": "Step",
+          "description": "A step is one operator from the closed set. Every operator's child slot takes a step, so the vocabulary nests without a second format. Adding a seventh member here is new syntax, which the closed-schema rule forbids.",
+          "anyOf": [
+            {
+              "$ref": "#/$defs/sequence"
+            },
+            {
+              "$ref": "#/$defs/parallel"
+            },
+            {
+              "$ref": "#/$defs/loop"
+            },
+            {
+              "$ref": "#/$defs/approval"
+            },
+            {
+              "$ref": "#/$defs/agent"
+            },
+            {
+              "$ref": "#/$defs/judge"
+            }
+          ],
+          "$defs": {
+            "sequence": {
+              "required": [
+                "op",
+                "id",
+                "steps"
+              ],
+              "properties": {
+                "op": {
+                  "const": "sequence"
+                }
+              }
+            },
+            "parallel": {
+              "required": [
+                "op",
+                "id",
+                "branches"
+              ],
+              "properties": {
+                "op": {
+                  "const": "parallel"
+                },
+                "tolerate": {
+                  "$ref": "#/$defs/tolerate"
+                }
+              }
+            },
+            "loop": {
+              "required": [
+                "op",
+                "id",
+                "max_iterations",
+                "exit_when",
+                "body"
+              ],
+              "properties": {
+                "op": {
+                  "const": "loop"
+                }
+              }
+            },
+            "approval": {
+              "required": [
+                "op",
+                "id",
+                "asks",
+                "view",
+                "decisions",
+                "returns"
+              ],
+              "description": "decisions is this operator's caller-facing narrowing of compose-approval's ApprovalGate.outcomes: same four-member enum, same return_with_notes value. return_to_step_id is required when decisions includes return_with_notes, matching compose-approval's ApprovalGate.return_to_step_id.",
+              "properties": {
+                "op": {
+                  "const": "approval"
+                },
+                "decisions": {
+                  "type": "array",
+                  "minItems": 2,
+                  "items": {
+                    "enum": [
+                      "approve",
+                      "edit",
+                      "reject",
+                      "return_with_notes"
+                    ]
+                  }
+                },
+                "return_to_step_id": {
+                  "type": "string",
+                  "description": "The step re-entered with the decider's notes when return_with_notes fires; required exactly when decisions includes return_with_notes (compose-approval's GateOutcome.outcome=return_with_notes)."
+                }
+              }
+            },
+            "agent": {
+              "required": [
+                "op",
+                "id",
+                "agent",
+                "input_from",
+                "task"
+              ],
+              "properties": {
+                "op": {
+                  "const": "agent"
+                }
+              }
+            },
+            "judge": {
+              "required": [
+                "op",
+                "id",
+                "of",
+                "criterion_ref"
+              ],
+              "properties": {
+                "op": {
+                  "const": "judge"
+                }
+              }
+            },
+            "tolerate": {
+              "type": "object",
+              "required": [
+                "failed"
+              ],
+              "properties": {
+                "failed": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "default": 0
+                }
+              }
+            }
+          }
+        },
+        "origin": "proposed"
+      },
+      {
+        "name": "termination (proposed shape for the machine-readable fields the loop and fan-out invariants below name; reason reuses compose-loop's LoopOutcome.terminated_by vocabulary verbatim rather than re-deriving it)",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:compose:termination:0.1",
+          "title": "Termination",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "step_id",
+            "reason",
+            "outcome"
+          ],
+          "properties": {
+            "step_id": {
+              "type": "string"
+            },
+            "reason": {
+              "enum": [
+                "verdict_pass",
+                "iteration_ceiling",
+                "budget_ceiling",
+                "tolerate_exceeded",
+                "approval_rejected"
+              ],
+              "description": "verdict_pass, iteration_ceiling and budget_ceiling are compose-loop's own three LoopOutcome.terminated_by values, named identically here so a nested loop and a bare compose-loop declaration report the same string for the same event. tolerate_exceeded (parallel) and approval_rejected (approval) are this operator set's own reasons; compose-loop never emits either. There is no separate bare 'cap' value: a cap termination is always one of iteration_ceiling or budget_ceiling."
+            },
+            "outcome": {
+              "enum": [
+                "success",
+                "failure",
+                "escalated"
+              ],
+              "description": "Extends compose-loop's two-way stop/cap split rather than replacing it: verdict_pass is a stop and reports success; iteration_ceiling and budget_ceiling are a cap and report escalated. failure is a third, non-escalating class that applies only to tolerate_exceeded and approval_rejected - reasons a bare compose-loop declaration never produces - so a loop nested inside a composition still only ever reports success or escalated, exactly as compose-loop's own outcome space requires."
+            },
+            "iterations_run": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "units_failed": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "unbounded": {
+              "const": false
+            }
+          }
+        },
+        "origin": "proposed"
+      },
+      {
+        "name": "resolved-default (proposed shape; the record resolved_default returns for one field of one step)",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:compose:resolved-default:0.1",
+          "title": "ResolvedDefault",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "step_id",
+            "field",
+            "value",
+            "resolved_from"
+          ],
+          "properties": {
+            "step_id": {
+              "type": "string"
+            },
+            "field": {
+              "type": "string"
+            },
+            "value": {},
+            "resolved_from": {
+              "enum": [
+                "caller",
+                "capability",
+                "platform"
+              ],
+              "description": "Exactly one layer, in that precedence order."
+            },
+            "override": {
+              "type": "boolean",
+              "default": false,
+              "description": "A caller override is legal and is recorded; it is never silent."
+            },
+            "non_conformant": {
+              "type": "boolean",
+              "default": false,
+              "description": "Set true whenever override is true. REF-3-2-11 states an override is legal, logged, and tagged non-conformant; this field is where that tag is written, so the record captures not only that an override happened but that it is marked as one."
+            }
+          }
+        },
+        "origin": "proposed"
+      }
+    ],
+    "invariants": [
+      {
+        "text": "The operators are model-free and deterministic. Which child runs next is decided by the document and by verdicts already recorded, never by a model reading the situation, so the same document over the same results always takes the same path; prior art shows deterministic composition is separable from model choice even when the nodes being composed are agents.",
+        "origin": "sourced",
+        "sources": [
+          "X-entry-composition-032",
+          "X-entry-composition-031"
+        ],
+        "quote": "is deterministic in how it executes its sub-agents"
+      },
+      {
+        "text": "Every loop is bounded, and there is no unbounded loop operator to write. compose-loop states the vocabulary once, as LoopOutcome.terminated_by: a loop ends on verdict_pass, on iteration_ceiling, or on budget_ceiling, whichever comes first, and this operator's termination record reuses those three names rather than re-deriving them. Stop and cap are opposites and are never collapsed into one halt: a stop firing terminates the step as a success; a cap firing terminates it as a failure that escalates to a human. The same bounding discipline governs nesting: depth is bounded and the bound is checked while the composition is resolved, not while it runs, so a nested operator that would pass the limit is refused before any step executes.",
+        "origin": "sourced",
+        "sources": [
+          "F-b4-02",
+          "X-compose-loop-001"
+        ],
+        "quote": "Exceeding it terminates the unit, not the platform"
+      },
+      {
+        "text": "Proposed: the approval operator's decisions enum is the caller-facing narrowing of compose-approval's own four-outcome vocabulary, never an independent one. compose-approval states as an invariant that a gate has exactly four outcomes and only one of them, return_with_notes, puts work back into the graph; this operator's decisions enum names the identical four values, and a decisions array containing return_with_notes requires return_to_step_id, naming the step re-entered with the decider's notes, exactly as compose-approval's ApprovalGate.return_to_step_id does for a full gate record. Fields this operator does not carry - decider, deadline_at, response_schema - resolve from the platform default the approval capability applies rather than from the caller, per the resolved_default precedence invariant above.",
+        "origin": "proposed",
+        "sources": [
+          "F-a2-01",
+          "REF-3-2-11"
+        ]
+      }
+    ],
+    "not_exposed": [
+      {
+        "text": "The judging criterion, at any depth and in any operator's fields. agentic-stack states design rule 6 (F-b1-07) and cap-document-validation carries the same quote for a declared shape; what the rule forbids on this vocabulary is specific - the judge operator carries an opaque criterion_ref and never the criterion body, no agent operator's task or input_from may name a step whose result is a criterion, and no child document may inherit one from its parent.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-07"
+        ],
+        "quote": "The grader is never visible to the graded."
+      },
+      {
+        "text": "Products, engines, endpoints, model vendors and store paths, in any field of any operator. agentic-stack states the rule (F-part-c-09); the consequence here is that a workflow document names a class and a capability and is therefore executable by any conformant engine, which is what makes engine independence a test rather than a claim.",
+        "origin": "sourced",
+        "sources": [
+          "F-part-c-09"
+        ],
+        "quote": "name capabilities and standards, never products"
+      },
+      {
+        "text": "Arbitrary cycles, goto, dynamic operator construction and the multi-merge and discriminator patterns the workflow-pattern catalogue enumerates. They are omitted deliberately, not overlooked: each one makes the reachable set of a composition undecidable before it runs, and cost known before commitment depends on that set being decidable.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-06",
+          "X-compose-operators-003"
+        ],
+        "quote": "Cost is knowable before commitment."
+      }
+    ]
+  },
+  "instructions": [
+    {
+      "step": 1,
+      "action": "Write the work as steps drawn from the closed set of six operators and nothing else: sequence, parallel, loop, approval, agent, judge. If the shape you want is not one of the six, you are describing a capability rather than a control structure - express it as a legal value of an existing field (another agent profile, another criterion_ref, another view) instead of reaching for a seventh operator.",
+      "why": "A caller who can learn six operators in one sitting never has to relearn the interface as the platform grows, which is the whole point of keeping the primitive count low; the moment a new capability needs new syntax, the schema is open and will accrete forever. Proposed: the six-operator set is ours, not PASS.md's.",
+      "origin": "sourced",
+      "sources": [
+        "X-entry-composition-030"
+      ],
+      "quote": "few enough primitives to make it quick to learn"
+    },
+    {
+      "step": 2,
+      "action": "Validate the composed document against the operator schema through cap-document-validation before anything is priced, graphed or dispatched, and treat the rejection as the answer rather than as a warning: an operator outside the closed set must fail here, not at the step that tries to run it.",
+      "why": "The closed set is only closed if something mechanical closes it. Checking through the imported validator rather than a hand-rolled field check is what makes the same rejection appear identically for every entry and every engine. Proposed: the validation call site is ours; the interface is cap-document-validation's.",
+      "origin": "sourced",
+      "sources": [
+        "F-b3-09"
+      ],
+      "quote": "any 2020-12 validator"
+    },
+    {
+      "step": 3,
+      "action": "Price the composition with core-planner and reconcile before you accept the number: each operator declares its own cost contribution, and a parent's total must equal the sum of its children's at every level. Print the reconciliation next to the estimate.",
+      "why": "A nested composition that reports a parent figure nobody derived cannot be checked against actuals, and cost known before commitment is the rule the whole planning step exists to satisfy. Proposed: the reconciliation print is ours.",
+      "origin": "sourced",
+      "sources": [
+        "F-b1-06"
+      ],
+      "quote": "Cost is knowable before commitment."
+    },
+    {
+      "step": 4,
+      "action": "Give every loop all three of its terminations before you write the body: the exit verdict it is waiting for, the iteration ceiling, and the budget ceiling it inherits per compose-loop's own contract. Record which one fired, and keep a stop that means done distinct from a cap that means escalate.",
+      "why": "A loop with two of the three terminations is an unbounded loop wearing a bound, and a single shared halt cannot tell a reader whether the work finished or ran out of road - a mistake the reference records as already made once. Proposed: the three-termination rule is ours.",
+      "origin": "sourced",
+      "sources": [
+        "F-b4-02"
+      ],
+      "quote": "Exceeding it terminates the unit, not the platform"
+    },
+    {
+      "step": 5,
+      "action": "Make each operator a durable step: checkpoint after every step rather than after the whole composition, so a restart resumes at the first incomplete step instead of replaying from the beginning. The interface for that is cap-durable-execution's; do not name an engine in the document (proposed).",
+      "why": "Proposed: a composition that checkpoints only at the end is a single step wearing a tree, and it is the difference between a restart that resumes and a restart that repeats every side effect already committed.",
+      "origin": "proposed"
+    },
+    {
+      "step": 6,
+      "action": "Let the platform carry correlation, budget, actor and idempotency through every operator, declare in the document that they are carried rather than chosen, and check afterwards that the criterion, the attempt history and the referent appear nowhere a step could read them.",
+      "why": "The cross-cutting guarantees are applied rather than requested, so a caller who could set them has been handed a way to decline them; and the three things that must never travel are exactly the ones whose leak turns every verdict below that point into self-grading.",
+      "origin": "sourced",
+      "sources": [
+        "F-b4-01",
+        "REF-5-5-01"
+      ],
+      "quote": "The platform applies each; a caller cannot decline them."
+    }
+  ],
+  "best_practices": [
+    {
+      "text": "Proposed: name a composition instead of spelling its control flow out inline - a step that references a defined sub-plan carries its loops, gates and views on one line, and complexity that lives in a named file can be improved for every caller at once.",
+      "origin": "proposed",
+      "sources": [
+        "REF-10-03",
+        "REF-3-2-02"
+      ],
+      "quote": "complexity lives in a named file"
+    },
+    {
+      "text": "Count what executed, not what passed, and keep one reference composition that exercises every operator exactly once so the count is assertable. A conformance run over a composition asserts how many distinct operators were exercised and how many steps actually dispatched, because a deterministic gate can be structurally green and mean nothing - the finding build-ceremony and core-document cite from the same A7 record for their own gates.",
+      "origin": "sourced",
+      "sources": [
+        "F-a7-03"
+      ],
+      "quote": "A deterministic gate can be structurally green and mean nothing."
+    },
+    {
+      "text": "Write the operator set down once and make the two copies prove they agree. The document schema admits a closed set and the running engine dispatches one; build-adapter-pair states that swappability is a tested property rather than an intention (F-b1-04), and the cheapest form of that test here is a per-engine drift count reported in the same run - schema_ops, executor_ops and drift - because an operator the schema admits and no engine dispatches is a vocabulary entry no caller can use, and one an engine dispatches without the schema admitting it is a composition nothing can validate.",
+      "origin": "sourced",
+      "sources": [
+        "F-b1-04"
+      ],
+      "quote": "Swappability is a tested property, not an intention."
+    }
+  ],
+  "adapters": [
+    {
+      "entity": "E-adapter-interpreted-workflow-document",
+      "role": "today",
+      "maps_to": "compose, to_graph and step_of served by interpreting the document while the run walks it. examples/end-to-end/schemas/workflow.schema.json declares the six operators as a closed anyOf over step, examples/end-to-end/workflows/triage-and-fix.json uses every one of them exactly once, and examples/end-to-end/run.py walks that tree node by node in one process, dispatching each agent operator through one dispatch interface. Proposed entity id: the knowledge base has no capability row for composition operators, so there is no E- record to reuse and this id is ours.",
+      "cannot": "Cannot know the full reachable set before the walk reaches it, because the tree is read as it is executed; cannot run two branches of a fan-out concurrently, since the fan-out is the contract here and not the threading; and cannot survive the loss of its process, because nothing between steps is committed anywhere an executor could resume from.",
+      "swap_procedure": "Point the second engine at the same document and the same schema, run one conformance report over both, and assert engines_run >= 2 with identical step order and identical terminal outcome. Nothing in the document changes, which is the property under test rather than a convenience.",
+      "status": "measured",
+      "sources": [
+        "X-end-to-end-066"
+      ],
+      "quote": "compatible across different AI frameworks"
+    },
+    {
+      "entity": "E-swap-candidate-a-queue-plus-a-state-machine",
+      "role": "second",
+      "maps_to": "the same six operators, compiled ahead of the run instead of interpreted during it: the document is lowered once into a static state machine whose transitions are enqueued, so a step is a message, the next step is chosen by a committed state row rather than by a call stack, and the operator tree exists only at compile time. This is the second execution model the interface has to survive, and it is reused from the durable-execution row of PASS.md B3 rather than minted.",
+      "cannot": "Cannot admit a document whose shape is not fully known before the run, so anything the interpreting engine could settle by looking at the tree mid-walk has to already be a declared field; and cannot report a failure as a position in a tree, because by run time there is no tree, only a state and a queue.",
+      "swap_procedure": "Compile the same workflow document against the same operator schema, run the conformance report with the compiled engine selected, and compare step order, termination reasons and terminal outcome against the interpreted run; a difference is a defect in the schema's completeness, not in either engine.",
+      "status": "claimed",
+      "sources": [
+        "F-b3-04",
+        "X-end-to-end-067"
+      ],
+      "quote": "a queue plus a state machine"
+    }
+  ],
+  "definition_of_done": {
+    "criterion": "bash harness/compose-operators/test.sh && python3 harness/compose-operators/conformance.py --engine dryrun --engine second",
+    "expected": "Measured by tools/measure.py at c754723: exit 0; last lines: engine_marker=compiled-state-machine/0.1 schema_ops=6 executor_ops=6 drift=0 operators_exercised=6 terminal_outcome=completed checks=39/39 | engines_run=2 step_order=identical terminal_outcome=identical distinct_markers=2 differ=nothing",
+    "breakage": "In harness/compose-operators/adapters/dryrun.py, make the interpreted engine register a branch operator arm the schema does not admit regardless of the gate's own flag (the operator set is then written in two places), run the criterion (drift lists branch, executor_ops is 7 on that engine while the compiled engine stays clean, and the gate exits 1), then git checkout harness/compose-operators/adapters/dryrun.py.",
+    "expected_failure": "Measured by tools/measure.py at c754723: exit 1; last lines:   FAIL the same suite exits 0 again (expected 0, got 1) | passed 29, failed 5",
+    "status": "measured",
+    "sources": [
+      "F-part-c-04",
+      "F-b1-04"
+    ],
+    "quote": "Swappability is a tested property, not an intention.",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "c754723",
+      "clean_exit": 0,
+      "clean_output": "  ok   call.py exits 0 (0)\n  ok   the live engine with no endpoint exits 2 (2)\n  ok   dry-run conformance exits 0 (0)\n  ok   after: the compiled engine exits 0 (0)\n  ok   the breakage run exits non-zero (nonzero)\n  ok   the same suite exits 0 again (0)\n...\nengine_marker=interpreted-walk/0.1 schema_ops=6 executor_ops=6 drift=0 operators_exercised=6 terminal_outcome=completed checks=39/39\nengine_marker=compiled-state-machine/0.1 schema_ops=6 executor_ops=6 drift=0 operators_exercised=6 terminal_outcome=completed checks=39/39\nengines_run=2 step_order=identical terminal_outcome=identical distinct_markers=2 differ=nothing",
+      "breakage_exit": 1,
+      "breakage_output": "  ok   call.py exits 0 (0)\n  ok   the live engine with no endpoint exits 2 (2)\n  FAIL dry-run conformance exits 0 (expected 0, got 1)\n  FAIL every check passed (expected [], got [{\"check\": \"A2 the running engine dispatches exactly the operators the schema admits\", \"detail\": \"drift=['branch']\"}])\n  FAIL drift between the schema and the executor (expected [], got [\"branch\"])\n  ok   after: the compiled engine exits 0 (0)\n  FAIL both engines in one report (expected 0, got 1)\n  ok   the breakage run exits non-zero (nonzero)\n  FAIL the same suite exits 0 again (expected 0, got 1)\n...\n  FAIL the same suite exits 0 again (expected 0, got 1)\n\npassed 29, failed 5",
+      "restored": true
+    },
+    "expected_design": "What the run proves: Proposed tool, built with stage 1 of the migration: `python3 tools/conformance_operators.py --workflow examples/end-to-end/workflows/triage-and-fix.json --schema examples/end-to-end/schemas/workflow.schema.json --engine interpreted --engine compiled --assert-binding --report out/operators-conformance.json`. Beyond the contract assertions compose-operators states, it asserts the build's own binding: for every engine, the operator names read from the running engine's dispatch equal the operator names read from the schema, so `drift` is empty; `engine_marker` is read from the running engine rather than from the binding record; `engines_run >= 2`; and `operators_exercised == 6` on each engine independently. | exit 0 and one line per engine of the form `engine_marker=<interpreted|compiled> schema_ops=6 executor_ops=6 drift=0 operators_exercised=6 step_order=<identical> terminal_outcome=completed`, followed by `engines_run=2`. Claimed: the tool does not exist yet, stage 1 of the migration is not applied, and the compiled engine is not built. What is measured today, on 2026-09-03, is the baseline the tool would wrap: `bash examples/end-to-end/test.sh` reports `passed 29, failed 0` on the interpreted engine, with `ok   agent registry and workflow validate (0)`.",
+    "expected_failure_design": "Every contract-level assertion still passes - the document is unchanged, so it validates, all six operators are exercised and both engines produce the same step order and terminal outcome - and the run exits non-zero on the binding alone: `drift=[\"branch\"] engine=interpreted schema_ops=6 executor_ops=7`. The compiled engine reports `drift=0`, which localises the fault to one engine's wiring rather than to the vocabulary. That is the failure mode this facet owns: an operator the schema does not admit but an executor would happily run is a door the closed set does not know about, and it opens only in the build."
+  },
+  "composes_with": {
+    "builds_on": [
+      "agentic-stack",
+      "build-ceremony",
+      "build-evidence",
+      "build-skill-authoring",
+      "cap-agent-runtime",
+      "cap-capability-packaging",
+      "cap-document-validation",
+      "cap-durable-execution",
+      "cap-isolation",
+      "cap-tool-access",
+      "core-components",
+      "xc-guarantees"
+    ],
+    "used_by": [
+      "compose-improvement-loop"
+    ]
+  },
+  "open_questions": [
+    {
+      "question": "There is no capability row for composition operators in PASS.md B3, so `python3 tools/kb.py tree` returns no adapter or swap-candidate entity for this layer and today's adapter id above is minted. Which id should a composition's execution model be recorded under?",
+      "evidence": "A B3 row for composition, or a decision that composition rides on the durable-execution row it already reuses for its second adapter. Applying TARGET T5's 1-3-1: the three candidates were a new B3 row, reuse of the durable-execution row for both adapters, and a minted id for the interpreted engine beside the reused one; the third was taken because the interpreted engine is not a durable executor and recording it as one would misstate what runs.",
+      "default": "Today's adapter carries the proposed entity id above and says so in its own row; the second adapter reuses the real durable-execution swap candidate. Neither id appears under this skill's entities list.",
+      "sources": [
+        "T-t5-02",
+        "F-b3-04"
+      ],
+      "quote": "identify the three best possible solutions"
+    },
+    {
+      "question": "The parallel operator in examples/end-to-end/schemas/workflow.schema.json has no tolerate member, while failure tolerance is stated here as a property of the fan-out. Should the example's schema gain the member, or should this skill drop it?",
+      "evidence": "A fan-out in that example that is expected to survive one failing unit; today every branch must succeed, so the question has never been forced. Recorded here as a disagreement with the consumption reference rather than resolved silently.",
+      "default": "The member is proposed as an addition to the example's parallel operator, defaulting to `{\"failed\": 0}`, which is exactly the behaviour the example has today - so adopting it changes no existing run and makes the currently implicit rule writable.",
+      "sources": [
+        "REF-5-3-07"
+      ],
+      "quote": "On the unit you cannot say \"any failure is fatal\"."
+    },
+    {
+      "question": "Should the operator vocabulary adopt the declarative, runtime-portable agent specification the research records as prior art, as its interchange form rather than only as an influence?",
+      "evidence": "A fetched copy of that specification and a mapping of all six operators onto it with nothing left over; the research records are search-only, so neither the version nor the operator coverage has been read.",
+      "default": "The vocabulary stays ours and is written in JSON Schema 2020-12, with the prior art cited as evidence that a portable declarative definition is achievable rather than as a standard adopted.",
+      "sources": [
+        "X-entry-composition-052",
+        "X-end-to-end-066"
+      ],
+      "quote": "a portable, shareable, platform-agnostic configuration language"
+    }
+  ],
+  "provenance": {
+    "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+    "kb_heads": {
+      "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+      "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+      "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+      "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+    },
+    "author": "session claude/auto-skill-creation-compose-operators"
+  },
+  "folded": {
+    "compose-operators-implement": {
+      "name": "compose-operators-implement",
+      "layer": "compose",
+      "wave": 8,
+      "description": "How the closed operator set is actually built here: the interpreted workflow document that runs today, a second engine that compiles the same document ahead of the run, the migration off an operator set that lives in two places at once, where budget, correlation, actor and idempotency attach to an operator, and a definition of done whose breakage is a drift between the schema and the executor. Load it when writing or reviewing the code that walks or compiles a composition, when a component is about to grow its own if-else over operator names, when someone asks 'where is the operator set actually enforced', 'can we run this definition on something else without editing it', or 'why did this workflow run here and refuse there', and before recording any engine-independence result as passing.",
+      "purpose": {
+        "text": "Proposed: build the operator vocabulary compose-operators defines so that the schema is the only place the set is written, two engines with different execution models read the same document unchanged, and engine independence is a report you can run rather than a property anyone asserts - which is build-adapter-pair's test applied to a document instead of to an interface.",
+        "origin": "proposed",
+        "sources": [
+          "F-b1-04",
+          "T-t2-02"
+        ],
+        "quote": "Swappability is a tested property, not an intention."
+      },
+      "entities": [
+        "E-capability-durable-execution",
+        "E-capability-document-validation",
+        "E-standard-json-schema-2020-12",
+        "E-rule-b1-3",
+        "E-rule-b1-7"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "operator-binding-report (proposed shape; what the conformance run writes, and the fields the definition of done asserts on)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:compose:operator-binding-report:0.1",
+              "title": "OperatorBindingReport",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "schema_ops",
+                "engines",
+                "engines_run",
+                "operators_exercised",
+                "drift"
+              ],
+              "properties": {
+                "schema_ops": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "The operator names the schema admits, read from the schema at run time and never retyped in the tool."
+                },
+                "engines": {
+                  "type": "array",
+                  "minItems": 2,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "engine_marker",
+                      "executor_ops",
+                      "step_order",
+                      "terminal_outcome"
+                    ],
+                    "properties": {
+                      "engine_marker": {
+                        "type": "string",
+                        "description": "Read from the running engine, not from the binding record that selected it."
+                      },
+                      "executor_ops": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "step_order": {
+                        "type": "array",
+                        "items": {
+                          "type": "string"
+                        }
+                      },
+                      "terminal_outcome": {
+                        "enum": [
+                          "completed",
+                          "refused",
+                          "escalated"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "engines_run": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "operators_exercised": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "drift": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Symmetric difference between schema_ops and any engine's executor_ops. A conformant build has this empty."
+                }
+              }
+            },
+            "origin": "proposed"
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Both engines read the same document bytes. No pre-pass rewrites, normalises, enriches or lowers the document before one engine sees it and not the other, because the moment one engine needs a transformed copy the swap stops testing anything: build-adapter-pair requires the second engine to run on the first engine's input unchanged, and swappability is a property that has to be tested rather than intended.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-04"
+            ],
+            "quote": "Swappability is a tested property, not an intention."
+          },
+          {
+            "text": "Which engine answered is read from the running engine, never inferred from the configuration that selected it. agentic-stack carries the measured finding that configuration written in the documented place can have no runtime effect; the consequence for this build is that a binding record says what was requested while an engine marker emitted at start says what actually served, and only the second can catch a fallback that silently ran both legs on one engine.",
+            "origin": "sourced",
+            "sources": [
+              "F-a7-04"
+            ],
+            "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+          },
+          {
+            "text": "The second engine is chosen because it breaks a different assumption, not because it is a different product. build-adapter-pair owns that test and its axes (F-b1-04); the axis this pair turns on is when the operator tree is read - during the walk in one process, or once before the run, after which there is no tree - and that difference is recorded in differs_in_execution_model rather than asserted in prose.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-04"
+            ],
+            "quote": "Every interface ships with at least two adapters"
+          },
+          {
+            "text": "No engine name, endpoint or vendor may appear in a workflow document, and the build enforces that rather than trusting it - the conformance run greps every document under test for the engine markers it knows about and fails on a hit, per agentic-stack's own rule that products belong in the adapter column only.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-09"
+            ],
+            "quote": "Products belong in the adapter column only."
+          },
+          {
+            "text": "Proposed: cross-cutting guarantees attach to the operator, not to the caller's document, and the document declares them as constant values so a reader can see them and a caller cannot set them. The consequence at build time is that the correlation attribute, the budget decrement, the actor chain and the step idempotency key are written by the engine on every operator record, and a step record missing any of the four fails the run rather than being back-filled.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-01",
+              "F-b4-06"
+            ],
+            "quote": "Correlation rides on explicit attributes, not trace parentage"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Build today's engine as an interpreter over the document: read the operator schema, derive the dispatch table from the operator names it admits, and walk the tree node by node. Do not write a second list of operator names beside the walk - if the code needs an if-else per operator, key it off the derived set so a name the schema does not admit cannot be reached.",
+          "why": "Proposed: the interpreted engine is what runs today, and its one structural defect is that the set of operators it can execute is written in code next to a schema that also writes it. Deriving one from the other is the whole difference between a closed set and a set that is closed twice, differently.",
+          "origin": "proposed"
+        },
+        {
+          "step": 2,
+          "action": "Build the second engine as a compiler: lower the same document once into a static state machine, enqueue its transitions, and let a worker advance the machine by committing one state row per step. The compiled engine must accept the document unchanged, with no pre-pass of its own.",
+          "why": "Proposed: this is the pair's proof obligation. An engine that reads the tree before the run cannot rely on anything the interpreter settled by looking at the tree mid-walk, so any field the compiler has to guess at is a field the schema was missing.",
+          "origin": "proposed"
+        },
+        {
+          "step": 3,
+          "action": "Record differs_in_execution_model with at least the three axes this pair actually turns on - processes required for progress, where durability lives, and whether a call returns a result or a ticket - using the shape and the axis names build-adapter-pair defines, and never a product name as a value.",
+          "why": "A pair whose difference is not written down as an axis and two values is a pair nobody can check; build-adapter-pair rejects a pair whose axes agree, because a second implementation of the same shape proves nothing.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-04"
+          ],
+          "quote": "the second exists to prove the first is not load-bearing"
+        },
+        {
+          "step": 4,
+          "action": "Migrate in four stages, each independently revertible: (1) derive the interpreter's dispatch from the schema and assert set equality at start-up; (2) put the conformance report in front of the interpreted engine alone, so its baseline is recorded before a second engine exists; (3) add the compiled engine and select it by configuration only; (4) add a declared cost contribution per operator so the reconciliation leg can move from claimed to measured.",
+          "why": "Proposed: stage 1 removes the drift that exists today, stage 2 fixes what 'unchanged' means before anything can be compared against it, stage 3 is the swap, and stage 4 is the only stage that needs a schema change - keeping them apart means a failure names its stage.",
+          "origin": "proposed"
+        },
+        {
+          "step": 5,
+          "action": "Wire the cross-cutting concerns at the operator boundary in both engines: stamp the correlation attribute on every step record explicitly rather than relying on parentage, decrement the budget from the entry ceiling before each step and refuse the step that would cross it, carry the actor's delegation chain onto every record, and give each step its own idempotency key rather than reusing the run's.",
+          "why": "xc-correlation owns the dispatch-attribute rule, xc-budget the decrement-and-refuse ceiling, xc-identity-delegation the actor chain and xc-idempotency-lease the per-step key; this step only says where the four attach at the operator boundary. agentic-stack carries the correlation finding as measured in PASS.md A7 (F-a7-02), and the consequence here is that a run key alone deduplicates a whole submission while a restart mid-composition needs the step to be the unit (F-b4-08).",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-02",
+            "F-b4-08"
+          ],
+          "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+        },
+        {
+          "step": 6,
+          "action": "Apply build-definition-of-done: run the criterion below, then run its deliberate breakage, and record both outputs as an evidence record carrying the tree hash under test and whether the tree was dirty. Label the result measured only where the exact strings were produced by a run in this repository.",
+          "why": "agentic-stack and build-definition-of-done both state it (F-part-c-04): a green run that never had a red is not evidence that anything is checked, and a measurement taken from a dirty tree cannot be reproduced by the person who reads it.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-04"
+          ],
+          "quote": "A criterion nothing can fail is not a criterion"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Keep one composition that exercises every operator exactly once and run it on both engines on every change, rather than a large suite that exercises four operators heavily and two never - compose-operators already owns the finding this guards against: a deterministic gate can be structurally green and mean nothing.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Only diff, syntax and format ran."
+        },
+        {
+          "text": "Treat the durable-execution engine that PASS.md A6 records as present but not listening as a reason to keep the composition expressible over a queue and a state machine, not as a reason to wait for it. The composition is defined over the step interface, so a down orchestrator delays the adapter, never the vocabulary.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-02"
+          ],
+          "quote": "Durable workflow orchestration and human-in-the-loop signals are designed around it and it is currently down"
+        },
+        {
+          "text": "Proposed: report the engine marker in the same line as the result, always. A report that names the adapter it asked for rather than the one that answered is the shape of the configuration finding PASS.md A7 already recorded.",
+          "origin": "proposed",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "Configuration written in the documented place was silently discarded."
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-interpreted-workflow-document",
+          "role": "today",
+          "maps_to": "the walk itself: examples/end-to-end/run.py reads examples/end-to-end/workflows/triage-and-fix.json, dispatches each agent operator through one dispatch interface, evaluates each judge operator against a criterion held outside the document, and parks at the approval operator. compose-operators carries the same pair at contract level; what this row adds is where the code is and what has to change in it. Proposed entity id: no capability row in PASS.md B3 covers composition operators, so there is no E- record to reuse.",
+          "cannot": "Cannot today prove its own operator set: the set it can execute is an if-else chain in run.py and the set it admits is the anyOf in schemas/workflow.schema.json, and nothing asserts the two are equal - which is precisely the binding stage 1 of the migration installs and the breakage below attacks.",
+          "swap_procedure": "Select the engine by configuration only, hand the compiled engine the same document and the same schema, and compare the operator-binding-report from both runs. Measured on 2026-09-03: `bash examples/end-to-end/test.sh` reports `passed 29, failed 0` for this engine alone.",
+          "status": "measured",
+          "sources": [
+            "T-t10-07"
+          ],
+          "quote": "inside the end-to-end example or beside it"
+        },
+        {
+          "entity": "E-swap-candidate-a-queue-plus-a-state-machine",
+          "role": "second",
+          "maps_to": "a build in which the document is lowered once, before the run, into a static state machine: each operator becomes one or more transitions, each transition is a message, and progress is one committed state row per step. compose-operators names this pair at contract level and reuses this entity from the durable-execution row of PASS.md B3 rather than minting one; the build detail here is that no worker ever holds the tree.",
+          "cannot": "Cannot resolve anything at run time that the compiler could not resolve at compile time, so a document that relies on being re-read mid-walk simply fails to compile; and cannot report a failure as a position in the tree, only as a state and a transition, which is why the report compares step order rather than stack traces.",
+          "swap_procedure": "Compile the same document against the same schema, run the same conformance report with this engine selected, and assert engines_run >= 2 with an empty drift array and identical step order and terminal outcome. A difference is a defect in the schema's completeness, not in either engine.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-04"
+          ],
+          "quote": "Restate · DBOS · Inngest · a queue plus a state machine"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/compose-operators/test.sh && python3 harness/compose-operators/conformance.py --engine dryrun --engine second",
+        "expected": "Measured by tools/measure.py at c754723: exit 0; last lines: engine_marker=compiled-state-machine/0.1 schema_ops=6 executor_ops=6 drift=0 operators_exercised=6 terminal_outcome=completed checks=39/39 | engines_run=2 step_order=identical terminal_outcome=identical distinct_markers=2 differ=nothing",
+        "breakage": "In harness/compose-operators/adapters/dryrun.py, make the interpreted engine register a branch operator arm the schema does not admit regardless of the gate's own flag (the operator set is then written in two places), run the criterion (drift lists branch, executor_ops is 7 on that engine while the compiled engine stays clean, and the gate exits 1), then git checkout harness/compose-operators/adapters/dryrun.py.",
+        "expected_failure": "Measured by tools/measure.py at c754723: exit 1; last lines:   FAIL the same suite exits 0 again (expected 0, got 1) | passed 29, failed 5",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04",
+          "F-b1-04"
+        ],
+        "quote": "Swappability is a tested property, not an intention.",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "c754723",
+          "clean_exit": 0,
+          "clean_output": "  ok   call.py exits 0 (0)\n  ok   the live engine with no endpoint exits 2 (2)\n  ok   dry-run conformance exits 0 (0)\n  ok   after: the compiled engine exits 0 (0)\n  ok   the breakage run exits non-zero (nonzero)\n  ok   the same suite exits 0 again (0)\n...\nengine_marker=interpreted-walk/0.1 schema_ops=6 executor_ops=6 drift=0 operators_exercised=6 terminal_outcome=completed checks=39/39\nengine_marker=compiled-state-machine/0.1 schema_ops=6 executor_ops=6 drift=0 operators_exercised=6 terminal_outcome=completed checks=39/39\nengines_run=2 step_order=identical terminal_outcome=identical distinct_markers=2 differ=nothing",
+          "breakage_exit": 1,
+          "breakage_output": "  ok   call.py exits 0 (0)\n  ok   the live engine with no endpoint exits 2 (2)\n  FAIL dry-run conformance exits 0 (expected 0, got 1)\n  FAIL every check passed (expected [], got [{\"check\": \"A2 the running engine dispatches exactly the operators the schema admits\", \"detail\": \"drift=['branch']\"}])\n  FAIL drift between the schema and the executor (expected [], got [\"branch\"])\n  ok   after: the compiled engine exits 0 (0)\n  FAIL both engines in one report (expected 0, got 1)\n  ok   the breakage run exits non-zero (nonzero)\n  FAIL the same suite exits 0 again (expected 0, got 1)\n...\n  FAIL the same suite exits 0 again (expected 0, got 1)\n\npassed 29, failed 5",
+          "restored": true
+        },
+        "expected_design": "What the run proves: Proposed tool, built with stage 1 of the migration: `python3 tools/conformance_operators.py --workflow examples/end-to-end/workflows/triage-and-fix.json --schema examples/end-to-end/schemas/workflow.schema.json --engine interpreted --engine compiled --assert-binding --report out/operators-conformance.json`. Beyond the contract assertions compose-operators states, it asserts the build's own binding: for every engine, the operator names read from the running engine's dispatch equal the operator names read from the schema, so `drift` is empty; `engine_marker` is read from the running engine rather than from the binding record; `engines_run >= 2`; and `operators_exercised == 6` on each engine independently. | exit 0 and one line per engine of the form `engine_marker=<interpreted|compiled> schema_ops=6 executor_ops=6 drift=0 operators_exercised=6 step_order=<identical> terminal_outcome=completed`, followed by `engines_run=2`. Claimed: the tool does not exist yet, stage 1 of the migration is not applied, and the compiled engine is not built. What is measured today, on 2026-09-03, is the baseline the tool would wrap: `bash examples/end-to-end/test.sh` reports `passed 29, failed 0` on the interpreted engine, with `ok   agent registry and workflow validate (0)`.",
+        "expected_failure_design": "Every contract-level assertion still passes - the document is unchanged, so it validates, all six operators are exercised and both engines produce the same step order and terminal outcome - and the run exits non-zero on the binding alone: `drift=[\"branch\"] engine=interpreted schema_ops=6 executor_ops=7`. The compiled engine reports `drift=0`, which localises the fault to one engine's wiring rather than to the vocabulary. That is the failure mode this facet owns: an operator the schema does not admit but an executor would happily run is a door the closed set does not know about, and it opens only in the build."
+      },
+      "composes_with": {
+        "builds_on": [
+          "compose-operators",
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Where does the compiled engine's state machine live, given that the durable-execution adapter PASS.md B3 names for this row is recorded as present but not listening?",
+          "evidence": "A reachable durable executor, or a decision to build the queue-plus-state-machine leg against the state seam directly. Applying TARGET T5's 1-3-1, the candidates were: wait for the orchestrator, build the compiled engine on the state seam's append-only log, or run it on an in-process queue with a committed row per transition. The second was taken, because it needs nothing that is currently down and it is the leg that makes the pair's axes differ.",
+          "default": "The compiled engine commits one state row per transition through the state seam and reads its work from a queue, with no dependency on an external orchestrator.",
+          "sources": [
+            "F-a6-02",
+            "T-t5-02"
+          ],
+          "quote": "Data directory present; server not listening"
+        },
+        {
+          "question": "Does a declared cost contribution per operator belong in the operator schema, or beside it in a capability definition the operator's verb resolves to?",
+          "evidence": "A three-level composition priced both ways, with the parent estimate reconciled against the sum of children in each. Until stage 4 of the migration runs, the reconciliation leg of the criterion above cannot be measured at all.",
+          "default": "Proposed: beside it, in the capability definition the agent operator's profile already resolves to, so the operator schema stays the control-flow vocabulary and does not acquire a cost field per operator.",
+          "sources": [
+            "REF-5-2-12"
+          ],
+          "quote": "Every kind must declare its cost contribution in its own envelope"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session claude/auto-skill-creation-compose-operators"
+      }
+    },
+    "compose-loop": {
+      "name": "compose-loop",
+      "layer": "compose",
+      "wave": 7,
+      "description": "A bounded loop assembled from lower layers: a body that runs, a verdict that decides, and two ceilings that end it. Load it when work has to be attempted more than once - fix-and-check, evaluator-optimizer, a self-improvement cycle - when writing a loop's exit condition, when deciding what an iteration may see of the criterion it is graded against, when a nested loop's cost or depth has to be known before it starts, when an iteration has to survive a crash, and when someone asks what stops this running forever, why did this stop, who pays for iteration nine, whether a running step may start a loop of its own, or how a run that ended for a fourth reason should be classified.",
+      "purpose": {
+        "text": "Proposed: compose a graded verdict, a declared iteration ceiling and a budget ceiling into one bounded iteration, so that every loop terminates for exactly one of three nameable reasons and can be priced before it starts.",
+        "origin": "proposed",
+        "sources": [
+          "F-b2-05",
+          "F-b4-02",
+          "F-b1-06",
+          "REF-12-14"
+        ]
+      },
+      "entities": [
+        "E-core-component-judge",
+        "E-core-component-planner",
+        "E-concern-budget",
+        "E-rule-b1-5",
+        "E-rule-b1-6",
+        "E-capability-durable-execution",
+        "E-seam-dispatch"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "loop-spec (proposed summary shape, field names kept identical to the loop operator in examples/end-to-end; the full schema, the three worked declarations and the worked rejections are in references/usage.md)",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-06",
+              "F-b4-02"
+            ],
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:compose:loop:spec:0.1",
+              "title": "LoopSpec",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Proposed. Bounded repetition: it ends on the exit condition, on max_iterations, or on the budget ceiling, and there is no unbounded variant to declare.",
+              "required": [
+                "op",
+                "id",
+                "max_iterations",
+                "exit_when",
+                "body",
+                "on_cap"
+              ],
+              "properties": {
+                "op": {
+                  "const": "loop"
+                },
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9-]{1,47}$"
+                },
+                "max_iterations": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 25,
+                  "description": "Required, so the worst case is priceable before the first iteration runs."
+                },
+                "exit_when": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "judge_step",
+                    "verdict"
+                  ],
+                  "properties": {
+                    "judge_step": {
+                      "type": "string"
+                    },
+                    "verdict": {
+                      "enum": [
+                        "pass",
+                        "fail"
+                      ]
+                    }
+                  }
+                },
+                "body": {
+                  "type": "object",
+                  "description": "One step of the closed operator set; the criterion behind judge_step is not part of it."
+                },
+                "on_cap": {
+                  "const": "escalate",
+                  "description": "A cap termination is a failure that goes to a human. There is no value here that means carry on."
+                },
+                "per_iteration_ceiling_micros": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "The slice each iteration may draw from the root ceiling xc-budget holds."
+                },
+                "max_depth": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Nesting bound checked when the plan resolves, not when the loop runs."
+                }
+              }
+            },
+            "quote": "Cost is knowable before commitment."
+          },
+          {
+            "name": "loop-outcome (proposed shape; this is what a caller and the ledger read, and it is what the definition of done asserts over)",
+            "origin": "proposed",
+            "sources": [
+              "REF-5-3-08",
+              "F-b2-06"
+            ],
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:compose:loop:outcome:0.1",
+              "title": "LoopOutcome",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Proposed. terminated_by is an enum of exactly three members: a fourth reason has nowhere to be written, which is how a defect becomes visible rather than plausible.",
+              "required": [
+                "loop_id",
+                "terminated_by",
+                "termination_class",
+                "iterations_run",
+                "cost_micros"
+              ],
+              "properties": {
+                "loop_id": {
+                  "type": "string"
+                },
+                "terminated_by": {
+                  "enum": [
+                    "verdict_pass",
+                    "iteration_ceiling",
+                    "budget_ceiling"
+                  ]
+                },
+                "termination_class": {
+                  "enum": [
+                    "stop",
+                    "cap"
+                  ],
+                  "description": "stop means done and returns the result; cap means escalate and carries a problem object."
+                },
+                "iterations_run": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "cost_micros": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "The sum of the iterations and their descendants, reconciled against the plan rather than re-estimated."
+                },
+                "last_verdict": {
+                  "type": "object",
+                  "description": "The verdict shape core-judge owns: verdict, failed check ids, detail."
+                },
+                "escalation": {
+                  "type": "object",
+                  "description": "Present when termination_class is cap: the problem object handed to the human."
+                }
+              }
+            }
+          }
+        ],
+        "invariants": [
+          {
+            "text": "A loop terminates on exactly one of three conditions - a verdict of pass, the declared iteration ceiling, or the budget ceiling xc-budget owns - and the outcome names which one. core-judge owns the verdict (F-b2-05); what this composition adds is that those three are the whole set, so a run that ends for a fourth reason, or does not end at all, is a defect rather than a variation.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-02",
+              "F-b2-05",
+              "REF-12-14"
+            ],
+            "quote": "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform"
+          },
+          {
+            "text": "agentic-stack states design rule 5 as a test (F-b1-06, F-b2-03). Its consequence here: the declared iteration ceiling is what makes a loop priceable at all, since the worst case is the ceiling times the body and the floor is one iteration. A loop with no ceiling cannot be planned, so it is refused at resolve rather than started and watched.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-06",
+              "F-b2-03"
+            ],
+            "quote": "Planning is a pure function and completes before execution begins"
+          },
+          {
+            "text": "core-judge owns the grading contract and agentic-stack states it as design rule 6 (F-b1-07). What a loop adds: the exit condition is evaluated outside the body, and the body is re-entered with the verdict and the failed check ids only. A loop that feeds the criterion back as guidance for the next attempt breaks the rule once per iteration, which is the most expensive way to break it.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-07",
+              "F-b2-05"
+            ],
+            "quote": "An agent sees its outcome, never the criterion it is judged against"
+          },
+          {
+            "text": "A composition introduces no new interface. The loop reaches dispatch, grading, checkpointing and the ceiling through capability interfaces only, as agentic-stack requires of the core (F-b1-02), so the same declaration runs on a second executor with no edit to the loop.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-02",
+              "F-b1-04"
+            ],
+            "quote": "Every external dependency sits behind a capability interface."
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "The criterion behind criterion_ref, the checks sampled for a grading and the criterion-set digest never enter the body or anything the body can read; core-judge owns the resolution path and agentic-stack states the rule. The body reads a verdict and failed check ids, which are labels the declaration already carried.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-07"
+            ],
+            "quote": "The grader is never visible to the graded."
+          },
+          {
+            "text": "No loop declaration names the engine that runs it. Which executor advances the iterations is configuration, so swapping it is not a change a caller writes.",
+            "origin": "sourced",
+            "sources": [
+              "T-t2-02",
+              "F-b1-02"
+            ],
+            "quote": "Every external dependency sits behind a capability interface."
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Declare the loop before running it: the body, an opaque criterion_ref, max_iterations, the per-iteration slice, the root ceiling and on_cap. Resolve it to a priced plan - floor of one iteration, worst case of max_iterations - and refuse at resolve if the floor already crosses what remains.",
+          "why": "Cost is knowable before commitment only because the ceiling is declared: it is the ceiling that turns an open-ended attempt into an arithmetic worst case.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-06",
+            "F-b2-03"
+          ],
+          "quote": "Cost is knowable before commitment."
+        },
+        {
+          "step": 2,
+          "action": "Evaluate the exit condition outside the body: hand the iteration's result and the criterion_ref to the grading contract core-judge owns, and pass back into the next iteration only the verdict and the failed check ids.",
+          "why": "The loop is the place design rule 6 is most easily lost, because the obvious way to make the next attempt better is to show it the criterion.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-07",
+            "F-b2-05"
+          ],
+          "quote": "\"done\" becomes an opinion"
+        },
+        {
+          "step": 3,
+          "action": "Give each iteration a slice of one root ceiling rather than a ceiling of its own, per xc-budget's own ceiling contract, sum the iterations and their descendants into the loop's cost, and reconcile that sum against the plan when the loop closes.",
+          "why": "A nested plan lies about cost unless costs sum upward, and a loop is the cheapest place to nest by accident: three iterations of a fanned-out body is a tree, not a line.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-02",
+            "REF-5-2-12"
+          ],
+          "quote": "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform"
+        },
+        {
+          "step": 4,
+          "action": "Commit one checkpoint per iteration in cap-durable-execution's vocabulary - step, idempotency key, checkpoint and resume point (F-b3-04) - keyed by the loop id and the iteration index, together with that iteration's effect; on restart read the resume point and continue at the first incomplete index.",
+          "why": "xc-idempotency-lease owns the replay guarantee this rests on (F-b4-08): an externally-triggered action is safe to replay only if the replay knows what already happened. What a loop adds is granularity - a loop that checkpoints once at the end replays its whole body after a crash and pays twice.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-08",
+            "F-b3-04"
+          ],
+          "quote": "Every externally-triggered action is safe to replay"
+        },
+        {
+          "step": 5,
+          "action": "Emit one loop-outcome per run naming terminated_by, termination_class, iterations_run and cost_micros, and assert over a population of runs that the reason is always one of the three and that unbounded is zero.",
+          "why": "build-definition-of-done owns this discipline (F-part-c-04): a criterion nothing can fail is not a criterion. The enum plus the counter is what makes a fourth exit path a test failure here instead of an anecdote in a log.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-04"
+          ],
+          "quote": "A criterion nothing can fail is not a criterion."
+        },
+        {
+          "step": 6,
+          "action": "Proposed: let internal results steer a running loop - a verdict, a partial result, a revised input - but never let one start a loop. A new root loop is admitted only from a person, a clock, or an outside event, through the same entry envelope.",
+          "why": "Every unit of work has to trace back to an actor and a ceiling; a self-started loop has neither, and this is the constraint a self-improvement loop in particular has to live inside.",
+          "origin": "proposed",
+          "sources": [
+            "REF-3-4-15",
+            "T-t4-04",
+            "T-t6-02"
+          ]
+        },
+        {
+          "step": 7,
+          "action": "Reach the loop the way any capability is reached, per cap-consumption: one entry envelope, whichever of the four entries you are, with the loop named in the workflow the intent points at. Do not add a per-entry loop path, and do not branch on which executor answered.",
+          "why": "Any entry can call complex workflows, agents and loops that run across the entire stack, so size belongs to the composition and not to the call.",
+          "origin": "sourced",
+          "sources": [
+            "T-t6-03",
+            "T-t6-02"
+          ],
+          "quote": "Any entry can call complex workflows, agents, and loops that run across the entire stack."
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Proposed: test the loop with a body that never passes, not with one that passes on the second attempt. The happy path exercises the verdict; only a permanently failing body exercises the ceiling, which is the part that keeps a loop from running forever.",
+          "origin": "proposed",
+          "sources": [
+            "F-part-c-04"
+          ]
+        },
+        {
+          "text": "Proposed: bound what each iteration carries forward as well as how many iterations there are. The records on file name history growth as the reason long-running loops have to be restarted deliberately in workflow engines, so carry a digest and a bounded window rather than the whole transcript.",
+          "origin": "proposed",
+          "sources": [
+            "X-compose-loop-002",
+            "X-cap-state-persistence-006"
+          ],
+          "quote": "to avoid running into the history scalability issue when workflows involve long-running loops"
+        },
+        {
+          "text": "Proposed: unlimited retries are not a reliability strategy, and neither is a very large ceiling. Pick max_iterations from what the body can plausibly improve in one attempt, and let the cap escalate rather than raising the number until the failures stop being visible.",
+          "origin": "proposed",
+          "sources": [
+            "X-compose-loop-003"
+          ],
+          "quote": "unlimited retries are not a reliability strategy"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second",
+        "expected": "exit 0, `passed 23, failed 0` from the gate, and `adapter=dryrun executor_marker=in-process-journal/0.1` then `adapter=second executor_marker=queue-state-machine/0.1`, each reading `steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28`, closing on `adapters_run=2 distinct_markers=2`. Cases C1-C3 run a loop to its iteration ceiling and D1 runs one that cannot afford its next iteration, so two of this facet's three terminated_by values are exercised on both executors. It is the gate compose-loop-implement owns; run here on 2026-09-03 and exited 0. Claimed, stated as the gap: tools/loop_conformance.py does not exist in this repository, so the 100-run mix this facet describes - runs_checked=100, unbounded=0, fourth_reason=0 and one escalation per cap - has never been run, and no run on disk drives a never-passing body against an unbounded declaration.",
+        "breakage": "Disable the per-iteration affordability check that fires the budget_ceiling termination in harness/workflow/flow.py's Driver.do_loop, so a loop that cannot afford its next iteration no longer caps, and restore the file afterwards.",
+        "expected_failure": "exit 1 with `FAIL every check passed (expected [], got [{\"check\": \"D1 a loop that cannot afford its next iteration terminates the unit\", \"detail\": \"rc 2 None\"}])` and `passed 17, failed 6`: only the budget_ceiling termination moves, while the iteration-ceiling cases, the crash-and-resume run and both executor markers stay green. Claimed here: the run proves a cap can fail on the executor pair compose-loop-implement owns; it says nothing about an unbounded loop, because no declaration on disk can omit max_iterations: harness/workflow/flow.py carries one loop node as a fixture and its driver iterates over that value.",
+        "status": "claimed",
+        "sources": [
+          "F-part-c-04"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion."
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-definition-of-done",
+          "build-skill-authoring",
+          "build-evidence-record",
+          "core-judge",
+          "xc-budget"
+        ],
+        "used_by": [
+          "compose-agent",
+          "compose-improvement-loop",
+          "compose-loop-implement"
+        ]
+      },
+      "open_questions": [
+        {
+          "question": "What problem type does a cap termination return? The closed registry in docs/decomposition.md section 2.1.6 has no row for an iteration ceiling reached without a pass verdict. The row proposed here is `iteration-ceiling-reached`, status 504, retryable no, raised when the declared iteration ceiling is reached and the verdict is still fail; it is marked proposed and pending registration wherever this skill states it.",
+          "evidence": "A registry row added in section 2.1.6, which is where the closed set lives and where the validator reads it from. cap-errors owns the failure object and core-judge and xc-budget state the same rule for their own boundaries (F-b4-07); until the row lands the nearest registered row is deadline-exceeded, whose retryable value is yes - which tells a caller to retry a loop that ended because it ran out of attempts, and that cost is the argument for the row.",
+          "default": "Return the registered `urn:agentic:problem:deadline-exceeded` with the loop-outcome attached, so no caller branches on a URI that cannot legally come back, and record the substitution in the outcome's escalation member.",
+          "sources": [
+            "F-b4-07"
+          ],
+          "quote": "Typed and machine-readable. Never parsed from prose"
+        },
+        {
+          "question": "Should compose-loop build on the durable-execution capability? Its contract fixes one iteration as one durable step, but docs/skill-manifest.json lists neither cap-durable-execution nor cap-state-persistence under this skill's builds_on, so the checkpoint obligation is stated here with no link to the skill that owns it. Reported, not edited: composes_with equals the manifest exactly.",
+          "evidence": "A manifest revision adding the link, or a decision that a composition may name a capability it does not build on. The same question applies to compose-approval, whose parking is durable in the same way.",
+          "default": "Name cap-durable-execution and its kb ids (F-b3-04, F-b4-08) in the rows that need it, and leave builds_on as the manifest has it.",
+          "sources": [
+            "F-b3-04"
+          ]
+        },
+        {
+          "question": "Is the reference example's marginal-gain stop - terminate as success when returns flatten over a window - a fourth termination condition, or a criterion the verdict already covers?",
+          "evidence": "A run where marginal gain flattens while the criterion still fails. If the right answer there is to stop as success, the three-condition rule is wrong; if it is to keep going to the cap, marginal gain is an input to the criterion and not a termination.",
+          "default": "Treat it as a criterion the grader evaluates, so the outcome enum stays at three members and a flattening loop terminates on a pass verdict or on its ceiling.",
+          "sources": [
+            "REF-5-3-03",
+            "REF-5-3-08"
+          ],
+          "quote": "| `stop: {marginal_gain_below, window}` | the step | returns flatten | **terminates as success** |"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session claude/auto-skill-creation compose-loop 2026-09-03"
+      }
+    },
+    "compose-loop-implement": {
+      "name": "compose-loop-implement",
+      "layer": "compose",
+      "wave": 8,
+      "description": "How a bounded loop is actually built here: the section loop this repository ran as the first executor, a durable executor with no session as the second, the three ways today's loop is not yet conformant, where the ceiling, the correlation attributes, the lease and the typed refusals attach to an iteration, and a definition of done whose breakage is in the wiring rather than in the contract. Load it when writing or reviewing the code that advances iterations, when binding a loop declaration to an executor, when a loop has to survive the death of the process driving it, when deciding what the second executor should be, when a resumed run repeats work it already committed, or when asking where this repository's own loop terminates and whether that reason is one of the three.",
+      "purpose": {
+        "text": "Proposed: build the bounded loop compose-loop specifies on two executors that differ in where a loop's state lives between iterations, and stage the migration from the loop this repository already ran, which is bounded but not yet conformant.",
+        "origin": "proposed",
+        "sources": [
+          "F-b1-04",
+          "T-t4-04",
+          "F-part-c-05"
+        ]
+      },
+      "entities": [
+        "E-capability-durable-execution",
+        "E-not-running-temporal",
+        "E-concern-budget",
+        "E-concern-idempotency",
+        "E-rule-b1-3"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "executor-binding (proposed shape; the configuration that selects which executor advances a loop, and the only place either executor is named)",
+            "origin": "proposed",
+            "sources": [
+              "T-t2-02",
+              "F-b1-02"
+            ],
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:compose:loop:executor-binding:0.1",
+              "title": "LoopExecutorBinding",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Proposed. A loop declaration carries none of this: swapping the executor is a configuration edit, so the conformance suite can run the same loop twice by changing one value.",
+              "required": [
+                "executor",
+                "checkpoint_scope",
+                "state_between_iterations"
+              ],
+              "properties": {
+                "executor": {
+                  "type": "string",
+                  "description": "The adapter id from this skill's Adapters table."
+                },
+                "checkpoint_scope": {
+                  "const": "iteration",
+                  "description": "Per iteration, never per loop. A binding that offers per-loop is the breakage in this skill's definition of done."
+                },
+                "state_between_iterations": {
+                  "enum": [
+                    "session_process",
+                    "external_store"
+                  ],
+                  "description": "The axis the pair differs on, in the field build-adapter-pair calls differs_in_execution_model."
+                },
+                "resume": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "lease_ttl_s": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "max_resumes": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "invariants": [
+          {
+            "text": "The pair differs on one named axis - where a loop's state lives between iterations - which build-adapter-pair requires filled in rather than asserted. Today's executor holds it in the process of a live session; the second holds it in a store the executor reads on restart.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-04",
+              "F-part-c-05"
+            ],
+            "quote": "Swappability is a tested property, not an intention."
+          },
+          {
+            "text": "Both executors emit the same loop-outcome and the same problem objects, so nothing downstream can tell which one ran, per build-adapter-pair's own swappability test. The conformance suite asserts that equality directly rather than inspecting each executor's own status vocabulary.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-04"
+            ],
+            "quote": "Swappability is a tested property, not an intention."
+          },
+          {
+            "text": "build-evidence-record governs what may be labelled measured here (F-a5-04). Every record this repository's own loop wrote carries dirty true, so the loop's runs are evidence that it ran and terminated, and are not a measurement of conformance to the loop contract; the adapter rows below are labelled accordingly.",
+            "origin": "sourced",
+            "sources": [
+              "F-a5-04",
+              "F-part-c-08"
+            ],
+            "quote": "whether the tree was dirty"
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "Neither executor's vocabulary reaches the loop - no run id of theirs, no status string of theirs, no replay concept of theirs appears in a loop declaration, a loop-outcome or a problem object. They appear in the binding and in the Adapters table below, and nowhere else, the way agentic-stack already requires products to stay out of core and interface material.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-09",
+              "F-b1-02"
+            ],
+            "quote": "Products belong in the adapter column only."
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Bind the loop contract to the executor that already runs: map the section list to max_iterations, one section's research, author, review and improve pass to the body, and the checkpoint phase to the per-iteration commit. Write the binding as configuration conforming to the executor-binding shape above, per build-adapter-pair's own test that an adapter is a binding a conformance suite can run.",
+          "why": "Proposed: an adapter is a binding that a conformance suite can run, not a claim that an existing script is close enough. Writing it is what exposes the three gaps in step 2 to 4.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-04"
+          ],
+          "quote": "Swappability is a tested property, not an intention."
+        },
+        {
+          "step": 2,
+          "action": "Close the fourth exit first. The script leaves its loop when a section's checkpoint phase does not push, which terminates the run for a reason outside the three compose-loop allows. Map that condition to a cap with on_cap escalate and a typed problem, and assert in the binding's test that no other early exit remains.",
+          "why": "Proposed: a fourth termination is the one defect the loop contract names as fatal, and it is already present in the thing being wrapped, so migration begins by removing it rather than by adding features.",
+          "origin": "proposed",
+          "sources": [
+            "T-t4-04",
+            "F-b4-07"
+          ]
+        },
+        {
+          "step": 3,
+          "action": "Supply the exit condition the script does not have. Today the loop ends when the section list is exhausted, which is an iteration ceiling wearing the clothes of success; wire evaluate_exit to a criterion_ref resolved outside the body, the way compose-loop's own verdict step requires, so a run can end on a pass verdict, and classify the exhausted list as the cap it is.",
+          "why": "Proposed: without a verdict the loop has two of the three terminations and no way to end as done, so every run reads as a cap and the stop-versus-cap distinction compose-loop states cannot be observed.",
+          "origin": "sourced",
+          "sources": [
+            "F-b2-05"
+          ],
+          "quote": "\"done\" becomes an opinion"
+        },
+        {
+          "step": 4,
+          "action": "Attach the ceiling. The run carries no budget object today, so wire a root ceiling and a per-iteration slice through the budget interface compose-loop's own contract already requires, decrement per iteration and per descendant dispatch, and make a crossing terminate the loop while the runner survives.",
+          "why": "Proposed: xc-budget places the ceiling outside the unit that spends (F-b4-02); a loop whose only bound is its iteration count is bounded in attempts and unbounded in money, because one iteration can fan out.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-02",
+            "F-b4-01"
+          ],
+          "quote": "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform"
+        },
+        {
+          "step": 5,
+          "action": "Build the second executor on the durable-execution interface: one iteration is one step, the checkpoint and the iteration's effect commit together, and the loop's state lives in a store rather than in a process. Start it, kill it mid-iteration, and resume it with no session attached, which is build-adapter-pair's own test for a second adapter.",
+          "why": "Proposed: the assumption the first executor rests on is that a live session survives the whole loop. The second breaks exactly that, which is the test build-adapter-pair applies to a second adapter (F-b1-04).",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-04",
+            "F-b3-04"
+          ],
+          "quote": "the second exists to prove the first is not load-bearing"
+        },
+        {
+          "step": 6,
+          "action": "Wire the cross-cutting concerns to the iteration, not to the run: re-stamp the correlation attributes on every iteration's spans and problem objects instead of relying on parentage, take an idempotency lease on the resume path, record provenance per artifact an iteration produces, and return both ceilings as typed problems.",
+          "why": "xc-correlation owns the dispatch-attribute rule, xc-idempotency-lease the keyed lease a resume takes, xc-provenance-chain the per-artifact record and xc-typed-errors the problem object a crossed ceiling returns; this step only says where the four attach in a loop. Correlation must ride on an explicit resource attribute set at dispatch, which agentic-stack records as the measured A7 finding; an iteration is a dispatch boundary, so this is where the finding bites in a loop.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-02",
+            "F-b4-08"
+          ],
+          "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Proposed: measure the executor you already have against the contract before wrapping it. This repository's own section loop ran ten ceremonies with its records on file in kb/ledger.jsonl and kb/ceremonies/, and it ended by exhausting its section list; that is evidence of a bounded loop and not of a conformant one, and the difference is the whole migration.",
+          "origin": "proposed",
+          "sources": [
+            "T-t4-04",
+            "F-part-c-08"
+          ],
+          "quote": "at the end of each section a ceremony re-reviews the output, improves the skills that produced it, and the loop continues"
+        },
+        {
+          "text": "Proposed: do not let the second executor's vocabulary name the fields. Audit the binding for concepts that only mean something under one of them - replay, worker, history, session - and push each back into the adapter, which is the shaping audit build-adapter-pair prescribes.",
+          "origin": "proposed",
+          "sources": [
+            "F-meta-04",
+            "F-b1-05"
+          ]
+        },
+        {
+          "text": "Proposed: keep the crash test in the suite rather than in a runbook. A resume that is only ever exercised by hand is a resume that works on the day it was written, and the durable executor's entire reason for being here is that it survives a death the first executor cannot.",
+          "origin": "proposed",
+          "sources": [
+            "F-part-c-04"
+          ]
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-section-loop-script",
+          "role": "today",
+          "maps_to": "The section loop this repository ran: a script driven by one live session that walks a list of sections, and for each runs research, then parallel authors, then a review and an improve pass that checkpoints by committing. Its records are kb/ledger.jsonl and kb/ceremonies/ceremony-01 through ceremony-10. E-adapter-section-loop-script is a proposed entity id, not a knowledge-base entity: the adapter entities in kb/entities.jsonl exist only for the capability rows of PASS.md B3, and a composition has no row there.",
+          "cannot": "It has no budget ceiling, no verdict-based exit and one termination outside the three - it leaves the loop when a section's checkpoint does not push. Its state lives in the process, so the death of the session ends the run, and every record it wrote carries dirty true, which is why this row is claimed rather than measured.",
+          "swap_procedure": "Express the section list as max_iterations and the per-section pass as the body, then select the other executor by changing state_between_iterations in the executor binding; nothing in the loop declaration changes.",
+          "status": "claimed",
+          "sources": [
+            "T-t4-04",
+            "F-a5-04"
+          ],
+          "quote": "Work through every item with a self-improvement loop"
+        },
+        {
+          "entity": "E-adapter-temporal",
+          "role": "second",
+          "maps_to": "The durable-execution capability's own adapter (F-b3-04) serving here as the SECOND executor for this composition: each iteration is a checkpointed step whose history lives on a server, so the loop advances with no session attached and a restart resumes at the first incomplete iteration.",
+          "cannot": "It is not listening today - PASS.md A6 records the data directory present, nothing on its ports, and durable workflow orchestration designed around it while it is down - so this row is claimed and the pair is unproven until the engine is up or a serverless step log is put in its place.",
+          "swap_procedure": "Set state_between_iterations to external_store in the executor binding and run the same conformance suite; if any loop declaration or assertion has to change, the boundary is shaped around the first executor.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-04",
+            "F-a6-02",
+            "F-b1-04"
+          ],
+          "quote": "Durable workflow orchestration and human-in-the-loop signals are designed around it and it is currently down"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second",
+        "expected": "Measured by tools/measure.py at ebb7068: exit 0; last lines: adapter=second executor_marker=queue-state-machine/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28 | adapters_run=2 distinct_markers=2",
+        "breakage": "sed -i 's/if body_cost > self.remaining or body_cost > node\\[\"per_iteration_ceiling_micros\"\\]:/if False:/' harness/workflow/flow.py -- in Driver.do_loop, this disables the per-iteration affordability check that fires the budget_ceiling termination, so a loop that cannot afford its next iteration no longer caps: the check is only ever true for the D1 case's constrained budget (200000-micros-normal loops never trip it), so the main crash/resume run and the iteration-ceiling case (C1-C3) are untouched. Restored with git checkout -- harness/workflow/flow.py.",
+        "expected_failure": "Measured by tools/measure.py at ebb7068: exit 1; last lines:   FAIL the same suite passes again once the key is restored (expected 0, got 1) | passed 17, failed 6",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04",
+          "F-a7-03"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion.",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "ebb7068",
+          "clean_exit": 0,
+          "clean_output": "  ok   call.py exits 0 (0)\n  ok   dry-run conformance exits 0 (0)\n  ok   the breakage run exits non-zero (nonzero)\n...\nadapter=dryrun executor_marker=in-process-journal/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28\nadapter=second executor_marker=queue-state-machine/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28\nadapters_run=2 distinct_markers=2",
+          "breakage_exit": 1,
+          "breakage_output": "  ok   call.py exits 0 (0)\n  FAIL dry-run conformance exits 0 (expected 0, got 1)\n  FAIL every check passed (expected [], got [{\"check\": \"D1 a loop that cannot afford its next iteration terminates the unit\", \"detail\": \"rc 2 None\"}])\n  FAIL before: dry-run adapter (expected 0, got 1)\n  FAIL after: queue-plus-state-machine adapter (expected 0, got 1)\n  FAIL both executors in one report (expected 0, got 1)\n  ok   the breakage run exits non-zero (nonzero)\n  FAIL the same suite passes again once the key is restored (expected 0, got 1)\n...\n  FAIL the same suite passes again once the key is restored (expected 0, got 1)\n\npassed 17, failed 6",
+          "restored": true
+        },
+        "expected_design": "test.sh: passed 23, failed 0. Direct swap run: 28/28 checks on each of dryrun and second, including B1-B2 (the loop exits on the judge verdict in 2 iterations), C1-C3 (a loop that never passes stops at its iteration ceiling, escalates with the registered deadline-exceeded type, and records the proposed iteration-ceiling-reached substitution) and D1 (a loop that cannot afford its next iteration terminates on the budget ceiling) - the loop's ceiling and all three termination reasons (verdict_pass/stop, iteration_ceiling/cap, budget_ceiling/cap); adapters_run=2, distinct_markers=2; exit 0 on both commands.",
+        "expected_failure_design": "D1 fails on both executors with rc 2 and terminated_by None instead of budget_ceiling (the per-step budget guard in Driver.charge still raises budget-exhausted, but before self.loop_outcome is ever set, so the loop-outcome record is empty rather than naming the cap): the direct swap run drops to 27/28 on each adapter, isolated to D1, while B1-B2 and C1-C3 - the judge-verdict stop and the iteration-ceiling cap - stay green on both; test.sh fails too since it re-invokes conformance across its swap and repair sections, each carrying the same isolated D1 failure. This names the third termination reason and not the loop's exit or ceiling logic."
+      },
+      "composes_with": {
+        "builds_on": [
+          "compose-loop",
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Which knowledge-base entity names this repository's own section loop as an adapter? `python3 tools/kb.py tree` shows adapter and swap-candidate entities only for the capability rows of PASS.md B3, and a composition has no row there, so the today row above uses a minted id.",
+          "evidence": "Either an entity added to kb/entities.jsonl for compositions, or a decision that composition adapters are named only in skills. 1-3-1 applied: reuse a B3 adapter entity (wrong row, and the validator warns for good reason), leave the row without an entity (the schema requires one), or mint and say so - the third was taken because it is the only one that is both honest and checkable, and build-adapter-pair states why an undecidable pair is recorded as an open question rather than shipped quietly (F-part-c-06).",
+          "default": "Keep E-adapter-section-loop-script as a proposed entity id declared in the row, and leave it out of the skill's entities list so nothing resolves it as a knowledge-base record.",
+          "sources": [
+            "F-part-c-06"
+          ],
+          "quote": "A required output, not an apology."
+        },
+        {
+          "question": "What serves as the second executor while the durable engine is not listening? The pair is unproven until something advances a loop with no session attached.",
+          "evidence": "Either the engine started and the crash test run against it, or a serverless step log - a committed row beside each iteration's effect - built and run through the same suite. Both would produce adapters_run == 2 from a real run rather than from a binding that exists on paper, which is the pair obligation build-adapter-pair owns (F-b1-04).",
+          "default": "Keep the durable engine as the declared second executor, keep both adapter rows claimed, and treat a serverless step log as the fallback if the engine stays down.",
+          "sources": [
+            "F-a6-02",
+            "F-b1-04"
+          ],
+          "quote": "Every interface ships with at least two adapters"
+        },
+        {
+          "question": "Is one ceremony - a review pass and an improve pass over the same section - one iteration or two? The answer decides what max_iterations counts and what a checkpoint covers when this repository's loop is expressed as a conformant one.",
+          "evidence": "A replay of the recorded sections under both readings, comparing resume behaviour after a crash between the review and the improve pass: whichever reading resumes without re-running a committed improve is the right unit.",
+          "default": "One section is one iteration, with the review and improve passes as steps of the body, because the checkpoint the script already commits is per section.",
+          "sources": [
+            "T-t4-04"
+          ],
+          "quote": "at the end of each section a ceremony re-reviews the output"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session claude/auto-skill-creation compose-loop 2026-09-03"
+      }
+    },
+    "compose-agent": {
+      "name": "compose-agent",
+      "layer": "compose",
+      "wave": 8,
+      "description": "An agent profile assembled from lower layers: what it is good at and not for, a model class that names a routing prefix and never a vendor, a declared tool surface, input and output shapes, a cost class and a max-concurrency ceiling, run as one isolated turn with the grading criterion absent from everything the unit can read. Load it when declaring a new agent profile or its good_at/not_for pair, when deciding which tools or packaged skills an agent unit may reach, when sequencing which profile handles which workflow step, when a running agent needs to delegate to a sub-agent with its own identity-chain hop and a budget slice cut from the parent, when checking whether a criterion could leak into an agent's context, or when reasoning about keeping well over a hundred concurrently running agents coherent.",
+      "purpose": {
+        "text": "Assemble a bounded loop, a declared tool surface and a packaged capability set into one agent unit that runs isolated, declared up front by what it is good at so a caller knows how to call it and how to sequence it.",
+        "origin": "sourced",
+        "sources": [
+          "T-t6-05"
+        ],
+        "quote": "Each agent is defined up front by what it is good at, so callers know how to call it and how to sequence it."
+      },
+      "entities": [
+        "E-capability-agent-runtime",
+        "E-capability-tool-access",
+        "E-capability-capability-packaging",
+        "E-capability-isolation",
+        "E-core-component-judge",
+        "E-rule-b1-6",
+        "E-concern-budget",
+        "E-concern-identity"
+      ],
+      "contract": {
+        "operations": [
+          {
+            "name": "declare_agent (proposed operation set; a composition introduces no new interface, so these are assembly points over interfaces the lower layers already publish; admission, the turn and release are cap-isolation's admit/terminate and cap-agent-runtime's prompt directly - only declare_agent and delegate add composition-specific shape)",
+            "input": "a profile - good_at, not_for, model_class, the declared tools[], input/output shapes, cost_class, max_concurrency - plus the budget and depth already consumed by whatever is calling it (proposed)",
+            "output": "a priced admission plan whose cost is one turn under the declared model_class and cost_class, or a refusal issued before anything runs when a declared tool or capability cannot be resolved (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "T-t6-05",
+              "F-a4-01"
+            ]
+          },
+          {
+            "name": "delegate (proposed)",
+            "input": "a sub-agent profile name, a task, the parent's delegation chain, and a budget slice cut from the parent's remaining ceiling (proposed)",
+            "output": "the sub-agent's turn result plus one new chain hop recorded against it, so the sub-agent's spend and its actor both trace back to the same root as the parent's (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-03",
+              "F-b4-02"
+            ]
+          }
+        ],
+        "shapes": [],
+        "invariants": [
+          {
+            "text": "The profile is declared up front by what it is good at, and TARGET T6.5 states the reason: a caller has to be able to name what an agent is good at and how to sequence it before it is ever called. The consequence here is the fixed field set that makes that declaration checkable rather than a paragraph of prose: good_at, not_for, model_class, tools, input/output shapes, cost_class and max_concurrency, matching examples/end-to-end/schemas/agent-profile.schema.json's required list.",
+            "origin": "sourced",
+            "sources": [
+              "T-t6-05"
+            ],
+            "quote": "Each agent is defined up front by what it is good at, so callers know how to call it and how to sequence it."
+          },
+          {
+            "text": "The unit an agent runs belongs to cap-agent-runtime, not to this layer: PASS.md B3 gives that capability the Agent Client Protocol as its contract (F-b3-05), and compose-agent supplies the task and reads back the stop reason without adding a turn shape of its own. Where a composition binds the tool surface and the capability set is one admission before the first turn opens, which step 2 states.",
+            "origin": "sourced",
+            "sources": [
+              "F-b3-05"
+            ],
+            "quote": "Agent runtime** | Agent Client Protocol"
+          },
+          {
+            "text": "cap-isolation owns the isolated unit of work (F-b3-02). The consequence here: an agent is exactly one isolation admission, so nothing about a concurrently running sibling agent - its inputs, its partial outputs, its own admission - is reachable from inside this one. That containment, repeated per unit, is what keeps TARGET T6.6's well-over-a-hundred concurrent agents coherent without a shared coordinator watching all of them at once.",
+            "origin": "sourced",
+            "sources": [
+              "T-t6-06"
+            ],
+            "quote": "The target scale is well over a hundred agents running at a time, working together, managing state, breaking problems down, and self-improving where they can."
+          },
+          {
+            "text": "Proposed: models are reached only through cap-model-access, and a profile's model_class is a routing class rather than a vendor - the same rule agentic-stack already states for every caller (F-a4-01). A profile that named a vendor model would make the swap agentic-stack requires of that capability impossible to honour from this layer.",
+            "origin": "sourced",
+            "sources": [
+              "F-a4-01"
+            ],
+            "quote": "Prefix carries the contract."
+          },
+          {
+            "text": "agentic-stack owns design rule 6, that the grader is never visible to the graded (F-b1-07, F-b2-05). The consequence here: core-judge grades a turn's result against criterion_ref after invoke_turn returns, never before, and the task built for invoke_turn is assembled from input_from and the declared input fields only - there is no field in the turn-request shape a wrapper at this layer could use to smuggle the criterion back in.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-07",
+              "F-b2-05"
+            ],
+            "quote": "An agent sees its outcome, never the criterion it is judged against"
+          },
+          {
+            "text": "Reach the agent the way any capability is reached, which is cap-consumption's contract for a caller and cap-work-intake's for normalising what a producer sent: TARGET T6.2's four entries - a human, an event, a schedule, an external system or agent - all name the same workflow_ref and the same agent step, and the consequence specific to an agent is that none of them may mint a fresh root agent invocation from inside a running turn. Proposed, following the reference example: a running unit's result may steer a later step; it may not start a new one with no actor and no ceiling of its own.",
+            "origin": "sourced",
+            "sources": [
+              "T-t6-02"
+            ],
+            "quote": "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent. All four enter through the same shape."
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "compose-loop applies design rule 6 to a loop's own exit condition (F-b1-07), and agentic-stack owns the rule itself. compose-agent's consequence: the criterion string, the checks sampled for a grading, and the criterion-set digest never enter the task built for invoke_turn, the unit's environment, or anything the profile's declared inputs could carry - decomposition.md section 3.5 row M4 states this as the composition-level assertion that the criterion is absent from everything the unit can read.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-07"
+            ],
+            "quote": "The grader is never visible to the graded."
+          },
+          {
+            "text": "Which product serves the runtime, the isolation boundary, the tool endpoint or the packaging store behind any one profile. agentic-stack owns the rule that products belong in the adapter column only (F-part-c-09); an agent profile carries a model_class prefix and a tool name, never a vendor or a version.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-09"
+            ],
+            "quote": "Products belong in the adapter column only"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Declare the profile before admitting anything: good_at entries specific enough to route on, not_for, model_class as a routing prefix, the declared tools[], input/output shapes, cost_class and max_concurrency. Resolve it with declare_agent to a priced admission plan before any unit runs.",
+          "why": "TARGET T6.5 is the reason the fields exist at all: a caller has to be able to tell what an agent is good at and how to sequence it without opening the agent itself.",
+          "origin": "sourced",
+          "sources": [
+            "T-t6-05"
+          ],
+          "quote": "so callers know how to call it and how to sequence it"
+        },
+        {
+          "step": 2,
+          "action": "Proposed: admit the unit through cap-isolation, bind its tool surface through cap-tool-access to exactly the declared tools[], and resolve its capability set through cap-capability-packaging to exactly the declared package list, once, at admission, before the first turn opens. Check design rule 6 again at this same boundary, per this skill's definition of done: assert the criterion string is absent from everything the unit can read, the unit's bound tool list equals the declared tools[] exactly, and no undeclared skill loaded.",
+          "why": "Proposed: cap-isolation, cap-tool-access and cap-capability-packaging each already own the operation that does this; what a composition adds is doing all three together, once, so nothing not named in the profile is reachable from inside the unit - and decomposition.md section 3.5 row M4 names the same three assertions as what makes that binding checkable rather than assumed.",
+          "origin": "proposed",
+          "sources": [
+            "F-b3-02",
+            "F-b3-06",
+            "F-b3-07",
+            "F-b1-07"
+          ]
+        },
+        {
+          "step": 3,
+          "action": "Reach the model only through cap-model-access, addressed by the profile's model_class prefix. Never let a profile, a task, or an admission record name a vendor or a specific model.",
+          "why": "agentic-stack owns that rule (F-a4-01): callers request a class, never a vendor, and the prefix carries the contract; a profile is exactly such a caller.",
+          "origin": "sourced",
+          "sources": [
+            "F-a4-01"
+          ],
+          "quote": "Callers request a class, never a vendor."
+        },
+        {
+          "step": 4,
+          "action": "Run the unit's work as one prompt turn through cap-agent-runtime's invoke_turn, per the Agent Client Protocol that capability names: build the task from input_from and the declared input fields only, take back the stop reason, the outputs and the usage, and reconcile the cost against the admission plan.",
+          "why": "cap-agent-runtime already fixes the turn as the unit of agent execution; a composition adds nothing to that shape, it only supplies the task and reads the result.",
+          "origin": "sourced",
+          "sources": [
+            "F-b3-05"
+          ],
+          "quote": "Agent Client Protocol"
+        },
+        {
+          "step": 5,
+          "action": "Hand the turn's result to core-judge for a verdict against criterion_ref; never let the agent, the profile, or the task carry the criterion itself.",
+          "why": "agentic-stack states design rule 6 as a test, and compose-loop already applies it to a loop's own exit condition (F-b1-07, F-b2-05): does the grading criterion ever travel with the thing graded. An agent composition is exactly where a well-meaning wrapper could add it back in by accident, so the rule has to be checked again here.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-07",
+            "F-b2-05"
+          ],
+          "quote": "\"done\" becomes an opinion"
+        },
+        {
+          "step": 6,
+          "action": "When one agent delegates to another, call delegate: append exactly one hop to the delegation chain already carried by the run, and cut the sub-agent's budget from the remaining slice rather than opening a fresh root ceiling. Terminate the unit and reconcile its cost up the tree on every stop reason, not only on end_turn - including a delegated sub-agent's return - and report a unit that used its full budget slice as a cap, never as a quiet success, whatever it produced.",
+          "why": "Proposed, drawing on xc-identity-delegation and xc-budget: every action names an actor and every unit of work carries a ceiling, so a delegation that skipped either would be an actor with no chain or a spend with no ceiling above it; following the reference example, stop and cap are opposite terminations, and collapsing them at the same reconciliation point is a mistake the reference records as already made once.",
+          "origin": "proposed",
+          "sources": [
+            "F-b4-03",
+            "F-b4-02",
+            "REF-5-3-08"
+          ]
+        },
+        {
+          "step": 7,
+          "action": "When the agent's work is iterative, put the agent step inside compose-loop's body instead of writing a private retry inside the agent. Let the loop's per-iteration ceiling, its depth bound checked at resolve time, and its three-way termination apply to the agent step exactly as they apply to any other step.",
+          "why": "Proposed, following the reference example: a nested plan lies about cost unless costs sum upward, and depth has to be bounded and checked before anything executes rather than discovered two iterations in.",
+          "origin": "proposed",
+          "sources": [
+            "REF-5-2-12",
+            "REF-5-2-13"
+          ]
+        },
+        {
+          "step": 8,
+          "action": "compose-loop carries TARGET T6.3 and T6.2 for the entry rule: any entry can call complex workflows, agents and loops that run across the entire stack. Reach the agent the same way: one entry envelope, whichever of the four entries you are, naming the workflow and the agent step the intent points at, and never mint a fresh root agent invocation from inside a running turn.",
+          "why": "Any entry can call complex workflows, agents and loops that run across the entire stack, so an agent's size and its concurrency belong to the composition, not to which door the call came through.",
+          "origin": "sourced",
+          "sources": [
+            "T-t6-03",
+            "T-t6-02"
+          ],
+          "quote": "Any entry can call complex workflows, agents, and loops that run across the entire stack."
+        },
+        {
+          "step": 9,
+          "action": "Set max_concurrency from what the isolation adapter can actually admit at once, not from a round number. Treat well over a hundred agents running concurrently as an ordinary point on that scale: each unit's own isolation boundary, its own budget slice and its own chain hop are what keep that many runs coherent, not a coordinator that watches all of them.",
+          "why": "TARGET T6.6 states the target scale directly; the mechanism this skill can offer for reaching it without a central bottleneck is the containment, budget and identity guarantees already declared per unit.",
+          "origin": "sourced",
+          "sources": [
+            "T-t6-06"
+          ],
+          "quote": "working together, managing state, breaking problems down, and self-improving where they can"
+        },
+        {
+          "step": 10,
+          "action": "Proposed: open references/usage.md for the full agent-profile schema, the delegation-call shape, a worked declaration for each of TARGET T1's three ways in, and the worked rejection in full. The body of this skill is enough to declare a conformant agent without it.",
+          "why": "Proposed: the full schema and three worked declarations would push this skill past its instruction and shape budget without adding anything the body does not already state.",
+          "origin": "proposed",
+          "sources": [
+            "T-t3-01"
+          ]
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Count what an agent run actually exercised before calling a gate evidence about a profile. agentic-stack records the A7 finding that a deterministic gate can be structurally green and mean nothing (F-a7-03), and it applies exactly here: a suite that never admits a unit against a declared profile cannot fail a tool-surface or capability-set check however the binding is written, so assert units_checked and the three counters by name rather than reading an exit code.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "A deterministic gate can be structurally green and mean nothing."
+        },
+        {
+          "text": "Proposed: write good_at entries specific enough to route on. A router takes input, determines intent, and routes the request to a handler without knowing what the handler does; the records on file describe this as the reason a router pattern scales, and it only works if good_at is a claim precise enough to route against rather than a category. The record is a search result rather than a page read, so take the shape and not a measurement from it.",
+          "origin": "proposed",
+          "sources": [
+            "X-compose-agent-003"
+          ],
+          "quote": "A router takes input, determines intent, and routes the request to a handler without knowing what the handler does."
+        },
+        {
+          "text": "Proposed: keep the profile declaration itself independent of which runtime, registry or process happens to serve it. The records on file describe an agent registry as a control plane that does not care how an agent runs, only that it is registered, governed and observable; that is the property this skill's own second adapter exists to test. The record is a search result rather than a page read.",
+          "origin": "proposed",
+          "sources": [
+            "X-compose-agent-006"
+          ],
+          "quote": "does not care how your agent runs, only that it is registered, governed, and observable"
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-in-process-agent-profile-registry",
+          "role": "today",
+          "maps_to": "declare_agent, admit_agent and invoke_turn served by resolving a profile name against a JSON file held in the same process as the composer, admitting the unit through cap-isolation and calling cap-agent-runtime directly. examples/end-to-end/agents.json declares seven profiles; examples/end-to-end/schemas/agent-profile.schema.json is the schema every one of them satisfies, requiring name, good_at, not_for, model_class, tools, inputs, outputs, cost_class and max_concurrency; examples/end-to-end/run.py resolves an agent step's profile field against that file and dispatches it through one dispatch interface in the same walk that runs every other operator. Proposed entity id: the knowledge base has no capability row for agent composition, so there is no E- record to reuse and this id is ours.",
+          "cannot": "Cannot discover a profile published outside this process or repository, cannot answer 'what agents exist' to a caller that only speaks a network protocol, and cannot authenticate a remote party against anything other than the identity chain this same process already trusts; the registry is a lookup table read at composer start, not a service another party can query.",
+          "swap_procedure": "Point declare_agent at a remote registry entry instead of a row in agents.json, admit the returned profile the same way, and run one conformance report over both. agentic-stack states design rule 3 - every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing - and this pair is that test applied to a profile registry.",
+          "status": "measured",
+          "sources": [
+            "T-t6-05"
+          ],
+          "quote": "Each agent is defined up front by what it is good at, so callers know how to call it and how to sequence it."
+        },
+        {
+          "entity": "E-swap-candidate-remote-agent-protocol-server",
+          "role": "second",
+          "maps_to": "the same declare_agent and admit_agent served by a remote agent protocol server: a profile is a signed, network-addressable registry entry rather than a row in a file the composer already has open, and admitting a unit means authenticating to that server and receiving a session over the network instead of instantiating a process in the same container. Proposed entity id: no swap-candidate entity exists in the knowledge base for this shape either, so it is minted the same way this skill's first adapter is.",
+          "cannot": "Cannot resolve a profile without a network round trip, so declare_agent fails for reasons an in-process registry never can - the server is unreachable, the entry's signature does not verify; and cannot assume its identity chain and the composer's are issued by the same authority, so the hop it adds must be a token exchange rather than a direct hop.",
+          "swap_procedure": "Publish one profile to both the in-process file and a conformant remote registry, run declare_agent against each for the same task, and assert adapters_run >= 2 with identical required admission fields - good_at, model_class, tools, cost_class, max_concurrency - even though the network round trip and the identity hop differ.",
+          "status": "claimed",
+          "sources": [
+            "F-b4-03"
+          ],
+          "quote": "Every action names an actor, including delegated agent actors. Delegation chains are explicit"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/linked/test.sh && ADAPTER_CONTAINMENT=second ADAPTER_GATEWAY=second ADAPTER_TRACE=second ADAPTER_WORKFLOW=second python3 harness/linked/conformance.py --report out/linked-swap.json",
+        "expected": "exit 0, `passed 32, failed 0` from the gate and `verdict pass: 23 of 23 checks pass` from the all-second run, with `counters: {\"doors_checked\": 4, \"manifests_distinct\": 1, \"subjects_distinct\": 1, \"typed_refusals\": 4, \"replay_noops\": 4, \"traces_reassembled\": 4}`. It is the gate compose-agent-implement owns; run here on 2026-09-03 and exited 0. Claimed, stated as the gap: those 23 checks cover the four doors, one envelope, containment, spend, replay and typed refusals, and none of this facet's own three assertions - criterion_leaks == 0, tool_mismatches == 0 and undeclared_skills == 0 over 20 units admitted against examples/end-to-end/agents.json - has ever been run, because tools/agent_conformance.py does not exist in this repository and no profile-registry swap is wired into any harness.",
+        "breakage": "In harness/linked/linked.py, break the replay check submit() makes against the ledger so a prior completion is never recognised: sed -i 's/prior = self.ledger.completed(env.idempotency_key)/prior = None/' harness/linked/linked.py, then git checkout -- harness/linked/linked.py.",
+        "expected_failure": "exit 1 with `FAIL the same suite passes again once the door is restored (expected 0, got 1)` and `passed 20, failed 12`: checks D1 and D2 fail and replay_noops drops from 4 to 0 while the door, manifest and refusal counters are unchanged. Claimed here for the same reason the criterion is: this breakage moves the cross-door replay seam that compose-agent-implement owns, not the criterion-leak, tool-surface or capability-set binding this facet asserts, and no edit on disk can make those three fail today.",
+        "status": "claimed",
+        "sources": [
+          "F-b1-07"
+        ],
+        "quote": "The grader is never visible to the graded."
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-definition-of-done",
+          "build-skill-authoring",
+          "compose-loop",
+          "cap-agent-runtime",
+          "cap-tool-access",
+          "cap-capability-packaging",
+          "cap-isolation"
+        ],
+        "used_by": [
+          "compose-agent-implement"
+        ]
+      },
+      "open_questions": [
+        {
+          "question": "Should compose-agent build on cap-model-access, core-judge, xc-identity-delegation and xc-budget? Its contract fixes model_class routing through cap-model-access, grading through core-judge, and delegation through an identity chain and a subdivided budget, but docs/skill-manifest.json lists none of the four under this skill's builds_on, so those rows are stated here with no link to the skill that owns each fact. Reported, not edited: composes_with equals the manifest exactly.",
+          "evidence": "A manifest revision adding the links, or a decision that a composition may cite a capability or cross-cutting concern it does not build on, the same question compose-loop already raised for cap-durable-execution.",
+          "default": "Name each capability and its kb ids in the rows that need it, and leave builds_on as the manifest has it.",
+          "sources": [
+            "F-b4-02",
+            "F-b4-03"
+          ]
+        },
+        {
+          "question": "Is a max_concurrency chosen per profile enough to keep TARGET T6.6's well-over-a-hundred concurrent agents coherent, or does coherence at that scale need a resource beyond what any one capability in this skill's builds_on states - a scheduler that admits across profiles rather than within one?",
+          "evidence": "A load test running many profiles concurrently against a shared isolation adapter, recording whether per-profile max_concurrency values are jointly honoured or whether the adapter's own admission ceiling is crossed first.",
+          "default": "Treat max_concurrency as a per-profile ceiling only, and rely on cap-isolation's own admission limit as the platform-wide backstop, revisiting if a load test finds the two disagree.",
+          "sources": [
+            "T-t6-06"
+          ],
+          "quote": "well over a hundred agents running at a time"
+        },
+        {
+          "question": "The knowledge base has no capability row for agent composition, so which entities should today's adapter and its second be recorded against?",
+          "evidence": "1-3-1 applied (TARGET T5): the three options were to record today's adapter against an existing capability entity such as agent runtime, to mint new entities for the composition layer, or to leave the adapters[] pair absent. Recording against agent runtime would misattribute an in-process registry's own row to a different B3 line (the citation defect a prior ceremony already named); leaving the pair absent would leave the round's explicit instruction to cite examples/end-to-end unaddressed. Recommendation taken: mint both, the way compose-operators already did for the operator layer, and say so in each row.",
+          "default": "Both adapters[].entity ids are recorded as proposed and pending a knowledge-base entity if PASS.md ever grows a composition-layer row.",
+          "sources": [
+            "T-t5-02"
+          ]
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session claude/auto-skill-creation compose-agent 2026-09-03"
+      }
+    },
+    "compose-agent-implement": {
+      "name": "compose-agent-implement",
+      "layer": "compose",
+      "wave": 9,
+      "description": "How compose-agent is actually wired on this repository's substrate: one microVM per agent running the agent-runtime adapter over the Agent Client Protocol as today's admission, a remote agent protocol server as the second, the three ways today's admission is not yet conformant to compose-agent's contract, where the tool-list, capability-set, criterion-absence and identity-chain checks attach to a unit, and a definition of done whose breakage is in the tool-registration binding rather than in the contract. Load it when writing or reviewing the code that admits an agent unit, when wiring a profile registry to the microVM launcher, when deciding what the second adapter should be, when a delegation call has nowhere to record an actor because no identity field exists yet, or when asking why this repository's own agent admission cannot yet prove the tool list it bound.",
+      "purpose": {
+        "text": "Proposed: build compose-agent's contract on the one-microVM-per-agent substrate that already runs, and stage the migration from a substrate whose tool endpoint has zero tools registered and whose identity field does not exist.",
+        "origin": "proposed",
+        "sources": [
+          "F-a6-03",
+          "F-a6-05",
+          "F-b1-04"
+        ]
+      },
+      "entities": [
+        "E-capability-agent-runtime",
+        "E-capability-tool-access",
+        "E-capability-isolation",
+        "E-capability-capability-packaging",
+        "E-not-running-mcp-endpoint",
+        "E-not-running-identity",
+        "E-rule-b1-3"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "profile-registry-binding (proposed shape; the configuration that selects which registry resolves declare_agent, and the only place either adapter is named)",
+            "origin": "proposed",
+            "sources": [
+              "T-t2-02",
+              "F-b1-02"
+            ],
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:compose:agent:registry-binding:0.1",
+              "title": "AgentRegistryBinding",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Proposed. A profile declaration carries none of this: swapping the registry is a configuration edit, so the conformance suite runs the same profile twice by changing one value.",
+              "required": [
+                "registry",
+                "tool_registration",
+                "identity_hop"
+              ],
+              "properties": {
+                "registry": {
+                  "type": "string",
+                  "description": "The adapter id from this skill's Adapters table."
+                },
+                "tool_registration": {
+                  "enum": [
+                    "endpoint_call",
+                    "none_yet"
+                  ],
+                  "description": "endpoint_call: admit_agent registers the declared tools[] with the tool-access endpoint before starting the unit. none_yet: the migration stage this repository is in today - the endpoint has zero tools registered (F-a6-03), so the tool-list-exactness assertion cannot yet be tested for real."
+                },
+                "identity_hop": {
+                  "enum": [
+                    "threaded",
+                    "absent"
+                  ],
+                  "description": "threaded: delegate appends a chain hop to a real actor field. absent: today's migration stage - no identity field exists anywhere in the system (F-a6-05), so a delegation call has nowhere to record its actor."
+                }
+              }
+            }
+          }
+        ],
+        "invariants": [
+          {
+            "text": "compose-agent states that a composition introduces no new interface and reaches isolation, tools, packaging and the runtime turn through capability interfaces only. The consequence here: the profile declaration is byte-identical on both registries and names neither, exactly as agentic-stack's rule 1 test requires (F-b1-02) - if a profile had to change to move registries, the boundary would be drawn wrong.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-02"
+            ],
+            "quote": "The core imports interfaces, never implementations"
+          },
+          {
+            "text": "Today's admission is non-conformant to compose-agent's contract on exactly three counts, and each is a migration stage rather than an excuse. First, there is no profile registry: the substrate starts one microVM per agent but nothing resolves a name to good_at, not_for, model_class, tools, cost_class or max_concurrency before it does. Second, the tool-access endpoint is live and authenticated but has zero tools registered, so admit_agent's tool-list-exactness assertion is vacuously true today only because both sides are empty. Third, no identity field exists anywhere in the system, so delegate's chain-hop requirement and xc-identity-delegation's actor requirement are both unimplementable until an actor field is threaded from entry through to admission.",
+            "origin": "sourced",
+            "sources": [
+              "F-a6-03",
+              "F-a6-05"
+            ],
+            "quote": "zero tools registered"
+          },
+          {
+            "text": "One unit per isolation admission, which compose-agent states as its containment invariant, is already true of the substrate: one microVM starts per agent, startable without sudo. The consequence for the build is that the migration needs no new isolation work to satisfy that row - it needs the registry, the tool registration and the identity field wired in front of an isolation boundary that already exists.",
+            "origin": "sourced",
+            "sources": [
+              "F-a2-02"
+            ],
+            "quote": "One microVM per agent, startable without sudo"
+          },
+          {
+            "text": "agentic-stack states the trace-context finding: the runtime that serves cap-agent-runtime's turn today mints its own root trace and ignores an injected trace-context header (F-a7-02). The consequence here: an agent unit's correlation attribute has to be re-stamped at admission, not inherited from whatever the microVM's own process tree carries, or a depth-3 delegation tree produces unrelated root traces exactly as A7 finding 1 already describes.",
+            "origin": "sourced",
+            "sources": [
+              "F-a7-02"
+            ],
+            "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Bind compose-agent's contract to the isolation boundary that already runs: one unit per microVM, admitted exactly as the substrate admits one microVM per agent today. Add nothing new here - this row of the migration is already satisfied.",
+          "why": "F-a2-02 states one microVM per agent; duplicating that mechanism to satisfy compose-agent's containment invariant would be building a second isolation boundary this repository does not need.",
+          "origin": "sourced",
+          "sources": [
+            "F-a2-02"
+          ],
+          "quote": "One microVM per agent, startable without sudo"
+        },
+        {
+          "step": 2,
+          "action": "Proposed: build the profile registry first. Nothing today resolves a name to good_at, not_for, model_class, tools, cost_class and max_concurrency before a microVM starts. Add a file shaped like examples/end-to-end/agents.json as declare_agent's backing store, and have admit_agent read it before requesting a unit.",
+          "why": "This is the first of the three non-conformance gaps this skill's invariants name, and it blocks every other assertion: there is nothing to check a bound tool list or a loaded capability set against without a declared list to compare to first.",
+          "origin": "proposed",
+          "sources": [
+            "T-t6-05"
+          ]
+        },
+        {
+          "step": 3,
+          "action": "Close the tool-registration gap second: register each admitted unit's declared tools[] with the tool-access endpoint before the unit starts, rather than leaving the endpoint at zero tools registered while the admission plan claims a list. Only once this is wired can the tool-list-exactness assertion fail on a real mismatch instead of passing vacuously.",
+          "why": "F-a6-03 records the endpoint as live and authenticated but with zero tools registered; a suite run against that state cannot fail the assertion it exists to check, which is the same well-formedness trap agentic-stack already names.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-03"
+          ],
+          "quote": "zero tools registered"
+        },
+        {
+          "step": 4,
+          "action": "Close the identity gap third: thread an actor field from the entry envelope through to admission, so a delegate call has a chain to append its hop to. Until this lands, record every delegation as unimplementable rather than silently allowing an actor-less chain hop.",
+          "why": "F-a6-05 records that no identity field exists anywhere in the system today; xc-identity-delegation's rule that every action names an actor cannot be honoured by a system with no field to name one in.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-05"
+          ],
+          "quote": "No identity field anywhere in the system"
+        },
+        {
+          "step": 5,
+          "action": "Proposed: build the second registry on a remote agent protocol server. A profile becomes a signed, network-addressable entry, and admitting a unit means a token exchange against that server instead of a local file read. Record the axis the pair differs on - network round trip and no shared identity authority - in the registry-binding shape.",
+          "why": "build-adapter-pair requires the second adapter to break a different assumption than the first; an in-process file and a network-addressed server disagree on exactly the assumption a caller might otherwise bake in - that resolving a profile never fails for a reason the first adapter cannot have.",
+          "origin": "proposed",
+          "sources": [
+            "F-b1-04"
+          ]
+        },
+        {
+          "step": 6,
+          "action": "Write one conformance suite against compose-agent's own definition of done - criterion_leaks, tool_mismatches, undeclared_skills - and parameterise it over both registries so the same 20 profiles run against each with only the registry-binding's `registry` field changed.",
+          "why": "build-definition-of-done owns the rule that a criterion nothing can fail is not a criterion (F-part-c-04); a suite that only ever runs against the in-process registry has never shown the remote one can pass or fail the same checks. Until this step lands, the gate this skill's definition of done measures is harness/linked's cross-door suite, which exercises none of the three counters and no registry swap, so criterion_leaks, tool_mismatches and undeclared_skills stay claimed.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-04"
+          ],
+          "quote": "A criterion nothing can fail is not a criterion."
+        },
+        {
+          "step": 7,
+          "action": "Wire the cross-cutting concerns to the unit, not to the process: re-stamp the correlation attribute at admission rather than trusting the microVM's own process tree, attach the budget slice when the plan resolves, and record the identity chain hop once step 4's field exists.",
+          "why": "agentic-stack states the trace-context finding (F-a7-02): the runtime that serves this composition's turn mints its own root trace and ignores an injected trace-context header, so correlation has to be an explicit attribute this skill sets, not one it inherits.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-02"
+          ],
+          "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "agentic-stack states the trace-context finding (F-a7-02). The consequence for this build: do not trust cancel or completion timing measured from inside the microVM's own process tree either, since the same boundary that loses trace parentage is the boundary a naive timer would cross.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-02"
+          ],
+          "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+        },
+        {
+          "text": "agentic-stack states the well-formedness finding (F-a7-03). The consequence for this build: a conformance run against an endpoint with zero tools registered cannot fail the tool-mismatch check no matter how the binding is written, so treat a green run recorded before step 3 lands as evidence of nothing.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        },
+        {
+          "text": "Proposed: measure max_concurrency against how many microVMs the host can actually keep live at once before publishing a profile's declared ceiling, rather than assuming the number the profile author picked is honoured underneath.",
+          "origin": "proposed",
+          "sources": [
+            "F-a2-02"
+          ]
+        },
+        {
+          "text": "Proposed: stage the three migration gaps in the order this skill's instructions give - registry, then tool registration, then identity - because the second and third assertions cannot be tested for real until the first exists to declare something for them to check against.",
+          "origin": "proposed",
+          "sources": [
+            "F-a6-03",
+            "F-a6-05"
+          ]
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-firecracker-goose-unit",
+          "role": "today",
+          "maps_to": "admit_agent and invoke_turn served by one Firecracker microVM per agent (F-a2-02), running goose over the Agent Client Protocol as JSON-RPC on stdio (F-a3-01, F-a3-02, F-a3-03), with no guest network by default and a dummy in-guest credential. declare_agent has no backing registry yet and the tool-access endpoint this unit would bind to is live and authenticated with zero tools registered (F-a6-03); no identity field exists to carry a delegation chain (F-a6-05). Proposed entity id: the knowledge base has no capability row for agent composition, so there is no E- record for the assembled unit and this id is ours, minted the way compose-operators already minted its own today-adapter id for the same reason.",
+          "cannot": "Cannot yet prove the tool-list-exactness or undeclared-skill assertions for real, since both the registry and the tool registration this skill's migration stages exist to add are absent; cannot record a delegation chain, since no identity field exists to hold one; and cannot survive the loss of the host, since nothing about a unit's admission is checkpointed anywhere an executor could resume from.",
+          "swap_procedure": "Point declare_agent at the remote registry adapter instead of the (currently absent) in-process file, admit through the same isolation boundary either way, and run the conformance suite with only the registry-binding's `registry` field changed. agentic-stack states design rule 3 - every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing - and this pair is that test applied once the registry exists to test at all.",
+          "status": "claimed",
+          "sources": [
+            "F-a2-02",
+            "F-a6-03"
+          ],
+          "quote": "One microVM per agent, startable without sudo via polkit"
+        },
+        {
+          "entity": "E-swap-candidate-remote-agent-protocol-server",
+          "role": "second",
+          "maps_to": "the same declare_agent and admit_agent served by a remote agent protocol server: a profile is a signed, network-addressable registry entry, and admitting a unit means authenticating to that server over the network instead of instantiating a process in the same container. Proposed entity id, carried over rather than re-minted: compose-agent's own ideal facet already mints this id for the same shape, and the knowledge base still has no capability row for agent composition to record it against instead.",
+          "cannot": "Cannot resolve a profile without a network round trip, so declare_agent fails for reasons the in-process file never can; cannot assume its identity chain and the composer's are issued by the same authority, so its hop must be a token exchange; and inherits every migration gap the in-process adapter has today, since neither adapter yet has a registry, a tool registration or an identity field to test against.",
+          "swap_procedure": "Publish one profile to both the in-process file and a conformant remote registry once both exist, run declare_agent against each for the same task, and assert adapters_run >= 2 with identical required admission fields even though the network round trip and the identity hop differ.",
+          "status": "claimed",
+          "sources": [
+            "F-b1-04"
+          ],
+          "quote": "Every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing."
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/linked/test.sh && ADAPTER_CONTAINMENT=second ADAPTER_GATEWAY=second ADAPTER_TRACE=second ADAPTER_WORKFLOW=second python3 harness/linked/conformance.py --report out/linked-swap.json",
+        "expected": "Measured by tools/measure.py at eaca633: exit 0; last lines: counters: {\"doors_checked\": 4, \"manifests_distinct\": 1, \"subjects_distinct\": 1, \"typed_refusals\": 4, \"replay_noops\": 4, \"traces_reassembled\": 4} | verdict pass: 23 of 23 checks pass",
+        "breakage": "In harness/linked/linked.py, break the replay check submit() makes against the ledger so a prior completion is never recognised: sed -i 's/prior = self.ledger.completed(env.idempotency_key)/prior = None/' harness/linked/linked.py. A replay of any door then re-runs the whole unit (re-dispatches the agent turn, re-calls the gateway, writes new durable records) instead of returning the stored result with zero new spend. Restore with git checkout -- harness/linked/linked.py.",
+        "expected_failure": "Measured by tools/measure.py at eaca633: exit 1; last lines:   FAIL the same suite passes again once the door is restored (expected 0, got 1) | passed 20, failed 12",
+        "status": "measured",
+        "sources": [
+          "F-a6-03"
+        ],
+        "quote": "zero tools registered",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "eaca633",
+          "clean_exit": 0,
+          "clean_output": "  ok   call.py exits 0 (0)\n  ok   dry-run conformance exits 0 (0)\n  ok   second-adapter conformance exits 0 (0)\n  ok   the breakage run exits non-zero (nonzero)\n...\n  ok   F1 no product is named in any file of this harness  [[]]\ncounters: {\"doors_checked\": 4, \"manifests_distinct\": 1, \"subjects_distinct\": 1, \"typed_refusals\": 4, \"replay_noops\": 4, \"traces_reassembled\": 4}\nverdict pass: 23 of 23 checks pass",
+          "breakage_exit": 1,
+          "breakage_output": "  ok   call.py exits 0 (0)\n  FAIL dry-run conformance exits 0 (expected 0, got 1)\n  FAIL verdict (expected pass, got fail)\n  FAIL no check failed (expected [], got [\"D1 a replay of every door returns the same result\", \"D2 a replay writes nothing and reaches no component\"])\n  FAIL replays that were no-ops (expected 4, got 0)\n  FAIL second-adapter conformance exits 0 (expected 0, got 1)\n  FAIL verdict after the swap (expected pass, got fail)\n  FAIL ADAPTER_CONTAINMENT=second (rc 1, markers moved 1)\n  FAIL ADAPTER_GATEWAY=second (rc 1, markers moved 1)\n  FAIL ADAPTER_TRACE=second (rc 1, markers moved 1)\n  FAIL ADAPTER_WORKFLOW=second (rc 1, markers moved 1)\n  ok   the breakage run exits non-zero (nonzero)\n...\n  FAIL the same suite passes again once the door is restored (expected 0, got 1)\n\npassed 20, failed 12",
+          "restored": true
+        },
+        "expected_design": "exit 0: the gate's 32 checks pass in dry run, the swap proof holds across all four components at once and one at a time, and the standalone conformance run against all-second adapters reports the same 23/23 cases green with four different markers.",
+        "expected_failure_design": "exit non-zero: D1 (a replay of every door returns the same result) and D2 (a replay writes nothing and reaches no component) both fail, with the durable/dispatch/unit deltas on replay now equal to the original run's deltas instead of [0,0,0]; every per-door and per-component check (A, B, C, E, F) stays green, isolating the fault to the idempotent-replay seam rather than to any one of the four components."
+      },
+      "composes_with": {
+        "builds_on": [
+          "compose-agent",
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Should the profile registry this skill's step 2 adds live as a file in this repository, or should it be the first real consumer of cap-capability-registry once that capability is built, given cap-capability-registry is not in this skill's builds_on?",
+          "evidence": "cap-capability-registry's own definition of done running against a profile resolved by name and version constraint, compared against the file-based registry's resolution for the same profile.",
+          "default": "Start with a file, shaped like examples/end-to-end/agents.json, and revisit once cap-capability-registry has an adapter that runs.",
+          "sources": [
+            "F-b1-04"
+          ]
+        },
+        {
+          "question": "Which entity should this skill's today adapter be recorded against, given the knowledge base has no capability row for an assembled agent-composition unit?",
+          "evidence": "1-3-1 applied (TARGET T5): the three options were to record it against one of the four component capabilities alone (isolation, tool access, packaging or agent runtime), to mint a new entity for the assembled unit, or to leave the adapters[] pair absent. Recording against one component alone would misattribute a four-capability composition to a single B3 row; leaving the pair absent would leave the round's instruction to describe the real substrate unaddressed. Recommendation taken: mint the entity, the way compose-agent's own ideal facet and compose-operators both already did for the same reason.",
+          "default": "The today adapter's entity id is recorded as proposed and pending a knowledge-base entity if PASS.md ever grows a composition-layer row.",
+          "sources": [
+            "T-t5-02"
+          ]
+        },
+        {
+          "question": "Does closing the identity gap in step 4 belong to this skill, or to a future xc-identity-delegation-implement stage that this skill should instead depend on?",
+          "evidence": "A manifest revision adding xc-identity-delegation-implement to this skill's builds_on once that skill exists, or a decision that the identity field is generic enough to land once and be reused rather than staged per composition.",
+          "default": "Stage it here as this skill's step 4, since compose-agent's own delegate operation is blocked without it and no xc-identity-delegation-implement skill exists yet to own the field.",
+          "sources": [
+            "F-a6-05"
+          ],
+          "quote": "No identity field anywhere in the system"
+        },
+        {
+          "question": "Can this skill's adapter pair be run through one suite before step 2 lands, given the today adapter's own row records that declare_agent has no backing registry yet while the swap_procedure swaps exactly that operation between a remote registry and an in-process file?",
+          "evidence": "A declare_agent call resolving one profile against a file in this repository and against a conformant remote registry, reported side by side with identical required admission fields; until the file registry exists, one side of the swap has nothing to run.",
+          "default": "Treat the pair as blocked on step 2 rather than as a proven boundary: the isolation and turn halves run today, the declaration half does not, and no conformance result may be recorded against the pair until both sides answer the same call. Reported, not edited: adapters[] is outside this step's scope.",
+          "sources": [
+            "F-b1-04"
+          ]
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session claude/auto-skill-creation compose-agent-implement 2026-09-03"
+      }
+    }
+  }
+}

@@ -236,18 +236,28 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | bash harness/capability-packaging/test.sh |
-| Expected | Two checks, both run from the repository root, deliberately separable. (1) Spec conformance, proposed tool built with the first adapter: `python3 tools/conformance_capability_packaging.py --root .claude/skills --report out/packaging-conformance.json`, asserting packages_checked > 0, frontmatter_missing == 0, required_field_missing == 0 over exactly the fields name and description, and name_mismatch == 0 where the declared name must equal the directory name. (2) Repository link check, which exists today: `python3 tools/validate_skills.py`, asserting 0 errors, plus the proposed counters links_checked > 0, dangling == 0 and asymmetric == 0 reported alongside its existing 'builds on unknown skill' and 'does not list ... under used_by' errors. (1) exit 0 with a report line reading `packages_checked=<N greater than 0> frontmatter_missing=0 required_field_missing=0 name_mismatch=0`. (2) exit 0 with `<N> skills checked, 0 errors` and `links_checked=<N greater than 0> dangling=0 asymmetric=0`. Until that proposed tool exists, `bash harness/capability-packaging/test.sh` (owned by cap-capability-packaging-implement) is the running gate: every check line reads ok and the script exits 0. |
-| Deliberate breakage | Rename one package directory and update that package's own frontmatter name to match its new directory, leaving every link in other packages that names the old directory unchanged. |
-| Expected failure | Check (1) stays green and still reports `name_mismatch=0`, because the renamed package is still spec-conformant on its own. Check (2) exits 1 with `dangling` non-zero and errors naming the old directory under 'builds on unknown skill'. The two checks failing independently is the point: the packaging contract is the specification's, and the link rule is ours. |
-| Status | claimed |
-| Evidence | `F-part-c-04`, `X-entry-composition-035` "A criterion nothing can fail is not a criterion" |
+| Criterion | bash harness/capability-packaging/test.sh && python3 harness/capability-packaging/conformance.py --adapter dryrun --adapter second |
+| Expected | Measured by tools/measure.py at 16d354c: exit 0; last lines:   adapter=content-addressed registry (network fetch, digest-verified) cases=12 passed=12 skipped=0 resolutions=7 refusals=3 source_marker=registry-digest-verified product_hits=0 \| conformance PASSED: 24/24 cases, 2 binding(s) |
+| Deliberate breakage | Widen REQUIRED_RESIDENT in harness/capability-packaging/interface.py from ("name", "description") to ("name", "description", "owner") and change nothing else (the harness README's breakage); restore with git checkout -- harness/capability-packaging/interface.py. |
+| Expected failure | Measured by tools/measure.py at 16d354c: exit 1; last lines:   ok   conformance FAILED, not PASSED \| passed 17, failed 10 |
+| Status | measured |
+| Evidence | `F-part-c-04`, `F-b1-02` "A criterion nothing can fail is not a criterion" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-capability-packaging-implement` | Build what cap-capability-packaging specifies: two package sources chosen by configuration, one conformance run that resolves the same identities through both and diffs them, and the wiring that makes a package resolution a recorded step rather than an unobserved file read. build-adapter-pair owns why there are two. | `references/cap-capability-packaging-implement.md` |
+| `cap-capability-registry` | Fix one contract for finding a capability or an agent by name and version constraint and getting back a signed, digest-matched record, so the core imports resolution and the store that holds the records stays an adapter. | `references/cap-capability-registry.md` |
+| `cap-capability-registry-implement` | Build what cap-capability-registry specifies: two record stores chosen by configuration, one conformance run that resolves the same names and constraints through both and diffs records, digests and refusals, and the wiring that makes a resolution a recorded step rather than an unobserved file read. build-adapter-pair owns why there are two. | `references/cap-capability-registry-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-document-validation`, `cap-errors`
+Builds on: `agentic-stack`, `build-ceremony`, `build-evidence`, `build-skill-authoring`, `cap-document-validation`, `cap-errors`, `cap-provenance`
 
-Used by: `cap-capability-packaging-implement`, `cap-capability-registry`, `compose-agent`
+Used by: `build-evidence`, `compose-improvement-loop`, `compose-workflow`
 
 ## Open questions
 

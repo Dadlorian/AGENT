@@ -418,18 +418,26 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | bash harness/evaluation/test.sh |
-| Expected | One conformance run over both adapters, from the repository root, with a proposed tool: `python3 tools/conformance_evaluation.py --adapter config/eval/trace-scoring.json --adapter config/eval/local-fixture.json --unit agent:release-reviewer@1.4.0 --case-set tests/fixtures/eval/cs-release-review --baseline tests/fixtures/eval/bl-2026-08-27.json --report out/eval-conformance.json`. The fixture corpus is six cases, three recorded and three synthetic, all passing at the baseline. Assert `adapters_run >= 2`, `cases_executed == 6`, `outcome == passed`, `transitions == 0`, `unrecorded_effects == 0`, `verdict_divergence == 0` between the two adapters, and that a second invocation of the same command with `--case-filter none` reports `cases_executed=0 outcome=inconclusive` and exits non-zero. exit 0 with one line per adapter reading `adapter=<role> cases_executed=6 outcome=passed transitions=0 unrecorded_effects=0` followed by `adapters_run=2 verdict_divergence=0`, and the `--case-filter none` invocation printing `cases_executed=0 outcome=inconclusive` and exiting non-zero. Until that proposed tool exists, `bash harness/evaluation/test.sh` (owned by cap-evaluation-implement) is the running gate: every check line reads ok and the script exits 0. |
-| Deliberate breakage | Introduce one regression into the unit under test - in the release-reviewer prompt, drop the instruction that makes it call the diff tool before answering - leaving the case set, the baseline and both adapters untouched. |
-| Expected failure | exit non-zero on both adapters with `outcome=failed transitions=1`, naming the case whose tool-use dimension moved from pass to fail against the baseline, and `verdict_divergence=0` still holding because both adapters must name the same case. Claimed: neither adapter, the fixture corpus nor the tool exists in this tree, so this check starts red by construction and is not dressed up as passing. That the regression is caught on the tool-use dimension while task completion still passes is what shows the run scores the trajectory rather than the final answer. |
-| Status | claimed |
-| Evidence | `F-part-c-04`, `X-end-to-end-040` "the deliberate breakage that proves the check can fail" |
+| Criterion | bash harness/evaluation/test.sh && ADAPTER=dryrun python3 harness/evaluation/conformance.py && ADAPTER=second python3 harness/evaluation/conformance.py |
+| Expected | Measured by tools/measure.py at bf17237: exit 0; last lines:   ok   C12b an unregistered problem type falls back rather than being minted   [urn:agentic:problem:adapter-unavailable] \| conformance PASSED: 22/22 cases, adapter=second |
+| Deliberate breakage | In harness/evaluation/interface.py outcome_for(), make a run that executed zero cases report passed instead of inconclusive, run the criterion (conformance case C6, a gate over a zero-case report cannot report success, fails on both adapters and the gate exits 1), then git checkout harness/evaluation/interface.py. |
+| Expected failure | Measured by tools/measure.py at bf17237: exit 1; last lines:   ok   outcome and cases_executed are stated together in the report shape \| passed 47, failed 8 |
+| Status | measured |
+| Evidence | `F-part-c-04`, `F-a7-03` "the deliberate breakage that proves the check can fail" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-evaluation-implement` | Turn the cap-evaluation contract into something that runs here: which adapter is built first and on what, what the second one deliberately lacks, how a pipeline whose behavioural stages skipped and still went green becomes a gate with a stored baseline, and what a run must print before either adapter is allowed to refuse a change. | `references/cap-evaluation-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-definition-of-done`, `build-adapter-pair`, `build-evidence-record`, `build-skill-authoring`, `build-research-record`, `build-ceremony`, `cap-errors`, `cap-telemetry`, `core-judge`
+Builds on: `agentic-stack`, `build-ceremony`, `build-evidence`, `build-skill-authoring`, `cap-errors`, `cap-telemetry`, `core-components`
 
-Used by: `cap-evaluation-implement`, `compose-improvement-loop`
+Used by: `compose-improvement-loop`
 
 ## Open questions
 

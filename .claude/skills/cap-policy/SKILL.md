@@ -258,18 +258,28 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | bash harness/policy/test.sh |
-| Expected | docs/decomposition.md section 3.2 row P10, made precise and run over the adapter pair above: `python3 tools/conformance/policy_decision.py --adapter today --adapter second --entry examples/end-to-end/entries/human.json --deny-rule deny-external-tool-without-mandate --report out/policy.json` (proposed tool, built with the first enforcing adapter), the engine selected by configuration with no code edit between runs. Per adapter it submits a dispatch that a policy rule denies and asserts `spend_delta_micros == 0` for that dispatch, that a `policy-decided` record exists carrying a non-empty `rule_id`, and that the result is `state: "rejected"` with problem type `urn:agentic:problem:policy-denied`. Across adapters it asserts `adapters_run >= 2` and `decisions_agree == true`, meaning both returned the same effect and the same rule_id for the byte-identical DecisionRequest. exit 0 with, per adapter, `spend_delta_micros=0`, `rule_id` non-empty, `state=rejected`, `problem_type=urn:agentic:problem:policy-denied`, followed by `adapters_run=2` and `decisions_agree=true`. Until that proposed tool exists, `bash harness/policy/test.sh` (owned by cap-policy-implement) is the running gate: every check line reads ok and the script exits 0. |
-| Deliberate breakage | Move the policy consultation to after the first metered call, changing nothing else, and re-run the same command. |
-| Expected failure | exit 1 with `spend_delta_micros > 0` for both engines and the `policy-decided` record timestamped after the first metered call, while `state=rejected` and the problem type still pass, which is the useful part: the refusal still looks correct and the money is already gone. This is the check that would have caught policy being defined and not wired into the enforcement path. Claimed: nothing consults a decision on the enforcement path today and the conformance tool is not written, so neither the criterion nor the breakage has been run here. |
-| Status | claimed |
-| Evidence | `F-b4-04`, `F-a6-04` "Refusal is deterministic and happens before execution, not after spend" |
+| Criterion | bash harness/policy/test.sh && python3 harness/policy/conformance.py --adapter dryrun --adapter second |
+| Expected | Measured by tools/measure.py at 372cdc1: exit 0; last lines:   adapter=in-process-typed-entity cases=14 passed=14 decisions_taken=8 decided_before_first_metered_call=8 spend_delta_micros=0 rule_id_present=True subset=['dispatch.data_query'] product_hits=0 \| conformance PASSED: 28/28 cases, 2 binding(s) |
+| Deliberate breakage | Append an engine-name comment (`# breakage: opa`) to the end of harness/policy/call.py, outside adapters/. Restored with `git checkout -- harness/policy/call.py`. |
+| Expected failure | Measured by tools/measure.py at 372cdc1: exit 1; last lines:   FAIL both adapters failed \| passed 30, failed 8 |
+| Status | measured |
+| Evidence | `F-a6-04`, `F-b4-04` "not wired into the enforcement path" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-policy-implement` | Turn the contract in cap-policy into something that runs here: one decide call, two engines behind it whose execution models differ, a policy-decided record on every decision, and consultation wired ahead of the first metered call rather than alongside it. | `references/cap-policy-implement.md` |
+| `xc-policy-gate` | cap-policy owns the decision contract and its one-sentence rule (F-b4-04). This skill fixes where that decision is taken: the gate is a placement over the call path, so the decision is recorded before the first metered call of a dispatch and a denied dispatch spends exactly nothing, whoever runs the call path. | `references/xc-policy-gate.md` |
+| `xc-policy-gate-implement` | Turn the placement rule in xc-policy-gate into something that runs here: two gate placements behind one admission contract, the second authorizing at the boundary the metered call crosses so that calls the dispatcher never composed are gated too, adopted into the enforcement path without a window in which a dispatch runs ungated. | `references/xc-policy-gate-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-document-validation`, `cap-errors`
+Builds on: `agentic-stack`, `build-evidence`, `build-skill-authoring`, `cap-document-validation`, `cap-errors`
 
-Used by: `cap-mandate-broker`, `cap-policy-implement`, `xc-enforcement-chain`, `xc-policy-gate`
+Used by: `cap-identity`, `seam-dispatch`, `xc-guarantees`
 
 ## Open questions
 

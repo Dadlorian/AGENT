@@ -288,18 +288,28 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | python3 tools/conformance/state_persistence.py --adapter jsonl-hash-chain --adapter merkle-object-store --records 1500 --report out/state.json |
-| Expected | docs/decomposition.md section 3.2 row P16, made precise and run over the adapter pair above: that command (proposed tool), the adapter selected by configuration with no code edit between runs. Per adapter it appends N records through the interface, then asserts that an independent verifier we did not write recomputes the same head digest from the stored records alone, that an inclusion proof for a uniformly random record verifies without the rest of the log, and that `records_written > 1000`; across adapters it asserts `head_digests_equal == true` and `adapters_run >= 2`. exit 0 with, per adapter, `records_written == 1500`, `external_head_matches == true`, `inclusion_proof_verified == true` and `chain_break_at == -1`, followed by `head_digests_equal=true adapters_run=2`. |
-| Deliberate breakage | Edit one record body in place in the store, leaving both adapters, the record count and the command untouched. |
-| Expected failure | exit 1 under both adapters: the independent verifier reports a chain break at that index and the inclusion proof for that record fails, so `chain_break_at` becomes the edited index, `external_head_matches == false` and `inclusion_proof_verified == false`. A run where the object-store adapter still exits 0 means its proof was served from a cached head instead of recomputed, which is the failure this breakage is aimed at rather than an incidental one. Claimed: neither adapter is written, no conformance tool exists here, and no run has been performed. The measured starting state is recorded in cap-state-persistence-use: the reference runner's chain verifies over 56 records across 4 runs and produces zero inclusion proofs, zero content-addressed record ids and zero sealed heads. |
-| Status | claimed |
-| Evidence | `F-b5-05`, `F-b3-17` "the integrity mechanism" |
+| Criterion | bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second |
+| Expected | Measured by tools/measure.py at 372cdc1: exit 0; last lines:   adapter=content-addressed merkle log over an object store (second adapter) cases=11 passed=11 appends=10 refusals=2 product_hits=0 \| conformance PASSED: 22/22 cases, 2 binding(s) |
+| Deliberate breakage | Append a product-name comment (`# breakage: litellm`) to the end of harness/state-persistence/call.py, outside adapters/. Restored with `git checkout -- harness/state-persistence/call.py`. |
+| Expected failure | Measured by tools/measure.py at 372cdc1: exit 1; last lines:   ok   chain_break_at went from -1 to 2, the tampered record \| passed 14, failed 6 |
+| Status | measured |
+| Evidence | `F-b5-05`, `F-b3-17` "concurrency and single-writer guarantees" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-state-persistence-implement` | Turn the contract in cap-state-persistence into something that runs here: one interface, two adapters whose execution models differ, and an existing hash-chained file carried forward rather than replaced. | `references/cap-state-persistence-implement.md` |
+| `cap-memory` | Fix one contract for writing, recalling and expiring scoped memory items, so a later run can act on what an earlier run learned without being handed its transcript, and the store that holds the items stays an adapter. PASS.md has no memory row in any section, so this capability exists because TARGET requires the gaps in that baseline to be made up. | `references/cap-memory.md` |
+| `cap-memory-implement` | Build what cap-memory specifies: two stores selected by configuration, one conformance run that writes and recalls the same fixtures through both and diffs items, scope leaks, expiries and refusal types, and the wiring that makes a write and a recall recorded steps rather than unobserved calls. build-adapter-pair owns why there are two. | `references/cap-memory-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors`
+Builds on: `agentic-stack`, `build-ceremony`, `build-evidence`, `build-skill-authoring`, `cap-errors`, `cap-identity`
 
-Used by: `cap-memory`, `cap-state-persistence-implement`, `seam-state`, `xc-idempotency-lease`, `xc-tenancy`
+Used by: `cap-idempotency`, `seam-state`, `xc-guarantees`
 
 ## Open questions
 

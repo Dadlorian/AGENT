@@ -516,18 +516,26 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | python3 harness/dispatch/conformance.py --adapter dryrun --adapter second |
-| Expected | exit 0 and one line per adapter of the form `adapter=<dryrun\|second> marker=<marker> assertions_run=33 failed=0 untyped=0`, then `adapters_run=2 migrated_paths=3 plan_digest_mismatches=0 verdict_mismatches=0 distinct_markers=2`. The report names each adapter separately; there is no aggregate pass line. The five assertions this facet states are in that run as S1 to S5: a malformed request refused with `urn:agentic:problem:document-invalid` and no step recorded; a cancel reaching a terminal state inside `deadline.cancel_grace_s`; a ceiling crossed terminating with `budget_exhausted` and a spend that is non-zero and at most the ceiling; an interrupted run left `partial` with an output whose `recorded_at_head` is not null; and every failure body typed from the closed registry (`untyped=0`). Claimed, stated as the gap: `tools/conformance_dispatch.py` does not exist - `harness/dispatch/conformance.py` is the on-disk equivalent, and its two bindings are a session-held in-process shim and a queue-and-poll one-shot rather than two production dispatchers. The criterion above was run on 2026-09-03 and exited 0. |
-| Deliberate breakage | Have one adapter return its native error object instead of problem details - the same body, served as `application/json` with the adapter's own field names - and change nothing else, then re-run. |
-| Expected failure | The failure-shape assertion fails for that adapter only: `untyped` becomes non-zero for it, the run exits non-zero, and the report names which adapter broke while the other still reports `failed=0 untyped=0`. That the suite singles out one adapter is the point, because the state this replaces is three implementations with no contract between them. |
-| Status | claimed |
-| Evidence | `F-part-c-04`, `F-b5-03` "the deliberate breakage that proves the check can fail" |
+| Criterion | bash harness/dispatch/test.sh && python3 harness/dispatch/conformance.py --adapter dryrun --adapter second |
+| Expected | Measured by tools/measure.py at 595225d: exit 0; last lines: adapter=second marker=queue-and-poll-oneshot/0.1 assertions_run=33 failed=0 untyped=0 plan_digest=4bce5f723c26 verdict=pass cancel_stop=cancel_timeout criterion_hits=0 \| adapters_run=2 migrated_paths=3 plan_digest_mismatches=0 verdict_mismatches=0 distinct_markers=2 |
+| Deliberate breakage | In harness/dispatch/adapters/base.py, make the dispatcher assemble the result before the state-seam write returns unconditionally (the durability branch the gate only enables under its own flag), run the criterion (partial_outputs_without_head becomes 1 on the targeted dispatcher and the gate exits 1), then git checkout harness/dispatch/adapters/base.py. |
+| Expected failure | Measured by tools/measure.py at 595225d: exit 1; last lines:   FAIL the same suite exits 0 again (expected 0, got 1) \| passed 31, failed 8 |
+| Status | measured |
+| Evidence | `F-part-c-04`, `F-b5-03` "a machine-checkable definition of done, plus the deliberate breakage that proves the check can fail" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `seam-dispatch-implement` | Turn the contract seam-dispatch fixes into running code on this substrate: shim what executes today, build a second executor whose execution model differs, migrate the paths that share no contract onto one interface, and attach every cross-cutting guarantee where no dispatch can skip it. | `references/seam-dispatch-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `build-adapter-pair`, `build-evidence-record`, `core-document`, `core-judge`, `cap-isolation`, `cap-agent-runtime`, `cap-durable-execution`, `cap-errors`, `xc-budget`, `xc-policy-gate`, `xc-identity-delegation`, `xc-correlation`, `xc-typed-errors`, `xc-provenance-chain`, `xc-idempotency-lease`
+Builds on: `agentic-stack`, `build-evidence`, `build-skill-authoring`, `cap-agent-runtime`, `cap-durable-execution`, `cap-errors`, `cap-idempotency`, `cap-identity`, `cap-isolation`, `cap-policy`, `cap-provenance`, `cap-telemetry`, `core-components`, `xc-guarantees`
 
-Used by: `seam-dispatch-implement`, `xc-compensation`
+Used by: `cap-durable-execution`
 
 ## Open questions
 

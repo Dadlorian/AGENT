@@ -92,11 +92,19 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Status | measured |
 | Evidence | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
 
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-consumption` | State once what is the same for every caller of this platform, so a capability skill carries only its own call card and no caller has to learn a new way in per capability. | `references/cap-consumption.md` |
+
 ## Composes with
 
 Builds on: -
 
-Used by: -
+Used by: `build-ceremony`, `build-evidence`, `build-skill-authoring`, `cap-agent-runtime`, `cap-capability-packaging`, `cap-document-validation`, `cap-durable-execution`, `cap-errors`, `cap-evaluation`, `cap-human-interaction`, `cap-idempotency`, `cap-identity`, `cap-isolation`, `cap-model-access`, `cap-policy`, `cap-provenance`, `cap-scheduling`, `cap-state-persistence`, `cap-telemetry`, `cap-tool-access`, `cap-work-intake`, `compose-improvement-loop`, `compose-workflow`, `core-components`, `seam-dispatch`, `seam-state`, `xc-guarantees`
 
 ## Open questions
 

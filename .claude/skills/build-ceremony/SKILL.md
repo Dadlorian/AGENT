@@ -195,11 +195,20 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Status | measured |
 | Evidence | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
 
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `build-solution-architecture` | Produce, before a section is built, one blueprint that shows where the impacts are, because standards, systems and components will all change. | `references/build-solution-architecture.md` |
+| `build-litmus-questionnaire` | The measuring sticks walk down each stack element and the standards it interoperates with: one section per capability interface in PASS.md B3, whose middle column is the contract, and one per cross-cutting concern in B4. Each section states the idealistic future state a build could reach inside the window and asks about it from several angles, so that how the element is used is what gets measured. The frame that fixes the window, the closed scale, the six angles, the settledness classes and the isolation rule is the owner's; it is proposed here and recorded in docs/litmus/frame.json. | `references/build-litmus-questionnaire.md` |
+
 ## Composes with
 
-Builds on: `agentic-stack`
+Builds on: `agentic-stack`, `build-skill-authoring`
 
-Used by: `build-entry-conformance`, `build-interface-versioning`, `build-simplicity-budget`, `cap-capability-registry`, `cap-evaluation`, `cap-human-interaction`, `cap-mandate-broker`, `cap-memory`, `compose-improvement-loop`, `compose-operators`, `xc-audit-trail`, `xc-compensation`, `xc-enforcement-chain`, `xc-tenancy`
+Used by: `build-evidence`, `build-skill-authoring`, `cap-capability-packaging`, `cap-durable-execution`, `cap-evaluation`, `cap-human-interaction`, `cap-identity`, `cap-provenance`, `cap-state-persistence`, `compose-improvement-loop`, `compose-workflow`, `xc-guarantees`
 
 ## Open questions
 

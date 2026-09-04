@@ -259,17 +259,25 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/compose-improvement-loop/test.sh && python3 harness/compose-improvement-loop/conformance.py --adapter dryrun --report harness/compose-improvement-loop/out/measure-before.json && python3 harness/compose-improvement-loop/conformance.py --adapter second --report harness/compose-improvement-loop/out/measure-after.json && python3 harness/compose-improvement-loop/conformance.py --merge harness/compose-improvement-loop/out/measure-before.json harness/compose-improvement-loop/out/measure-after.json --report harness/compose-improvement-loop/out/measure-merged.json |
-| Expected | exit 0, `passed 62, failed 0` from the gate, `ok   S5 both drivers passed their own conformance run   [25/25 and 25/25]` and `conformance PASSED: 5/5 cases, merged swap proof` from the merge. That covers the promote-only-on-pass rule, the iteration ceiling the declaration schema requires, and one candidate driven through two executors with no code edit between them. It is the gate compose-improvement-loop-implement owns; run here on 2026-09-03 and exited 0. Claimed, stated as the gap: tools/improvement_loop_conformance.py, the fixture ceremony and the candidate registry do not exist, so this facet's own counters - promoted + declined == 20 over seeded candidates, edited_in_place == 0, rollback_to set on every promoted record - have never been run, and this repository's review/improve half still edits target files in place, which is the defect the second executor exists to close. |
-| Deliberate breakage | Make the default decision rule advance the checkpoint on every gate outcome, failed and inconclusive included, rather than only on a passed one, and restore the file afterwards. |
-| Expected failure | exit 1 with `passed 47, failed 15`: the merged swap proof and the per-driver runs fail together because a candidate is promoted with no passing verdict behind it, while the declaration-schema checks - including the iteration ceiling - stay green, so the report names the promotion rule rather than the loop's bounds. Claimed here: the edit moves the driver binding compose-improvement-loop-implement owns; nothing on disk writes a registry record with rollback_to, so this facet's promotion counters cannot be made to fail today. |
-| Status | claimed |
+| Expected | Measured by tools/measure.py at ebb7068: exit 0; last lines:   ok   S5 both drivers passed their own conformance run   [25/25 and 25/25] \| conformance PASSED: 5/5 cases, merged swap proof |
+| Deliberate breakage | sed -i 's/return outcome == PASSED/return True/' harness/compose-improvement-loop/interface.py -- in promote_on_pass, the decision rule every driver is bound with by default, this makes the checkpoint advance on every gate outcome (failed and inconclusive included), not only on passed - the same symptom the harness's own --break-gate flag reproduces (promote_regardless), but reached here by editing the rule callers actually run rather than by passing that flag. Restored with git checkout -- harness/compose-improvement-loop/interface.py. |
+| Expected failure | Measured by tools/measure.py at ebb7068: exit 1; last lines:   ok   the declaration schema requires an iteration ceiling \| passed 47, failed 15 |
+| Status | measured |
 | Evidence | `F-part-c-04` "A criterion nothing can fail is not a criterion." |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `compose-improvement-loop-implement` | Proposed: build compose-improvement-loop's candidate lifecycle on two executors that differ in who or what holds promotion authority, and stage the migration from the review-and-improve loop this repository already runs, which closes findings but gates and promotes neither through cap-evaluation nor cap-capability-registry. | `references/compose-improvement-loop-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `build-evidence-record`, `build-ceremony`, `build-research-record`, `core-judge`, `cap-evaluation`, `cap-capability-registry`, `compose-loop`
+Builds on: `agentic-stack`, `build-ceremony`, `build-evidence`, `build-skill-authoring`, `cap-capability-packaging`, `cap-evaluation`, `compose-workflow`, `core-components`
 
-Used by: `compose-improvement-loop-implement`
+Used by: -
 
 ## Open questions
 

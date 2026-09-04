@@ -12,7 +12,7 @@
       "E-capability-state-persistence",
       "E-seam-state"
     ],
-    "quote": "**State** \u2014 the graph and the ledger persist."
+    "quote": "**State** — the graph and the ledger persist."
   },
   "entities": [
     "E-capability-state-persistence",
@@ -296,7 +296,7 @@
           "F-b3-17",
           "E-capability-state-persistence"
         ],
-        "quote": "\u2014 *(no standard; see B5)* | JSONL + hash chain | object store \u00b7 relational \u00b7 event log |"
+        "quote": "— *(no standard; see B5)* | JSONL + hash chain | object store · relational · event log |"
       },
       {
         "text": "With no standard to conform to, the interface is judged instead by whether it settles the five things the source names: this must specify: the write model, concurrency and single-writer guarantees, the integrity mechanism, retention, and the query surface a planner needs. Anything left open among those five is a gap in the contract, not a decision delegated to the adapter.",
@@ -396,7 +396,7 @@
         "sources": [
           "F-b3-17"
         ],
-        "quote": "object store \u00b7 relational \u00b7 event log"
+        "quote": "object store · relational · event log"
       },
       {
         "text": "There is no call that rehashes the whole log. Verification is always a proof about one record at one head. An interface whose only integrity operation is a full scan cannot be implemented over a store whose expensive part is reading every record, so exposing one would make the second adapter unimplementable by construction rather than by choice.",
@@ -572,35 +572,44 @@
         "X-cross-structure-052",
         "E-swap-candidate-object-store"
       ],
-      "quote": "object store \u00b7 relational \u00b7 event log"
+      "quote": "object store · relational · event log"
     }
   ],
   "definition_of_done": {
-    "criterion": "python3 tools/conformance/state_persistence.py --adapter jsonl-hash-chain --adapter merkle-object-store --records 1500 --report out/state.json",
-    "expected": "docs/decomposition.md section 3.2 row P16, made precise and run over the adapter pair above: that command (proposed tool), the adapter selected by configuration with no code edit between runs. Per adapter it appends N records through the interface, then asserts that an independent verifier we did not write recomputes the same head digest from the stored records alone, that an inclusion proof for a uniformly random record verifies without the rest of the log, and that `records_written > 1000`; across adapters it asserts `head_digests_equal == true` and `adapters_run >= 2`. exit 0 with, per adapter, `records_written == 1500`, `external_head_matches == true`, `inclusion_proof_verified == true` and `chain_break_at == -1`, followed by `head_digests_equal=true adapters_run=2`.",
-    "breakage": "Edit one record body in place in the store, leaving both adapters, the record count and the command untouched.",
-    "expected_failure": "exit 1 under both adapters: the independent verifier reports a chain break at that index and the inclusion proof for that record fails, so `chain_break_at` becomes the edited index, `external_head_matches == false` and `inclusion_proof_verified == false`. A run where the object-store adapter still exits 0 means its proof was served from a cached head instead of recomputed, which is the failure this breakage is aimed at rather than an incidental one. Claimed: neither adapter is written, no conformance tool exists here, and no run has been performed. The measured starting state is recorded in cap-state-persistence-use: the reference runner's chain verifies over 56 records across 4 runs and produces zero inclusion proofs, zero content-addressed record ids and zero sealed heads.",
-    "status": "claimed",
+    "criterion": "bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second",
+    "expected": "Measured by tools/measure.py at 372cdc1: exit 0; last lines:   adapter=content-addressed merkle log over an object store (second adapter) cases=11 passed=11 appends=10 refusals=2 product_hits=0 | conformance PASSED: 22/22 cases, 2 binding(s)",
+    "breakage": "Append a product-name comment (`# breakage: litellm`) to the end of harness/state-persistence/call.py, outside adapters/. Restored with `git checkout -- harness/state-persistence/call.py`.",
+    "expected_failure": "Measured by tools/measure.py at 372cdc1: exit 1; last lines:   ok   chain_break_at went from -1 to 2, the tampered record | passed 14, failed 6",
+    "status": "measured",
     "sources": [
       "F-b5-05",
       "F-b3-17"
     ],
-    "quote": "the integrity mechanism"
+    "quote": "concurrency and single-writer guarantees",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "372cdc1",
+      "clean_exit": 0,
+      "clean_output": "r: 2 record(s) of kind 'tagged' at size 18\n  ok   a consistency proof shows the log only grew: size 18 -> 19 verified as a pure extension\n  ok   redact drops the body but the record's proof still verifies: body dropped, record_id unchanged, the same proof still verifies\n  ok   an independent verifier, run as a subprocess, recomputes the same head: 20 records, external root matches the adapter's head, chain_break_at=-1\n  adapter=content-addressed merkle log over an object store (second adapter) cases=11 passed=11 appends=10 refusals=2 product_hits=0\nconformance PASSED: 22/22 cases, 2 binding(s)",
+      "breakage_exit": 1,
+      "breakage_output": "deliberate breakage: one record body edited in place in the store\nappended 5 records, head sha256:b387fc130af4d63ed78d847acceec6466a0ce31d3827879cfd68daa6af9e5bfa\n  ok   before tampering: chain_break_at is -1\n  ok   tampered 9a7b39f77fa01e8d6bf66d60cff92968f09220878635e84a90e2812e285aae21.json in place, record_id unchanged\n{\"count\": 5, \"root_hash\": \"sha256:f735f9be08c412f73916f80294bc30b81466e806b070a5e53f88396335c0444a\", \"chain_break_at\": 2}\nchain_break_at = 2\n  ok   the tampered run reports the edited index (0)\n  ok   chain_break_at went from -1 to 2, the tampered record\n\npassed 14, failed 6"
+    },
+    "expected_design": "docs/decomposition.md section 3.2 row P16, extended with the swap: `python3 tools/conformance/state_persistence.py --adapter jsonl-hash-chain --records 1500 --report out/state-a.json` then the same command with `--adapter merkle-object-store --report out/state-b.json`, the adapter chosen by configuration with no code edit between runs. Each run appends the identical 1500-record sequence through the interface, races two writers on one partition at least once, then hands the stored records to an independent verifier we did not write, invoked as a subprocess with no access to our reader. Both reports must validate against the StateConformanceReport shape above and assert, per adapter, `records_written > 1000`, `chain_break_at == -1`, `external_head_matches == true`, `inclusion_proof_verified == true` for a uniformly random record, `concurrent_appends_rejected > 0` and `tombstone_proof_still_verifies == true`. Earlier criterion named tools/conformance/state_persistence.py, replaced by the harness on 2026-09-03.",
+    "expected_failure_design": "test.sh's product-name scan (check 3) fails with product_hits going from 0 to 1, and `conformance.py --adapter dryrun --adapter second` also reports the same non-zero product_hits and exits non-zero, since every conformance run scans for a product name outside adapters/."
   },
   "composes_with": {
     "builds_on": [
       "agentic-stack",
-      "build-adapter-pair",
-      "build-definition-of-done",
+      "build-ceremony",
+      "build-evidence",
       "build-skill-authoring",
-      "cap-errors"
+      "cap-errors",
+      "cap-identity"
     ],
     "used_by": [
-      "cap-memory",
-      "cap-state-persistence-implement",
+      "cap-idempotency",
       "seam-state",
-      "xc-idempotency-lease",
-      "xc-tenancy"
+      "xc-guarantees"
     ]
   },
   "open_questions": [
@@ -643,5 +652,1382 @@
       "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
     },
     "author": "session cap-state-persistence 2831cb4f, 2026-09-03"
+  },
+  "folded": {
+    "cap-state-persistence-implement": {
+      "name": "cap-state-persistence-implement",
+      "layer": "cap",
+      "wave": 4,
+      "description": "How to build the State persistence capability on this stack: what the hash-chained line-delimited stores that already run give you and what they cannot give anyone else, a first adapter that adds content-addressed ids, a Merkle tree and sealed heads to the file that exists, a second adapter with a different execution model built from immutable objects under a content address and a compare-and-swap head, the migration between them, where the append path is wired so no writer can bypass it, and a definition of done with the breakage that makes it fail. Load it when writing the code behind append, read_at or prove, when adding a lease to a store that assumed one process, when a conformance run reports a forked log, or when deciding what to do with the file that is already there.",
+      "purpose": {
+        "text": "Turn the contract in cap-state-persistence into something that runs here: one interface, two adapters whose execution models differ, and an existing hash-chained file carried forward rather than replaced.",
+        "origin": "sourced",
+        "sources": [
+          "F-b3-17",
+          "F-b5-05",
+          "E-capability-state-persistence"
+        ],
+        "quote": "Today a JSONL file with a hash chain"
+      },
+      "entities": [
+        "E-capability-state-persistence",
+        "E-seam-state",
+        "E-adapter-jsonl-hash-chain",
+        "E-swap-candidate-object-store",
+        "E-swap-candidate-relational",
+        "E-swap-candidate-event-log"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "StateConformanceReport (proposed shape; the counters the definition of done below asserts on, per adapter)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:state:report:0.1",
+              "title": "StateConformanceReport",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "adapter",
+                "records_written",
+                "chain_break_at",
+                "external_head_matches",
+                "inclusion_proof_verified",
+                "concurrent_appends_rejected",
+                "adapters_run",
+                "selected_by"
+              ],
+              "properties": {
+                "adapter": {
+                  "enum": [
+                    "jsonl-hash-chain",
+                    "merkle-object-store"
+                  ]
+                },
+                "records_written": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "chain_break_at": {
+                  "type": "integer",
+                  "minimum": -1,
+                  "description": "-1 when no break was found; otherwise the index the verifier stopped at."
+                },
+                "external_head_matches": {
+                  "type": "boolean",
+                  "description": "Recomputed by a verifier we did not write, from the stored records alone."
+                },
+                "inclusion_proof_verified": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ],
+                  "description": "Null means the adapter declares the property unsupported at this stage; false means it tried and failed. The two are never merged."
+                },
+                "concurrent_appends_rejected": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Appends refused because the expected head had moved or the fencing token was stale. Zero means the race was never run."
+                },
+                "tombstone_proof_still_verifies": {
+                  "type": [
+                    "boolean",
+                    "null"
+                  ]
+                },
+                "head_digests_equal": {
+                  "type": "boolean",
+                  "description": "Set on the merged report: both adapters produced the same head over the same record sequence."
+                },
+                "adapters_run": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "selected_by": {
+                  "const": "configuration",
+                  "description": "A code edit between runs would not be a swap."
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04",
+              "F-b5-05"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "cap-state-persistence, F-a5-03 and F-a5-04 already record what runs today: two append-only hash-chained line-delimited stores, a task store and an evidence store, and neither is deleted by this work. The build consequence: the migration adds identity, a tree and a lease to the file that exists; a green-field store would leave the platform running the old one anyway and would make the swap untestable because only one implementation would ever hold real records.",
+            "origin": "sourced",
+            "sources": [
+              "F-a5-03",
+              "F-a5-04"
+            ],
+            "quote": "JSONL, hash-chained"
+          },
+          {
+            "text": "cap-state-persistence states why the pair of proofs is needed (X-cross-structure-052: a valid log can be cryptographically verified by any third-party). The build consequence: the chain is kept and the tree is added over the same values, so the leaves of the tree are the record ids the chain already commits to - an existing store becomes provable without a single record being rewritten, and a rollback is stopping the tree rather than restoring a file.",
+            "origin": "sourced",
+            "sources": [
+              "X-cross-structure-052",
+              "F-a5-03"
+            ],
+            "quote": "a valid log can be cryptographically verified by any third-party"
+          },
+          {
+            "text": "Proposed pointer, see build-adapter-pair's design rule 3 (F-b1-04) that swappability is a tested property: the build consequence is that both adapters implement the identical operation set from cap-state-persistence, the running adapter is chosen by configuration with no code edit between runs, and the selection appears in the report shape above, because a swap nobody can observe in the output is indistinguishable from running one adapter twice.",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04"
+            ]
+          },
+          {
+            "text": "cap-state-persistence and X-cross-structure-048 state the optimistic-concurrency property this facet's fencing token gives both adapters: two concurrent writers trying to append at the same version will fail, and one will need to retry, which prevents lost updates without requiring locks. The build consequence: the two adapters hold the head in different places and must behave identically at the interface - the file adapter's head is the last line it wrote, the object-store adapter's head is one small object updated by compare-and-swap, and both reject an append whose expected head has moved or whose fencing token is below the highest seen, with the conformance report counting those rejections rather than assuming the race happened.",
+            "origin": "sourced",
+            "sources": [
+              "X-cross-structure-048",
+              "F-b5-05"
+            ],
+            "quote": "two concurrent writers trying to append at the same version will fail, and one will need to retry"
+          },
+          {
+            "text": "build-definition-of-done already names the structurally-green trap (F-a7-03): a gate can pass while asserting nothing. The build consequence: an adapter that cannot yet serve a property declares it unsupported rather than reporting zero. In the report shape above, inclusion_proof_verified is null for the file adapter before the tree lands and false once it tries and fails, and merging those two into one falsy value is precisely how a stage that never ran comes to look like a stage that passed.",
+            "origin": "sourced",
+            "sources": [
+              "F-a7-03"
+            ],
+            "quote": "A deterministic gate can be structurally green and mean nothing"
+          },
+          {
+            "text": "agentic-stack fixes that cross-cutting guarantees are not optional (F-b1-08), and T-t2-03 fixes that state and every cross-cutting concern are managed across the entire structure. The build consequence: no writer reaches the store except through append, and the platform stamps the actor, the partition and the correlation attributes onto every record on that one path. A second write path would be a caller deciding for itself whether a record is attributable, which is the property a cross-cutting guarantee does not have, and it would also be the place a fork appears.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-08",
+              "T-t2-03"
+            ],
+            "quote": "Cross-cutting guarantees are not optional"
+          },
+          {
+            "text": "Proposed: a refused append, a stale token, a missing record and an unverifiable proof are returned as problem details from the registry cap-errors owns, and this capability mints no failure object of its own; a new registry row is required before any new type is raised. A caller must be able to tell a lost race, which is retryable after re-reading the head, from a broken chain, which is not.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-07"
+            ],
+            "quote": "Typed and machine-readable. Never parsed from prose"
+          },
+          {
+            "text": "Apply build-evidence-record: the conformance run and its breakage are written to the evidence store naming the code version and the tree hash under test, and stay claimed until they have actually been run here; nothing in this facet has been executed on this platform; proposed pointer, see that skill.",
+            "origin": "proposed",
+            "sources": [
+              "F-a5-04"
+            ],
+            "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Start from the file that exists rather than from a new store: the task store already appends JSONL, hash-chained records, so the first three changes are identity, a tree and a lease on that same file, not a replacement for it.",
+          "why": "agentic-stack states the chain property this store relies on (F-a5-03) and cap-state-persistence carries it into this capability's open question about cross-run continuity. What this facet adds is the observation that every later step is additive over that file, so each one is revertible on its own and the platform never runs a half-migrated store it cannot read.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-03",
+            "F-b5-05"
+          ],
+          "quote": "JSONL, hash-chained"
+        },
+        {
+          "step": 2,
+          "action": "Add content-addressed identity first, while still in the file: compute the record id from the canonical bytes of the body, write it into each record, and keep the sequence number as a position hint rather than as identity.",
+          "why": "Proposed. Identity is the change every later step depends on: the tree's leaves are record ids, the tombstone preserves a record id, and two adapters can only be compared on the same head if they agree on what each record is called. Doing it inside the file adapter means the object-store adapter is written against a settled identity rather than inventing one. Research query: does F-b5-05's list of what the migration must specify (write model, integrity mechanism) fix content-addressed identity as the required scheme, or is choosing content-address over another identity scheme this facet's own design?",
+          "origin": "proposed",
+          "sources": [
+            "F-b5-05"
+          ]
+        },
+        {
+          "step": 3,
+          "action": "build-evidence-record and F-a5-03 already fix the chain property this facet extends: each run's closing digest is the next run's opening digest, so a manual edit between runs is detectable. The build consequence: add the append-only Merkle tree over those record ids and write a sealed head at run close carrying the tree size, the root hash and the chain digest; make the closing sealed head of one run the opening head of the next.",
+          "why": "Proposed, and it preserves the property the platform already depends on while changing how it is checked: detection stops being a rehash of the whole file and becomes a proof, which is what lets a third party check one record. The sealed head is also the only object the signing path needs, so provenance over state costs one signature per run rather than one per record.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-03"
+          ],
+          "quote": "each run's closing digest is the next run's opening digest, so a manual edit between runs is detectable"
+        },
+        {
+          "step": 4,
+          "action": "Add the fencing lease and make every append conditional: the writer states the head it expects and the token it holds, and the store refuses the write if either is behind. Run the two-writer race in the test suite from the day the lease lands.",
+          "why": "The check is the general form of what an event store does with a version: it enforces optimistic concurrency control, and this prevents lost updates without requiring locks. Running the race immediately matters because a rejection counter that is never exercised reads exactly like a store that has no lease at all.",
+          "origin": "sourced",
+          "sources": [
+            "X-cross-structure-048",
+            "X-cross-structure-049"
+          ],
+          "quote": "This prevents lost updates without requiring locks"
+        },
+        {
+          "step": 5,
+          "action": "cap-state-persistence's own recorded row already names the swap candidates (F-b3-17): object store, relational, event log. Build the second adapter over an object store: one immutable object per record named by its content address, the tree persisted as objects, and the head as a single small object updated by compare-and-swap. Do not port the file adapter's assumption that write order is byte order.",
+          "why": "Proposed second adapter, per the recorded swap-candidate column. It breaks a different assumption than the first: the file adapter owns one mutable file, finds its head by reading the last line, and rehashes to verify, while this one has out-of-order arrivals, an eventually consistent listing, no cheap full scan, and verification only through proofs. cap-state-persistence records the axis; what this adds is that the object store is chosen over the other two candidates precisely because a relational store would preserve the single-writer, ordered-append assumption rather than test it.",
+          "origin": "sourced",
+          "sources": [
+            "F-b3-17"
+          ],
+          "quote": "object store · relational · event log"
+        },
+        {
+          "step": 6,
+          "action": "Migrate in that order and keep both adapters live behind one interface: identity, then tree and sealed heads, then lease, then the object-store adapter selected by configuration. Do not delete the file adapter once the object store works.",
+          "why": "Proposed migration. Each step is independently revertible and the store stays readable throughout. Keeping the file adapter is what makes the pair testable later; an interface with one surviving implementation drifts back into the shape of whatever runs, which is the failure design rule 3 exists to catch. Research query: does a migration record for another adapter pair in this repository already show 'identity, tree, lease, then swap adapter' as a proven revertible order, which would source this order rather than leave it a proposal?",
+          "origin": "proposed",
+          "sources": [
+            "F-b1-04"
+          ]
+        },
+        {
+          "step": 7,
+          "action": "agentic-stack fixes that cross-cutting guarantees are applied by the platform, not requested by the caller (F-b1-08). The build consequence: wire the cross-cutting concerns onto the single append path - the actor and the correlation attributes are stamped by the platform, the retention class is assigned at write, a tombstone is itself a record, and there is no flag that skips any of it.",
+          "why": "Proposed wiring. One path is what makes the guarantee hold whichever entry produced the work, and it is also the cheapest place to enforce retention: a record that arrives without a class is refused at the boundary rather than found later by a sweep that has to guess.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-08"
+          ],
+          "quote": "not requested by the caller"
+        },
+        {
+          "step": 8,
+          "action": "Make the conformance suite adapter-parameterised from the first line, with one command, one report shape and an external verifier invoked as a subprocess that is given the records and never the store's own reader.",
+          "why": "Proposed. A suite written against the file adapter and generalised later encodes byte order and full-scan verification into its assertions, and a suite allowed to call our reader will eventually be satisfied by it, which is the outcome the capability's integrity invariant forbids. Research query: does F-b5-05's 'query surface a planner needs' extend to fixing that the external verifier is invoked as a subprocess denied the store's own reader, or is that isolation this facet's own conformance design?",
+          "origin": "proposed",
+          "sources": [
+            "F-b1-04",
+            "F-b5-05"
+          ]
+        },
+        {
+          "step": 9,
+          "action": "Proposed: open references/state-adapters.md when you need the per-adapter mapping table, the failure each adapter can and cannot detect, or the step-by-step swap runbook. This skill body is enough to build either adapter without it.",
+          "why": "Proposed, progressive disclosure. The mapping table and the runbook are long material that a reader writing the first adapter does not yet need, and inlining them would push the part that decides the design below the fold.",
+          "origin": "proposed"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "agentic-stack states the finding (F-a7-04) that configuration written in the documented place was silently discarded before. The consequence here: check that the configured adapter is the one that actually wrote, by reading a record back and looking at its shape, not by reviewing the configuration file - a store is the worst place to learn that late, because the wrong adapter will have been accumulating records the whole time.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "was silently discarded"
+        },
+        {
+          "text": "Size the verification cost against where this is going, not against where it is. build-evidence-record already cites the store's scale (F-a5-04), ~2,445 records across 308 runs; rehashing that is tractable and rehashing a hundred times that is not, which is the practical half of the reason the tree is added rather than the chain merely tuned.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-04"
+          ],
+          "quote": "~2,445 records across 308 runs"
+        },
+        {
+          "text": "Keep operational state and historical facts in the same log but not in the same record: one search-only record on file says operational workflow state includes execution status, variable values, loop counters, and idempotency keys, and those change often. Write each change as a new fact rather than editing a record, or the store acquires an update path and every proof taken before it becomes a lie.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-state-persistence-006"
+          ],
+          "quote": "execution status, variable values, loop counters, and idempotency keys"
+        },
+        {
+          "text": "Proposed: run the deliberate breakage on a copy of a real store, not on a fixture of ten records. A fixture cannot show whether the verifier stops at the right index or merely reports that something is wrong, and the index is the part a person acts on when a store is actually found to be edited. Research query: does F-part-c-04's deliberate-breakage principle, read specifically rather than as the general definition-of-done rule, fix a minimum store size or a real-store requirement for the breakage fixture, or is the ten-record-fixture-is-insufficient claim this facet's own testing judgment?",
+          "origin": "proposed",
+          "sources": [
+            "F-part-c-04"
+          ]
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-jsonl-hash-chain",
+          "role": "today",
+          "maps_to": "cap-state-persistence already records this role (F-b3-17): JSONL + hash chain is the adapter today. What this facet adds is the staged build on top of the file that exists: record ids over canonical bytes, then a Merkle tree over those ids with a sealed head per run, then a fencing lease with conditional append. Each stage ships on its own and the file stays readable by every existing reader throughout.",
+          "cannot": "Cannot serve a proof at all before the tree lands, and declares that member unsupported rather than reporting zero. Even complete it cannot escape a single mutable file: its head is a byte position, one process owns it, and a reader that wants integrity without the tree must fetch every record.",
+          "swap_procedure": "Additive, in four stages, each revertible by not reading the field the previous stage added; nothing already written is rewritten, because the tree's leaves are ids the chain already commits to.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-17",
+            "F-a5-03",
+            "E-adapter-jsonl-hash-chain"
+          ],
+          "quote": "JSONL + hash chain"
+        },
+        {
+          "entity": "E-swap-candidate-object-store",
+          "role": "second",
+          "maps_to": "A content-addressed Merkle log over an object store: one immutable object per record named by the digest of its canonical bytes, the tree persisted alongside them, and the head a single small object advanced by compare-and-swap. Proofs are served from the tree, so a consumer verifies one record from the proof and the head alone.",
+          "cannot": "Cannot assume write order, cannot read the previous line to find the head, cannot take a lock on a file, and cannot cheaply scan every record; a listing is eventually consistent and an object may arrive after one written later. It also cannot be made to work if the interface ever grows a full-log rehash, which is why cap-state-persistence forbids one.",
+          "swap_procedure": "cap-state-persistence records the two roles and the axis they differ on (F-b3-17, F-b1-04); what this facet adds is the procedure. Select by configuration only, replay the same record sequence through each, and require the merged report to show adapters_run == 2, selected_by == configuration, head_digests_equal == true, and the file adapter's unsupported members recorded as null rather than asserted false.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-17",
+            "F-b1-04",
+            "X-cross-structure-052",
+            "E-swap-candidate-object-store"
+          ],
+          "quote": "object store · relational · event log"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second",
+        "expected": "Measured by tools/measure.py at 372cdc1: exit 0; last lines:   adapter=content-addressed merkle log over an object store (second adapter) cases=11 passed=11 appends=10 refusals=2 product_hits=0 | conformance PASSED: 22/22 cases, 2 binding(s)",
+        "breakage": "Append a product-name comment (`# breakage: litellm`) to the end of harness/state-persistence/call.py, outside adapters/. Restored with `git checkout -- harness/state-persistence/call.py`.",
+        "expected_failure": "Measured by tools/measure.py at 372cdc1: exit 1; last lines:   ok   chain_break_at went from -1 to 2, the tampered record | passed 14, failed 6",
+        "status": "measured",
+        "sources": [
+          "F-b5-05",
+          "F-b3-17"
+        ],
+        "quote": "concurrency and single-writer guarantees",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "372cdc1",
+          "clean_exit": 0,
+          "clean_output": "r: 2 record(s) of kind 'tagged' at size 18\n  ok   a consistency proof shows the log only grew: size 18 -> 19 verified as a pure extension\n  ok   redact drops the body but the record's proof still verifies: body dropped, record_id unchanged, the same proof still verifies\n  ok   an independent verifier, run as a subprocess, recomputes the same head: 20 records, external root matches the adapter's head, chain_break_at=-1\n  adapter=content-addressed merkle log over an object store (second adapter) cases=11 passed=11 appends=10 refusals=2 product_hits=0\nconformance PASSED: 22/22 cases, 2 binding(s)",
+          "breakage_exit": 1,
+          "breakage_output": "deliberate breakage: one record body edited in place in the store\nappended 5 records, head sha256:b387fc130af4d63ed78d847acceec6466a0ce31d3827879cfd68daa6af9e5bfa\n  ok   before tampering: chain_break_at is -1\n  ok   tampered 9a7b39f77fa01e8d6bf66d60cff92968f09220878635e84a90e2812e285aae21.json in place, record_id unchanged\n{\"count\": 5, \"root_hash\": \"sha256:f735f9be08c412f73916f80294bc30b81466e806b070a5e53f88396335c0444a\", \"chain_break_at\": 2}\nchain_break_at = 2\n  ok   the tampered run reports the edited index (0)\n  ok   chain_break_at went from -1 to 2, the tampered record\n\npassed 14, failed 6"
+        },
+        "expected_design": "docs/decomposition.md section 3.2 row P16, extended with the swap: `python3 tools/conformance/state_persistence.py --adapter jsonl-hash-chain --records 1500 --report out/state-a.json` then the same command with `--adapter merkle-object-store --report out/state-b.json`, the adapter chosen by configuration with no code edit between runs. Each run appends the identical 1500-record sequence through the interface, races two writers on one partition at least once, then hands the stored records to an independent verifier we did not write, invoked as a subprocess with no access to our reader. Both reports must validate against the StateConformanceReport shape above and assert, per adapter, `records_written > 1000`, `chain_break_at == -1`, `external_head_matches == true`, `inclusion_proof_verified == true` for a uniformly random record, `concurrent_appends_rejected > 0` and `tombstone_proof_still_verifies == true`. Earlier criterion named tools/conformance/state_persistence.py, replaced by the harness on 2026-09-03.",
+        "expected_failure_design": "test.sh's product-name scan (check 3) fails with product_hits going from 0 to 1, and `conformance.py --adapter dryrun --adapter second` also reports the same non-zero product_hits and exits non-zero, since every conformance run scans for a product name outside adapters/."
+      },
+      "composes_with": {
+        "builds_on": [
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record",
+          "cap-state-persistence"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Which adapter is primary once both exist, and does a deployment with no outbound network get the file adapter or no store at all?",
+          "evidence": "Measure, per adapter: append latency added to the write path, the number of external services that must be reachable for a record to be durable, and whether a consumer holding only a proof and a head can verify without reaching us. The last is the capability's contract; the second decides whether the object store can sit on the hot path.",
+          "default": "Proposed: the file adapter stays primary for the per-step append path and the object-store adapter holds sealed heads and anything a third party is expected to verify, both selected by configuration. A deployment with no outbound network runs the file adapter and records the reduced guarantee rather than losing the store.",
+          "sources": [
+            "F-b1-04"
+          ]
+        },
+        {
+          "question": "Is the sealed head signed by this capability or by the provenance capability, given that both want the same object?",
+          "evidence": "Whether any consumer needs a signed head without also needing an attestation, and whether the signing identity for a head differs from the one used for an artifact. If neither differs, one signing path serves both and this capability emits an unsigned head.",
+          "default": "Proposed: this capability produces the sealed head and stops there; signing is the provenance capability's call over that object, so the store gains no signing key and the swap between adapters stays a storage decision. Reversible: moving the signature here would change which skill owns the key, not the head's shape.",
+          "sources": [
+            "F-b4-05",
+            "F-b5-05"
+          ]
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session cap-state-persistence 2831cb4f, 2026-09-03"
+      }
+    },
+    "cap-memory": {
+      "name": "cap-memory",
+      "layer": "cap",
+      "wave": 4,
+      "description": "The memory contract: write, retrieve and expire scoped items so a later run can read what earlier runs learned without being handed their whole transcript. Load it when a run needs something an earlier run found out, when an agent is being passed a transcript because there is nowhere else to put what it learned, when deciding what should still be known next week and what should have expired by then, when a recall must never cross a principal, an agent or a tenant boundary, when someone asks 'why did it remember that', 'how do we forget it', or 'is this the same thing as the ledger', and before an embedding index, a similarity threshold or a store layout is allowed anywhere near the interface.",
+      "purpose": {
+        "text": "Fix one contract for writing, recalling and expiring scoped memory items, so a later run can act on what an earlier run learned without being handed its transcript, and the store that holds the items stays an adapter. PASS.md has no memory row in any section, so this capability exists because TARGET requires the gaps in that baseline to be made up.",
+        "origin": "sourced",
+        "sources": [
+          "T-t4-03",
+          "X-end-to-end-001"
+        ],
+        "quote": "make up for the gaps, and solve it"
+      },
+      "entities": [
+        "E-capability-identity",
+        "E-capability-state-persistence",
+        "E-capability-errors",
+        "E-core-component-ledger",
+        "E-standard-json-schema-2020-12",
+        "E-standard-rfc-9457-problem-details"
+      ],
+      "contract": {
+        "operations": [
+          {
+            "name": "remember",
+            "input": "one item: scope, body, kind, provenance (what produced it, when, on which correlation id) and a staleness policy",
+            "output": "a memory_id, and the id of any item this one supersedes (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "X-end-to-end-002",
+              "X-cap-memory-008"
+            ]
+          },
+          {
+            "name": "recall",
+            "input": "a scope selector naming at least one dimension, a need expressed as text or an explicit key, and a limit",
+            "output": "items in an unspecified order, each with its provenance and its age, plus the selector that was applied (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "X-cap-memory-002",
+              "X-cap-memory-004"
+            ]
+          },
+          {
+            "name": "supersede",
+            "input": "a memory_id and a replacement body with its own provenance",
+            "output": "the new memory_id; the superseded item stops being recallable and is not rewritten in place (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "X-cap-memory-008"
+            ]
+          },
+          {
+            "name": "forget",
+            "input": "a selector: one memory_id, or a scope plus a reason (expiry, erasure request, retention limit)",
+            "output": "the count removed and the reason recorded; expiry also happens without this call being made (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "X-cap-memory-005"
+            ]
+          }
+        ],
+        "shapes": [
+          {
+            "name": "MemoryItem (proposed summary shape; the full schema and the scope grammar are in references/memory-item.md)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:memory:item:0.1",
+              "type": "object",
+              "required": [
+                "memory_id",
+                "scope",
+                "kind",
+                "body",
+                "provenance",
+                "staleness"
+              ],
+              "properties": {
+                "memory_id": {
+                  "type": "string"
+                },
+                "scope": {
+                  "type": "object",
+                  "minProperties": 1,
+                  "properties": {
+                    "principal": {
+                      "type": "string",
+                      "examples": [
+                        "user:corey"
+                      ]
+                    },
+                    "agent": {
+                      "type": "string",
+                      "examples": [
+                        "agent:release-reviewer"
+                      ]
+                    },
+                    "run": {
+                      "type": "string"
+                    },
+                    "org": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "kind": {
+                  "enum": [
+                    "working",
+                    "episodic",
+                    "semantic",
+                    "procedural"
+                  ]
+                },
+                "body": {
+                  "type": "object"
+                },
+                "provenance": {
+                  "type": "object",
+                  "required": [
+                    "produced_by",
+                    "observed_at",
+                    "correlation_id"
+                  ],
+                  "properties": {
+                    "produced_by": {
+                      "type": "string"
+                    },
+                    "observed_at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "correlation_id": {
+                      "type": "string"
+                    },
+                    "supersedes": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                },
+                "staleness": {
+                  "type": "object",
+                  "required": [
+                    "expires_at"
+                  ],
+                  "properties": {
+                    "expires_at": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    },
+                    "review_after": {
+                      "type": [
+                        "string",
+                        "null"
+                      ],
+                      "format": "date-time"
+                    }
+                  }
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "X-end-to-end-002",
+              "X-cap-memory-005",
+              "X-cap-memory-007"
+            ]
+          },
+          {
+            "name": "RecallQuery and RecallResult (proposed summary shape; ranking inputs are absent by design)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:memory:recall:0.1",
+              "type": "object",
+              "required": [
+                "query",
+                "result"
+              ],
+              "properties": {
+                "query": {
+                  "type": "object",
+                  "required": [
+                    "scope",
+                    "limit"
+                  ],
+                  "properties": {
+                    "scope": {
+                      "$ref": "urn:agentic:memory:item:0.1#/properties/scope"
+                    },
+                    "need": {
+                      "type": "string",
+                      "description": "what the caller is trying to answer, in words"
+                    },
+                    "key": {
+                      "type": "string",
+                      "description": "an explicit item key, when the caller knows it"
+                    },
+                    "limit": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  },
+                  "not": {
+                    "anyOf": [
+                      {
+                        "required": [
+                          "embedding"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "similarity_threshold"
+                        ]
+                      },
+                      {
+                        "required": [
+                          "index"
+                        ]
+                      }
+                    ]
+                  }
+                },
+                "result": {
+                  "type": "object",
+                  "required": [
+                    "items",
+                    "scope_applied"
+                  ],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "urn:agentic:memory:item:0.1"
+                      }
+                    },
+                    "scope_applied": {
+                      "$ref": "urn:agentic:memory:item:0.1#/properties/scope"
+                    },
+                    "age_seconds": {
+                      "type": "array",
+                      "items": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "X-cap-memory-002",
+              "X-cap-memory-001"
+            ]
+          },
+          {
+            "name": "The failure shape (proposed): a recall at a scope the caller does not hold [caller's view, folded from cap-memory-use]",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:cap:memory:example:scope-denied",
+              "title": "The scope is not yours",
+              "$ref": "urn:agentic:problem:0.1",
+              "description": "Media type application/problem+json. A recall at a scope the actor does not hold is a deterministic pre-execution refusal, which is exactly the registered `policy-denied` row in docs/decomposition.md section 2.1.6, so this example carries that type and its rule_id member rather than a memory-specific suffix cap-errors' closed registry has no row for. This is not the same as an empty result: empty means nothing was learned at a scope you hold, denied means you asked at a scope you do not.",
+              "examples": [
+                {
+                  "type": "urn:agentic:problem:policy-denied",
+                  "title": "The scope is not yours",
+                  "status": 403,
+                  "detail": "recall named principal user:dana; the run's actor is user:corey and holds principal user:corey, agent agent:release-reviewer and org org:platform.",
+                  "retryable": false,
+                  "correlation_id": "corr-b-0003",
+                  "rule_id": "memory.scope.not-held"
+                }
+              ]
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b3-13"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Every write carries a scope and every recall names at least one scope dimension. The dimensions are the identity subjects cap-identity already establishes - principal, agent, run, org - and they tag an item rather than nesting it, so cross-principal contamination is kept out of results by construction rather than by a filter someone remembered to add.",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-memory-002",
+              "X-end-to-end-002"
+            ],
+            "quote": "Every search must include at least one of these dimensions in filters"
+          },
+          {
+            "text": "Every item carries a staleness policy at write time. A store with no temporal validity model with no expiry dates or conflict detection lets a run act with confidence on state that has moved, so an item with no declared expiry is a rejected write, not a permanent one.",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-memory-004",
+              "X-cap-memory-005"
+            ],
+            "quote": "no temporal validity model with no expiry dates or conflict detection"
+          },
+          {
+            "text": "Every item carries provenance: what produced it, when it was observed, and the correlation id of the run it came from, alongside metadata like timestamps and the source message. An item that cannot say where it came from cannot be judged, superseded or defended when it turns out to be wrong.",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-memory-007"
+            ],
+            "quote": "alongside metadata like timestamps and the source message"
+          },
+          {
+            "text": "A correction supersedes; it does not edit. Active supersession on every write so contradictions never accumulate is what keeps two versions of a fact from both being recallable, and the superseded item stays readable to provenance even though recall no longer returns it.",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-memory-008"
+            ],
+            "quote": "active supersession on every write so contradictions never accumulate"
+          },
+          {
+            "text": "Memory is not the Ledger. cap-state-persistence owns the ledger row, which is append-only across runs; the deduplication authority - it answers whether work already happened, for the platform. Memory answers what a run should know, for an agent, and its items are scoped, expirable and supersedable; merging the two would make a dedup record expire or a memory item permanent.",
+            "origin": "sourced",
+            "sources": [
+              "F-b2-06",
+              "X-end-to-end-001"
+            ],
+            "quote": "append-only across runs; the deduplication authority"
+          },
+          {
+            "text": "Ranking is not in the contract (proposed). A caller names a scope and a need or an explicit key, never an embedding, a similarity threshold, a k or an index name; agent memory systems typically rank candidate memories by cosine similarity, and how candidates are ordered belongs to the adapter, which is what lets an approximate ranker and an exact key lookup satisfy the same interface.",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-memory-001"
+            ],
+            "quote": "rank candidate memories by cosine similarity"
+          },
+          {
+            "text": "No ratified standard governs this interface: no prior protocol provides verified memory portability, and the one protocol proposal found is a 2026 preprint, so unlike the rest of the capability table this shape is designed here rather than adopted (proposed) - PASS.md's own position is that everything else in that part is a decision someone else already published, and this is the exception the manifest records as none found.",
+            "origin": "sourced",
+            "sources": [
+              "X-end-to-end-003",
+              "F-b5-06"
+            ],
+            "quote": "no prior protocol provides verified memory portability"
+          },
+          {
+            "text": "A refusal is typed. cap-errors owns the closed registry of RFC 9457 problem details; on this interface the refusals a caller meets are an out-of-scope recall, a write with no staleness policy, and a supersede naming an item that is already gone. An empty recall is not a refusal - it is a result with zero items and the applied scope.",
+            "origin": "sourced",
+            "sources": [
+              "F-b3-13"
+            ],
+            "quote": "RFC 9457 problem details"
+          },
+          {
+            "text": "The three ways in are the same two calls. TARGET T1 names a human, an agent, and an internal or external event as the ways into the system; here all three write and recall the same shapes, differing only in the produced_by subject - user:, agent:, service: or schedule: - and the platform records which one it was. This is the one enumeration of ways in used in this skill.",
+            "origin": "sourced",
+            "sources": [
+              "T-t1-03",
+              "T-t1-02"
+            ],
+            "quote": "An internal or external event must be able to enter the system."
+          },
+          {
+            "text": "Enhancing one aspect leaves the rest untouched: composability allows enhancing particular aspects of any element without touching the rest. Swap the store cap-memory-implement binds, add decay to ranking, tighten the retention defaults, and no step that remembers or recalls is edited - a scope, a claim, an expiry and a need are the only things any of them named. cap-errors states the same record (T-t2-02) for its own boundary; this row is that rule's consequence here.",
+            "origin": "sourced",
+            "sources": [
+              "T-t2-02"
+            ],
+            "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "The criterion an agent's output will be judged against. agentic-stack states design rule 6 (F-b1-07); on this interface it forbids exactly one thing: a memory item whose body is a grading rubric, an acceptance criterion or a judge prompt may never be recallable at a scope the graded agent can read, because recall places items directly into that agent's context. A criterion may be remembered at the judge's own scope, and its identifier may appear in an item, never its body.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-07"
+            ],
+            "quote": "An agent sees its outcome, never the criterion it is judged against"
+          },
+          {
+            "text": "The embedding model, the index type, the similarity metric, the store layout and whether there is one store or two: memory servers in the wild already vary between a single index and a hybrid dual-store architecture combining vector-based semantic search and graph-based entity-relationship storage. None of them is a field of a query or of a result (proposed).",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-memory-006"
+            ],
+            "quote": "a hybrid dual-store architecture combining vector-based semantic search and graph-based entity-relationship storage"
+          },
+          {
+            "text": "Proposed: the existence of items outside the caller's scope. An out-of-scope recall returns zero items or a typed refusal; it never reports how many items it declined to show, which would leak another principal's activity through a count. Research query: has an out-of-scope recall actually been run against a populated store to confirm no count leaks, or does the cited scoping record (X-cap-memory-002) only establish that filters exist, not that a decline count is withheld?",
+            "origin": "proposed",
+            "sources": [
+              "X-cap-memory-002"
+            ]
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Before designing anything, decide whether what you want to keep is a memory item at all. If the platform reads it to decide whether work already happened, it is a ledger record and belongs to cap-state-persistence and the State seam; if a later run reads it to act better, it is a memory item and belongs here.",
+          "why": "cap-state-persistence owns the ledger row (F-b2-06), which is append-only across runs; the deduplication authority. Deciding this first is what stops a store that must never forget and a store that must forget on schedule from being built as one thing.",
+          "origin": "sourced",
+          "sources": [
+            "F-b2-06"
+          ],
+          "quote": "append-only across runs; the deduplication authority"
+        },
+        {
+          "step": 2,
+          "action": "Draw the interface as remember, recall, supersede and forget, and nothing else. Keep every ranking input out of the signatures: a caller supplies a scope and a need or an explicit key.",
+          "why": "agentic-stack states design rule 1 (F-b1-02): the core imports interfaces, never implementations. A k, a threshold or an index name in the signature is the store's shape leaking into the contract, and it is what would make an exact-key adapter unable to implement it.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-02",
+            "X-cap-memory-001"
+          ],
+          "quote": "The core imports interfaces, never implementations"
+        },
+        {
+          "step": 3,
+          "action": "Derive the scope dimensions from identity rather than inventing them: principal, agent, run and org, each an actor subject cap-identity already establishes, tagged onto the item at write time.",
+          "why": "The prior art on file records that each memory write is tagged with one or more identity scopes; taking the subjects from identity means a scope cannot name a principal the platform cannot authenticate, and tenancy questions are answered once rather than twice.",
+          "origin": "sourced",
+          "sources": [
+            "X-end-to-end-002"
+          ],
+          "quote": "each memory write is tagged with one or more identity scopes"
+        },
+        {
+          "step": 4,
+          "action": "Require a staleness policy on every write and make expiry the default path rather than a cleanup job someone runs. Episodic items - transcript extracts, run notes - get a time-to-live at the moment they are written.",
+          "why": "Systems must actively update or expire memories rather than treat them as immutable logs, and raw episodic data should always carry one, because transcripts grow without bound and carry retention constraints. A store that only ever grows becomes a store nobody dares recall from.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-memory-005"
+          ],
+          "quote": "raw episodic data should always carry one"
+        },
+        {
+          "step": 5,
+          "action": "Return provenance and age with every recalled item, and let the caller see both. Do not silently drop an old item that is still within its policy.",
+          "why": "An agent that retrieved a deployment guide last updated eighteen months ago can note this staleness rather than presenting the information as current - which is only possible if the age travels with the item instead of being flattened away by the ranker.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-memory-004",
+            "X-cap-memory-007"
+          ],
+          "quote": "note this staleness rather than presenting the information as current"
+        },
+        {
+          "step": 6,
+          "action": "Make correction a supersede, not an update, and keep the superseded item readable to provenance while removing it from recall.",
+          "why": "Active supersession on every write so contradictions never accumulate is the mechanism; keeping the old item readable is what lets a wrong answer later be traced to the item that caused it rather than to the item that replaced it.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-memory-008"
+          ],
+          "quote": "active supersession on every write so contradictions never accumulate"
+        },
+        {
+          "step": 7,
+          "action": "Type every refusal against the registry cap-errors owns, and keep an empty recall out of that path: zero items plus the applied scope is a result.",
+          "why": "cap-errors adopts RFC 9457 problem details whole, so a caller branches on a type rather than parsing a message. Treating 'nothing to recall' as an error would make the common case of a first run look like a fault.",
+          "origin": "sourced",
+          "sources": [
+            "F-b3-13"
+          ],
+          "quote": "RFC 9457 problem details"
+        },
+        {
+          "step": 8,
+          "action": "Judge an implementation by the conformance run in the definition of done, over both adapters in the pair below, not by whether one store works.",
+          "why": "build-adapter-pair states the rule (F-b1-04): swappability is a tested property, not an intention. Here the axis that must differ is how a candidate is found - approximate ranking over an index versus exact lookup on a scope key - because an interface shaped around ranking cannot be served by a key lookup at all.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-04"
+          ],
+          "quote": "Swappability is a tested property, not an intention."
+        },
+        {
+          "step": 9,
+          "action": "Write one claim per item, in a sentence a later run can act on, at the narrowest scope that will need it. Do not paste the conversation it came from.",
+          "why": "This skill cites the prior art that memory exists so work can carry across turns, sessions, and tasks; the caller-side consequence is that a pasted transcript pushes the summarising onto every future reader and expires as one block instead of per fact. Narrow first also means an item can be promoted to a wider scope later, while a wide one cannot be un-shared.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-memory-003"
+          ],
+          "quote": "remember information across turns, sessions, and tasks"
+        },
+        {
+          "step": 10,
+          "action": "Proposed: open references/memory-item.md when writing the item schema, the scope grammar or the retention table. The body of this skill is enough to draw and review the interface without it. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file.",
+          "why": "Proposed: the full schema, the scope grammar and the retention defaults are longer than the interface they serve, and inlining them would bury the four operations a reader came for.",
+          "origin": "proposed"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Set the three policies together, not one at a time: TTL on long-tail entries to bound storage, decay on retrieval scores to bound interference, and supersession on write. Two of the three leave a failure mode open - TTL alone lets contradictions pile up inside the window, supersession alone lets the store grow forever.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-memory-008"
+          ],
+          "quote": "TTL on long-tail entries to bound storage"
+        },
+        {
+          "text": "Write the claim, not the transcript (proposed). Memory exists so an agent can remember information across turns, sessions, and tasks; an item that is a pasted conversation moves the summarising work to every future reader and expires as a block instead of per fact.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-memory-003"
+          ],
+          "quote": "remember information across turns, sessions, and tasks"
+        },
+        {
+          "text": "Keep the store count out of the contract (proposed). Whether an adapter is one index or a hybrid dual-store architecture combining vector-based semantic search and graph-based entity-relationship storage is its own decision; a contract that names a graph acquires a graph's query language and stops being implementable by a file.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-memory-006"
+          ],
+          "quote": "a hybrid dual-store architecture combining vector-based semantic search and graph-based entity-relationship storage"
+        },
+        {
+          "text": "Proposed: scope narrowly on write and widen on read. An item written at run scope can be promoted to principal scope once it proves useful, but an item written at org scope cannot be un-shared, and the prior art's warning is that a search without a dimension filter is what lets one tenant's facts reach another. Research query: has an un-shared-once-widened item actually been attempted and shown irreversible, or is the write-narrow/read-wide asymmetry this repo's own extension of the cited filter-based isolation record (X-cap-memory-002), which establishes filtering but not irreversibility?",
+          "origin": "proposed",
+          "sources": [
+            "X-cap-memory-002"
+          ]
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-embedding-ranked-memory-store",
+          "role": "today",
+          "maps_to": "Proposed adapter, and a proposed entity id: PASS.md has no memory row in A5, A6 or B3, so kb/entities.jsonl carries no adapter entity for this capability and none may be added without rewriting the entity chain every written skill pins in provenance. What the manifest records as today's adapter is a hosted memory service that embeds queries and stored memories and ranks candidate memories by cosine similarity, with the four operations mapped onto its write, search, update and delete calls and the scope dimensions mapped onto its filter tags.",
+          "cannot": "Proposed: cannot answer 'give me the item at exactly this key' without ranking, cannot explain why one item outranked another, cannot run where no embedding endpoint is reachable, and cannot be read by a person opening a file - so an operator debugging a bad recall has nothing to look at but the ranker's output.",
+          "swap_procedure": "Select the store by configuration only, with no core edit, and run the identical write-then-recall fixture through both; cap-memory-implement owns the migration and the wiring, this row records what the pair is and the axis it differs on.",
+          "status": "claimed",
+          "sources": [
+            "X-cap-memory-001",
+            "X-cap-memory-002"
+          ],
+          "quote": "rank candidate memories by cosine similarity"
+        },
+        {
+          "entity": "E-swap-candidate-scope-keyed-file-store",
+          "role": "second",
+          "maps_to": "Proposed adapter, and a proposed entity id: a file-backed store - one document per scope, or a single-file relational database - where recall is an exact lookup on the scope key and expiry is a comparison on a stored timestamp. It reads the same scope dimensions, which are tagging dimensions, not nested layers, so the same selector that filters the ranked store indexes this one.",
+          "cannot": "Proposed: cannot answer a need expressed only in words, cannot rank, and cannot scale past the point where one process can read the files. That is the axis build-adapter-pair asks for: the first adapter finds candidates by approximate similarity over an index it owns, the second finds them by exact key in a file the caller could open, so any operation shaped around ranking fails outright here rather than degrading.",
+          "swap_procedure": "One conformance run writes the same fixture items through both adapters and recalls them at the same scopes, diffing returned item ids, cross-scope hits, expired items served and refusal types; the report must show adapters_run >= 2 and no divergence on which items are recallable.",
+          "status": "claimed",
+          "sources": [
+            "X-cap-memory-002",
+            "F-b1-04"
+          ],
+          "quote": "which are tagging dimensions, not nested layers"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/memory/test.sh",
+        "expected": "One conformance run over both adapters, from the repository root, with a proposed tool: `python3 tools/conformance_memory.py --adapter config/memory/today.json --adapter config/memory/scope-keyed.json --fixtures tests/fixtures/memory --report out/memory-conformance.json`. The fixture set is three writes in run A - one item scoped to `user:corey`, one scoped to `agent:release-reviewer`, one written with `expires_at` already in the past - and four recalls in run B: the same scope as each write, and one recall at `user:corey` for the item written at `agent:release-reviewer`. Assert `adapters_run >= 2`, `recalled_across_runs == 2`, `cross_scope_hits == 0`, `expired_served == 0`, `items_without_provenance == 0`, `refusals_typed == refusals` with every refusal carrying a `urn:agentic:problem:` type, and `result_divergence == 0` on the item ids the two adapters return. exit 0 with one line per adapter reading `adapter=<role> recalled_across_runs=2 cross_scope_hits=0 expired_served=0 items_without_provenance=0 refusals_typed=1` followed by `adapters_run=2 result_divergence=0`. Until that proposed tool exists, `bash harness/memory/test.sh` (owned by cap-memory-implement) is the running gate: every check line reads ok and the script exits 0.",
+        "breakage": "In the recall path of both adapters, drop the scope predicate and search the whole store, leaving the expiry comparison exactly as it is.",
+        "expected_failure": "exit non-zero on both adapters with `cross_scope_hits=1`, naming the item written at `agent:release-reviewer` as returned to a recall scoped to `user:corey`, while `expired_served=0` still holds. Claimed: neither adapter, the fixture set nor the tool exists in this tree, so this check starts red by construction and is not dressed up as passing. The expiry counter staying green under the breakage is what shows the run separates the scope filter from the staleness filter rather than passing or failing as a block.",
+        "status": "claimed",
+        "sources": [
+          "F-part-c-04",
+          "X-cap-memory-002"
+        ],
+        "quote": "keeps cross-user contamination out of results by construction"
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-adapter-pair",
+          "build-ceremony",
+          "build-definition-of-done",
+          "build-research-record",
+          "build-skill-authoring",
+          "cap-errors",
+          "cap-identity",
+          "cap-state-persistence"
+        ],
+        "used_by": [
+          "cap-memory-implement"
+        ]
+      },
+      "open_questions": [
+        {
+          "question": "Which standard governs this interface, given that the manifest records none found and PASS.md has no memory row to read a standard column from?",
+          "evidence": "1-3-1 applied and recorded on 2026-09-03. Options: (a) declare no governing standard and design the shape here, recording the one protocol proposal on file as prior art rather than as a standard; (b) adopt that proposal as the governing standard now; (c) shape the interface around a tool-server memory convention and call the convention the standard. Recommendation and followed: (a). The record on file states that no prior protocol provides verified memory portability and is a 2026 preprint that was not fetched from this environment, so (b) would cite a version nobody here has read, and (c) would adopt a product convention as a standard, which the adapter rule forbids. What would settle it is a fetch of the proposal recording a version string and a ratification status; the proxy blocked documentation fetches in this session.",
+          "default": "No standard row is carried, and the shapes above are proposed. If the proposal is ratified, the item and recall shapes are the two things that would be replaced, and nothing in the four operations changes.",
+          "sources": [
+            "X-end-to-end-003",
+            "F-part-c-10"
+          ],
+          "quote": "no prior protocol provides verified memory portability"
+        },
+        {
+          "question": "Where does the adapter pair for this capability live, and under what entity ids, given that kb/entities.jsonl has no adapter or swap-candidate entity for a capability PASS.md does not have a row for?",
+          "evidence": "1-3-1 applied and recorded on 2026-09-03. Options: (a) carry the pair here with proposed entity ids declared as proposed in the row itself, as cap-human-interaction does for the same reason; (b) append new entities to kb/entities.jsonl, which rewrites the entity chain head that every written skill pins in provenance; (c) defer the pair to cap-memory-implement and carry none here. Recommendation and followed: (a), so a reader of the ideal facet alone can name both adapters and the axis they differ on.",
+          "default": "The pair above, with proposed entity ids. A kb rebuild that adds a memory row to PASS.md is what would replace them with real ones.",
+          "sources": [
+            "T-t5-02",
+            "F-b1-04"
+          ],
+          "quote": "When a problem comes up, use 1-3-1"
+        },
+        {
+          "question": "Is memory a capability with adapters, or a third boundary with no standard to adopt, alongside Dispatch and State - and if the second, does it belong in the seam layer rather than the cap layer?",
+          "evidence": "Whether an adapter pair can be made to agree on this contract at all. If the conformance run above can be satisfied by two stores with different execution models, memory is a capability whose store is swappable; if the contract has to be rewritten to admit the second store, it is original design and the seam layer is where it belongs. PASS.md names two such boundaries and says everything else in B3 is a decision someone else already published; this one is neither in B3 nor published, which is why the question is open.",
+          "default": "Proposed: it stays a capability in the cap layer, as the manifest places it, and the conformance run is what would move it. Treating it as a seam now would put an interface with two candidate adapters into the layer reserved for boundaries that have none.",
+          "sources": [
+            "F-b5-06",
+            "F-b5-01"
+          ],
+          "quote": "Everything else in B3 is a decision someone else already published."
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session claude/auto-skill-creation cap-memory author 2026-09-03"
+      }
+    },
+    "cap-memory-implement": {
+      "name": "cap-memory-implement",
+      "layer": "cap",
+      "wave": 5,
+      "description": "How to build the memory capability on this stack: a ranked store behind a binding record, a second store that answers by exact scope key, the migration from handing a run its predecessor's transcript to writing items it can recall, where a write and a recall are wired so the platform's guarantees ride on them, and the run that decides whether either store may be called done. Load it when standing up a memory store, when choosing what goes inside an adapter and what stays in the interface, when an item survives an expiry it should not have, when a recall works on one store and not the other, or when a memory change has to be shown to have taken effect rather than merely configured.",
+      "purpose": {
+        "text": "Build what cap-memory specifies: two stores selected by configuration, one conformance run that writes and recalls the same fixtures through both and diffs items, scope leaks, expiries and refusal types, and the wiring that makes a write and a recall recorded steps rather than unobserved calls. build-adapter-pair owns why there are two.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-04"
+        ],
+        "quote": "the second exists to prove the first is not load-bearing"
+      },
+      "entities": [
+        "E-capability-identity",
+        "E-capability-state-persistence",
+        "E-capability-errors",
+        "E-concern-provenance",
+        "E-standard-json-schema-2020-12"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "MemoryBinding (): the record that selects a store, one per adapter, the only file that differs between them",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:memory:binding:0.1",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "binding_id",
+                "role",
+                "retrieval_model",
+                "scope_dimensions",
+                "expiry_enforcement",
+                "declares"
+              ],
+              "properties": {
+                "binding_id": {
+                  "type": "string"
+                },
+                "role": {
+                  "enum": [
+                    "today",
+                    "second"
+                  ]
+                },
+                "retrieval_model": {
+                  "enum": [
+                    "ranked",
+                    "exact-key"
+                  ],
+                  "description": "the axis the pair differs on"
+                },
+                "scope_dimensions": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "principal",
+                      "agent",
+                      "run",
+                      "org"
+                    ]
+                  },
+                  "minItems": 1
+                },
+                "expiry_enforcement": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "on-read",
+                      "swept"
+                    ]
+                  },
+                  "contains": {
+                    "const": "on-read"
+                  }
+                },
+                "declares": {
+                  "type": "object",
+                  "required": [
+                    "reached",
+                    "trust_anchor"
+                  ],
+                  "properties": {
+                    "reached": {
+                      "type": "string",
+                      "description": "what the adapter reported reaching at start-up, not what this file asked for"
+                    },
+                    "trust_anchor": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "origin": "sourced",
+            "sources": [
+              "T-t10-05"
+            ],
+            "quote": "the swap is proven by the conformance run, never asserted"
+          }
+        ],
+        "invariants": [
+          {
+            "text": "cap-memory owns the contract - scope on every write, a staleness policy on every write, provenance on every item, ranking absent from the signature. What this skill adds is where those are enforced: at the adapter boundary, so a store that cannot express a scope filter is rejected at start-up rather than quietly returning more than it should.",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-memory-002"
+            ],
+            "quote": "Every search must include at least one of these dimensions in filters"
+          },
+          {
+            "text": "Both stores are selected by a binding record and nothing else. build-adapter-pair states the swap test (F-meta-04): if an implementation cannot be swapped without touching the core, the boundary is drawn wrong. Here that is checkable - the two bindings are the only files that differ between a conformance run over the ranked store and one over the key store.",
+            "origin": "sourced",
+            "sources": [
+              "F-meta-04"
+            ],
+            "quote": "the boundary is drawn wrong"
+          },
+          {
+            "text": "agentic-stack states design rule 7 as a test (F-b4-01): the platform applies each; a caller cannot decline them. What this skill adds is the two places they attach - the write path and the recall path - so an item carries the correlation attribute, the policy decision and the provenance of the run that produced it without a caller passing any of them.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-01"
+            ],
+            "quote": "The platform applies each; a caller cannot decline them"
+          },
+          {
+            "text": "Proposed: expiry is enforced on read in every adapter, and a sweeper is an optimisation on top. An expired item that is still on disk must not be recallable between sweeps, which is why expiry_enforcement in the binding record must contain on-read. Research query: does X-cap-memory-004 or X-cap-memory-005, read in full rather than as a search snippet, say enforcement happens on read specifically (as opposed to only naming TTL/expiry as a policy), which would source the read-versus-sweep distinction rather than leave it proposed?",
+            "origin": "proposed",
+            "sources": [
+              "X-cap-memory-005"
+            ],
+            "quote": "Systems must actively update or expire memories rather than treat them as immutable logs"
+          },
+          {
+            "text": "Proposed pointer, see cap-memory's invariant that cross-principal isolation holds by construction, never by a filter someone remembered to add: the build consequence is that the scope predicate must be part of the query the store executes, never a filter applied to results afterwards, because post-filtering satisfies the same assertion on a small fixture and fails in production, where a limit is applied before the filter and the ranked store's timings then leak how much it declined to show.",
+            "origin": "proposed",
+            "sources": [
+              "X-cap-memory-002"
+            ],
+            "quote": "keeps cross-user contamination out of results by construction"
+          },
+          {
+            "text": "build-evidence-record owns the labelling rule (F-part-c-08). The consequence here is that 'both stores agree' is claimed until the conformance run has been executed and its output recorded; nothing in this skill has been run in this tree, so every status it carries is claimed.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-08"
+            ],
+            "quote": "Distinguish **claimed** from **measured** throughout"
+          }
+        ],
+        "not_exposed": []
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Put every store behind the binding record and keep embedding clients, index parameters, file paths and query strings inside the adapter directory. Core and seam code names remember, recall, supersede and forget and nothing else.",
+          "why": "Every external dependency sits behind a capability interface, and here the leak is specific: a scope key format or an index name in core code is what makes the second store impossible to add later without editing the thing that was supposed to be independent of it.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-02"
+          ],
+          "quote": "Every external dependency sits behind a capability interface"
+        },
+        {
+          "step": 2,
+          "action": "Build today's adapter against a hosted store that embeds queries and stored items: map remember, recall, supersede and forget onto its write, search, update and delete calls, map cap-memory's four scope dimensions onto its filter tags, and refuse a write with no staleness policy at the adapter boundary rather than defaulting one.",
+          "why": "The store's own model is to place the top-ranked memories into the model context, so the adapter's whole job is to constrain that: a scope filter on every search, an expiry comparison on every result, and a refusal where the contract requires a field the store treats as optional.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-memory-001",
+            "X-cap-memory-002"
+          ],
+          "quote": "place the top-ranked memories into the model context"
+        },
+        {
+          "step": 3,
+          "action": "Build the second adapter against a file-backed store - one document per scope, or a single-file relational database - where recall is an exact lookup on the scope key, the need string is used only to select among items at that key, and expiry is a timestamp comparison performed on read.",
+          "why": "cap-memory states the axis the pair must differ on: approximate ranking over an index versus exact lookup on a key. Building the second one is also how the ranking-shaped assumptions in the first get found, because anything that cannot be answered without a ranker fails here outright instead of degrading.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-memory-005",
+            "F-b1-04"
+          ],
+          "quote": "raw episodic data should always carry one"
+        },
+        {
+          "step": 4,
+          "action": "Migrate in this order: keep the current hand-off of a predecessor run's transcript in place and write memory items alongside it; then read from memory with the transcript still passed and diff what a run would have done; then stop passing the transcript and keep the diff running for a period; only then delete the hand-off path.",
+          "why": "Proposed migration. There is no memory store to migrate from - PASS.md's inventory of what is defined but not running is stated because an inventory that omits this is not an inventory, and memory is in none of its rows - so the thing being replaced is the habit of passing a whole transcript, and the diff is the only evidence that items carry what the transcript did. Research query: does a dispatch or ledger record in this repository already show the diff-then-cutover order for a similar hand-off removal, which would fix this order rather than leave it a proposal?",
+          "origin": "proposed",
+          "sources": [
+            "F-a6-01",
+            "X-cap-memory-003"
+          ],
+          "quote": "Stated because an inventory that omits this is not an inventory."
+        },
+        {
+          "step": 5,
+          "action": "Wire the cross-cutting concerns onto the write path and the recall path: set the correlation attribute explicitly at dispatch and copy it into the item's provenance, consult policy before an item crosses a scope wider than the writer's, charge the recall to the run's budget, and emit one telemetry span per operation naming the binding but not the store's address.",
+          "why": "agentic-stack states design rule 7 (F-b4-01, F-b1-08): the platform applies each; a caller cannot decline them. Attaching them at these two points is what makes an item's origin recoverable later, and it is why an adapter never receives a correlation id as an argument it could omit.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-01",
+            "F-b1-08"
+          ],
+          "quote": "The platform applies each; a caller cannot decline them"
+        },
+        {
+          "step": 6,
+          "action": "Have each adapter report at start-up what it actually reached - the endpoint or the file it opened, and the trust anchor it verified against - and compare that against the binding record's declares.reached, failing start-up on a mismatch.",
+          "why": "PASS.md records that configuration written in the documented place was silently discarded on this stack, so a binding file that says one store proves nothing about which store answered. The comparison is what turns a configured swap into an observed one.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "Configuration written in the documented place was silently discarded"
+        },
+        {
+          "step": 7,
+          "action": "Write one conformance run parameterised over the binding records: write the same fixture items through every configured store, recall them at the same scopes from a later process, and assert the per-store counters and zero divergence on which item ids are recallable.",
+          "why": "cap-memory's criterion is defined over the pair, not over one store, and build-adapter-pair states the rule it comes from. Parameterising the run is what stops the second adapter from getting a smaller test than the first, which is the usual way a pair turns out to be one store and a stub.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-04"
+          ],
+          "quote": "Every interface ships with at least two adapters"
+        },
+        {
+          "step": 8,
+          "action": "Record each conformance run as an evidence record naming the command, the fixture set, the code version and tree hash under test, and whether the tree was dirty, and leave the pair labelled claimed until a run exists.",
+          "why": "build-evidence-record owns the record's fields and the labelling; what this skill adds is which run gets recorded - the cross-store one, not a unit test of either store, because a passing unit test of the ranked store says nothing about whether the interface is swappable.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-04"
+          ],
+          "quote": "and whether the tree was dirty"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Verify the swap by what answered, not by what was configured: build-evidence-record carries the finding that values written to YAML validated, reviewed correctly, and had no runtime effect (F-a7-04), so a binding read from a file is evidence of an intention and not of a store.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+        },
+        {
+          "text": "Proposed: the memory conformance report records declares.reached from each adapter's own start-up line, so a run against two bindings that both reached the same store is caught rather than counted as a pair. Research query: unresearched; no prior-art search has been run for how conformance harnesses establish that two bindings reached distinct backing stores rather than the same one under two names.",
+          "origin": "proposed",
+          "sources": [
+            "F-a7-04"
+          ]
+        },
+        {
+          "text": "Proposed: run the expiry fixture with the sweeper disabled. A store that only passes expiry checks while a background job is running has not enforced expiry on read, and the binding record's expiry_enforcement claim is then false in the only case that matters. Research query: does a definition-of-done record for another expiry-bearing capability in this repository already run its breakage with the background sweep disabled, which would source this test discipline rather than leave it a proposed practice?",
+          "origin": "proposed",
+          "sources": [
+            "X-cap-memory-005"
+          ],
+          "quote": "A time-to-live (TTL) is the cheapest forgetting mechanism"
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-embedding-ranked-memory-store",
+          "role": "today",
+          "maps_to": "Proposed adapter and a proposed entity id, carried forward from cap-memory because PASS.md has no memory row and kb/entities.jsonl therefore has no adapter entity for this capability. Built here as: a client for a hosted store that embeds queries and stored memories, a scope filter compiled into every search, an expiry comparison applied to every candidate before it is returned, and a write path that refuses an item with no staleness policy.",
+          "cannot": "Proposed: cannot serve a recall while the embedding endpoint is unreachable, cannot return an item by key without ranking it against the query, and cannot be inspected by a person reading a file - which is why the adapter also logs the item ids it returned and the scope it applied.",
+          "swap_procedure": "Change the binding record only. The conformance run in the definition of done writes and recalls the same fixtures through both bindings and requires identical recallable item ids, identical refusal types and zero cross-scope hits.",
+          "status": "claimed",
+          "sources": [
+            "X-cap-memory-001",
+            "X-cap-memory-002"
+          ],
+          "quote": "embed the query, find the closest stored embeddings"
+        },
+        {
+          "entity": "E-swap-candidate-scope-keyed-file-store",
+          "role": "second",
+          "maps_to": "Proposed adapter and a proposed entity id: a file-backed store, one document per scope key or a single-file relational database, where recall is an exact lookup, expiry is a timestamp comparison on read, and supersession appends a replacement and marks the previous item superseded_by. It differs in execution model, not in product class: no network call, no index, no ranker, and the whole store can be read by a person.",
+          "cannot": "Proposed: cannot answer a need expressed only in words, cannot serve concurrent writers without a lock, and cannot grow past one host. Those limits are the point - an operation that cannot be implemented here is an operation cap-memory drew around the ranked store, which is exactly what the pair exists to detect.",
+          "swap_procedure": "Run the same conformance command with the second binding record and diff the two reports; assert adapters_run >= 2, result_divergence == 0, and that each adapter's start-up line reported reaching a different store.",
+          "status": "claimed",
+          "sources": [
+            "X-cap-memory-002",
+            "F-b1-04"
+          ],
+          "quote": "which are tagging dimensions, not nested layers"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/memory/test.sh && python3 harness/memory/conformance.py --adapter dryrun --adapter second",
+        "expected": "Measured by tools/measure.py at ba83b69: exit 0; last lines: adapters_run=2 stores_reached_distinct=2 result_divergence=0 | conformance PASSED: 20/20 cases, 2 binding(s)",
+        "breakage": "Remove the on-read expiry filter from recall() in harness/memory/interface.py (the line calling _expired), run the criterion (the conformance run reports expired_served above zero on both adapters and exits 1), then git checkout harness/memory/interface.py.",
+        "expected_failure": "Measured by tools/measure.py at ba83b69: exit 1; last lines:   ok   cross_scope_hits=0 still holds: the scope check and the expiry check fail independently | passed 13, failed 10",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04",
+          "X-cap-memory-005"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "ba83b69",
+          "clean_exit": 0,
+          "clean_output": "y-denied, not returned empty: policy-denied 403, distinct from an empty result\n  ok   supersede replaces recallability without editing the old item: old item no longer recallable, new item is\n  ok   supersede naming an unknown item is refused item-not-found: item-not-found 404\n  adapter=file-backed store, one document per exact scope key (second adapter) cases=10 passed=10 recalled_across_runs=2 cross_scope_hits=0 expired_served=0 items_without_provenance=0 refusals_typed=1 product_hits=0\nadapters_run=2 stores_reached_distinct=2 result_divergence=0\nconformance PASSED: 20/20 cases, 2 binding(s)",
+          "breakage_exit": 1,
+          "breakage_output": "e axes (expected 0, got 1)\n  FAIL AssertionError: both bindings must pass the same cases\n3. no product name in the interface, the caller or the conformance run\n  ok   product scan over the shipped tree exits 0 (0)\n  ok   0 hits outside adapters/\n4. deliberate breakage: on-read expiry moved out of the shared recall path\n  FAIL sed did not find the line to break\n  ok   conformance exits non-zero under the breakage\n  ok   expired_served=1 on both bindings: the stale item was served\n  ok   cross_scope_hits=0 still holds: the scope check and the expiry check fail independently\n\npassed 13, failed 10"
+        },
+        "expected_design": "What the run proves: Two checks, both from the repository root. (1) Cross-store equivalence, proposed tool: `python3 tools/conformance_memory.py --binding config/memory/today.json --binding config/memory/scope-keyed.json --fixtures tests/fixtures/memory --report out/memory-conformance.json`, over three writes in run A - one scoped to `user:corey`, one to `agent:release-reviewer`, one with `expires_at` already past - and four recalls in a later process, asserting `adapters_run >= 2`, `recalled_across_runs == 2` per binding, `cross_scope_hits == 0`, `expired_served == 0` with the sweeper disabled, `items_without_provenance == 0`, `refusals_typed == refusals`, `stores_reached_distinct == 2` from each adapter's start-up line, and `result_divergence == 0`. (2) Containment: `grep -rIlE '(embedding|similarity|scope_key|\\.memory\\.jsonl)' src/core/ src/seam/` returns no files, so retrieval mechanics appear only inside the adapter directories. Gap: no harness covers this capability yet (STATUS row 60). | (1) exit 0 with one line per binding reading `binding=<role> recalled_across_runs=2 cross_scope_hits=0 expired_served=0 items_without_provenance=0 refusals_typed=1` followed by `adapters_run=2 stores_reached_distinct=2 result_divergence=0`. (2) grep exits 1 printing nothing.",
+        "expected_failure_design": "Check (1) exits non-zero with `expired_served=1` on both bindings, naming the past-dated fixture item as recalled, while `cross_scope_hits=0` still holds. Check (2) exits 0 and names the core file. The two fail for different reasons, which is why both are kept: the leaked format alone leaves check (1) fully green, and the sweeper-only expiry alone leaves check (2) green. Claimed: neither adapter, the fixture set nor the tool exists in this tree, so both checks start red by construction and no run has been performed."
+      },
+      "composes_with": {
+        "builds_on": [
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record",
+          "cap-memory"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Does an item written at organisation scope need the integrity mechanism the task store already has - a chain where each record names the previous head - or is provenance on each item enough?",
+          "evidence": "Whether anything downstream acts on a memory item in a way that must be defensible after the fact. If a recalled item can change a spend or a deployment, an item that can be edited between runs without detection is a hole; if memory only ever informs a draft, provenance is enough. cap-state-persistence owns the chained store and would be the place to put it.",
+          "default": "Proposed: provenance only, and supersession rather than editing, until a recalled item is shown to drive an irreversible action. The chain costs a single-writer constraint that the two stores in this pair do not otherwise need.",
+          "sources": [
+            "F-a5-03"
+          ],
+          "quote": "each run's closing digest is the next run's opening digest"
+        },
+        {
+          "question": "Which store answers an organisation-scoped recall when the two adapters disagree about who may read it - the file store has no tenancy model of its own and the ranked store does?",
+          "evidence": "A conformance case that writes one item at org scope and recalls it as two principals in the same organisation and one outside it, run against both bindings. If the file store can only satisfy it by adding a check the ranked store does not need, the tenancy check belongs above both adapters rather than inside either.",
+          "default": "Proposed: the scope check is applied above the adapters, in the capability cap-memory defines, and each adapter is required only to execute the selector it is handed. That keeps the file store implementable and makes a tenancy bug one bug rather than two.",
+          "sources": [
+            "X-end-to-end-002"
+          ],
+          "quote": "each memory write is tagged with one or more identity scopes"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session claude/auto-skill-creation cap-memory author 2026-09-03"
+      }
+    }
   }
 }

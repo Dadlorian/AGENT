@@ -79,6 +79,9 @@ def render(sk: dict) -> str:
     L += ["## Definition of done", ""] + table(["Field", "Value"], [["Criterion", d["criterion"]], ["Expected", d["expected"]], ["Deliberate breakage", d["breakage"]],
                                                                     ["Expected failure", d["expected_failure"]], ["Status", d["status"]], ["Evidence", ev(d)]])
     cw = sk["composes_with"]
+    if sk.get("folded"):
+        L += ["## Folded skills", "", "Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.", ""]
+        L += table(["Was", "Purpose", "Read"], [[f"`{n}`", f["purpose"]["text"], f"`references/{n}.md`"] for n, f in sk["folded"].items()])
     L += ["## Composes with", "", "Builds on: " + (", ".join(f"`{n}`" for n in cw["builds_on"]) or "-"), "", "Used by: " + (", ".join(f"`{n}`" for n in cw["used_by"]) or "-"), ""]
     if sk.get("open_questions"):
         L += ["## Open questions", ""] + table(["Question", "Deciding evidence", "Default until then", "Evidence"],
@@ -126,6 +129,14 @@ def main(argv: list[str]) -> int:
         sk = json.loads((d / "skill.json").read_text())
         out = render(sk)
         md = d / "SKILL.md"
+        for fname, fsk in (sk.get("folded") or {}).items():
+            ref = d / "references" / f"{fname}.md"
+            ftxt = render(fsk).replace(f"# {fsk['name']}\n", f"# {fsk['name']} (folded into `{sk['name']}`)\n", 1)
+            if check:
+                if not ref.is_file() or ref.read_text() != ftxt:
+                    print(f"stale: {ref}"); rc = 1
+            else:
+                ref.parent.mkdir(exist_ok=True); ref.write_text(ftxt)
         if check:
             if not md.is_file() or md.read_text() != out:
                 print(f"STALE {d.name}/SKILL.md (run tools/render_skill.py {d})")

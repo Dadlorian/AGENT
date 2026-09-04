@@ -1,0 +1,196 @@
+---
+name: "xc-correlation-implement"
+description: "How to build the correlation guarantee on the stack that actually runs: what stamps the run and root dispatch identifiers today, why the header currently injected into the agent runtime is the counter-example rather than the mechanism, the migration in three steps that can each ship alone, the second adapter that moves enforcement out of the emitter's process, and the definition of done that fails when a sub-agent stops re-stamping. Load it when wiring the identifiers into a real dispatch path, when adding a new emission point or a new boundary to an existing deployment, when deciding where the omission count is taken, when planning the move off trace-header propagation, when a review asks which of the two implementations a check has actually run against, or when an audit reports green and you need to know whether anything was collected."
+---
+
+# xc-correlation-implement (folded into `cap-telemetry`)
+
+Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Source IDs resolve with `python3 tools/kb.py show <id>`.
+
+## Purpose
+
+| Statement | Origin | Evidence |
+|---|---|---|
+| Turn the correlation guarantee stated in xc-correlation into a build on what runs here: today a trace header is injected at dispatch and the agent runtime does not honour it, so this facet is a migration off an inherited context onto a stamped record, plus the second implementation that proves the check is not tuned to one backend. | sourced | `F-a7-02`, `F-b3-10`, `E-finding-a7-1` "We inject `TRACEPARENT`" |
+
+## Entities
+
+| Entity |
+|---|
+| `E-finding-a7-1` |
+| `E-concern-telemetry` |
+| `E-adapter-langfuse-opentelemetry` |
+| `E-swap-candidate-any-otlp-collector` |
+| `E-service-observe-langfuse-web-1` |
+| `E-service-observe-langfuse-worker-1` |
+| `E-seam-dispatch` |
+
+## Contract
+
+### Shapes (JSON Schema 2020-12)
+
+**CorrelationConformanceReport (proposed): the machine-readable output the definition of done asserts on, one object per audit run** (proposed; sources: `F-part-c-04`, `F-b4-06`)
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:correlation:conformance-report:0.1",
+  "title": "CorrelationConformanceReport",
+  "type": "object",
+  "required": [
+    "adapter",
+    "selected_by",
+    "entries_run",
+    "per_entry"
+  ],
+  "properties": {
+    "adapter": {
+      "type": "string",
+      "description": "Which implementation produced this report. A label only; nothing in the audit branches on it."
+    },
+    "selected_by": {
+      "const": "configuration"
+    },
+    "entries_run": {
+      "type": "integer",
+      "minimum": 3
+    },
+    "per_entry": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "entry_kind",
+          "levels_covered",
+          "run_id_groups",
+          "per_signal_kind"
+        ],
+        "properties": {
+          "entry_kind": {
+            "type": "string"
+          },
+          "levels_covered": {
+            "type": "integer"
+          },
+          "run_id_groups": {
+            "type": "integer"
+          },
+          "distinct_trace_ids": {
+            "type": "integer",
+            "description": "Reported and never asserted on."
+          },
+          "per_signal_kind": {
+            "type": "object",
+            "description": "One entry each for span, log_record and problem_object; each carries signals_checked, missing_run_id and missing_root_dispatch_id.",
+            "additionalProperties": {
+              "type": "object",
+              "required": [
+                "signals_checked",
+                "missing_run_id",
+                "missing_root_dispatch_id"
+              ],
+              "properties": {
+                "signals_checked": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "missing_run_id": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "missing_root_dispatch_id": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "evidence_record_ref": {
+      "type": "string",
+      "description": "The evidence record this run was written into, per build-evidence-record: tool digest, commit, tree hash, dirty flag, and the claimed-or-measured label."
+    }
+  }
+}
+```
+
+### Invariants
+
+| Invariant | Origin | Evidence |
+|---|---|---|
+| What runs today is the counter-example, not the baseline to extend. A trace header is injected at dispatch and the agent runtime ignores it and mints its own root trace, so this build removes a dependency on an inherited context rather than adding a feature on top of one. | sourced | `F-a7-02`, `E-finding-a7-1` "mints its own root trace" |
+| The stamp is written by the platform at the dispatch seam and read by adapters; no adapter derives it. agentic-stack states design rule 1 (F-b1-02); the consequence here is that an implementation which computes a run identifier inside a backend integration has moved the guarantee into the thing the guarantee is meant to survive. | sourced | `F-b1-02`, `E-seam-dispatch` "The core imports interfaces, never implementations" |
+| The audit runs unchanged against both implementations, selected by configuration with no code edit between runs, and a merged report showing fewer than two is a failed run rather than a partial one. build-adapter-pair owns the rule and the axis test (F-b1-04); what this facet adds is that the two differ in where enforcement executes, not in which vendor supplies it. | sourced | `F-b1-04` "Swappability is a tested property, not an intention." |
+| The three signal kinds do not start in the same state and the report says so per kind rather than in one total: spans are emitted by the stack that runs, correlated log records are not, and typed failure bodies do not exist at all because the standard for them has been named and not adopted, so two of the three counts start red by construction. | sourced | `F-a6-06`, `F-b3-13` "RFC 9457 problem details" |
+| Proposed: no value in the report is ever filled in by reading a parent span. An audit that backfills a missing identifier from the trace tree converts the exact failure this guarantee exists to detect into a passing row, and the audit is then the defect rather than the emitter. | proposed | `F-a7-02`, `F-part-c-04` |
+
+### Deliberately not exposed
+
+| Item | Origin | Evidence |
+|---|---|---|
+| Proposed: the choice of implementation is not visible to anything that emits. No emitter, no core component and no workflow author can tell which of the two is receiving, because a caller that could tell them apart would encode the difference and the swap would stop being free. | proposed | `F-b1-05` |
+| agentic-stack states design rule 7 (F-b1-08); xc-correlation applies it to why a caller cannot decline the guarantee. The consequence for the build is that no configuration key disables the stamp or the audit for a deployment, an environment or a fast path: the off switch must not exist in the configuration surface either, or the zero-omission assertion becomes a statement about how one environment was configured. | sourced | `F-b1-08` "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller" |
+
+## Instructions
+
+| Step | Action | Why | Origin | Evidence |
+|---|---|---|---|---|
+| 1 | Keep injecting the trace header and stop asserting on it. Add the correlation record as a required field of the dispatch request in the same change, so the two carriers coexist and only one of them is load-bearing. | The header is already injected and already ignored downstream, so removing it first buys nothing and breaks whatever incidentally reads it; making the explicit record required is what changes the outcome. Keeping both also gives the one-week both-carriers measurement in open question 8 something to measure. | sourced | `F-a7-02` "We inject `TRACEPARENT`" |
+| 2 | Put the stamp in the dispatch seam, not in the emitters: one unit of work executes and returns one result, and the record is bound to the unit before it starts and derived for each child unit it dispatches. | The seam is the one place every unit of work passes through whichever entry it came from, so stamping there is what makes the guarantee independent of how many emission sites exist, and a new emitter inherits the property instead of having to remember it. | sourced | `F-b5-02`, `E-seam-dispatch` "one unit of agent work executes and returns one result" |
+| 3 | Migrate in three steps that can each ship alone: first stamp the record and emit it as resource attributes in-process; second run the audit read-only and record the per-kind omission counts as claimed; third turn those counts into a gate. Do not merge steps two and three. | Proposed. A gate switched on over a population nobody has counted turns a migration into an outage on the first run, and the read-only pass is also the only way to learn which emission sites exist rather than which ones were remembered. | proposed | `F-part-c-04` |
+| 4 | Add the second implementation as a pipeline stage between the emitters and the stores, with the conformance check as a processor that counts and routes non-conformant records rather than as a change to any emitter. | This is composability doing the work the target asks of it: enhancing one aspect without touching the rest. Enforcement moves into a stage, no emitter is edited to get it, and the check now runs in a process the emitting runtime does not control, which is the arrangement the guarantee has to survive. | sourced | `T-t2-02`, `F-b1-04` "Composability allows enhancing particular aspects of any element without touching the rest." |
+| 5 | Wire the record as a declared member of the three things a run leaves behind: the failure body, the ledger record for each recorded action, and the attribution beside the actor on every delegated action. Add it to each shape rather than to a logging helper. | Proposed. Every action already names an actor including delegated agent actors, so the join a reader wants is actor plus run, and a correlation value that lives only in a logging helper is absent from exactly the records that outlive the process. | proposed | `F-b4-03`, `F-b4-06` |
+| 6 | Write every audit run into an evidence record before reading its numbers: the tool digest, the commit, the tree hash under test, whether the tree was dirty, and the claimed-or-measured label. Never label a run from a dirty tree measured. | build-evidence-record owns the record's fields and agentic-stack owns the labelling rule (F-part-c-08); the consequence here is that the omission counts are the kind of number that gets quoted later, so an unlabelled count becomes a measurement the moment someone repeats it. | sourced | `F-part-c-08` "Distinguish **claimed** from **measured** throughout" |
+| 7 | Run the identical audit against both implementations with the choice made in configuration only, and treat any code edit needed between the two runs as the finding rather than as setup. | build-adapter-pair states the discipline and the axis test; what this step adds is the failure mode specific to this guarantee, which is a check that reads the hosted backend's own query surface and therefore cannot run at all against a pipeline that has no query surface. | sourced | `F-part-c-05`, `F-b1-04` "chosen to prove the interface is not shaped around its current implementation" |
+| 8 | Proposed: open references/migration-and-wiring.md for the per-adapter conformance subset, the cross-cutting wiring table, and the boundary-by-boundary migration checklist. This skill body is enough to plan and judge the build without it. | Proposed, progressive disclosure. The subset and the checklist change every time a boundary or an adapter is added, and material on that cadence does not belong in the body that a reviewer reads once. | proposed | - |
+
+## Best practices
+
+| Practice | Origin | Evidence |
+|---|---|---|
+| Count non-conformant records in the pipeline stage; never drop them. A stage that silently discards what it cannot verify produces a clean report from a broken system, which is the same shape of green as a gate whose behavioural stages all skipped - agentic-stack states it as a best practice and build-evidence-record and build-definition-of-done both build on it (F-a7-03). | sourced | `F-a7-03` "Those establish well-formedness, not correctness" |
+| Verify that the stamp took effect at runtime rather than that it was configured: configuration written in the documented place was silently discarded here before, so read a resource attribute back off the wire in the audit instead of asserting that a file or an environment variable was set. | sourced | `F-a7-04` "Configuration written in the documented place was silently discarded." |
+| Proposed: when an omission is found, fix the boundary that failed to stamp and re-run, rather than teaching the audit to tolerate that emission site. A tolerated site is a permanent hole with a comment on it, and the count is the only thing standing between the guarantee and a convention. | proposed | `F-b1-08` |
+
+## Adapters
+
+| Adapter | Role | Maps to | Cannot | Swap procedure | Status | Evidence |
+|---|---|---|---|---|---|---|
+| `E-adapter-langfuse-opentelemetry` | today | Langfuse + OpenTelemetry is the recorded adapter for this capability, and Part A runs it as a trace UI and ingestion API with an async worker behind it. For this guarantee its role is in-process: an SDK linked into the emitting process carries the correlation record as resource attributes, and the audit reads the counts back through the hosted service's own query surface. Today the platform does not stamp at all - it injects TRACEPARENT, which goose ignores while minting its own root trace - so this adapter's correlation role starts unimplemented rather than partially working. | Cannot see a record emitted by a process it is not linked into, and cannot enforce anything: an SDK inside the emitter can only stamp what that emitter agreed to stamp. Its execution model is a library in the emitting process reporting to a hosted service. | Point the exporter at the pipeline by configuration and change no emitter code; xc-correlation owns the guarantee and cap-telemetry owns the capability's roles, and what this row adds is that the correlation audit must read from whichever surface the selected adapter offers without the audit itself changing. | claimed | `F-b3-10`, `F-a1-05`, `F-a7-02` "We inject `TRACEPARENT`; goose ignores it and mints its own root trace." |
+| `E-swap-candidate-any-otlp-collector` | second | Any OTLP collector run as a separate process between the emitters and the stores: receivers accept the payload, a processor verifies that every record carries both identifiers and routes the ones that do not to a counted dead-letter, an exporter writes rows to a columnar store, and the audit reads those rows with a query anyone can write. | Cannot mint an identifier it was never sent, and must never try: it verifies and counts, it does not invent. It has no trace UI and no semantic model of a model call, so anything that exists only in the hosted service's object model is a field this guarantee must not depend on. The axis is where enforcement executes - a library inside the emitting process against a separate process the emitting runtime does not control - which is a different execution model rather than a different product of the same shape, and it is the axis that matters here because the measured failure happened at exactly that boundary. | Select by configuration only, with no code edit between runs, and require the merged report to show adapters_run == 2 and selected_by == "configuration" with identical per-entry assertions under both. build-adapter-pair owns the rule that the second exists to prove the first is not load-bearing (F-b1-04); what this row adds is the axis and the dead-letter count the pipeline adapter must publish. | claimed | `F-b3-10`, `F-b1-04`, `E-swap-candidate-any-otlp-collector` "any OTLP collector" |
+
+## Definition of done
+
+| Field | Value |
+|---|---|
+| Criterion | bash harness/observability/test.sh |
+| Expected | Measured by tools/measure.py at fb96f80: exit 0; last lines:   ok   the unit shape has nowhere to put a parent span \| passed 37, failed 0 |
+| Deliberate breakage | sed -i '71s#.*#        if level > 0:#' harness/observability/call.py |
+| Expected failure | Measured by tools/measure.py at fb96f80: exit 1; last lines:   ok   the unit shape has nowhere to put a parent span \| passed 26, failed 11 |
+| Status | measured |
+| Evidence | `F-a7-02`, `F-a6-06` "A depth-3 task tree produces three unrelated root traces." |
+
+## Composes with
+
+Builds on: `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`, `xc-correlation`
+
+Used by: -
+
+## Open questions
+
+| Question | Deciding evidence | Default until then | Evidence |
+|---|---|---|---|
+| When both implementations are deployed, which one enforces: the in-process stamp, the pipeline processor, or both? | Run the read-only audit under both for one week over the same traffic and compare the per-kind omission counts. If the pipeline sees records the in-process surface never showed, enforcement belongs where the wider view is; if the counts match, the cheaper one wins. | Stamp in-process and verify in the pipeline, with the pipeline forbidden to invent a missing value. build-adapter-pair states the two-adapter rule this question sits inside (F-b1-04); what is open is only which of the two enforces. Reversible by promoting the processor to the only enforcement point, which costs one configuration change and no emitter change. | `F-b1-04` "Every interface ships with at least two adapters" |
+| Can this definition of done be run at all before typed failure bodies exist, given the problem-object signal kind cannot reach a non-zero population today? | Whether any code path in the platform returns a structured failure yet; the recorded state is that typed errors are absent and the standard to adopt has been named but not adopted. | Run it and let it stay red for that kind rather than removing the kind from the report, and label the whole run claimed. A signal kind quietly dropped because nothing emits it yet is how a guarantee becomes a claim about the kinds that were easy. | `F-a6-06`, `F-b3-13` "RFC 9457 problem details" |
+
+## Provenance
+
+| Field | Value |
+|---|---|
+| PASS.md sha256 | cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96 |
+| kb facts head | 9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e |
+| kb entities head | 747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604 |
+| kb edges head | a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6 |
+| Author | session xc-correlation 2831cb4f, 2026-09-03 |

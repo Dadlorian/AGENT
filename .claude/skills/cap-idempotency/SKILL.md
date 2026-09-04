@@ -248,18 +248,28 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | bash harness/idempotency/test.sh |
-| Expected | docs/decomposition.md section 3.2 row P15, made precise and run over the adapter pair above: `python3 tools/conformance/idempotency_race.py --adapter today --adapter second --entry examples/end-to-end/entries/human.json --concurrency 100 --report out/idem.json` (proposed tool, built with the first enforcing adapter), the adapter selected by configuration with no code edit between runs. Per adapter it fires the same externally-triggered request 100 times concurrently under one key and asserts `executions == 1`, `duplicates == 99`, and `overlapped >= 1`, where `overlapped` counts duplicates answered while the first execution had not yet completed; across adapters it asserts `adapters_run >= 2`. exit 0 with, per adapter, `executions == 1`, `duplicates == 99`, `conflicts == 0`, `overlapped >= 1`, followed by `adapters_run=2` Until that proposed tool exists, `bash harness/idempotency/test.sh` (owned by cap-idempotency-implement) is the running gate: every check line reads ok and the script exits 0. |
-| Deliberate breakage | Remove the lease acquisition from one of the two adapters while keeping the key on the wire, which is the state PASS.md B3 records today, and re-run the same command unchanged. |
-| Expected failure | exit 1 for that adapter with `executions > 1` and `overlapped == 0`, because with no lease every concurrent copy wins the check, while the other adapter still passes and `adapters_run` still reports 2; a run that fails both, or neither, has not tested the swap. Claimed: there is no lease today and the race tool is not written, so neither run has been performed here. The sequential half of this property has been measured and is recorded in cap-idempotency-use; the concurrent half, which is the half a key without a lease fails, has not. |
-| Status | claimed |
-| Evidence | `F-b3-16`, `F-b4-08` "key on the wire, no lease" |
+| Criterion | bash harness/idempotency/test.sh && python3 harness/idempotency/conformance.py --adapter dryrun --adapter second |
+| Expected | Measured by tools/measure.py at 16d354c: exit 0; last lines:   adapter=conditional-write-lease cases=8 passed=8 supports_in_flight=True overlapped=19 \| conformance PASSED: 16/16 cases, 2 binding(s) |
+| Deliberate breakage | In harness/idempotency/adapters/second.py, remove the `with self._lock:` guard around the conditional write in claim() (replacing it with an unlocked read that widens the race window) and change nothing else (the harness README's breakage); restore with git checkout -- harness/idempotency/adapters/second.py. |
+| Expected failure | Measured by tools/measure.py at 16d354c: exit 1; last lines:   File "<stdin>", line 9, in <module> \| AssertionError: anchor block not found; second.py changed shape |
+| Status | measured |
+| Evidence | `F-b3-16`, `F-b1-04` "key on the wire, no lease" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-idempotency-implement` | Turn the contract in cap-idempotency into something that runs here: one claim call, two adapters behind it whose execution models differ, and every externally-triggered entry and recorded step boundary going through it. | `references/cap-idempotency-implement.md` |
+| `xc-idempotency-lease` | Fix the idempotency guarantee as a placement: one keyed lease, derived by the platform and acquired before execution begins at every way in, carrying an owner and an expiry, so a replay attaches to the one execution instead of starting a second. | `references/xc-idempotency-lease.md` |
+| `xc-idempotency-lease-implement` | Turn the placement xc-idempotency-lease fixes into something that runs here: two lease providers behind one acquisition point, each publishing its key-derivation rule, migrated in without a window in which a repeat can execute twice. | `references/xc-idempotency-lease-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors`
+Builds on: `agentic-stack`, `build-evidence`, `build-skill-authoring`, `cap-errors`, `cap-state-persistence`
 
-Used by: `cap-idempotency-implement`, `xc-compensation`, `xc-idempotency-lease`
+Used by: `cap-durable-execution`, `cap-human-interaction`, `seam-dispatch`
 
 ## Open questions
 

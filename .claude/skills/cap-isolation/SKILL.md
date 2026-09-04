@@ -232,18 +232,26 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | bash harness/containment/test.sh |
-| Expected | Proposed tool, built with the first implementation of this interface: `python3 tools/conformance_isolation.py --adapter today --adapter second --fixture fixtures/unit-egress-probe --report out/isolation-conformance.json`. It runs one fixture unit under both adapters from the same declaration (profile `small`, `egress: "none"`) and asserts: exit codes equal across adapters, output digests equal, `jail_mode == "0700"` with `owner_in_host_passwd == false`, a connect attempt from inside to an address outside the declared allowlist fails, `egress_attempts_blocked == egress_attempts_made`, `egress_attempts_made > 0`, and `adapters_run >= 2`. exit 0 and one line per adapter of the form `adapter=<entity> exit=0 digest=<equal across adapters> jail_mode=0700 owner_in_host_passwd=false egress_attempts_made=<above 0> egress_attempts_blocked=<equal to made>`, followed by `adapters_run=2`. Until that proposed tool exists, `bash harness/containment/test.sh` (owned by cap-isolation-implement) is the running gate: every check line reads ok and the script exits 0. |
-| Deliberate breakage | Add `0.0.0.0/0` to the default `egress_allowlist` and change nothing else, then re-run both adapters. |
-| Expected failure | The probe's connect attempts now succeed, so `egress_attempts_blocked` drops below `egress_attempts_made` under both adapters, the equality assertion fails for each, and the run exits non-zero naming both adapters. The jail and digest assertions still pass, which is the point: a green run on those alone would have said nothing about egress. |
-| Status | claimed |
-| Evidence | `F-part-c-04`, `F-a3-04`, `F-a3-06` "Egress is a flag, default off" |
+| Criterion | bash harness/containment/test.sh && python3 harness/containment/conformance.py --adapter dryrun --adapter second |
+| Expected | Measured by tools/measure.py at 16d354c: exit 0; last lines: adapters_run=2 \| conformance: pass  report=/home/user/AGENT/harness/containment/out/containment-conformance.json |
+| Deliberate breakage | Add 0.0.0.0/0 to harness/containment/binding.json's default_declaration egress_allowlist (egress: allowlist) and change nothing else (the harness README's breakage A); restore with git checkout -- harness/containment/binding.json. |
+| Expected failure | Measured by tools/measure.py at 16d354c: exit 1; last lines:   ok   typed as isolation-unavailable (503) \| passed 19, failed 6 |
+| Status | measured |
+| Evidence | `F-part-c-04`, `F-a3-06` "owned by a per-VM uid with no passwd entry" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-isolation-implement` | Turn the contract in cap-isolation into something that runs here: two containment technologies behind one declaration, the unit shapes that exist today brought in front of it as profiles rather than as separate interfaces, and every ceiling attached around the unit instead of inside it. | `references/cap-isolation-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors`
+Builds on: `agentic-stack`, `build-evidence`, `build-skill-authoring`, `cap-errors`
 
-Used by: `cap-isolation-implement`, `compose-agent`, `seam-dispatch`, `xc-tenancy`
+Used by: `compose-workflow`, `seam-dispatch`, `xc-guarantees`
 
 ## Open questions
 

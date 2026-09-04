@@ -222,18 +222,28 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | python3 tools/conformance/telemetry_correlate.py --adapter llm-trace-ui --adapter otlp-collector-columnar --depth 3 --report out/tel.json |
-| Expected | docs/decomposition.md section 3.2 row P9, made precise and run over the adapter pair above: that command (proposed tool), the adapter selected by configuration with no code edit between runs. Per adapter it executes a depth-3 task tree, then queries that backend for every span carrying resource attribute `run.id == R` and asserts that the returned spans cover all three levels, that grouping by `run.id` yields exactly one group, that `distinct_trace_ids >= 1` is permitted rather than asserted equal to 1, and that `mapping_version` is non-empty on the run; across adapters it asserts `adapters_run >= 2`. exit 0 with, per adapter, `levels_covered == 3`, `run_id_groups == 1`, `mapping_version` present, and `distinct_trace_ids` reported without being constrained, followed by `adapters_run=2` |
-| Deliberate breakage | Remove the `run.id` resource attribute injection at dispatch, leaving both adapters and the command untouched. |
-| Expected failure | exit 1 under both adapters with `levels_covered == 1` and `run_id_groups == 0`: the query returns only the top level and correlation collapses into three unrelated trees, reproducing PASS.md A7 finding 1. A run that still exits 0 means the query fell back to trace parentage, which is the failure this capability exists to avoid. Claimed: neither adapter is wired, the conformance tool does not exist and no span is emitted anywhere today, so neither run has been performed here. The measured starting state is recorded in cap-telemetry-use, where the reference corpus carries the correlation attributes on every record and emits zero spans. |
-| Status | claimed |
-| Evidence | `F-b4-06`, `F-a7-02` "A depth-3 task tree produces three unrelated root traces." |
+| Criterion | cd harness/observability && bash test.sh && python3 conformance.py --adapter dryrun --report out/tel-a.json && ADAPTER=second python3 conformance.py --report out/tel-b.json && python3 conformance.py --merge out/tel-a.json out/tel-b.json --report out/merged.json |
+| Expected | Measured by tools/measure.py at 372cdc1: exit 0; last lines: } \| conformance: PASS adapter=['dryrun', 'second'] |
+| Deliberate breakage | Append a product-name comment (`# breakage: langfuse`) to the end of harness/observability/call.py, outside adapters/. Restored with `git checkout -- harness/observability/call.py`. |
+| Expected failure | Measured by tools/measure.py at 372cdc1: exit 1; last lines:   ok   the unit shape has nowhere to put a parent span \| passed 36, failed 1 |
+| Status | measured |
+| Evidence | `F-b4-06`, `F-b1-04` "Correlation rides on explicit attributes, not trace parentage" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-telemetry-implement` | Turn the contract in cap-telemetry into something that runs here: one injection point at dispatch, an emitter bound only to the pinned transport, a mapping adapter that can be revised on its own, and two backends behind the same interface whose execution models differ. | `references/cap-telemetry-implement.md` |
+| `xc-correlation` | Make it a checked property that every span, log record and problem object emitted during a run carries the identifiers the platform stamped at entry, so a run is reassembled by grouping on an explicit field rather than by walking a parent chain that has been measured not to reach across an agent boundary. | `references/xc-correlation.md` |
+| `xc-correlation-implement` | Turn the correlation guarantee stated in xc-correlation into a build on what runs here: today a trace header is injected at dispatch and the agent runtime does not honour it, so this facet is a migration off an inherited context onto a stamped record, plus the second implementation that proves the check is not tuned to one backend. | `references/xc-correlation-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors`
+Builds on: `agentic-stack`, `build-evidence`, `build-skill-authoring`, `cap-errors`
 
-Used by: `cap-evaluation`, `cap-telemetry-implement`, `xc-correlation`
+Used by: `cap-evaluation`, `seam-dispatch`, `xc-guarantees`
 
 ## Open questions
 

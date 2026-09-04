@@ -269,7 +269,7 @@ def check_structure(sk: dict, name: str, errs: list[str], warns: list[str]):
     for k in req:
         if k not in sk:
             errs.append(f"{name}: missing required field {k}")
-    allowed = set(req) | {"wave", "entities", "contract", "best_practices", "adapters", "open_questions"}
+    allowed = set(req) | {"wave", "entities", "contract", "best_practices", "adapters", "open_questions", "folded"}
     for k in sk:
         if k not in allowed:
             errs.append(f"{name}: unknown field {k}")

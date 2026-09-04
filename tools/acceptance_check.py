@@ -73,7 +73,8 @@ def derive() -> dict:
             continue
         element = cells[0].strip("*")
         key = element.lower().replace(" ", "-")
-        ideal, impl = skill(f"cap-{key}"), skill(f"cap-{key}-implement")
+        ideal = skill(f"cap-{key}")
+        impl = skill(f"cap-{key}-implement") or ideal   # since STATUS row 71 the implement facet is folded into the ideal
         std = next((s for s in standards if fid in (s.get("sources") or [])), None)
         harness = next((h for c, h in by_cap.items() if c and element.lower() in c), None)
         o = origins(ideal, {}) if ideal else {}
@@ -99,7 +100,7 @@ def derive() -> dict:
             "element": element, "key": key, "source": fid,
             "standard": cells[1], "standard_id": std["id"] if std else None,
             "today": cells[2], "swap_options": cells[3],
-            "skills": [n for n, s in ((f"cap-{key}", ideal), (f"cap-{key}-implement", impl)) if s],
+            "skills": sorted({n for n, s in ((f"cap-{key}", ideal), (f"cap-{key}-implement", skill(f"cap-{key}-implement"))) if s}),
             "harness": harness["dir"] if harness else None,
             "sticks": sticks, "holds": holds, "accepted": holds == len(sticks),
         })

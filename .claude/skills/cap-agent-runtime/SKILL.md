@@ -277,18 +277,26 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | bash harness/containment/test.sh |
-| Expected | Proposed tool, built with the first implementation of this interface: `python3 tools/conformance_agent_runtime.py --adapter today --adapter second --op-seconds 45 --cancel-at 5 --grace 10 --report out/agent-runtime-conformance.json`. Per adapter it starts a 45 second tool call, sends cancel at t=5s, and asserts that a terminal frame arrives within cancel_grace_s, that stop_reason == "cancelled", and that frames_after_terminal == 0; across adapters it asserts adapters_run >= 2. exit 0 and one report line per adapter of the form `adapter=<role> cancel_to_terminal_s=<under 10> stop_reason=cancelled frames_after_terminal=0`, followed by `adapters_run=2`. The reference point for the interactive adapter is about 8 seconds against the 45 second operation. Until that proposed tool exists, `bash harness/containment/test.sh` (owned by cap-isolation-implement) is the running gate: every check line reads ok and the script exits 0. |
-| Deliberate breakage | Raise that adapter's internal cancel poll interval above the grace window - 30 seconds against a grace of 10 - and change nothing else, then re-run. |
-| Expected failure | The terminal frame arrives after cancel_grace_s, the dispatcher hard-stops the unit, and stop_reason becomes cancel_timeout instead of cancelled; the stop_reason assertion fails for that adapter, the run exits non-zero, and the report names which adapter broke while the other still reports stop_reason=cancelled. |
-| Status | claimed |
+| Criterion | bash harness/containment/test.sh && python3 harness/containment/conformance.py --adapter dryrun --adapter second |
+| Expected | Measured by tools/measure.py at 16d354c: exit 0; last lines: adapters_run=2 \| conformance: pass  report=/home/user/AGENT/harness/containment/out/containment-conformance.json |
+| Deliberate breakage | Raise harness/containment/binding.json's tuning.cancel_poll_interval_s to 30, above the 0.5s grace window, and change nothing else (the harness README's breakage B); restore with git checkout -- harness/containment/binding.json. |
+| Expected failure | Measured by tools/measure.py at 16d354c: exit 1; last lines:   ok   typed as isolation-unavailable (503) \| passed 20, failed 5 |
+| Status | measured |
 | Evidence | `F-part-c-04`, `F-a3-09` "ends the turn in ~8s against a 45s operation, zero trailing frames" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-agent-runtime-implement` | Turn the contract in cap-agent-runtime into something that runs here: two runtimes behind one turn interface, the execution paths that share no contract today brought in front of it one at a time, and every cross-cutting ceiling attached around the turn rather than inside it. | `references/cap-agent-runtime-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors`
+Builds on: `agentic-stack`, `build-evidence`, `build-skill-authoring`, `cap-errors`
 
-Used by: `cap-agent-runtime-implement`, `compose-agent`, `seam-dispatch`
+Used by: `compose-workflow`, `seam-dispatch`
 
 ## Open questions
 

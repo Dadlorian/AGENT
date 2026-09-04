@@ -1,7 +1,7 @@
 {
   "name": "cap-human-interaction",
   "layer": "cap",
-  "wave": 4,
+  "wave": 3,
   "description": "The ideal state of the Human interaction capability: one interface through which a person enters a run, watches it as a typed event stream, and steers it by approving, editing, rejecting or answering back on the same correlation id. Load it when a run has to stop and ask someone something, when designing an approval or review step, when a person needs to see what an agent is about to do before it happens, when deciding what a reviewer may change and what only the platform may, or when judging whether a pause-and-resume implementation really resumes the same run. Also load it when someone proposes a bespoke approval screen, a second inbox, or an approve/reject pair with nowhere to put an edit, when a parked item has been sitting for days with no deadline, or when the surface a person uses is being built as request-and-response rather than as a stream they can watch.",
   "purpose": {
     "text": "Fix the contract for a run that has to stop and ask a person something: what the pause emits, what a decision may carry back, and on what identifier the run resumes - so that a human is a first-class way into a running system rather than a screen bolted onto one workflow.",
@@ -582,33 +582,43 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "bash harness/human-interaction/test.sh",
-    "expected": "The manifest row for this capability, made precise and run over the adapter pair above: `python3 tools/conformance/human_resume.py --surface parked-approval-unit --surface event-stream-client --case approve --case edit --case reject-with-notes --case partial --report out/hitl.json` (proposed tool, built with the first surface adapter), the surface selected by configuration with no code edit between runs. It parks one run in waiting-for-human, delivers one decision per case, and asserts `resumed_on_same_correlation == 4` (the run's correlation id before the ask equals the one it carries after the resume, for all four cases), `edit_changed_artifact == true` (the artifact the run continues with after the edit case equals the reviewer's body and not the proposed one), `duplicate_resumes == 0` when each decision is delivered ten times, and `adapters_run >= 2`. exit 0 with `resumed_on_same_correlation: 4`, `edit_changed_artifact: true`, `duplicate_resumes: 0` and `adapters_run: 2` Until that proposed tool exists, `bash harness/human-interaction/test.sh` (owned by cap-human-interaction-implement) is the running gate: every check line reads ok and the script exits 0.",
-    "breakage": "In the resume path, record the reviewer's decision on the parked item and hand the next step the originally proposed artifact rather than the reviewer's body, changing nothing else, and re-run the same command.",
-    "expected_failure": "exit 1 with `edit_changed_artifact: false` while `resumed_on_same_correlation` is still 4 and `duplicate_resumes` still 0 - which is the useful part: the failure is that the edit was recorded and not applied, not that the run failed to resume, and an approve-and-reject-only implementation passes every other assertion. Claimed: the tool, the fixture and both surface adapters do not exist here and neither run has been performed, so this check starts red by construction.",
-    "status": "claimed",
+    "criterion": "bash harness/human-interaction/test.sh && python3 harness/human-interaction/conformance.py --surface dryrun --surface second",
+    "expected": "Measured by tools/measure.py at bf17237: exit 0; last lines: # one store, one ask: parked by parked-item-request-response/0.1, decided by event-stream-client/0.1, same correlation True | adapters_run=2 failures=0",
+    "breakage": "In harness/human-interaction/store.py, stop refusing a decision whose correlation_id is not the parked ask's (make that comparison never true), run the criterion (a decision on a foreign handle is accepted and the gate exits 1), then git checkout harness/human-interaction/store.py.",
+    "expected_failure": "Measured by tools/measure.py at bf17237: exit 1; last lines:   FAIL the same suite passes again once the store is the resume point (expected 0, got 1) | passed 33, failed 6",
+    "status": "measured",
     "sources": [
-      "T-t1-01",
-      "F-b1-04"
+      "F-b1-04",
+      "F-b4-08"
     ],
-    "quote": "A human must be able to enter the system."
+    "quote": "Every externally-triggered action is safe to replay",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "bf17237",
+      "clean_exit": 0,
+      "clean_output": "   an edit larger than the surface can hold is refused, not truncated: refused above 65536 bytes with a type\n  ok   the ask outlives the surface: a fresh surface object decides it: parked by one surface object, decided by another, one correlation id\n  ok   every refusal in this run carried a registered type: untyped_refusals=0 over 4 registered types\n  resumed_on_same_correlation=4 edit_changed_artifact=True duplicate_resumes=0 untyped_refusals=0\n# one store, one ask: parked by parked-item-request-response/0.1, decided by event-stream-client/0.1, same correlation True\nadapters_run=2 failures=0",
+      "breakage_exit": 1,
+      "breakage_output": "4. deliberate breakage: the streaming surface resumes from the copy it holds\n  ok   the streaming run exits non-zero (nonzero)\n  ok   nine of the ten deliveries applied again (9)\n  ok   and one case resumed on an identifier the client minted (3)\n  ok   the edit still reached the artifact, so this is not a broken resume (true)\n  FAIL the first surface is untouched by the same run (expected 0, got 1)\n  ok   singling out one surface is the point: the other still reports no duplicates (0)\n  FAIL the same suite passes again once the store is the resume point (expected 0, got 1)\n\npassed 33, failed 6",
+      "restored": true
+    },
+    "expected_design": "What the run proves: The manifest row for this capability, extended with the swap: `python3 tools/conformance/human_resume.py --surface parked-approval-unit --case approve --case edit --case reject-with-notes --case partial --deliver-times 10 --report out/hitl-a.json` then the same command with `--surface event-stream-client --report out/hitl-b.json`, the surface chosen by configuration with no code edit between runs and both runs parking against one store. Both reports must validate against the ResumeConformanceReport shape above and assert, per surface, `resumed_on_same_correlation == 4`, `edit_changed_artifact == true`, `duplicate_resumes == 0` and `untyped_refusals == 0`; the merged report must show `adapters_run == 2` and `selected_by == \"configuration\"` in both. Gap: no harness covers this capability yet (STATUS row 60). | both runs exit 0; each report shows `resumed_on_same_correlation: 4`, `edit_changed_artifact: true`, `duplicate_resumes: 0` and `untyped_refusals: 0`, and the merged report shows `adapters_run: 2`",
+    "expected_failure_design": "the streaming run exits 1 with `duplicate_resumes: 9` and `resumed_on_same_correlation: 3` naming that surface - the client-held copy has no lease and no state transition, so nine of the ten deliveries apply again and the partial case resumes on the identifier the client minted - while the first surface's run still exits 0. Singling out one surface is the point: a run that fails both, or neither, has not tested the swap. Claimed: the store, both surfaces, the fixture and the runner do not exist here and neither run has been performed, so this check starts red by construction."
   },
   "composes_with": {
     "builds_on": [
       "agentic-stack",
-      "build-adapter-pair",
       "build-ceremony",
-      "build-definition-of-done",
-      "build-research-record",
+      "build-evidence",
       "build-skill-authoring",
       "cap-document-validation",
       "cap-errors",
+      "cap-idempotency",
       "cap-identity",
+      "cap-scheduling",
       "cap-work-intake"
     ],
     "used_by": [
-      "build-entry-conformance",
-      "cap-human-interaction-implement"
+      "build-evidence"
     ]
   },
   "open_questions": [
@@ -664,5 +674,1233 @@
       "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
     },
     "author": "session cap-human-interaction 2831cb4f, 2026-09-03"
+  },
+  "folded": {
+    "cap-human-interaction-implement": {
+      "name": "cap-human-interaction-implement",
+      "layer": "cap",
+      "wave": 5,
+      "description": "How to build the Human interaction capability on this stack: the durable parked-ask store first, the approval unit that already runs wrapped as the first surface, a streaming browser client as the second surface behind the same interface, the migration between them with the ask and decision shapes held still, the one place identity, correlation, budget and replay are stamped on a pause and on a resume, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that parks a run and resumes it, when adding a second place people can decide, when a decision arrived twice or arrived after the deadline, when deciding what stores the parked item, or when a resume conformance run reports that an edit changed the verdict and not the artifact.",
+      "purpose": {
+        "text": "cap-human-interaction states the contract (T-t1-01); this facet is how it gets built here: what to write first, how the unit that already parks workflows becomes an adapter rather than the design, how a streaming surface is added beside it without touching the run, and what has to be stamped on a pause and on a resume so no surface can decline it.",
+        "origin": "sourced",
+        "sources": [
+          "T-t1-01",
+          "F-a2-01"
+        ],
+        "quote": "Approve / reject / return a parked workflow from a phone"
+      },
+      "entities": [
+        "E-host-unit-approve-service",
+        "E-not-running-temporal",
+        "E-capability-state-persistence",
+        "E-standard-json-schema-2020-12",
+        "E-standard-rfc-9457-problem-details",
+        "E-concern-idempotency",
+        "E-concern-identity",
+        "E-finding-a7-1"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "ParkedAsk (proposed; the stored row the surfaces render and the run resumes from - the wire shapes are cap-human-interaction's HumanAsk and HumanDecision)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:hitl:parked:0.1",
+              "title": "ParkedAsk",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "ask",
+                "state",
+                "stored_at",
+                "resume_token",
+                "attempts"
+              ],
+              "properties": {
+                "ask": {
+                  "type": "object",
+                  "description": "The HumanAsk exactly as emitted. Stored, not regenerated, so every surface renders the same question."
+                },
+                "state": {
+                  "enum": [
+                    "open",
+                    "decided",
+                    "expired"
+                  ],
+                  "description": "open is the only state that accepts a decision. The transition is the lease."
+                },
+                "stored_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "resume_token": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Derived from ask_id and correlation_id, never minted per surface: two surfaces showing one ask derive the same token."
+                },
+                "attempts": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "idempotency_key",
+                      "outcome"
+                    ],
+                    "properties": {
+                      "idempotency_key": {
+                        "type": "string"
+                      },
+                      "outcome": {
+                        "enum": [
+                          "applied",
+                          "duplicate",
+                          "refused"
+                        ]
+                      }
+                    }
+                  },
+                  "description": "Every delivery, including the nine that were duplicates."
+                },
+                "decision": {
+                  "type": "object",
+                  "description": "The HumanDecision that closed it, absent while open."
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b4-08",
+              "E-capability-state-persistence"
+            ]
+          },
+          {
+            "name": "ResumeConformanceReport (proposed; what the definition of done below emits, one per surface adapter plus a merged report)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:hitl:conformance:0.1",
+              "title": "ResumeConformanceReport",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "surface",
+                "selected_by",
+                "cases_run",
+                "resumed_on_same_correlation",
+                "edit_changed_artifact",
+                "duplicate_resumes",
+                "untyped_refusals"
+              ],
+              "properties": {
+                "surface": {
+                  "type": "string"
+                },
+                "selected_by": {
+                  "const": "configuration",
+                  "description": "A const: a swap that needed a code edit did not test the interface."
+                },
+                "cases_run": {
+                  "type": "integer",
+                  "minimum": 4
+                },
+                "resumed_on_same_correlation": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "edit_changed_artifact": {
+                  "type": "boolean"
+                },
+                "duplicate_resumes": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "untyped_refusals": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "adapters_run": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "description": "Present on the merged report only; the pair is proved by this being at least 2."
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04",
+              "F-b3-13"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "The parked ask is stored before either surface exists, and the store is what a resume reads. cap-human-interaction states that the parked state belongs to the platform rather than to whoever is holding the screen; the build consequence is ordering - write the store, then wrap a surface around it, because a surface built first always ends up holding a field the store does not have.",
+            "origin": "sourced",
+            "sources": [
+              "E-capability-state-persistence",
+              "F-b3-17"
+            ],
+            "quote": "State persistence"
+          },
+          {
+            "text": "The pair differs in execution model, not in product: one surface is request/response over a single parked item, the other is a stream a person watches for a whole run. build-adapter-pair states the rule (F-b1-04); the build consequence is that a second approval page of the same shape would not have tested this interface at all.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-04"
+            ],
+            "quote": "the second exists to prove the first is not load-bearing"
+          },
+          {
+            "text": "Identity, correlation, budget, policy, provenance, telemetry and replay are stamped by the platform at the pause and again at the resume, not by whichever surface is in front of the person: the platform applies each; a caller cannot decline them, and a surface is a caller.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-01",
+              "F-b1-08"
+            ],
+            "quote": "The platform applies each; a caller cannot decline them."
+          },
+          {
+            "text": "The correlation attribute is set explicitly when the ask is emitted and carried on the decision: correlation rides on explicit attributes, not trace parentage - see A7 finding 1, and a human boundary is the longest gap in any run, so there is no live trace left to be a parent by the time someone decides.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-06",
+              "E-finding-a7-1"
+            ],
+            "quote": "Correlation rides on explicit attributes, not trace parentage"
+          },
+          {
+            "text": "A decision is safe to replay: cap-human-interaction holds the replay rule for a decision (F-b4-08), and nothing in this build weakens it - a decision delivered twice leaves the run in the state one delivery would have left it in.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-08",
+              "E-concern-idempotency"
+            ],
+            "quote": "Every externally-triggered action is safe to replay"
+          },
+          {
+            "text": "Proposed: a resume takes the lease on the decision's idempotency key and transitions the stored state in one write, not two. A decision delivered by a retrying phone, a refreshed browser and a webhook redelivery is one act arriving three times, and a lease taken in a write separate from the transition leaves a window in which two of the three both read an un-transitioned state. Research query: unresearched; no prior-art search has been run for whether a lease acquisition and a state transition at a human-decision resume point must be a single atomic write, beyond the general replay rule F-b4-08.",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-08",
+              "E-concern-idempotency"
+            ]
+          },
+          {
+            "text": "A decision names its actor and every hop it came through: every action names an actor, including delegated agent actors. Delegation chains are explicit - cap-identity owns that contract, and the build consequence here is that a surface authenticates a person and then puts that subject on the decision, rather than the store trusting whichever surface posted.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-03",
+              "E-concern-identity"
+            ],
+            "quote": "Every action names an actor, including delegated agent actors. Delegation chains are explicit"
+          },
+          {
+            "text": "Proposed: the migration holds the ask and the decision shapes still and moves only who renders them. Every step below is reversible by configuration, and no step changes the run - if a migration step requires editing the workflow that parks, the pause was defined in the surface's terms and not in the interface's. Research query: is there a recorded migration step in this repository (another capability's own migration instructions) that required editing a workflow to change who renders a pause, which would show this constraint being violated or held elsewhere on this platform?",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-02"
+            ]
+          },
+          {
+            "text": "Every conformance run above is recorded as claimed until it has actually been run: each A7 finding invalidates a design that looks correct on paper, and build-evidence-record owns the claimed-versus-measured record shape. The build consequence is specific - a resume path is the easiest thing in the platform to believe works, because its happy case is one person clicking approve once.",
+            "origin": "sourced",
+            "sources": [
+              "F-a7-01"
+            ],
+            "quote": "Each invalidates a design that looks correct on paper."
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Write the parked-ask store first: an append-only record per ask keyed by ask_id and correlation_id, with an open/decided/expired state and every delivery attempt recorded. Do not start with a screen.",
+          "why": "The store is the only thing both surfaces share, and it is what makes a decision auditable after the surface that took it is gone. Checkpointers persist a thread's state for exactly this - human-in-the-loop workflows are named as one of the uses - so the store is the feature, and the screen is a view of it.",
+          "origin": "sourced",
+          "sources": [
+            "X-cross-structure-045",
+            "F-b3-17"
+          ],
+          "quote": "including conversation continuity, human-in-the-loop workflows, time travel, and fault tolerance"
+        },
+        {
+          "step": 2,
+          "action": "Wrap the approval unit that already runs as the first surface adapter: keep the screen and the phone-reachable endpoint, replace what it posts with a HumanDecision and what it reads with a stored ParkedAsk. Do not extend it with a second endpoint for edits.",
+          "why": "PASS.md A2 records a running unit whose purpose is to approve, reject or return a parked workflow from a phone, and cap-human-interaction names it as the adapter today; the build consequence is that the fastest honest first adapter is that unit speaking the new shapes. Adding an edit endpoint to it instead would put the four decisions in the surface rather than in the interface, and the second surface would then have to reimplement them.",
+          "origin": "sourced",
+          "sources": [
+            "F-a2-01",
+            "E-host-unit-approve-service"
+          ],
+          "quote": "Approve / reject / return a parked workflow from a phone"
+        },
+        {
+          "step": 3,
+          "action": "Add the command-line client next and record it as the same execution model as the first surface, not as the second adapter. It reads the same store and posts the same decision.",
+          "why": "build-adapter-pair states that the second adapter exists to prove the first is not load-bearing (F-b1-04); a command line and a phone page are both request/response over one parked item, so shipping them as a pair would prove nothing. The command line earns its place as the surface an operator uses when the page is down, not as the swap.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-04"
+          ],
+          "quote": "Swappability is a tested property, not an intention."
+        },
+        {
+          "step": 4,
+          "action": "Build the second surface as a client of the run's typed event stream, and deliver the ask as one event in that stream rather than as a separate notification. Select it by configuration only.",
+          "why": "The event protocol on file transmits a continuous sequence of JSON-formatted events through standard web protocols, so the ask, the work that led to it and the decision all arrive on one connection - a different execution model from a page that exists only once there is something to approve. cap-human-interaction states the axis; this step is where it becomes code.",
+          "origin": "sourced",
+          "sources": [
+            "X-entry-composition-021",
+            "X-end-to-end-016"
+          ],
+          "quote": "AG-UI transmits a continuous sequence of JSON-formatted events through standard web protocols"
+        },
+        {
+          "step": 5,
+          "action": "Do not implement pause and resume as a feature of the workflow orchestrator. Define them on the store and let an orchestrator, when one is running, deliver the decision as a signal into the parked run.",
+          "why": "PASS.md A6 records that human-in-the-loop signals are designed around it and it is currently down, so building the primitive inside it makes the capability unavailable exactly when the orchestrator is. External actors like approval UIs send decisions into the workflow as signals - that is a delivery mechanism worth adopting, not a place to keep the state.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-02",
+            "X-entry-composition-024"
+          ],
+          "quote": "human-in-the-loop signals are designed around it and it is currently down"
+        },
+        {
+          "step": 6,
+          "action": "Stamp the cross-cutting fields in exactly two places - the code path that parks an ask and the code path that applies a decision - and make both refuse rather than fill in a missing actor, correlation id, ceiling or key.",
+          "why": "The platform applies each; a caller cannot decline them, and a surface is a caller. Two stamping points is also what makes the wiring auditable: any third place that writes a ParkedAsk is a path that can enter without them.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-01"
+          ],
+          "quote": "These are the difference between a working system and a production one."
+        },
+        {
+          "step": 7,
+          "action": "Migrate by running both surfaces against the same store, cutting over by configuration, and keeping the first surface able to render any ask the second can. Do not migrate by re-parking open asks.",
+          "why": "Proposed. An ask that is re-parked gets a new identifier, and every decision already in flight against the old one is then refused as unknown - the one failure mode a person cannot work around. Dual-rendering against one store also makes the swap test and the migration the same run. Research query: is there a recorded migration record on this platform where re-parking an in-flight item broke a decision already issued against its old identifier, confirming this failure mode rather than only anticipating it?",
+          "origin": "proposed",
+          "sources": [
+            "F-b1-04"
+          ]
+        },
+        {
+          "step": 8,
+          "action": "Record an evidence record for each conformance run: what was run, the code version and tree hash, whether the tree was dirty, the output, and the claimed-or-measured label. Do not upgrade this skill's definition of done to measured until both surfaces have actually run.",
+          "why": "build-evidence-record owns the record shape and the chaining; the consequence here is specific - a resume path passes its happy case on the first try, so a green run that never exercised edit, expiry or duplicate delivery is exactly the structurally green gate A7 warns about.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03",
+            "F-a7-01"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        },
+        {
+          "step": 9,
+          "action": "Open references/human-interaction-wiring.md when you need the per-concern wiring table, the migration steps with their rollback, or the surface conformance checklist. This skill body is enough to build and judge the pair without it.",
+          "why": "Proposed, progressive disclosure. The wiring table has one row per cross-cutting concern and the migration has a rollback per step; a reader deciding how to start does not need either yet.",
+          "origin": "proposed"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Make waiting free before making it pretty: a suspended run should wait at zero cost, however long it takes, so hold no worker, no connection and no lease while an ask is open, and let the arriving decision be what wakes the run.",
+          "origin": "sourced",
+          "sources": [
+            "X-entry-composition-029"
+          ],
+          "quote": "The function waits at zero cost, however long it takes."
+        },
+        {
+          "text": "Treat the resume path as a side-effecting node: every side-effecting node needs an idempotency story, because if a tool call succeeds but the agent crashes before saving state, a resumed workflow may retry the call - and the action a person just approved is the one you least want run twice.",
+          "origin": "sourced",
+          "sources": [
+            "X-end-to-end-042"
+          ],
+          "quote": "Every side-effecting node needs an idempotency story"
+        },
+        {
+          "text": "Build the expiry sweeper in the same change as the ask, not later: prior art on file warns that a caller exceeds a timeout waiting for input that never arrives, and an expiry that exists only as a field on a record is a deadline nothing enforces.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-human-interaction-008"
+          ],
+          "quote": "a caller exceeds a timeout waiting for input that never arrives"
+        },
+        {
+          "text": "Give the second surface a runtime marker in its report rather than trusting configuration, the same discipline build-evidence-record and agentic-stack apply to a case where configuration written in the documented place had no runtime effect (F-a7-04); a swap that was configured but silently fell back to the first surface produces the same green report as a swap that worked, which is that same failure applied to adapters.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "had no runtime effect"
+        },
+        {
+          "text": "Configuration written in the documented place can be silently overridden, as agentic-stack and build-evidence-record both state from A7 finding 3; the consequence for a surface pair is that you verify which surface actually served each conformance case from the run's own output, never from the configuration file that selected it.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04",
+            "E-finding-a7-3"
+          ],
+          "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-parked-approval-unit",
+          "role": "today",
+          "maps_to": "Proposed adapter with a proposed entity id, as cap-human-interaction records: the systemd unit `approve.service`, enabled and running, bound on a Tailscale address, whose recorded purpose is to approve, reject or return a parked workflow from a phone. Building it means keeping the unit and the address and changing only its payloads: it reads a stored ParkedAsk and posts a HumanDecision, with the four decisions rendered as four buttons and the diff rendered above them.",
+          "cannot": "Cannot render a run in flight, cannot hold an edited artifact larger than a form field, and cannot reach a decider who is not already opening it. It also cannot be the store: it is a single host unit, so an ask that lives only in it is an ask that a restart loses.",
+          "swap_procedure": "Point it at the parked-ask store instead of its own state, then leave it in place. It stays the fallback surface after the swap, which is what makes the cutover reversible by configuration rather than by redeploy.",
+          "status": "claimed",
+          "sources": [
+            "F-a2-01",
+            "E-host-unit-approve-service"
+          ],
+          "quote": "systemd, enabled, running"
+        },
+        {
+          "entity": "E-swap-candidate-ag-ui-browser-stream",
+          "role": "second",
+          "maps_to": "Proposed adapter with a proposed entity id: a browser client subscribed to the run's typed event stream over HTTP with server-sent events. It renders `run.started`, `step.progress` and `tool.proposed` as they arrive, renders `human.ask` inline as a form generated from the ask's response schema, and posts the decision back on the same correlation id. cap-human-interaction states the axis this pair differs on.",
+          "cannot": "Cannot serve a decider with no session open when the ask is emitted unless the stream is replayable from a stored position, and cannot be the only surface on a phone that has been asleep. It also needs the store to answer from a position, which the first adapter never has to do.",
+          "swap_procedure": "Select the surface by configuration only, with no code edit between runs; run the four-decision fixture through each surface against one store; require each report to show `selected_by: configuration` and a runtime marker naming the surface that served, and the merged report to show `adapters_run >= 2`. build-adapter-pair states the rule (F-b1-04); what is specific here is that both surfaces must be run against the same open ask, because the property under test is that the ask outlives the surface.",
+          "status": "claimed",
+          "sources": [
+            "F-b1-04",
+            "X-entry-composition-021"
+          ],
+          "quote": "Each event carries a type field that identifies the action taking place"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/human-interaction/test.sh && python3 harness/human-interaction/conformance.py --surface dryrun --surface second",
+        "expected": "Measured by tools/measure.py at bf17237: exit 0; last lines: # one store, one ask: parked by parked-item-request-response/0.1, decided by event-stream-client/0.1, same correlation True | adapters_run=2 failures=0",
+        "breakage": "In harness/human-interaction/store.py, stop refusing a decision whose correlation_id is not the parked ask's (make that comparison never true), run the criterion (a decision on a foreign handle is accepted and the gate exits 1), then git checkout harness/human-interaction/store.py.",
+        "expected_failure": "Measured by tools/measure.py at bf17237: exit 1; last lines:   FAIL the same suite passes again once the store is the resume point (expected 0, got 1) | passed 33, failed 6",
+        "status": "measured",
+        "sources": [
+          "F-b1-04",
+          "F-b4-08"
+        ],
+        "quote": "Every externally-triggered action is safe to replay",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "bf17237",
+          "clean_exit": 0,
+          "clean_output": "   an edit larger than the surface can hold is refused, not truncated: refused above 65536 bytes with a type\n  ok   the ask outlives the surface: a fresh surface object decides it: parked by one surface object, decided by another, one correlation id\n  ok   every refusal in this run carried a registered type: untyped_refusals=0 over 4 registered types\n  resumed_on_same_correlation=4 edit_changed_artifact=True duplicate_resumes=0 untyped_refusals=0\n# one store, one ask: parked by parked-item-request-response/0.1, decided by event-stream-client/0.1, same correlation True\nadapters_run=2 failures=0",
+          "breakage_exit": 1,
+          "breakage_output": "4. deliberate breakage: the streaming surface resumes from the copy it holds\n  ok   the streaming run exits non-zero (nonzero)\n  ok   nine of the ten deliveries applied again (9)\n  ok   and one case resumed on an identifier the client minted (3)\n  ok   the edit still reached the artifact, so this is not a broken resume (true)\n  FAIL the first surface is untouched by the same run (expected 0, got 1)\n  ok   singling out one surface is the point: the other still reports no duplicates (0)\n  FAIL the same suite passes again once the store is the resume point (expected 0, got 1)\n\npassed 33, failed 6",
+          "restored": true
+        },
+        "expected_design": "What the run proves: The manifest row for this capability, extended with the swap: `python3 tools/conformance/human_resume.py --surface parked-approval-unit --case approve --case edit --case reject-with-notes --case partial --deliver-times 10 --report out/hitl-a.json` then the same command with `--surface event-stream-client --report out/hitl-b.json`, the surface chosen by configuration with no code edit between runs and both runs parking against one store. Both reports must validate against the ResumeConformanceReport shape above and assert, per surface, `resumed_on_same_correlation == 4`, `edit_changed_artifact == true`, `duplicate_resumes == 0` and `untyped_refusals == 0`; the merged report must show `adapters_run == 2` and `selected_by == \"configuration\"` in both. Gap: no harness covers this capability yet (STATUS row 60). | both runs exit 0; each report shows `resumed_on_same_correlation: 4`, `edit_changed_artifact: true`, `duplicate_resumes: 0` and `untyped_refusals: 0`, and the merged report shows `adapters_run: 2`",
+        "expected_failure_design": "the streaming run exits 1 with `duplicate_resumes: 9` and `resumed_on_same_correlation: 3` naming that surface - the client-held copy has no lease and no state transition, so nine of the ten deliveries apply again and the partial case resumes on the identifier the client minted - while the first surface's run still exits 0. Singling out one surface is the point: a run that fails both, or neither, has not tested the swap. Claimed: the store, both surfaces, the fixture and the runner do not exist here and neither run has been performed, so this check starts red by construction."
+      },
+      "composes_with": {
+        "builds_on": [
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record",
+          "cap-human-interaction"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Does the parked-ask store live in the platform's own state persistence, or in the workflow orchestrator once it is running again?",
+          "evidence": "Whether an ask ever needs a query the state store cannot answer - list every open ask for a person, ordered by deadline - and whether a decision must survive the orchestrator being down. If open asks must be listable while the orchestrator is down, the store is the platform's.",
+          "default": "1-3-1 applied and recorded on 2026-09-03. Options: (a) the platform's own state persistence, with the orchestrator delivering decisions as signals; (b) the orchestrator's own durable state; (c) both, with the orchestrator authoritative when up. Recommendation and default: (a). PASS.md A6 records the orchestrator as down while human-in-the-loop is designed around it, so (b) makes the capability unavailable exactly when it is needed, and (c) needs a reconciliation nobody has specified.",
+          "sources": [
+            "T-t5-02",
+            "F-a6-02"
+          ],
+          "quote": "define the problem, identify the three best possible solutions that align to the goal"
+        },
+        {
+          "question": "How does a partial acceptance - approve three of five proposed changes - reach the run: as an edit whose body is the reduced artifact, or as a fifth decision kind?",
+          "evidence": "Take a corpus of real multi-part proposals and count how many partial acceptances can be expressed as an edited artifact with no loss. If every one can, partial is a shape of edit and needs no new decision kind.",
+          "default": "Proposed: an edit whose body is the reduced artifact. cap-human-interaction states four decisions and nothing else; a fifth kind would have to be implemented by both surfaces and understood by every workflow that parks, where an edit already is.",
+          "sources": [
+            "X-entry-composition-023"
+          ],
+          "quote": "modified before running (edit)"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session cap-human-interaction 2831cb4f, 2026-09-03"
+      }
+    },
+    "compose-approval": {
+      "name": "compose-approval",
+      "layer": "compose",
+      "wave": 7,
+      "description": "How to assemble an approval gate as a composition rather than a screen: a step that stops before an irreversible action, parks on a durable record carrying a named view, a deadline, a stated decider and the wire a decision may arrive over, and resumes exactly once on the run's own correlation id with one of approve, edit, reject or return-with-notes. Load it when a workflow has to stop and ask a person before doing something it cannot undo, when designing a review step or a sign-off, when deciding what happens if nobody answers, when a decision may be delivered twice or arrive after the run ended, when someone proposes a second inbox or a bespoke approval page, or when a parked item has no owner, no deadline and no way to say change this and try again.",
+      "purpose": {
+        "text": "Fix the recipe for a gate: a workflow runs up to an irreversible action and stops on a durable record, a person is given something they can actually decide from, and the run continues exactly once on the identifier it already had - so that pausing for a human is a composition of capabilities this platform already owns rather than a feature of whichever screen is in front of the decider.",
+        "origin": "sourced",
+        "sources": [
+          "X-compose-approval-001",
+          "F-b4-08",
+          "T-t6-02"
+        ],
+        "quote": "the workflow runs up to the point of the irreversible action and stops, storing its state"
+      },
+      "entities": [
+        "E-rule-b1-5",
+        "E-rule-b1-6",
+        "E-rule-b1-7",
+        "E-seam-state",
+        "E-concern-idempotency",
+        "E-concern-identity",
+        "E-capability-work-intake",
+        "E-capability-scheduling"
+      ],
+      "contract": {
+        "operations": [
+          {
+            "name": "declare_gate (proposed operator set; the composition adds a gate to a step, it does not define what an ask is - cap-human-interaction owns that)",
+            "input": "the step whose action is irreversible, a named view the decider is shown, the deciding subject and the wires a decision may arrive over, a deadline, the outcome set, and the step to re-enter on return-with-notes (proposed)",
+            "output": "a gate declaration resolved with the plan: refused before execution if the view is missing, if the deadline is missing, or if the plan would nest past its depth bound (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "REF-10-05",
+              "REF-5-2-13",
+              "REF-3-2-10"
+            ]
+          },
+          {
+            "name": "return_with_notes (proposed)",
+            "input": "the fourth outcome: the decider's notes and the gate id",
+            "output": "re-entry at the step named on the gate with the notes as input, under the budget that remains, and a fresh gate id; this is the only outcome that puts work back into the graph rather than ending the gate (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-a2-01",
+              "X-end-to-end-018"
+            ]
+          }
+        ],
+        "shapes": [],
+        "invariants": [
+          {
+            "text": "Proposed: four outcomes, and only one of them puts work back. cap-human-interaction states the four decisions a person may return (X-entry-composition-023); this composition binds three of them to gate outcomes that end the gate - approve, edit and reject - and adds return-with-notes, which re-enters the graph at the step named on the gate with the notes as input and parks again. This is the one enumeration of outcomes in this skill and every other row points at it. The unit PASS.md A2 records already offers the triple plus the return.",
+            "origin": "sourced",
+            "sources": [
+              "F-a2-01",
+              "X-entry-composition-023"
+            ],
+            "quote": "Approve / reject / return a parked workflow from a phone"
+          },
+          {
+            "text": "cap-human-interaction fixes resume identity for the interface: the client continues the interaction by sending a new message with the same taskId and contextId. The consequence a composition must preserve is that the gate record stores the run's own correlation id and an outcome is matched against it, so the run that continues is provably the run that parked and not a new one wearing its name.",
+            "origin": "sourced",
+            "sources": [
+              "X-end-to-end-014"
+            ],
+            "quote": "the client continues the interaction by sending a new message with the same taskId and contextId"
+          },
+          {
+            "text": "xc-idempotency-lease states the placement of the claim and cap-idempotency the claim itself: Every externally-triggered action is safe to replay. A delivered decision is externally triggered, so the consequence here is that the resume boundary acquires its own lease scoped to the gate id - ten deliveries of one outcome resume the run once, a duplicate arriving while the first resume is still running attaches to it, and a decision delivered after the gate closed is a no-op rather than a second run.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-08",
+              "T-t2-03"
+            ],
+            "quote": "Every externally-triggered action is safe to replay"
+          },
+          {
+            "text": "agentic-stack states design rule 5 as a test (F-b1-06): Planning is a pure function and completes before execution begins. Three consequences a gate must preserve, the last two following the reference example: the gate declares its own cost contribution so a parent estimate is the sum of its children rather than a guess; the depth bound is checked at resolve time, so a sub-plan that would nest past the limit is refused before anything executes; and a parked gate accrues no spend at all, because it holds no process while it waits.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-06",
+              "REF-5-2-12",
+              "REF-5-2-13",
+              "X-entry-composition-029"
+            ],
+            "quote": "Planning is a pure function and completes before execution begins"
+          },
+          {
+            "text": "The cross-cutting guarantees are not suspended while a run is parked, and a gate is not a place a caller may opt out of them: cap-work-intake and cap-consumption state the rule for an entry - the platform applies each; a caller cannot decline them - and the consequence a composition must preserve is that the gate record, the ask, the outcome and the resumed step each carry the run's correlation attributes, a non-null actor, a budget ceiling and a lease, so a gate offering a way to continue without any of them is not a gate.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-01",
+              "F-b1-08"
+            ],
+            "quote": "The platform applies each; a caller cannot decline them."
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "Proposed: the criterion never travels in the view. agentic-stack states design rule 6 (F-b1-07), that an agent sees its outcome, never the criterion it is judged against; what a gate forbids is putting the grading rule into the view, the response schema or the notes a return carries back, because everything a gate shows can be read by the unit that resumes and will be graded. A human reviewer may be shown the criterion by the Judge's own surface; the parked gate is not that surface.",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-07"
+            ]
+          },
+          {
+            "text": "Proposed: there is no force-resume, no skip and no administrative continue that leaves the gate open. Each of those is an unrecorded approval by another name, and the gate record is the only place the deciding actor is written down. The only ways out of a parked gate are the four outcomes and expiry.",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-03",
+              "X-end-to-end-063"
+            ]
+          },
+          {
+            "text": "Proposed: no wire handle escapes into the composition. A session token, a message receipt, an inbox cursor or a delivery id may be recorded for audit, but none of them may become the gate id, the correlation id or the idempotency key, or the run becomes resumable only by whoever holds one particular channel and the second channel can never be proved equivalent.",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04",
+              "X-entry-composition-022"
+            ]
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Put the gate immediately before the step whose action is irreversible, not around the plan, and declare it there with five things: the named view, the deciding subject, the wires a decision may arrive over, the deadline, and the outcome set including the step to re-enter on return-with-notes.",
+          "why": "Proposed, following the reference example: a plan with a gate is five fields and one gate declaration with its view, and the view is required the moment the step declares a human gate. A gate around the whole plan asks a person to approve something they cannot see the boundary of.",
+          "origin": "proposed",
+          "sources": [
+            "REF-3-4-03",
+            "REF-3-2-10"
+          ]
+        },
+        {
+          "step": 2,
+          "action": "Resolve the gate with the plan, before anything executes: refuse a gate with no view, refuse a gate with no deadline, refuse a child that would nest past the depth bound, and reconcile the plan estimate against the sum of the children rather than against a top-level guess.",
+          "why": "agentic-stack states design rule 5 (F-b1-06) and this skill's invariant draws its three consequences. Doing the refusals at resolve time is what makes them cheap: a gate discovered to be undecidable while a person is waiting has already cost the run everything up to that step.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-06",
+            "REF-5-2-13"
+          ],
+          "quote": "Planning is a pure function and completes before execution begins"
+        },
+        {
+          "step": 3,
+          "action": "Park by writing a durable gate record through the state seam at the moment the step would have executed, and hold no process, no connection and no in-memory timer while waiting.",
+          "why": "A suspended step waits at zero cost, however long it takes, and a checkpointed run can pause, resume, rewind and branch; a gate implemented as a blocked worker converts a person going home into a lost run.",
+          "origin": "sourced",
+          "sources": [
+            "X-entry-composition-029",
+            "X-cross-structure-046"
+          ],
+          "quote": "The function waits at zero cost, however long it takes"
+        },
+        {
+          "step": 4,
+          "action": "Emit the ask through cap-human-interaction, one per wire the gate named, and let it own what a person sees and answers. Do not draw a screen in the composition and do not open a second inbox.",
+          "why": "Proposed: cap-human-interaction fixes the ask, the typed response schema and the four decisions; a composition that renders its own approval page has made the gate resumable only from that page, which is the coupling both layers exist to remove.",
+          "origin": "proposed",
+          "sources": [
+            "X-entry-composition-016",
+            "X-compose-approval-005"
+          ]
+        },
+        {
+          "step": 5,
+          "action": "Register the deadline as an occurrence through cap-scheduling rather than as a timer inside whatever is running, and make expiry write the gate terminal and terminate the run with the registered deadline-exceeded problem.",
+          "why": "cap-human-interaction states the rule that you should design explicit timeouts for human steps rather than letting approvals sit indefinitely; the composition-level consequence is where the clock lives, because a timer inside a process dies with the process and leaves a gate that is open forever with nobody watching it.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-human-interaction-008",
+            "F-b3-15"
+          ],
+          "quote": "you should design explicit timeouts for human steps rather than letting approvals sit indefinitely"
+        },
+        {
+          "step": 6,
+          "action": "Acquire the idempotency lease on the resume boundary, scoped to the gate id, before any outcome is applied - not at the door the run originally came in through, and not inside any one wire's handler.",
+          "why": "xc-idempotency-lease states that the claim is applied across the whole structure and not only at the door (T-t2-03), so a delivered decision is an external trigger at a later boundary and needs its own claim there. This is the single line the definition of done below deletes to prove the check can fail.",
+          "origin": "sourced",
+          "sources": [
+            "T-t2-03",
+            "F-b4-08"
+          ],
+          "quote": "State, telemetry, and every cross-cutting concern are managed across the entire structure"
+        },
+        {
+          "step": 7,
+          "action": "Bind the deciding actor onto the outcome and extend the run's delegation chain by that hop before the run continues, refusing an outcome from a subject the gate did not name with the registered policy-denied.",
+          "why": "xc-identity-delegation states the guarantee for every action (F-b4-03); deciding a gate is an action like any other, and a resume whose actor is null is an approval that nobody can be shown to have given.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-03"
+          ],
+          "quote": "Every action names an actor"
+        },
+        {
+          "step": 8,
+          "action": "Deliver the outcome into the platform through cap-work-intake's one envelope, as an entry that steers the existing correlation id, and never as a new root run with its own budget.",
+          "why": "cap-work-intake states that all four entries enter through the same shape, and cap-scheduling draws the same rule for a firing schedule, so a decision does not get a private door either; the composition-level consequence is that the envelope carries the existing correlation id, which is what keeps the resumed run inside the ceiling, the chain and the trace it already had.",
+          "origin": "sourced",
+          "sources": [
+            "T-t6-02",
+            "F-b3-08"
+          ],
+          "quote": "All four enter through the same shape."
+        },
+        {
+          "step": 9,
+          "action": "Implement return-with-notes as a re-entry edge rather than a fourth verdict: write the notes, re-enter at the step the gate named, deduct nothing from the outcome set, spend from the budget that remains, and open a fresh gate id when that step reaches the gate again.",
+          "why": "The unit PASS.md A2 records already offers return alongside approve and reject, and a reviewer who can only approve or reject has to reject work that needed one change; an edit-in-place review beats approve-then-fix, and a return is the same idea when the change is not the reviewer's to make.",
+          "origin": "sourced",
+          "sources": [
+            "F-a2-01",
+            "X-end-to-end-018"
+          ],
+          "quote": "Optional edit-in-place beats approve-then-fix."
+        },
+        {
+          "step": 10,
+          "action": "Proposed: open references/usage.md when you need the worked gate declaration for each of TARGET T1's three ways in, the full ApprovalGate and GateOutcome schemas, or the worked rejection. The body of this skill is enough without it.",
+          "why": "Proposed: our progressive-disclosure convention. The three worked declarations and two full schemas are longer than the recipe they illustrate, and a reader assembling a gate needs the recipe first.",
+          "origin": "proposed",
+          "sources": [
+            "T-t3-01"
+          ]
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Gate only the irreversible or high-cost actions. The research on file is blunt about the cost of the alternative: gating everything overloads reviewers and trains them to approve without reading, which converts a control into a rubber stamp while every metric still says the gate is there.",
+          "origin": "sourced",
+          "sources": [
+            "X-compose-approval-006",
+            "X-end-to-end-063"
+          ],
+          "quote": "gating everything overloads reviewers and trains them to approve without reading"
+        },
+        {
+          "text": "Give the decider the artifact, not a verdict box. Optional edit-in-place beats approve-then-fix, and a gate whose view is a summary with two buttons quietly degrades edit and return-with-notes into approve-with-a-comment.",
+          "origin": "sourced",
+          "sources": [
+            "X-end-to-end-018",
+            "X-end-to-end-019"
+          ],
+          "quote": "Optional edit-in-place beats approve-then-fix."
+        },
+        {
+          "text": "Test the clock and the duplicate in the same fixture. Prior art states the pair as one rule: messages will be delivered more than once, and every step should have a timeout - so a suite that fires ten copies but never lets a deadline pass has tested half of what a gate is for, and one that expires gates but never duplicates a decision has tested the other half.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-compensation-006",
+            "X-cap-human-interaction-008"
+          ],
+          "quote": "Every step in a saga should have a timeout"
+        },
+        {
+          "text": "agentic-stack states the structurally-green-gate finding (F-a7-03): those establish well-formedness, not correctness. Its consequence for an approval suite is that a run in which no gate ever parked will pass every assertion about duplicate resumes, so assert that gates were declared and parked before asserting anything about how they resumed.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second",
+        "expected": "exit 0, `passed 23, failed 0` from the gate, and one line per executor reading `executor_marker=in-process-journal/0.1` and `executor_marker=queue-state-machine/0.1` with `steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28`, closing on `adapters_run=2 distinct_markers=2`. The 28 checks include the four decided outcomes, ten deliveries of one decision resuming the run once, and an expiry followed by a late decision that is a no-op. It is the gate compose-approval-implement owns; run here on 2026-09-03 and exited 0. Claimed, stated as the gap: what this run swaps is the durable executor, not the decision wire - `wire` appears nowhere in harness/workflow/conformance.py or test.sh and flow.py takes one --wire with a single default of parked-item - so this facet's own `wires_run >= 2`, its `views_missing == 0` and its `gates_parked == 5` counters have never been measured, and tools/conformance/approval_gate.py does not exist in this repository.",
+        "breakage": "In harness/workflow/adapters/dryrun.py, break the redelivery dedup in record_decision so a prior gate-decided record is never recognised as a duplicate: sed -i 's/for r in prior)/for r in [])/' harness/workflow/adapters/dryrun.py, then git checkout -- harness/workflow/adapters/dryrun.py.",
+        "expected_failure": "exit 1 with `FAIL every check passed (expected [], got [{\"check\": \"F ten deliveries of one decision resume the run once\", \"detail\": \"applied=10\"}])` and `passed 18, failed 5`: only the exactly-once assertion moves, while parking, the four outcomes, the expiry case and both executor markers stay green, so a reader can tell the fault was the missing claim rather than a broken gate. Claimed here: this edit moves the resume seam compose-approval-implement owns; nothing on disk can make the wire-swap counter fail today because only one wire exists.",
+        "status": "claimed",
+        "sources": [
+          "F-part-c-04",
+          "F-b4-08"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion"
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-definition-of-done",
+          "build-skill-authoring",
+          "cap-work-intake",
+          "cap-scheduling",
+          "xc-idempotency-lease"
+        ],
+        "used_by": [
+          "compose-approval-implement"
+        ]
+      },
+      "open_questions": [
+        {
+          "question": "Who may answer a gate, and over what wire, once plans nest? This skill makes the decider and the wires declared fields, which answers the shape of the question but not the resolution rule: at depth 3 with a gate at each level, is the decider the root run's owner, the subject the ask names, or whoever the parent escalated to?",
+          "evidence": "cap-human-interaction carries the same open question for the interface (REF-11-07, REF-7-07); what would settle it here is parking a gate at each level of a depth-3 run across both wires and recording, per gate, which subject the policy admitted and which wire carried the decision. The reference names running each stage as its own workflow as the common workaround rather than an answer.",
+          "default": "Proposed: the gate declaration resolves its decider from the root run's owner unless the step overrides it, and an outcome is accepted from any listed wire that can authenticate that subject against the correlation id. The reference records this as a gap against this skill (REF-12-10) and the declared fields are the part of it this skill closes.",
+          "sources": [
+            "REF-12-10",
+            "REF-11-07",
+            "REF-7-07"
+          ]
+        },
+        {
+          "question": "Where does the expiry sweep run, given that the orchestrator human-in-the-loop signals were designed around is recorded as not listening?",
+          "evidence": "1-3-1 applied (TARGET T5) and recorded on 2026-09-03. Options: (a) an occurrence registered through cap-scheduling, evaluated by whatever serves that capability; (b) a deadline field on the gate record swept by the same reader that resumes; (c) a durable timer inside the executor that owns the run. Recommendation followed: (a), because it is the only one that keeps expiry working when nothing is executing and the run holds no process. What would settle it is measuring how long a gate stays open past its deadline under each, with the executor stopped.",
+          "default": "Proposed: register the deadline through cap-scheduling and treat the sweep as an entry like any other. (c) is refused outright here because it reintroduces the process the park just released.",
+          "sources": [
+            "T-t5-02",
+            "F-a6-02"
+          ],
+          "quote": "human-in-the-loop signals are designed around it and it is currently down"
+        },
+        {
+          "question": "Is return-with-notes a fourth outcome of the gate or an edge of the graph that a gate happens to trigger?",
+          "evidence": "Whether a returned run ever needs anything the gate does not already carry - a different budget slice, a different criterion, a different decider on the second pass. If it never does, it is an outcome; if it does, it is an edge core-graph owns and the gate only names its target.",
+          "default": "Proposed: an outcome, with return_to_step_id on the gate. Modelling it as a graph edge would put the reviewer's judgment into the plan's topology, and the reviewer decides at run time which the plan cannot know at resolve time.",
+          "sources": [
+            "F-a2-01",
+            "T-t5-02"
+          ],
+          "quote": "return a parked workflow from a phone"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session compose-approval 2831cb4f, 2026-09-03"
+      }
+    },
+    "compose-approval-implement": {
+      "name": "compose-approval-implement",
+      "layer": "compose",
+      "wave": 8,
+      "description": "How to build the approval gate compose-approval fixes on this stack: the parked-item wire that runs today, a queued decision inbox as the second wire because it breaks the assumption that a decider is looking when the ask arrives, where the gate record and the lease are bound so both wires pass through one resume seam, how to migrate from gates that live inside an orchestrator that is not listening, where correlation, identity, budget, provenance and typed errors attach to a park and to a resume, and a definition of done whose breakage moves one binding. Load it when writing or reviewing the code that parks a run, delivers an ask or applies a decision, when a decision resumed a run twice, when a gate stayed open past its deadline because nothing swept it, when choosing what the second decision channel should be, or when a gate passes on one channel and not the other.",
+      "purpose": {
+        "text": "Turn the gate compose-approval fixes into something that runs here: two decision wires behind one resume seam, a durable gate record that outlives every process, and a migration that never leaves a window in which one decision can be applied twice.",
+        "origin": "sourced",
+        "sources": [
+          "F-a2-01",
+          "F-b3-16"
+        ],
+        "quote": "Approve / reject / return a parked workflow from a phone"
+      },
+      "entities": [
+        "E-host-unit-approve-service",
+        "E-not-running-temporal",
+        "E-concern-idempotency",
+        "E-concern-identity",
+        "E-capability-state-persistence",
+        "E-capability-scheduling",
+        "E-capability-work-intake"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "differs_in_execution_model for this wire pair (proposed instance of the shape build-adapter-pair defines)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:compose:approval:pair-axes:0.1",
+              "title": "ApprovalWirePairAxes",
+              "description": "Proposed. The three axes the two decision wires differ on, stated as properties rather than as product names. measured stays false until the swap has been run and recorded.",
+              "type": "array",
+              "minItems": 3,
+              "examples": [
+                [
+                  {
+                    "axis": "who_initiates_delivery",
+                    "today_value": "the decider, who opens the parked item and pulls it",
+                    "second_value": "the platform, which pushes the ask into a durable queue whether or not anyone is there",
+                    "measured": false
+                  },
+                  {
+                    "axis": "delivery_multiplicity",
+                    "today_value": "one post per decision, and a lost post is a decision that never happened",
+                    "second_value": "at-least-once, so the same decision is redelivered until it is acknowledged and arrives more than once by design",
+                    "measured": false
+                  },
+                  {
+                    "axis": "decider_presence_required",
+                    "today_value": "a live session at the moment of deciding; nothing is delivered to someone who is not looking",
+                    "second_value": "none; the ask sits in the queue and the decision is accepted whenever it is produced, including after the deadline",
+                    "measured": false
+                  }
+                ]
+              ]
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04",
+              "X-entry-composition-024"
+            ]
+          },
+          {
+            "name": "approval-conformance report (proposed; the counters the definition of done asserts on, written per wire and once across wires)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:compose:approval:conformance-report:0.1",
+              "title": "ApprovalConformanceReport",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Proposed. A green run names what it checked and where the claim was taken, not only its exit code.",
+              "required": [
+                "wire",
+                "gates_parked",
+                "views_missing",
+                "resumes_per_gate_max",
+                "resumed_on_same_correlation",
+                "expired_gates",
+                "late_decisions_applied",
+                "lease_boundary_observed"
+              ],
+              "properties": {
+                "wire": {
+                  "type": "string",
+                  "description": "The entity id of the decision wire selected by configuration."
+                },
+                "gates_parked": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "views_missing": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "resumes_per_gate_max": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "The largest number of continuations any one gate produced across its deliveries."
+                },
+                "resumed_on_same_correlation": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "return_reentered_named_step": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "expired_gates": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "late_decisions_applied": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "lease_boundary_observed": {
+                  "type": "string",
+                  "description": "Read from the granted lease record, never from the binding that was configured. The value that passes is the shared resume seam; a wire name here is the fault the breakage introduces."
+                },
+                "sweeper_source": {
+                  "type": "string",
+                  "description": "What closed the expired gates: the scheduling occurrence, or a timer inside a process."
+                },
+                "wires_run": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-a7-03",
+              "F-b4-08"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "agentic-stack states design rule 1 (F-b1-02). Its consequence here: which wire carried a decision is configuration and audit, never control flow. delivered_over is recorded on the outcome and no workflow, no gate and no core component branches on it, or the second wire can never be run through the same fixture as the first.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-02"
+            ],
+            "quote": "The core imports interfaces, never implementations"
+          },
+          {
+            "text": "PASS.md A6 records that durable workflow orchestration and the human-in-the-loop signals were designed around a component whose server is not listening. The consequence for this build is that the gate is not defined in that component's vocabulary at all: the parked gate is a record in the state seam, the deadline is a scheduling occurrence, and the claim is a lease - three things that already have interfaces here - so nothing about a gate waits for that server to come back.",
+            "origin": "sourced",
+            "sources": [
+              "F-a6-02",
+              "E-not-running-temporal"
+            ],
+            "quote": "Durable workflow orchestration and human-in-the-loop signals are designed around it and it is currently down"
+          },
+          {
+            "text": "agentic-stack states that what runs is substrate (F-part-c-11). Its consequence here: the unit that already parks, shows and decides is not replaced. It becomes wire one, its verdict is mapped onto the outcome shape compose-approval fixes, and what is added in front of it is the gate record, the resume seam and the lease - not a new approval product.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-11",
+              "F-a2-01"
+            ],
+            "quote": "Part A is substrate, not scope. Do not propose replacing what runs."
+          },
+          {
+            "text": "Proposed, and the single most load-bearing binding in this build: the lease is acquired once, at the shared resume seam every wire passes through, and never inside a wire's own handler. compose-approval states the placement as a contract; what this adds is that the binding is observable - the granted lease record names the boundary it was taken at, and the conformance report reads that field rather than the configuration that set it.",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-08",
+              "F-a6-04"
+            ]
+          },
+          {
+            "text": "Proposed: the migration never has a window in which one decision can be applied twice. The gate record and the lease are added in shadow first, recording what they would have refused while the existing unit still resumes runs on its own; only then does the resume seam become the only path, and only then is the second wire enabled. Adding the second wire before the seam is what would create the window.",
+            "origin": "proposed",
+            "sources": [
+              "F-b3-16",
+              "T-t2-03"
+            ]
+          },
+          {
+            "text": "Apply build-evidence-record: every statement here about how a wire behaves stays claimed until the conformance run and its evidence record exist, naming the code version and the tree hash under test and whether the tree was dirty. Rewording a sentence never upgrades a label; proposed pointer, see that skill.",
+            "origin": "sourced",
+            "sources": [
+              "F-a5-04",
+              "F-part-c-08"
+            ],
+            "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Build wire one as a thin binding over the unit that already runs: it shows one parked item and posts one decision. Map its three verdicts onto the outcome shape compose-approval fixes, add the gate id, the correlation id and the deciding subject to what it posts, and change nothing else about it.",
+          "why": "compose-approval states that the unit PASS.md A2 records already offers approve, reject and return (F-a2-01); building the pair from what runs rather than from an intention is what makes the first wire real, and it makes the gap explicit - this wire delivers nothing to someone who is not looking at it.",
+          "origin": "sourced",
+          "sources": [
+            "F-a2-01",
+            "F-part-c-11"
+          ],
+          "quote": "Approve / reject / return a parked workflow from a phone"
+        },
+        {
+          "step": 2,
+          "action": "Proposed: build wire two as a queued decision inbox. The ask is pushed into a durable queue as a message, the decision comes back as an at-least-once delivery with no session behind it, and the wire acknowledges only after the resume seam has answered.",
+          "why": "Proposed: this breaks the assumption that a decider is present when the ask arrives. Prior art on file describes exactly this shape - external actors send decisions into the workflow as signals and the workflow reacts when the signal arrives without polling from inside the workflow - and it is the wire that makes the ten-deliveries case a real condition rather than a synthetic one.",
+          "origin": "sourced",
+          "sources": [
+            "X-entry-composition-024",
+            "X-entry-composition-029"
+          ],
+          "quote": "the workflow reacts when the signal arrives without polling from inside the workflow"
+        },
+        {
+          "step": 3,
+          "action": "Write the gate record through cap-state-persistence, keyed by correlation id and gate id, and make the record durable at a head before any ask is emitted on any wire.",
+          "why": "Proposed: an ask that exists on a wire before the gate exists in the store is a decision that can arrive with nothing to apply it to. Ordering the two writes this way is also what lets a wire be deleted and rebuilt between the ask and the decision without losing the run.",
+          "origin": "proposed",
+          "sources": [
+            "F-b3-17",
+            "X-cross-structure-046"
+          ]
+        },
+        {
+          "step": 4,
+          "action": "Put one resume seam in front of every wire and bind the lease acquisition, the actor binding and the response-schema validation inside it, in that order, before any outcome is applied. Record the boundary on the granted lease record so a report can observe where the claim was taken.",
+          "why": "compose-approval states that the resume boundary acquires its own lease (F-b4-08); at code level the risk is not that the claim is absent but that it is bound per wire, in which case the first wire looks correct and the second bypasses it. The recorded boundary is what turns that into something a run can assert on rather than something a reviewer has to read for.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-08",
+            "F-a6-04"
+          ],
+          "quote": "Conformance checks exist; not wired into the enforcement path"
+        },
+        {
+          "step": 5,
+          "action": "Bind the deadline sweep to the gate record through cap-scheduling, not to a wire and not to whatever process is running the workflow, and have the sweep write the gate terminal and return the registered deadline-exceeded problem.",
+          "why": "compose-approval's second open question records the 1-3-1 that chose this; the build-level reason is that a wire-owned sweep expires only its own asks, so a gate reachable from two wires would expire twice on one and never on the other, and a process-owned timer expires nothing at all once the process ends.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-human-interaction-008",
+            "F-b3-15"
+          ],
+          "quote": "you should design explicit timeouts for human steps rather than letting approvals sit indefinitely"
+        },
+        {
+          "step": 6,
+          "action": "Migrate in three stages with no gap: write gate records and take leases in shadow while the existing unit still resumes runs, recording every would-be refusal; then make the resume seam the only path for the wire that already exists; then enable the second wire.",
+          "why": "Proposed: doing it in the other order - second wire first - is the one sequence that creates a window in which two paths can both apply the same decision, which is precisely the failure this composition exists to prevent, introduced by the work of preventing it.",
+          "origin": "proposed",
+          "sources": [
+            "F-b3-16",
+            "T-t2-03"
+          ]
+        },
+        {
+          "step": 7,
+          "action": "Wire the cross-cutting guarantees onto the park and the resume as two distinct points: stamp the run's correlation attributes on the ask, the outcome and the resumed step; append the deciding hop to the delegation chain; resume under the ceiling that remains rather than a fresh one; record the view digest the decider saw as an attributable input; and return only registered problem types from both wires.",
+          "why": "The guarantees are managed across the entire structure, whichever entry point was used, and a park is the point where a run is most likely to lose them, because the process that held them has gone away. Each of the five is owned elsewhere - xc-correlation for the correlation attributes, xc-identity-delegation for the deciding hop, xc-budget for the ceiling that remains, xc-provenance-chain for the view digest as an attributable input and xc-typed-errors for the registered problem types - and what this step places is where they attach: on the park and on the resume as two distinct points, so a gate that satisfies four of them and drops one still reports green on every gate assertion.",
+          "origin": "sourced",
+          "sources": [
+            "T-t2-03",
+            "F-b4-01"
+          ],
+          "quote": "State, telemetry, and every cross-cutting concern are managed across the entire structure, whichever entry point was used."
+        },
+        {
+          "step": 8,
+          "action": "Run the conformance suite in the definition of done against both wires, selected by configuration with no code edit between runs, and write an evidence record per run before labelling anything measured. What that suite swaps today is the two executors, not the two wires: harness/workflow's conformance and gate name no wire at all and flow.py takes one --wire with a single default of parked-item, so wires_run stays claimed until the second wire of step 6 exists.",
+          "why": "build-adapter-pair states that swappability is a tested property, not an intention (F-b1-04), and build-evidence-record states what a record has to name; a pair described in a table and never run through one suite is two implementations, not a proven boundary.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-04",
+            "F-a5-04"
+          ],
+          "quote": "Swappability is a tested property, not an intention."
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Report the counters per wire and refuse to merge them. compose-approval draws the structurally-green consequence for a gate suite from F-a7-03; at build level the sharper version is that a merged report can show one continuation per gate while one wire produced ten and the other produced none, because the fixture never reached it.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        },
+        {
+          "text": "Expect the two wires to disagree about ordering and treat the difference as the finding, not as noise. A pulled decision arrives once when a person acts; a pushed one arrives repeatedly and may arrive after the gate closed. What must not differ between them is how many times the run continued and whether a late decision was applied.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-compensation-006",
+            "X-entry-composition-024"
+          ],
+          "quote": "messages will be delivered more than once, and every participant must handle duplicates gracefully"
+        },
+        {
+          "text": "Proposed: keep the gate record small and let it reference rather than contain. The view, the proposed artifact and the reviewer's edited body live where artifacts live and the gate holds digests, or a record designed to be read on every sweep inherits the size and retention policy of whatever the largest reviewed artifact happens to be.",
+          "origin": "proposed",
+          "sources": [
+            "F-b3-17",
+            "F-b4-05"
+          ]
+        },
+        {
+          "text": "Keep the gate on the live path. PASS.md A6 records a concern whose checks exist and sit outside the path that enforces them, and an approval suite that replays a stored fixture can pass in full while the workflow that actually runs never parks at all.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-04"
+          ],
+          "quote": "not wired into the enforcement path"
+        },
+        {
+          "text": "Proposed: rehearse the crash between the ask and the decision on both wires, not only the duplicate. Kill everything after the ask is emitted, bring it back, and deliver the decision; a gate that only survives a tidy shutdown has tested the queue, not the record the queue is a view of.",
+          "origin": "proposed",
+          "sources": [
+            "X-cross-structure-046",
+            "X-end-to-end-042"
+          ]
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-parked-approval-unit",
+          "role": "today",
+          "maps_to": "Proposed adapter, and a proposed entity id: PASS.md B3 has no Human interaction row, so no adapter entity exists to name here and cap-human-interaction mints the same id for the same thing. What runs is the host unit PASS.md A2 records, reachable on a private address, whose stated purpose compose-approval quotes as the source of the outcome triple plus the return. As a decision wire it serves park by rendering one item, and resume by posting one decision when a person is looking at it.",
+          "cannot": "Cannot deliver an ask to a decider who is not already looking, cannot redeliver a decision that was lost in flight, and cannot accept a decision produced while nothing was connected. It renders one item rather than a run in flight, so a reviewer sees the question and not the work that produced it, and it has nowhere to put an artifact the reviewer would edit in place.",
+          "swap_procedure": "Keep the gate record, the outcome shape and the resume seam still and move only what carries the ask and the decision. The wire is selected by configuration; the identical five-case fixture runs against each and the merged report must show wires_run at least 2.",
+          "status": "claimed",
+          "sources": [
+            "F-a2-01",
+            "E-host-unit-approve-service"
+          ],
+          "quote": "Approve / reject / return a parked workflow from a phone"
+        },
+        {
+          "entity": "E-swap-candidate-queued-decision-inbox",
+          "role": "second",
+          "maps_to": "Proposed adapter, and a proposed entity id: a durable queue the platform pushes the ask into and reads decisions back from, with no session anywhere in it. Prior art on file describes the shape - external actors send decisions into the workflow as signals, and the workflow reacts when the signal arrives without polling from inside the workflow - and delivery is at-least-once, so a decision arrives more than once by construction rather than by accident.",
+          "cannot": "Cannot show anyone anything: it carries a view reference, not a view, so it needs a renderer it does not own. It cannot tell a decider that a gate is about to expire, gives no ordering guarantee between two decisions produced close together, and cannot make progress when its own broker is unreachable, where the first wire needs only the item to be openable. That is the axis: pull by a present decider against push to an absent one, and one post against redelivery until acknowledged.",
+          "swap_procedure": "Proposed: the axes are who_initiates_delivery, delivery_multiplicity and decider_presence_required, recorded in the shape above. agentic-stack and build-adapter-pair already state design rule 3 (F-b1-04); what is new here is that the second wire is chosen for having no decider present rather than for being a different approval product, which is what makes the ten-deliveries and late-decision cases real conditions on it.",
+          "status": "claimed",
+          "sources": [
+            "F-b1-04",
+            "X-entry-composition-024"
+          ],
+          "quote": "External actors like approval UIs send decisions into the workflow as signals"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second",
+        "expected": "Measured by tools/measure.py at eaca633: exit 0; last lines: adapter=second executor_marker=queue-state-machine/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28 | adapters_run=2 distinct_markers=2",
+        "breakage": "In harness/workflow/adapters/dryrun.py, break the redelivery dedup in record_decision so a prior gate-decided record is never recognised as a duplicate: sed -i 's/for r in prior)/for r in [])/' harness/workflow/adapters/dryrun.py. Ten deliveries of the same decision then each re-apply instead of the first one landing and the rest being no-ops. Restore with git checkout -- harness/workflow/adapters/dryrun.py.",
+        "expected_failure": "Measured by tools/measure.py at eaca633: exit 1; last lines:   FAIL the same suite passes again once the key is restored (expected 0, got 1) | passed 18, failed 5",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04",
+          "F-b1-04"
+        ],
+        "quote": "the second exists to prove the first is not load-bearing",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "eaca633",
+          "clean_exit": 0,
+          "clean_output": "  ok   call.py exits 0 (0)\n  ok   dry-run conformance exits 0 (0)\n  ok   the breakage run exits non-zero (nonzero)\n...\nadapter=dryrun executor_marker=in-process-journal/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28\nadapter=second executor_marker=queue-state-machine/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28\nadapters_run=2 distinct_markers=2",
+          "breakage_exit": 1,
+          "breakage_output": "  ok   call.py exits 0 (0)\n  FAIL dry-run conformance exits 0 (expected 0, got 1)\n  FAIL every check passed (expected [], got [{\"check\": \"F ten deliveries of one decision resume the run once\", \"detail\": \"applied=10\"}])\n  FAIL before: dry-run adapter (expected 0, got 1)\n  FAIL both executors in one report (expected 0, got 1)\n  ok   the breakage run exits non-zero (nonzero)\n  FAIL the same suite passes again once the key is restored (expected 0, got 1)\n...\n  FAIL the same suite passes again once the key is restored (expected 0, got 1)\n\npassed 18, failed 5",
+          "restored": true
+        },
+        "expected_design": "exit 0: the gate's 23 checks pass (including E approve/edit/reject/return, F ten deliveries resume once, G expiry plus a late no-op decision), the swap proof holds across two executor markers, and the standalone conformance run reports adapters_run=2 with the parked-gate cases green on both.",
+        "expected_failure_design": "exit non-zero: check F (ten deliveries of one decision resume the run once) fails with applied=10 instead of 1, which fails out/before.json's zero-failures check inside test.sh and stops the gate short; every other case (gate parking, expiry, return-with-notes re-entry, the swap markers) is unaffected, isolating the fault to the resume seam's decision dedup rather than to parking or expiry."
+      },
+      "composes_with": {
+        "builds_on": [
+          "compose-approval",
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Both wire entities are minted here. The knowledge base has no adapter or swap-candidate entity for a decision channel, because PASS.md B3 has no Human interaction row to hang one on. Where should they live?",
+          "evidence": "1-3-1 applied (TARGET T5) and recorded on 2026-09-03, the same way cap-human-interaction records the gap for its own pair. Options: (a) carry the pair here with proposed entity ids declared as proposed in the rows themselves; (b) append entities to kb/entities.jsonl, which rewrites the entity chain head every written skill pins in provenance; (c) reuse the host-unit entity as the adapter id, which would put a unit of the running host where an adapter belongs. Recommendation followed: (a).",
+          "default": "Proposed: the pair stays on minted ids, declared as proposed in each row, and cap-human-interaction's identical row for the first wire is the precedent. A knowledge-base rebuild that adds a Human interaction row to PASS.md B3 is what replaces them.",
+          "sources": [
+            "T-t5-02",
+            "F-b1-04"
+          ],
+          "quote": "define the problem, identify the three best possible solutions that align to the goal"
+        },
+        {
+          "question": "How long should the lease on a resume boundary live, given that a gate may stay open for days while a lease that outlives a crashed owner blocks the key?",
+          "evidence": "The two durations are unrelated: the gate's deadline bounds how long a person has, the lease bounds how long one delivery may hold the claim. Measure the time from delivery to applied outcome per wire and set the lease above its tail, then measure how many redeliveries a normal queued decision produces inside that window.",
+          "default": "Proposed: a lease scoped to the delivery rather than to the gate, short enough that a crashed resume clears within one redelivery interval, with the value carried per wire rather than globally. No number is proposed because none has been measured on this stack.",
+          "sources": [
+            "F-b4-08",
+            "X-xc-compensation-006"
+          ],
+          "quote": "if a service does not respond within a defined period"
+        },
+        {
+          "question": "Should the second wire acknowledge a delivery it could not apply because the gate had already closed, or leave it for redelivery?",
+          "evidence": "Whether a late decision is observable to the person who made it. Measure how many late deliveries occur per expired gate; if acknowledging silently makes a decider believe they decided, the acknowledgement has to carry the registered deadline-exceeded problem back rather than an empty success.",
+          "default": "Proposed: acknowledge, and return the problem object on the acknowledgement path. Leaving it for redelivery converts one late decision into an unbounded retry against a gate that will never open.",
+          "sources": [
+            "X-cap-human-interaction-008",
+            "F-b4-07"
+          ],
+          "quote": "Typed and machine-readable. Never parsed from prose"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session compose-approval 2831cb4f, 2026-09-03"
+      }
+    }
   }
 }

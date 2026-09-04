@@ -351,17 +351,25 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Field | Value |
 |---|---|
 | Criterion | bash harness/state-persistence/test.sh && python3 harness/state-persistence/conformance.py --adapter dryrun --adapter second |
-| Expected | exit 0, `passed 20, failed 0` from the gate and `conformance PASSED: 22/22 cases, 2 binding(s)` over the in-memory chained log and the content-addressed merkle log over an object store, the binding chosen by configuration (`nothing but the binding changed between the two runs`). Three of this facet's assertions are on disk there: `a pinned snapshot does not see a later write`, `an inclusion proof verifies without the whole log`, and `two writers racing for the same head never fork the log`. It is the gate seam-state-implement owns. Claimed, stated as the gap: `tools/conformance/state_seam.py` does not exist, so `projections_checked == 8`, `distinct_results_per_projection == [1,1,1,1,1,1,1,1]` at 100 repeats against a concurrent writer, `concurrent_appends_observed > 0` and a consistency proof checked by an external Merkle verifier run as a subprocess have never been produced here. The criterion above was run on 2026-09-03 and exited 0. |
-| Deliberate breakage | Let one projection - `open_dispatches` - resolve the head itself and read live instead of reading at the `at_head` it was passed. Change nothing else: same adapters, same record sequence, same command. |
-| Expected failure | Exit 1 under both adapters. That projection's 100 results diverge as soon as the concurrent writer appends, so `distinct_results_per_projection` becomes greater than 1 in exactly that position while assertion (a) still passes, isolating the fault to the query surface rather than to the integrity mechanism. Two nearby readings are also failures, not passes: `concurrent_appends_observed == 0` means the race never happened and the pinning was never tested, and an `external_verifier_exit == 0` obtained by handing the verifier our own head rather than the stored records proves nothing. Claimed: neither adapter is written, tools/conformance/state_seam.py does not exist, and no run has been performed here. |
-| Status | claimed |
-| Evidence | `F-b5-05`, `F-b1-06`, `F-b1-04` "the integrity mechanism, retention, and the query surface a planner needs" |
+| Expected | Measured by tools/measure.py at fb96f80: exit 0; last lines:   adapter=content-addressed merkle log over an object store (second adapter) cases=11 passed=11 appends=10 refusals=2 product_hits=0 \| conformance PASSED: 22/22 cases, 2 binding(s) |
+| Deliberate breakage | sed -i '76s#.*#LEAF_PREFIX = b"\\x02"#' harness/state-persistence/interface.py |
+| Expected failure | Measured by tools/measure.py at fb96f80: exit 1; last lines:   ok   chain_break_at went from -1 to 2, the tampered record \| passed 14, failed 6 |
+| Status | measured |
+| Evidence | `F-b5-05`, `F-b1-06`, `F-part-c-04` "concurrency and single-writer guarantees" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `seam-state-implement` | Turn the contract in seam-state into something that runs here: one append path behind two adapters whose execution models differ, built out of the JSONL, hash-chained store that already exists rather than beside it, so the chain that is the valuable idea survives the move. | `references/seam-state-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-definition-of-done`, `build-skill-authoring`, `build-adapter-pair`, `build-evidence-record`, `core-graph`, `core-ledger`, `cap-state-persistence`, `xc-provenance-chain`, `cap-errors`
+Builds on: `agentic-stack`, `build-evidence`, `build-skill-authoring`, `cap-errors`, `cap-provenance`, `cap-state-persistence`, `core-components`
 
-Used by: `seam-state-implement`, `xc-audit-trail`
+Used by: `cap-provenance`
 
 ## Open questions
 

@@ -230,18 +230,30 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | python3 tools/conformance/provenance_verify.py --adapter local-signed-jsonl --adapter keyless-transparency-log --artifact out/artifact.bin --report out/prov.json |
-| Expected | docs/decomposition.md section 3.2 row P11, made precise and run over the adapter pair above: that command (proposed tool, built with the first signing adapter), the adapter selected by configuration with no code edit between runs. Per adapter it produces an artifact, emits the statement, then shells out to a third-party verifier that we did not write, with our evidence store unmounted, and asserts that the external verifier exits 0, that `attestations_verified > 0`, and that every subject digest in the statement matches the artifact on disk; across adapters it asserts `adapters_run >= 2`. exit 0 with, per adapter, `external_verifier_exit == 0`, `attestations_verified > 0`, `subject_mismatches == 0` and `store_mounted == false`, followed by `adapters_run=2` |
-| Deliberate breakage | Rebuild the artifact from a modified input without regenerating the attestation, and re-run the same command unchanged. |
-| Expected failure | exit 1 with the external verifier exiting non-zero on subject digest mismatch, `subject_mismatches == 1` and `attestations_verified == 0`, under both adapters, because the mismatch is in the statement rather than in either signer; a run where the external verifier still exits 0 means the check was reading our own store and the store was not actually unmounted. Claimed: no statement is emitted anywhere today, neither signing adapter is written and the conformance tool does not exist, so neither run has been performed here. What is measured is the starting state, recorded in cap-provenance-use: the reference runner emits subject digests and zero attestations. |
-| Status | claimed |
+| Criterion | bash harness/provenance/test.sh && python3 harness/provenance/conformance.py --adapter dryrun --adapter second |
+| Expected | Measured by tools/measure.py at 372cdc1: exit 0; last lines:   cases=13 passed=13 emitted=2 verified=1 subject_mismatches=0 orphan_subjects=0 store_mounted=False verifier_exit=0 log_inclusion_proofs=1 product_hits=0 \| conformance PASSED: 26/26 cases, 2 binding(s) |
+| Deliberate breakage | Append a product-name comment (`# breakage: sigstore`) to the end of harness/provenance/call.py, outside adapters/. Restored with `git checkout -- harness/provenance/call.py`. |
+| Expected failure | Measured by tools/measure.py at 372cdc1: exit 1; last lines:   ok   the run names what broke it \| passed 21, failed 6 |
+| Status | measured |
 | Evidence | `F-b4-05`, `F-b3-12` "verifiable with a tool we did not write" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-provenance-implement` | Turn the contract in cap-provenance into something that runs here: one attest call, two signing adapters behind it whose execution models differ, and every artifact and agent action reaching a statement an outside verifier can check. | `references/cap-provenance-implement.md` |
+| `xc-provenance-chain` | Fix the closure half of provenance: cap-provenance settles what a statement is and how an outsider checks one, build-evidence-record marks the same boundary from the other side by keeping note-taking out of attestation (F-b4-05), and this guarantee settles that a statement exists for every artifact digest that leaves, applied by the platform at the point of release rather than requested by whoever produced the output. | `references/xc-provenance-chain.md` |
+| `xc-provenance-chain-implement` | Turn the closure guarantee xc-provenance-chain states into two enforcement points on this stack, chosen the way build-adapter-pair requires, selectable by configuration, with a migration that never leaves a window in which an output can be released unattested, and a run that can actually fail. | `references/xc-provenance-chain-implement.md` |
+| `xc-audit-trail` | Fix what makes a record of what happened evidence rather than a log: attributable to an actor and a delegation chain, reachable by correlation id, chained so that interference is detectable, retained for a stated period, and produced by the platform from the ledger, identity, provenance and correlation guarantees it already applies. cap-provenance settles what a signed statement is, xc-provenance-chain settles that one exists for every artifact, seam-state settles how the log is written and sealed; this guarantee settles that the resulting record answers who, under whose authority, in which run, and that someone other than us can check it. | `references/xc-audit-trail.md` |
+| `xc-audit-trail-implement` | Turn the guarantee xc-audit-trail states into two stores behind one trail contract, chosen the way build-adapter-pair requires so that the second breaks the assumption that we hold the only copy of our own record, with a migration that never claims coverage it does not have, and a run that can actually fail. | `references/xc-audit-trail-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-evidence-record`, `build-skill-authoring`, `cap-errors`
+Builds on: `agentic-stack`, `build-ceremony`, `build-evidence`, `build-skill-authoring`, `cap-errors`, `cap-scheduling`, `core-components`, `seam-state`, `xc-guarantees`
 
-Used by: `cap-capability-registry`, `cap-mandate-broker`, `cap-provenance-implement`, `xc-audit-trail`, `xc-provenance-chain`
+Used by: `cap-capability-packaging`, `cap-identity`, `seam-dispatch`, `seam-state`
 
 ## Open questions
 

@@ -266,18 +266,26 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | bash harness/gateway/test.sh |
-| Expected | Proposed tool, built with the first implementation of this interface: `python3 tools/conformance_model_access.py --adapter today --adapter second --request fixtures/model-access/request.json --report out/model-access-conformance.json`. It dispatches the same request object through the synchronous adapter and the asynchronous batch adapter and asserts, per adapter, that submit returned a claim ticket, that claim redeemed it, and that the result validates against the one result schema; across adapters it asserts `adapters_run >= 2` and `results_validated == adapters_run`. It then runs `grep -rIl -E '(litellm\|openrouter\|gemini\|sglang)' src/core/ src/seam/` and asserts `product_hits == 0`. exit 0, one line per adapter of the form `adapter=<entity> ticket_state=redeemed result_schema=valid endpoint_read_from=response`, followed by `adapters_run=2 results_validated=2 product_hits=0`. Until that proposed tool exists, `bash harness/gateway/test.sh` (owned by cap-model-access-implement) is the running gate: every check line reads ok and the script exits 0. |
-| Deliberate breakage | Add a branch on the adapter name inside the caller so that the batch path takes a different code path, change nothing else, and re-run the same command. |
-| Expected failure | The grep over `src/core/` and `src/seam/` now lists the caller's file, `product_hits` becomes non-zero, and the run exits non-zero naming that file: the 'no product names in core' assertion is design rule 1 made checkable, and it fails the moment the two adapters stop being one interface. `adapters_run` stays 2, which is what shows the failure is the branch rather than an adapter that never ran. |
-| Status | claimed |
-| Evidence | `F-part-c-04`, `F-b1-02`, `F-b3-03` "A criterion nothing can fail is not a criterion" |
+| Criterion | bash harness/gateway/test.sh && python3 harness/gateway/conformance.py --adapter dryrun --adapter second |
+| Expected | Measured by tools/measure.py at 372cdc1: exit 0; last lines:   adapter=provider-native asynchronous batch (claim-and-poll) cases=12 passed=12 dispatches=7 refusals=2 overshoot_violations=0 endpoint_marker=batch-job-accepted product_hits=0 \| conformance PASSED: 24/24 cases, 2 binding(s) |
+| Deliberate breakage | Append a product-name comment (`# breakage: litellm`) to the end of harness/gateway/call.py, outside adapters/. Restored with `git checkout -- harness/gateway/call.py`. |
+| Expected failure | Measured by tools/measure.py at 372cdc1: exit 1; last lines:   FAIL hits not counted \| passed 18, failed 7 |
+| Status | measured |
+| Evidence | `F-part-c-04`, `F-b1-02` "The core imports interfaces, never implementations" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-model-access-implement` | Turn the contract in cap-model-access into something that runs here: two adapters behind one completions interface, the model classes that exist today brought in front of it group by group, and every ceiling attached around the submission and around the claim rather than inside the gateway. | `references/cap-model-access-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors`
+Builds on: `agentic-stack`, `build-evidence`, `build-skill-authoring`, `cap-errors`
 
-Used by: `cap-model-access-implement`, `xc-budget`
+Used by: `xc-guarantees`
 
 ## Open questions
 

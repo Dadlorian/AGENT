@@ -236,18 +236,26 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | python3 tools/conformance/recurrence_vectors.py --adapter today --adapter second --vectors tests/vectors/rfc5545/ --report out/sched.json |
-| Expected | docs/decomposition.md section 3.2 row P14, made precise and run over the adapter pair above: that command (proposed tool, built with the first evaluator), the adapter selected by configuration with no code edit between runs. Per adapter it evaluates every vector and asserts each computed occurrence set equals the expected set exactly (`mismatches == 0`) and `vectors_run > 40`; the corpus must contain at least one daylight-saving spring-forward vector, one fall-back vector, one 29 February leap-day vector and one BYSETPOS vector, asserted by `corpus_covers == ["dst_forward", "dst_back", "leap_day", "bysetpos"]`. Across adapters it asserts `adapters_run >= 2`. exit 0 with, per adapter, `mismatches == 0`, `vectors_run > 40` and the four corpus classes present, followed by `adapters_run=2` |
-| Deliberate breakage | Replace the RFC 5545 evaluator behind one adapter with a fixed-interval cron that adds a constant period to the previous firing, and re-run the same command unchanged. |
-| Expected failure | exit 1 for that adapter with `mismatches >= 3`: the spring-forward vector produces an occurrence one hour off, the leap-day vector produces the wrong date, and the BYSETPOS vector cannot be expressed at all so its computed set is empty. The other adapter still passes and `adapters_run` still reports 2; a run that fails both, or neither, has not tested the swap. Claimed: the vector corpus and the runner do not exist here and neither run has been performed, so both halves of this criterion start red by construction. |
-| Status | claimed |
-| Evidence | `F-b3-15`, `F-b1-04` "cron · any RFC 5545 parser" |
+| Criterion | bash harness/scheduling/test.sh && python3 harness/scheduling/conformance.py --vectors --adapter dryrun --adapter second |
+| Expected | Measured by tools/measure.py at d6473df: exit 0; last lines: # adapter standalone-evaluator vectors_run=43 mismatches=0 corpus_covers=['bysetpos', 'dst_back', 'dst_forward', 'leap_day'] unsupported_parts=[] \| conformance PASSED (vectors): 2 binding(s) |
+| Deliberate breakage | In harness/scheduling/interface.py idempotency_key(), mint the key from the wall clock instead of unit and occurrence, run the criterion (the replay case fails on both adapters while the vector corpus still shows mismatches 0, and the gate exits 1), then git checkout harness/scheduling/interface.py. |
+| Expected failure | Measured by tools/measure.py at d6473df: exit 1; last lines:   File "<stdin>", line 14, in <module> \| AssertionError: the breakage pattern was not found; test.sh is out of sync with interface.py |
+| Status | measured |
+| Evidence | `F-b3-15`, `F-b1-04`, `F-a6-02` "cron · any RFC 5545 parser" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-scheduling-implement` | Turn the contract in cap-scheduling into something that runs here: one declaration, two adapters whose execution models differ, a ticker that reads the clock in one place, and every firing entering through the ordinary path. | `references/cap-scheduling-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors`
+Builds on: `agentic-stack`, `build-evidence`, `build-skill-authoring`, `cap-errors`
 
-Used by: `cap-scheduling-implement`, `compose-approval`, `xc-audit-trail`
+Used by: `cap-human-interaction`, `cap-provenance`
 
 ## Open questions
 

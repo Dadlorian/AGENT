@@ -193,15 +193,15 @@
   },
   "composes_with": {
     "builds_on": [
-      "agentic-stack"
+      "agentic-stack",
+      "build-ceremony",
+      "build-evidence"
     ],
     "used_by": [
-      "build-entry-conformance",
-      "build-interface-versioning",
-      "build-simplicity-budget",
+      "build-ceremony",
+      "build-evidence",
       "cap-agent-runtime",
       "cap-capability-packaging",
-      "cap-capability-registry",
       "cap-document-validation",
       "cap-durable-execution",
       "cap-errors",
@@ -210,8 +210,6 @@
       "cap-idempotency",
       "cap-identity",
       "cap-isolation",
-      "cap-mandate-broker",
-      "cap-memory",
       "cap-model-access",
       "cap-policy",
       "cap-provenance",
@@ -220,29 +218,12 @@
       "cap-telemetry",
       "cap-tool-access",
       "cap-work-intake",
-      "compose-agent",
-      "compose-approval",
       "compose-improvement-loop",
-      "compose-loop",
-      "compose-operators",
-      "core-document",
-      "core-graph",
-      "core-judge",
-      "core-ledger",
-      "core-planner",
+      "compose-workflow",
+      "core-components",
       "seam-dispatch",
       "seam-state",
-      "xc-audit-trail",
-      "xc-budget",
-      "xc-compensation",
-      "xc-correlation",
-      "xc-enforcement-chain",
-      "xc-idempotency-lease",
-      "xc-identity-delegation",
-      "xc-policy-gate",
-      "xc-provenance-chain",
-      "xc-tenancy",
-      "xc-typed-errors"
+      "xc-guarantees"
     ]
   },
   "open_questions": [
@@ -276,5 +257,891 @@
       "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
     },
     "author": "session claude/auto-skill-creation-i8javu"
+  },
+  "folded": {
+    "build-status-table": {
+      "name": "build-status-table",
+      "layer": "build",
+      "wave": 1,
+      "description": "How STATUS.md is kept: one heading and one table with five fixed columns, one plain statement per cell, a closed status vocabulary, no dependency language, and a checker that rejects anything else. Load it before editing STATUS.md or STATUS-ARCHIVE.md, when a row turns Done and should be archived, when adding a work item or changing its status, when a status cell starts to explain instead of state, when someone asks where are we or what is left, and when a report is about to grow prose, sub-bullets, or run-on sentences. Also load it when a row is marked Done without a result, or when a new column seems necessary.",
+      "purpose": {
+        "text": "Give the owner one table that states where the work is, in the simplest form, so a decision can be made without reading prose.",
+        "origin": "sourced",
+        "sources": [
+          "T-t3-01"
+        ],
+        "quote": "It has to be simple to use."
+      },
+      "contract": {
+        "invariants": [
+          {
+            "text": "The file is a single heading and a single table. Anything else is rejected by the checker.",
+            "origin": "sourced",
+            "sources": [
+              "T-t3-02"
+            ],
+            "quote": "It cannot be daunting or overly complex, or no one will use it."
+          },
+          {
+            "text": "As agentic-stack states, a Done row carries a measured result, never a pending one.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-04"
+            ],
+            "quote": "A criterion nothing can fail is not a criterion"
+          },
+          {
+            "text": "Dependencies live in docs/skill-manifest.json and the ledger, never in the table. (proposed: our convention) Research query: project-tracking practice on keeping a dependency graph out of a status view and in a separate artifact.",
+            "origin": "proposed"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Add a work item as one row: a five-word name, a definition of done that is a verifiable statement, a status from the closed set, and a result that is a number or a plain fact. Research query: one-idea-per-row conventions in status-reporting tables for glanceable readability.",
+          "why": "Proposed: one idea per cell keeps the table readable at a glance.",
+          "origin": "proposed"
+        },
+        {
+          "step": 2,
+          "action": "Write the definition of done as the state that would make the row Done, not as the work to do.",
+          "why": "As agentic-stack states, a criterion nothing can fail is not a criterion, so state the observable end.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-04"
+          ],
+          "quote": "A criterion nothing can fail is not a criterion"
+        },
+        {
+          "step": 3,
+          "action": "Mark a row Done only when the result was measured; otherwise leave it Open or In progress and put the current number in Result.",
+          "why": "As agentic-stack states, claimed and measured are kept apart.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-08"
+          ],
+          "quote": "Distinguish **claimed** from **measured** throughout"
+        },
+        {
+          "step": 4,
+          "action": "When a cell needs a second idea, split the row or move the detail to the run summary. Never widen the table. Research query: practice on splitting a table row versus widening a table when a cell needs a second idea.",
+          "why": "Proposed: the table is the decision view, not the record.",
+          "origin": "proposed"
+        },
+        {
+          "step": 5,
+          "action": "Keep row numbers contiguous; retire a row by marking it Done or by deleting it and renumbering. Research query: stable-numbering practice for referring to a row in conversation across edits.",
+          "why": "Proposed: stable numbering lets a conversation refer to a row.",
+          "origin": "proposed"
+        },
+        {
+          "step": 6,
+          "action": "Before committing any change that moves a work item, edit its row and run the checker; commit the row with the change. Research query: pre-commit checking practice: running a validator before and after a change to a tracked document, in the same commit as the change.",
+          "why": "Proposed: the owner reads the table, not the log; a stale row is a false statement.",
+          "origin": "proposed"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Prefer a number in Result over a word; 29 of 29 beats passing. (proposed: our convention) Research query: status-reporting practice on preferring a measured number over a qualitative word in a result field.",
+          "origin": "proposed"
+        },
+        {
+          "text": "Blocked names what blocks it in the Result cell in three words or fewer. (proposed: our convention) Research query: practice on naming a blocker concisely in a status field rather than describing it at length.",
+          "origin": "proposed"
+        },
+        {
+          "text": "As agentic-stack states, facts belong in the table and reasons in the ceremony records; products only in adapter columns.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-09"
+          ],
+          "quote": "Products belong in the adapter column only"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "python3 tools/status_check.py",
+        "expected": "Measured by tools/measure.py at 1d15132: exit 0; last lines: STATUS.md: 13 rows, 0 errors | STATUS-ARCHIVE.md: 50 rows, 0 errors",
+        "breakage": "Replace the Result cell of the row numbered 13 in STATUS.md with a run-on carrying a dependency word and a parenthetical, then run the criterion and restore the file byte for byte from the copy taken in the same command: `cp STATUS.md <backup> && sed -i '/^| 13 |/s/[^|]*|$/ Verified; depends on the loop (see row 5) |/' STATUS.md`. The checker reads STATUS.md at a fixed path, so the mutation is applied to that file and undone, not to a copy the criterion would never open.",
+        "expected_failure": "Measured by tools/measure.py at 1d15132: exit 1; last lines: STATUS.md: 13 rows, 4 errors | STATUS-ARCHIVE.md: 50 rows, 0 errors",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "1d15132",
+          "clean_exit": 0,
+          "clean_output": "STATUS.md: 13 rows, 0 errors\nSTATUS-ARCHIVE.md: 50 rows, 0 errors",
+          "breakage_exit": 1,
+          "breakage_output": "error: row 13: Result contains 'depends'\nerror: row 13: Result contains ';'\nerror: row 13: Result contains '('\nerror: row 13: Result contains ')'\nSTATUS.md: 13 rows, 4 errors\nSTATUS-ARCHIVE.md: 50 rows, 0 errors"
+        },
+        "expected_design": "`STATUS.md: <count> rows, 0 errors` then `STATUS-ARCHIVE.md: <count> rows, 0 errors`, exit 0. The row counts move as rows are added and archived and are not the criterion; zero errors on both files is.",
+        "expected_failure_design": "exit 1 with the four lines `error: row 13: Result contains 'depends'`, `error: row 13: Result contains ';'`, `error: row 13: Result contains '('`, `error: row 13: Result contains ')'`, then `STATUS.md: <count> rows, 4 errors` and `STATUS-ARCHIVE.md: <count> rows, 0 errors`. One run-on cell raises one error per banned token, which is why the count is four and not one. The row number is the row the breakage names, and the exact output is in measured_run below; STATUS.md was restored byte for byte afterwards."
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack"
+        ],
+        "used_by": []
+      },
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session claude/auto-skill-creation-i8javu"
+      }
+    },
+    "build-research-record": {
+      "name": "build-research-record",
+      "layer": "build",
+      "wave": 1,
+      "description": "The discipline of keeping one record per search, source and quote, so a claim a skill makes can be traced back to text that was actually read. Load before citing an X- id in a skill, when a statement needs a source and none is on file, before searching for prior art for a capability or a seam, when deciding whether a page was read or only its search result seen, before writing down a URL, a title or a version string, when a reviewer asks where a sentence came from, and when a search found nothing and you have to say so anyway. Fixes the record's fields (lens, topic, query, url, title, verbatim snippet, read, status search-only versus fetched), the rule that a cited quote is a verbatim substring of the record it names, and the merge that makes an X- id resolve at all.",
+      "purpose": {
+        "text": "Keep one record per search, source and quote - collecting and storing the information about each source at the moment it is read - so a claim a skill makes can be traced back to text that was actually read, and so a search that found nothing is written down rather than lost. PASS.md states the write-down-what-you-searched rule for the first-cut Dispatch and State design; applying it to every lens in this repository is our own convention, recorded in the invariants below.",
+        "origin": "sourced",
+        "sources": [
+          "X-build-research-record-001",
+          "X-build-research-record-002",
+          "F-part-c-03"
+        ],
+        "quote": "keeping track of your sources that allow you to collect and store information about sources"
+      },
+      "entities": [
+        "E-standard-json-schema-2020-12",
+        "E-provisioning-concern-evidence-store"
+      ],
+      "contract": {
+        "standards": [
+          {
+            "entity": "E-standard-json-schema-2020-12",
+            "version": "2020-12",
+            "version_status": "unverified",
+            "url": null,
+            "sources": [
+              "F-b3-09",
+              "E-standard-json-schema-2020-12"
+            ]
+          }
+        ],
+        "shapes": [
+          {
+            "name": "research-record (proposed shape; the field-by-field rules, a worked example and the lens naming convention are in references/research-record-shape.md)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "title": "research-record",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "type",
+                "lens",
+                "topic",
+                "query",
+                "url",
+                "title",
+                "snippet",
+                "status",
+                "agent",
+                "date"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^X-[a-z0-9]+(-[a-z0-9]+)*-[0-9]{3}$"
+                },
+                "type": {
+                  "const": "research"
+                },
+                "lens": {
+                  "type": "string"
+                },
+                "topic": {
+                  "type": "string"
+                },
+                "informs": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^[FERT]-"
+                  }
+                },
+                "query": {
+                  "type": "string"
+                },
+                "url": {
+                  "type": "string",
+                  "format": "uri"
+                },
+                "title": {
+                  "type": "string"
+                },
+                "snippet": {
+                  "type": "string"
+                },
+                "read": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "status": {
+                  "enum": [
+                    "search-only",
+                    "fetched"
+                  ]
+                },
+                "claim": {
+                  "type": "string"
+                },
+                "agent": {
+                  "type": "string"
+                },
+                "date": {
+                  "type": "string",
+                  "format": "date"
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b3-09"
+            ],
+            "quote": "JSON Schema 2020-12"
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Status is the claimed-versus-measured line for research, the same distinction agentic-stack states for the platform: search-only means a title and a result snippet were seen; fetched means the page body was read into the record.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-08"
+            ],
+            "quote": "Distinguish **claimed** from **measured** throughout"
+          },
+          {
+            "text": "Proposed: read is non-null exactly when status is fetched. A search-only record never carries page text, and a fetched record never carries an empty read. Research query: research-record schema conventions for a nullable field whose non-null state is keyed to an enum value elsewhere in the same record.",
+            "origin": "proposed"
+          },
+          {
+            "text": "A citation must never imply a page was read when only its search result was seen, because citing sources without reading them is considered fraudulent.",
+            "origin": "sourced",
+            "sources": [
+              "X-build-research-record-002"
+            ],
+            "quote": "Citing sources without reading them is considered fraudulent because you are lying about the work you have done."
+          },
+          {
+            "text": "Proposed: nothing in a record is composed. The url, the title, the snippet, the date and any version string inside them are copied from what was in front of you or the record is not written. Research query: source-documentation practice on whether a field copied from a viewed page (url, title, snippet, date) may be normalized or must stay byte-for-byte as seen.",
+            "origin": "proposed",
+            "sources": [
+              "F-part-c-10"
+            ],
+            "quote": "Cite the standard and its version."
+          },
+          {
+            "text": "Proposed: a version number counts as verified only when a record with status fetched carries it; otherwise the standard it governs stays version_status unverified. Research query: standards-tracking practice on what evidence is required before a version number is marked verified rather than unverified.",
+            "origin": "proposed",
+            "sources": [
+              "F-part-c-10"
+            ],
+            "quote": "Prefer an existing standard to an original design."
+          },
+          {
+            "text": "The store is append-only, on the model of the evidence store, which PASS.md records as append-only JSONL. A record is never edited to fit a later claim; a correction is a new record and the old one stays where it is.",
+            "origin": "sourced",
+            "sources": [
+              "F-a5-04"
+            ],
+            "quote": "Append-only JSONL"
+          },
+          {
+            "text": "Proposed: a record is citable only once it resolves in kb/research.jsonl. An X- id that resolves nowhere is a claim about a record, not a citation. Research query: citation-resolution practice on whether an id that does not resolve in a merged store counts as a citation at all.",
+            "origin": "proposed"
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "This discipline does not record runs of our own code. A command, its exit status and the tree it ran against - the evidence-record fields PASS.md names (script SHA-256, git commit, tree hash) - belong to the evidence-record discipline (build-evidence-record), kept separate so a page somebody else wrote is never filed as something we measured.",
+            "origin": "sourced",
+            "sources": [
+              "F-a5-04"
+            ],
+            "quote": "Each record names the script SHA-256, git commit"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Decide the fields before collecting: every record fills the required set in schemas/research.schema.json - id, type, lens, topic, query, url, title, snippet, status, agent, date - and nothing outside it.",
+          "why": "The schema is the intellectual heart of a system that digests research: it encodes what was captured and so determines which comparisons across sources are possible later.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-research-record-004"
+          ],
+          "quote": "The database schema is the intellectual heart of systems that digest research information"
+        },
+        {
+          "step": 2,
+          "action": "Write one record per result you intend to rely on, at the moment you read it, with the query string exactly as it was run and the url and title copied from the result. Research query: citation-manager practice on recording a source at the moment of reading versus batching citations after drafting.",
+          "why": "Proposed: our convention, following the scholarly practice of a store that collects and keeps source information as you go rather than reconstructing citations at writing time.",
+          "origin": "proposed",
+          "sources": [
+            "X-build-research-record-001"
+          ],
+          "quote": "collect and store information about sources, organize and keep track of your references"
+        },
+        {
+          "step": 3,
+          "action": "Copy the snippet verbatim out of the result into the record. Do not retype it, tidy the punctuation, or trim it to the part that suits the claim.",
+          "why": "The quote is the only thing a later tool can re-check, and citation hallucination is a measured failure of generated text, not a hypothetical one.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-research-record-005"
+          ],
+          "quote": "Citation hallucination rates range from 11% to 57% across commercially deployed models."
+        },
+        {
+          "step": 4,
+          "action": "Set status honestly: search-only with read null when you saw a title and a snippet, fetched with a verbatim excerpt in read only when the page body was actually retrieved.",
+          "why": "Citing sources without reading them is fraudulent, so the record has to make the difference visible rather than let a snippet pass for a reading.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-research-record-002",
+            "F-part-c-08"
+          ],
+          "quote": "Citing sources without reading them is considered fraudulent"
+        },
+        {
+          "step": 5,
+          "action": "Record the searches that failed too: keep the query and the url of what you looked at even when nothing supported the claim, and say so in the skill. PASS.md asks this for the Dispatch and State design; doing it for every lens is proposed. Research query: whether the failed-search recording rule PASS.md states for the Dispatch/State design is meant to generalize to every research lens, or stays scoped to that one design.",
+          "why": "A first-cut design has to say what was searched when prior art was not found, and a search nobody wrote down cannot be re-run or believed; the proposed extension to every lens is what keeps a proposed row honest rather than merely unsourced.",
+          "origin": "proposed",
+          "sources": [
+            "F-part-c-03"
+          ],
+          "quote": "If you searched for prior art and found none, say what you searched."
+        },
+        {
+          "step": 6,
+          "action": "Correct a record only by appending another and leaving the original in place; never edit a snippet, a url or a status after the fact.",
+          "why": "On the model of the append-only evidence store PASS.md records. An in-place edit destroys the only thing that showed what was actually in front of the author.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-04"
+          ],
+          "quote": "Append-only JSONL"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Citation hallucination rates range from 11% to 57% across commercially deployed models, and sentence-level attribution systems can attribute each sentence in generated text to quotes from source documents, allowing for quick fact-checking.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-research-record-005"
+          ],
+          "quote": "Citation hallucination rates range from 11% to 57% across commercially deployed models."
+        },
+        {
+          "text": "Verification has more than one axis: a widely-used framework checks provenance, source, date, location, and motivation, and asks whether the platform publishing the information is known for accuracy and reliability.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-research-record-006"
+          ],
+          "quote": "provenance, source, date, location, and motivation"
+        },
+        {
+          "text": "Recording where a resource came from is ordinary schema practice rather than overhead: it is very common to have a resource that has a source that needs to be recorded to understand how information was obtained.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-research-record-008"
+          ],
+          "quote": "very common to have a resource that has a source that needs to be recorded to understand how information was obtained"
+        },
+        {
+          "text": "Treat retrieval and verification as two steps, not one: fact-checking pipelines usually consist of evidence retrieval and verification, so finding a promising result is not yet having checked the claim against it.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-research-record-003"
+          ],
+          "quote": "The pipelines usually consist of evidence retrieval and verification."
+        },
+        {
+          "text": "Ethical research and writing means giving proper attribution and credit to the work of others, which is why the record names the source rather than absorbing its wording into ours.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-research-record-002"
+          ],
+          "quote": "Ethical research and writing means giving proper attribution and credit to the work of others"
+        },
+        {
+          "text": "agentic-stack already carries the well-formedness finding (F-a7-03) as a best practice; cite it by name instead of re-deriving it. Its analogue here is that a record which validates against the schema is well-formed, not true - schema-valid establishes well-formedness, not correctness.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness."
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "python3 tools/kb.py merge-research && python3 -c \"import json,re,pathlib;S=json.load(open('schemas/research.schema.json'));R=[json.loads(l) for l in open('kb/research.jsonl') if l.strip()];ids={r['id'] for r in R};bad=sorted({r.get('id') for r in R if [k for k in S['required'] if k not in r] or not re.match(S['properties']['id']['pattern'],r.get('id','')) or r.get('status') not in S['properties']['status']['enum']});cited={i for p in pathlib.Path('.claude/skills').glob('*/skill.json') for i in re.findall(r'X-[a-z0-9-]+',p.read_text())};dangling=sorted(cited-ids);print('records',len(R),'invalid',bad,'dangling',dangling);assert not bad and not dangling\" && python3 tools/validate_skills.py --only build-research-record",
+        "expected": "Measured by tools/measure.py at fd2fa05: exit 0; last lines: warning: build-research-record: restates F-part-c-08 under the same quote as agentic-stack, without naming it (compose by name, not by copy) | build-research-record: 0 errors, 1 warnings",
+        "breakage": "Two, applied one at a time to kb/research/build-research-record.jsonl, re-merged with `python3 tools/kb.py merge-research`, and then restored: (a) invalid record - delete the `status` field from X-build-research-record-002; (b) altered snippet - change one character of X-build-research-record-002's snippet (`fraudulent` to `fraudulant`) so a quote this skill cites is no longer a verbatim substring of it.",
+        "expected_failure": "Measured by tools/measure.py at fd2fa05: exit 1; last lines:   File \"<string>\", line 1, in <module> | AssertionError",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "fd2fa05",
+          "clean_exit": 0,
+          "clean_output": "merged 555 research records into kb/research.jsonl\nrecords 555 invalid [] dangling []\nwarning: build-research-record: restates F-part-c-08 under the same quote as agentic-stack, without naming it (compose by name, not by copy)\nbuild-research-record: 0 errors, 1 warnings",
+          "breakage_exit": 1,
+          "breakage_output": "merged 555 research records into kb/research.jsonl\nrecords 555 invalid ['X-build-research-record-002'] dangling []\nTraceback (most recent call last):\n  File \"<string>\", line 1, in <module>\nAssertionError"
+        },
+        "expected_design": "Check 1 prints `records <count> invalid [] dangling []` and exits 0. Check 2 prints `build-research-record: 0 errors` and exits 0.",
+        "expected_failure_design": "Measured in this session (https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96) on 2026-09-03 in /home/user/AGENT. Breakage (a): check 1 printed `records 224 invalid ['X-build-research-record-002'] dangling []`, raised AssertionError and exited 1. Breakage (b): check 2 printed `error:   build-research-record: .contract.invariants[3].quote is not a verbatim substring of any cited record: 'Citing sources without reading them is considered fraudulent'`, the same error for `.instructions[4].quote`, then `build-research-record: 2 errors, 0 warnings`, and exited 1 - while check 1 still printed `records 224 invalid [] dangling []` and exited 0, because a well-formed record can carry text that no longer matches the quote citing it, which is why both checks are required. After restoring the lens file and re-merging, both checks exited 0."
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack"
+        ],
+        "used_by": [
+          "build-entry-conformance",
+          "build-interface-versioning",
+          "build-litmus-questionnaire",
+          "build-simplicity-budget",
+          "cap-capability-registry",
+          "cap-evaluation",
+          "cap-human-interaction",
+          "cap-mandate-broker",
+          "cap-memory",
+          "compose-improvement-loop",
+          "compose-operators",
+          "xc-audit-trail",
+          "xc-compensation",
+          "xc-enforcement-chain",
+          "xc-tenancy"
+        ]
+      },
+      "open_questions": [
+        {
+          "question": "Can any record in this lens move from search-only to fetched from this environment, so that a version string in it could be treated as verified?",
+          "evidence": "One successful fetch of a recorded url with the page text placed in read; the outbound proxy blocked documentation fetches for the wave-1 authors, so nothing here has been read beyond its search result.",
+          "default": "Every record in this lens stays status search-only, and no standard's version is recorded as verified on the strength of one.",
+          "sources": [
+            "F-part-c-10"
+          ],
+          "quote": "Cite the standard and its version."
+        },
+        {
+          "question": "Should a fetched record be re-fetched before a later section cites it, given that a page can change under a stable url?",
+          "evidence": "A second fetch of the same url on a later date, showing whether the recorded excerpt is still present verbatim; a divergence would decide whether re-fetching is required or the date field is enough.",
+          "default": "Proposed: a record is cited as of its date, and the date is what a reader checks, the way the host inventory is cited as verified against the running host on 2026-09-03.",
+          "sources": [
+            "F-meta-02"
+          ],
+          "quote": "verified against the running host on 2026-09-03"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96"
+      }
+    },
+    "build-simplicity-budget": {
+      "name": "build-simplicity-budget",
+      "layer": "build",
+      "wave": 2,
+      "description": "Hold every element to a counted simplicity budget: one call or one declaration for the common case, options additive with defaults, and an escape hatch that hands full control back. Load it before adding a required field, a required handler, a new concept or a new knob to any envelope, schema, profile or interface; when a review says a surface is simple, clean or easy and offers no number; when someone asks why a first successful run takes so much setup, or how much a unit costs to keep resident; when a schema's required list grows; when deciding whether a new capability belongs in the default path, the options tier or the escape hatch; and when judging onboarding cost or the risk that a surface is too daunting for anyone to adopt.",
+      "purpose": {
+        "text": "Proposed as the eighth design rule alongside the seven in agentic-stack: every element carries three counted ceilings, so the target requirement that it cannot be daunting or overly complex is checked rather than asserted.",
+        "origin": "proposed",
+        "sources": [
+          "T-t3-01",
+          "T-t3-02",
+          "F-b1-01"
+        ],
+        "quote": "It cannot be daunting or overly complex, or no one will use it."
+      },
+      "entities": [
+        "E-concern-budget"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "simplicity-budget-declaration (proposed shape; the worked declaration for the entry envelope is in references/counting-method.md)",
+            "origin": "proposed",
+            "sources": [
+              "T-t3-01"
+            ],
+            "quote": "It has to be simple to use.",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:simplicity-budget:declaration:0.1",
+              "title": "Simplicity budget declaration (proposed)",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "element",
+                "source_of_truth",
+                "ceilings",
+                "counted",
+                "counted_on",
+                "escape_hatch"
+              ],
+              "properties": {
+                "element": {
+                  "type": "string",
+                  "minLength": 3
+                },
+                "source_of_truth": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "ceilings": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "first_run_concepts",
+                    "resident_metadata",
+                    "minimum_implementation"
+                  ],
+                  "properties": {
+                    "first_run_concepts": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "resident_metadata": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "minimum_implementation": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                },
+                "counted": {
+                  "$ref": "#/properties/ceilings"
+                },
+                "counted_on": {
+                  "type": "string",
+                  "format": "date"
+                },
+                "escape_hatch": {
+                  "type": "string",
+                  "minLength": 10
+                }
+              }
+            }
+          },
+          {
+            "name": "simplicity-budget-check-result (proposed shape; the three counting expressions behind it are in references/counting-method.md)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-02"
+            ],
+            "quote": "Every unit of work carries a ceiling",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:simplicity-budget:check:0.1",
+              "title": "Simplicity budget check result (proposed)",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "element",
+                "counted",
+                "ceilings",
+                "exceeded",
+                "verdict",
+                "measured_on"
+              ],
+              "properties": {
+                "element": {
+                  "type": "string"
+                },
+                "counted": {
+                  "type": "object"
+                },
+                "ceilings": {
+                  "type": "object"
+                },
+                "exceeded": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "first_run_concepts",
+                      "resident_metadata",
+                      "minimum_implementation"
+                    ]
+                  }
+                },
+                "verdict": {
+                  "enum": [
+                    "within",
+                    "exceeded"
+                  ]
+                },
+                "measured_on": {
+                  "type": "string",
+                  "format": "date"
+                }
+              }
+            }
+          }
+        ],
+        "invariants": [
+          {
+            "text": "The layering that keeps the counts low is three tiers, flag then options then closure, which is the practical implementation of progressive disclosure.",
+            "origin": "sourced",
+            "sources": [
+              "X-entry-composition-038"
+            ],
+            "quote": "This three-tier model (flag, then options, then closure) is the practical implementation of Progressive Disclosure."
+          },
+          {
+            "text": "An advanced capability is reached through a default that can be overridden, not through a parameter the caller is required to supply upfront.",
+            "origin": "sourced",
+            "sources": [
+              "X-entry-composition-039"
+            ],
+            "quote": "sensible defaults with the option to override, rather than requiring explicit configuration of every parameter"
+          },
+          {
+            "text": "The measurable instance of a bounded resident tier is the three-tier skill model, where only the name and description load at startup (~30-50 tokens per skill) and everything else loads on demand.",
+            "origin": "sourced",
+            "sources": [
+              "X-entry-composition-036"
+            ],
+            "quote": "only the name and description load at startup (~30-50 tokens per skill)"
+          },
+          {
+            "text": "A minimum implementation surface is countable: a conforming agent registers three named handlers and one connect call, so a claim about how hard something is to implement resolves to a number.",
+            "origin": "sourced",
+            "sources": [
+              "X-entry-composition-010"
+            ],
+            "quote": "you can register handlers such as initialize(...), newSession(...), and prompt(...), then call connect(stream)"
+          },
+          {
+            "text": "The Budget concern in PASS.md B4 gives the shape this discipline reuses at authoring time: every unit of work carries a ceiling, and exceeding it terminates the unit, not the platform.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-02",
+              "E-concern-budget"
+            ],
+            "quote": "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform"
+          },
+          {
+            "text": "A count over its ceiling rejects the change, it does not warn, on the model of a resource quota that enforces its budget by rejecting the creation of resources that would exceed the established limits. The element gets the new concept only by giving up another required one, by moving it into the options tier with a default, or by raising the ceiling in a recorded decision.",
+            "origin": "sourced",
+            "sources": [
+              "X-build-simplicity-budget-004"
+            ],
+            "quote": "rejecting the creation of resources that would exceed the established limits"
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "The budget never caps capability. It caps what is required; advanced options stay available but not required upfront, and the escape hatch that hands full control back is part of the element, not an exception to it.",
+            "origin": "sourced",
+            "sources": [
+              "X-entry-composition-039"
+            ],
+            "quote": "Well-designed APIs present a simple surface area for common use cases, with advanced options available but not required upfront."
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Name the element and list the machine-readable files that are its source of truth (a JSON Schema, a registry, an interface definition). Every later count is read from those files by a command, never from a description of them. Research query: budget-declaration practice on whether the source-of-truth files for a counted limit must be machine-readable rather than descriptive prose.",
+          "why": "Proposed: a count taken from prose drifts from the artifact the day after it is written, and the next author cannot re-run it.",
+          "origin": "proposed"
+        },
+        {
+          "step": 2,
+          "action": "Count first_run_concepts: the concepts a caller must author for one first successful run, which for a declarative element is the length of its required list. Research query: onboarding-cost research on whether required-field count is a validated proxy for first-run adoption friction.",
+          "why": "Proposed: this is the number a newcomer pays before anything works at all, and the target requirement is about adoption, not expressiveness.",
+          "origin": "proposed",
+          "sources": [
+            "T-t3-02"
+          ],
+          "quote": "It cannot be daunting or overly complex, or no one will use it."
+        },
+        {
+          "step": 3,
+          "action": "Count resident_metadata: what rides with every unit regardless of the work in it, which for an envelope is the required fields minus the payload.",
+          "why": "This is the tier paid on every call rather than once, the same distinction the three-tier skill model draws in this skill's invariants between what loads at startup and what loads on demand.",
+          "origin": "sourced",
+          "sources": [
+            "X-entry-composition-036"
+          ],
+          "quote": "the full SKILL.md loads when triggered, and reference files load only when needed during execution"
+        },
+        {
+          "step": 4,
+          "action": "Count minimum_implementation: the handlers or fields someone must implement to stand up a conforming implementation of the element, counted from the definition rather than from the reference implementation.",
+          "why": "The handler-plus-connect count in this skill's invariants shows the measure exists; counting from the reference implementation instead measures its conveniences, not the contract.",
+          "origin": "sourced",
+          "sources": [
+            "X-entry-composition-010"
+          ],
+          "quote": "you can register handlers such as initialize(...), newSession(...), and prompt(...), then call connect(stream)"
+        },
+        {
+          "step": 5,
+          "action": "Write the three ceilings as a simplicity-budget-declaration (contract.shapes), setting each ceiling to the count measured today unless a research record supports a lower one, and record counted_on and the escape hatch that hands full control back. Research query: simplicity-budget declaration practice on setting a ceiling to today's measured count as a ratchet rather than to a target value.",
+          "why": "Proposed: a ceiling at today's count is a ratchet, so the next required concept has to be argued for rather than added silently, and the escape hatch is what makes the low ceiling honest instead of limiting.",
+          "origin": "proposed"
+        },
+        {
+          "step": 6,
+          "action": "Wire the check as the element's definition of done in the form build-definition-of-done requires: the counting command, its expected output, and a deliberate breakage that adds one required concept to a throwaway copy and makes the same command exit non-zero.",
+          "why": "build-definition-of-done already owns this rule (F-part-c-04); the only thing this discipline adds is which command counts and what the breakage is.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-04"
+          ],
+          "quote": "A criterion nothing can fail is not a criterion."
+        },
+        {
+          "step": 7,
+          "action": "Source any ceiling that is not a ratchet to a research record with a verbatim snippet, following build-research-record; a number with no record is written as proposed and says so. Research query: whether a counted ceiling with no supporting research record should default to proposed or block the declaration.",
+          "why": "Proposed: a ceiling is the part of this discipline most likely to be invented, and an invented number is indistinguishable from a measured one once it is in a table.",
+          "origin": "proposed"
+        },
+        {
+          "step": 8,
+          "action": "When a count exceeds its ceiling, apply 1-3-1 over exactly three options, move the concept into the options tier with a default, drop another required concept, or raise the ceiling with the reason recorded, then follow the recommendation and record it; carry an unresolved overrun into the section ceremony that build-ceremony defines rather than leaving it open.",
+          "why": "The operating protocol names 1-3-1 for exactly this, and an overrun that nobody decides on becomes a permanent exception.",
+          "origin": "sourced",
+          "sources": [
+            "T-t5-02"
+          ],
+          "quote": "define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Enforce the ceiling in a command, not in a paragraph asking authors to keep things small: real enforcement is code, not prose.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-simplicity-budget-003"
+          ],
+          "quote": "real enforcement is code, not prose"
+        },
+        {
+          "text": "Reject at admission rather than after the fact, the way a resource quota works by rejecting the creation of resources that would exceed the established limits, so the count is checked when the field is added and not when someone complains.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-simplicity-budget-004"
+          ],
+          "quote": "rejecting the creation of resources that would exceed the established limits"
+        },
+        {
+          "text": "Push rarely used capability down a tier instead of deleting it; progressive disclosure defers advanced features rather than removing them, by deferring some advanced or rarely-used features to a secondary screen.",
+          "origin": "sourced",
+          "sources": [
+            "X-entry-composition-037"
+          ],
+          "quote": "deferring some advanced or rarely-used features to a secondary screen"
+        },
+        {
+          "text": "A ceiling is a cap per period or per unit, not a total: token budgeting works by setting explicit caps on how many tokens a user, session, or feature can consume within a given period, and a simplicity ceiling is scoped to one element the same way.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-simplicity-budget-001"
+          ],
+          "quote": "setting explicit caps on how many tokens a user, session, or feature can consume within a given period"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "python3 -c 'import json,sys; e=json.load(open(sys.argv[1])); a=json.load(open(sys.argv[2])); c=[len(e[\"required\"]), len([f for f in e[\"required\"] if f!=\"payload\"]), len(a[\"$defs\"][\"profile\"][\"required\"])]; ok=c[0]<=10 and c[1]<=9 and c[2]<=9; print(\"first_run_concepts\",c[0],\"resident_metadata\",c[1],\"minimum_implementation\",c[2],\"verdict\",\"within\" if ok else \"exceeded\"); sys.exit(0 if ok else 1)' examples/end-to-end/schemas/entry.schema.json examples/end-to-end/schemas/agent-profile.schema.json",
+        "expected": "Measured by tools/measure.py at fd2fa05: exit 0; last lines: first_run_concepts 10 resident_metadata 9 minimum_implementation 9 verdict within",
+        "breakage": "D=$(mktemp -d); python3 -c 'import json,sys; s=json.load(open(\"examples/end-to-end/schemas/entry.schema.json\")); s[\"required\"].append(\"priority\"); s[\"properties\"][\"priority\"]={\"type\":\"string\"}; json.dump(s,open(sys.argv[1],\"w\"))' \"$D/entry.schema.json\"; then run the criterion with \"$D/entry.schema.json\" as its first argument (the repository tree is left untouched)",
+        "expected_failure": "Measured by tools/measure.py at fd2fa05: exit 1; last lines: first_run_concepts 11 resident_metadata 10 minimum_implementation 9 verdict exceeded",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion.",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "fd2fa05",
+          "clean_exit": 0,
+          "clean_output": "first_run_concepts 10 resident_metadata 9 minimum_implementation 9 verdict within",
+          "breakage_exit": 1,
+          "breakage_output": "first_run_concepts 11 resident_metadata 10 minimum_implementation 9 verdict exceeded"
+        },
+        "expected_design": "first_run_concepts 10 resident_metadata 9 minimum_implementation 9 verdict within, exit 0",
+        "expected_failure_design": "first_run_concepts 11 resident_metadata 10 minimum_implementation 9 verdict exceeded, exit 1"
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-ceremony",
+          "build-definition-of-done",
+          "build-research-record",
+          "build-skill-authoring"
+        ],
+        "used_by": [
+          "build-worked-example"
+        ]
+      },
+      "open_questions": [
+        {
+          "question": "Is there a published standard that governs a counted simplicity budget, or does progressive disclosure remain the named pattern with the three-tier skill model as its only measurable instance?",
+          "evidence": "A fetched specification that defines counted limits on a surface, recorded as a research record with a verbatim snippet; searches so far returned the pattern and its instances, not a specification.",
+          "default": "No standard is named in contract.standards, and the discipline stands as proposed with its three counts as the check.",
+          "sources": [
+            "X-entry-composition-037",
+            "X-entry-composition-036"
+          ],
+          "quote": "Progressive disclosure is an interaction design pattern used to make applications easier to learn and less error-prone"
+        },
+        {
+          "question": "Should the resident_metadata ceiling of roughly 30-50 tokens per unit be applied to the skills in this repository, whose descriptions run to several hundred characters each?",
+          "evidence": "A count of name plus description across the rendered skills against that ceiling, and a decision on whether the description's trigger clauses are worth the resident cost.",
+          "default": "The entry envelope is the measured element; skill descriptions are counted but not capped, and the question is carried to the next ceremony.",
+          "sources": [
+            "X-entry-composition-036"
+          ],
+          "quote": "only the name and description load at startup (~30-50 tokens per skill)"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session claude/build-simplicity-budget 2026-09-03"
+      }
+    }
   }
 }

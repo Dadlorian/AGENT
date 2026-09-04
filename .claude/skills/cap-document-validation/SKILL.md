@@ -238,18 +238,26 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | bash harness/document-validation/test.sh |
-| Expected | Proposed tool, built with the first implementation of this interface: `python3 tools/conformance_document_validation.py --suite third_party/JSON-Schema-Test-Suite/tests/draft2020-12 --adapter today --adapter second --report out/document-validation-conformance.json`. It asserts, per adapter, required_failed == 0, cases_run > 1000, and dialect_in_effect equal to the 2020-12 dialect URI the adapter reports at run time, and across adapters adapters_run >= 2. exit 0, and one report line per adapter of the form `adapter=<role> cases_run=<N greater than 1000> required_failed=0 dialect_in_effect=<the 2020-12 dialect URI>`, followed by `adapters_run=2`. Until that proposed tool exists, `bash harness/document-validation/test.sh` (owned by cap-document-validation-implement) is the running gate: every check line reads ok and the script exits 0. |
-| Deliberate breakage | Configure one adapter for draft-07 instead of the 2020-12 dialect, change nothing else, and re-run. |
-| Expected failure | For that adapter the `$dynamicRef` and `$recursiveRef` cases fail, required_failed becomes non-zero, its reported dialect_in_effect no longer equals the 2020-12 URI, and the run exits non-zero while the other adapter still reports required_failed=0 - so the report names which adapter broke rather than only that something did. |
-| Status | claimed |
-| Evidence | `F-part-c-04`, `X-cap-document-validation-004` "A criterion nothing can fail is not a criterion" |
+| Criterion | bash harness/document-validation/test.sh && python3 harness/document-validation/conformance.py --adapter dryrun --adapter second |
+| Expected | Measured by tools/measure.py at 16d354c: exit 0; last lines:   adapter=compiled-schema checker (compile once, check many) cases=14 passed=14 prepares=6 schema_reads=0 dialect_in_effect=https://json-schema.org/draft/2020-12/schema product_hits=0 \| conformance PASSED: 28/28 cases, 2 binding(s) |
+| Deliberate breakage | Import a validator library (jsonschema) directly at the top of harness/document-validation/call.py and change nothing else (the harness README's breakage); restore with git checkout -- harness/document-validation/call.py. |
+| Expected failure | Measured by tools/measure.py at 16d354c: exit 1; last lines:   FAIL hits not counted \| passed 7, failed 17 |
+| Status | measured |
+| Evidence | `F-part-c-04`, `F-b1-02` "A criterion nothing can fail is not a criterion" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-document-validation-implement` | Build what cap-document-validation specifies: two adapters selected by configuration, one conformance run that judges both, and the wiring that puts validation before spend rather than beside it. | `references/cap-document-validation-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`
+Builds on: `agentic-stack`, `build-evidence`, `build-skill-authoring`
 
-Used by: `cap-capability-packaging`, `cap-capability-registry`, `cap-document-validation-implement`, `cap-human-interaction`, `cap-policy`, `cap-tool-access`, `cap-work-intake`, `compose-operators`, `core-document`
+Used by: `cap-capability-packaging`, `cap-human-interaction`, `cap-policy`, `cap-tool-access`, `cap-work-intake`, `compose-workflow`, `core-components`
 
 ## Open questions
 

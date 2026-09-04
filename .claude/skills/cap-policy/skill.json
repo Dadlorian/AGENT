@@ -547,31 +547,39 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "bash harness/policy/test.sh",
-    "expected": "docs/decomposition.md section 3.2 row P10, made precise and run over the adapter pair above: `python3 tools/conformance/policy_decision.py --adapter today --adapter second --entry examples/end-to-end/entries/human.json --deny-rule deny-external-tool-without-mandate --report out/policy.json` (proposed tool, built with the first enforcing adapter), the engine selected by configuration with no code edit between runs. Per adapter it submits a dispatch that a policy rule denies and asserts `spend_delta_micros == 0` for that dispatch, that a `policy-decided` record exists carrying a non-empty `rule_id`, and that the result is `state: \"rejected\"` with problem type `urn:agentic:problem:policy-denied`. Across adapters it asserts `adapters_run >= 2` and `decisions_agree == true`, meaning both returned the same effect and the same rule_id for the byte-identical DecisionRequest. exit 0 with, per adapter, `spend_delta_micros=0`, `rule_id` non-empty, `state=rejected`, `problem_type=urn:agentic:problem:policy-denied`, followed by `adapters_run=2` and `decisions_agree=true`. Until that proposed tool exists, `bash harness/policy/test.sh` (owned by cap-policy-implement) is the running gate: every check line reads ok and the script exits 0.",
-    "breakage": "Move the policy consultation to after the first metered call, changing nothing else, and re-run the same command.",
-    "expected_failure": "exit 1 with `spend_delta_micros > 0` for both engines and the `policy-decided` record timestamped after the first metered call, while `state=rejected` and the problem type still pass, which is the useful part: the refusal still looks correct and the money is already gone. This is the check that would have caught policy being defined and not wired into the enforcement path. Claimed: nothing consults a decision on the enforcement path today and the conformance tool is not written, so neither the criterion nor the breakage has been run here.",
-    "status": "claimed",
+    "criterion": "bash harness/policy/test.sh && python3 harness/policy/conformance.py --adapter dryrun --adapter second",
+    "expected": "Measured by tools/measure.py at 372cdc1: exit 0; last lines:   adapter=in-process-typed-entity cases=14 passed=14 decisions_taken=8 decided_before_first_metered_call=8 spend_delta_micros=0 rule_id_present=True subset=['dispatch.data_query'] product_hits=0 | conformance PASSED: 28/28 cases, 2 binding(s)",
+    "breakage": "Append an engine-name comment (`# breakage: opa`) to the end of harness/policy/call.py, outside adapters/. Restored with `git checkout -- harness/policy/call.py`.",
+    "expected_failure": "Measured by tools/measure.py at 372cdc1: exit 1; last lines:   FAIL both adapters failed | passed 30, failed 8",
+    "status": "measured",
     "sources": [
-      "F-b4-04",
-      "F-a6-04"
+      "F-a6-04",
+      "F-b4-04"
     ],
-    "quote": "Refusal is deterministic and happens before execution, not after spend"
+    "quote": "not wired into the enforcement path",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "372cdc1",
+      "clean_exit": 0,
+      "clean_output": "ny-cross-tenant-resource, spend_delta_micros=0\n  ok   nothing names an engine, a rule language or a bundle on the way out: a decision carries an effect, a rule, a version and a digest, and nothing about who answered\n  ok   a point this binding cannot serve is declared, never answered allow: declared subset ['dispatch.data_query'] refused, not answered allow\n  adapter=in-process-typed-entity cases=14 passed=14 decisions_taken=8 decided_before_first_metered_call=8 spend_delta_micros=0 rule_id_present=True subset=['dispatch.data_query'] product_hits=0\nconformance PASSED: 28/28 cases, 2 binding(s)",
+      "breakage_exit": 1,
+      "breakage_output": " product scan over the shipped tree exits 0 (expected 0, got 1)\n  FAIL engine names leaked\n4. deliberate breakage: the decision moved after the first metered call, on one adapter only\n  ok   the breakage run exits non-zero on the adapter that lost the ordering (1)\n  ok   the ordering and zero-spend counters inverted (0)\n  ok   decided_before_first_metered_call 9/9 -> 2/9, spend_delta_micros on denied dispatches 0 -> 2400\n  ok   the run names what broke: the binding took over the gate\n  FAIL the untouched adapter still exits 0 (expected 0, got 1)\n  FAIL both adapters failed\n\npassed 30, failed 8"
+    },
+    "expected_design": "docs/decomposition.md section 3.2 row P10, extended with the swap: `python3 tools/conformance/policy_decision.py --adapter out-of-process-document-query --entry examples/end-to-end/entries/human.json --deny-rule deny-external-tool-without-mandate --report out/policy-a.json` then the same command with `--adapter in-process-typed-entity --report out/policy-b.json`, the engine chosen by configuration with no code edit between runs. Both reports must validate against the PolicyConformanceReport shape above and assert, per adapter, `spend_delta_micros == 0` for the denied dispatch, `rule_id_present == true`, `decided_before_first_metered_call == decisions_taken`, and the result `state: \"rejected\"` with problem type `urn:agentic:problem:policy-denied`. Earlier criterion named tools/conformance/policy_decision.py, replaced by the harness on 2026-09-03.",
+    "expected_failure_design": "test.sh's engine-name scan (check 3) fails with product_hits going from 0 to 1, and `conformance.py --adapter dryrun --adapter second` also reports the same non-zero product_hits and exits non-zero, since every conformance run scans for an engine name outside adapters/."
   },
   "composes_with": {
     "builds_on": [
       "agentic-stack",
-      "build-adapter-pair",
-      "build-definition-of-done",
+      "build-evidence",
       "build-skill-authoring",
       "cap-document-validation",
       "cap-errors"
     ],
     "used_by": [
-      "cap-mandate-broker",
-      "cap-policy-implement",
-      "xc-enforcement-chain",
-      "xc-policy-gate"
+      "cap-identity",
+      "seam-dispatch",
+      "xc-guarantees"
     ]
   },
   "open_questions": [
@@ -612,5 +620,1260 @@
       "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
     },
     "author": "session cap-policy 2831cb4f, 2026-09-03"
+  },
+  "folded": {
+    "cap-policy-implement": {
+      "name": "cap-policy-implement",
+      "layer": "cap",
+      "wave": 4,
+      "description": "How to build the Policy capability on this stack: what the rule sets that exist today already give you and what they do not, a first enforcing adapter that wraps the engine already provisioned behind one decide call, a second with a different execution model that evaluates in process against a typed entity model, the migration between them, where the call is wired so no path can skip it, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that asks for a decision, when adding a decision point or a rule bundle to the running system, when choosing where the policy-decided record is written, when a refusal arrives after money has been spent, or when a conformance run reports a non-zero spend delta on a denied dispatch.",
+      "purpose": {
+        "text": "Turn the contract in cap-policy into something that runs here: one decide call, two engines behind it whose execution models differ, a policy-decided record on every decision, and consultation wired ahead of the first metered call rather than alongside it.",
+        "origin": "sourced",
+        "sources": [
+          "F-a6-04",
+          "F-a5-05",
+          "E-not-running-policy-in-the-gate-path"
+        ],
+        "quote": "Conformance checks exist; not wired into the enforcement path"
+      },
+      "entities": [
+        "E-capability-policy",
+        "E-not-running-policy-in-the-gate-path",
+        "E-provisioning-concern-policy",
+        "E-adapter-opa",
+        "E-swap-candidate-cedar",
+        "E-swap-candidate-any-policy-engine-with-a-decision-api"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "PolicyConformanceReport (the counters the definition of done below asserts on, per adapter)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:policy:report:0.1",
+              "title": "PolicyConformanceReport",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "adapter",
+                "decisions_taken",
+                "spend_delta_micros",
+                "rule_id_present",
+                "decided_before_first_metered_call",
+                "adapters_run"
+              ],
+              "properties": {
+                "adapter": {
+                  "enum": [
+                    "out-of-process-document-query",
+                    "in-process-typed-entity"
+                  ]
+                },
+                "decisions_taken": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "spend_delta_micros": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Ledger delta for the denied dispatch. Must be 0."
+                },
+                "rule_id_present": {
+                  "type": "boolean",
+                  "description": "True only if every policy-decided record carries a non-empty rule_id, allow rows included."
+                },
+                "decided_before_first_metered_call": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Dispatches whose decision timestamp precedes the first metered call. Must equal decisions_taken."
+                },
+                "adapters_run": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "selected_by": {
+                  "const": "configuration",
+                  "description": "Recorded at runtime. A code edit between runs would not be a swap."
+                }
+              }
+            },
+            "origin": "sourced",
+            "sources": [
+              "T-t9-06"
+            ],
+            "quote": "Swaps proven: every harness section executes one adapter swap with the conformance run before and after."
+          }
+        ],
+        "invariants": [
+          {
+            "text": "the starting point is rule sets that already exist and decide nothing, so the first change is a call site, not a rule language. cap-policy states the recorded state (F-a6-04) and the decision contract (F-b4-04); this facet only builds against them, and treating this as a green-field capability would produce a second rule set beside one nobody consults.",
+            "origin": "sourced",
+            "sources": [
+              "F-a6-04"
+            ],
+            "quote": "Conformance checks exist; not wired into the enforcement path"
+          },
+          {
+            "text": "cap-policy fixes deterministic refusal before execution, not after spend (F-b4-04). The build consequence: the policy-decided record must be written before the call is issued rather than after the outcome is known - a record written afterwards can report a refusal but cannot cause one, which is the difference between the enforcement path and a report about it.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-04"
+            ],
+            "quote": "Refusal is deterministic and happens before execution, not after spend"
+          },
+          {
+            "text": "Proposed: the input digest is computed over canonical bytes before evaluation, so two engines asked the same question agree on what the question was. Digesting a serialised form would make key ordering or whitespace look like a different request and break the cross-adapter agreement assertion for reasons that have nothing to do with policy. Research query: does RFC 8785 JSON canonicalization (already governing state-persistence and provenance per F-b5-05) also fix the canonical-bytes-before-digest rule for a policy DecisionRequest specifically, or is that extension this facet's own and still uncovered?",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04"
+            ]
+          },
+          {
+            "text": "Proposed: the call is wired into the platform's own call path at the registered decision points, never into each caller, and no request field can turn it off. A new entry kind or a new agent therefore inherits consultation by construction, because it reaches execution through the same path. Research query: cap-policy's own instructions row already hands decision placement to xc-policy-gate rather than owning it here (docs/decomposition.md); does xc-policy-gate or xc-enforcement-chain carry a kb-cited row this facet could point to instead of restating placement as its own invariant?",
+            "origin": "proposed",
+            "sources": [
+              "T-t2-03",
+              "F-b4-01"
+            ]
+          },
+          {
+            "text": "the correlation fields, the actor and the pinned policy_version are stamped onto the DecisionRequest by the platform and are not read from the caller's payload. agentic-stack states the correlation finding (F-a7-02); the consequence here is that a denied dispatch often produces no execution at all, so the decision record is the only place those fields will ever be written for it.",
+            "origin": "sourced",
+            "sources": [
+              "F-a7-02"
+            ],
+            "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+          },
+          {
+            "text": "build-definition-of-done already names the structurally-green trap (F-a7-03): a gate can pass while asserting nothing. The build consequence here: an engine that cannot serve a registered decision point declares that subset rather than answering allow. A documented conformance subset is honest; an engine that reports a decision it did not take is precisely the failure the pair exists to expose.",
+            "origin": "sourced",
+            "sources": [
+              "F-a7-03"
+            ],
+            "quote": "A deterministic gate can be structurally green and mean nothing"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Inventory what already exists before writing anything: the rule sets provisioned for the policy concern, and the fact that nothing on the execution path consults them. Do not re-derive the contract; cap-policy states it.",
+          "why": "The recorded state for policy in the gate path is that conformance checks exist; not wired into the enforcement path. The gap is a missing call, so an implementation that starts by authoring rules widens the gap it was meant to close.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-04",
+            "E-not-running-policy-in-the-gate-path"
+          ],
+          "quote": "Conformance checks exist; not wired into the enforcement path"
+        },
+        {
+          "step": 2,
+          "action": "Build the first enforcing adapter by wrapping the engine already provisioned for this concern behind decide: post the canonical DecisionRequest to its decision endpoint, read the JSON answer, and map it into the Decision shape. Introduce no new engine and no new store.",
+          "why": "Proposed. The engine is already provisioned as the implementation of the policy concern (claimed, per PASS.md A5), so the cheapest correct first step adds the call and the mapping rather than a dependency, and it keeps the first migration step independently revertible.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-05"
+          ],
+          "quote": "Rego / Open Policy Agent"
+        },
+        {
+          "step": 3,
+          "action": "Stand up the decision-point registry next, starting with dispatch-admit, and refuse a request naming an unregistered point with the registered document-invalid problem rather than with a deny. Research query: is there a fetched (not search-only) source fixing 'dispatch-admit' as the first decision point to register, or is the starting point itself this repository's own design with only the refusal-shape half (cap-document-validation, cap-errors) already covered?",
+          "why": "Proposed, following cap-policy's registration rule. A missing registration is a build error in the caller; answering it with a deny would make a wiring mistake look like a policy outcome and would be counted as one.",
+          "origin": "proposed",
+          "sources": [
+            "F-b3-09",
+            "F-b4-07"
+          ]
+        },
+        {
+          "step": 4,
+          "action": "Write the policy-decided record at the moment of the decision, carrying rule_id, policy_version, input_digest and the correlation fields, for allow as well as deny, and only then issue the first metered call. Research query: does docs/decomposition.md's policy-decided record definition become citable once it is folded into a kb record, or does F-b4-04 cover only the before-execution ordering and not the specific field list (rule_id, policy_version, input_digest)?",
+          "why": "Proposed. docs/decomposition.md rows P10 and X3 both assert on that record and on its timestamp relative to the first metered call, so recording after the fact makes the criterion unmeasurable even when the behaviour is right.",
+          "origin": "proposed",
+          "sources": [
+            "F-b4-04"
+          ]
+        },
+        {
+          "step": 5,
+          "action": "Build the second adapter as an in-process evaluator over a typed entity model that denies by default, serving the same decide call with no wire hop. Research query: does a fetched read of the decision-API standard this capability adopts (F-a5-05) state a deny-by-default posture as a property of the standard itself, rather than of build-adapter-pair's generic swappability axis, which would source the deny-by-default claim specifically?",
+          "why": "Proposed second adapter, per the manifest and the recorded swap-candidate column. It breaks a different assumption than the first: the first evaluates an open JSON document out of process and can be reached only over a boundary, while the second evaluates a schema-checked entity model inside the calling process. That is the axis the pair has to differ on for the swap to prove anything.",
+          "origin": "proposed",
+          "sources": [
+            "F-b3-11",
+            "F-b1-04"
+          ]
+        },
+        {
+          "step": 6,
+          "action": "Wire the cross-cutting edges once, at the same place: stamp correlation onto the request, append the decision through the state seam, and hand a denial to the typed-failure path as the registered policy-denied problem. Give no call site a flag that skips any of the three.",
+          "why": "Proposed wiring. cap-errors owns the failure shape (F-b4-07) and cap-policy owns the decision; what is left to this facet is that all three edges are attached at one point, because three separately attached edges are three separate places a new call site can forget one.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-07",
+            "T-t2-03"
+          ],
+          "quote": "every cross-cutting concern are managed across the entire structure"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Consult at the call site, on the actual arguments, not once over the plan: cap-policy cites the finding that dynamic tool-switching, where agents select tools at runtime, defeats static policy. In implementation terms that means the tool-invoke point is inside the executor's call wrapper, not in the planner.",
+          "origin": "sourced",
+          "sources": [
+            "X-end-to-end-062"
+          ],
+          "quote": "Dynamic tool-switching, where agents select tools at runtime, defeats static policy."
+        },
+        {
+          "text": "Attach the call by construction rather than by convention, so that there's no need for engineers to remember extra config steps: cap-policy states this as a practice, and here it means the decision is taken inside the shared dispatch and tool wrappers, where a new call site cannot be written without passing through it.",
+          "origin": "sourced",
+          "sources": [
+            "X-cross-structure-024"
+          ],
+          "quote": "there's no need for engineers to remember extra config steps"
+        },
+        {
+          "text": "agentic-stack and build-definition-of-done state the configuration finding (F-a7-04): a configuration row can overlay and replace what a file declares, with the file itself validated and reviewed but never taking effect. The specific trap here: verify which bundle is actually serving by reading policy_version off a live Decision, not by reading the bundle file, because a rule set can be provisioned, reviewed and merged while the engine keeps serving the bundle it loaded at start.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "overlays and replaces `router_settings` on every gateway load"
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-opa",
+          "role": "today",
+          "maps_to": "Part A records Rego / Open Policy Agent as the implementation of the policy provisioning concern (claimed), and PASS.md B3 names OPA as the adapter today for this capability. The first enforcing adapter wraps that engine: decide posts the canonical DecisionRequest to its decision endpoint over the local boundary and maps the returned JSON into a Decision, with the rule set loaded as a digest-addressed bundle. Nothing about the rule language changes; what changes is that something now asks.",
+          "cannot": "Cannot answer without the engine reachable, so it inherits that process's availability, and cannot evaluate inside an isolated unit that has no path to it. Because it evaluates an open JSON document, it cannot itself tell a missing field from a field the rules never read, which is why the decision-point registry validates the input first.",
+          "swap_procedure": "cap-policy already records the two roles and the axis they differ on (F-b3-11, F-b1-04). What this facet adds is the procedure: keep decide, DecisionRequest and Decision byte-identical, select the engine by configuration only, run the identical P10 suite against each, and require the merged report to show adapters_run == 2, selected_by == configuration, and a declared conformance subset for any decision point an engine cannot serve.",
+          "status": "claimed",
+          "sources": [
+            "F-a5-05",
+            "F-b3-11",
+            "E-adapter-opa",
+            "E-provisioning-concern-policy"
+          ],
+          "quote": "Rego / Open Policy Agent"
+        },
+        {
+          "entity": "E-swap-candidate-cedar",
+          "role": "second",
+          "maps_to": "The second adapter is Cedar, the recorded swap candidate alongside any policy engine with a decision API, embedded as a library and evaluated in process against a typed entity model. Search-only research describes it as a declarative open-source authorization language and engine designed for fine-grained role-based and attribute-based policies, more strict and structured with emphasis on safety by default (deny by default). decide becomes a function call: entities and the request are marshalled from the same canonical DecisionRequest, and the returned determination is mapped into the same Decision.",
+          "cannot": "Cannot express a decision over data outside its entity model, cannot evaluate the first engine's rules at all, and cannot be updated without redeploying the process that embeds it, where the first engine reloads a bundle in place. Its failure modes are the first engine's inverted, which is the point of the pair.",
+          "swap_procedure": "As above and owned jointly with cap-policy: configuration selects the engine, the suite is unchanged, and the merged report must additionally assert decisions_agree == true, meaning both returned the same effect and rule_id for the byte-identical request. Disagreement is a finding about the rule translation, not a licence to fork the interface.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-11",
+            "X-cap-policy-004",
+            "E-swap-candidate-cedar",
+            "E-swap-candidate-any-policy-engine-with-a-decision-api"
+          ],
+          "quote": "Cedar · any policy engine with a decision API"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/policy/test.sh && python3 harness/policy/conformance.py --adapter dryrun --adapter second",
+        "expected": "Measured by tools/measure.py at 372cdc1: exit 0; last lines:   adapter=in-process-typed-entity cases=14 passed=14 decisions_taken=8 decided_before_first_metered_call=8 spend_delta_micros=0 rule_id_present=True subset=['dispatch.data_query'] product_hits=0 | conformance PASSED: 28/28 cases, 2 binding(s)",
+        "breakage": "Append an engine-name comment (`# breakage: opa`) to the end of harness/policy/call.py, outside adapters/. Restored with `git checkout -- harness/policy/call.py`.",
+        "expected_failure": "Measured by tools/measure.py at 372cdc1: exit 1; last lines:   FAIL both adapters failed | passed 30, failed 8",
+        "status": "measured",
+        "sources": [
+          "F-a6-04",
+          "F-b4-04"
+        ],
+        "quote": "not wired into the enforcement path",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "372cdc1",
+          "clean_exit": 0,
+          "clean_output": "ny-cross-tenant-resource, spend_delta_micros=0\n  ok   nothing names an engine, a rule language or a bundle on the way out: a decision carries an effect, a rule, a version and a digest, and nothing about who answered\n  ok   a point this binding cannot serve is declared, never answered allow: declared subset ['dispatch.data_query'] refused, not answered allow\n  adapter=in-process-typed-entity cases=14 passed=14 decisions_taken=8 decided_before_first_metered_call=8 spend_delta_micros=0 rule_id_present=True subset=['dispatch.data_query'] product_hits=0\nconformance PASSED: 28/28 cases, 2 binding(s)",
+          "breakage_exit": 1,
+          "breakage_output": " product scan over the shipped tree exits 0 (expected 0, got 1)\n  FAIL engine names leaked\n4. deliberate breakage: the decision moved after the first metered call, on one adapter only\n  ok   the breakage run exits non-zero on the adapter that lost the ordering (1)\n  ok   the ordering and zero-spend counters inverted (0)\n  ok   decided_before_first_metered_call 9/9 -> 2/9, spend_delta_micros on denied dispatches 0 -> 2400\n  ok   the run names what broke: the binding took over the gate\n  FAIL the untouched adapter still exits 0 (expected 0, got 1)\n  FAIL both adapters failed\n\npassed 30, failed 8"
+        },
+        "expected_design": "docs/decomposition.md section 3.2 row P10, extended with the swap: `python3 tools/conformance/policy_decision.py --adapter out-of-process-document-query --entry examples/end-to-end/entries/human.json --deny-rule deny-external-tool-without-mandate --report out/policy-a.json` then the same command with `--adapter in-process-typed-entity --report out/policy-b.json`, the engine chosen by configuration with no code edit between runs. Both reports must validate against the PolicyConformanceReport shape above and assert, per adapter, `spend_delta_micros == 0` for the denied dispatch, `rule_id_present == true`, `decided_before_first_metered_call == decisions_taken`, and the result `state: \"rejected\"` with problem type `urn:agentic:problem:policy-denied`. Earlier criterion named tools/conformance/policy_decision.py, replaced by the harness on 2026-09-03.",
+        "expected_failure_design": "test.sh's engine-name scan (check 3) fails with product_hits going from 0 to 1, and `conformance.py --adapter dryrun --adapter second` also reports the same non-zero product_hits and exits non-zero, since every conformance run scans for an engine name outside adapters/."
+      },
+      "composes_with": {
+        "builds_on": [
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record",
+          "cap-policy"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Which of the two engines is primary once both exist?",
+          "evidence": "Measure, under the P10 suite for each: evaluation latency at the tool-invoke point on the hot path, the number of separate processes that must be running for a decision to be answered, and how many registry decision points each can serve without a declared subset. The middle number is the one that decides it, given how much of what is defined here is currently not running.",
+          "default": "The already-provisioned out-of-process engine is primary, because it is what exists and because it can serve the whole registry today; the in-process engine stays as the second implementation and as the path for units that cannot reach a decision endpoint.",
+          "sources": [
+            "F-a5-05",
+            "F-b1-04"
+          ]
+        },
+        {
+          "question": "How is one rule set kept equivalent across two engines with different languages?",
+          "evidence": "Count, over the registry, how many decision points need a hand-written rule in each language, and measure how often the cross-adapter agreement assertion fails after a rule edit. A high failure rate after edits means the translation, not the interface, is the load-bearing thing.",
+          "default": "Proposed: a single declarative rule table as the source, compiled to both languages, with the agreement assertion in the conformance run as the check that the compilation is faithful. Reversible to hand-written pairs at the cost of a divergence per edit.",
+          "sources": [
+            "F-b3-11",
+            "F-b1-04"
+          ]
+        },
+        {
+          "question": "Is the policy-decided record written through the state seam on the run's own log, or to a separate decision store?",
+          "evidence": "Measure the added write latency at the decision points on the hot path, and count how many audit questions need a decision and a dispatch in one ordered log rather than joined after the fact.",
+          "default": "Proposed: through the state seam onto the same append-only log, so the ordering assertion that a decision precedes the first metered call is a comparison within one log rather than across two clocks.",
+          "sources": [
+            "F-b4-04"
+          ]
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session cap-policy 2831cb4f, 2026-09-03"
+      }
+    },
+    "xc-policy-gate": {
+      "name": "xc-policy-gate",
+      "layer": "xc",
+      "wave": 4,
+      "description": "The policy gate as a placement over the call path: the decision is taken, recorded and returned before the first metered call of a dispatch, and a denied dispatch spends exactly nothing. Load it when deciding where a refusal is consulted rather than what it decides, when wiring an admission check in front of anything that costs money, occupies a machine or leaves the platform, when a decision is about to be consulted concurrently with the work it governs, when a refusal arrives after tokens were already burned, when someone proposes a fast path, an advisory mode or a warn-only rollout for a check, when a conformance suite exists and nothing on the live path calls it, or when a review asks how a human, an agent and an event all pass through the same gate.",
+      "purpose": {
+        "text": "cap-policy owns the decision contract and its one-sentence rule (F-b4-04). This skill fixes where that decision is taken: the gate is a placement over the call path, so the decision is recorded before the first metered call of a dispatch and a denied dispatch spends exactly nothing, whoever runs the call path.",
+        "origin": "sourced",
+        "sources": [
+          "F-b4-04",
+          "E-concern-policy"
+        ],
+        "quote": "Refusal is deterministic and happens before execution, not after spend"
+      },
+      "entities": [
+        "E-concern-policy",
+        "E-capability-policy",
+        "E-not-running-policy-in-the-gate-path",
+        "E-provisioning-concern-policy"
+      ],
+      "contract": {
+        "operations": [
+          {
+            "name": "gate (PASS.md states the policy contract as one sentence, not as a list of calls; this operation set follows the PDP shape X-xc-policy-gate-004 describes, of authorization logic offloaded to a separate system)",
+            "input": "the dispatch about to run, the registered decision point it belongs to, the correlation it carries, and the pinned policy version",
+            "output": "an admission token bound to that dispatch id and that policy version, or the registered typed refusal; nothing metered may start without the token",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-04",
+              "X-xc-policy-gate-004"
+            ],
+            "quote": "The PDP allows authorization logic to be offloaded to a separate system from application code."
+          },
+          {
+            "name": "record (proposed)",
+            "input": "the decision that was taken, the rule that decided it, and the position it holds in the run's append-only log (proposed)",
+            "output": "a policy-decided record written before the admission token is handed back, so the ordering is a fact on disk rather than a property of the code path (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-04",
+              "F-a6-04"
+            ]
+          },
+          {
+            "name": "attest_ordering (asserts the ordering directly, rather than trusting a green run, per F-a7-03's warning that a deterministic gate can be structurally green and mean nothing)",
+            "input": "a corpus of runs read at a pinned head",
+            "output": "per dispatch, the interval between its policy-decided record and its first metered call, and the count of inversions where that interval is negative or the record is missing",
+            "origin": "sourced",
+            "sources": [
+              "F-a7-03"
+            ],
+            "quote": "A deterministic gate can be structurally green and mean nothing"
+          }
+        ],
+        "shapes": [
+          {
+            "name": "admission-token (proposed summary shape; the full token and policy-decided record schemas and the three full entry envelopes are in references/policy-gate.md)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:policy-gate:admission:0.1",
+              "title": "AdmissionToken",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Proposed. What a metered surface demands before it will run. It is bound to one dispatch and one pinned policy version, so it cannot be reused, widened or minted by the caller. There is no field for a skipped, advisory or deferred decision, because there is no such outcome to express.",
+              "required": [
+                "dispatch_id",
+                "decision_point",
+                "effect",
+                "rule_id",
+                "policy_version",
+                "decided_at",
+                "decided_seq"
+              ],
+              "properties": {
+                "dispatch_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "decision_point": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "effect": {
+                  "const": "allow"
+                },
+                "rule_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "policy_version": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                },
+                "decided_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "decided_seq": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Position of the policy-decided record in the run's log. The ordering assertion reads this, not the wall clock, when two events share a timestamp."
+                },
+                "correlation": {
+                  "type": "object",
+                  "required": [
+                    "run_id",
+                    "root_dispatch_id"
+                  ]
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b4-04",
+              "F-b1-08"
+            ]
+          },
+          {
+            "name": "gated entry, T6.2's four doors (worked instances; TARGET T6.2 names a human, an event, a schedule and an external system or agent, and the same gate stands in front of all four)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:policy-gate:gated-entry:0.1",
+              "title": "GatedEntry",
+              "type": "object",
+              "description": "The minimum a caller supplies is nothing: the actor and the correlation are already on the entry envelope, and the gate is applied to them. These four are the same envelope entering by T6.2's four doors and receiving the same admission token shape.",
+              "examples": [
+                {
+                  "entry": {
+                    "kind": "human",
+                    "actor": {
+                      "subject": "user:corey"
+                    },
+                    "correlation": {
+                      "run_id": "run-human-0001",
+                      "root_dispatch_id": "disp-human-0001"
+                    }
+                  },
+                  "admission": {
+                    "dispatch_id": "disp-human-0001",
+                    "decision_point": "dispatch.admit",
+                    "effect": "allow",
+                    "rule_id": "allow-owner-repo-write",
+                    "decided_seq": 4
+                  }
+                },
+                {
+                  "entry": {
+                    "kind": "external",
+                    "actor": {
+                      "subject": "agent:partner-sre-bot"
+                    },
+                    "correlation": {
+                      "run_id": "run-external-0001",
+                      "root_dispatch_id": "disp-external-0001"
+                    }
+                  },
+                  "admission": {
+                    "dispatch_id": "disp-external-0001",
+                    "decision_point": "dispatch.admit",
+                    "effect": "allow",
+                    "rule_id": "allow-partner-read-only",
+                    "decided_seq": 3
+                  }
+                },
+                {
+                  "entry": {
+                    "kind": "event",
+                    "actor": {
+                      "subject": "service:alerting"
+                    },
+                    "correlation": {
+                      "run_id": "run-event-0001",
+                      "root_dispatch_id": "disp-event-0001"
+                    }
+                  },
+                  "admission": {
+                    "dispatch_id": "disp-event-0001",
+                    "decision_point": "dispatch.admit",
+                    "effect": "allow",
+                    "rule_id": "allow-alert-triage",
+                    "decided_seq": 3
+                  }
+                },
+                {
+                  "entry": {
+                    "kind": "schedule",
+                    "actor": {
+                      "subject": "schedule:nightly-fault-sweep"
+                    },
+                    "correlation": {
+                      "run_id": "run-schedule-0001",
+                      "root_dispatch_id": "disp-schedule-0001"
+                    }
+                  },
+                  "admission": {
+                    "dispatch_id": "disp-schedule-0001",
+                    "decision_point": "dispatch.admit",
+                    "effect": "allow",
+                    "rule_id": "allow-scheduled-sweep",
+                    "decided_seq": 2
+                  }
+                }
+              ]
+            },
+            "origin": "sourced",
+            "sources": [
+              "T-t6-02"
+            ],
+            "quote": "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent."
+          },
+          {
+            "name": "worked rejection (proposed instance; the type is the registered policy-denied row of the closed registry in docs/decomposition.md section 2.1.6 and cap-errors owns the object)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:policy-gate:denied-instance:0.1",
+              "title": "PolicyDeniedInstance",
+              "description": "Proposed. What a caller actually receives when the gate refuses, shown rather than described. It arrives before any metered call, so the spend ledger delta for this dispatch is exactly zero.",
+              "allOf": [
+                {
+                  "$ref": "urn:agentic:problem:0.1"
+                }
+              ],
+              "examples": [
+                {
+                  "type": "urn:agentic:problem:policy-denied",
+                  "title": "Policy denied",
+                  "status": 403,
+                  "detail": "decision point dispatch.admit refused disp-event-0001: egress to an unapproved host is not permitted for this actor",
+                  "dispatch_id": "disp-event-0001",
+                  "rule_id": "deny-egress-unapproved-host",
+                  "retryable": false,
+                  "correlation": {
+                    "run_id": "run-event-0001",
+                    "root_dispatch_id": "disp-event-0001",
+                    "depth": 0
+                  }
+                }
+              ]
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b4-07",
+              "F-b4-04"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "cap-policy owns the rule that refusal is deterministic and happens before execution (F-b4-04). What the gate adds is that 'before' is an assertion over records rather than a description of intent: for every dispatch, the policy-decided record precedes that dispatch's first metered call, and the number of inversions is counted rather than assumed.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-04",
+              "E-concern-policy"
+            ],
+            "quote": "Refusal is deterministic and happens before execution, not after spend"
+          },
+          {
+            "text": "Proposed (docs/decomposition.md section 3.2 row P10 and section 3.4 row X3): a denied dispatch has a spend ledger delta of exactly zero. Not small, not refunded, not reconciled afterwards: zero, because the refusal happened before anything could be drawn. Research query: is there a fetched source stating a denied dispatch's spend delta must be exactly zero rather than refunded or reconciled, or is that this row's own reading of rows P10 and X3?",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-04"
+            ]
+          },
+          {
+            "text": "agentic-stack states design rule 7 as a test (F-b1-08): the platform applies policy rather than the caller requesting it. Its consequence at this placement is that there is no request field, header, actor class, decision point or deployment mode that reaches a metered surface without an admission token, so 'cannot decline' is spelled as a missing code path rather than as a rule in prose.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-08",
+              "F-b4-01"
+            ],
+            "quote": "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller"
+          },
+          {
+            "text": "cap-policy records the state this layer exists to correct (F-a6-04). What the gate adds is the distinction that state hides: a check that a decision was available is not a check that it was taken first, and only the ordering assertion tells the two apart. Every other conformance signal reads identically in both worlds.",
+            "origin": "sourced",
+            "sources": [
+              "F-a6-04",
+              "E-not-running-policy-in-the-gate-path"
+            ],
+            "quote": "Conformance checks exist; not wired into the enforcement path"
+          },
+          {
+            "text": "Proposed: 'metered' is defined by what is consumed, not by which capability was called. Any call that debits a budget, occupies isolation, or leaves the platform is metered, and the gate precedes the earliest of them - synchronously, since a decision consulted concurrently with the first call can return quickly enough to look correct and still be unordered; enumerating the surface narrowly is how an ungated path survives a green check. Research query: is there a fetched source defining 'metered' by consumption (budget, isolation, egress) rather than by which capability was called, or is that this skill's own definition?",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-06",
+              "F-b2-03"
+            ]
+          },
+          {
+            "text": "cap-errors owns the failure object and its closed type registry (F-b4-07). What the gate adds is that its refusal is the registered policy-denied row with a non-empty rule_id, arriving before any spend, so a caller branches on a type and never on the words in a message.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-07"
+            ],
+            "quote": "Typed and machine-readable. Never parsed from prose"
+          },
+          {
+            "text": "Determinism is a property of the whole gate and not only of the engine behind it. The gate forwards the request it was given and nothing else, reads no clock and no ambient state of its own, and pins the policy version into the admission token, so the same dispatch replays to the same decision. The record on file is a search result rather than a page that was read, and it reports one evaluation model failing on exactly this axis - 'runtime exceptions, non-determinism, and extensibility risks' - which names the shape of the risk this placement is built to avoid, not a benchmark of this gate.",
+            "origin": "sourced",
+            "sources": [
+              "X-xc-policy-gate-006"
+            ],
+            "quote": "runtime exceptions, non-determinism, and extensibility risks"
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "There is no admitted-with-warning, advisory, dry-run or deferred outcome, and no latency budget, timeout override or partial admission that would let a caller trade the ordering for speed: 'the platform applies each; a caller cannot decline them' (F-b4-01). A dispatch either holds an admission token bound to its own dispatch id or nothing metered runs for it, so the schema offers nothing to negotiate and a warn-only rollout, or a start-now-decide-later reason code, has no field to live in.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-01"
+            ],
+            "quote": "The platform applies each; a caller cannot decline them"
+          },
+          {
+            "text": "agentic-stack states design rule 6 (F-b1-07). What the gate must not expose: the criterion a result will be judged against never travels in what the gate forwards. It carries the dispatch's opaque criterion handle and never the criterion, and a refusal's detail names the rule that decided, never the standard the work would have been measured by.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-07"
+            ],
+            "quote": "An agent sees its outcome, never the criterion it is judged against"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Put the gate on the dispatch path itself and make the admission token the thing every metered surface demands, rather than adding a check the dispatcher is expected to call.",
+          "why": "cap-policy records what happens when the two are separated (F-a6-04): a decision capability exists and the enforcement path does not consult it. A token the surface demands cannot be forgotten by a caller, where a call the caller must remember to make can.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-04",
+            "E-not-running-policy-in-the-gate-path"
+          ],
+          "quote": "Conformance checks exist; not wired into the enforcement path"
+        },
+        {
+          "step": 2,
+          "action": "Proposed: consult synchronously and block. Take the decision, write its record, and only then admit the dispatch; never start the first call and the consultation together, and never admit on a timeout.",
+          "why": "Proposed: the ordering is what is being guaranteed, and a parallel consultation is unordered even when it is fast. Admitting on a timeout converts an unreachable gate into an open one, which is the worst of the two failure modes because it is silent. Research query: is there a fetched source on admit-on-timeout as a named anti-pattern for a synchronous policy gate, or is that this row's own reasoning about silent failure modes?",
+          "origin": "proposed",
+          "sources": [
+            "F-b4-04"
+          ]
+        },
+        {
+          "step": 3,
+          "action": "Proposed: write the policy-decided record before the admission token is handed back, carrying decided_at, the record's sequence position in the run's log, the rule that decided and the pinned policy version.",
+          "why": "Proposed: the assertion in the definition of done runs over records, so a decision that was taken and not recorded is indistinguishable from one never taken. The sequence position is what settles ordering when two events share a timestamp, which they will under a coarse clock. Research query: is there a fetched source recommending a sequence-position field over a wall-clock timestamp for ordering assertions under a coarse clock, or is that this row's own mechanism choice?",
+          "origin": "proposed",
+          "sources": [
+            "F-a6-04",
+            "F-b4-04"
+          ]
+        },
+        {
+          "step": 4,
+          "action": "Wire the identical gate on each of TARGET T1's three ways in - a human, an agent, and an internal or external event - and prove it by replaying one corpus through each door, asserting the same inversion count of zero for all three.",
+          "why": "A guarantee wired only on the path someone remembered is declinable by choosing another door, and entry is the place where doors multiply. Replaying one corpus through each is what turns 'cannot be declined' into a number rather than a claim.",
+          "origin": "sourced",
+          "sources": [
+            "T-t1-01",
+            "T-t1-02",
+            "T-t1-03"
+          ],
+          "quote": "An internal or external event must be able to enter the system."
+        },
+        {
+          "step": 5,
+          "action": "Return the registered policy-denied problem with a non-empty rule_id, status 403 and retryable false, and assert the spend ledger delta for that dispatch is exactly zero before the refusal is handed back.",
+          "why": "cap-errors owns the failure object and the closed registry (F-b4-07); the gate supplies one registered row of it and adds the zero-spend assertion, which is the part a caller cannot see and therefore the part that has to be checked rather than trusted.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-07"
+          ],
+          "quote": "Typed and machine-readable. Never parsed from prose"
+        },
+        {
+          "step": 6,
+          "action": "Assert the ordering over at least 100 dispatches and report the inversion count together with how many of those dispatches actually reached a metered call, rather than reporting an exit code.",
+          "why": "agentic-stack states the structurally-green-gate finding (F-a7-03). Here it bites precisely: a corpus in which nothing ever spent has zero inversions by construction, so the count of metered dispatches is what makes the zero mean something.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        },
+        {
+          "step": 7,
+          "action": "Prove the gate took effect by observing a dispatch refused on the live path, not by reading the policy bundle, the decision-point registry or the configuration that installed it.",
+          "why": "agentic-stack states the silently-discarded-configuration finding (F-a7-04), measured on this host. A gate believed to be in force because it was configured is that same failure with an enforcement decision attached to it.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "agentic-stack already states the structurally-green-gate finding (F-a7-03). What it adds here, as this skill's own proposed consequence: report inversions alongside metered_dispatches and denied, because a run over a corpus that never spent and a run over a corpus that is properly ordered print the same zero.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        },
+        {
+          "text": "Treat the gate as the place the prior art already names: a decision point whose only job is to be asked, before the access happens, whether it is permitted. Keeping the gate that thin is what stops it from acquiring a cache, a retry loop or a default of its own, each of which is a way for an answer to arrive after the fact.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-policy-gate-004"
+          ],
+          "quote": "returning a decision on whether a particular access is permitted"
+        },
+        {
+          "text": "Prefer an evaluation model that is default-deny, order-independent and free of side effects for anything on this path. The gate runs in front of every dispatch, so a rule set whose answer depends on evaluation order cannot be replayed and a rule that can act cannot be safely re-run; the record on file describes one shipped language chosen for those properties - 'default-deny, forbid-wins-over-permit, order-independent evaluation, no side effects' - as an example of the properties this placement needs, not a requirement to adopt that language.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-policy-gate-002"
+          ],
+          "quote": "default-deny, forbid-wins-over-permit, order-independent evaluation, no side effects"
+        },
+        {
+          "text": "Enforce at the boundary the metered call actually crosses rather than only where the dispatch is composed. The records on file describe a shipped system placing authorization at the point every tool call passes through, which closes the calls a dispatch-path check never sees; they are search results rather than pages that were read.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-policy-gate-007"
+          ],
+          "quote": "intercepts every agent-tool call at the gateway boundary and authorizes against a policy set"
+        },
+        {
+          "text": "Proposed: fail closed. An unreachable decision service, an unregistered decision point and a policy version that no longer resolves are all refusals, returned as the registered adapter-unavailable or policy-denied row; none of them is an admission. A gate that opens when it breaks has been optimised for uptime at the cost of the only thing it does. Research query: is there a fetched source classifying an unregistered decision point and a stale policy version as refusals specifically (versus the unreachable-service case X-xc-policy-gate-004 already covers), or is that this row's own enumeration?",
+          "origin": "proposed",
+          "sources": [
+            "F-b4-01",
+            "F-b4-07"
+          ]
+        },
+        {
+          "text": "Proposed: keep the gate out of the retry path. A dispatch that was denied is not retried by the platform on the caller's behalf, because a deterministic decision returns the same answer and a retry that succeeds means something non-deterministic entered the gate; treat a denial that later admits as a defect to investigate, not as recovery. Research query: is there a fetched source recommending against platform-side retry of a denied dispatch specifically, or is that this row's own extension of the determinism argument X-xc-policy-gate-006 makes for the engine?",
+          "origin": "proposed",
+          "sources": [
+            "F-b4-04",
+            "X-xc-policy-gate-006"
+          ]
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "python3 harness/policy/conformance.py --adapter dryrun --adapter second",
+        "expected": "exit 0, last line `conformance PASSED: 28/28 cases, 2 binding(s)`, with one line per binding reading `cases=14 passed=14 decisions_taken=8 decided_before_first_metered_call=8 spend_delta_micros=0 rule_id_present=True product_hits=0`: every decision was taken before that dispatch's first metered call, and a denial cost nothing. What this run stands in for: the criterion this facet carried before ceremony 61 (finding R61B-018) moved its prose out of the criterion field, which is the check this guarantee ultimately needs and which nothing on disk runs yet - docs/decomposition.md section 3.4 row X3, made precise: `python3 tools/conformance/policy_gate.py --corpus out/dispatches.jsonl --min-dispatches 100 --report out/policy-gate.json` (proposed tool, built with the first enforcing placement). Reading a pinned state head, for every dispatch it asserts that a `policy-decided` record exists carrying a non-empty `rule_id`, and that its `(decided_at, decided_seq)` precedes the `(started_at, seq)` of that dispatch's first metered call; for every denied dispatch it asserts `spend_delta_micros == 0` and a result of `state: \"rejected\"` with problem type `urn:agentic:problem:policy-denied`. It reports `dispatches_checked`, `metered_dispatches`, `denied`, `missing_decision` and `inversions`, and asserts `dispatches_checked >= 100`, `metered_dispatches > 0`, `missing_decision == 0` and `inversions == 0`. Expected of that check: exit 0 and one summary line `dispatches_checked=100 metered_dispatches=<m> denied=<d> missing_decision=0 inversions=0 spend_delta_micros_on_denied=0`, with `metered_dispatches` and `denied` both greater than zero so the ordering assertion and the zero-spend assertion each had something to assert on.",
+        "breakage": "sed -i 's/\"spend_delta_micros\": 0}/\"spend_delta_micros\": 1000}/' harness/policy/interface.py -- a denied dispatch reports spend, so the refusal no longer precedes the money. Restore with git checkout harness/policy/interface.py.",
+        "expected_failure": "exit 1 on both bindings with `a deny cost 1000 micros` at the deny case and spend_delta_micros non-zero on the summary line, while decisions_taken and decided_before_first_metered_call stay equal at 8 - the two counts fail independently, which locates the defect in what a denial costs rather than in when the decision was taken. Status claimed: tools/measure.py has recorded neither run for this pair here. The breakage the prose criterion above stood for, and what it expected: Consult policy asynchronously in parallel with the first call: start the decision and the first metered call together and await the decision afterwards, changing nothing else in the corpus or the tool. exit 1 with `inversions` non-zero, naming the dispatch ids whose first metered call started before their `policy-decided` record, while `dispatches_checked` stays at or above 100 and `missing_decision` stays 0 - which is what shows the decision is still being taken and has stopped being taken first, rather than the corpus having gone unread.",
+        "status": "claimed",
+        "sources": [
+          "F-part-c-04",
+          "F-b4-04"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion"
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-definition-of-done",
+          "build-skill-authoring",
+          "cap-errors",
+          "cap-policy"
+        ],
+        "used_by": [
+          "seam-dispatch",
+          "xc-enforcement-chain",
+          "xc-policy-gate-implement"
+        ]
+      },
+      "open_questions": [
+        {
+          "question": "What counts as the first metered call when a dispatch's first action is a cached read, a local tool call or a state read that costs nothing? The ordering assertion needs a decidable boundary, not a judgement call per dispatch.",
+          "evidence": "Classify every call site in the running system by whether it can debit a budget, occupy isolation or leave the platform, and count how many are ambiguous. If the ambiguous set is empty the narrow definition is safe; if it is not, the gate precedes the earliest call of any kind and the cost is measured as added latency on free calls.",
+          "default": "Gate the union: any call that debits a budget, occupies isolation or leaves the platform is metered, and a call that is none of those is still admitted under the same token because the token is taken once per dispatch.",
+          "sources": [
+            "F-b4-04",
+            "F-b1-06"
+          ]
+        },
+        {
+          "question": "Where does the gate sit relative to the idempotency lease and the budget reservation in the enforcement chain, given that a denied dispatch must show a spend delta of exactly zero?",
+          "evidence": "Replay a corpus of denied dispatches under each order and read the spend ledger and the lease store afterwards. Whichever order leaves no lease held and no reservation drawn for a denied dispatch is the one that satisfies the zero assertion literally rather than by refund.",
+          "default": "Policy first. A lease taken and a reservation drawn before the decision are both state changes attributable to a dispatch that was refused, and a zero spend delta reached by reversal is not the same fact as a zero spend delta reached by never drawing.",
+          "sources": [
+            "F-b4-04",
+            "F-b1-08"
+          ]
+        },
+        {
+          "question": "How should this guarantee record the governing standard, given that the gate is a placement rather than an interface and cap-policy already owns the standards row for the decision API?",
+          "evidence": "1-3-1 applied (TARGET T5): (a) duplicate cap-policy's standards row here, which puts two owners on one version string and invites drift; (b) own no standards row and reference cap-policy by name for the decision API, stating the placement in invariants instead, which is what this skill does; (c) propose a new standard entity for gate placement, which would need a knowledge-base rebuild and would invalidate every written skill's provenance heads. Recommendation followed: (b). The question closes if a placement standard is ever ratified and entered as an entity.",
+          "default": "No standards row here; cap-policy owns the decision API's standard and this skill owns where the call is made.",
+          "sources": [
+            "T-t5-02",
+            "F-b3-11"
+          ]
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session xc-policy-gate 2831cb4f, 2026-09-03"
+      }
+    },
+    "xc-policy-gate-implement": {
+      "name": "xc-policy-gate-implement",
+      "layer": "xc",
+      "wave": 5,
+      "description": "How to make the policy gate real on this stack: a first placement that consults the decision service synchronously on the dispatch path, a second placement that authorizes at the boundary every metered call crosses, the adoption path from a decision capability that exists and gates nothing, where correlation, provenance, budget and typed failures attach to an admission, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that admits or refuses a dispatch, when a metered surface can be reached without an admission token, when a check is about to be added beside the call path rather than on it, when a warn-only rollout is proposed, when deciding what the second placement should be, or when an ordering assertion passes on one placement and inverts on the other.",
+      "purpose": {
+        "text": "Turn the placement rule in xc-policy-gate into something that runs here: two gate placements behind one admission contract, the second authorizing at the boundary the metered call crosses so that calls the dispatcher never composed are gated too, adopted into the enforcement path without a window in which a dispatch runs ungated.",
+        "origin": "sourced",
+        "sources": [
+          "F-b4-04",
+          "F-a6-04"
+        ],
+        "quote": "Conformance checks exist; not wired into the enforcement path"
+      },
+      "entities": [
+        "E-concern-policy",
+        "E-capability-policy",
+        "E-adapter-opa",
+        "E-swap-candidate-cedar",
+        "E-not-running-policy-in-the-gate-path"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "differs_in_execution_model for this pair (proposed instance of the shape build-adapter-pair defines)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:policy-gate:pair-axes:0.1",
+              "title": "PolicyGatePairAxes",
+              "description": "Proposed. The three axes on which the two gate placements differ, stated as properties rather than as product names. measured stays false until the swap has been executed and recorded.",
+              "type": "array",
+              "minItems": 3,
+              "examples": [
+                [
+                  {
+                    "axis": "locus_of_enforcement",
+                    "today_value": "inside the process that is about to dispatch, which must remember to ask",
+                    "second_value": "at the boundary every metered call crosses, which refuses whoever made the call",
+                    "measured": false
+                  },
+                  {
+                    "axis": "processes_required_for_progress",
+                    "today_value": "a decision service must be reachable for any dispatch to be admitted",
+                    "second_value": "a pinned policy set is evaluated in-process at the boundary with no network hop",
+                    "measured": false
+                  },
+                  {
+                    "axis": "unit_gated",
+                    "today_value": "one dispatch admitted once, by an admission token",
+                    "second_value": "every metered call authorized individually against the same pinned version",
+                    "measured": false
+                  }
+                ]
+              ]
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04"
+            ]
+          },
+          {
+            "name": "gate-conformance report (proposed; the fields the definition of done asserts on, written per placement and once across placements)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:policy-gate:implement-report:0.1",
+              "title": "PolicyGateImplementReport",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Proposed. Written per placement so a green run names what it actually checked, and once across placements so a swap that never ran cannot report as two.",
+              "required": [
+                "placement",
+                "dispatches_checked",
+                "metered_dispatches",
+                "denied",
+                "missing_decision",
+                "inversions",
+                "placement_observed"
+              ],
+              "properties": {
+                "placement": {
+                  "type": "string",
+                  "description": "The entity id of the gate placement under test."
+                },
+                "dispatches_checked": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "metered_dispatches": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "denied": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "missing_decision": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "inversions": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "spend_delta_micros_on_denied": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "ungated_calls_found": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Metered calls reached with no admission token. The shadow step's whole output: the calls one placement refuses and the other never saw."
+                },
+                "placement_observed": {
+                  "type": "string",
+                  "description": "Read from the refusal that came back, never from the binding that selected the placement."
+                },
+                "placements_run": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-a7-03"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Proposed: the two placements differ on three of build-adapter-pair's axes - locus_of_enforcement, processes_required_for_progress and unit_gated - recorded in the shape above. A different decision engine consulted the same way from the same process would agree with today's on all three, so swapping to it would test a vendor rather than the placement.",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04"
+            ],
+            "quote": "Swappability is a tested property, not an intention."
+          },
+          {
+            "text": "Refusal is deterministic and happens before execution, not after spend, at both placements over the same corpus: a placement that cannot show a zero inversion count is not an alternative implementation, it is an unfinished one (F-b4-04, E-concern-policy; xc-policy-gate owns the ordering rule and the zero-spend rule).",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-04",
+              "E-concern-policy"
+            ],
+            "quote": "Refusal is deterministic and happens before execution, not after spend"
+          },
+          {
+            "text": "agentic-stack states design rule 1 as a test (F-b1-02). Its consequence here: which placement refused is configuration. No core code, no workflow and no caller branches on it; the placement appears in the conformance report, never in a field a caller can read and route on.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-02"
+            ],
+            "quote": "The core imports interfaces, never implementations"
+          },
+          {
+            "text": "agentic-stack states that what runs is substrate (F-part-c-11). Its consequence here: the decision capability already provisioned on this host is not replaced. It becomes the first placement, moved from beside the path onto it, and the boundary placement is added next to it rather than instead of it.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-11"
+            ],
+            "quote": "Part A is substrate, not scope. Do not propose replacing what runs."
+          },
+          {
+            "text": "Conformance checks exist and are not wired into the enforcement path, so the move is adoption into that path rather than migration within it: the shadow step is the present state made explicit and time-boxed, a decision taken and recorded while the dispatch proceeds, and it ends on a date rather than when someone notices (F-a6-04, E-not-running-policy-in-the-gate-path; xc-policy-gate records the state this work starts from).",
+            "origin": "sourced",
+            "sources": [
+              "F-a6-04",
+              "E-not-running-policy-in-the-gate-path"
+            ],
+            "quote": "Conformance checks exist; not wired into the enforcement path"
+          },
+          {
+            "text": "Apply build-evidence-record: every statement here about how a placement behaves stays claimed until the conformance run and its evidence record exist, naming the code version and the tree hash under test, and rewording a sentence never upgrades a label; proposed pointer, see that skill.",
+            "origin": "proposed",
+            "sources": [
+              "F-a5-04",
+              "F-part-c-08"
+            ],
+            "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Build the first placement by moving the decision capability that is already provisioned onto the dispatch path: the dispatcher calls its decision API synchronously, writes the policy-decided record, and only then mints the admission token every metered surface demands.",
+          "why": "xc-policy-gate records why this layer exists (F-a6-04): the capability is defined and the enforcement path does not consult it. Moving what already runs onto the path is the smaller change and it starts the pair from a real refusal rather than an intention.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-04",
+            "F-b3-11"
+          ],
+          "quote": "Conformance checks exist; not wired into the enforcement path"
+        },
+        {
+          "step": 2,
+          "action": "Proposed: build the second placement at the boundary every metered call crosses - the model gateway, the tool surface, the isolation admission and the egress point - evaluating a pinned, precompiled policy set in-process at that boundary and refusing any call that arrives without a valid admission token.",
+          "why": "Proposed: this breaks the assumption that the dispatcher is the only thing that starts metered work. A boundary placement refuses calls composed by code that never asked, and it removes the decision service from the critical path, so the two placements fail for different reasons rather than together.",
+          "origin": "proposed",
+          "sources": [
+            "F-b3-11",
+            "F-b1-04"
+          ]
+        },
+        {
+          "step": 3,
+          "action": "Apply build-adapter-pair: record differs_in_execution_model from the shape above, leave measured false until the swap has actually been run, and write each placement's gaps down as gaps rather than as caveats; proposed pointer, see that skill.",
+          "why": "differs_in_execution_model, its axes and the rule that measured stays false until the swap has run belong to build-adapter-pair; four sibling skills carried the sentence verbatim (consolidation part B, kb/ceremonies/implement-clusters.json).",
+          "origin": "proposed",
+          "sources": [
+            "F-b1-04"
+          ],
+          "quote": "Swappability is a tested property, not an intention."
+        },
+        {
+          "step": 4,
+          "action": "Adopt in three steps with no window in which a dispatch runs ungated: shadow, where both placements decide and record while the dispatch proceeds and ungated_calls_found is counted; compare, where the two refusal sets are reconciled over one corpus; then enforce, where the token check is switched on at every metered surface at once.",
+          "why": "agentic-stack states that what runs is substrate (F-part-c-11), and the shadow step is the only stage in which a disagreement between the two placements is cheap: it is where the calls the dispatch-path gate never sees are first counted. Switching one surface at a time leaves the others open while the report already reads green.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-04",
+            "F-part-c-11"
+          ],
+          "quote": "Part A is substrate, not scope. Do not propose replacing what runs."
+        },
+        {
+          "step": 5,
+          "action": "Stamp the run identifier and the root dispatch identifier as explicit attributes on every decision request, every policy-decided record and every admission token, rather than relying on the trace the calling process is inside.",
+          "why": "agentic-stack states that correlation must ride on an explicit attribute set at dispatch (F-a7-02) because parentage did not survive the agent boundary. A decision whose run cannot be identified cannot be ordered against that run's first metered call, which is the whole assertion.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-02"
+          ],
+          "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+        },
+        {
+          "step": 6,
+          "action": "Append the policy-decided record and the admission it produced through the append-only chained store, and let the ordering assertion read them at a pinned head rather than from the gate's own memory or logs.",
+          "why": "agentic-stack states why the chain is there (F-a5-03): a later edit is detectable. An ordering claim read out of the process that made the decision is a claim that process is honest about itself; read out of a chained log at a pinned head, it is a fact anyone can recheck.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-03"
+          ],
+          "quote": "each run's closing digest is the next run's opening digest, so a manual edit between runs is detectable"
+        },
+        {
+          "step": 7,
+          "action": "Read which placement refused from the refusal that actually came back and put that value in placement_observed, never from the binding or the configuration that selected the placement.",
+          "why": "agentic-stack states the silently-discarded-configuration finding (F-a7-04), measured on this host: values written where the documentation says were overlaid by a stored row. A gate believed installed because it was configured is that failure with an enforcement decision attached.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+        },
+        {
+          "step": 8,
+          "action": "Run the definition of done below over both placements and over each of TARGET T1's three ways in, then run its breakage, and record both outputs as evidence records naming the script hash, the commit, the tree hash under test and whether the tree was dirty.",
+          "why": "build-evidence-record fixes what a record contains (F-a5-04); a result from a dirty tree is not reproducible and may not be labelled measured. Running the breakage is what shows the ordering assertion can fail rather than that it merely passed.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-04",
+            "F-part-c-04"
+          ],
+          "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Report metered_dispatches per placement: one corpus replayed through two placements can leave the boundary placement with nothing to authorize and still exit green, the way a nine-stage pipeline ran green because the generated work contained nothing those tools apply to (F-a7-03, agentic-stack's finding, whose gate-level consequence build-definition-of-done owns; xc-policy-gate owns the consequence for an inversion count).",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "because the generated work contained nothing those tools apply to"
+        },
+        {
+          "text": "Test the gate by watching a dispatch be blocked on the live path, not by reading the policy bundle that was loaded or the decision-point registry that was published: values written to YAML validated, reviewed correctly, and had no runtime effect, so a loaded bundle and an enforced bundle are indistinguishable from the file (F-a7-04, agentic-stack's silently-discarded-configuration finding).",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+        },
+        {
+          "text": "Expect the two placements to disagree during the shadow step and treat the difference as the finding rather than as noise. In code the difference lands as ungated_calls_found: metered calls that reached a surface with no admission token, the set a dispatch-path gate can never report and a placement that intercepts every agent-tool call at the gateway boundary can (X-xc-policy-gate-007; xc-policy-gate cites the same record for the boundary pattern).",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-policy-gate-007"
+          ],
+          "quote": "intercepts every agent-tool call at the gateway boundary and authorizes against a policy set"
+        },
+        {
+          "text": "Proposed: choose the boundary placement's evaluation model for its constraints, not its expressiveness, since it runs on every metered call. xc-policy-gate already prefers default-deny, order-independent, side-effect-free evaluation on this path; what this adds is the code-level cost, that a language flexible enough to fetch, branch on time or mutate makes the boundary gate itself a source of the non-determinism it exists to remove.",
+          "origin": "proposed",
+          "sources": [
+            "X-xc-policy-gate-002",
+            "X-xc-policy-gate-006"
+          ],
+          "quote": "default-deny, forbid-wins-over-permit, order-independent evaluation, no side effects"
+        },
+        {
+          "text": "Proposed: keep the conformance run on the same code path a live dispatch takes rather than beside it, replaying the corpus through the real admission call. A suite that reads a stored corpus and never touches the admission code reproduces exactly the state this layer exists to leave: a check that exists and an enforcement path that does not consult it.",
+          "origin": "proposed",
+          "sources": [
+            "F-a6-04"
+          ]
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-opa",
+          "role": "today",
+          "maps_to": "gate, record and attest_ordering served by the decision engine PASS.md B3 names in the policy row as today's adapter and PASS.md A5 records as the provisioned policy role on this host, called synchronously from the dispatching process: gate is one decision-API request per dispatch, record is the policy-decided record the dispatcher appends before minting the admission token, and attest_ordering reads those records back at a pinned head.",
+          "cannot": "Proposed: cannot gate a metered call made by a process that does not call it, so any code path composed outside the dispatcher stays open; binds only while the decision service is reachable, which makes an outage a choice between refusing everything and admitting everything; and its evaluation model is the flexible kind the research records associate with runtime exceptions and non-determinism, which on this path is a source of inversions rather than of expressiveness.",
+          "swap_procedure": "Select the placement by configuration with no code edit between runs, replay the same corpus through both, and compare: assert every refusal this placement produced is also produced by the boundary placement, and record the metered calls the boundary placement refused that this one never saw as ungated_calls_found. Read the placement from the refusal, not from the binding.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-11",
+            "F-a5-05",
+            "F-a6-04"
+          ],
+          "quote": "Rego / OPA | OPA"
+        },
+        {
+          "entity": "E-swap-candidate-cedar",
+          "role": "second",
+          "maps_to": "the same three operations served at the boundary every metered call crosses, with a pinned, precompiled policy set evaluated in-process there: gate is an authorization per metered call rather than per dispatch, record is the same policy-decided record written through the state seam, and attest_ordering is unchanged because it reads records rather than call sites. PASS.md B3's policy row names this engine and, more generally, any policy engine with a decision API as the swap candidates.",
+          "cannot": "Proposed: cannot express rules outside typical access control, so a decision that needs a computed aggregate or an external lookup has to stay on the dispatch-path placement; cannot see a dispatch that never reaches a boundary, so it can never report missing_decision on its own; and it adds per-call latency to every metered call rather than once per dispatch.",
+          "swap_procedure": "Proposed: the axes that differ are locus_of_enforcement (inside the dispatching process versus at the boundary the call crosses), processes_required_for_progress (a reachable decision service versus in-process evaluation of a pinned set) and unit_gated (one dispatch admitted once versus every metered call authorized). Select by configuration, run the same corpus through both, and compare both reports against the same declared gaps.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-11",
+            "F-b1-04"
+          ],
+          "quote": "Cedar · any policy engine with a decision API"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/policy/test.sh && python3 harness/policy/conformance.py --adapter dryrun --adapter second",
+        "expected": "Measured by tools/measure.py at 52a1457: exit 0; last lines:   adapter=in-process-typed-entity cases=14 passed=14 decisions_taken=8 decided_before_first_metered_call=8 spend_delta_micros=0 rule_id_present=True subset=['dispatch.data_query'] product_hits=0 | conformance PASSED: 28/28 cases, 2 binding(s)",
+        "breakage": "sed -i 's/effect, rule_id, detail = self._evaluate(request, bundle)$/effect, rule_id, detail = self._evaluate(request, bundle); rule_id = \"\"/' harness/policy/interface.py -- every decision comes back with an empty rule_id, so the concrete admit() gate can no longer attribute an allow or a deny and refuses adapter-unavailable instead. Restore: git checkout harness/policy/interface.py",
+        "expected_failure": "Measured by tools/measure.py at 52a1457: exit 1; last lines:   FAIL both adapters failed | passed 17, failed 21",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04",
+          "F-b4-04"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "52a1457",
+          "clean_exit": 0,
+          "clean_output": "ny-cross-tenant-resource, spend_delta_micros=0\n  ok   nothing names an engine, a rule language or a bundle on the way out: a decision carries an effect, a rule, a version and a digest, and nothing about who answered\n  ok   a point this binding cannot serve is declared, never answered allow: declared subset ['dispatch.data_query'] refused, not answered allow\n  adapter=in-process-typed-entity cases=14 passed=14 decisions_taken=8 decided_before_first_metered_call=8 spend_delta_micros=0 rule_id_present=True subset=['dispatch.data_query'] product_hits=0\nconformance PASSED: 28/28 cases, 2 binding(s)",
+          "breakage_exit": 1,
+          "breakage_output": "zero on the adapter that lost the ordering (1)\n  FAIL the ordering and zero-spend counters inverted (expected 0, got 1)\n  ok   Traceback (most recent call last):\n  File \"<stdin>\", line 5, in <module>\nAssertionError: {'adapter': 'out-of-process-document-query', 'adapters_run': 1, 'decided_before_first_metered_call': 0, 'decisions_taken': 0, 'rule_id_present': True, 'selected_by': 'configuration', 'spend_delta_micros': 0}\n  ok   the run names what broke: the binding took over the gate\n  FAIL the untouched adapter still exits 0 (expected 0, got 1)\n  FAIL both adapters failed\n\npassed 17, failed 21",
+          "restored": true
+        },
+        "expected_design": "docs/decomposition.md section 3.4 row X3, run over harness/policy (harness/tool-access also serves this skill per harness/plan.json co_skills, but the measured run here is policy): test.sh exits 0 (38 checks: dry run, the swap proof, one deliberate breakage restoring clean); conformance.py --adapter dryrun --adapter second then exits 0 with 28/28 cases across 2 bindings.",
+        "expected_failure_design": "test.sh exits 1 (17 passed, 21 failed): the gate itself stops deciding on both bindings, so the ordering, zero-spend, and configuration-swap assertions all fail together, including an unhandled AssertionError from the harness's own conformance check. Restoring the file with git checkout returns the tree to a clean run."
+      },
+      "composes_with": {
+        "builds_on": [
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record",
+          "xc-policy-gate"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "The gate is a placement, not a capability row, so it has no adapter or swap-candidate entity of its own, and the pair here is recorded against the policy capability's entities. Should the placement get its own entity pair?",
+          "evidence": "1-3-1 applied (TARGET T5): (a) add entities for a dispatch-path placement and a boundary placement, which needs a knowledge-base rebuild and would invalidate the provenance heads of every skill already written; (b) record the pair against the policy capability's existing adapter and swap-candidate entities and say so in the rows, which is what this skill does and which keeps the citation inside the capability the placement gates; (c) defer the pair to a later wave, which would leave this guarantee with one placement and nothing to prove swappability. Recommendation followed: (b). The question closes when a ceremony rebuilds the knowledge base and the two entities exist.",
+          "default": "Keep the pair on the policy capability's entities, with the reason stated in each adapter row so a reader is not sent to the wrong capability's row.",
+          "sources": [
+            "F-b3-11",
+            "T-t5-02"
+          ],
+          "quote": "When a problem comes up, use 1-3-1"
+        },
+        {
+          "question": "Should the boundary placement authorize every metered call individually, or accept the per-dispatch admission token and only re-check when the pinned policy version changes?",
+          "evidence": "Measure the added per-call latency of in-process evaluation against the number of metered calls that a per-dispatch token would have admitted without a second look, over the shadow corpus. If ungated_calls_found stays zero under token acceptance, the per-call check is buying latency and nothing else.",
+          "default": "Authorize every metered call. The axis that makes this placement worth having is that it refuses whoever made the call, and accepting a token minted elsewhere reintroduces the assumption that the dispatcher is the only thing that starts metered work.",
+          "sources": [
+            "F-b1-04",
+            "F-b4-04"
+          ]
+        },
+        {
+          "question": "What is the time box on the shadow step, and what evidence ends it?",
+          "evidence": "Count ungated_calls_found per day during shadow. The step ends when the count is stable across a full corpus replay and every call site it named has either acquired a token check or been recorded as a declared exception with an owner; a shadow step with no end date is the present state with a new name.",
+          "default": "Proposed: end the shadow step on a stated date rather than on a metric alone, since the metric can be held at zero by a corpus that exercises nothing, and record the date in the evidence record for the shadow run.",
+          "sources": [
+            "F-a6-04",
+            "F-a7-03"
+          ]
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session xc-policy-gate 2831cb4f, 2026-09-03"
+      }
+    }
   }
 }

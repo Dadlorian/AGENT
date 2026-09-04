@@ -1,7 +1,7 @@
 {
   "name": "cap-evaluation",
   "layer": "cap",
-  "wave": 5,
+  "wave": 3,
   "description": "The evaluation contract: score a versioned unit of work against a versioned case set - synthetic scenarios and recorded runs replayed with their external effects served from the record - and return passed, failed or inconclusive against a stored baseline. Load it before a prompt, a model, a skill or a workflow change is allowed to ship, when a self-improvement loop needs a gate that can actually say no, when someone asks 'did that change make it worse', 'how do we test an agent without calling the real thing', 'what exactly is this scored against', or 'is this not just the Judge again', when a recorded run is about to be re-executed rather than replayed, and whenever a green test run turns out to have executed no cases at all.",
   "purpose": {
     "text": "Fix one contract for scoring a versioned unit of work against a versioned case set and a stored baseline, so a change can be refused before it ships and the harness that does the scoring stays an adapter. PASS.md has no evaluation row in any section: this capability exists because TARGET requires the gaps in that baseline to be found and filled, and because an evaluation harness is a different artifact from the runtime Judge.",
@@ -686,32 +686,39 @@
     }
   ],
   "definition_of_done": {
-    "criterion": "bash harness/evaluation/test.sh",
-    "expected": "One conformance run over both adapters, from the repository root, with a proposed tool: `python3 tools/conformance_evaluation.py --adapter config/eval/trace-scoring.json --adapter config/eval/local-fixture.json --unit agent:release-reviewer@1.4.0 --case-set tests/fixtures/eval/cs-release-review --baseline tests/fixtures/eval/bl-2026-08-27.json --report out/eval-conformance.json`. The fixture corpus is six cases, three recorded and three synthetic, all passing at the baseline. Assert `adapters_run >= 2`, `cases_executed == 6`, `outcome == passed`, `transitions == 0`, `unrecorded_effects == 0`, `verdict_divergence == 0` between the two adapters, and that a second invocation of the same command with `--case-filter none` reports `cases_executed=0 outcome=inconclusive` and exits non-zero. exit 0 with one line per adapter reading `adapter=<role> cases_executed=6 outcome=passed transitions=0 unrecorded_effects=0` followed by `adapters_run=2 verdict_divergence=0`, and the `--case-filter none` invocation printing `cases_executed=0 outcome=inconclusive` and exiting non-zero. Until that proposed tool exists, `bash harness/evaluation/test.sh` (owned by cap-evaluation-implement) is the running gate: every check line reads ok and the script exits 0.",
-    "breakage": "Introduce one regression into the unit under test - in the release-reviewer prompt, drop the instruction that makes it call the diff tool before answering - leaving the case set, the baseline and both adapters untouched.",
-    "expected_failure": "exit non-zero on both adapters with `outcome=failed transitions=1`, naming the case whose tool-use dimension moved from pass to fail against the baseline, and `verdict_divergence=0` still holding because both adapters must name the same case. Claimed: neither adapter, the fixture corpus nor the tool exists in this tree, so this check starts red by construction and is not dressed up as passing. That the regression is caught on the tool-use dimension while task completion still passes is what shows the run scores the trajectory rather than the final answer.",
-    "status": "claimed",
+    "criterion": "bash harness/evaluation/test.sh && ADAPTER=dryrun python3 harness/evaluation/conformance.py && ADAPTER=second python3 harness/evaluation/conformance.py",
+    "expected": "Measured by tools/measure.py at bf17237: exit 0; last lines:   ok   C12b an unregistered problem type falls back rather than being minted   [urn:agentic:problem:adapter-unavailable] | conformance PASSED: 22/22 cases, adapter=second",
+    "breakage": "In harness/evaluation/interface.py outcome_for(), make a run that executed zero cases report passed instead of inconclusive, run the criterion (conformance case C6, a gate over a zero-case report cannot report success, fails on both adapters and the gate exits 1), then git checkout harness/evaluation/interface.py.",
+    "expected_failure": "Measured by tools/measure.py at bf17237: exit 1; last lines:   ok   outcome and cases_executed are stated together in the report shape | passed 47, failed 8",
+    "status": "measured",
     "sources": [
       "F-part-c-04",
-      "X-end-to-end-040"
+      "F-a7-03"
     ],
-    "quote": "the deliberate breakage that proves the check can fail"
+    "quote": "the deliberate breakage that proves the check can fail",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "bf17237",
+      "clean_exit": 0,
+      "clean_output": "-2769d65827, 2 baselines, previous intact=True]\n  ok   C11 the interface carries exactly the five operations the core imports   [evaluate, promote_baseline, register_case_set, replay_case, score_trajectory]\n  ok   C11b no operation executes an effect\n  ok   C11c a case has nowhere to put the text it is graded against\n  ok   C12 an unresolved case set answers with typed problem details   [urn:agentic:problem:case-set-unresolved]\n  ok   C12b an unregistered problem type falls back rather than being minted   [urn:agentic:problem:adapter-unavailable]\nconformance PASSED: 22/22 cases, adapter=second",
+      "breakage_exit": 1,
+      "breakage_output": "ailure path answers with problem details, never an exception\n  ok   unconfigured live adapter exits 2 (2)\n  ok   answer is problem details\n  ok   typed from the closed registry\n  ok   no traceback reached the caller\n6. the boundary holds in the source, not only at runtime\n  ok   no product name in interface.py, call.py, conformance.py or the unit under test\n  ok   the interface carries five operations, none of which executes an effect\n  ok   a case has a rubric handle and nowhere to put a rubric body\n  ok   outcome and cases_executed are stated together in the report shape\n\npassed 47, failed 8",
+      "restored": true
+    },
+    "expected_design": "What the run proves: Two runs from the repository root with a proposed tool. First the pair: `python3 tools/conformance_evaluation.py --binding config/eval/trace-scoring.json --binding config/eval/local-fixture.json --unit agent:release-reviewer@1.4.0 --case-set corpus/cs-release-review --baseline corpus/bl-2026-08-27.json --report out/eval-conformance.json` over six cases, three harvested from recorded runs and three synthetic, all passing at the baseline. Then the gate: `python3 tools/gate.py --stage evaluation --report out/eval-conformance.json --emit out/gate-stage.json`. Assert `adapters_run == 2`, `cases_executed == 6`, `outcome == passed`, `transitions == 0`, `verdict_divergence == 0`, that `out/gate-stage.json` validates against GateStageResult with `status=passed`, and that re-running the gate against a report with `cases_executed=0` yields `status=inconclusive` and exit 1. Gap: no harness covers this capability yet (STATUS row 60). | `adapter=today cases_executed=6 outcome=passed transitions=0` and `adapter=second cases_executed=6 outcome=passed transitions=0`, then `adapters_run=2 verdict_divergence=0`, then `stage=evaluation status=passed cases_executed=6 evidence_record_id=<id>`; the zero-case gate run printing `stage=evaluation status=inconclusive cases_executed=0` and exiting 1.",
+    "expected_failure_design": "Both bindings still report `outcome=passed transitions=0` and `adapters_run=2 verdict_divergence=0`, so neither harness is what moved. The zero-case run is the one that fails: the gate prints `stage=evaluation status=passed cases_executed=0` and exits 0 where `status=inconclusive` and exit 1 are required, so that assertion fails and the definition-of-done run exits non-zero naming the gate stage rather than a case. A gate reporting passed having executed nothing is the structurally-green pipeline F-a7-03 records, and catching it here is what shows the stage status is read from the report's counters rather than from an exit code - a build-level fault, distinct from the regression in the unit under test that cap-evaluation's own breakage introduces. Claimed: neither binding, the corpus, the gate stage nor the tool exists in this tree, so this starts red by construction."
   },
   "composes_with": {
     "builds_on": [
       "agentic-stack",
-      "build-definition-of-done",
-      "build-adapter-pair",
-      "build-evidence-record",
-      "build-skill-authoring",
-      "build-research-record",
       "build-ceremony",
+      "build-evidence",
+      "build-skill-authoring",
       "cap-errors",
       "cap-telemetry",
-      "core-judge"
+      "core-components"
     ],
     "used_by": [
-      "cap-evaluation-implement",
       "compose-improvement-loop"
     ]
   },
@@ -757,5 +764,428 @@
       "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
     },
     "author": "session claude/auto-skill-creation cap-evaluation author 2026-09-03"
+  },
+  "folded": {
+    "cap-evaluation-implement": {
+      "name": "cap-evaluation-implement",
+      "layer": "cap",
+      "wave": 6,
+      "description": "How to build the Evaluation capability on this stack: a scoring adapter over the trace backend that already ingests every run, a second adapter with no collector and no server that replays fixtures from disk, the migration from a deterministic pipeline whose behavioural stages can all skip and still report green, where budget, policy, identity, telemetry, provenance and idempotency attach to an evaluation and to each case, and a definition of done with the regression that makes it fail. Load it when writing or reviewing the code that registers a case set, replays a recorded run or scores a trajectory, when wiring an evaluation into a release gate or a self-improvement loop, when deciding what the second harness should be, when a verdict reproduces on one harness and not the other, or when a gate reported success having executed nothing.",
+      "purpose": {
+        "text": "Turn the cap-evaluation contract into something that runs here: which adapter is built first and on what, what the second one deliberately lacks, how a pipeline whose behavioural stages skipped and still went green becomes a gate with a stored baseline, and what a run must print before either adapter is allowed to refuse a change.",
+        "origin": "sourced",
+        "sources": [
+          "F-a7-03",
+          "F-a5-02"
+        ],
+        "quote": "A deterministic gate can be structurally green and mean nothing."
+      },
+      "entities": [
+        "E-finding-a7-2",
+        "E-finding-a7-3",
+        "E-capability-telemetry",
+        "E-core-component-judge",
+        "E-standard-genai-semantic-conventions"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "EvaluationBinding (proposed): the record that selects a harness - the only file that differs between the two adapters",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:evaluation:binding:0.1",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Proposed. One binding per adapter, selected by configuration. Nothing in cap-evaluation's operations, CaseSet or EvaluationReport changes when the binding changes; if a field has to move into a request to make a harness work, the field belongs to the harness and not to the capability.",
+              "required": [
+                "binding_id",
+                "role",
+                "execution_model",
+                "trajectory_source",
+                "case_set_root",
+                "report_sink"
+              ],
+              "properties": {
+                "binding_id": {
+                  "type": "string"
+                },
+                "role": {
+                  "enum": [
+                    "today",
+                    "second"
+                  ]
+                },
+                "execution_model": {
+                  "enum": [
+                    "collector-backed",
+                    "no-server"
+                  ],
+                  "description": "the axis the pair differs on; two bindings with the same value are not a pair"
+                },
+                "trajectory_source": {
+                  "enum": [
+                    "trace-backend",
+                    "fixture-file"
+                  ],
+                  "description": "where a trajectory to be scored comes from"
+                },
+                "case_set_root": {
+                  "type": "string",
+                  "description": "resolved corpus location or endpoint; never read by a caller"
+                },
+                "report_sink": {
+                  "type": "string"
+                },
+                "emit_evaluation_result": {
+                  "type": "boolean",
+                  "default": true,
+                  "description": "whether per-case verdicts are also exported on the standard carrier; the second binding may leave this false without changing the report a caller reads"
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b1-02"
+            ]
+          },
+          {
+            "name": "GateStageResult (proposed): what the release gate reports, so a stage that ran nothing cannot read as green",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:evaluation:gate-stage:0.1",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Proposed. The stage record the pipeline writes. status is copied from the report's outcome and is never derived from an exit code, because a stage that skipped exits zero.",
+              "required": [
+                "stage",
+                "status",
+                "cases_executed",
+                "report_id",
+                "adapters_run"
+              ],
+              "properties": {
+                "stage": {
+                  "const": "evaluation"
+                },
+                "status": {
+                  "enum": [
+                    "passed",
+                    "failed",
+                    "inconclusive",
+                    "skipped"
+                  ],
+                  "description": "skipped and inconclusive both block promotion; neither may be reported as green"
+                },
+                "cases_executed": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "report_id": {
+                  "type": "string"
+                },
+                "adapters_run": {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                "evidence_record_id": {
+                  "type": "string",
+                  "description": "the appended record naming the script digest, the commit, the tree hash and whether the tree was dirty"
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-a7-03",
+              "F-a5-04"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "The core imports cap-evaluation's five operations and never a harness. A harness is reached only through an EvaluationBinding selected by configuration, so agentic-stack's design rule 1 and cap-evaluation's restatement of it (F-b1-02) are enforced by there being no other path to one.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-02"
+            ],
+            "quote": "The core imports interfaces, never implementations"
+          },
+          {
+            "text": "A gate stage that executed no case reports inconclusive or skipped and blocks promotion. agentic-stack and build-definition-of-done both state the finding this comes from (F-a7-03): the 9-stage pipeline that runs here has already gone green with every behavioural stage skipped, so an evaluation stage that copies its status from an exit code repeats that defect exactly.",
+            "origin": "sourced",
+            "sources": [
+              "F-a7-03"
+            ],
+            "quote": "Those establish well-formedness, not correctness"
+          },
+          {
+            "text": "Neither adapter gates anything until both have scored the same registered case set and agreed case by case. build-adapter-pair owns design rule 3 and cap-evaluation states the pair for this capability (F-b1-04); the consequence in the code is that the conformance run, not the first green pipeline, is what promotes a harness to gating.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-04"
+            ],
+            "quote": "the second exists to prove the first is not load-bearing"
+          },
+          {
+            "text": "Budget, policy, identity, telemetry, provenance and idempotency attach at the evaluate boundary and again per case, and no field of an evaluation request can decline them. agentic-stack states the rule (F-b1-08); what is specific here is that a corpus of cases is the cheapest way to spend a budget by accident, so the ceiling is checked per case and not once per report.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-08"
+            ],
+            "quote": "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller"
+          },
+          {
+            "text": "Every conformance and gate result is labelled claimed until a run produced it, and the run that produces it is appended to the evidence store with the tree it tested. build-evidence-record owns the record shape and the claimed-versus-measured labelling (F-part-c-08); this skill's own definition of done is claimed, because nothing described here exists in this tree yet.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-08"
+            ],
+            "quote": "Distinguish **claimed** from **measured** throughout"
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "Proposed: the binding itself. Which harness scored a report, where the corpus was resolved from and whether a collector was attached are absent from CaseSet, EvaluationReport and the problem object, so a caller cannot come to depend on the adapter that happens to be selected. cap-evaluation owns the full not-exposed list for this capability, including what the grader rule forbids here. Research query: is there a recorded conformance report shape (a binding record schema already in this facet's contract.shapes) that fixes exactly which binding fields exist, so this exclusion can cite that shape by name instead of asserting the list here?",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-02"
+            ]
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Implement cap-evaluation's five operations as the module the core imports, and put the harness behind an EvaluationBinding resolved at startup. Do not let a metric class, a dataset loader, a test-runner decorator or a collector client appear in a signature the core calls.",
+          "why": "Everything that differs between a collector-backed harness and a harness with no server lives in exactly those four things. If one of them reaches a core signature, the second adapter cannot be written without editing the core, and the pair stops being a swap.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-02"
+          ],
+          "quote": "The core imports interfaces, never implementations"
+        },
+        {
+          "step": 2,
+          "action": "Build today's adapter on the trace stack that already runs: read the stored trajectory for a recorded run out of the trace backend, score it per case, write the EvaluationReport, and export each per-case verdict on the standard evaluation-result carrier.",
+          "why": "Traces are already being ingested and stored on this host, so the recorded half of the corpus costs nothing to obtain and the first adapter needs no new storage. See the Adapters table for what this binding is and what it cannot do.",
+          "origin": "sourced",
+          "sources": [
+            "F-b3-10",
+            "F-a1-05"
+          ],
+          "quote": "OTLP · GenAI semantic conventions"
+        },
+        {
+          "step": 3,
+          "action": "Build the second adapter with no collector, no backend and no server: each case is a test function, each recorded run is a fixture file on disk, and the assertion is the per-case verdict against the stored baseline. Read the same CaseSet and write the same EvaluationReport.",
+          "why": "cap-evaluation names the axis the pair must differ on. Choosing a second harness that also needs a running collector would prove only that two products of the same shape exist, which is the failure build-adapter-pair is written to prevent.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-04"
+          ],
+          "quote": "the second exists to prove the first is not load-bearing"
+        },
+        {
+          "step": 4,
+          "action": "Harvest the recorded half of the first corpus rather than authoring it: take runs the evidence store already names, pair each with the trajectory the trace backend holds for it, and register them as cases with mode replay. Author only the synthetic half.",
+          "why": "There are already thousands of appended records over hundreds of runs, and build-evidence-record states what each one names (F-a5-04) - which is exactly the provenance a case needs to be worth replaying. Writing a corpus from scratch also writes in the assumptions the system already has.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-04"
+          ],
+          "quote": "tree hash under test, and whether the tree was dirty"
+        },
+        {
+          "step": 5,
+          "action": "Freeze the first baseline from a single report over the harvested corpus, record it as claimed, and do not promote a second baseline in the same change that alters a unit under test.",
+          "why": "A baseline promoted alongside the change it was meant to judge is not a baseline. Keeping promotion a separate, separately authorised call is what stops a self-improvement loop from grading itself into approval, and build-evidence-record owns the labelling that keeps the frozen baseline honest until a run produced it (F-part-c-08).",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-08"
+          ],
+          "quote": "Distinguish **claimed** from **measured** throughout"
+        },
+        {
+          "step": 6,
+          "action": "Replace the behavioural stage of the deterministic pipeline with one evaluate call, and have the stage copy its status from the report's outcome. Make skipped and inconclusive block promotion, and never derive the stage status from an exit code.",
+          "why": "The pipeline here has already run green with every behavioural stage skipped, because the tools had nothing to apply to. A stage that reads an exit code cannot tell that case from a real pass, so the count of executed cases has to be the thing it reports.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Our 9-stage pipeline recently ran with every behavioural stage skipped"
+        },
+        {
+          "step": 7,
+          "action": "Wire the cross-cutting guarantees at the evaluate boundary and again around each case: the budget ceiling checked per case, the policy decision taken before the first case runs, the actor and its delegation chain carried onto every case, the correlation id set at dispatch, the report appended to the provenance chain, and the idempotency key covering the whole evaluation rather than one case.",
+          "why": "agentic-stack states that these are applied by the platform and not requested by the caller (F-b1-08). A corpus is where that rule bites hardest: one evaluate call can fan out into hundreds of metered model calls, so a ceiling checked once at the top stops nothing.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-08"
+          ],
+          "quote": "Cross-cutting guarantees are not optional."
+        },
+        {
+          "step": 8,
+          "action": "Prove the binding took runtime effect rather than that it was written: run the same corpus under both bindings in one command and diff the per-case verdicts, instead of asserting that the configuration file names the harness you expect.",
+          "why": "agentic-stack records the finding (F-a7-04): configuration written in the documented place on this host has already been silently overridden by a stored row. The consequence here is specific - a scoring harness selected but not actually used produces a plausible report from the wrong code, and a diff of two verdict sets is the cheapest thing that can tell.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+        },
+        {
+          "step": 9,
+          "action": "Append every conformance and gate run to the evidence store as a record naming the script digest, the commit, the tree hash under test and whether the tree was dirty, and cite that record id from the gate stage result.",
+          "why": "build-evidence-record owns the record shape; the consequence here is that a report claiming a regression was caught is only evidence if the tree it scored can be named afterwards, and a dirty tree makes the whole report unreproducible.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-04"
+          ],
+          "quote": "Each record names the script SHA-256, git commit"
+        },
+        {
+          "step": 10,
+          "action": "Proposed: open references/wiring.md for the per-concern attachment table, the migration order with what is claimed at each step, and the conformance command in full. The body of this skill is enough to build both adapters without it.",
+          "why": "Proposed: progressive disclosure. The attachment table and the migration order are long and are needed once, when the wiring is written, not every time someone reads how the pair works.",
+          "origin": "proposed",
+          "sources": [
+            "F-b1-08"
+          ]
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Set the correlation id on an explicit attribute at dispatch and carry it onto every case, rather than relying on trace parentage to link a case back to the evaluation that ran it. agentic-stack states the finding (F-a7-02); it matters twice here, because today's adapter reads the very traces that lost their parentage.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-02"
+          ],
+          "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+        },
+        {
+          "text": "Do not let the existence of conformance checks stand in for their being wired in. A check that exists and is not in the enforcement path is the state this host is already in for policy, and an evaluation harness that runs beside the gate rather than inside it will read as adopted while refusing nothing.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-04"
+          ],
+          "quote": "Conformance checks exist; not wired into the enforcement path"
+        },
+        {
+          "text": "Keep the replay half of the corpus in continuous integration and the live half out of it. cap-evaluation states the practice and its source (X-end-to-end-038); the split matters in the code because a live case in CI turns every pull request into real spend and real side effects.",
+          "origin": "sourced",
+          "sources": [
+            "X-end-to-end-038"
+          ],
+          "quote": "To proactively guard against non-determinism errors"
+        },
+        {
+          "text": "Proposed practice, on a sourced fact: the deployment phases here already report automated verification green across the board (F-a5-02), so treat all-green as a question rather than an answer - the first useful thing a new corpus does is fail on something that was green yesterday.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-02"
+          ],
+          "quote": "8, each with automated verification, all currently green"
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-otel-trace-scoring-harness",
+          "role": "today",
+          "maps_to": "Proposed adapter, and a proposed entity id: PASS.md B3 has no Evaluation row, so kb/entities.jsonl carries no adapter entity for this capability; cap-evaluation mints the same id and records the gap as an open question. What it binds to does run: the Langfuse trace UI and ingestion API with ClickHouse behind it, already ingesting and storing every trace on this host. register_case_set writes the corpus beside the traces, replay_case reads a stored trajectory instead of re-running the unit, score_trajectory scores that trajectory, and each verdict is exported as a gen_ai.evaluation.result against the OpenTelemetry GenAI semantic conventions.",
+          "cannot": "Proposed: cannot score a run whose trace never reached the backend, cannot run in a pull-request checkout where no collector, ClickHouse or Langfuse instance is reachable, and cannot give a developer a verdict they can reproduce locally before pushing. It also inherits the correlation defect: goose mints its own root trace, so a case assembled from trace parentage alone can be the wrong trajectory.",
+          "swap_procedure": "Change binding.execution_model from collector-backed to no-server in the EvaluationBinding and re-run; no core file is edited, because the core imports cap-evaluation's five operations.",
+          "status": "claimed",
+          "sources": [
+            "F-a1-05",
+            "F-a1-07",
+            "F-b3-10"
+          ],
+          "quote": "Trace UI and ingestion API"
+        },
+        {
+          "entity": "E-swap-candidate-local-fixture-replay-harness",
+          "role": "second",
+          "maps_to": "Proposed adapter, and a proposed entity id: a test-runner-shaped harness with no collector and no server. Cases are test functions, recorded trajectories are fixture files committed beside the corpus, and the per-case verdict is the assertion. It reads the same CaseSet and writes the same EvaluationReport, with emit_evaluation_result false, so it runs in a checkout with nothing else installed.",
+          "cannot": "Proposed: cannot score a production run it did not record, cannot aggregate across a fleet and cannot show a trend without something else keeping the reports. That is the axis: the first binding needs a collector, a trace store and a backend running; the second needs a filesystem. An operation shaped around a live trace stream fails here outright rather than degrading, which is what makes the pair a test of the interface.",
+          "swap_procedure": "One conformance run puts the identical registered corpus through both bindings against the same baseline and diffs per-case verdicts, transitions and refusal types; the merged report must show adapters_run >= 2 and verdict_divergence == 0 before either binding is allowed to gate a promotion.",
+          "status": "claimed",
+          "sources": [
+            "X-cap-evaluation-001",
+            "F-b1-04"
+          ],
+          "quote": "a runner designed for local development and CI/CD"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/evaluation/test.sh && ADAPTER=dryrun python3 harness/evaluation/conformance.py && ADAPTER=second python3 harness/evaluation/conformance.py",
+        "expected": "Measured by tools/measure.py at bf17237: exit 0; last lines:   ok   C12b an unregistered problem type falls back rather than being minted   [urn:agentic:problem:adapter-unavailable] | conformance PASSED: 22/22 cases, adapter=second",
+        "breakage": "In harness/evaluation/interface.py outcome_for(), make a run that executed zero cases report passed instead of inconclusive, run the criterion (conformance case C6, a gate over a zero-case report cannot report success, fails on both adapters and the gate exits 1), then git checkout harness/evaluation/interface.py.",
+        "expected_failure": "Measured by tools/measure.py at bf17237: exit 1; last lines:   ok   outcome and cases_executed are stated together in the report shape | passed 47, failed 8",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04",
+          "F-a7-03"
+        ],
+        "quote": "the deliberate breakage that proves the check can fail",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "bf17237",
+          "clean_exit": 0,
+          "clean_output": "-2769d65827, 2 baselines, previous intact=True]\n  ok   C11 the interface carries exactly the five operations the core imports   [evaluate, promote_baseline, register_case_set, replay_case, score_trajectory]\n  ok   C11b no operation executes an effect\n  ok   C11c a case has nowhere to put the text it is graded against\n  ok   C12 an unresolved case set answers with typed problem details   [urn:agentic:problem:case-set-unresolved]\n  ok   C12b an unregistered problem type falls back rather than being minted   [urn:agentic:problem:adapter-unavailable]\nconformance PASSED: 22/22 cases, adapter=second",
+          "breakage_exit": 1,
+          "breakage_output": "ailure path answers with problem details, never an exception\n  ok   unconfigured live adapter exits 2 (2)\n  ok   answer is problem details\n  ok   typed from the closed registry\n  ok   no traceback reached the caller\n6. the boundary holds in the source, not only at runtime\n  ok   no product name in interface.py, call.py, conformance.py or the unit under test\n  ok   the interface carries five operations, none of which executes an effect\n  ok   a case has a rubric handle and nowhere to put a rubric body\n  ok   outcome and cases_executed are stated together in the report shape\n\npassed 47, failed 8",
+          "restored": true
+        },
+        "expected_design": "What the run proves: Two runs from the repository root with a proposed tool. First the pair: `python3 tools/conformance_evaluation.py --binding config/eval/trace-scoring.json --binding config/eval/local-fixture.json --unit agent:release-reviewer@1.4.0 --case-set corpus/cs-release-review --baseline corpus/bl-2026-08-27.json --report out/eval-conformance.json` over six cases, three harvested from recorded runs and three synthetic, all passing at the baseline. Then the gate: `python3 tools/gate.py --stage evaluation --report out/eval-conformance.json --emit out/gate-stage.json`. Assert `adapters_run == 2`, `cases_executed == 6`, `outcome == passed`, `transitions == 0`, `verdict_divergence == 0`, that `out/gate-stage.json` validates against GateStageResult with `status=passed`, and that re-running the gate against a report with `cases_executed=0` yields `status=inconclusive` and exit 1. Gap: no harness covers this capability yet (STATUS row 60). | `adapter=today cases_executed=6 outcome=passed transitions=0` and `adapter=second cases_executed=6 outcome=passed transitions=0`, then `adapters_run=2 verdict_divergence=0`, then `stage=evaluation status=passed cases_executed=6 evidence_record_id=<id>`; the zero-case gate run printing `stage=evaluation status=inconclusive cases_executed=0` and exiting 1.",
+        "expected_failure_design": "Both bindings still report `outcome=passed transitions=0` and `adapters_run=2 verdict_divergence=0`, so neither harness is what moved. The zero-case run is the one that fails: the gate prints `stage=evaluation status=passed cases_executed=0` and exits 0 where `status=inconclusive` and exit 1 are required, so that assertion fails and the definition-of-done run exits non-zero naming the gate stage rather than a case. A gate reporting passed having executed nothing is the structurally-green pipeline F-a7-03 records, and catching it here is what shows the stage status is read from the report's counters rather than from an exit code - a build-level fault, distinct from the regression in the unit under test that cap-evaluation's own breakage introduces. Claimed: neither binding, the corpus, the gate stage nor the tool exists in this tree, so this starts red by construction."
+      },
+      "composes_with": {
+        "builds_on": [
+          "cap-evaluation",
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Should the recorded half of the corpus be stored beside the code or in the trace backend that already holds the trajectories?",
+          "evidence": "A measurement of how large one replay fixture actually is for a representative run, and whether the trace backend can export a trajectory in a form the no-server binding can read without it. Applying 1-3-1: (1) fixtures in the repository, which makes the no-server binding self-contained and the corpus reviewable in a diff but adds weight to every checkout; (2) fixtures in the trace backend only, which is free until the second binding needs one and then blocks it entirely; (3) fixtures in the repository by digest with the bodies in the blob store the trace stack already runs, which keeps the checkout small but reintroduces a running service the second binding was chosen to do without. Recommendation and choice: (1) until a fixture is measured large enough to hurt, because option 3 defeats the axis the pair differs on.",
+          "default": "Fixtures live beside the corpus in the repository, and the binding's trajectory_source says which one is read.",
+          "sources": [
+            "T-t5-02",
+            "F-b1-04"
+          ],
+          "quote": "identify the three best possible solutions that align to the goal"
+        },
+        {
+          "question": "Does the durable orchestrator that is installed but not listening become the thing that runs a long evaluation, or does the harness fan cases out itself?",
+          "evidence": "PASS.md A6 records the orchestrator's data directory present and the server not listening. Deciding needs a measurement of how long a full corpus takes under each binding and whether a crash mid-corpus is common enough to need resumption at the first incomplete case.",
+          "default": "The harness fans out cases itself and re-running the whole corpus is the recovery. cap-durable-execution owns the step, checkpoint and resume vocabulary if that stops being acceptable; nothing in cap-evaluation's operations changes either way.",
+          "sources": [
+            "F-a6-02"
+          ],
+          "quote": "Data directory present; server not listening"
+        },
+        {
+          "question": "Registry gap list: does the closed registry in docs/decomposition.md section 2.1.6 need a row for urn:agentic:problem:case-set-unresolved, the type this skill's own C12 conformance case names for a case set that fails to resolve (its C12b case already proves the fallback: an unregistered type is never minted, it falls back to the registered adapter-unavailable)?",
+          "evidence": "The suffix has no row today. It is stated only inside this skill's measured_run conformance output, so it is recorded here rather than edited into that measured evidence. It is proposed and pending registration until docs/decomposition.md section 2.1.6 gains the row.",
+          "default": "Until the row lands, urn:agentic:problem:case-set-unresolved stays pending registration wherever this skill states it, and a conformant implementation answers a case set that fails to resolve with the registered adapter-unavailable, naming the unresolved case set in detail."
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session claude/auto-skill-creation cap-evaluation-implement author 2026-09-03"
+      }
+    }
   }
 }

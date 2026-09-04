@@ -1,0 +1,2789 @@
+{
+  "name": "xc-guarantees",
+  "layer": "xc",
+  "wave": 4,
+  "description": "One ordered interception chain through which every unit of work passes, whichever way it entered: six typed slots applied in one declared order on the way in and in the inverse order on the way out, at three named points - admission before a work item is accepted, dispatch before a unit runs, and call before each model or tool call. Load it when asking where a cross-cutting guarantee is actually applied rather than what it decides, when a new concern needs somewhere to attach, when one door into the platform received a check the others did not, when a tool chosen at runtime reaches the outside without passing anything, when an agent loop has no ceiling on its own iterations, when an irreversible action is about to run on an approval granted earlier for something else, when someone proposes a fast path around a whole point, a trusted caller or a per-team exemption, or when a review asks what precisely a caller cannot decline.",
+  "purpose": {
+    "text": "xc-typed-errors, xc-budget and xc-correlation each carry one guarantee across every entry point (T-t2-03). This skill fixes the single structure that carries all of them: one ordered chain of typed slots, applied at named enforcement points, entered before anything is spent and unwound in the inverse order on the way out, so that a guarantee is a property of the path rather than of the caller who remembered it.",
+    "origin": "sourced",
+    "sources": [
+      "T-t2-03",
+      "F-b1-08"
+    ],
+    "quote": "State, telemetry, and every cross-cutting concern are managed across the entire structure, whichever entry point was used."
+  },
+  "entities": [
+    "E-concern-budget",
+    "E-concern-identity",
+    "E-concern-policy",
+    "E-concern-provenance",
+    "E-concern-telemetry",
+    "E-concern-errors",
+    "E-concern-idempotency",
+    "E-rule-b1-7",
+    "E-not-running-policy-in-the-gate-path"
+  ],
+  "contract": {
+    "operations": [
+      {
+        "name": "enter (proposed operation set; PASS.md states the cross-cutting concerns as a table of contracts, not as a chain of calls)",
+        "input": "the enforcement point being crossed, the unit about to cross it, and the chain context of the enclosing point if there is one (proposed)",
+        "output": "a chain context carrying one slot record per declared slot in declared order, or the typed refusal of the first slot that refused; nothing metered runs for a unit that holds no chain context for the point it is crossing (proposed)",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-01",
+          "T-t2-03"
+        ]
+      },
+      {
+        "name": "exit (proposed)",
+        "input": "the chain context handed back by enter, and the outcome of the work the point wrapped, success or failure (proposed)",
+        "output": "the same context sealed, with each slot's inverse recorded in the reverse of the entry order, on the failure path as well as the success path (proposed)",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-01"
+        ]
+      },
+      {
+        "name": "attest_chain (proposed)",
+        "input": "a corpus of units read at a pinned state head, and the declared slot order (proposed)",
+        "output": "per unit and per point: which slots ran, in which order, which inverses ran on exit, and counts of slots_missing, out_of_order, missing_inverse and metered calls reached with no chain context (proposed)",
+        "origin": "proposed",
+        "sources": [
+          "F-a7-03"
+        ]
+      }
+    ],
+    "shapes": [
+      {
+        "name": "chain-context (proposed summary shape; the full slot record, the three worked entries and the worked refusal are in references/usage.md)",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:xc:enforcement-chain:context:0.1",
+          "title": "ChainContext",
+          "type": "object",
+          "additionalProperties": false,
+          "description": "Proposed. What one traversal of one enforcement point produces. There is no field for a skipped, advisory or deferred slot, and no field in which a caller may supply the order: the order is declared by the platform and the slot list is closed.",
+          "required": [
+            "point",
+            "unit_id",
+            "correlation",
+            "slots",
+            "entered_seq"
+          ],
+          "properties": {
+            "point": {
+              "enum": [
+                "admission",
+                "dispatch",
+                "call"
+              ],
+              "description": "The named enforcement point being crossed. The same chain runs at each."
+            },
+            "unit_id": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "entered_seq": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "correlation": {
+              "type": "object",
+              "required": [
+                "run_id",
+                "root_dispatch_id"
+              ]
+            },
+            "slots": {
+              "type": "array",
+              "minItems": 6,
+              "description": "One record per declared slot, in declared order: identity resolve, policy decide, budget reserve, telemetry open, idempotency claim, provenance open. A slot may record a no-op; it may not be absent.",
+              "items": {
+                "type": "object",
+                "required": [
+                  "slot",
+                  "seq",
+                  "outcome"
+                ],
+                "properties": {
+                  "slot": {
+                    "enum": [
+                      "identity.resolve",
+                      "policy.decide",
+                      "budget.reserve",
+                      "telemetry.open",
+                      "idempotency.claim",
+                      "provenance.open"
+                    ]
+                  },
+                  "seq": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "outcome": {
+                    "enum": [
+                      "passed",
+                      "no-op",
+                      "refused"
+                    ]
+                  },
+                  "inverse_seq": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "description": "Sequence of this slot's inverse on exit. Inverses run in the reverse of the entry order, whatever the outcome of the wrapped work."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b4-01",
+          "F-b1-08"
+        ]
+      },
+      {
+        "name": "chained entry, T6.2's four entries (proposed worked instances; TARGET T6.2 names a human, an event, a schedule and an external system or agent, and the same chain stands at the admission point of all four)",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:xc:enforcement-chain:entry:0.1",
+          "title": "ChainedEntry",
+          "type": "object",
+          "description": "Proposed. The minimum a caller supplies is the entry envelope cap-consumption already fixes; the chain is applied to it and there is nothing to add, set or request. What comes back is one result or one problem object. These four are the same envelope entering by all four of TARGET T6.2's doors and traversing the same six slots. The event and schedule rows are not interchangeable: the reference example this repo follows states that an internal event steers work that already exists and never starts it, while a schedule entry starts root work of its own (REF-3-4-10, REF-3-4-15) - so the event row below carries a correlation the run already had, and the schedule row opens a new one.",
+          "examples": [
+            {
+              "entry": {
+                "kind": "human",
+                "actor": {
+                  "subject": "user:corey"
+                },
+                "correlation": {
+                  "run_id": "run-h-0001",
+                  "root_dispatch_id": "disp-h-0001"
+                }
+              },
+              "chain": {
+                "point": "admission",
+                "unit_id": "disp-h-0001",
+                "slots_run": 6,
+                "refused_at": null
+              }
+            },
+            {
+              "entry": {
+                "kind": "external",
+                "actor": {
+                  "subject": "agent:partner-sre-bot"
+                },
+                "correlation": {
+                  "run_id": "run-a-0001",
+                  "root_dispatch_id": "disp-a-0001"
+                }
+              },
+              "chain": {
+                "point": "admission",
+                "unit_id": "disp-a-0001",
+                "slots_run": 6,
+                "refused_at": null
+              }
+            },
+            {
+              "entry": {
+                "kind": "event",
+                "actor": {
+                  "subject": "service:alerting"
+                },
+                "correlation": {
+                  "run_id": "run-e-0001",
+                  "root_dispatch_id": "disp-e-0001"
+                },
+                "note": "steers a live run; admitted only against a correlation that already exists"
+              },
+              "chain": {
+                "point": "admission",
+                "unit_id": "disp-e-0001",
+                "slots_run": 6,
+                "refused_at": null
+              }
+            },
+            {
+              "entry": {
+                "kind": "schedule",
+                "actor": {
+                  "subject": "schedule:nightly-fault-sweep"
+                },
+                "correlation": {
+                  "run_id": "run-s-0001",
+                  "root_dispatch_id": "disp-s-0001"
+                },
+                "note": "starts a new root run under the schedule's own standing allocation, not a caller's"
+              },
+              "chain": {
+                "point": "admission",
+                "unit_id": "disp-s-0001",
+                "slots_run": 6,
+                "refused_at": null
+              }
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "T-t6-02",
+          "REF-3-4-10",
+          "REF-3-4-15"
+        ],
+        "quote": "a human, an event, a schedule (time), and an external system or agent. All four enter through the same shape."
+      },
+      {
+        "name": "worked refusal at the call point (proposed instance; the type is the registered budget-exhausted row of the closed registry in docs/decomposition.md section 2.1.6, and cap-errors owns the object)",
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:xc:enforcement-chain:refusal:0.1",
+          "title": "ChainRefusalInstance",
+          "description": "Proposed. What a caller actually receives when a slot refuses, shown rather than described. It names the point and the slot, never the engine or process that decided, and it arrives before the call it refused, so the spend for that call is zero.",
+          "allOf": [
+            {
+              "$ref": "urn:agentic:problem:0.1"
+            }
+          ],
+          "examples": [
+            {
+              "type": "urn:agentic:problem:budget-exhausted",
+              "title": "Budget exhausted",
+              "status": 402,
+              "detail": "enforcement point call, slot budget.reserve: the model call would cross the ceiling of run-e-0001",
+              "dispatch_id": "disp-e-0001",
+              "retryable": false,
+              "correlation": {
+                "run_id": "run-e-0001",
+                "root_dispatch_id": "disp-e-0001",
+                "depth": 2
+              }
+            }
+          ]
+        },
+        "origin": "proposed",
+        "sources": [
+          "F-b4-07",
+          "F-b4-02"
+        ]
+      }
+    ],
+    "invariants": [
+      {
+        "text": "agentic-stack states design rule 7 as a test (F-b1-08): the platform applies the cross-cutting guarantees rather than the caller requesting them. What the chain adds is where 'the platform' is: there is exactly one traversal path from any entry to any metered call, and a call reached without a chain context for its point is a defect that is counted, not a caller's choice.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-08",
+          "E-rule-b1-7"
+        ],
+        "quote": "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller"
+      },
+      {
+        "text": "Proposed: the chain's contents are PASS.md B4's concerns - Budget, Identity, Policy, Provenance, Telemetry, Errors, Idempotency - of which six are ordered slots (identity resolve, policy decide, budget reserve, telemetry open, idempotency claim, provenance open) and the seventh, Errors, is not a slot but the shape every slot's refusal takes, so the chain has one return type and not six. Research query: is there a fetched source classifying Errors as the shape every refusal takes rather than a seventh slot, or is that this skill's own reading of B4's seven-row table?",
+        "origin": "proposed",
+        "sources": [
+          "F-b4-01",
+          "E-concern-budget",
+          "E-concern-identity",
+          "E-concern-policy",
+          "E-concern-provenance",
+          "E-concern-telemetry",
+          "E-concern-errors",
+          "E-concern-idempotency"
+        ],
+        "quote": "These are the difference between a working system and a production one."
+      },
+      {
+        "text": "The order is declared and total: every slot runs at every point in the declared order and each has its inverse on exit in the reverse order, on the failure path as well as the success path. A slot may record a no-op; it may not be absent, because the prior art's whole property is that the interceptors surround the target operation regardless of outcome.",
+        "origin": "sourced",
+        "sources": [
+          "X-xc-enforcement-chain-005"
+        ],
+        "quote": "Interceptors form a chain that always surrounds and invokes a fixed target operation, ensuring every interceptor executes both before and after the target regardless of outcomes."
+      },
+      {
+        "text": "xc-policy-gate owns the rule that refusal precedes spend (F-b4-04). What the chain adds is that the rule holds at three points and not one: admission, dispatch and every model or tool call each take the decision and the reservation before the thing they wrap begins, so a unit admitted once cannot spend unboundedly afterwards.",
+        "origin": "sourced",
+        "sources": [
+          "F-b4-04",
+          "E-concern-policy"
+        ],
+        "quote": "Refusal is deterministic and happens before execution, not after spend"
+      },
+      {
+        "text": "In-path enforcement at the call point is not redundant with the earlier points, because the thing being enforced against is chosen after them: enforcement must sit where the call is actually made, so that a boundary still refuses when everything upstream was satisfied.",
+        "origin": "sourced",
+        "sources": [
+          "X-end-to-end-062"
+        ],
+        "quote": "Infrastructure-level governance provides a hard enforcement boundary even when prompt injection succeeds at the LLM level."
+      },
+      {
+        "text": "xc-typed-errors states that a guarantee holds across the whole structure rather than per entry point (T-t2-03). What the chain adds is that the structure is one object: the same declared slot list, in the same order, at the same three points, whichever of TARGET T1's three ways in was used - so a new door is wired by attaching the chain, never by re-deriving the checks.",
+        "origin": "sourced",
+        "sources": [
+          "T-t2-03",
+          "T-t1-01",
+          "T-t1-02",
+          "T-t1-03"
+        ],
+        "quote": "3. An internal or external event must be able to enter the system."
+      },
+      {
+        "text": "The call point carries two containment controls that no upstream point can supply: a hard ceiling on autonomous iterations, and an approval gate that fires on any action declared irreversible regardless of an approval granted earlier for the run.",
+        "origin": "sourced",
+        "sources": [
+          "X-end-to-end-063"
+        ],
+        "quote": "Hard caps on autonomous loops, plan-validation checkpoints, and approval gates on irreversible actions are the typical defenses."
+      }
+    ],
+    "not_exposed": [
+      {
+        "text": "agentic-stack states design rule 7 (F-b1-08): cross-cutting guarantees are applied by the platform, not requested by the caller. For the chain, declining is inexpressible rather than forbidden: no entry shape carries a slots array, an order array, a skip list, a point selector, a bypass field, a trusted-caller class or an advisory mode, so there is nothing to negotiate and a fast path has no field to live in. The only way a slot does not run is that the platform declared it a no-op for that point, which is recorded in the chain context and counted by the attestation, not left to a caller's configuration.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-08"
+        ],
+        "quote": "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller"
+      },
+      {
+        "text": "agentic-stack states design rule 6 (F-b1-07). What the chain must not expose: the criterion a result will be judged against never travels in a chain context, a slot record or a refusal. A refusal names the point and the slot that refused, never the standard the work would have been measured by.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-07",
+          "E-rule-b1-7"
+        ],
+        "quote": "An agent sees its outcome, never the criterion it is judged against"
+      },
+      {
+        "text": "No engine, process or product behind a slot appears in a chain context or a refusal. A caller learns which point and which slot refused, which is what they can act on; which implementation decided is configuration and appears only in the conformance report. (agentic-stack and build-skill-authoring apply the same rule generally; this row applies it to a chain refusal specifically.)",
+        "origin": "sourced",
+        "sources": [
+          "F-part-c-09"
+        ],
+        "quote": "Products belong in the adapter column only."
+      }
+    ]
+  },
+  "instructions": [
+    {
+      "step": 1,
+      "action": "Declare the chain once, as an ordered list of typed slots with one owning skill per slot, and let the chain own only two things: the order and the totality. Never restate what a slot decides here.",
+      "why": "Proposed: each slot's semantics already belong to a guarantee skill - xc-policy-gate for the decision, xc-budget for the ceiling, xc-correlation for the stamped identifiers, xc-typed-errors for the refusal shape. A chain that also decides is a second owner for every rule, and the two owners drift. Research query: is there a fetched source on a single-owner-per-concern rule for an interception chain specifically, or is that this skill's own extension of the sidecar/AOP prior art it cites elsewhere?",
+      "origin": "proposed",
+      "sources": [
+        "F-b4-01"
+      ]
+    },
+    {
+      "step": 2,
+      "action": "Name the enforcement points and put the same chain at each: admission, before a work item is accepted; dispatch, before a unit runs; call, before each model or tool call. Add a point by naming it, never by adding a check somewhere unnamed.",
+      "why": "cap-policy already draws the consequence for its own decision that runtime tool choice defeats a plan-time check; the chain's consequence is structural: the call point is the only place that sees the arguments a unit actually chose, so a platform with only admission and dispatch points is enforcing against a plan and not against a call.",
+      "origin": "sourced",
+      "sources": [
+        "X-end-to-end-062",
+        "X-cross-structure-030"
+      ],
+      "quote": "Dynamic tool-switching, where agents select tools at runtime, defeats static policy."
+    },
+    {
+      "step": 3,
+      "action": "Order the slots so that everything that can refuse runs before anything that can spend, and record each slot's sequence position as it runs: identity resolve, policy decide, budget reserve, telemetry open, idempotency claim, provenance open.",
+      "why": "xc-policy-gate owns the ordering rule for the decision and xc-budget owns the ceiling; what the chain adds is that both are positions in one list, so 'before spend' is checkable as a sequence rather than argued per call site.",
+      "origin": "sourced",
+      "sources": [
+        "F-b4-04",
+        "F-b4-02"
+      ],
+      "quote": "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform"
+    },
+    {
+      "step": 4,
+      "action": "Run each slot's inverse on exit, in the reverse of the entry order, and run it on the failure path too: reserve is reconciled, the claim is settled, the span and the provenance record are closed whether the unit succeeded, refused or crashed.",
+      "why": "The prior art's defining property is that the chain surrounds the target operation and executes on both sides regardless of outcome; an exit that runs only on success leaks reservations and leaves open spans exactly on the runs that most need reading.",
+      "origin": "sourced",
+      "sources": [
+        "X-xc-enforcement-chain-005"
+      ],
+      "quote": "ensuring every interceptor executes both before and after the target regardless of outcomes"
+    },
+    {
+      "step": 5,
+      "action": "Make traversal automatic: attach the chain where units are constructed and calls are issued, so that no engineer adds a call to it and no configuration step is required to get it.",
+      "why": "cap-policy already draws this consequence for automatic consultation of its decision; for the chain the same mechanism is what makes 'cannot decline' true, because a step that has to be remembered is declined by being forgotten, and the forgetting is silent.",
+      "origin": "sourced",
+      "sources": [
+        "X-cross-structure-024",
+        "X-cross-structure-025"
+      ],
+      "quote": "there's no need for engineers to remember extra config steps"
+    },
+    {
+      "step": 6,
+      "action": "Give the call point a hard ceiling on autonomous iterations and a gate that fires on any action declared irreversible, and make the irreversible gate fire regardless of an approval already granted for the run.",
+      "why": "These are the containment controls the risk taxonomy on file names, and neither can be supplied upstream: an iteration count only exists once the loop is running, and an approval granted at admission was granted for a plan, not for the specific irreversible action a later turn chose.",
+      "origin": "sourced",
+      "sources": [
+        "X-end-to-end-063",
+        "X-end-to-end-061"
+      ],
+      "quote": "Hard caps on autonomous loops, plan-validation checkpoints, and approval gates on irreversible actions are the typical defenses."
+    },
+    {
+      "step": 7,
+      "action": "Wire the identical chain on each of TARGET T6.2's four entries - a human, an event, a schedule and an external system or agent - and prove it by replaying one corpus through each door and asserting the same slot order, the same inverses and zero ungated metered calls for all four. A schedule entry starts a new root run under its own standing allocation; an event entry only steers a run that already exists and is admitted just where a correlation for it is already open (REF-3-4-10, REF-3-4-15).",
+      "why": "cap-work-intake carries the four-door claim this reads from (T-t6-02). A guarantee wired only on the path someone remembered is declined by choosing another door, and entry is where doors multiply. Replaying one corpus through each of the four is what turns 'whichever entry point was used' into a number, and treating schedule as a fourth alias of T1's three ways in would leave the one door that mints its own root work unchecked.",
+      "origin": "sourced",
+      "sources": [
+        "T-t6-02",
+        "REF-3-4-10",
+        "REF-3-4-15"
+      ],
+      "quote": "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent."
+    },
+    {
+      "step": 8,
+      "action": "Return the refusal of the first slot that refuses as one typed problem from the closed registry, naming the point and the slot in its detail, and stop the traversal there rather than collecting further refusals.",
+      "why": "xc-typed-errors owns the rule that no failure is discovered by matching a string; what the chain adds is that a caller who sees one object still learns where in the chain it stopped, which is the only part of the traversal they can act on.",
+      "origin": "sourced",
+      "sources": [
+        "F-b4-07",
+        "E-concern-errors"
+      ],
+      "quote": "Typed and machine-readable"
+    },
+    {
+      "step": 9,
+      "action": "For usability, add nothing to the caller's side: a human, an agent and an event all reach the chain by submitting the entry envelope cap-consumption fixes, supply no slot, flag or order, and read back either one result or one problem object naming the point and slot that refused.",
+      "why": "Proposed: the chain is the part of the platform a caller most wants to configure and least should, so the usability answer is that there is no chain-shaped input at all; cap-consumption states the caller doctrine once, and restating it here would give it a second owner. Research query: has a caller ever been observed reaching for a chain-shaped input field (a slot list, an order override) before this row asserted there is none to reach for, or is the absence purely a design choice with no counter-example on file?",
+      "origin": "proposed",
+      "sources": [
+        "T-t6-02",
+        "T-t3-01"
+      ]
+    },
+    {
+      "step": 10,
+      "action": "Proposed: open references/usage.md when you need the full chain-context and slot-record schemas, the three complete worked entries, the worked refusal in full, or the slot-to-owner table. The body of this skill is enough to judge a chain and to place a point without it.",
+      "why": "Proposed: the full schemas and three complete envelopes exceed the progressive-disclosure budget for a skill body, and a reader deciding whether a call is on the chain does not need them open.",
+      "origin": "proposed"
+    }
+  ],
+  "best_practices": [
+    {
+      "text": "cap-policy already cites this record for consulting one decision everywhere; what the chain adds is the reason to define the whole set once rather than concern by concern: a single composition point is what keeps the unit's own logic free of them, so a new concern is added in one file rather than in every agent.",
+      "origin": "sourced",
+      "sources": [
+        "X-cross-structure-026"
+      ],
+      "quote": "keeping the core reasoning focused on business goals while shared concerns stay centralized"
+    },
+    {
+      "text": "Prefer a placement that can enforce against a workload you cannot modify. The prior art on file describes a helper process alongside the application handling the cross-cutting concerns with no change to the application, which is the only shape that also works for an agent runtime or a tool server we did not write; the records are search results rather than pages that were read.",
+      "origin": "sourced",
+      "sources": [
+        "X-cross-structure-020"
+      ],
+      "quote": "A sidecar is a helper process that runs alongside your application and handles cross-cutting concerns without touching the application code."
+    },
+    {
+      "text": "Treat enforcement as inherently cross-cutting rather than as a component's own business: the records on file describe policy-relevant events spanning agents, models, services and tools, which is why a per-component check leaves the gaps between components unguarded.",
+      "origin": "sourced",
+      "sources": [
+        "X-xc-enforcement-chain-003",
+        "X-xc-enforcement-chain-006"
+      ],
+      "quote": "making policy enforcement cross-cutting rather than local to any single component"
+    },
+    {
+      "text": "cap-policy already states that interoperability protocols cannot enforce governance semantics. What this adds for the chain, as this skill's own proposed consequence: adopting a protocol at the door buys transport, not enforcement, so the chain is what a new door inherits and the protocol choice never changes which slots run.",
+      "origin": "sourced",
+      "sources": [
+        "X-entry-composition-059",
+        "X-entry-composition-060"
+      ],
+      "quote": "Current protocols can transport governance-related messages as opaque payloads"
+    },
+    {
+      "text": "agentic-stack already states the structurally-green-gate finding (F-a7-03). What it adds here, as this skill's own proposed consequence: report metered calls and slot executions alongside the zero counts, because a corpus in which nothing spent and a corpus that is properly chained both print zero ungated calls.",
+      "origin": "sourced",
+      "sources": [
+        "F-a7-03"
+      ],
+      "quote": "Those establish well-formedness, not correctness"
+    },
+    {
+      "text": "agentic-stack already states the silently-discarded-configuration finding (F-a7-04). What it adds here, as this skill's own proposed consequence: prove a point is on the chain by watching a call be refused at it on the live path, not by reading the wiring that installed it; an installed chain and an enforced chain are indistinguishable from the file.",
+      "origin": "sourced",
+      "sources": [
+        "F-a7-04"
+      ],
+      "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+    },
+    {
+      "text": "Proposed: fail closed at slot granularity. A slot whose owner is unreachable is a refusal returned as the registered adapter-unavailable row, not a no-op and not a pass-through; a chain that thins itself under load has removed exactly the guarantees that load makes expensive. Research query: is there a fetched source recommending fail-closed behaviour at the granularity of one slot (versus the whole chain or the whole point), or is that this skill's own extension of the general fail-closed principle?",
+      "origin": "proposed",
+      "sources": [
+        "F-b4-01",
+        "F-b4-07"
+      ]
+    }
+  ],
+  "definition_of_done": {
+    "criterion": "bash harness/xc-enforcement-chain/test.sh && python3 harness/xc-enforcement-chain/conformance.py --adapter dryrun --adapter second --min-units 100",
+    "expected": "Measured by tools/measure.py at 5dd855c: exit 0; last lines:   ok   identical chain records from 2 enforcement points (db7461f6c118), differing on 2 loci | conformance PASSED: 26/26",
+    "breakage": "In harness/xc-enforcement-chain/interface.py, unbind the event door's intake path from the admission point (meter the unit and continue before the chain runs, the same edit the gate applies to a copy in its step 4), run the criterion (chain_context_missing and ungated_metered_calls become non-zero for the event door alone and the gate exits 1), then git checkout harness/xc-enforcement-chain/interface.py.",
+    "expected_failure": "Measured by tools/measure.py at 5dd855c: exit 1; last lines:   ok   the run names the case that broke it | passed 25, failed 11",
+    "status": "measured",
+    "sources": [
+      "F-part-c-04",
+      "F-b1-08"
+    ],
+    "quote": "A criterion nothing can fail is not a criterion",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "5dd855c",
+      "clean_exit": 0,
+      "clean_output": "ion of the corpus, not of the run: records_digest=db7461f6c118 on both runs\nadapter=out-of-process chain (an admitting process the traffic must cross) ways_in=human,event,schedule,external points=admission,dispatch,call units_checked=104 metered_units=96 slots_missing=0 out_of_order=0 missing_inverse=0 ungated_metered_calls=0 chain_context_missing=0 slots_noop_by_absent_owner=592 adapter_observed=out-of-process chain (an admitting process the traffic must cross)\nadapters_run=2\n  ok   identical chain records from 2 enforcement points (db7461f6c118), differing on 2 loci\nconformance PASSED: 26/26",
+      "breakage_exit": 1,
+      "breakage_output": "uct name outside adapters/ and the env-var table\n  ok   product scan over the shipped tree exits 0 (0)\n  ok   0 hits outside adapters/\n4. deliberate breakage: one door's intake path is unbound from the admission point\n  ok   the unbound-door run exits non-zero (1)\nevent: chain_context_missing=26 ungated_metered_calls=26; human/schedule/external: 0 on both counts; units_checked=104 adapters_run=2; unbound calls that still spent in process: 26, refused out of process\n  ok   the breakage names the one door that lost its binding (0)\n  ok   the run names the case that broke it\n\npassed 25, failed 11",
+      "restored": true
+    },
+    "expected_design": "What the run proves: The manifest row for this piece, made precise and run over the implementation pair above: `python3 tools/conformance/enforcement_chain.py --adapter today --adapter second --corpus out/units.jsonl --points admission,dispatch,call --ways-in human,event,schedule,external --min-units 100 --report out/chain-implement.json` (proposed tool, built with the first chained point), the implementation selected by configuration with no code edit between runs. Per implementation it asserts every unit has a chain context at every point it crossed, all six declared slots present with strictly increasing `seq` in declared order, every slot unwound on exit in the reverse order including on failed units, and `adapter_observed` read from the refusal rather than the binding. Across implementations it asserts `adapters_run >= 2`, `units_checked >= 100`, `metered_units > 0`, all four of TARGET T6.2's entries and all three points covered, and `slots_missing == out_of_order == missing_inverse == ungated_metered_calls == chain_context_missing == 0`. | exit 0 and one line per implementation of the form `adapter=<entity> ways_in=human,event,schedule,external points=admission,dispatch,call units_checked=100 metered_units=<m> slots_missing=0 out_of_order=0 missing_inverse=0 ungated_metered_calls=0 chain_context_missing=0 slots_noop_by_absent_owner=<n> adapter_observed=<entity>`, followed by `adapters_run=2`, with `metered_units` greater than zero on both so each assertion had something to assert on.",
+    "expected_failure_design": "exit 1 with `chain_context_missing` and `ungated_metered_calls` non-zero for `ways_in=event` alone, naming the unit ids that reached work with no context, while the human, schedule and external doors stay at zero on every count, `adapters_run` stays 2 and `units_checked` stays at or above 100 - which is what shows one binding was lost rather than the corpus having gone unread or an implementation having failed to run."
+  },
+  "composes_with": {
+    "builds_on": [
+      "agentic-stack",
+      "build-ceremony",
+      "build-evidence",
+      "build-skill-authoring",
+      "cap-errors",
+      "cap-identity",
+      "cap-isolation",
+      "cap-model-access",
+      "cap-policy",
+      "cap-state-persistence",
+      "cap-telemetry",
+      "cap-work-intake"
+    ],
+    "used_by": [
+      "build-evidence",
+      "cap-durable-execution",
+      "cap-provenance",
+      "compose-workflow",
+      "core-components",
+      "seam-dispatch"
+    ]
+  },
+  "open_questions": [
+    {
+      "question": "Should `idempotency.claim` run before `budget.reserve` rather than after it, so that a replayed unit cannot draw a reservation it will never use?",
+      "evidence": "Replay a corpus containing duplicate idempotency keys under both orders and read the reservation store afterwards: whichever order leaves no reservation drawn for a unit that was deduplicated is the one that satisfies the zero-spend property literally rather than by reversal. Count the reservations released by the exit inverse under the current order; if that count is non-zero in normal operation, the order is wrong.",
+      "default": "Keep the declared order (identity, policy, budget, telemetry, idempotency, provenance) because it is what the manifest row for this piece names, and rely on the exit inverse to release a reservation held by a deduplicated unit. The question closes when the replay above has been run.",
+      "sources": [
+        "F-b4-08",
+        "F-b4-02",
+        "T-t5-02"
+      ],
+      "quote": "Every externally-triggered action is safe to replay"
+    },
+    {
+      "question": "This guarantee has no governing standard: the pattern it implements is advice applied at a pointcut, and the records on file name it as prior art rather than as a specification. Should a standard be recorded for it anyway?",
+      "evidence": "1-3-1 applied (TARGET T5): (a) mint a standard entity for the interception pattern, which needs a knowledge-base rebuild and would invalidate the provenance heads of every skill already written; (b) carry no standards row here and let each slot's own capability name the standard that governs it, which is what this skill does; (c) adopt an unrelated transport standard as a proxy, which would name a specification that does not govern this. Recommendation followed: (b). The question closes if an interception or enforcement-placement specification is ever ratified and entered as an entity.",
+      "default": "No standards row here. Each slot's capability names its own standard, and this skill states only the order, the points and the totality.",
+      "sources": [
+        "X-cross-structure-029",
+        "F-b1-03",
+        "T-t5-02"
+      ],
+      "quote": "AOP adds behavior to existing code (an advice) without modifying the code"
+    },
+    {
+      "question": "Refusal by absence - a credential that simply cannot reach a forbidden destination - is a second shape of enforcement that needs no chain traversal at all. Does it replace a slot at the call point, or sit under it?",
+      "evidence": "Count the call-point refusals that a credential scope would have made impossible in the first place. If the two sets are equal the slot is buying only an error message; if the chain refuses cases the credential cannot express, both are needed and the chain is the place the refusal becomes typed.",
+      "default": "Both, with the chain on top: cap-mandate-broker owns the credential that cannot reach the destination, and the call point still runs its slots so that a refusal is a typed problem rather than an unexplained connection failure.",
+      "sources": [
+        "F-b4-07",
+        "T-t5-02"
+      ]
+    }
+  ],
+  "provenance": {
+    "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+    "kb_heads": {
+      "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+      "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+      "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+      "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+    },
+    "author": "session xc-enforcement-chain 2831cb4f, 2026-09-03"
+  },
+  "folded": {
+    "xc-enforcement-chain-implement": {
+      "name": "xc-enforcement-chain-implement",
+      "layer": "xc",
+      "wave": 8,
+      "description": "How to make the enforcement chain real on this stack: a first implementation that wires the three points already enforcing on this host - the approval unit at admission, the dispatcher at dispatch, the host broker and the gateway's scoped key at the call - into one chain with one shared context, a second implementation that runs out of process and admits nothing it has not seen, the migration off three unrelated checks that share no context, where correlation, provenance, identity and typed refusals attach to a slot, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that enters or exits an enforcement point, when a call site is reached with no chain context, when deciding whether the second implementation should be in-process or beside the workload, when a slot has no owner running yet and must not be reported as passed, or when an attestation is green on one implementation and red on the other.",
+      "purpose": {
+        "text": "Turn the ordered chain xc-enforcement-chain defines into something that runs here: two implementations behind one chain contract, the second placed outside the process so that a unit which never calls the chain cannot proceed, adopted without a window in which a door runs unchained, and honest about the slots whose owners are not running on this host yet.",
+        "origin": "sourced",
+        "sources": [
+          "F-a6-04",
+          "F-a6-05"
+        ],
+        "quote": "No identity field anywhere in the system"
+      },
+      "entities": [
+        "E-host-unit-approve-service",
+        "E-sandbox-property-model-egress",
+        "E-sandbox-property-field-filtering",
+        "E-not-running-policy-in-the-gate-path",
+        "E-not-running-identity",
+        "E-not-running-typed-errors"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "differs_in_execution_model for this pair (proposed instance of the shape build-adapter-pair defines)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:enforcement-chain:pair-axes:0.1",
+              "title": "EnforcementChainPairAxes",
+              "description": "Proposed. The three axes on which the two chain implementations differ, stated as properties rather than product names. measured stays false until the swap has been executed and recorded.",
+              "type": "array",
+              "minItems": 3,
+              "examples": [
+                [
+                  {
+                    "axis": "locus_of_traversal",
+                    "today_value": "in the process that constructs the unit and issues the call, which must be built to enter the chain",
+                    "second_value": "in a separate process the unit's traffic must cross, which admits or refuses whatever arrives",
+                    "measured": false
+                  },
+                  {
+                    "axis": "processes_required_for_progress",
+                    "today_value": "one process; a chain failure and a unit failure are the same fault",
+                    "second_value": "two; the unit cannot proceed while the admitting process is unreachable, which is a refusal rather than a bypass",
+                    "measured": false
+                  },
+                  {
+                    "axis": "reach_over_unmodified_workloads",
+                    "today_value": "none; a runtime or tool server we did not write is never chained",
+                    "second_value": "full; the workload is unchanged and the chain runs beside it",
+                    "measured": false
+                  }
+                ]
+              ]
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04"
+            ]
+          },
+          {
+            "name": "chain-conformance report (proposed; the fields the definition of done asserts on, written per implementation and once across implementations)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:enforcement-chain:implement-report:0.1",
+              "title": "EnforcementChainImplementReport",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Proposed. Written per implementation so a green run names what it actually checked, and once across implementations so a swap that never ran cannot report as two.",
+              "required": [
+                "adapter",
+                "ways_in",
+                "points_covered",
+                "units_checked",
+                "metered_units",
+                "slots_missing",
+                "out_of_order",
+                "missing_inverse",
+                "ungated_metered_calls",
+                "chain_context_missing",
+                "adapter_observed"
+              ],
+              "properties": {
+                "adapter": {
+                  "type": "string",
+                  "description": "The entity id of the implementation under test."
+                },
+                "adapter_observed": {
+                  "type": "string",
+                  "description": "Read from the refusal that came back, never from the binding that selected the implementation."
+                },
+                "ways_in": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "human",
+                      "event",
+                      "schedule",
+                      "external"
+                    ]
+                  },
+                  "description": "TARGET T6.2's four entries, not T1's three ways in: schedule starts a new root run and event only steers an existing one."
+                },
+                "points_covered": {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "admission",
+                      "dispatch",
+                      "call"
+                    ]
+                  }
+                },
+                "units_checked": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "metered_units": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "slots_missing": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "out_of_order": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "missing_inverse": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "ungated_metered_calls": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "chain_context_missing": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Units that reached a point with no chain context at all. Separates a lost binding from a chain that ran and skipped a slot."
+                },
+                "slots_noop_by_absent_owner": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Slots recorded no-op because their owner is not running on this host yet. Reported, never counted as passed."
+                },
+                "adapters_run": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-a7-03",
+              "F-a6-05"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Proposed: the two implementations differ on three of build-adapter-pair's axes - locus_of_traversal, processes_required_for_progress and reach_over_unmodified_workloads - recorded in the shape above. A second in-process chain written in another language would agree with the first on all three, so swapping to it would test a library rather than the placement.",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04"
+            ]
+          },
+          {
+            "text": "xc-enforcement-chain owns the declared slot order, the three named points and the totality rule (T-t2-03). What this build adds is that both implementations must satisfy the same attestation over the same corpus and the same three doors, so an implementation that cannot show a zero for slots_missing and ungated_metered_calls is not an alternative, it is unfinished.",
+            "origin": "sourced",
+            "sources": [
+              "T-t2-03"
+            ],
+            "quote": "every cross-cutting concern are managed across the entire structure"
+          },
+          {
+            "text": "agentic-stack states design rule 1 as a test (F-b1-02). Its consequence here: which implementation traversed the chain is configuration. No core code, no workflow and no caller branches on it; the implementation appears in the conformance report and in adapter_observed, never in a field a caller can read and route on.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-02"
+            ],
+            "quote": "The core imports interfaces, never implementations"
+          },
+          {
+            "text": "agentic-stack states that what runs is substrate (F-part-c-11). Its consequence here: the three points that already refuse on this host - the approval unit, the broker holding the real credential, the gateway's scoped key - are not replaced. They become the first implementation's slots, joined by one shared chain context, and the out-of-process implementation is added beside them rather than instead of them.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-11",
+              "F-a2-01"
+            ],
+            "quote": "Part A is substrate, not scope. Do not propose replacing what runs."
+          },
+          {
+            "text": "A slot whose owner is not running on this host is recorded as a no-op and counted, never reported as passed: this host has no identity field anywhere, typed errors are absent, and the decision engine is not on the enforcement path, so the first attestation is honestly partial and the counts say which slots are hollow.",
+            "origin": "sourced",
+            "sources": [
+              "F-a6-05",
+              "F-a6-06",
+              "F-a6-04",
+              "E-not-running-identity"
+            ],
+            "quote": "| Typed errors | Absent |"
+          },
+          {
+            "text": "Apply build-evidence-record: every statement here about how an implementation behaves stays claimed until the conformance run and its evidence record exist, naming the code version and the tree hash under test, and rewording a sentence never upgrades a label; proposed pointer, see that skill.",
+            "origin": "proposed",
+            "sources": [
+              "F-a5-04",
+              "F-part-c-08"
+            ]
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Build the first implementation by joining the three points that already refuse on this host into one chain with one shared context: the host approval unit at admission, the dispatcher at dispatch, and the broker that holds the real credential together with the gateway's scoped key at the call.",
+          "why": "These are the only places on this host that stop anything today, and they share no context, so a unit refused at one is invisible at the others. xc-budget already records that the scoped key terminates spend rather than merely recording it; joining the three is what turns three unrelated checks into the chain xc-enforcement-chain defines.",
+          "origin": "sourced",
+          "sources": [
+            "F-a2-01",
+            "F-a3-07",
+            "F-a4-07"
+          ],
+          "quote": "verified to terminate spend rather than merely record it"
+        },
+        {
+          "step": 2,
+          "action": "Record every slot whose owner is not running yet as a no-op with the reason, and surface the count as slots_noop_by_absent_owner; never let an absent owner render as a passed slot.",
+          "why": "Three of the six slots have no owner running on this host: there is no identity field anywhere, typed errors are absent, and the decision engine is defined but off the enforcement path. A chain that reports six passed slots over three hollow ones is the structurally-green gate with a new name.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-05",
+            "F-a6-06",
+            "F-a6-04"
+          ],
+          "quote": "Conformance checks exist; not wired into the enforcement path"
+        },
+        {
+          "step": 3,
+          "action": "Proposed: build the second implementation out of process - a helper beside the workload, or an admission step in front of it - that sees the unit's traffic at a boundary it cannot route around, runs the same declared slots, and refuses anything arriving without a context it issued.",
+          "why": "Proposed: this breaks the assumption the first implementation rests on, that everything which starts work was built to enter the chain. An out-of-process placement chains an agent runtime or a tool server we did not write, and its unreachability is a refusal rather than a silent bypass, so the two fail for different reasons.",
+          "origin": "proposed",
+          "sources": [
+            "X-cross-structure-020",
+            "F-b1-04"
+          ]
+        },
+        {
+          "step": 4,
+          "action": "Apply build-adapter-pair: record differs_in_execution_model from the shape above, leave measured false until the swap has actually been run, and write each implementation's gaps down as gaps rather than as caveats; proposed pointer, see that skill.",
+          "why": "differs_in_execution_model, its axes and the rule that measured stays false until the swap has run belong to build-adapter-pair, and swappability is the design rule this pair exists to satisfy rather than assert.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-04"
+          ],
+          "quote": "Swappability is a tested property, not an intention."
+        },
+        {
+          "step": 5,
+          "action": "Adopt in three stages with no window in which a door runs unchained: shadow, where both implementations enter and exit while the unit proceeds and ungated_metered_calls and chain_context_missing are counted; compare, where the two refusal sets are reconciled over one corpus; then enforce, where the context check is switched on at all three points and all three doors at once.",
+          "why": "The shadow stage is the only one in which a disagreement is cheap, and it is where calls made by code that never enters the chain are first counted. Switching one point or one door at a time leaves the others open while the report already reads green, which is the structurally-green-gate finding agentic-stack records applied to a rollout.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03",
+            "F-part-c-11"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        },
+        {
+          "step": 6,
+          "action": "Wire the cross-cutting guarantees onto the slot records themselves: stamp the run identifier and root dispatch identifier as explicit attributes on every slot and inverse, and append them through the append-only chained store so the attestation reads them at a pinned head rather than from the chain's own memory.",
+          "why": "agentic-stack states that correlation must ride on an explicit attribute set at dispatch (F-a7-02) because parentage did not survive the agent boundary, and that the chained store makes a later edit detectable (F-a5-03). An ordering claim read out of the process that enforced it is that process vouching for itself.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-02",
+            "F-a5-03"
+          ],
+          "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+        },
+        {
+          "step": 7,
+          "action": "Read which implementation enforced from the refusal that actually came back and put that value in adapter_observed, never from the binding, the unit file or the configuration that selected it.",
+          "why": "agentic-stack states the silently-discarded-configuration finding (F-a7-04), measured on this host: values written where the documentation says were overlaid by a stored row. A chain believed installed because it was configured is that failure with an enforcement decision attached.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+        },
+        {
+          "step": 8,
+          "action": "Run the definition of done below over both implementations and each of TARGET T6.2's four entries, then run its breakage, and record both outputs as evidence records naming the script hash, the commit, the tree hash under test and whether the tree was dirty.",
+          "why": "build-evidence-record fixes what a record contains (F-a5-04); a result from a dirty tree is not reproducible and may not be labelled measured. Running the breakage is what shows the attestation can fail rather than that it merely passed.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-04",
+            "F-part-c-04"
+          ],
+          "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Report metered_units and slots_noop_by_absent_owner per implementation: one corpus replayed through two implementations can leave the out-of-process one with nothing to admit and still exit green, the way a nine-stage pipeline ran green because the generated work contained nothing those tools apply to (F-a7-03, agentic-stack's finding, whose gate-level consequence build-definition-of-done owns; xc-enforcement-chain owns the consequence for the four zero counts).",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "because the generated work contained nothing those tools apply to"
+        },
+        {
+          "text": "Expect the two implementations to disagree during the shadow stage and treat the difference as the finding rather than as noise. Where it lands in code is chain_context_missing and ungated_metered_calls: the calls made by code that was never built to enter the chain, which the in-process implementation can never report on itself.",
+          "origin": "sourced",
+          "sources": [
+            "X-cross-structure-020"
+          ],
+          "quote": "handles cross-cutting concerns without touching the application code"
+        },
+        {
+          "text": "Proposed: make traversal a property of deployment rather than of a code review. Attach the chain where units and calls are constructed, and let the out-of-process implementation be injected at deploy time, so a new component is chained by existing, not by remembering; xc-enforcement-chain states the rule and this is where it lands in the build.",
+          "origin": "proposed",
+          "sources": [
+            "X-cross-structure-024"
+          ]
+        },
+        {
+          "text": "Proposed: keep the conformance run on the same code path a live unit takes, replaying the corpus through the real enter and exit calls. A suite that reads a stored corpus and never touches the chain reproduces exactly the state this build exists to leave behind: a check that exists beside an enforcement path that does not consult it.",
+          "origin": "proposed",
+          "sources": [
+            "F-a6-04"
+          ]
+        },
+        {
+          "text": "Proposed: give the out-of-process implementation no degraded mode. Under load or on partial failure it refuses with the registered adapter-unavailable row rather than admitting unchained traffic, because a chain that thins itself when busy removes its guarantees exactly when they cost most.",
+          "origin": "proposed",
+          "sources": [
+            "F-b4-07",
+            "F-b4-01"
+          ]
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-litellm",
+          "role": "today",
+          "maps_to": "enter, exit and attest_chain served in process by the three enforcement points PASS.md Part A already runs, joined by one chain context: admission by the host approval unit that parks a workflow for a person to approve, reject or return; the call point's credential and destination slots by the broker that holds the real key, picks the endpoint and drops model and destination overrides by name; and the call point's budget slot by the model gateway's scoped virtual key with a hard budget cap, which xc-budget records as terminating spend rather than merely recording it. The dispatch point is new code around the existing dispatcher.",
+          "cannot": "Proposed: cannot chain a unit whose code was not built to enter the chain, so an agent runtime or a tool server we did not write stays off it; cannot fill the identity, policy and typed-error slots at all on this host, since none of those owners is running; and a chain fault and a unit fault are the same process, so a crash removes the enforcement and the work together with nothing left to refuse.",
+          "swap_procedure": "Select the implementation by configuration with no code edit between runs, replay the same corpus through both and through all three doors, and compare: assert every refusal this implementation produced is also produced by the out-of-process one, and record the calls the out-of-process one refused that this one never saw as ungated_metered_calls. Read the implementation from the refusal, not from the binding.",
+          "status": "claimed",
+          "sources": [
+            "F-a2-01",
+            "F-a3-07",
+            "F-a3-08",
+            "F-a4-07",
+            "F-b3-03"
+          ],
+          "quote": "Model and destination overrides dropped by name at the broker"
+        },
+        {
+          "entity": "E-swap-candidate-out-of-process-enforcement-sidecar",
+          "role": "second",
+          "maps_to": "Proposed implementation, and a proposed entity id: the knowledge base has no capability row for an enforcement chain, so no adapter or swap-candidate entity exists to name here. The same three operations served by a helper process beside the workload, or an admission step in front of it, which the unit's traffic must cross: enter is an admit call the workload never makes for itself, exit is recorded when the wrapped traffic completes or the process observing it ends, and attest_chain is unchanged because it reads records rather than call sites.",
+          "cannot": "Proposed: cannot see anything that does not cross its boundary, so an entirely in-process side effect is invisible to it; adds a second process to every unit's critical path and a hop to every call it wraps; and cannot express a slot needing state only the unit holds, which has to stay on the in-process implementation.",
+          "swap_procedure": "Proposed: the axes, in the form build-adapter-pair defines, are locus_of_traversal (inside the process that issues the call versus a process the traffic must cross), processes_required_for_progress (one versus two, where the second's absence is a refusal) and reach_over_unmodified_workloads (none versus full). Select by configuration, run the same corpus through both, and compare both reports against the same declared gaps.",
+          "status": "claimed",
+          "sources": [
+            "F-b1-04",
+            "X-cross-structure-020"
+          ],
+          "quote": "Every interface ships with at least two adapters"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/xc-enforcement-chain/test.sh && python3 harness/xc-enforcement-chain/conformance.py --adapter dryrun --adapter second --min-units 100",
+        "expected": "Measured by tools/measure.py at 5dd855c: exit 0; last lines:   ok   identical chain records from 2 enforcement points (db7461f6c118), differing on 2 loci | conformance PASSED: 26/26",
+        "breakage": "In harness/xc-enforcement-chain/interface.py, unbind the event door's intake path from the admission point (meter the unit and continue before the chain runs, the same edit the gate applies to a copy in its step 4), run the criterion (chain_context_missing and ungated_metered_calls become non-zero for the event door alone and the gate exits 1), then git checkout harness/xc-enforcement-chain/interface.py.",
+        "expected_failure": "Measured by tools/measure.py at 5dd855c: exit 1; last lines:   ok   the run names the case that broke it | passed 25, failed 11",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04",
+          "F-b1-08"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "5dd855c",
+          "clean_exit": 0,
+          "clean_output": "ion of the corpus, not of the run: records_digest=db7461f6c118 on both runs\nadapter=out-of-process chain (an admitting process the traffic must cross) ways_in=human,event,schedule,external points=admission,dispatch,call units_checked=104 metered_units=96 slots_missing=0 out_of_order=0 missing_inverse=0 ungated_metered_calls=0 chain_context_missing=0 slots_noop_by_absent_owner=592 adapter_observed=out-of-process chain (an admitting process the traffic must cross)\nadapters_run=2\n  ok   identical chain records from 2 enforcement points (db7461f6c118), differing on 2 loci\nconformance PASSED: 26/26",
+          "breakage_exit": 1,
+          "breakage_output": "uct name outside adapters/ and the env-var table\n  ok   product scan over the shipped tree exits 0 (0)\n  ok   0 hits outside adapters/\n4. deliberate breakage: one door's intake path is unbound from the admission point\n  ok   the unbound-door run exits non-zero (1)\nevent: chain_context_missing=26 ungated_metered_calls=26; human/schedule/external: 0 on both counts; units_checked=104 adapters_run=2; unbound calls that still spent in process: 26, refused out of process\n  ok   the breakage names the one door that lost its binding (0)\n  ok   the run names the case that broke it\n\npassed 25, failed 11",
+          "restored": true
+        },
+        "expected_design": "What the run proves: The manifest row for this piece, made precise and run over the implementation pair above: `python3 tools/conformance/enforcement_chain.py --adapter today --adapter second --corpus out/units.jsonl --points admission,dispatch,call --ways-in human,event,schedule,external --min-units 100 --report out/chain-implement.json` (proposed tool, built with the first chained point), the implementation selected by configuration with no code edit between runs. Per implementation it asserts every unit has a chain context at every point it crossed, all six declared slots present with strictly increasing `seq` in declared order, every slot unwound on exit in the reverse order including on failed units, and `adapter_observed` read from the refusal rather than the binding. Across implementations it asserts `adapters_run >= 2`, `units_checked >= 100`, `metered_units > 0`, all four of TARGET T6.2's entries and all three points covered, and `slots_missing == out_of_order == missing_inverse == ungated_metered_calls == chain_context_missing == 0`. | exit 0 and one line per implementation of the form `adapter=<entity> ways_in=human,event,schedule,external points=admission,dispatch,call units_checked=100 metered_units=<m> slots_missing=0 out_of_order=0 missing_inverse=0 ungated_metered_calls=0 chain_context_missing=0 slots_noop_by_absent_owner=<n> adapter_observed=<entity>`, followed by `adapters_run=2`, with `metered_units` greater than zero on both so each assertion had something to assert on.",
+        "expected_failure_design": "exit 1 with `chain_context_missing` and `ungated_metered_calls` non-zero for `ways_in=event` alone, naming the unit ids that reached work with no context, while the human, schedule and external doors stay at zero on every count, `adapters_run` stays 2 and `units_checked` stays at or above 100 - which is what shows one binding was lost rather than the corpus having gone unread or an implementation having failed to run."
+      },
+      "composes_with": {
+        "builds_on": [
+          "xc-enforcement-chain",
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "The chain is a placement across several capabilities, not a capability row, so PASS.md B3 has no adapter or swap-candidate entity for it and the second implementation here carries a minted id. Should the pair get entities of its own?",
+          "evidence": "1-3-1 applied (TARGET T5): (a) mint entities for an in-process chain and an out-of-process chain, which needs a knowledge-base rebuild and would invalidate the provenance heads of every skill already written; (b) record today's implementation against the model-gateway adapter entity whose scoped key is the one slot that already enforces, and mark the second implementation's id as proposed in the row that states it, which is what this skill does; (c) defer the pair to a later wave, which would leave this guarantee with one implementation and nothing to prove swappability. Recommendation followed: (b). The question closes when a ceremony rebuilds the knowledge base and the two entities exist.",
+          "default": "Keep today's row on the existing model-gateway adapter entity, since its scoped key is the one point of the chain that measurably refuses today, and keep the second implementation's entity id marked proposed in its own row.",
+          "sources": [
+            "F-b3-03",
+            "F-a4-07",
+            "T-t5-02"
+          ]
+        },
+        {
+          "question": "Does the out-of-process implementation run one instance per isolated unit, or one per host serving many units?",
+          "evidence": "Measure the added latency per call and the resident cost per unit under both, over the shadow corpus, and count the refusals each can express: a per-unit instance can hold unit-scoped state a shared one cannot, and a shared one cannot be starved by one unit's traffic.",
+          "default": "Proposed: one per isolated unit while the unit count is small, because it keeps a slot's state next to the unit it belongs to and makes a failure blast-radius of one; revisit at the scale TARGET T6.6 names, where a per-unit process per agent is the dominant cost.",
+          "sources": [
+            "T-t6-06",
+            "F-b1-04"
+          ]
+        },
+        {
+          "question": "At the enforce stage, must all three points and all three doors be switched on in one change, or can the call point follow the other two?",
+          "evidence": "Count, during shadow, how many refusals occur only at the call point. If that set is non-empty, switching the call point last leaves the calls it alone would refuse running unchained for the length of the gap, and the report reads green throughout because the other two points pass.",
+          "default": "All at once. A staged switch is a period in which the attestation is green and the guarantee is partial, which is precisely the state this build exists to end.",
+          "sources": [
+            "F-a7-03",
+            "F-a6-04"
+          ]
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session xc-enforcement-chain 2831cb4f, 2026-09-03"
+      }
+    },
+    "xc-budget": {
+      "name": "xc-budget",
+      "layer": "xc",
+      "wave": 4,
+      "description": "The budget guarantee as a placement, not a request: every unit of work carries a ceiling that the platform applies outside the unit, and exceeding it terminates that unit rather than the platform. Load it when a run, a workflow, a bounded loop or a delegated sub-agent needs a spend limit, when deciding where the limit is checked and who decrements it, when a request object is about to grow a field that skips or raises its own limit, when work fans out and nobody can say what the whole tree will cost, when a cap only records spend instead of stopping it, when someone asks what happens to half-finished outputs after the money runs out, or when a review asks how a human, an agent and an event all end up under the same ceiling.",
+      "purpose": {
+        "text": "Fix the budget guarantee as a placement: one ceiling per root unit of work, applied by the platform outside the unit that spends, decremented by every descendant of that unit, and terminating that unit and nothing else when it is crossed.",
+        "origin": "sourced",
+        "sources": [
+          "F-b4-02",
+          "F-b4-01",
+          "E-concern-budget"
+        ],
+        "quote": "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform"
+      },
+      "entities": [
+        "E-concern-budget",
+        "E-capability-model-access",
+        "E-not-running-policy-in-the-gate-path"
+      ],
+      "contract": {
+        "operations": [
+          {
+            "name": "reserve (proposed operation set; PASS.md states the budget contract as one sentence, not as a list of calls)",
+            "input": "the root unit of work, its ceiling and currency, and the delegation depth and fan-out bounds that apply to its tree (proposed)",
+            "output": "a reservation lease against that root's remaining ceiling, with an owner and an expiry (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-02"
+            ]
+          },
+          {
+            "name": "draw (proposed)",
+            "input": "a lease, the dispatch about to run, and the priced floor of that dispatch (proposed)",
+            "output": "an allowance for that dispatch, or the registered typed refusal when the draw would cross what is left (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-02",
+              "F-b4-07"
+            ]
+          },
+          {
+            "name": "reconcile (proposed)",
+            "input": "an allowance and the cost actually incurred, which may arrive long after the work was authorised (proposed)",
+            "output": "the root's remaining ceiling recomputed from actuals, never from the estimate that was reserved (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-02",
+              "X-end-to-end-047"
+            ]
+          },
+          {
+            "name": "remaining (proposed)",
+            "input": "a root unit of work and a pinned state head (proposed)",
+            "output": "what is left of that root's ceiling and the depth and fan-out already consumed by its tree, as a pure read (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "X-end-to-end-045",
+              "T-t2-03"
+            ]
+          }
+        ],
+        "shapes": [
+          {
+            "name": "run-budget (proposed summary shape; the full schema, the reservation lease, the cost record and the three worked declarations are in references/run-budget.md)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:budget:run-budget:0.1",
+              "title": "RunBudget",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Proposed. One ceiling per root unit of work, decremented by every descendant. on_exceed is a const rather than an enum: there is no opt-out to express, so there is no request that carries one.",
+              "required": [
+                "ceiling_micros",
+                "currency",
+                "on_exceed",
+                "max_delegation_depth",
+                "max_fanout"
+              ],
+              "properties": {
+                "ceiling_micros": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "currency": {
+                  "type": "string",
+                  "pattern": "^[A-Z]{3}$"
+                },
+                "token_ceiling": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "on_exceed": {
+                  "const": "terminate_unit"
+                },
+                "max_delegation_depth": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 3
+                },
+                "max_fanout": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "default": 20
+                },
+                "mid_run_outcome": {
+                  "enum": [
+                    "continue",
+                    "narrow",
+                    "require_approval",
+                    "stop"
+                  ],
+                  "default": "stop",
+                  "description": "What a mid-run control does when the remaining ceiling crosses a warning band. It never includes carrying on past zero."
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b4-02",
+              "X-end-to-end-045",
+              "X-end-to-end-046"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Every unit of work carries a ceiling, and crossing it ends that unit and nothing above it. A run with no ceiling is not a cheap run, it is an unbounded one, and a crossing that takes the platform down with it has confused the unit for the host.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-02",
+              "E-concern-budget"
+            ],
+            "quote": "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform"
+          },
+          {
+            "text": "The tree is bounded by an explicit maximum delegation depth and maximum fan-out carried on the root budget, refused at dispatch rather than discovered when the money runs out. A cost bound alone lets one root spawn an unbounded number of cheap descendants, and the records on file show a shipped product reaching for exactly these two bounds.",
+            "origin": "sourced",
+            "sources": [
+              "X-end-to-end-046"
+            ],
+            "quote": "capped concurrently-running subagents at 20 and stopped subagents from spawning nested subagents"
+          },
+          {
+            "text": "cap-errors owns the failure object (F-b4-07). What this guarantee adds is that its refusal is the registered budget-exhausted row, carrying stop_reason budget_exhausted and retryable false, so a caller branches on a type and never on the words 'budget' appearing in a message.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-07"
+            ],
+            "quote": "Typed and machine-readable. Never parsed from prose"
+          },
+          {
+            "text": "A unit terminated on budget keeps the outputs that were already durable, as a partial rather than a loss. The records on file argue that returning what exists beats returning nothing, and a ceiling that also destroys paid-for work charges twice for one overrun.",
+            "origin": "sourced",
+            "sources": [
+              "X-xc-budget-005"
+            ],
+            "quote": "allow systems to return partial results instead of failing completely"
+          },
+          {
+            "text": "Proposed, following the reference example in docs/reference/composable-plan.md: a stop and a cap are opposite terminations and are never collapsed into one halt. A stop condition firing means the work is done and the unit terminates as a success; a cap firing means an unbounded unit ran long and the unit terminates as a failure that escalates to a person. One shared halt reason makes a success indistinguishable from an escalation in the ledger, and the reference records that merge as a mistake already made once.",
+            "origin": "proposed",
+            "sources": [
+              "REF-5-3-08",
+              "REF-5-3-03",
+              "REF-5-3-04",
+              "REF-12-14"
+            ],
+            "quote": "`stop` and `cap` are opposites and must not be collapsed"
+          },
+          {
+            "text": "Proposed, following the same reference: a step that fans out carries a per-unit share as well as the root ceiling, and a unit crossing its share is a hard ceiling on that unit rather than a draw on its siblings. Without the per-unit share the first unit can spend the root allowance and the rest fail for want of money rather than on their own merits; how many units may fail stays a property of the fan-out, not of the unit and not of the plan.",
+            "origin": "proposed",
+            "sources": [
+              "REF-5-3-01",
+              "REF-5-3-07",
+              "REF-12-14"
+            ],
+            "quote": "per-unit budget | the step | one unit exceeds its share | throws, hard ceiling"
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "There is no field, header, role or configuration flag that skips the check, raises a ceiling from inside the unit it bounds, or converts a stop into a warning. Cross-cutting guarantees are not optional, and the only honest way to say so in a schema is to leave nothing to set.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-08",
+              "F-b4-01"
+            ],
+            "quote": "Cross-cutting guarantees are not optional"
+          },
+          {
+            "text": "cap-model-access already keeps the measured property that a scoped key with a hard budget cap stops spend (F-a4-07). What this guarantee refuses to expose is the opposite: a ceiling that appears only as a number in a report, since a limit that is observed after the fact is a speed limit sign and not a governor.",
+            "origin": "sourced",
+            "sources": [
+              "F-a4-07"
+            ],
+            "quote": "with a hard budget cap"
+          },
+          {
+            "text": "agentic-stack states design rule 6 (F-b1-07). What it forbids here specifically: neither the budget object nor the refusal it returns may carry the criterion a result will be judged against, because a detail string written to explain an overrun is an easy place for the rule to leak to the thing being graded.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-07"
+            ],
+            "quote": "An agent sees its outcome, never the criterion it is judged against"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Put the ceiling on the entry envelope, required on every entry, with on_exceed as a const rather than an enum, and reject an envelope that omits it instead of defaulting one in.",
+          "why": "The platform applies the guarantee rather than the caller requesting it, so the schema must offer nothing to negotiate. A default ceiling silently invented at intake is an unbounded run wearing a number.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-01",
+            "F-b4-02"
+          ],
+          "quote": "The platform applies each; a caller cannot decline them"
+        },
+        {
+          "step": 2,
+          "action": "Proposed (docs/decomposition.md section 2.1.4): enforce outside the unit. Take a reservation lease at dispatch against the root's remaining ceiling, pre-check every metered call against what the lease still holds, reconcile with the actual cost afterwards, and expire an unreconciled reservation at the deadline plus grace. Research query: see the reservation-lease research query on the budget invariant row below.",
+          "why": "A unit that enforces its own ceiling can decline to. cap-model-access records the substrate's measured behaviour here (F-a4-07): scoped keys already stop spend rather than note it, so matching that model is the smaller change, and the lease is what stops a crashed unit from consuming a root's ceiling forever.",
+          "origin": "proposed",
+          "sources": [
+            "F-a4-07",
+            "F-b4-02"
+          ],
+          "quote": "terminate spend rather than merely record it"
+        },
+        {
+          "step": 3,
+          "action": "Proposed: carry the root run identifier on every descendant dispatch and decrement the one root ceiling from every one of them, so the delegation tree shares a ceiling rather than each level receiving a fresh one.",
+          "why": "Per-key and per-call caps bound a key and a call, not a tree. Every cross-cutting concern is managed across the whole structure whichever entry point was used, and a budget that resets at each hop is managed per hop.",
+          "origin": "sourced",
+          "sources": [
+            "T-t2-03",
+            "X-end-to-end-045"
+          ],
+          "quote": "State, telemetry, and every cross-cutting concern are managed across the entire structure"
+        },
+        {
+          "step": 5,
+          "action": "Compare the plan's priced floor with the remaining ceiling before anything is dispatched, and refuse there when the floor already exceeds it, rather than starting work that cannot finish.",
+          "why": "Cost is knowable before commitment because planning completes before execution begins, so the cheapest refusal is available for free. The policy row of PASS.md B4 states the analogous rule for refusals, that they are deterministic and happen before execution rather than after spend; this row proposes the same placement for the ceiling.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-06",
+            "F-b4-04"
+          ],
+          "quote": "Planning is a pure function and completes before execution begins."
+        },
+        {
+          "step": 6,
+          "action": "Return the registered budget-exhausted problem object with status 402 and retryable false, set the unit's stop reason to budget_exhausted, and leave every already-durable output in place as a partial.",
+          "why": "cap-errors owns the failure object and its closed type registry (F-b4-07); this guarantee only supplies one registered row of it. Discarding durable outputs on the way out would charge for the work twice, once in money and once in the result.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-07",
+            "X-xc-budget-005"
+          ],
+          "quote": "Typed and machine-readable. Never parsed from prose"
+        },
+        {
+          "step": 7,
+          "action": "Wire the identical check on every way in and prove it by replaying one corpus through each: a human entering the system, an agent entering the system, and an internal or external event entering the system.",
+          "why": "TARGET T1 names those three ways in, and a guarantee that is only wired on the path someone remembered is declinable by choosing another door. Running one corpus through each door is what turns 'cannot be declined' into a count. cap-model-access states the same record (T-t1-01) for its own boundary; this row is that rule's consequence here.",
+          "origin": "sourced",
+          "sources": [
+            "T-t1-01",
+            "T-t1-02",
+            "T-t1-03",
+            "T-t2-03"
+          ],
+          "quote": "An internal or external event must be able to enter the system."
+        },
+        {
+          "step": 8,
+          "action": "Proposed: write the cost record in a published cost-and-usage vocabulary that already models split cost allocation, rather than inventing columns, and keep the estimate and the reconciled actual as separate members. Research query: has FOCUS 1.3's split-cost-allocation dataset actually been fetched and checked against this guarantee's reconcile shape, rather than adopted from a search-only announcement of its ratification?",
+          "why": "Splitting one shared cost across the descendants that caused it is exactly the run-scoped problem here, and a ratified specification already has those columns. The records naming it are search results rather than pages that were read, so its version is unverified and no version string is asserted here.",
+          "origin": "proposed",
+          "sources": [
+            "X-end-to-end-047",
+            "X-end-to-end-048"
+          ],
+          "quote": "columns for splitting shared costs"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Judge a ceiling by whether it stops a call, not by whether it appears in a report: cap-model-access carries the measured property that this substrate's scoped keys already do the former (F-a4-07). Any candidate mechanism that cannot refuse the next call is telemetry with a threshold.",
+          "origin": "sourced",
+          "sources": [
+            "F-a4-07"
+          ],
+          "quote": "verified to terminate spend rather than merely record it"
+        },
+        {
+          "text": "agentic-stack states the structurally-green-gate finding (F-a7-03). What it adds here, as this guarantee's own consequence and proposed: a budget check that ran over a corpus containing no expensive dispatch reports the same green as one that caught an overrun, so assert the number of dispatches actually checked and the number of ceilings actually crossed, never the exit code alone.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        },
+        {
+          "text": "agentic-stack states the silently-discarded-configuration finding (F-a7-04). What it adds here, as this guarantee's own consequence and proposed: a cap that was written where the documentation says is not a cap that took effect, so prove enforcement by observing a refused call, not by reading the row or the file that declares the limit.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+        },
+        {
+          "text": "Do not let exhaustion turn into a silent retry on something cheaper. The records on file describe automatic fallback chains as graceful degradation, and applied to a ceiling that converts a stop the caller can see into a narrowing nobody recorded; narrowing is one of the declared mid-run outcomes and it is written down when it happens.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-budget-004"
+          ],
+          "quote": "automatically retry with a fallback chain of alternative models"
+        },
+        {
+          "text": "Treat a cap that lives only at the model gateway as bounding only what flows through the gateway. The records on file describe the gateway pattern and describe quotas as tokens per user or key within a time window, which is not the same shape as one ceiling per run tree, and it never sees spend that happens anywhere else.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-budget-001",
+            "X-xc-budget-003"
+          ],
+          "quote": "restricting how many tokens each user or API key can consume within a time window"
+        },
+        {
+          "text": "Keep the check in the enforcement path rather than beside it. The inventory of what runs today already records a concern whose conformance checks exist and are not wired into the path that enforces them, which is the exact failure this layer exists to avoid repeating for budget.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-04",
+            "E-not-running-policy-in-the-gate-path"
+          ],
+          "quote": "Conformance checks exist; not wired into the enforcement path"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/gateway/test.sh && python3 harness/gateway/conformance.py --adapter dryrun --adapter second",
+        "expected": "exit 0, `passed 25, failed 0` from the gate and `conformance PASSED: 24/24 cases, 2 binding(s)` over both bindings. Row X1's enforcement half is on disk there: `a request over its cap exits 2`, `typed as budget-exhausted (402)`, `refused before the call`, and a completed call reporting `cost=780 <= ceiling=200000 cost_status=reconciled`, on both bindings. It is the gate xc-budget-implement owns. Claimed, stated as the gap: `tools/conformance_budget.py` and the 100-dispatch corpus do not exist, so `dispatches_checked=100 roots=<n> unbounded=0 terminated_on_budget=<k> overshoot_violations=0` has never been produced - the on-disk gate shows one ceiling enforced at one point, not that every dispatch in a corpus carries one and that descendants draw from their root's. The criterion above was run on 2026-09-03 and exited 0.",
+        "breakage": "Make `budget` optional in the dispatch request schema, submit one dispatch without it into the same corpus, and change nothing else.",
+        "expected_failure": "The non-null assertion fails and unbounded dispatches appear: `unbounded` becomes 1, the run exits non-zero naming the dispatch id with the null ceiling, and `dispatches_checked` stays at or above 100, which is what shows the failure is the missing ceiling rather than a corpus that was never read.",
+        "status": "claimed",
+        "sources": [
+          "F-part-c-04",
+          "F-b4-02"
+        ],
+        "quote": "the deliberate breakage that proves the check can fail"
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-definition-of-done",
+          "build-skill-authoring",
+          "cap-errors",
+          "cap-model-access"
+        ],
+        "used_by": [
+          "compose-loop",
+          "core-planner",
+          "seam-dispatch",
+          "xc-budget-implement",
+          "xc-enforcement-chain"
+        ]
+      },
+      "open_questions": [
+        {
+          "question": "At what granularity is the ceiling enforced: a pre-check before each metered call with a reservation lease, or periodic reconciliation within a tolerance band? (docs/decomposition.md open question 7)",
+          "evidence": "Measure worst-case overshoot in currency units on a workload with high per-call cost variance, and measure the latency the pre-check adds per call. Whichever keeps overshoot inside one call's worth without adding latency a caller can feel wins.",
+          "default": "The pre-check with a reservation lease. The substrate's existing behaviour already is the pre-check model, so matching it is the smaller change and the tolerance band would be a new failure mode rather than a saved one.",
+          "sources": [
+            "F-a4-07",
+            "F-b4-02"
+          ],
+          "quote": "hard budget cap, verified to terminate spend"
+        },
+        {
+          "question": "The cost-and-usage schema this guarantee should adopt has no E-standard- entity in the knowledge base, so it cannot be entered in contract.standards without rebuilding the knowledge base, which would invalidate the provenance heads of every skill already written. How should the governing standard be recorded until then?",
+          "evidence": "1-3-1 applied (TARGET T5): (a) add the entity and rebuild the knowledge base, which breaks every written skill's provenance; (b) name the standard in an invariant and an instruction citing the research records, and record the missing entity here; (c) leave the standard unnamed until a later wave. Recommendation followed: (b). Deciding evidence for closing the question is a ceremony that adds the entity as part of a knowledge-base rebuild, at which point this row becomes a contract.standards entry with version_status unverified until the specification is actually fetched and read.",
+          "default": "The standard is named in capability terms in instruction 8 and its version is left unverified, because the records naming it are search results rather than pages that were read.",
+          "sources": [
+            "X-end-to-end-047",
+            "T-t5-02"
+          ],
+          "quote": "When a problem comes up, use 1-3-1"
+        },
+        {
+          "question": "What are the right defaults for maximum delegation depth and maximum fan-out, and are they per root or per profile?",
+          "evidence": "Run the consumption reference's fan-out workflow at increasing depth and width and record where the marginal descendant stops paying for itself. The one datum on file is a product that capped concurrent descendants at twenty, removed nesting entirely, then reinstated it at depth three within three days, which says the values are tuned rather than derived.",
+          "default": "Depth 3 and fan-out 20 on the root budget, carried in the shape above and marked proposed, since they come from one search-only record about another system.",
+          "sources": [
+            "X-end-to-end-046"
+          ],
+          "quote": "on July 24, version 2.1.219 reinstated nesting at a default depth of 3"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session xc-budget 2831cb4f, 2026-09-03"
+      }
+    },
+    "xc-budget-implement": {
+      "name": "xc-budget-implement",
+      "layer": "xc",
+      "wave": 5,
+      "description": "How to make the budget ceiling real on this stack: today's enforcement bound to the scoped keys the model gateway already carries, a second enforcement point the platform holds itself and draws from before every dispatch, how to migrate from one to both without a window where nothing stops spend, where the ceiling attaches to correlation, provenance, policy and typed failures, and a definition of done with the breakage that makes it fail. Load it when writing or reviewing the code that refuses a call for cost, when a cap only bounds what flows through the gateway, when delegated work outspends the run that authorised it, when a reservation is left held by a unit that crashed, or when deciding what the second enforcement point should be.",
+      "purpose": {
+        "text": "Turn the guarantee in xc-budget into something that runs here: two enforcement points behind one ceiling, the second one drawing from a platform-held lease before each dispatch so that spend outside the model gateway is bounded too, migrated in without a window in which nothing stops a call.",
+        "origin": "sourced",
+        "sources": [
+          "F-b4-02",
+          "F-a4-07"
+        ],
+        "quote": "Every unit of work carries a ceiling"
+      },
+      "entities": [
+        "E-concern-budget",
+        "E-adapter-litellm",
+        "E-swap-candidate-any-keyed-lease-store",
+        "E-service-gateway-db-1"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "differs_in_execution_model for this pair (proposed instance of the shape build-adapter-pair defines)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:budget:pair-axes:0.1",
+              "title": "BudgetPairAxes",
+              "description": "Proposed. The three axes on which the two enforcement points differ, stated as properties rather than as product names. measured stays false until the swap has been executed and recorded.",
+              "type": "array",
+              "minItems": 3,
+              "examples": [
+                [
+                  {
+                    "axis": "unit_of_resource_granted",
+                    "today_value": "spend allowance on one key within a time window",
+                    "second_value": "a reservation against one root unit of work's ceiling",
+                    "measured": false
+                  },
+                  {
+                    "axis": "locus_of_durability_and_verification",
+                    "today_value": "the gateway's own spend ledger",
+                    "second_value": "the platform's append-only state, verifiable at a pinned head",
+                    "measured": false
+                  },
+                  {
+                    "axis": "processes_required_for_progress",
+                    "today_value": "the gateway must be reachable for the ceiling to bind",
+                    "second_value": "the draw happens before dispatch and binds even when no metered call follows",
+                    "measured": false
+                  }
+                ]
+              ]
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04"
+            ]
+          },
+          {
+            "name": "budget-conformance report (proposed; the fields the definition of done asserts on)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:budget:conformance-report:0.1",
+              "title": "BudgetConformanceReport",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Proposed. Written per adapter and once across adapters, so a green run names what it actually checked rather than only its exit code.",
+              "required": [
+                "adapter",
+                "dispatches_checked",
+                "roots",
+                "unbounded",
+                "terminated_on_budget",
+                "overshoot_violations",
+                "enforcement_point_observed"
+              ],
+              "properties": {
+                "adapter": {
+                  "type": "string",
+                  "description": "The entity id of the enforcement adapter under test."
+                },
+                "dispatches_checked": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "roots": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "unbounded": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "Dispatches with a null or absent ceiling."
+                },
+                "terminated_on_budget": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "overshoot_micros_max": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "overshoot_violations": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "enforcement_point_observed": {
+                  "type": "string",
+                  "description": "Read from the refusal that came back, never from the binding that selected the adapter."
+                },
+                "adapters_run": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-a7-03"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Proposed: the two enforcement points differ on three of build-adapter-pair's axes - unit_of_resource_granted, locus_of_durability_and_verification and processes_required_for_progress - recorded in the shape above. Another gateway with per-key caps would agree with today's on all three, so swapping to it would test a vendor and not the guarantee.",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04"
+            ],
+            "quote": "Swappability is a tested property, not an intention."
+          },
+          {
+            "text": "agentic-stack and build-adapter-pair state design rule 1 (F-b1-02). Its consequence here: which enforcement point refused a call is configuration, and no core code, no workflow and no caller branches on it; a refusal names its enforcement point in the report, not in a field a caller can read and route on.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-02"
+            ],
+            "quote": "The core imports interfaces, never implementations"
+          },
+          {
+            "text": "agentic-stack states that what runs is substrate (F-part-c-11). Its consequence here: the scoped keys that already cap spend on this host are not replaced, they become the first enforcement point, and the platform-held lease is added beside them rather than in place of them.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-11"
+            ],
+            "quote": "Part A is substrate, not scope. Do not propose replacing what runs."
+          },
+          {
+            "text": "The ceiling and its placement are xc-budget's (F-b4-02). On this stack one enforcement point is not enough, because a cap that lives at the model gateway - the adapter cap-model-access-implement owns - bounds only what crosses the gateway, and a run also spends on isolation, tool calls and delegated descendants that never appear in a completion request.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-02",
+              "X-xc-budget-001"
+            ],
+            "quote": "Exceeding it terminates the unit, not the platform"
+          },
+          {
+            "text": "Proposed: the migration never has a window in which nothing stops a call. The existing key caps keep enforcing while the lease is introduced, both run together over the same corpus, and only then does the lease become authoritative for the root ceiling with the key caps left in place as a backstop.",
+            "origin": "proposed",
+            "sources": [
+              "F-a4-07"
+            ]
+          },
+          {
+            "text": "The contents of a record of a run are build-evidence-record's (F-a5-04). Every statement in this skill about how an enforcement point behaves is claimed until the conformance report and its evidence record exist, and a reworded sentence never upgrades a label.",
+            "origin": "sourced",
+            "sources": [
+              "F-a5-04"
+            ],
+            "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Build today's enforcement point as a thin binding onto the scoped keys the model gateway already carries: map one root unit of work to the key group its class prefix resolves to, read the remaining allowance before dispatch, and treat the gateway's refusal as the authoritative stop.",
+          "why": "xc-budget records that this property is already measured on this substrate (F-a4-07): the keys stop spend rather than noting it. Building on the mechanism that already refuses calls is the smaller change and it starts the pair from a real enforcement point rather than an intention.",
+          "origin": "sourced",
+          "sources": [
+            "F-a4-07",
+            "F-a1-04"
+          ],
+          "quote": "verified to terminate spend rather than merely record it"
+        },
+        {
+          "step": 2,
+          "action": "Proposed: build the second enforcement point as a platform-held reservation lease. Reserve the priced floor of a dispatch from the root's remaining ceiling before the dispatch starts, write the reservation through the state seam, reconcile it with the actual cost afterwards, and expire an unreconciled reservation at the unit's deadline plus grace.",
+          "why": "Proposed: this breaks the assumption that the model gateway is the only place spend occurs. A reservation taken before dispatch binds work that never reaches the gateway at all, and the expiry is what stops a crashed unit from holding a root's ceiling forever.",
+          "origin": "proposed",
+          "sources": [
+            "F-b3-16",
+            "F-b4-02"
+          ]
+        },
+        {
+          "step": 3,
+          "action": "Apply build-adapter-pair: record differs_in_execution_model from the shape above, leave measured false until the swap has actually been run, and write each enforcement point's gaps down as gaps rather than as caveats; proposed pointer, see that skill.",
+          "why": "differs_in_execution_model, its axes and the rule that measured stays false until the swap has run belong to build-adapter-pair; four sibling skills carried the sentence verbatim (consolidation part B, kb/ceremonies/implement-clusters.json).",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-04"
+          ],
+          "quote": "Swappability is a tested property, not an intention."
+        },
+        {
+          "step": 4,
+          "action": "Migrate in three steps with no gap: keep the key caps enforcing and add the lease in shadow, recording what it would have refused; run both over the same corpus and reconcile the two refusal sets; then make the lease authoritative for the root ceiling and keep the key caps as a per-key backstop.",
+          "why": "The shadow step is what shows the lease refuses the same calls plus the ones the gateway never sees, and it is the only step in which a disagreement between the two is cheap. Switching in one move would replace a mechanism measured to work with one that has never refused anything.",
+          "origin": "sourced",
+          "sources": [
+            "F-a4-07",
+            "F-part-c-11"
+          ],
+          "quote": "Do not propose replacing what runs"
+        },
+        {
+          "step": 5,
+          "action": "Wire the cross-cutting attachments at both enforcement points: stamp the root run identifier as an explicit attribute on every draw and every reconcile, append both as records in the append-only chained store, and return the registered typed refusal rather than a message.",
+          "why": "agentic-stack states that correlation must ride on an explicit attribute set at dispatch (F-a7-02) because parentage did not survive the agent boundary; a draw whose root cannot be identified cannot be subtracted from the right ceiling. The chained store is what makes a later edit to a spend record detectable.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-02",
+            "F-a5-03"
+          ],
+          "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+        },
+        {
+          "step": 6,
+          "action": "Read the enforcement point from the refusal that actually came back, not from the binding that selected the adapter, and make the conformance report carry that observed value.",
+          "why": "agentic-stack states the silently-discarded-configuration finding (F-a7-04), measured on this very gateway: a stored row overlaid the settings written in the documented file. A ceiling believed to be in force because it was configured is exactly that failure with money attached.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "Configuration written in the documented place was silently discarded."
+        },
+        {
+          "step": 7,
+          "action": "Apply build-definition-of-done: run the definition of done below over both enforcement points and then its deliberate breakage, and record both outputs as an evidence record the way build-evidence-record fixes, before calling this facet done; proposed pointer, see those skills.",
+          "why": "build-definition-of-done owns criterion plus deliberate breakage plus both recorded outputs, and build-evidence-record owns what the record names, so this row points at them instead of restating the sentence six sibling -implement skills had copied (consolidation part B, kb/ceremonies/implement-clusters.json).",
+          "origin": "proposed",
+          "sources": [
+            "F-part-c-04"
+          ],
+          "quote": "A criterion nothing can fail is not a criterion."
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Test the ceiling by watching a call be refused, never by reading the configured limit. The one measurement on file for this boundary is that a limit which stops spend and a limit which records it look identical in configuration and differ entirely in effect.",
+          "origin": "sourced",
+          "sources": [
+            "F-a4-07"
+          ],
+          "quote": "hard budget cap, verified to terminate spend rather than merely record it"
+        },
+        {
+          "text": "Report the counts per enforcement point. A corpus replayed through two adapters can leave one of them with nothing to refuse and still exit green - the structurally-green-gate finding is agentic-stack's (F-a7-03) and xc-budget draws it for a budget corpus; this is the code-level form.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        },
+        {
+          "text": "Proposed: reconcile from actuals and never from the reservation. Copying the reserved figure into the reconciled one produces a ledger that always balances and a ceiling that drifts by exactly the estimation error, which is the failure that is hardest to see because nothing ever disagrees.",
+          "origin": "proposed",
+          "sources": [
+            "X-end-to-end-047"
+          ]
+        },
+        {
+          "text": "Expect the two enforcement points to disagree in the shadow step and treat the difference as the finding rather than as noise: the draws the lease refuses and the gateway never saw are the spend that a gateway-only cap was always missing. The records on file describe that gateway pattern as the converged one, which is why the gap is easy to overlook.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-budget-001"
+          ],
+          "quote": "a dedicated AI gateway sits between application code and provider APIs"
+        },
+        {
+          "text": "Keep the conformance suite in the enforcement path rather than beside it. Why this layer exists is xc-budget's (F-a6-04); the code-level trap is that a budget suite replaying a stored corpus never touches the path a live dispatch takes, so wire it to the same draw the dispatcher calls.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-04"
+          ],
+          "quote": "Conformance checks exist; not wired into the enforcement path"
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-litellm",
+          "role": "today",
+          "maps_to": "reserve, draw, reconcile and remaining served by the scoped virtual keys of the model gateway PASS.md B3 names in the model-access row and PASS.md A1 records running on this host, with its configuration, its keys and its spend ledger held in the gateway database container. A draw is the gateway accepting or refusing the call; reconciliation is the gateway's own spend ledger; remaining is that ledger read back per key group.",
+          "cannot": "Proposed: cannot bound spend that does not cross the gateway - isolation time, tool calls, and any descendant that never issues a completion request - and cannot express one ceiling per root unit of work, because its unit is a key within a time window rather than a run tree. It also binds only while the gateway is reachable.",
+          "swap_procedure": "Select the enforcement point by configuration, replay the same corpus of dispatches through both, and compare the refusal sets: assert that every refusal the gateway produced is also produced by the lease, and record the refusals only the lease produced as the gap the pair exists to expose. Read the enforcement point from the refusal, not from the binding.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-03",
+            "F-a4-07",
+            "F-a1-04"
+          ],
+          "quote": "Gateway config, virtual keys, spend ledger"
+        },
+        {
+          "entity": "E-swap-candidate-any-keyed-lease-store",
+          "role": "second",
+          "maps_to": "the same four operations served by a platform-held reservation lease drawn before each dispatch: reserve takes a lease against the root unit of work's remaining ceiling, draw pre-checks the priced floor of the next dispatch against what the lease holds, reconcile writes the actual cost through the state seam, and remaining is a pure read at a pinned head. Budget has no adapter column of its own in PASS.md B3 because it is a platform obligation rather than an external dependency, so this is realised on the keyed lease store PASS.md B3 names as the swap candidate for leases.",
+          "cannot": "Proposed: cannot know a cost the provider has not reported yet, so it holds an estimate between dispatch and reconciliation and can over-reserve; cannot refuse a call that bypasses dispatch entirely; and needs its own expiry, because a unit that crashes while holding a lease would otherwise consume the root's ceiling permanently.",
+          "swap_procedure": "Proposed: the axes that differ are unit_of_resource_granted (a key's allowance in a window versus a reservation against one root's ceiling), locus_of_durability_and_verification (the gateway's spend ledger versus the platform's append-only state at a pinned head) and processes_required_for_progress (the gateway must be reachable versus a draw that binds before any metered call). Select by configuration with no code edit between runs, then compare both reports against the same declared gaps.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-16",
+            "F-b4-02",
+            "F-b1-04"
+          ],
+          "quote": "any keyed lease store"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/gateway/test.sh && python3 harness/gateway/conformance.py --adapter dryrun --adapter second",
+        "expected": "Measured by tools/measure.py at fb96f80: exit 0; last lines:   adapter=provider-native asynchronous batch (claim-and-poll) cases=12 passed=12 dispatches=7 refusals=2 overshoot_violations=0 endpoint_marker=batch-job-accepted product_hits=0 | conformance PASSED: 24/24 cases, 2 binding(s)",
+        "breakage": "sed -i '235s#.*#        if estimate >= request.ceiling_micros \\* 100:#' harness/gateway/interface.py",
+        "expected_failure": "Measured by tools/measure.py at fb96f80: exit 1; last lines:   ok   product_hits went from 0 to 1 | passed 16, failed 9",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04",
+          "F-b4-02"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "fb96f80",
+          "clean_exit": 0,
+          "clean_output": "n the way out: ticket carries a class, a state, a result and nothing about who served it\n  ok   cancel says which of two things happened: cancellable=False -> recorded, owed 3132 micros\n  ok   the endpoint marker is read from the response: batch-job-accepted matches the binding\n  ok   routing is a pure function, testable from a table: 5 vectors, no model reachable, no spend\n  adapter=provider-native asynchronous batch (claim-and-poll) cases=12 passed=12 dispatches=7 refusals=2 overshoot_violations=0 endpoint_marker=batch-job-accepted product_hits=0\nconformance PASSED: 24/24 cases, 2 binding(s)",
+          "breakage_exit": 1,
+          "breakage_output": "bf778bb0da2418e49f)\n  ok   the same caller code runs on the second adapter (0)\n  FAIL the two adapters differ in execution model on 3 or more axes (expected 0, got 1)\n  FAIL AssertionError: both bindings must pass the same cases\n3. no product name in the interface, the caller or the conformance run\n  ok   product scan over the shipped tree exits 0 (0)\n  ok   0 hits outside adapters/\n4. deliberate breakage: the caller branches on which adapter answered\n  ok   the breakage run exits non-zero (1)\n  ok   the run names the file that broke it\n  ok   product_hits went from 0 to 1\n\npassed 16, failed 9",
+          "restored": true
+        },
+        "expected_design": "test.sh: exit 0, `passed 25, failed 0`; conformance.py: exit 0, `conformance PASSED: 24/24 cases, 2 binding(s)`. That is cap-model-access-implement's gateway harness and its adapter pair, so what the criterion measures is the gateway enforcement point this facet borrows: the second enforcement point the platform holds itself, and the reconciliation across both, stay claimed until the tool below is run. Proposed tool (not run): python3 tools/conformance_budget.py --adapter today --adapter second --corpus out/dispatches.jsonl --min-dispatches 100 --report out/budget-conformance.json, asserting per enforcement point non-null budget.ceiling_micros, one root run id per dispatch, overshoot at most one call's worth, enforcement_point_observed read from the refusal, and across enforcement points adapters_run >= 2, unbounded == 0, overshoot_violations == 0 (docs/decomposition.md section 3.4 row X1).",
+        "expected_failure_design": "The widened pre-dispatch ceiling comparison no longer fires at the real ceiling on either binding, so the case asserting a request over its cap is refused before the call gets a result instead of budget-exhausted. In the criterion as chained, harness/gateway/test.sh runs the same conformance.py internally (lines 15,45) over the edited interface.py and fails first, so the standalone conformance.py after the `&&` never runs and the chain ends at test.sh's own summary `passed 16, failed 9`; git checkout -- harness/gateway/interface.py restores."
+      },
+      "composes_with": {
+        "builds_on": [
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record",
+          "xc-budget"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Budget has no capability row in PASS.md B3, so it has no adapter or swap-candidate entity of its own, and the second enforcement point here is recorded against the keyed lease store named as the swap candidate for leases. Should Budget get its own entity pair?",
+          "evidence": "1-3-1 applied (TARGET T5), the same way xc-budget records its own standard-entity gap: (a) add E-adapter-gateway-virtual-key and E-swap-candidate-platform-budget-lease, which needs a knowledge-base rebuild and would invalidate the provenance heads of every skill already written; (b) record the pair against the existing gateway and keyed-lease-store entities and say so in the row, which is what this skill does; (c) leave the pair to a later wave, which would leave this guarantee with one enforcement point. Recommendation followed: (b). The question closes when a ceremony rebuilds the knowledge base and the two entities exist.",
+          "default": "Keep the pair on the existing entities, with the reason stated in the adapter row so a reader is not sent to the wrong capability's row.",
+          "sources": [
+            "F-b3-16",
+            "T-t5-02"
+          ],
+          "quote": "When a problem comes up, use 1-3-1"
+        },
+        {
+          "question": "How much overshoot does the pre-check actually allow on this stack, and how much latency does it add per call? (xc-budget carries the granularity question; this is the measurement that closes it)",
+          "evidence": "Run the corpus with high per-call cost variance through both enforcement points and record `overshoot_micros_max` and the added per-call latency for each. If the lease's overshoot exceeds one call's worth, the priced floor is the wrong quantity to reserve and the reservation should be the priced ceiling instead.",
+          "default": "Reserve the priced floor and assert overshoot is at most one call's worth, which is the bound the definition of done already checks.",
+          "sources": [
+            "F-b1-06"
+          ],
+          "quote": "Cost is knowable before commitment"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session xc-budget 2831cb4f, 2026-09-03"
+      }
+    },
+    "xc-tenancy": {
+      "name": "xc-tenancy",
+      "layer": "xc",
+      "wave": 8,
+      "description": "The isolation guarantee applied across principals rather than across runs: every unit of work carries a mandatory principal, bound at the same enforcement-chain slot that already binds its actor, and verified at every shared choke point so that one principal's state, memory, budget, identity and telemetry can never be read, spent or exhausted by another's. Load it when more than one principal shares the platform, when deciding what a record, a memory item or a budget reservation must carry before it is scoped, when a store, a sandbox pool or a routing-class key is shared infrastructure and someone asks whether one caller can see or spend against another's share, when reviewing whether isolation is enforced structurally or only by a query filter someone remembered to add, or when a cross-tenant read, recall or spend needs a name for what refused it.",
+      "purpose": {
+        "text": "PASS.md's B4 table of cross-cutting concerns has no row for tenancy, and no section of PASS.md names a principal boundary between units of work sharing the platform (research-gap): TARGET states that PASS.md's list is a limited baseline, and the obligation is to make up the gaps in it and solve them. This skill fixes the guarantee that follows once more than one principal shares the same substrate: a mandatory principal on every unit of work, applied by the platform at the same choke points that already apply identity, policy and budget, so that a caller cannot decline it by leaving a field blank any more than they can decline telemetry.",
+        "origin": "sourced",
+        "sources": [
+          "T-t4-03",
+          "F-b1-08"
+        ],
+        "quote": "make up for the gaps, and solve it"
+      },
+      "entities": [
+        "E-concern-identity",
+        "E-concern-budget",
+        "E-concern-policy",
+        "E-capability-identity",
+        "E-capability-isolation",
+        "E-capability-state-persistence",
+        "E-not-running-identity",
+        "E-sandbox-property-jail"
+      ],
+      "contract": {
+        "operations": [
+          {
+            "name": "bind_scope (proposed operation set; PASS.md states no calls for this concern, only that cross-cutting guarantees are applied by the platform and not requested)",
+            "input": "the chain context xc-enforcement-chain's identity.resolve slot already produced for this unit, carrying the actor xc-identity-delegation bound at entry (proposed)",
+            "output": "the same chain context with one additional required field, principal, resolved from that actor; a chain context whose actor resolves to no principal is the refusal of identity.resolve, not a unit that proceeds unscoped (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-03",
+              "F-b4-01"
+            ]
+          },
+          {
+            "name": "check_scope (proposed)",
+            "input": "the requesting principal and the principal already stamped on the record, memory item, budget reservation or isolation admission being crossed (proposed)",
+            "output": "passed only if the two principals are equal; otherwise the typed refusal of policy.decide, and for a read or a recall, nothing returned - not a redacted view, not a count that discloses the target exists (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-04"
+            ]
+          },
+          {
+            "name": "meter_scope (proposed)",
+            "input": "the requesting principal and the unit's reservation at budget.reserve (proposed)",
+            "output": "a ceiling checked against that principal's remaining budget in addition to the run's own; exceeding it terminates the unit under that principal, never another principal's remaining ceiling or the platform (proposed)",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-02"
+            ]
+          }
+        ],
+        "shapes": [
+          {
+            "name": "TenantScope (proposed summary shape; the full ScopedRecord schema and the complete worked entries are in references/usage.md)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:tenancy:scope:0.1",
+              "title": "TenantScope",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Proposed. The mandatory scope key. It is carried on the actor identity xc-identity-delegation already binds, never supplied as a separate caller-chosen field, and it is decided in exactly one place.",
+              "required": [
+                "principal",
+                "resolved_at"
+              ],
+              "properties": {
+                "principal": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The tenant boundary. Opaque to every consumer above this contract."
+                },
+                "resolved_at": {
+                  "enum": [
+                    "identity.resolve"
+                  ],
+                  "description": "Always the same enforcement-chain slot xc-enforcement-chain names; there is no second slot where a principal is decided."
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b4-03"
+            ]
+          },
+          {
+            "name": "ScopedRecord (proposed; the mandatory field every record cap-state-persistence appends and every item cap-memory writes carries in addition to its own required fields)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:tenancy:scoped-record:0.1",
+              "title": "ScopedRecord",
+              "type": "object",
+              "additionalProperties": true,
+              "description": "Proposed. A record or item with no principal is refused at write time; it is not appended and then filtered out at read time.",
+              "required": [
+                "principal"
+              ],
+              "properties": {
+                "principal": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b3-17"
+            ]
+          },
+          {
+            "name": "ScopeByWayIn (proposed worked instances, one per TARGET T6.2 entry; the complete envelopes are in references/usage.md)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:tenancy:entry:0.1",
+              "title": "ScopeByWayIn",
+              "type": "object",
+              "description": "Proposed. The caller supplies nothing beyond the entry envelope cap-consumption already fixes; the principal rides on the actor the driving adapter stamped, and it is present at admission for all four of TARGET T6.2's entries.",
+              "examples": [
+                {
+                  "entry": {
+                    "kind": "human",
+                    "actor": {
+                      "subject": "user:corey",
+                      "principal": "tenant-northwind"
+                    }
+                  },
+                  "chain": {
+                    "point": "admission",
+                    "slot": "identity.resolve",
+                    "principal": "tenant-northwind"
+                  }
+                },
+                {
+                  "entry": {
+                    "kind": "external",
+                    "actor": {
+                      "subject": "agent:partner-sre-bot",
+                      "principal": "tenant-acme"
+                    }
+                  },
+                  "chain": {
+                    "point": "admission",
+                    "slot": "identity.resolve",
+                    "principal": "tenant-acme"
+                  }
+                },
+                {
+                  "entry": {
+                    "kind": "event",
+                    "actor": {
+                      "subject": "service:alerting",
+                      "principal": "tenant-acme"
+                    },
+                    "note": "T6.2's Internal door: steers a run that already exists and never starts one (REF-3-4-10)"
+                  },
+                  "chain": {
+                    "point": "admission",
+                    "slot": "identity.resolve",
+                    "principal": "tenant-acme"
+                  }
+                },
+                {
+                  "entry": {
+                    "kind": "schedule",
+                    "actor": {
+                      "subject": "schedule:nightly-tenancy-sweep",
+                      "principal": "tenant-northwind"
+                    },
+                    "note": "T6.2's Time door: starts a new root run under its own principal and never steers (REF-3-4-10)"
+                  },
+                  "chain": {
+                    "point": "admission",
+                    "slot": "identity.resolve",
+                    "principal": "tenant-northwind"
+                  }
+                }
+              ]
+            },
+            "origin": "proposed",
+            "sources": [
+              "T-t1-01",
+              "T-t1-02",
+              "T-t1-03",
+              "T-t6-02",
+              "REF-3-4-10"
+            ]
+          },
+          {
+            "name": "worked refusal (proposed instance; the type is the registered policy-denied row of the closed registry in docs/decomposition.md section 2.1.6, and cap-errors owns the object)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:tenancy:refusal:0.1",
+              "title": "TenancyRefusalInstance",
+              "description": "Proposed. What a caller receives when a read, a recall or a spend crosses a principal boundary: the point and the rule that refused it, never the other principal's record.",
+              "allOf": [
+                {
+                  "$ref": "urn:agentic:problem:0.1"
+                }
+              ],
+              "examples": [
+                {
+                  "type": "urn:agentic:problem:policy-denied",
+                  "title": "Cross-tenant access denied",
+                  "status": 403,
+                  "detail": "enforcement point call, slot policy.decide: the requested record belongs to a different principal than the requesting actor",
+                  "rule_id": "tenancy-scope",
+                  "retryable": false
+                }
+              ]
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b4-04",
+              "F-b4-07"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "agentic-stack states design rule 7 as a test: telemetry, policy, provenance and budget are applied by the platform, never requested by the caller (F-b1-08). Tenancy is the same test aimed at one more axis: a principal is bound by the platform at identity.resolve, never accepted as a field a caller supplies and asks the platform to trust.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-08"
+            ],
+            "quote": "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller"
+          },
+          {
+            "text": "xc-identity-delegation already fixes where the actor is bound - at entry, by the driving adapter, stamped onto the envelope (F-b4-03). What tenancy adds, as this skill's own proposed consequence: the principal travels as a property of that same actor and is resolved at the same slot, identity.resolve, rather than a second binding step, so there is exactly one place a principal can be wrong and it is the place an actor already is.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-03"
+            ],
+            "quote": "Every action names an actor, including delegated agent actors"
+          },
+          {
+            "text": "Proposed: xc-enforcement-chain fixes six named slots at three named points. Tenancy attaches to three of them rather than adding a seventh: identity.resolve is where the principal is bound, policy.decide is where a cross-principal read, recall or write is refused, and budget.reserve is where a ceiling is drawn against the requesting principal's remaining budget and not only the run's. Research query: is there a fetched source recommending exactly these three slots (identity.resolve, policy.decide, budget.reserve) as the attachment points for a tenancy dimension, or is that this skill's own reading of the enforcement chain's slot list?",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-01"
+            ]
+          },
+          {
+            "text": "cap-isolation already states that a unit of work runs contained with declared resources and declared egress, governed by the OCI Runtime Spec (F-b3-02). What tenancy adds at the isolation boundary, as this skill's own proposed consequence: a sandbox slot exhausted by one principal must not block another principal's admission - the axis xc-tenancy-implement's second adapter is chosen to break.",
+            "origin": "sourced",
+            "sources": [
+              "F-b3-02"
+            ],
+            "quote": "OCI Runtime Spec"
+          },
+          {
+            "text": "cap-state-persistence already forwards the write model and the query surface to seam-state's design, with no standard to conform to (F-b3-17). What tenancy adds, as this skill's own proposed consequence: every record carries a principal alongside whatever partition key seam-state already uses, so a read at a pinned head is narrowed to one principal's records as a property of the record, not a filter a caller remembers to add - no recall, no spend, no read crosses a principal.",
+            "origin": "sourced",
+            "sources": [
+              "F-b3-17"
+            ],
+            "quote": "JSONL + hash chain"
+          },
+          {
+            "text": "xc-budget and, at the isolation admission slot, cap-isolation and xc-enforcement-chain already state that a unit of work carries a ceiling and exceeding it terminates that unit, not the platform (F-b4-02). What tenancy adds, as this skill's own proposed consequence: budget.reserve draws against a ceiling scoped to the requesting principal as well as the run's, so one principal exhausting its quota terminates only that principal's units - the platform's remaining capacity and every other principal's remaining ceiling stay untouched, the same noisy-neighbour boundary the research on file places at the shared choke points.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-02",
+              "X-end-to-end-033"
+            ],
+            "quote": "Exceeding it terminates the unit, not the platform"
+          },
+          {
+            "text": "cap-memory already states that every write and recall carries a scope dimension, principal among them, so cross-principal contamination is kept out of results by construction rather than by a filter someone remembered to add (X-cap-memory-002). What tenancy adds, as this skill's own proposed consequence: principal is not one dimension a caller may omit in favour of another, it is the mandatory one - a recall naming no principal, or a different principal than the actor's, is refused before ranking runs.",
+            "origin": "sourced",
+            "sources": [
+              "X-cap-memory-002"
+            ],
+            "quote": "Every search must include at least one of these dimensions in filters"
+          },
+          {
+            "text": "cap-identity and xc-identity-delegation already state that PASS.md A6 records no identity field anywhere in the system (F-a6-05); tenancy has even less: no fact in PASS.md names a tenant or a principal at all, so tenancy as such is absent from the substrate. The nearest measured analogues are the per-VM uid jail (F-a3-06) and the per-group scoped model-access virtual keys with hard budget caps (F-a4-07), and xc-tenancy-implement treats both as the starting point rather than as evidence that tenancy already runs, which is the reading proposed here.",
+            "origin": "sourced",
+            "sources": [
+              "F-a6-05",
+              "F-a3-06",
+              "F-a4-07"
+            ],
+            "quote": "identity field anywhere in the system"
+          },
+          {
+            "text": "xc-enforcement-chain already wires the identical chain on all four of TARGET T6.2's entries - a human, an event, a schedule, an external system or agent. What tenancy adds, as this skill's own proposed consequence: the principal rides on the same actor whichever driving adapter stamped, so enhancing one aspect (adding a fifth scope dimension, moving the store, tightening a sandbox quota) leaves how a caller reaches it untouched.",
+            "origin": "sourced",
+            "sources": [
+              "T-t6-02"
+            ],
+            "quote": "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent."
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "Proposed: no operation returns another principal's data as a redacted view, a filtered page, or a count. A cross-principal read, recall or admission returns nothing - the typed refusal, or an empty result - never a shape that discloses the target exists. Research query: is there a fetched source recommending an empty result over a redacted view specifically for cross-tenant disclosure prevention, or is that this row's own extension of the general non-disclosure principle?",
+            "origin": "proposed",
+            "sources": [
+              "F-b4-04"
+            ]
+          },
+          {
+            "text": "agentic-stack already states that products belong in the adapter column only (F-part-c-09). The consequence here, as this skill's own proposed consequence: which store, sandbox pool or key group implements the scope boundary is not part of the contract, so no caller and no policy rule can branch on whether isolation is namespace-based or a dedicated pool per principal.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-09"
+            ],
+            "quote": "Products belong in the adapter column only"
+          },
+          {
+            "text": "agentic-stack states design rule 6 (F-b1-07). Tenancy opens no new place for the grading criterion to leak: the principal rides on the same actor structure a unit's output-judging criterion is already kept off, and no shape in this contract adds a second field for it to travel on.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-07"
+            ],
+            "quote": "An agent sees its outcome, never the criterion it is judged against"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Bind the principal at identity.resolve only - the same enforcement-chain slot and the same admission point xc-identity-delegation already binds the actor at - and never add a second, tenancy-specific binding step.",
+          "why": "xc-identity-delegation fixes the placement of the actor binding; a second binding step for the principal would give the same question two owners and let them drift apart under load.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-03"
+          ],
+          "quote": "Every action names an actor, including delegated agent actors"
+        },
+        {
+          "step": 2,
+          "action": "Make the principal mandatory and total: a unit whose actor resolves to no principal is refused at admission, before policy.decide or budget.reserve run - there is no unscoped-but-admitted state.",
+          "why": "agentic-stack states cross-cutting guarantees are applied by the platform, not requested (F-b1-08); an optional principal is a caller-declinable one, which fails that test as directly as an optional budget ceiling would.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-08"
+          ],
+          "quote": "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller"
+        },
+        {
+          "step": 3,
+          "action": "Scope every persisted record: extend cap-state-persistence's record and cap-memory's item with the mandatory ScopedRecord field above, enforced at write time, so an append or a write with no principal never reaches the store.",
+          "why": "cap-state-persistence forwards its write model to seam-state's design (F-b3-17); adding the field at write time rather than filtering at read time is what keeps a read from ever having to trust that the filter was applied.",
+          "origin": "sourced",
+          "sources": [
+            "F-b3-17"
+          ],
+          "quote": "JSONL + hash chain"
+        },
+        {
+          "step": 4,
+          "action": "Scope every recall: require principal as cap-memory's mandatory scope dimension, and return an empty result - never an error that discloses the item exists - when a recall names no principal or a different one than the actor's.",
+          "why": "cap-memory already keeps cross-principal contamination out of results by construction once a scope dimension is required in every search; tenancy makes principal the one dimension that cannot be substituted for another.",
+          "origin": "sourced",
+          "sources": [
+            "X-cap-memory-002"
+          ],
+          "quote": "Every search must include at least one of these dimensions in filters"
+        },
+        {
+          "step": 5,
+          "action": "Scope every budget reservation: at budget.reserve, draw against a ceiling keyed to the requesting principal in addition to the run's own ceiling, so exceeding one principal's quota terminates only that principal's units.",
+          "why": "xc-budget, cap-isolation and xc-enforcement-chain already state a ceiling terminates the unit, not the platform; the research on file places noisy-neighbour risk exactly at the choke points every principal shares, which is where a per-principal ceiling has to attach - the placement proposed here.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-02",
+            "X-end-to-end-033"
+          ],
+          "quote": "Exceeding it terminates the unit, not the platform"
+        },
+        {
+          "step": 6,
+          "action": "Scope isolation admission: when a sandbox pool is shared infrastructure, tag each slot with the principal that holds it, so a principal that exhausts its own sandbox slots refuses only its own new admissions, never another principal's.",
+          "why": "cap-isolation states a unit runs contained with declared resources; tenancy's consequence for that contract is that resource exhaustion is a property of one principal's declared share, not of the pool as a whole.",
+          "origin": "sourced",
+          "sources": [
+            "F-b3-02"
+          ],
+          "quote": "OCI Runtime Spec"
+        },
+        {
+          "step": 7,
+          "action": "Wire the identical scope check on all four of TARGET T6.2's entries - a human, an event, a schedule, and an external system or agent - by replaying one corpus with at least two principals represented through each door and asserting the same zero cross-principal counts for all four, including a schedule-originated unit that starts a new root run under its own principal rather than steering one already open, and an event-originated unit that steers an existing run rather than starting one.",
+          "why": "xc-enforcement-chain already wires the identical chain on all four of TARGET T6.2's entries; a guarantee wired only on the door someone remembered is declined by choosing another door, and replaying through all four while requiring more than one principal in the corpus is what keeps a single-tenant test from reporting a false zero. REF-3-4-10 states starts-or-steers per door directly: schedule starts only, internal event steers only - a corpus that never exercises the schedule door cannot prove the guarantee holds on a run it did not start through the shared choke points.",
+          "origin": "sourced",
+          "sources": [
+            "T-t6-02",
+            "REF-3-4-10"
+          ],
+          "quote": "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent."
+        },
+        {
+          "step": 8,
+          "action": "For usability, add nothing to the caller's side: a human, an event, a schedule and an external system or agent all reach this guarantee by submitting the entry envelope cap-consumption fixes, supply no principal field and no scope flag, and read back either the normal result - narrowed to their own principal by construction - or one urn:agentic:problem:policy-denied naming the enforcement-chain point and the rule_id that refused.",
+          "why": "cap-consumption states the caller doctrine once; restating it here would give it a second owner. The principal already rides on the actor xc-identity-delegation stamps, so there is nothing tenancy-shaped for a caller to configure.",
+          "origin": "sourced",
+          "sources": [
+            "T-t6-02",
+            "T-t3-01"
+          ],
+          "quote": "All four enter through the same shape."
+        },
+        {
+          "step": 9,
+          "action": "Attest the guarantee by replaying a corpus at a pinned state head and counting cross-principal reads, recalls and spend directly, the way xc-enforcement-chain's attest_chain counts slots - never by reading the absence of an error.",
+          "why": "agentic-stack states the structurally-green-gate finding: well-formedness checks are not correctness checks, and a gate whose behavioural stages all skipped proves nothing.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        },
+        {
+          "step": 10,
+          "action": "Proposed: open references/usage.md when you need the full ScopedRecord schema, the three complete worked entries, or the worked refusal in full. The body of this skill is enough to judge whether a boundary is tenant-scoped without it.",
+          "why": "Proposed: the complete envelopes exceed the progressive-disclosure budget for a skill body, and a reader deciding whether a choke point is scoped does not need them open.",
+          "origin": "proposed"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "agentic-stack already states the structurally-green-gate finding (F-a7-03). What it costs here, as this skill's own proposed consequence: a corpus with only one principal represented can report every cross-principal count at zero and prove nothing, so require at least two principals covered in every report, the same discipline xc-enforcement-chain's attest_chain applies to all four of TARGET T6.2's entries.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        },
+        {
+          "text": "agentic-stack states the silently-discarded-configuration finding (F-a7-04). What it adds here, as this skill's own proposed consequence: prove a store or a sandbox pool is scoped by principal by watching a live cross-principal request actually refused, not by reading the migration that added the column.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+        },
+        {
+          "text": "The research on file (X-xc-tenancy-004) states isolation must be enforced at token level, middleware level, policy level, database level and encryption level, with tenant context mandatory in every request path. Treat the enforcement-chain's named slots as that layering rather than inventing a parallel tenancy-specific stack.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-tenancy-004"
+          ],
+          "quote": "Tenant context should be mandatory in every request path"
+        },
+        {
+          "text": "The research on file (X-xc-tenancy-006) separates decision from enforcement: a policy engine answers whether a principal has permission, and an enforcement layer applies that decision uniformly across every API, service and data layer. Tenancy is one more input into that same decision, not a second gate beside it.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-tenancy-006"
+          ],
+          "quote": "decision-making is separated from enforcement"
+        },
+        {
+          "text": "The research on file (X-xc-tenancy-005) names the riskiest noisy-neighbour points as exactly the resources PASS.md's substrate already shares across everything running on it - compute and model access - which is why budget.reserve and the isolation admission slot are where a quota test is cheapest to write first.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-tenancy-005"
+          ],
+          "quote": "Sharing the same resources may result in noisy neighbor effects"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "python3 harness/xc-tenancy/conformance.py --adapter dryrun --adapter second",
+        "expected": "exit 0, last line `conformance PASSED: 18/18 cases, 2 binding(s), adapters_run=2`, with one line per binding reading `adapter=<entity> cases=9 passed=9 units_checked=11 principals_covered=2 no_principal_admitted=0 cross_tenant_reads=0 cross_tenant_recalls=0 cross_tenant_spend=0`: two principals are represented, so a report of all-zero cross-principal counts means something. What this run stands in for: the criterion this facet carried before ceremony 61 (finding R61B-018) moved its prose out of the criterion field, which is the check this guarantee ultimately needs and which nothing on disk runs yet - Proposed tool, built with the first enforcement point: `python3 tools/conformance/tenancy.py --corpus out/units.jsonl --principals tenant-northwind,tenant-acme --ways-in human,event,schedule,external --min-units 100 --report out/tenancy.json`. Reading a pinned state head, for every unit it asserts a principal was present before admission, and for every read, recall and budget draw the unit performed it asserts the target's own principal equalled the requesting actor's. It reports `units_checked`, `principals_covered`, `ways_in_covered`, `no_principal_admitted`, `cross_principal_reads`, `cross_principal_recalls`, and `cross_principal_spend`, and asserts `units_checked >= 100`, `principals_covered >= 2`, all four of TARGET T6.2's entries covered (human, event, schedule, external) with at least one schedule-originated unit in the corpus that started a new root run rather than steering one already open, and `no_principal_admitted == cross_principal_reads == cross_principal_recalls == cross_principal_spend == 0`. Expected of that check: exit 0 and one summary line `units_checked=100 principals_covered=2 ways_in_covered=human,event,schedule,external no_principal_admitted=0 cross_principal_reads=0 cross_principal_recalls=0 cross_principal_spend=0`.",
+        "breakage": "sed -i 's/if not principal:/if False:/' harness/xc-tenancy/interface.py -- resolve_scope stops refusing an actor that carries no principal, so a unit with no tenant is admitted and reaches a store before anything scopes it. Restore with git checkout harness/xc-tenancy/interface.py.",
+        "expected_failure": "exit 1 on both bindings at the no-principal case, which expects the registered no-principal refusal at admission and instead sees the unit admitted, while principals_covered stays 2 and units_checked stays at 11 - which shows the corpus was still driven and the other counters still meant something. Status claimed: tools/measure.py has recorded neither run for this pair here. The breakage the prose criterion above stood for, and what it expected: Submit one state read whose query names a record_id known to belong to a different principal than the requesting actor, everything else in the corpus unchanged. exit 1 with `cross_principal_reads == 1` naming that record and both principals, while `no_principal_admitted`, `cross_principal_recalls` and `cross_principal_spend` stay 0 and `units_checked` stays at or above 100 - showing the corpus was still read and the other three counters still meant something. Claimed: no fact in PASS.md names a tenant or a principal, the tool does not exist, and this run has not been performed here.",
+        "status": "claimed",
+        "sources": [
+          "F-part-c-04",
+          "F-a6-05"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion"
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-definition-of-done",
+          "build-skill-authoring",
+          "build-research-record",
+          "build-ceremony",
+          "cap-identity",
+          "cap-isolation",
+          "cap-state-persistence",
+          "xc-identity-delegation",
+          "xc-enforcement-chain"
+        ],
+        "used_by": [
+          "xc-tenancy-implement"
+        ]
+      },
+      "open_questions": [
+        {
+          "question": "Is a principal a claim carried on the actor cap-identity's delegation chain already verifies, or a wholly separate concern with its own store and its own verification - the same actor can act for different principals across different units, so who-acted and whose-account-it-acted-for may not be the same question even when the same identity is behind both.",
+          "evidence": "1-3-1 applied (TARGET T5): (a) treat principal as a claim verified the same way cap-identity verifies any other claim on the chain, needing no new verification path; (b) treat principal as a wholly separate concern with its own attestation, since an actor's chain proves who acted, not on whose behalf they were allowed to act, and conflating the two would let a valid chain stand in for a scope check it never performed; (c) leave the question open until the first enforcement point exists. Recommendation followed: (b), because cap-identity's own not_exposed section keeps prior actors out of the authorisation decision, and folding a scope decision into the identity chain would put exactly that decision back in.",
+          "default": "Verify principal as a separate claim at identity.resolve, alongside the actor rather than nested inside its chain, until this is run and reconsidered.",
+          "sources": [
+            "F-b4-03",
+            "T-t5-02"
+          ],
+          "quote": "Every action names an actor, including delegated agent actors"
+        },
+        {
+          "question": "cap-isolation's proposed second adapter compares namespace isolation to a dedicated sandbox pool per principal, while cap-state-persistence's natural second adapter compares row-level scoping to a store-per-tenant; are these the same axis proven twice, or two genuinely different swaps that both need running before this guarantee is trusted?",
+          "evidence": "Count, once both pairs exist, how many refusals each swap catches that the other does not. If the sets are identical the isolation pair is redundant with the state pair for this guarantee's purposes; if they diverge, both are load-bearing because they break different assumptions at different choke points.",
+          "default": "Treat both as load-bearing until xc-tenancy-implement's conformance run says otherwise, since one governs admission to a sandbox and the other governs a persisted record, and PASS.md draws them as separate B3 rows.",
+          "sources": [
+            "F-b3-02",
+            "F-b3-17"
+          ],
+          "quote": "JSONL + hash chain"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session xc-tenancy 2831cb4f, 2026-09-03"
+      }
+    },
+    "xc-tenancy-implement": {
+      "name": "xc-tenancy-implement",
+      "layer": "xc",
+      "wave": 9,
+      "description": "How to make the mandatory-principal guarantee real on this stack from a starting point where tenancy as such does not exist: today's nearest measured substrate (a per-VM jail, per-group scoped budget keys, a single hash-chained log), a second adapter that stores each principal separately instead of filtering a shared store, the migration when no field exists to migrate from, where the scope attaches to the enforcement chain's slots, and a definition of done with a breakage the build owns. Load it when writing or reviewing the code that resolves, checks or meters a principal, when a shared store, key group or sandbox pool is about to grow a tenant column, when choosing what the second adapter should be, when a migration would otherwise refuse every unit the platform currently admits, or when a conformance run reports a cross-principal read on one adapter and not the other.",
+      "purpose": {
+        "text": "Turn the placement xc-tenancy fixes into something that runs here: a today adapter built from PASS.md A3's per-VM uid jail and A4's scoped budget keys, since PASS.md A6 records no identity field anywhere in the system and no fact anywhere names a tenant, a second adapter chosen because it stores each principal separately rather than filtering one shared store, and a migration that starts red because there is no field on this host to migrate from.",
+        "origin": "sourced",
+        "sources": [
+          "F-a6-05",
+          "F-a3-06",
+          "F-a4-07"
+        ],
+        "quote": "No identity field anywhere in the system"
+      },
+      "entities": [
+        "E-adapter-jsonl-hash-chain",
+        "E-swap-candidate-object-store",
+        "E-not-running-identity",
+        "E-capability-state-persistence"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "differs_in_execution_model for this pair (proposed instance of the shape build-adapter-pair defines)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:tenancy:pair-axes:0.1",
+              "title": "TenancyPairAxes",
+              "description": "Proposed. The axes on which the two adapters differ, stated as properties rather than as product names. The axis is where and how the tenant boundary is enforced, not which store technology is used underneath. measured stays false until the swap has been executed and recorded.",
+              "type": "array",
+              "minItems": 3,
+              "examples": [
+                [
+                  {
+                    "axis": "locus_of_the_tenant_boundary",
+                    "today_value": "a principal column filtered at read time within one shared keyspace",
+                    "second_value": "a wholly separate store instance selected by principal before any read or write",
+                    "measured": false
+                  },
+                  {
+                    "axis": "failure_mode_of_a_wrong_or_missing_principal",
+                    "today_value": "returns another principal's rows if the filter is dropped or wrong",
+                    "second_value": "fails to resolve a store at all, returning nothing",
+                    "measured": false
+                  },
+                  {
+                    "axis": "provisioning_cost_of_a_new_principal",
+                    "today_value": "a new principal needs only a new value in an existing column",
+                    "second_value": "a new principal needs a new store instance created before its first write can succeed",
+                    "measured": false
+                  }
+                ]
+              ]
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04"
+            ]
+          },
+          {
+            "name": "ScopeAssignmentRecord (proposed; what one unit's principal resolution writes through the state seam, for the shadow-migration report to read back)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:xc:tenancy:scope-assignment:0.1",
+              "title": "ScopeAssignmentRecord",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Proposed. One record per unit, appended rather than mutated, so the adapter a corpus check reads back is the adapter that actually resolved the unit and not the one the configuration selected.",
+              "required": [
+                "run_id",
+                "unit_id",
+                "principal",
+                "adapter",
+                "written_at"
+              ],
+              "properties": {
+                "run_id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "unit_id": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "principal": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "adapter": {
+                  "type": "string",
+                  "description": "Read from the stamp the resolution produced, never from the configuration that selected it."
+                },
+                "written_at": {
+                  "type": "string"
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-a5-03"
+            ]
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Proposed: the two adapters differ on three of build-adapter-pair's axes - locus_of_the_tenant_boundary, failure_mode_of_a_wrong_or_missing_principal, and provisioning_cost_of_a_new_principal - recorded in the shape above. A second store that only relocated the same filter would agree with the first on all three, so swapping to it would test a database and not the boundary shape.",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-04"
+            ],
+            "quote": "Swappability is a tested property, not an intention."
+          },
+          {
+            "text": "build-adapter-pair and agentic-stack state design rule 1 (F-b1-02). Its consequence here: which adapter resolved a unit's store is configuration, and no core code, no workflow and no policy rule branches on it; the adapter appears in the conformance report, never in a field a caller can read and route on.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-02"
+            ],
+            "quote": "The core imports interfaces, never implementations"
+          },
+          {
+            "text": "There is no identity field anywhere in the system and no fact in PASS.md names a tenant, so the today adapter is written rather than replaced and every assertion in the definition of done below is red until it exists (F-a6-05; xc-tenancy owns the placement and records tenancy's absence from the substrate).",
+            "origin": "sourced",
+            "sources": [
+              "F-a6-05"
+            ],
+            "quote": "No identity field anywhere in the system"
+          },
+          {
+            "text": "cap-state-persistence's own recorded row, which xc-tenancy also cites, names JSONL plus hash chain as today's adapter and an object store, a relational store or an event log as swap candidates for the whole capability (F-b3-17). This skill's pair answers a narrower question than that row does: not which store cap-state-persistence should use, but whether the store's tenant boundary is a filter over shared partitions or a partition of its own - so the two adapter tables can share entities without re-answering the same question.",
+            "origin": "sourced",
+            "sources": [
+              "F-b3-17"
+            ],
+            "quote": "JSONL + hash chain"
+          },
+          {
+            "text": "The research on file names three multi-tenant database patterns - shared database with shared schema, shared database with separate schemas, and database per tenant (X-xc-tenancy-001). The two adapters below sit at the two ends of that range: a principal column on the shared log today, and database-per-tenant as the second.",
+            "origin": "sourced",
+            "sources": [
+              "X-xc-tenancy-001"
+            ],
+            "quote": "Database per Tenant"
+          },
+          {
+            "text": "Principal is stamped beside the explicit resource attribute correlation uses at dispatch rather than inferred from it, so a scope-assignment record and a correlation record are written from the same call and can never name two different runs for one unit; correlation must ride on that explicit attribute because parentage did not survive the agent boundary (F-a7-02; agentic-stack and build-adapter-pair own that rule).",
+            "origin": "sourced",
+            "sources": [
+              "F-a7-02"
+            ],
+            "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+          },
+          {
+            "text": "agentic-stack and build-definition-of-done state the structurally-green-gate finding (F-a7-03). What it costs here: a corpus replayed through two adapters can leave one of them with only a single principal represented and still report every cross-principal count at zero, so report principals_covered per adapter and fail when either is below two.",
+            "origin": "sourced",
+            "sources": [
+              "F-a7-03"
+            ],
+            "quote": "Those establish well-formedness, not correctness"
+          },
+          {
+            "text": "Apply build-evidence-record: every statement here about how an adapter behaves stays claimed until the conformance run and its evidence record exist, naming the code version and the tree hash under test, and rewording a sentence never upgrades a label; proposed pointer, see that skill.",
+            "origin": "proposed",
+            "sources": [
+              "F-a5-04"
+            ]
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Write the today adapter as the observed substrate, not an incumbent that already enforces tenancy: a principal column added to every record cap-state-persistence appends, filtered at read time, sitting beside a per-VM uid jail and per-group scoped budget keys that already run for unrelated reasons and carry no principal concept of their own.",
+          "why": "PASS.md A6 records no identity field anywhere in the system and no fact names a tenant; the jail and the keys are the nearest measured analogues, not evidence that tenancy already runs, so the first adapter to exist is the one described here.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-05",
+            "F-a3-06",
+            "F-a4-07"
+          ],
+          "quote": "No identity field anywhere in the system"
+        },
+        {
+          "step": 2,
+          "action": "Proposed: build the second adapter on the database-per-tenant pattern - each principal's records resolve to a separate store instance selected before any append or read, so a missing or wrong principal fails to resolve a store at all rather than under-filtering one.",
+          "why": "Proposed: this breaks the assumption behind the today adapter that isolation is a query filter someone remembered to add. It also fails differently - provisioning a new principal needs a new store instance, not a new value in a column - which is what makes the pair a test of the boundary shape rather than of a database product.",
+          "origin": "proposed",
+          "sources": [
+            "X-xc-tenancy-001",
+            "F-b1-04"
+          ]
+        },
+        {
+          "step": 3,
+          "action": "Apply build-adapter-pair: record differs_in_execution_model from the shape above, leave measured false until the swap has actually run, and write each adapter's gaps down as gaps rather than as caveats; proposed pointer, see that skill.",
+          "why": "differs_in_execution_model and the rule that measured stays false until the swap has run belong to build-adapter-pair; naming the axes here without restating that rule keeps one owner for it.",
+          "origin": "proposed",
+          "sources": [
+            "F-b1-04"
+          ],
+          "quote": "Swappability is a tested property, not an intention."
+        },
+        {
+          "step": 4,
+          "action": "Migrate in three steps from nothing: add principal as optional and stamp it wherever an adapter can, recording how often it could not; run the corpus check in shadow over that period and reconcile what it would have refused; then make principal required, refuse a write or a read with none, and keep the shadow report as the regression baseline.",
+          "why": "There is no principal field anywhere in the system today, so making it required on day one would refuse every unit the platform currently accepts. The shadow period is where the paths that cannot yet establish a principal are found, before the refusal is live.",
+          "origin": "sourced",
+          "sources": [
+            "F-a6-05",
+            "F-part-c-11"
+          ],
+          "quote": "No identity field anywhere in the system"
+        },
+        {
+          "step": 5,
+          "action": "Wire the cross-cutting attachments at both adapters: stamp principal beside the run identifier on the same explicit attribute correlation already uses at dispatch, append one scope-assignment record per unit through the state seam, and hand the policy gate the resolved principal alongside the current actor.",
+          "why": "Correlation must ride on an explicit resource attribute set at dispatch because parentage did not survive the agent boundary (F-a7-02; agentic-stack and build-adapter-pair own that rule); a principal that rode on inference instead of that same attribute would be unattributable for the same reason, and the policy gate cannot decide a cross-principal refusal it was never handed the principal for.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-02"
+          ],
+          "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+        },
+        {
+          "step": 6,
+          "action": "Read the adapter and the principal from the stamp or the refusal that actually came back, rather than the value the configuration selected, and report both per unit.",
+          "why": "Settings written in the documented place had no runtime effect when measured on this host (F-a7-04; agentic-stack and build-evidence-record own the silently-discarded-configuration finding), and a scope believed enforced because it was configured is that failure with an audit trail attached.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "had no runtime effect"
+        },
+        {
+          "step": 7,
+          "action": "Apply build-definition-of-done: run the definition of done below over both adapters and then its deliberate breakage, and record both outputs as an evidence record the way build-evidence-record fixes, before calling this facet done; proposed pointer, see those skills.",
+          "why": "build-definition-of-done owns criterion plus deliberate breakage plus both recorded outputs, and build-evidence-record owns what the record names, so this row points at them instead of restating what every sibling -implement skill already states once.",
+          "origin": "proposed",
+          "sources": [
+            "F-part-c-04"
+          ],
+          "quote": "A criterion nothing can fail is not a criterion."
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Expect the two adapters to disagree during the shadow step and treat the difference as the finding. build-adapter-pair states why a second adapter exists (F-b1-04); the gap it exposes here is concrete: the units the shared-store adapter can filter correctly and the ones it cannot are the ones nobody was actually scoping.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-04"
+          ],
+          "quote": "Every interface ships with at least two adapters"
+        },
+        {
+          "text": "agentic-stack and build-definition-of-done state the structurally-green-gate finding (F-a7-03). What it costs here: a corpus with one principal represented can report cross_tenant_reads at zero and prove nothing; require principals_covered >= 2 per adapter, not only across the merged report.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        },
+        {
+          "text": "The research on file (X-xc-tenancy-003) places namespace and cgroup isolation at the containment layer, not the store layer. Do not re-decide cap-isolation's own namespace-versus-dedicated-pool question here: this pair is about cap-state-persistence's row, and xc-tenancy's own open question already tracks whether the isolation pair is a second load-bearing swap or the same axis proven twice.",
+          "origin": "sourced",
+          "sources": [
+            "X-xc-tenancy-003"
+          ],
+          "quote": "Namespaces provide process isolation by creating separate views of system resources"
+        },
+        {
+          "text": "Apply build-evidence-record's naming rule to every claim in this skill about how an adapter behaves: claimed until the conformance run has actually produced the exact output recorded, and rewording a sentence never upgrades the label.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-04"
+          ],
+          "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+        }
+      ],
+      "adapters": [
+        {
+          "entity": "E-adapter-jsonl-hash-chain",
+          "role": "today",
+          "maps_to": "row-level, key-scoped tenancy on shared infrastructure. As xc-tenancy already notes, the nearest measured analogues PASS.md records are the per-VM uid jail, `0700` and owned by a per-VM uid with no passwd entry, verified live (F-a3-06), and the per-group scoped model-access virtual keys carrying a hard budget cap, verified to terminate spend rather than merely record it (F-a4-07), sitting beside the single hash-chained JSONL log every run's records fold into (F-b3-17). None of the three carries a tenant or a principal concept: the jail scopes a VM, the key scopes a routing class, the log partitions by run_id. Tenancy as such is absent - no field on any of the three names a tenant, and no query filters by one - so this adapter is what a principal column is added to, not an incumbent that already enforces one.",
+          "cannot": "Cannot refuse a cross-tenant read today: nothing in the substrate carries a principal to check, so a caller who can name another run's record, another routing class's key, or another VM's jail path meets no scope check at all, only whichever isolation or budget boundary that resource already has for an unrelated reason. Once a principal column is added, it still cannot prevent isolation structurally - a dropped filter returns another principal's rows rather than failing to resolve anything.",
+          "swap_procedure": "Add principal as a required field in every appended record's canonical body and a required claim on every routing-class key stamp, so filtering by tenant becomes a check over the store's existing partition key rather than a second store. Select the adapter by configuration with no code edit between runs, replay the identical corpus through both, and require the merged report to show adapters_run == 2 with adapter read from the stamp rather than the configuration.",
+          "status": "claimed",
+          "sources": [
+            "F-a3-06",
+            "F-a4-07",
+            "F-b3-17"
+          ],
+          "quote": "JSONL + hash chain"
+        },
+        {
+          "entity": "E-swap-candidate-object-store",
+          "role": "second",
+          "maps_to": "database-per-tenant: each principal's records resolve to a separate store instance, selected by principal before any append or read, so isolation is structural rather than a filter over one shared store - the pattern the research on file names as database per tenant (X-xc-tenancy-001), realised on the same swap candidate cap-state-persistence's own B3 row already names for a different reason (F-b3-17).",
+          "cannot": "Proposed: cannot answer a cross-tenant query at all, even an authorised platform-level audit, without a second read that unions every tenant's store; and cannot share one fenced writer per run_id across tenants the way the shared store does, because the store boundary is now per tenant as well as per run, so a writer's fencing lease has to be taken per tenant-and-run pair instead of per run alone.",
+          "swap_procedure": "Proposed: the axes that differ are locus_of_the_tenant_boundary (a filtered column versus a separate store instance), failure_mode_of_a_wrong_or_missing_principal (returns the wrong rows versus resolves no store) and provisioning_cost_of_a_new_principal (a new column value versus a new store instance). Select the store by principal at the same slot identity.resolve already resolves the actor at, before dispatch; replay the identical corpus through both adapters and assert the merged report shows adapters_run == 2, with cross_tenant_reads forced to zero structurally on this adapter and only by the added filter on the first.",
+          "status": "claimed",
+          "sources": [
+            "F-b3-17",
+            "X-xc-tenancy-001",
+            "F-b1-04"
+          ],
+          "quote": "Database per Tenant"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash harness/xc-tenancy/test.sh && python3 harness/xc-tenancy/conformance.py --adapter dryrun --adapter second",
+        "expected": "Measured by tools/measure.py at 844f32b: exit 0; last lines:   adapter=database-per-tenant cases=9 passed=9 units_checked=11 principals_covered=2 no_principal_admitted=0 cross_tenant_reads=0 cross_tenant_recalls=0 cross_tenant_spend=0 | conformance PASSED: 18/18 cases, 2 binding(s), adapters_run=2",
+        "breakage": "In harness/xc-tenancy/adapters/dryrun.py, drop the principal filter on reads so every record is returned regardless of principal, run the criterion (the cross-tenant read is served instead of refused, conformance fails on the first adapter while the second stays 9 of 9, and the gate exits 1), then git checkout harness/xc-tenancy/adapters/dryrun.py.",
+        "expected_failure": "Measured by tools/measure.py at 844f32b: exit 1; last lines:   ok   singling out one adapter: the other is still 9/9 | passed 22, failed 7",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04",
+          "F-a6-05"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "844f32b",
+          "clean_exit": 0,
+          "clean_output": ", units_checked unchanged at 11\n  ok   a caller cannot decline the gate with an advisory field: a request carrying a bypass field is 422, refused before resolve_scope even ran\n  ok   a spend naming a different target principal is refused, not silently charged there: urn:agentic:problem:cross-tenant-denied for a spend by tenant-northwind naming target tenant-acme\n  adapter=database-per-tenant cases=9 passed=9 units_checked=11 principals_covered=2 no_principal_admitted=0 cross_tenant_reads=0 cross_tenant_recalls=0 cross_tenant_spend=0\nconformance PASSED: 18/18 cases, 2 binding(s), adapters_run=2",
+          "breakage_exit": 1,
+          "breakage_output": "r (1)\n  ok   6/9 cases pass; the 3 cross-tenant cases fail\n  FAIL every leak counter inverted from zero (expected 0, got 1)\n  ok   Traceback (most recent call last):\n  File \"<stdin>\", line 4, in <module>\nAssertionError: {'adapter': 'shared-keyspace-principal-column', 'adapters_run': 1, 'cross_tenant_reads': 0, 'cross_tenant_recalls': 5, 'cross_tenant_spend': 0, 'no_principal_admitted': 0, 'principals_covered': 2, 'selected_by': 'configuration', 'units_checked': 11}\n  ok   the untouched second adapter still exits 0 (0)\n  ok   singling out one adapter: the other is still 9/9\n\npassed 22, failed 7",
+          "restored": true
+        },
+        "expected_design": "What the run proves: docs/decomposition.md has no row for tenancy; this is xc-tenancy's manifest row, made precise and extended with the swap. Proposed tool, built with the first adapter: `python3 tools/conformance/tenancy_adapters.py --adapter today --corpus out/units.jsonl --principals tenant-northwind,tenant-acme --min-units 100 --report out/tenancy-a.json`, then the same command with `--adapter second --report out/tenancy-b.json`, the adapter chosen by configuration with no code edit between runs. Both reports validate against the ScopeAssignmentRecord shape above and assert, per adapter, `units_checked >= 100`, `principals_covered >= 2`, `no_principal_admitted == 0`, `cross_tenant_reads == 0`, `cross_tenant_recalls == 0` and `cross_tenant_spend == 0`. Across adapters it asserts `adapters_run >= 2` and that `adapter` in every finding was read from the stamp rather than from the configuration. | both runs exit 0 and one line per adapter of the form `adapter=<entity> units_checked=100 principals_covered=2 no_principal_admitted=0 cross_tenant_reads=0 cross_tenant_recalls=0 cross_tenant_spend=0`, followed by `adapters_run=2`.",
+        "expected_failure_design": "the today adapter's run exits 1 with `cross_tenant_reads` naming at least one crossed record, while the second adapter's run still exits 0 with `cross_tenant_reads == 0` - because its isolation is structural, a filter was never in its path to drop - and `adapters_run` stays 2 with `units_checked` at or above 100 on both. Singling out one adapter is the point: a suite that fails both, or neither, has not tested the swap. Claimed: PASS.md records no principal field, neither adapter is written, the tool does not exist, and this run has not been performed here, so the check starts red by construction."
+      },
+      "composes_with": {
+        "builds_on": [
+          "xc-tenancy",
+          "build-adapter-pair",
+          "build-definition-of-done",
+          "build-evidence-record"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "This guarantee has no adapter or swap-candidate entity of its own, on top of the absence xc-tenancy already records for tenancy generally: both entities used above belong to cap-state-persistence's B3 row (F-b3-17, JSONL + hash chain today). Should the tenancy pair get its own entities instead of sharing that row's?",
+          "evidence": "1-3-1 applied (TARGET T5), the same way xc-identity-delegation-implement records its own entity gap. Options: (a) mint E-adapter-shared-keyspace-tenancy and E-swap-candidate-store-per-tenant, which needs a knowledge-base rebuild and would invalidate the provenance heads of every skill already written; (b) record the pair against cap-state-persistence's existing entities and state in each row which question that table answers, which is what this skill does; (c) leave the pair unentitied until a later wave, which would leave this guarantee with no tested swap at all. Recommendation followed: (b). The question closes when a ceremony rebuilds the knowledge base and the two entities exist.",
+          "default": "Keep the pair on cap-state-persistence's existing entities, with the difference from that capability's own adapter table stated in both rows above so a reader is not sent to the wrong question.",
+          "sources": [
+            "F-b3-17",
+            "T-t5-02"
+          ],
+          "quote": "JSONL + hash chain"
+        },
+        {
+          "question": "xc-tenancy's own open question asks whether cap-isolation's namespace-versus-dedicated-pool pair and this skill's store-per-tenant pair are the same axis proven twice or two genuinely different swaps. Does the isolation pair belong in this skill too, or stay entirely in a future cap-isolation-implement?",
+          "evidence": "Run both pairs' conformance reports once they exist and compare the refusals each catches that the other does not, exactly as xc-tenancy's open question proposes at the guarantee level.",
+          "default": "Leave the isolation pair to cap-isolation-implement. This skill's adapters answer only cap-state-persistence's row; naming a second pair here before cap-isolation-implement exists would answer a question that skill has not been written to ask yet.",
+          "sources": [
+            "F-b3-02",
+            "T-t5-02"
+          ],
+          "quote": "OCI Runtime Spec"
+        },
+        {
+          "question": "The refusal both adapters raise for a cross-principal read, recall or spend is urn:agentic:problem:cross-tenant-denied, which has no row in the closed registry in docs/decomposition.md section 2.1.6 and is therefore pending registration: should the registry gain that row, or should a cross-principal refusal be carried as the registered policy-denied (403, a deterministic pre-execution refusal carrying rule_id)?",
+          "evidence": "Proposed, and 1-3-1 applied (TARGET T5): the closed registry in docs/decomposition.md section 2.1.6 is extended only by adding a row and states that an unregistered type is a conformance failure, so the harness output recorded in the definition of done above states a type that registry does not yet carry. Options: (a) add a cross-tenant-denied row to section 2.1.6, which is the smallest edit and keeps the refusal readable as its own class; (b) carry it as policy-denied with a rule_id naming the principal boundary, which needs no registry edit but merges a tenancy refusal into the policy class; (c) leave it unregistered, which is the conformance failure the registry exists to prevent. Recommendation: (a), taken by the ceremony that owns docs/decomposition.md, since this skill's scope is the build and not the registry.",
+          "default": "Until the row exists, read cross-tenant-denied as pending registration wherever this skill states it, and treat the registered policy-denied as the fallback type an adapter emits if it must answer today.",
+          "sources": [
+            "F-b4-07",
+            "T-t5-02"
+          ]
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session xc-tenancy-implement 2831cb4f, 2026-09-03"
+      }
+    }
+  }
+}

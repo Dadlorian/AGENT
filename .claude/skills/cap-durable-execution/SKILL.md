@@ -204,18 +204,28 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | bash harness/workflow/test.sh |
-| Expected | Proposed tool, built with the first implementation of this interface: `python3 tools/conformance_durable_execution.py --adapter today --adapter second --steps 20 --side-effecting-step 11 --kill-at 11 --report out/durable-execution-conformance.json`. Per adapter it runs a 20-step workflow with a side-effecting step, sends `kill -9` to the executor at step 11, restarts it, and asserts that each side-effecting step has exactly one committed effect keyed by its step idempotency key and that `steps_replayed > 0` so the crash actually happened. Across adapters it asserts `adapters_run >= 2`. exit 0 and one line per adapter of the form `adapter=<entity> steps_committed=20 steps_replayed=<greater than 0> effects_for_step_11=1 duplicate_effects=0`, followed by `adapters_run=2`. Until that proposed tool exists, `bash harness/workflow/test.sh` (owned by cap-durable-execution-implement) is the running gate: every check line reads ok and the script exits 0. |
-| Deliberate breakage | Drop the idempotency key from the step record - write the checkpoint with the step id alone - change nothing else, and re-run the same command. |
-| Expected failure | The restart cannot tell the retried step 11 from a new one, the effect count for step 11 becomes 2, `duplicate_effects` becomes non-zero, and the run exits non-zero naming the adapter and the step; `steps_replayed` stays greater than 0, which is what shows the failure is duplication and not a crash that never happened. |
-| Status | claimed |
-| Evidence | `F-part-c-04`, `F-b4-08` "Every externally-triggered action is safe to replay" |
+| Criterion | bash harness/workflow/test.sh && python3 harness/workflow/conformance.py --adapter dryrun --adapter second |
+| Expected | Measured by tools/measure.py at 16d354c: exit 0; last lines: adapter=second executor_marker=queue-state-machine/0.1 steps_committed=8 steps_replayed=6 effects_for_publish=1 duplicate_effects=0 declared_gap_honoured=true checks=28/28 \| adapters_run=2 distinct_markers=2 |
+| Deliberate breakage | In harness/workflow/flow.py, make Attempt.key() always return None instead of the step's idempotency key (the harness's own --break-idempotency behaviour, made the default so the criterion needs no extra flag) and change nothing else; restore with git checkout -- harness/workflow/flow.py. |
+| Expected failure | Measured by tools/measure.py at 16d354c: exit 1; last lines:   FAIL the same suite passes again once the key is restored (expected 0, got 1) \| passed 13, failed 10 |
+| Status | measured |
+| Evidence | `F-part-c-04`, `F-b4-08` "A criterion nothing can fail is not a criterion" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-durable-execution-implement` | Turn the contract in cap-durable-execution into something that runs here: two executors behind one step interface, workflows that checkpoint nothing today brought in front of it one at a time, and every ceiling attached around the step and around the restart rather than inside the executor. | `references/cap-durable-execution-implement.md` |
+| `xc-compensation` | Fix compensation as a placement rather than as error-handling: an effect's irreversibility class and its compensating action are recorded before the effect is committed, the platform applies this at the dispatch and step boundaries whichever way in the work arrived, and a failed or cancelled run is unwound from that record instead of from whatever the failing step happened to remember. | `references/xc-compensation.md` |
+| `xc-compensation-implement` | Turn the placement xc-compensation fixes into something that can run here: two compensation registers behind one declaration point, both reading the same class vocabulary, migrated in without a window in which an effect is committed with no record behind it. | `references/xc-compensation-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-adapter-pair`, `build-definition-of-done`, `build-skill-authoring`, `cap-errors`
+Builds on: `agentic-stack`, `build-ceremony`, `build-evidence`, `build-skill-authoring`, `cap-errors`, `cap-idempotency`, `core-components`, `seam-dispatch`, `xc-guarantees`
 
-Used by: `cap-durable-execution-implement`, `compose-operators`, `seam-dispatch`, `xc-compensation`
+Used by: `compose-workflow`, `seam-dispatch`
 
 ## Open questions
 

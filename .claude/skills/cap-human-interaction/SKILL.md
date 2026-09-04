@@ -268,18 +268,28 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 | Field | Value |
 |---|---|
-| Criterion | bash harness/human-interaction/test.sh |
-| Expected | The manifest row for this capability, made precise and run over the adapter pair above: `python3 tools/conformance/human_resume.py --surface parked-approval-unit --surface event-stream-client --case approve --case edit --case reject-with-notes --case partial --report out/hitl.json` (proposed tool, built with the first surface adapter), the surface selected by configuration with no code edit between runs. It parks one run in waiting-for-human, delivers one decision per case, and asserts `resumed_on_same_correlation == 4` (the run's correlation id before the ask equals the one it carries after the resume, for all four cases), `edit_changed_artifact == true` (the artifact the run continues with after the edit case equals the reviewer's body and not the proposed one), `duplicate_resumes == 0` when each decision is delivered ten times, and `adapters_run >= 2`. exit 0 with `resumed_on_same_correlation: 4`, `edit_changed_artifact: true`, `duplicate_resumes: 0` and `adapters_run: 2` Until that proposed tool exists, `bash harness/human-interaction/test.sh` (owned by cap-human-interaction-implement) is the running gate: every check line reads ok and the script exits 0. |
-| Deliberate breakage | In the resume path, record the reviewer's decision on the parked item and hand the next step the originally proposed artifact rather than the reviewer's body, changing nothing else, and re-run the same command. |
-| Expected failure | exit 1 with `edit_changed_artifact: false` while `resumed_on_same_correlation` is still 4 and `duplicate_resumes` still 0 - which is the useful part: the failure is that the edit was recorded and not applied, not that the run failed to resume, and an approve-and-reject-only implementation passes every other assertion. Claimed: the tool, the fixture and both surface adapters do not exist here and neither run has been performed, so this check starts red by construction. |
-| Status | claimed |
-| Evidence | `T-t1-01`, `F-b1-04` "A human must be able to enter the system." |
+| Criterion | bash harness/human-interaction/test.sh && python3 harness/human-interaction/conformance.py --surface dryrun --surface second |
+| Expected | Measured by tools/measure.py at bf17237: exit 0; last lines: # one store, one ask: parked by parked-item-request-response/0.1, decided by event-stream-client/0.1, same correlation True \| adapters_run=2 failures=0 |
+| Deliberate breakage | In harness/human-interaction/store.py, stop refusing a decision whose correlation_id is not the parked ask's (make that comparison never true), run the criterion (a decision on a foreign handle is accepted and the gate exits 1), then git checkout harness/human-interaction/store.py. |
+| Expected failure | Measured by tools/measure.py at bf17237: exit 1; last lines:   FAIL the same suite passes again once the store is the resume point (expected 0, got 1) \| passed 33, failed 6 |
+| Status | measured |
+| Evidence | `F-b1-04`, `F-b4-08` "Every externally-triggered action is safe to replay" |
+
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `cap-human-interaction-implement` | cap-human-interaction states the contract (T-t1-01); this facet is how it gets built here: what to write first, how the unit that already parks workflows becomes an adapter rather than the design, how a streaming surface is added beside it without touching the run, and what has to be stamped on a pause and on a resume so no surface can decline it. | `references/cap-human-interaction-implement.md` |
+| `compose-approval` | Fix the recipe for a gate: a workflow runs up to an irreversible action and stops on a durable record, a person is given something they can actually decide from, and the run continues exactly once on the identifier it already had - so that pausing for a human is a composition of capabilities this platform already owns rather than a feature of whichever screen is in front of the decider. | `references/compose-approval.md` |
+| `compose-approval-implement` | Turn the gate compose-approval fixes into something that runs here: two decision wires behind one resume seam, a durable gate record that outlives every process, and a migration that never leaves a window in which one decision can be applied twice. | `references/compose-approval-implement.md` |
 
 ## Composes with
 
-Builds on: `agentic-stack`, `build-adapter-pair`, `build-ceremony`, `build-definition-of-done`, `build-research-record`, `build-skill-authoring`, `cap-document-validation`, `cap-errors`, `cap-identity`, `cap-work-intake`
+Builds on: `agentic-stack`, `build-ceremony`, `build-evidence`, `build-skill-authoring`, `cap-document-validation`, `cap-errors`, `cap-idempotency`, `cap-identity`, `cap-scheduling`, `cap-work-intake`
 
-Used by: `build-entry-conformance`, `cap-human-interaction-implement`
+Used by: `build-evidence`
 
 ## Open questions
 

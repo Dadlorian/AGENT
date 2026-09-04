@@ -73,11 +73,21 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Status | measured |
 | Evidence | `F-part-c-04` "A criterion nothing can fail is not a criterion" |
 
+## Folded skills
+
+Each was a skill of its own before STATUS row 71; its full content, with every citation, is rendered under `references/`.
+
+| Was | Purpose | Read |
+|---|---|---|
+| `build-status-table` | Give the owner one table that states where the work is, in the simplest form, so a decision can be made without reading prose. | `references/build-status-table.md` |
+| `build-research-record` | Keep one record per search, source and quote - collecting and storing the information about each source at the moment it is read - so a claim a skill makes can be traced back to text that was actually read, and so a search that found nothing is written down rather than lost. PASS.md states the write-down-what-you-searched rule for the first-cut Dispatch and State design; applying it to every lens in this repository is our own convention, recorded in the invariants below. | `references/build-research-record.md` |
+| `build-simplicity-budget` | Proposed as the eighth design rule alongside the seven in agentic-stack: every element carries three counted ceilings, so the target requirement that it cannot be daunting or overly complex is checked rather than asserted. | `references/build-simplicity-budget.md` |
+
 ## Composes with
 
-Builds on: `agentic-stack`
+Builds on: `agentic-stack`, `build-ceremony`, `build-evidence`
 
-Used by: `build-entry-conformance`, `build-interface-versioning`, `build-simplicity-budget`, `cap-agent-runtime`, `cap-capability-packaging`, `cap-capability-registry`, `cap-document-validation`, `cap-durable-execution`, `cap-errors`, `cap-evaluation`, `cap-human-interaction`, `cap-idempotency`, `cap-identity`, `cap-isolation`, `cap-mandate-broker`, `cap-memory`, `cap-model-access`, `cap-policy`, `cap-provenance`, `cap-scheduling`, `cap-state-persistence`, `cap-telemetry`, `cap-tool-access`, `cap-work-intake`, `compose-agent`, `compose-approval`, `compose-improvement-loop`, `compose-loop`, `compose-operators`, `core-document`, `core-graph`, `core-judge`, `core-ledger`, `core-planner`, `seam-dispatch`, `seam-state`, `xc-audit-trail`, `xc-budget`, `xc-compensation`, `xc-correlation`, `xc-enforcement-chain`, `xc-idempotency-lease`, `xc-identity-delegation`, `xc-policy-gate`, `xc-provenance-chain`, `xc-tenancy`, `xc-typed-errors`
+Used by: `build-ceremony`, `build-evidence`, `cap-agent-runtime`, `cap-capability-packaging`, `cap-document-validation`, `cap-durable-execution`, `cap-errors`, `cap-evaluation`, `cap-human-interaction`, `cap-idempotency`, `cap-identity`, `cap-isolation`, `cap-model-access`, `cap-policy`, `cap-provenance`, `cap-scheduling`, `cap-state-persistence`, `cap-telemetry`, `cap-tool-access`, `cap-work-intake`, `compose-improvement-loop`, `compose-workflow`, `core-components`, `seam-dispatch`, `seam-state`, `xc-guarantees`
 
 ## Open questions
 

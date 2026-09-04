@@ -1,0 +1,2443 @@
+{
+  "name": "build-evidence",
+  "layer": "build",
+  "wave": 1,
+  "description": "The discipline that gives every piece a machine-checkable criterion, a deliberate breakage that makes that criterion fail, and the recorded output of both runs. Load it when you are writing or reviewing a Definition of done section, deciding what a green check actually proved, wiring a gate or CI stage that reports pass or fail, choosing the breakage that shows the check can fail, or judging whether a passing run checked anything at all. Also load it when a pipeline reports success with every behavioural stage skipped, when an assertion rests on an exit code alone, or when configuration was written in the documented place and you need evidence that it took effect rather than the file that declared it.",
+  "purpose": {
+    "text": "Give every piece a criterion a machine can check, a breakage that makes that criterion fail, and the recorded output of both runs, so a green result is evidence rather than a habit.",
+    "origin": "sourced",
+    "sources": [
+      "F-part-c-04",
+      "F-a7-03"
+    ],
+    "quote": "A criterion nothing can fail is not a criterion."
+  },
+  "entities": [
+    "E-ask-item-c-3",
+    "E-finding-a7-2",
+    "E-finding-a7-3",
+    "E-standard-in-toto",
+    "E-standard-dsse"
+  ],
+  "contract": {
+    "standards": [
+      {
+        "entity": "E-standard-json-schema-2020-12",
+        "version": "2020-12",
+        "version_status": "unverified",
+        "url": null,
+        "sources": [
+          "F-b3-09"
+        ]
+      },
+      {
+        "entity": "E-standard-in-toto",
+        "version": "Statement v1 (unverified)",
+        "version_status": "unverified",
+        "url": null,
+        "sources": [
+          "F-b3-12",
+          "X-cross-structure-050",
+          "X-build-definition-of-done-004"
+        ]
+      },
+      {
+        "entity": "E-standard-dsse",
+        "version": "unverified",
+        "version_status": "unverified",
+        "url": null,
+        "sources": [
+          "F-b3-12",
+          "X-cross-structure-050"
+        ]
+      }
+    ],
+    "operations": [
+      {
+        "name": "attest_effective_configuration",
+        "input": "an adapter at start-up",
+        "output": "an in-toto Statement inside a DSSE envelope whose predicate is the configuration the adapter actually resolved (proposed operation)",
+        "origin": "proposed"
+      },
+      {
+        "name": "compare_configuration",
+        "input": "the declared configuration and the attested effective configuration",
+        "output": "mismatched_keys; a non-empty list is a failed definition of done for that adapter (proposed operation)",
+        "origin": "proposed"
+      }
+    ],
+    "shapes": [
+      {
+        "name": "definition-of-done (proposed summary shape; the full schema, with the measured_at requirement and the breakage scope rule, is in references/definition-of-done-shapes.md)",
+        "origin": "proposed",
+        "sources": [
+          "F-part-c-04"
+        ],
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:build:definition-of-done:0.1",
+          "title": "definition-of-done",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "piece",
+            "criterion",
+            "expected",
+            "breakage",
+            "expected_failure",
+            "status"
+          ],
+          "properties": {
+            "piece": {
+              "type": "string",
+              "minLength": 1
+            },
+            "criterion": {
+              "type": "object",
+              "required": [
+                "command",
+                "asserts_nonzero_count_of"
+              ],
+              "properties": {
+                "command": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "asserts_nonzero_count_of": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "criterion_ref": {
+                  "type": "string"
+                }
+              }
+            },
+            "expected": {
+              "type": "string",
+              "minLength": 1
+            },
+            "breakage": {
+              "type": "object",
+              "required": [
+                "edit",
+                "reversible"
+              ],
+              "properties": {
+                "edit": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "reversible": {
+                  "const": true
+                },
+                "scope": {
+                  "enum": [
+                    "subject",
+                    "harness"
+                  ]
+                }
+              }
+            },
+            "expected_failure": {
+              "type": "string",
+              "minLength": 1
+            },
+            "status": {
+              "enum": [
+                "claimed",
+                "measured"
+              ]
+            },
+            "measured_at": {
+              "type": "object",
+              "required": [
+                "session",
+                "date",
+                "tree_dirty"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "name": "gate-outcome (proposed summary shape; the full schema and the ordered decision rule are in references/definition-of-done-shapes.md)",
+        "origin": "proposed",
+        "sources": [
+          "F-a7-03"
+        ],
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "urn:agentic:build:gate-outcome:0.1",
+          "title": "gate-outcome",
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "piece",
+            "verdict",
+            "stages",
+            "counts"
+          ],
+          "properties": {
+            "piece": {
+              "type": "string",
+              "minLength": 1
+            },
+            "verdict": {
+              "enum": [
+                "pass",
+                "fail",
+                "inconclusive"
+              ]
+            },
+            "stages": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "kind",
+                  "applicable",
+                  "ran",
+                  "checked"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "kind": {
+                    "enum": [
+                      "structural",
+                      "behavioural"
+                    ]
+                  },
+                  "applicable": {
+                    "type": "boolean"
+                  },
+                  "ran": {
+                    "type": "boolean"
+                  },
+                  "checked": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "skip_reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "counts": {
+              "type": "object",
+              "required": [
+                "applicable_behavioural",
+                "ran_behavioural",
+                "checked_total"
+              ],
+              "properties": {
+                "applicable_behavioural": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "ran_behavioural": {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                "checked_total": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            },
+            "exit_code": {
+              "type": "integer"
+            }
+          }
+        }
+      }
+    ],
+    "invariants": [
+      {
+        "text": "Every piece carries a criterion a machine can check and the deliberate breakage that proves the check can fail. A criterion with no stated breakage is not finished.",
+        "origin": "sourced",
+        "sources": [
+          "F-part-c-04",
+          "E-ask-item-c-3"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion."
+      },
+      {
+        "text": "A criterion asserts on a non-zero count of things actually checked. An exit code alone is not an assertion: a nine-stage pipeline ran green because the generated work contained nothing those tools applied to.",
+        "origin": "sourced",
+        "sources": [
+          "F-a7-03"
+        ],
+        "quote": "because the generated work contained nothing those tools apply to"
+      },
+      {
+        "text": "A gate reports which stages were applicable, and a run with zero applicable behavioural stages is inconclusive rather than green (proposed: this is our remedy for the measured failure in F-a7-03, expressed in the gate-outcome shape's counts.applicable_behavioural field). Research query: unresearched; no prior-art search has been run for a three-valued gate-outcome verdict beyond the general green-gate finding F-a7-03 this remedies.",
+        "origin": "proposed",
+        "sources": [
+          "F-a7-03"
+        ],
+        "quote": "with every behavioural stage skipped"
+      },
+      {
+        "text": "agentic-stack states the well-formedness finding (F-a7-03): the structural stages of a pipeline settle well-formedness only, not correctness.",
+        "origin": "sourced",
+        "sources": [
+          "F-a7-03"
+        ],
+        "quote": "Those establish well-formedness, not correctness."
+      },
+      {
+        "text": "The declared configuration is not evidence that the configuration took effect; configuration written in the documented place has been observed to validate, review correctly and change nothing at runtime.",
+        "origin": "sourced",
+        "sources": [
+          "F-a7-04",
+          "E-finding-a7-3"
+        ],
+        "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect."
+      },
+      {
+        "text": "each adapter emits at start-up the configuration it actually resolved, as an attested record whose predicate a validator compares against the declared configuration; a non-empty mismatched_keys fails that adapter's definition of done whatever the gate's exit code said.",
+        "origin": "sourced",
+        "sources": [
+          "X-build-definition-of-done-005"
+        ],
+        "quote": "The values supplied in the attestation evidence are compared against reference values."
+      },
+      {
+        "text": "Proposed: the breakage edits the subject and nothing else, and is reversible. A breakage that also disables the harness makes every criterion fail and so proves nothing about this one. Research query: unresearched; no external source on breakage-isolation-as-a-DoD-property has been searched.",
+        "origin": "proposed",
+        "sources": [
+          "F-part-c-04"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion."
+      },
+      {
+        "text": "One definition of done governs a piece whichever entry point reached it, because every cross-cutting concern is managed across the whole structure rather than per entry point.",
+        "origin": "sourced",
+        "sources": [
+          "T-t2-03",
+          "F-b4-01"
+        ],
+        "quote": "managed across the entire structure, whichever entry point was used"
+      }
+    ],
+    "not_exposed": [
+      {
+        "text": "The criterion body does not travel with the work under test. Per the rule agentic-stack states as design rule 6 (F-b1-07), the record carries criterion_ref, an opaque handle the runner resolves; a criterion the graded thing can read is a target.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-07"
+        ],
+        "quote": "An agent sees its outcome, never the criterion it is judged against"
+      },
+      {
+        "text": "Proposed: the gate's exit code is not part of the contract and no consumer may read it as the verdict. The verdict is the three-valued gate-outcome.verdict field plus its counts; exit_code is kept for debugging only. Research query: unresearched; this is our own exit-code-vs-verdict convention.",
+        "origin": "proposed",
+        "sources": [
+          "F-a7-03"
+        ],
+        "quote": "Those establish well-formedness, not correctness."
+      }
+    ]
+  },
+  "instructions": [
+    {
+      "step": 1,
+      "action": "Start from the row for your piece in the definition-of-done table and rewrite its criterion as one command with named counters, then fill a definition-of-done record: piece, criterion.command, criterion.asserts_nonzero_count_of, expected, breakage.edit, expected_failure, status.",
+      "why": "The record, not the prose, is what a later reader and a later checker both read. A criterion nothing can fail is not a criterion, so the breakage is written at the same time as the criterion, never after.",
+      "origin": "sourced",
+      "sources": [
+        "F-part-c-04",
+        "E-ask-item-c-3"
+      ],
+      "quote": "A criterion nothing can fail is not a criterion."
+    },
+    {
+      "step": 2,
+      "action": "Make every assertion count things actually checked - cases run, fixtures rejected, adapters exercised, records verified - and require each named counter to be greater than zero. Never assert on an exit code alone.",
+      "why": "A nine-stage pipeline ran with every behavioural stage skipped and reported green, because the generated work contained nothing those tools apply to. Counting is what separates a check that ran from a check that was present.",
+      "origin": "sourced",
+      "sources": [
+        "F-a7-03",
+        "E-finding-a7-2"
+      ],
+      "quote": "because the generated work contained nothing those tools apply to"
+    },
+    {
+      "step": 3,
+      "action": "Have the gate emit a gate-outcome: one entry per stage with kind structural or behavioural, applicable, ran and checked, plus counts. Resolve the verdict in order - any failed stage is fail; zero applicable behavioural stages is inconclusive; zero checked_total is inconclusive; otherwise pass. Research query: unresearched; no prior-art search has been run for a three-valued (pass/fail/inconclusive) gate verdict resolution order specifically, beyond the general green-gate finding F-a7-03 this remedies.",
+      "why": "Proposed: agentic-stack already carries the well-formedness finding (F-a7-03), so this step adds only what is new here - reporting applicability is what makes the structurally-green failure visible instead of silent, so a run carried by structural stages alone resolves to inconclusive rather than pass.",
+      "origin": "proposed",
+      "sources": [
+        "F-a7-03"
+      ],
+      "quote": "Those establish well-formedness, not correctness."
+    },
+    {
+      "step": 4,
+      "action": "Write the breakage as a single reversible edit inside the subject, apply it, run the criterion, and record the exact failing output including which counter moved. Then restore and run the criterion again.",
+      "why": "An executable check is the only verification that a criterion has been met, and a pass is only meaningful once the same command has been seen to produce a fail. Restoring and re-running proves the breakage, not the harness, caused it.",
+      "origin": "sourced",
+      "sources": [
+        "X-build-definition-of-done-002",
+        "F-part-c-04"
+      ],
+      "quote": "They are executable and can be run manually by a QA engineer or automated using a test framework, producing a result of pass or fail."
+    },
+    {
+      "step": 5,
+      "action": "Label the record measured only after both runs happened, naming the session, the date and whether the tree was dirty; otherwise leave it claimed. Do not reword a claim into a measurement.",
+      "why": "agentic-stack fixes claimed versus measured for the whole repo (F-part-c-08); this skill only adds where the line falls for a gate - a definition of done is claimed until the criterion and its breakage have both been run.",
+      "origin": "sourced",
+      "sources": [
+        "F-part-c-08"
+      ],
+      "quote": "Distinguish **claimed** from **measured** throughout"
+    },
+    {
+      "step": 6,
+      "action": "Have each adapter emit, at start-up, the configuration it actually resolved after every overlay - not the file it was handed - as an in-toto Statement inside a DSSE envelope, and run a validator that compares it against the declared configuration.",
+      "why": "Proposed fold-in of the effective-configuration gap: configuration written in the documented place validated, reviewed correctly and had no runtime effect, so only the resolved value is evidence. Attested values compared against reference values is the established shape for this check.",
+      "origin": "sourced",
+      "sources": [
+        "X-build-definition-of-done-004"
+      ],
+      "quote": "the DSSE Envelope (the transport layer), the in-toto Statement (the attestation header), and the predicate (the attestation payload)"
+    },
+    {
+      "step": 7,
+      "action": "Make the record structural rather than advisory: inject a definition-of-done record at admission, then validate it, so a piece that lacks one cannot be admitted at all. Research query: unresearched beyond the admission-webhook ordering finding (X-cross-structure-023); no prior-art search has been run for injecting a definition-of-done record as a structural admission mutation specifically.",
+      "why": "Proposed: the mutate-then-validate ordering, where the mutating step is called first and can alter the resource before validation, is what turns an obligation into something a caller cannot skip. The platform applies each guarantee; a caller cannot decline them.",
+      "origin": "proposed",
+      "sources": [
+        "X-cross-structure-023",
+        "F-b4-01"
+      ],
+      "quote": "Mutating webhooks are called first and can alter resource definitions"
+    },
+    {
+      "step": 8,
+      "action": "Re-run the criterion on a schedule and on every change, and keep the outcomes; do not treat a single green run at build time as a standing property.",
+      "why": "Proposed: a tamper-evident record only delivers its guarantee if something independently monitors it, and the same holds for a gate - the applicable stages change as the work changes, so yesterday's pass says nothing about today's tree.",
+      "origin": "sourced",
+      "sources": [
+        "X-build-definition-of-done-006"
+      ],
+      "quote": "maintaining a representation of recent test history for each combination of a test and build flags, including both presubmit results for pending changes and postsubmit results"
+    },
+    {
+      "step": 9,
+      "action": "Apply one record per piece regardless of which entry point produced the work, and state the criterion once rather than per entry path.",
+      "why": "State, telemetry and every cross-cutting concern are managed across the entire structure whichever entry point was used, and a gate that differs by entry point is an opt-out in disguise.",
+      "origin": "sourced",
+      "sources": [
+        "T-t2-03",
+        "F-b4-01"
+      ],
+      "quote": "managed across the entire structure, whichever entry point was used"
+    },
+    {
+      "step": 10,
+      "action": "If you cannot find a breakage that fails only this criterion, do not ship the criterion and do not stall: define the problem in one line, list the three best breakages, take the recommended one, and record the choice as an open question with the evidence that would settle it.",
+      "why": "1-3-1 keeps a blocked gate from becoming an unstated gate. The alternative in practice is a criterion shipped with no breakage, which is the exact defect this discipline exists to prevent.",
+      "origin": "sourced",
+      "sources": [
+        "T-t5-02",
+        "F-part-c-04"
+      ],
+      "quote": "define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation"
+    }
+  ],
+  "best_practices": [
+    {
+      "text": "Keep the two apart: acceptance criteria are specific to one item, while the definition of done applies universally to all. Repo-wide gates belong in the second; per-piece assertions belong in the first.",
+      "origin": "sourced",
+      "sources": [
+        "X-build-definition-of-done-001"
+      ],
+      "quote": "the definition of done applies universally to all"
+    },
+    {
+      "text": "State each criterion as a boolean invariant a pipeline can validate, so the assertion is configuration a gate reads rather than judgement a reviewer applies.",
+      "origin": "sourced",
+      "sources": [
+        "X-build-definition-of-done-003"
+      ],
+      "quote": "Assertions and assumptions define the boundaries of acceptable behavior, allowing developers to configure CI/CD pipelines to validate changes simply and securely."
+    },
+    {
+      "text": "Keep the history of criterion runs across build variants; without it a red result cannot be attributed to the change rather than to the harness.",
+      "origin": "sourced",
+      "sources": [
+        "X-build-definition-of-done-006"
+      ],
+      "quote": "maintaining a representation of recent test history for each combination of a test and build flags"
+    },
+    {
+      "text": "Let the evidence corroborate: a property proven at the design level and checked again at the implementation level is worth more than either alone, because evidence from one process supports evidence from the others.",
+      "origin": "sourced",
+      "sources": [
+        "X-build-definition-of-done-008"
+      ],
+      "quote": "Evidence generated by one V&V process supports evidence generated by the others"
+    },
+    {
+      "text": "Prefer an attestation format a tool you did not write can verify; the framework generates verifiable claims about how a piece of software was produced, which is what makes an outside check possible at all.",
+      "origin": "sourced",
+      "sources": [
+        "X-build-definition-of-done-004",
+        "X-cross-structure-050"
+      ],
+      "quote": "The in-toto Attestation Framework provides a specification for generating verifiable claims about any aspect of how a piece of software is produced."
+    },
+    {
+      "text": "Proposed: name in the record which counter the breakage is expected to move. A breakage described only as 'the test fails' cannot be distinguished from a broken harness when someone re-runs it a year later. Research query: unresearched; our own record-keeping convention.",
+      "origin": "proposed",
+      "sources": [
+        "F-part-c-04"
+      ],
+      "quote": "A criterion nothing can fail is not a criterion."
+    },
+    {
+      "text": "keep the three attestation layers distinct when recording configuration evidence - the envelope, the statement header, and the predicate that carries the payload - so a validator can check the signature without understanding our fields.",
+      "origin": "sourced",
+      "sources": [
+        "X-build-definition-of-done-004"
+      ],
+      "quote": "the DSSE Envelope (the transport layer), the in-toto Statement (the attestation header), and the predicate (the attestation payload)"
+    },
+    {
+      "text": "Proposed: when a piece has an ideal facet and an -implement facet, give each a breakage that fails for a different reason - the ideal facet's contract violation, the implement facet's wiring, migration stage, binding or gate - so the pair demonstrates two failure modes rather than the same one twice. A breakage copied word for word from the paired facet re-proves the check the other facet already proved and leaves the build itself unexercised. Research query: unresearched beyond this repo's own ceremony 10 finding C10-001 (not a citable kb id).",
+      "origin": "proposed",
+      "sources": [
+        "F-part-c-04"
+      ],
+      "quote": "A criterion nothing can fail is not a criterion."
+    }
+  ],
+  "definition_of_done": {
+    "criterion": "python3 -c \"import json,pathlib,sys; root=pathlib.Path(sys.argv[1]); dirs=sorted(p for p in root.iterdir() if p.is_dir()); req=('criterion','expected','breakage','expected_failure','status'); dod=lambda p: (json.loads((p/'skill.json').read_text()).get('definition_of_done') or {}) if (p/'skill.json').is_file() else {}; missing=[p.name for p in dirs if not all(str(dod(p).get(k) or '').strip() for k in req)]; print('skills_total',len(dirs),'skills_checked',len(dirs),'missing',len(missing),missing); sys.exit(1 if missing or not dirs else 0)\" .claude/skills .",
+    "expected": "Measured by tools/measure.py at 1ff81e1: exit 0; last lines: skills_total 102 skills_checked 102 missing 0 []",
+    "breakage": "Two, each applied to a copy of .claude/skills and the command re-run against that copy. (a) Add a skill directory build-no-breakage whose skill.json has a criterion and an expected result but an empty breakage and empty expected_failure. (b) Point the command at an empty skills directory, so nothing is checked.",
+    "expected_failure": "Measured by tools/measure.py at 1ff81e1: exit 1; last lines: skills_total 103 skills_checked 103 missing 1 ['build-no-breakage']",
+    "status": "measured",
+    "sources": [
+      "F-part-c-04",
+      "F-a7-03"
+    ],
+    "quote": "A criterion nothing can fail is not a criterion.",
+    "measured_run": {
+      "by": "tools/measure.py",
+      "commit": "1ff81e1",
+      "clean_exit": 0,
+      "clean_output": "skills_total 102 skills_checked 102 missing 0 []",
+      "breakage_exit": 1,
+      "breakage_output": "skills_total 103 skills_checked 103 missing 1 ['build-no-breakage']"
+    },
+    "expected_design": "It asserts skills_checked == skills_total (every directory under .claude/skills is opened), missing == 0 (every skill.json carries a non-empty criterion, expected, breakage, expected_failure and status), and skills_checked > 0 (an empty tree exits 1 rather than passing vacuously). Prints 'skills_total N skills_checked N missing 0 []' with N greater than 0, and exits 0.",
+    "expected_failure_design": "Measured in session https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96 on 2026-09-03 in /home/user/AGENT. Baseline against .claude/skills printed: skills_total 4 skills_checked 4 missing 0 [] , exit 0; re-run after this skill landed printed skills_total 6 skills_checked 6 missing 0 [] , exit 0. N moves as skills land, so the assertions are on missing and on skills_checked > 0, never on N. Breakage (a), a copy of .claude/skills with an extra build-no-breakage directory whose definition_of_done had an empty breakage and empty expected_failure, printed: skills_total 5 skills_checked 5 missing 1 [build-no-breakage] , exit 1. Breakage (b), the same command pointed at an empty skills directory, printed: skills_total 0 skills_checked 0 missing 0 [] , exit 1 - the vacuous-pass guard fires because skills_checked is 0, so an empty tree cannot report green. Both breakages were applied to copies under the session scratchpad; no repository file was edited, so no restore was needed and the tree stayed clean."
+  },
+  "composes_with": {
+    "builds_on": [
+      "agentic-stack",
+      "build-ceremony",
+      "build-skill-authoring",
+      "cap-capability-packaging",
+      "cap-human-interaction",
+      "cap-work-intake",
+      "xc-guarantees"
+    ],
+    "used_by": [
+      "build-skill-authoring",
+      "cap-agent-runtime",
+      "cap-capability-packaging",
+      "cap-document-validation",
+      "cap-durable-execution",
+      "cap-errors",
+      "cap-evaluation",
+      "cap-human-interaction",
+      "cap-idempotency",
+      "cap-identity",
+      "cap-isolation",
+      "cap-model-access",
+      "cap-policy",
+      "cap-provenance",
+      "cap-scheduling",
+      "cap-state-persistence",
+      "cap-telemetry",
+      "cap-tool-access",
+      "cap-work-intake",
+      "compose-improvement-loop",
+      "compose-workflow",
+      "core-components",
+      "seam-dispatch",
+      "seam-state",
+      "xc-guarantees"
+    ]
+  },
+  "open_questions": [
+    {
+      "question": "Which of the nine pipeline stages are behavioural for a given piece, and who decides applicability - the stage itself or the record?",
+      "evidence": "Run the gate over a corpus of at least 50 changes of mixed kind and count, per stage, how often it self-reports not applicable versus how often the piece's record declares it out of scope. A large gap means the stage's own judgement cannot be trusted as the applicability signal.",
+      "default": "Proposed: the stage self-reports applicable and the record may only narrow it, never widen it; a stage that cannot report applicability is counted as not applicable and therefore pushes the verdict towards inconclusive.",
+      "sources": [
+        "F-a7-03"
+      ],
+      "quote": "with every behavioural stage skipped"
+    },
+    {
+      "question": "Can effective-configuration attestation be produced by every adapter, or only by those whose configuration resolution is observable from inside the process?",
+      "evidence": "For each adapter, attempt to dump the resolved configuration at start-up and compare it with the declared file; an adapter that cannot expose its resolved values is the counterexample. This agent has no access to the running host, so nothing here has been attempted.",
+      "default": "Proposed: an adapter that cannot emit its effective configuration is recorded as unverified for the configuration half of its definition of done, and that half stays claimed rather than being dropped.",
+      "sources": [
+        "F-a7-04"
+      ],
+      "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect."
+    }
+  ],
+  "provenance": {
+    "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+    "kb_heads": {
+      "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+      "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+      "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+      "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+      "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+    },
+    "author": "session https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96"
+  },
+  "folded": {
+    "build-evidence-record": {
+      "name": "build-evidence-record",
+      "layer": "build",
+      "wave": 1,
+      "description": "The discipline of recording claimed versus measured evidence, so a reader can tell what was observed from what was believed. Load whenever you are about to record a definition-of-done outcome or an entry in the evidence store, label a check as passing, upgrade a claim to a measurement, cite evidence inside a skill, or reconcile a measurement that contradicts what the design says: it fixes what an evidence record contains (what was run, the code version and tree hash under test, whether the tree was dirty, the output, the status label), how records are appended and chained so an edit is detectable, and what a contradicting measurement obliges you to do.",
+      "purpose": {
+        "text": "Record what was actually run, against which code version, and what came back, so a claim is never laundered into a measurement by rewording. agentic-stack fixes the claimed-versus-measured distinction for the whole repository (F-part-c-08); this discipline carries the record that makes a label checkable.",
+        "origin": "sourced",
+        "sources": [
+          "F-part-c-08",
+          "F-a5-04"
+        ],
+        "quote": "Distinguish **claimed** from **measured** throughout"
+      },
+      "entities": [
+        "E-provisioning-concern-evidence-store",
+        "E-provisioning-concern-task-store",
+        "E-provisioning-concern-deployment-phases",
+        "E-finding-a7-1",
+        "E-finding-a7-2",
+        "E-finding-a7-3",
+        "E-concern-provenance",
+        "E-constraint-c-constraint-202"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "evidence-record (proposed shape; summary - the full schema with per-field constraints and the dirty-tree rule is in references/evidence-record-shape.md)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "title": "evidence-record",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "recorded_at",
+                "claim",
+                "ran",
+                "code_version",
+                "output",
+                "status",
+                "prev",
+                "hash"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "recorded_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "claim": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "ran": {
+                  "type": "object",
+                  "required": [
+                    "command",
+                    "script_sha256"
+                  ]
+                },
+                "code_version": {
+                  "type": "object",
+                  "required": [
+                    "commit",
+                    "tree_hash",
+                    "tree_dirty"
+                  ]
+                },
+                "output": {
+                  "type": "object",
+                  "required": [
+                    "exit_status",
+                    "text"
+                  ]
+                },
+                "status": {
+                  "enum": [
+                    "claimed",
+                    "measured"
+                  ]
+                },
+                "supersedes": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                "prev": {
+                  "type": "string"
+                },
+                "hash": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "F-a5-04",
+              "F-part-c-08"
+            ],
+            "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+          }
+        ],
+        "invariants": [
+          {
+            "text": "Every record names what was run and the code version it ran against: the hash of the script and the commit.",
+            "origin": "sourced",
+            "sources": [
+              "F-a5-04"
+            ],
+            "quote": "Each record names the script SHA-256, git commit"
+          },
+          {
+            "text": "Every record names the tree that was actually under test and whether that tree was dirty, because a dirty tree is not the commit.",
+            "origin": "sourced",
+            "sources": [
+              "F-a5-04"
+            ],
+            "quote": "tree hash under test, and whether the tree was dirty"
+          },
+          {
+            "text": "Every record carries exactly one status label, claimed or measured, per the claimed-versus-measured rule agentic-stack states for the whole repository (F-part-c-08). An absent label is a defect, not a default.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-08",
+              "E-constraint-c-constraint-202"
+            ],
+            "quote": "Distinguish **claimed** from **measured** throughout"
+          },
+          {
+            "text": "Proposed: a result produced from a dirty tree may never carry the label measured, because nobody else can reproduce the tree it ran against. Research query: unresearched beyond the dirty flag the evidence store already records (F-a5-04); no prior-art search has been run for the reproducibility rationale specifically.",
+            "origin": "proposed",
+            "sources": [
+              "F-a5-04"
+            ],
+            "quote": "whether the tree was dirty"
+          },
+          {
+            "text": "The store is append-only. A record is never edited or deleted; a correction is a new record naming the id of the one it supersedes.",
+            "origin": "sourced",
+            "sources": [
+              "F-a5-04"
+            ],
+            "quote": "Append-only JSONL"
+          },
+          {
+            "text": "records are chained the way the hash-chained task store agentic-stack cites is (F-a5-03), so that each run's closing digest is the next run's opening digest and a manual edit between runs is detectable.",
+            "origin": "sourced",
+            "sources": [
+              "F-a5-03"
+            ],
+            "quote": "each run's closing digest is the next run's opening digest, so a manual edit between runs is detectable"
+          },
+          {
+            "text": "Proposed: the record holds the output as observed, with its exit status, not a summary of it. A summary cannot be re-read against a later run. Research query: unresearched; our own convention, no prior-art search has been run for a raw-output-over-summary requirement in evidence record keeping.",
+            "origin": "proposed"
+          },
+          {
+            "text": "Proposed: measured is a property of an attached run, not of confidence. A record with no run attached is claimed by construction, however certain its author is. Research query: unresearched; our own convention, no prior-art search has been run for a run-attachment (versus author confidence) definition of a measured label.",
+            "origin": "proposed"
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "This discipline does not produce a signed attestation for a third party. It records what happened for a reader of this repo; attributing an artifact to the code, inputs and actor that produced it, verifiable with a tool we did not write, is the provenance concern's job and is deliberately kept separate.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-05",
+              "E-concern-provenance"
+            ],
+            "quote": "verifiable with a tool we did not write"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Write the claim down before you run anything, in the words you intend to publish, and give it a record id. Research query: unresearched; our own convention, no prior-art search has been run for a write-the-claim-before-the-run requirement in evidence or audit-trail record keeping.",
+          "why": "Proposed: our convention. A claim written after the output is read is shaped by the output, and the record can no longer show what was believed beforehand.",
+          "origin": "proposed"
+        },
+        {
+          "step": 2,
+          "action": "Capture run identity before the run and record it as data, not as a description: the exact command, the SHA-256 of the script it invoked, the commit, the hash of the tree actually under test, and whether that tree was dirty.",
+          "why": "These are the fields the evidence store already records. A description cannot be re-run, the script hash pins the thing that produced the output after the script changes, and the dirty flag separates a reproducible result from an unreproducible one.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-04"
+          ],
+          "quote": "Each record names the script SHA-256, git commit, tree hash under test, and whether the tree was dirty"
+        },
+        {
+          "step": 3,
+          "action": "Capture the output as observed, with its exit status, into the record. Truncate at the end if you must; do not paraphrase, reorder, or clean it up. Research query: unresearched; our own convention, no prior-art search has been run for a no-paraphrase raw-output-capture rule in evidence record keeping.",
+          "why": "Proposed: our convention. The record's only job is to let a later reader see what you saw, including the parts that did not fit the claim.",
+          "origin": "proposed"
+        },
+        {
+          "step": 4,
+          "action": "Label the record claimed or measured. Use measured only when this record carries a run: a command, a code version, a clean tree, an exit status and the output. Everything else, including a confident inference, is claimed.",
+          "why": "The point of the two labels, which agentic-stack fixes for the whole repository (F-part-c-08), is that a reader can separate what was observed from what was believed; this record is where that separation is written down field by field.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-08"
+          ],
+          "quote": "Distinguish **claimed** from **measured** throughout"
+        },
+        {
+          "step": 5,
+          "action": "Refuse the label measured when the tree was dirty. Append the record as claimed and say in the claim text that the tree was dirty; re-run on a clean tree if the measurement matters. Research query: unresearched beyond the dirty flag the evidence store already records (F-a5-04); no prior-art search has been run for a reproducibility-gated label specifically.",
+          "why": "Proposed: our convention, following the dirty flag the evidence store records. A result nobody can reproduce is a report of an event, not a measurement of the code.",
+          "origin": "proposed",
+          "sources": [
+            "F-a5-04"
+          ],
+          "quote": "whether the tree was dirty"
+        },
+        {
+          "step": 6,
+          "action": "Correct a record only by appending another, since the evidence store is append-only JSONL: to upgrade a claim to measured, append a record that attaches a run; when a measurement contradicts a claim, append the measurement. Either way name the old record's id in supersedes, and never rewrite, reword or delete the record being corrected.",
+          "why": "Proposed: our convention on an append-only store. An in-place relabel leaves no trace of when a belief became an observation, and each recorded finding invalidates a design that looks correct on paper, so the superseded claim is what shows the next reader which paper-correct designs have already failed.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-04",
+            "F-a7-01"
+          ],
+          "quote": "Append-only JSONL"
+        },
+        {
+          "step": 7,
+          "action": "Append every record, chain it to its predecessor, and carry the closing digest of a run into the opening digest of the next.",
+          "why": "A chain of the kind agentic-stack cites from the task store (F-a5-03) makes a manual edit between runs detectable, which is what stops a record being quietly improved after the fact.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-03"
+          ],
+          "quote": "each run's closing digest is the next run's opening digest, so a manual edit between runs is detectable"
+        },
+        {
+          "step": 8,
+          "action": "Verify the chain and the source hash with `python3 tools/kb.py verify` before citing any record, stop if it fails, and cite as one or more kb ids plus a quote copied character for character out of one cited record via `python3 tools/kb.py show <id>`. Research query: unresearched beyond the task store's own chain-verification property (F-a5-03); no prior-art search has been run for cite-then-verify as a citation discipline specifically.",
+          "why": "Proposed: our convention. An unverified record is a claim about a record, and a restatement from memory is how a claim acquires the authority of a measurement it never had.",
+          "origin": "proposed",
+          "sources": [
+            "F-a5-03"
+          ],
+          "quote": "a manual edit between runs is detectable"
+        },
+        {
+          "step": 9,
+          "action": "Scope the measured label to what the run observed, and no wider: name the property that was checked, not the property you hope it stands for.",
+          "why": "agentic-stack records the well-formedness finding A7.2 (F-a7-03): a pipeline can run green with every behavioural stage skipped, and those establish well-formedness, not correctness. The consequence for a label is that measured covers only what the run observed.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "Those establish well-formedness, not correctness"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Record what the receiving side reported, not what was sent: injected context was ignored downstream and a depth-3 task tree produced three unrelated root traces, so a record of the injection would have been evidence of nothing.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-02",
+            "E-finding-a7-1"
+          ],
+          "quote": "A depth-3 task tree produces three unrelated root traces."
+        },
+        {
+          "text": "Measure the runtime effect, not the file you wrote: agentic-stack records the runtime-effect finding A7.3 (F-a7-04), where configuration written in the documented place validated, reviewed correctly, and had no runtime effect at all.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04",
+            "E-finding-a7-3"
+          ],
+          "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+        },
+        {
+          "text": "Treat an automated verification that reports all currently green as a claim about the check until a record attaches the run that produced it.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-02"
+          ],
+          "quote": "each with automated verification, all currently green"
+        },
+        {
+          "text": "Say where and when a measurement was taken, the way the inventory does when it says it was verified against the running host on 2026-09-03; a measurement with no place and no date cannot be re-taken.",
+          "origin": "sourced",
+          "sources": [
+            "F-meta-02"
+          ],
+          "quote": "verified against the running host on 2026-09-03"
+        },
+        {
+          "text": "prefer few records that each name their code version to many that do not. A store of ~2,445 records across 308 runs is worth only the fraction of records whose run identity is complete.",
+          "origin": "sourced",
+          "sources": [
+            "F-a5-04"
+          ],
+          "quote": "~2,445 records across 308 runs"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "python3 tools/kb.py verify && python3 -c \"import json;rs=[json.loads(l) for l in open('kb/facts.jsonl')];assert rs and all(r.get('status') for r in rs);print('labels ok',len(rs))\"",
+        "expected": "Measured by tools/measure.py at 710e7b4: exit 0; last lines: kb verified: chains intact, source hash matches, every fact matches its lines, rebuild is identical | labels ok 109",
+        "breakage": "Two, applied one at a time to kb/facts.jsonl and then restored: (a) mismatched hash — change one character of record F-a5-04's text ('Append-only' to 'Append-Only') so the record no longer hashes to its stored digest; (b) missing status — delete the status field from record F-a5-04.",
+        "expected_failure": "Measured by tools/measure.py at 710e7b4: exit 1; last lines: FAIL: chain broken at facts F-a5-04 | kb verification FAILED",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "710e7b4",
+          "clean_exit": 0,
+          "clean_output": "kb verified: chains intact, source hash matches, every fact matches its lines, rebuild is identical\nlabels ok 109",
+          "breakage_exit": 1,
+          "breakage_output": "FAIL: chain broken at facts F-a5-04\nkb verification FAILED"
+        },
+        "expected_design": "Two checks over the record store: (1) integrity via tools/kb.py verify; (2) labelling, which asserts records_checked > 0 and unlabelled == 0. Check 1 prints 'kb verified: chains intact, source hash matches, every fact matches its lines, rebuild is identical' and exits 0. Check 2 prints 'labels ok 109' and exits 0.",
+        "expected_failure_design": "Measured in this session (https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96) on 2026-09-03 in /home/user/AGENT. Breakage (a): check 1 printed 'FAIL: chain broken at facts F-a5-04', 'FAIL: F-a5-04 text does not match PASS.md lines 77-77', 'kb verification FAILED' and exited 1. Breakage (b): check 2 printed 'records 109 unlabelled 1 [F-a5-04]', raised AssertionError and exited 1, and check 1 printed 'FAIL: chain broken at facts F-a5-04' and exited 1, because the label is inside the hashed record. After restoring kb/facts.jsonl (sha256 a95803f63e274d768144ef05825a27c0646b0fe3ffbe7b49c28fcac52fc27950, git tree clean) both checks exited 0."
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack"
+        ],
+        "used_by": [
+          "build-entry-conformance",
+          "cap-agent-runtime-implement",
+          "cap-capability-packaging-implement",
+          "cap-capability-registry-implement",
+          "cap-document-validation-implement",
+          "cap-durable-execution-implement",
+          "cap-errors-implement",
+          "cap-evaluation",
+          "cap-evaluation-implement",
+          "cap-human-interaction-implement",
+          "cap-idempotency-implement",
+          "cap-identity-implement",
+          "cap-isolation-implement",
+          "cap-mandate-broker-implement",
+          "cap-memory-implement",
+          "cap-model-access-implement",
+          "cap-policy-implement",
+          "cap-provenance",
+          "cap-provenance-implement",
+          "cap-scheduling-implement",
+          "cap-state-persistence-implement",
+          "cap-telemetry-implement",
+          "cap-tool-access-implement",
+          "cap-work-intake-implement",
+          "compose-agent-implement",
+          "compose-approval-implement",
+          "compose-improvement-loop",
+          "compose-improvement-loop-implement",
+          "compose-loop",
+          "compose-loop-implement",
+          "compose-operators-implement",
+          "core-document-implement",
+          "core-graph-implement",
+          "core-judge-implement",
+          "core-ledger-implement",
+          "core-planner-implement",
+          "seam-dispatch",
+          "seam-dispatch-implement",
+          "seam-state",
+          "seam-state-implement",
+          "xc-audit-trail",
+          "xc-audit-trail-implement",
+          "xc-budget-implement",
+          "xc-compensation-implement",
+          "xc-correlation",
+          "xc-correlation-implement",
+          "xc-enforcement-chain-implement",
+          "xc-idempotency-lease-implement",
+          "xc-identity-delegation-implement",
+          "xc-policy-gate-implement",
+          "xc-provenance-chain",
+          "xc-provenance-chain-implement",
+          "xc-tenancy-implement",
+          "xc-typed-errors-implement"
+        ]
+      },
+      "open_questions": [
+        {
+          "question": "Are the records in the evidence store chained, or only appended? The source states append-only for the evidence store and hash-chaining only for the task store, so the chain invariant here is ours rather than a description of what runs.",
+          "evidence": "Reading the evidence store on the running host and checking whether each record carries a predecessor digest; this agent has no access to that host, so nothing here can be measured.",
+          "default": "The chain requirement is recorded as proposed, and an evidence record is treated as unverified until a chain verification passes.",
+          "sources": [
+            "F-a5-04",
+            "F-a5-03"
+          ],
+          "quote": "Append-only JSONL"
+        },
+        {
+          "question": "What counts as the tree hash when the run touches files outside the repository, for example a configuration read from the host?",
+          "evidence": "A run recorded twice with the same commit and tree hash but different host state, showing whether the outputs diverge; the divergence would decide whether host state must be a required field.",
+          "default": "Proposed: such a run is labelled claimed, and the record names the outside input it depended on.",
+          "sources": [
+            "F-a7-04"
+          ],
+          "quote": "had no runtime effect"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session https://claude.ai/code/session_01XDYnrM4HZbMdASzsqN4j96"
+      }
+    },
+    "build-adapter-pair": {
+      "name": "build-adapter-pair",
+      "layer": "build",
+      "wave": 1,
+      "description": "The discipline of shipping two adapters behind one capability interface, where the second is chosen because it breaks a different assumption than the first. Load it when picking a second implementation for a boundary, when writing the conformance suite both implementations must pass, when wiring the swap into CI, or when auditing whether a contract has been quietly shaped around whatever runs today. Also load it when a boundary has only one implementation, when someone says the thing behind it can be changed later, when a review asks whether a field belongs to the capability or to the thing behind it, or when a proposed alternative is a different product of the same shape.",
+      "purpose": {
+        "text": "Make swappability a tested property rather than an intention, per design rule 3 as agentic-stack states it (F-b1-04): every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing and that the interface is not shaped around its current implementation.",
+        "origin": "sourced",
+        "sources": [
+          "F-b1-04",
+          "F-part-c-05",
+          "E-rule-b1-3"
+        ],
+        "quote": "Every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing"
+      },
+      "entities": [
+        "E-rule-b1-3",
+        "E-ask-item-c-4",
+        "E-capability-isolation",
+        "E-standard-oci-runtime-spec",
+        "E-adapter-firecracker-microvm",
+        "E-swap-candidate-gvisor",
+        "E-capability-state-persistence",
+        "E-adapter-jsonl-hash-chain",
+        "E-swap-candidate-object-store",
+        "E-finding-a7-2",
+        "E-finding-a7-3"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "differs_in_execution_model (proposed shape; the seven axes are ours, from docs/decomposition.md section 4, not from PASS.md)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "title": "differs_in_execution_model",
+              "description": "Carried by an adapter pair. The pair is rejected unless at least one entry has today_value != second_value; a check cannot express that inequality in JSON Schema, so the tool asserts it.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "axis",
+                  "today_value",
+                  "second_value"
+                ],
+                "properties": {
+                  "axis": {
+                    "enum": [
+                      "start_and_teardown_cost",
+                      "processes_required_for_progress",
+                      "result_or_claim_ticket",
+                      "prompt_cancellation",
+                      "locus_of_durability_and_verification",
+                      "unit_of_resource_granted",
+                      "replay_determinism_required"
+                    ]
+                  },
+                  "today_value": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The today adapter's value on this axis, stated as a property and never as a product name."
+                  },
+                  "second_value": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "The second adapter's value on the same axis."
+                  },
+                  "measured": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "True only when the difference was observed in a run, not inferred from documentation."
+                  }
+                }
+              }
+            },
+            "origin": "proposed"
+          }
+        ],
+        "invariants": [
+          {
+            "text": "The pair exists at all, per design rule 3 as agentic-stack states it (F-b1-04): an interface ships with at least two adapters. One adapter is an implementation, not a boundary.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-04"
+            ],
+            "quote": "Every interface ships with at least two adapters"
+          },
+          {
+            "text": "The second adapter's job is proof, not redundancy: it is chosen to prove the interface is not shaped around its current implementation.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-05",
+              "F-b1-04"
+            ],
+            "quote": "chosen to prove the interface is not shaped around its current implementation"
+          },
+          {
+            "text": "Per design rule 1 as agentic-stack states it (F-b1-02), what the core imports is the interface, never either implementation; the consequence for a pair is that both adapters satisfy the same named standard.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-02",
+              "F-b1-03"
+            ],
+            "quote": "The core imports interfaces, never implementations"
+          },
+          {
+            "text": "The swap touches configuration and adapters only. agentic-stack carries the boundary-drawn-wrong finding (F-meta-04); the consequence for a pair is that a swap which requires touching the core has found the defect the pair exists to find, rather than merely failing.",
+            "origin": "sourced",
+            "sources": [
+              "F-meta-04"
+            ],
+            "quote": "If Part B cannot swap an implementation without touching the core, the boundary is drawn wrong"
+          },
+          {
+            "text": "The interface survives the swap and the implementation does not: the contract is stated as the capability plus its standard, so the adapter changes and the core does not.",
+            "origin": "sourced",
+            "sources": [
+              "F-b3-18",
+              "F-b3-01"
+            ],
+            "quote": "the adapter changes and the core does not"
+          },
+          {
+            "text": "Neither adapter obliges a caller to take a client library we wrote. agentic-stack carries the bespoke-boundary finding (F-b1-05); the consequence for a pair is that if integration requires our SDK the pair is proving the wrong thing, because both adapters sit behind our code rather than behind a standard.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-05"
+            ],
+            "quote": "If integration requires our SDK, a boundary is bespoke where a standard existed"
+          },
+          {
+            "text": "A pair is claimed until the swap has been executed and recorded; swappability is a tested property, not an intention, and the two labels are kept apart.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-04",
+              "F-part-c-08"
+            ],
+            "quote": "Swappability is a tested property, not an intention."
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "Product names, versions and hostnames stay in the adapter rows, per the product rule agentic-stack states (F-part-c-09). The interface, its invariants and its conformance suite name capabilities and standards only.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-09"
+            ],
+            "quote": "Products belong in the adapter column only"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Write the boundary as a capability plus the standard that governs it - 'a unit of work does X, per <standard>, version cited or unverified' - before naming any implementation, then check that today's implementation is only one of several ways to satisfy that sentence.",
+          "why": "The Isolation row is the stated template for the whole table: the architecture names the capability and the standard, satisfies it with today's adapter, and when the workload changes the adapter changes and the core does not.",
+          "origin": "sourced",
+          "sources": [
+            "F-b3-18",
+            "F-b1-03"
+          ],
+          "quote": "the adapter changes and the core does not"
+        },
+        {
+          "step": 2,
+          "action": "Require two adapters per interface and treat the second as a proof obligation rather than a spare: it exists to prove the first is not load-bearing and that the interface is not shaped around its current implementation.",
+          "why": "Design rule 3 makes swappability a tested property rather than an intention, and the ask names the second adapter's purpose as exactly that proof.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-04",
+            "F-part-c-05"
+          ],
+          "quote": "Swappability is a tested property, not an intention."
+        },
+        {
+          "step": 3,
+          "action": "Proposed: choose the second adapter by asking whether it breaks a different assumption, scoring candidates on the seven execution-model axes the Shapes section enumerates - start and teardown cost, how many separate processes must run for work to progress, whether a call returns a result or a claim ticket, whether cancellation can be honoured promptly, where durability and verification live, what unit of resource is granted, and whether replay determinism is required. Reject any candidate scoring identically to the first on every axis. Record the answer in the machine-readable differs_in_execution_model field defined under Shapes, naming the axis and both values; an empty field rejects the pair, and the author must find a different second adapter rather than argue for the one in hand. Research query for the axis catalogue itself: a published taxonomy of adapter/plugin conformance-testing dimensions (start cost, durability locus, cancellation semantics) has not been searched for; PASS.md and docs/decomposition.md are the only sources checked so far.",
+          "why": "Proposed, from docs/decomposition.md sections 4 and 3.5 row B2. A candidate with the same execution model can be swapped in while the interface stays shaped around that shared model, so the swap succeeds and demonstrates nothing; and a judgement that lives only in prose cannot be checked, where the check is what lets this discipline fail.",
+          "origin": "proposed"
+        },
+        {
+          "step": 4,
+          "action": "Write one conformance suite against the interface and parameterise it over adapters: the suite imports the interface only, never an adapter type, and both adapters run the identical assertions with no per-adapter skips or per-adapter expected values. Then give that suite a deliberate breakage and run it: remove one interface guarantee from an adapter, or feed the suite a stub adapter that returns success for everything, and record which assertion fails.",
+          "why": "Per design rule 1 as agentic-stack states it (F-b1-02), the core imports interfaces, never implementations, so the contract, not either implementation, is what both adapters must satisfy; and a criterion nothing can fail is not a criterion, so a suite that has never been seen to fail is not yet evidence that either adapter conforms.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-02",
+            "F-part-c-04"
+          ],
+          "quote": "The core imports interfaces, never implementations"
+        },
+        {
+          "step": 5,
+          "action": "exercise the swap in CI rather than on paper. Run the full conformance suite once per adapter on every change, selecting the adapter by configuration alone with no code edit between runs, and fail the job if either run is skipped or reports zero behavioural assertions.",
+          "why": "For the reason the agentic-stack root contract records under F-a7-03: a swap job that runs but asserts nothing repeats a known failure in a new place.",
+          "origin": "sourced",
+          "sources": [
+            "T-t7-05",
+            "F-a7-03"
+          ],
+          "quote": "Changing a component means swapping its adapter, and the conformance run proves the interface held."
+        },
+        {
+          "step": 6,
+          "action": "Proposed: audit the interface for shaping. List every field, operation and error in the contract and ask, for each, which adapter's vocabulary named it. Anything only the first adapter's model can honour is that adapter's detail leaking into the contract: express it in the capability's own terms, make it an optional negotiated capability, or delete it. In the same pass, check that integrating either adapter needs no client library we wrote, and fix the boundary before shipping the pair if it does. Research query: no prior-art search has been run for a leaky-abstraction audit method for adapter/plugin interfaces (detecting which contract fields trace back to one implementation's vocabulary rather than the capability's own).",
+          "why": "Proposed procedure over a finding agentic-stack carries (F-meta-04): if an implementation cannot be swapped without touching the core, the boundary is drawn wrong, and a field only one adapter can honour is how that happens quietly; and if integration requires our SDK, a boundary is bespoke where a standard existed, so a pair behind it proves only that we can swap our own code.",
+          "origin": "proposed",
+          "sources": [
+            "F-meta-04",
+            "F-b1-05"
+          ],
+          "quote": "If Part B cannot swap an implementation without touching the core, the boundary is drawn wrong"
+        },
+        {
+          "step": 7,
+          "action": "Assert in the conformance suite that telemetry, policy, provenance and budget hold identically under both adapters, instead of being supplied by one adapter's implementation.",
+          "why": "Per design rule 7 as agentic-stack states it (F-b1-08, F-b4-01), those guarantees are applied by the platform and not requested by the caller; the consequence for a pair is that they belong to the platform around it and must survive the swap unchanged under both adapters.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-08",
+            "F-b4-01"
+          ],
+          "quote": "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller"
+        },
+        {
+          "step": 8,
+          "action": "When no candidate differs on any axis, record it as an open question with the measurement that would decide it and a default, instead of shipping a same-shape pair that satisfies the count of two.",
+          "why": "What could not be decided is a required output, not an apology.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-06"
+          ],
+          "quote": "A required output, not an apology."
+        },
+        {
+          "step": 9,
+          "action": "Proposed: read references/execution-model-axes.md before scoring a candidate when the second adapter feels different but you cannot name the axis, or when reviewing a pair whose difference field reads as a vendor name rather than a property.",
+          "why": "Proposed reference material. It holds the axis catalogue, the three-part wrapper test, and a worked pair written by knowledge-base entity id, all of which are too long for this table.",
+          "origin": "proposed"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Proposed: the green-gate finding (F-a7-03) is stated in the agentic-stack root contract and is not restated here. What it adds for a pair: count the behavioural assertions that actually ran under each adapter, because a swap job can be green with none of them executed under either. Research query: unresearched; no prior-art search has been run for counting per-adapter behavioural-assertion coverage in a swap/conformance CI job specifically (versus the general green-gate finding F-a7-03 itself).",
+          "origin": "proposed",
+          "sources": [
+            "F-a7-03"
+          ]
+        },
+        {
+          "text": "Verify which adapter actually served the call at runtime rather than trusting the configuration that selected it: agentic-stack records the runtime-effect finding A7.3 (F-a7-04), where values written in the documented place validated, reviewed correctly, and had no runtime effect.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-04",
+            "E-finding-a7-3"
+          ],
+          "quote": "Values written to YAML validated, reviewed correctly, and had no runtime effect"
+        },
+        {
+          "text": "agentic-stack records the correlation-boundary finding A7.2 (F-a7-02): correlation must ride on an explicit resource attribute set at dispatch. The consequence for a pair is that the telemetry assertions in a conformance suite still hold under an adapter that mints its own root trace instead of inheriting one.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-02"
+          ],
+          "quote": "Correlation must ride on an explicit resource attribute set at dispatch"
+        },
+        {
+          "text": "Callers request a class, never a vendor, as agentic-stack states (F-a4-01): if selecting between the pair leaks a vendor name into caller code, the choice has escaped the adapter row and the swap is no longer a configuration change.",
+          "origin": "sourced",
+          "sources": [
+            "F-a4-01",
+            "F-part-c-09"
+          ],
+          "quote": "Callers request a class, never a vendor"
+        },
+        {
+          "text": "A route in the substrate that is widely adopted can still be written around a fixed list of implementations: one such route branches only on three provider names and refuses a fourth provider actually in use. Check that the route your adapters both depend on admits both of them, instead of reading wide adoption as implementation-neutrality.",
+          "origin": "sourced",
+          "sources": [
+            "F-a4-08"
+          ],
+          "quote": "route, which branches only on"
+        },
+        {
+          "text": "Name the property being preserved across the swap, not the container holding it: where the store changes, the chain is the valuable idea and should survive, the file is not.",
+          "origin": "sourced",
+          "sources": [
+            "F-b5-05"
+          ],
+          "quote": "The chain is the valuable idea and should survive; the file is not"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "python3 tools/check_adapter_pairs.py --skills .claude/skills",
+        "expected": "Run via tools/check_adapter_pairs.py, built in the STATUS row 59 measure ceremony (originally proposed alongside the first cap- skill in wave 3). For every cap- and seam- skill it asserts: exactly one adapter with role today, at least one with role second, a non-empty differs_in_execution_model naming an axis and both adapters' values, and at least one axis whose two values differ. The pass condition is exit 0 with `pairs_checked > 0`, `single_adapter == 0`, `empty_axis == 0`, `same_model_pairs == 0`. That condition is not met in this repository today and is not expected to be until the differs_in_execution_model field ships: the field is proposed in this skill's Shapes section and no cap- or seam- adapter row carries it yet, so the clean run exits 1 with `empty_axis` and `same_model_pairs` equal to `pairs_checked` (44 of 44 in the run recorded below, none of them a deliberate breakage). The criterion is recorded as claimed on that basis: it has been run here and it fails for a stated, unshipped-shape reason, and it becomes a pass when the adapter shape ships rather than when the tool is written.",
+        "breakage": "Add a `cap-` skill whose second adapter is a thin wrapper of the first: copy the today adapter's row, change only the entity id, and leave differs_in_execution_model empty. Then run it a second time with that field filled in by hand but carrying the same axis values as the first adapter. Both runs are meaningful only once the clean run passes.",
+        "expected_failure": "Not performed here, and not claimed to have been. While the clean run already fails with `empty_axis == 44`, a planted same-shape pair is indistinguishable from the 44 pairs failing for that same reason, and applying the breakage means editing cap-/seam- skills held by other agents in this ceremony. Once every adapter row carries differs_in_execution_model and the clean run exits 0, the first breakage run must exit 1 with `empty_axis == 1` naming the skill and the adapter entity, and the second - the field filled in but carrying the first adapter's axis values - must still exit 1 with `same_model_pairs == 1`, which is the case that counting two adapters cannot catch.",
+        "status": "claimed",
+        "sources": [
+          "F-part-c-04",
+          "F-b1-04"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "02659a2",
+          "clean_exit": 1,
+          "clean_output": "', 'cap-isolation', 'cap-isolation-implement', 'cap-mandate-broker', 'cap-mandate-broker-implement', 'cap-memory', 'cap-memory-implement', 'cap-model-access', 'cap-model-access-implement', 'cap-policy', 'cap-policy-implement', 'cap-provenance', 'cap-provenance-implement', 'cap-scheduling', 'cap-scheduling-implement', 'cap-state-persistence', 'cap-state-persistence-implement', 'cap-telemetry', 'cap-telemetry-implement', 'cap-tool-access', 'cap-tool-access-implement', 'cap-work-intake', 'cap-work-intake-implement', 'seam-dispatch', 'seam-dispatch-implement', 'seam-state', 'seam-state-implement']"
+        }
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack"
+        ],
+        "used_by": [
+          "build-interface-versioning",
+          "cap-agent-runtime",
+          "cap-agent-runtime-implement",
+          "cap-capability-packaging",
+          "cap-capability-packaging-implement",
+          "cap-capability-registry",
+          "cap-capability-registry-implement",
+          "cap-document-validation",
+          "cap-document-validation-implement",
+          "cap-durable-execution",
+          "cap-durable-execution-implement",
+          "cap-errors",
+          "cap-errors-implement",
+          "cap-evaluation",
+          "cap-evaluation-implement",
+          "cap-human-interaction",
+          "cap-human-interaction-implement",
+          "cap-idempotency",
+          "cap-idempotency-implement",
+          "cap-identity",
+          "cap-identity-implement",
+          "cap-isolation",
+          "cap-isolation-implement",
+          "cap-mandate-broker",
+          "cap-mandate-broker-implement",
+          "cap-memory",
+          "cap-memory-implement",
+          "cap-model-access",
+          "cap-model-access-implement",
+          "cap-policy",
+          "cap-policy-implement",
+          "cap-provenance",
+          "cap-provenance-implement",
+          "cap-scheduling",
+          "cap-scheduling-implement",
+          "cap-state-persistence",
+          "cap-state-persistence-implement",
+          "cap-telemetry",
+          "cap-telemetry-implement",
+          "cap-tool-access",
+          "cap-tool-access-implement",
+          "cap-work-intake",
+          "cap-work-intake-implement",
+          "compose-agent-implement",
+          "compose-approval-implement",
+          "compose-improvement-loop-implement",
+          "compose-loop-implement",
+          "compose-operators-implement",
+          "core-document-implement",
+          "core-graph-implement",
+          "core-judge-implement",
+          "core-ledger-implement",
+          "core-planner-implement",
+          "seam-dispatch",
+          "seam-dispatch-implement",
+          "seam-state",
+          "seam-state-implement",
+          "xc-audit-trail-implement",
+          "xc-budget-implement",
+          "xc-compensation-implement",
+          "xc-correlation-implement",
+          "xc-enforcement-chain-implement",
+          "xc-idempotency-lease-implement",
+          "xc-identity-delegation-implement",
+          "xc-policy-gate-implement",
+          "xc-provenance-chain-implement",
+          "xc-tenancy-implement",
+          "xc-typed-errors-implement"
+        ]
+      },
+      "open_questions": [
+        {
+          "question": "Does every capability admit a second adapter that differs in execution model, or do some admit only a narrower difference that still satisfies design rule 3?",
+          "evidence": "For each capability, score its candidate second adapters on the axis list and record the widest true difference found. A capability where no candidate differs on any axis is recorded as an exception with its reason, and the count of such exceptions is the answer.",
+          "default": "The pair is still required and the difference field records the narrowest true difference; a pair with no true difference is rejected rather than granted an exception.",
+          "sources": [
+            "F-b1-04",
+            "F-part-c-05"
+          ],
+          "quote": "Every interface ships with at least two adapters"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session claude/build-adapter-pair 2831cb4f"
+      }
+    },
+    "build-entry-conformance": {
+      "name": "build-entry-conformance",
+      "layer": "build",
+      "wave": 8,
+      "description": "The conformance suite every entry point must pass: one document driven through the human, event, schedule and external doors yields one identical envelope, one identical resolved manifest and the same downstream behaviour, with identity and budget attaching per door. Load it when adding or changing an entry point or a producer, when wiring the check CI runs across the doors, when someone asks 'does the event door really behave like the human one', 'what does a partner get back for a malformed task', 'is a replay actually free', or 'can an internal event start work of its own', and before recording any entry check as passing. Also load it when several doors are green and nobody compared them, when a new front door is proposed instead of a new producer behind an existing one, or when driving an entry needs code from this repository.",
+      "purpose": {
+        "text": "Turn 'all four enter through the same shape' from an assertion into a suite that can fail: one document through the human, event, schedule and external doors must resolve to one identical manifest and behave identically downstream, with only identity, correlation and entry kind differing. cap-work-intake fixes the shape; this skill is the check on it.",
+        "origin": "sourced",
+        "sources": [
+          "T-t6-02",
+          "T-t2-03"
+        ],
+        "quote": "Four entries cover nearly every situation"
+      },
+      "entities": [
+        "E-capability-work-intake",
+        "E-rule-b1-4"
+      ],
+      "contract": {
+        "shapes": [
+          {
+            "name": "entry-conformance-report (proposed summary shape; the full schema and the check matrix are in references/report.md)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:entry-conformance:report:0.1",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "subject_digest",
+                "client_shape",
+                "doors",
+                "counters",
+                "verdict"
+              ],
+              "properties": {
+                "subject_digest": {
+                  "type": "string",
+                  "description": "digest of the one document driven through every door"
+                },
+                "client_shape": {
+                  "enum": [
+                    "generated-from-description",
+                    "raw-script"
+                  ]
+                },
+                "doors": {
+                  "type": "array",
+                  "minItems": 4,
+                  "items": {
+                    "type": "object",
+                    "description": "one per entry kind (human, event, schedule, external): kind, actor_subject, manifest_digest, identity_hops, budget_source, and checks mapping each check name to pass, fail or not-run"
+                  }
+                },
+                "counters": {
+                  "type": "object",
+                  "description": "doors_checked, manifests_distinct, typed_refusals, replay_noops: non-negative integers reported with every verdict"
+                },
+                "verdict": {
+                  "enum": [
+                    "pass",
+                    "fail",
+                    "inconclusive"
+                  ]
+                }
+              }
+            },
+            "origin": "proposed",
+            "sources": [
+              "T-t6-02"
+            ],
+            "quote": "a human, an event, a schedule (time), and an external system or agent"
+          }
+        ],
+        "invariants": [
+          {
+            "text": "The subject of the suite is one document, not four: cap-work-intake states that all four of TARGET T6.2's entries enter through the same shape (T-t6-02), and the check here is that the four envelopes differ only in entry kind, actor and correlation, over a subject whose digest is recorded once and compared per door.",
+            "origin": "sourced",
+            "sources": [
+              "T-t6-02"
+            ],
+            "quote": "All four enter through the same shape."
+          },
+          {
+            "text": "The comparison is of the resolved manifest, not of the final status: four doors that each reach a completed state prove nothing about each other, and a plan is comparable across doors only because planning is a pure function that completes before execution begins.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-06"
+            ],
+            "quote": "Planning is a pure function and completes before execution begins."
+          },
+          {
+            "text": "Proposed, following the reference example in docs/reference/composable-plan.md: only resolution differs between the doors, so the suite asserts one distinct manifest across four doors and asserts the differences it expects - whose identity and whose money - rather than treating any difference as tolerable.",
+            "origin": "proposed",
+            "sources": [
+              "REF-3-4-08",
+              "REF-3-4-11",
+              "REF-3-4-12"
+            ],
+            "quote": "The document is byte-identical through all four. Only resolution differs."
+          },
+          {
+            "text": "Identity and budget attach per door, and the suite checks their values rather than their presence: an entry protocol carries governance material as an opaque payload and cannot interpret, validate, or enforce their governance semantics, so a green protocol handshake is not evidence that a ceiling or a delegation chain took effect. cap-work-intake states the platform-applies rule (F-b4-01); the consequence here is a per-door assertion on hop count and budget source.",
+            "origin": "sourced",
+            "sources": [
+              "X-entry-composition-059",
+              "F-b4-01",
+              "T-t2-03"
+            ],
+            "quote": "cannot interpret, validate, or enforce their governance semantics"
+          },
+          {
+            "text": "Proposed, following the same reference and the invariant cap-work-intake already states (REF-3-4-15): an internal event steers work that exists and never starts work of its own, so the suite submits an internal event with no parent run and requires a refusal, then submits it against a live correlation and requires it to be admitted as steering.",
+            "origin": "proposed",
+            "sources": [
+              "REF-3-4-15",
+              "REF-3-4-10"
+            ],
+            "quote": "Every unit of work therefore traces back to a person, a clock, or an outside event."
+          },
+          {
+            "text": "A malformed entry at any door returns one typed problem object from the closed registry in docs/decomposition.md section 2.1.6 - urn:agentic:problem:document-invalid, 422, for an envelope that fails validation - and writes nothing durable. cap-human-interaction states the platform-wide rule that failures are typed and machine-readable (F-b4-07); the consequence here is that the suite counts typed refusals per door and fails on prose.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-07",
+              "F-b3-13"
+            ],
+            "quote": "Typed and machine-readable. Never parsed from prose"
+          },
+          {
+            "text": "A replay at any door is a no-op: cap-human-interaction states the platform rule that every externally-triggered action is safe to replay (F-b4-08), and the consequence here is that the suite resubmits each door's entry under its original key and requires the same result with zero new durable records, per door and not only at the door someone happened to test.",
+            "origin": "sourced",
+            "sources": [
+              "F-b4-08"
+            ],
+            "quote": "Every externally-triggered action is safe to replay"
+          },
+          {
+            "text": "The caller side of the suite contains no code from this repository, because rule 4 is only checkable that way: if integration requires our SDK, a boundary is bespoke where a standard existed. Each door is driven twice - once from a client built from the entry point's published description document, once from a hand-written raw script - and both runs must pass unchanged.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-05",
+              "E-rule-b1-4",
+              "X-end-to-end-035"
+            ],
+            "quote": "If integration requires our SDK, a boundary is bespoke where a standard existed."
+          },
+          {
+            "text": "A run that did not exercise four doors is inconclusive, never green: build-definition-of-done states the finding that a deterministic gate can be structurally green and mean nothing (F-a7-03), and cap-capability-registry cites the same sentence for its own conformance run; the consequence here is that doors_checked, manifests_distinct, typed_refusals and replay_noops are reported with the verdict, and a missing door is a named not-run cell rather than a silently absent row.",
+            "origin": "sourced",
+            "sources": [
+              "F-a7-03"
+            ],
+            "quote": "A deterministic gate can be structurally green and mean nothing."
+          }
+        ],
+        "not_exposed": [
+          {
+            "text": "The grading criterion of any step the suite drives. agentic-stack states design rule 6 (F-b1-07), that the grader is never visible to the graded; on this suite it forbids one specific thing - the criterion body may not appear in a report, a diff of two doors' outputs, or a failure detail, because a suite that prints it to explain a mismatch has leaked it to every caller-visible surface at once.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-07"
+            ],
+            "quote": "The grader is never visible to the graded."
+          },
+          {
+            "text": "Proposed: the suite exposes no per-door option, tolerance or skip flag. agentic-stack states that a criterion nothing can fail is not a criterion (F-part-c-04); here that forbids the flag, so a door that cannot be driven yet is a not-run cell in the report and an open question, never a configuration that makes the verdict green without it. Research query: unresearched; no prior-art search has been run for a no-skip-flag rule specific to a multi-entry conformance suite, beyond the general criterion finding F-part-c-04 this applies.",
+            "origin": "proposed",
+            "sources": [
+              "F-part-c-04"
+            ],
+            "quote": "A criterion nothing can fail is not a criterion"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Fix the subject before the suite: one intent, one payload, one workflow reference, digested once, then build the four envelopes of TARGET T6.2 differing only in entry kind, actor and correlation. Record subject_digest in the report.",
+          "why": "Proposed: an equal-behaviour assertion over four doors proves nothing if each door was handed a different document, and the reference example this repo follows keeps the document byte-identical for exactly that reason.",
+          "origin": "proposed",
+          "sources": [
+            "REF-3-4-08"
+          ],
+          "quote": "The document is byte-identical through all four."
+        },
+        {
+          "step": 2,
+          "action": "Capture each door's resolved manifest before anything is dispatched and assert manifests_distinct == 1 with doors_checked == 4; compare the plan text after normalisation, holding identity, correlation and entry kind out of the comparison and asserting those separately.",
+          "why": "The plan is the door-independent artifact because planning completes before execution begins; comparing final statuses instead lets two doors diverge and still both report completed.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-06"
+          ],
+          "quote": "Planning is a pure function and completes before execution begins."
+        },
+        {
+          "step": 3,
+          "action": "Assert the per-door attachments by value, naming the slot xc-enforcement-chain declares rather than a field of this suite's own: the delegation hop count and the subject prefix expected for that door from `identity.resolve`, and the budget source (caller, standing allocation, pre-authorised per source, or subdivided from the parent) from `budget.reserve`, on the entry record and on every step record beneath it.",
+          "why": "The entry protocols carry governance material but cannot interpret, validate, or enforce their governance semantics, so identity and budget have to be observed after intake, not inferred from a successful handshake. xc-enforcement-chain names `identity.resolve` and `budget.reserve` as the two slots this check rides on, at the admission point every door crosses; this suite checks their output by value rather than restating what applies them.",
+          "origin": "sourced",
+          "sources": [
+            "X-entry-composition-059",
+            "T-t2-03"
+          ],
+          "quote": "cannot interpret, validate, or enforce their governance semantics"
+        },
+        {
+          "step": 4,
+          "action": "Run the steer-versus-start pair: submit an internal event with no parent run and require a typed refusal, then submit the same event against a live correlation and require it to be admitted as steering, with the parent's ceiling and identity unchanged.",
+          "why": "Proposed, following the reference example and the invariant cap-work-intake already states: internal steers but never starts, so a loop that can mint its own root work has no provenance and no ceiling, and nothing else in a green suite would show it.",
+          "origin": "proposed",
+          "sources": [
+            "REF-3-4-15",
+            "REF-3-4-10"
+          ],
+          "quote": "A loop that can mint its own root work has no provenance and no ceiling"
+        },
+        {
+          "step": 5,
+          "action": "Send a malformed entry at every door - not one - and require application/problem+json carrying a type from the closed registry (urn:agentic:problem:document-invalid, 422, for a schema failure), the offending field named, and no durable record written. Count typed_refusals and fail the door on prose or on an unregistered type.",
+          "why": "cap-human-interaction states the platform-wide rule that failures are typed and machine-readable and never parsed from prose (F-b4-07, F-b3-13); the consequence here is that a refusal proven at one door says nothing about the door a partner system actually uses.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-07",
+            "F-b3-13"
+          ],
+          "quote": "Typed and machine-readable. Never parsed from prose"
+        },
+        {
+          "step": 6,
+          "action": "Replay every door: resubmit each entry under its original idempotency key and require the same result, zero new durable records and no second dispatch. Count replay_noops and require it to equal doors_checked.",
+          "why": "cap-human-interaction states the platform guarantee that every externally-triggered action is safe to replay (F-b4-08); the consequence here is that a suite replaying only the door it was written against leaves three doors where a retry can double-charge.",
+          "origin": "sourced",
+          "sources": [
+            "F-b4-08"
+          ],
+          "quote": "Every externally-triggered action is safe to replay"
+        },
+        {
+          "step": 7,
+          "action": "Drive the whole matrix twice from the caller's side: once from a client built out of the entry point's published description document, once from a hand-written raw script over the same wire, and require identical reports from both. Neither may import code from this repository.",
+          "why": "Machine-readable specifications power code generation, testing, and interactive documentation, but no single standard covers the whole agent surface - the recorded protocols each have blind spots the others must compensate for - and (proposed) generation tooling may not exist for a caller's stack, so the raw shape is what proves the door is reachable without adapting one's thinking to the framework's way of doing things.",
+          "origin": "sourced",
+          "sources": [
+            "X-end-to-end-035",
+            "X-end-to-end-036",
+            "X-entry-composition-041",
+            "T-t3-02"
+          ],
+          "quote": "OpenAPI for REST APIs and AsyncAPI for event-driven APIs provide machine-readable specifications that power code generation, testing, and interactive documentation."
+        },
+        {
+          "step": 8,
+          "action": "Emit the entry-conformance-report with its counters and a three-valued verdict, and resolve it in order: any failed cell fails; otherwise doors_checked < 4, manifests_distinct != 1 or any not-run cell is inconclusive; only a full matrix passes.",
+          "why": "build-definition-of-done states that a gate can be structurally green and mean nothing (F-a7-03), and cap-capability-registry cites the same sentence for its conformance run; the consequence here is that a suite reporting a verdict without saying how many doors it drove cannot be told apart from one that drove none.",
+          "origin": "sourced",
+          "sources": [
+            "F-a7-03"
+          ],
+          "quote": "A deterministic gate can be structurally green and mean nothing."
+        },
+        {
+          "step": 9,
+          "action": "Record every run per build-evidence-record: the command, the code version, the tree hash and whether it was dirty, the observed output, and the report; label the run measured only when it carries that run, and name in the record which cells were not-run. examples/end-to-end/test.sh is today's measured instance of part of this suite - four doors driven to completion over one workflow, a typed document-invalid refusal, a replay that appends nothing, budget refusals before and mid-run, and a hash-chained ledger that detects a one-character edit, 29 checks passing on 2026-09-03. In the same record state what that instance does not yet cover, as not-run cells rather than silence: it compares no door against another (a per-door ceiling change still reports 29 of 29 green, measured below), checks the malformed entry, the replay and the budget refusals at the human door only, has no steer-versus-start case, asserts no per-door identity hop count or budget source, and drives every door from repository code, so no description-built client and no raw third-party script has ever exercised these doors. Where a cell cannot be run yet, apply 1-3-1 and record the choice as an open question instead of stalling.",
+          "why": "build-evidence-record's rule is to distinguish claimed from measured throughout; a suite whose partial instance is cited as if it were the whole suite is how a green count becomes a claim about doors nobody drove. build-ceremony and build-definition-of-done both work from TARGET T5's rule (T-t5-02) - define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation - so a coverage gap that is not written down is indistinguishable from a check that passed.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-08",
+            "F-a5-04",
+            "T-t5-02"
+          ],
+          "quote": "Distinguish **claimed** from **measured** throughout"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Proposed: compare doors against each other, never each door against itself. Measured in this repository on 2026-09-03: raising one door's ceiling in its envelope left examples/end-to-end/test.sh reporting 29 of 29 checks green, while a cross-door comparison of the resolved plans caught the divergence immediately. Research query: unresearched beyond this repo's own measured incident; no prior-art search has been run for cross-instance (door-to-door) comparison as a regression-detection technique, versus each instance graded against its own fixed expectation.",
+          "origin": "proposed",
+          "sources": [
+            "F-b1-06"
+          ],
+          "quote": "Planning is a pure function and completes before execution begins."
+        },
+        {
+          "text": "Normalise before you compare, and keep the pre-normalisation bytes in the record: trigger endpoints normalize the incoming event into a consistent JSON structure before passing it on, so the comparison belongs after normalisation while the diagnosis of a producer-specific failure needs what arrived.",
+          "origin": "sourced",
+          "sources": [
+            "X-entry-composition-005"
+          ],
+          "quote": "normalize the incoming event into a consistent JSON structure"
+        },
+        {
+          "text": "Check that one correlation identifier survives every door before checking anything else: cap-human-interaction states that correlation ids should be preserved at every boundary (X-entry-composition-015), and a suite that cannot join a door's records to a run cannot assert anything else about that run.",
+          "origin": "sourced",
+          "sources": [
+            "X-entry-composition-015"
+          ],
+          "quote": "Correlation IDs should be preserved at every boundary"
+        },
+        {
+          "text": "Proposed, following the reference example: a new producer earns a row in the matrix, never a column. Entry categories are a closed set of four and what is inside each is open, so a suite that grows a fifth door has recorded a design failure rather than covered a new case.",
+          "origin": "proposed",
+          "sources": [
+            "REF-5-1-07"
+          ],
+          "quote": "Entry categories are a closed set of four. What is inside each is open."
+        },
+        {
+          "text": "Proposed inference from the protocols on file: keep each door small enough that a hand-written script is a plausible client. The recorded editor-to-agent protocol is a JSON-RPC 2.0 based protocol, an event door can be reached with standard HTTP POST requests to send and receive events, and publishing one conformant endpoint is what lets any compliant AI agent immediately become a first-class citizen in their ecosystem rather than an integration project; a door that needs more than that will only ever be driven by generated clients.",
+          "origin": "proposed",
+          "sources": [
+            "X-entry-composition-009",
+            "X-entry-composition-007",
+            "X-entry-composition-019"
+          ],
+          "quote": "any compliant AI agent can immediately become a first-class citizen in their ecosystem"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "bash examples/end-to-end/test.sh && python3 -c \"import sys,pathlib;d=pathlib.Path('examples/end-to-end/out');L={k:(d/(k+'.log')).read_text().splitlines() for k in ('human','event','schedule','external') if (d/(k+'.log')).is_file()};P={k:chr(10).join(v[:v.index('')]) for k,v in L.items()};A={k:[x for x in v if x.startswith('RESULT')][0].split('actor=')[1].split()[0] for k,v in L.items()};print('doors_checked',len(L),'distinct_plans',len(set(P.values())),'distinct_actors',len(set(A.values())));sys.exit(0 if (len(L)==4 and len(set(P.values()))==1 and len(set(A.values()))==4) else 1)\"",
+        "expected": "Measured by tools/measure.py at 1ff81e1: exit 0; last lines: passed 30, failed 0 | doors_checked 4 distinct_plans 1 distinct_actors 4",
+        "breakage": "In examples/end-to-end/entries/event.json change `\"ceiling_micros\": 1500000` to `\"ceiling_micros\": 2000000` - one door's budget only - and re-run both commands, then restore the file.",
+        "expected_failure": "Measured by tools/measure.py at 1ff81e1: exit 1; last lines: passed 30, failed 0 | doors_checked 4 distinct_plans 2 distinct_actors 4",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04",
+          "F-a7-03"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "1ff81e1",
+          "clean_exit": 0,
+          "clean_output": "ceiling below the plan floor exits 2 (2)\n  ok   typed as budget-exhausted (402)\n  ok   refused before any step ran\n  ok   no dispatch in the ledger\n  ok   ceiling that runs dry mid-loop exits 2 (2)\n  ok   tripped at the step that would cross it\n5. malformed envelope\n  ok   malformed envelope exits 2 (2)\n  ok   answer is problem details\n  ok   typed as document-invalid (422)\n  ok   names the missing field\n  ok   nothing written for an invalid envelope\n6. ledger still verifies after everything\n  ok   final chain verifies (0)\n\npassed 30, failed 0\ndoors_checked 4 distinct_plans 1 distinct_actors 4",
+          "breakage_exit": 1,
+          "breakage_output": "ceiling below the plan floor exits 2 (2)\n  ok   typed as budget-exhausted (402)\n  ok   refused before any step ran\n  ok   no dispatch in the ledger\n  ok   ceiling that runs dry mid-loop exits 2 (2)\n  ok   tripped at the step that would cross it\n5. malformed envelope\n  ok   malformed envelope exits 2 (2)\n  ok   answer is problem details\n  ok   typed as document-invalid (422)\n  ok   names the missing field\n  ok   nothing written for an invalid envelope\n6. ledger still verifies after everything\n  ok   final chain verifies (0)\n\npassed 30, failed 0\ndoors_checked 4 distinct_plans 2 distinct_actors 4"
+        },
+        "expected_design": "The command chain runs the measured partial instance, then a cross-door check that instance does not contain (that no test.sh check yet compares one door's output against another). test.sh prints 'passed <count>, failed 0' and exits 0; the cross-door check prints 'doors_checked 4 distinct_plans 1 distinct_actors 4' and exits 0 - one resolved manifest across four doors, four distinct actors.",
+        "expected_failure_design": "test.sh still prints 'passed <count>, failed 0' and exits 0, because it checks each door alone; the cross-door check prints 'doors_checked 4 distinct_plans 2 distinct_actors 4' and exits 1. Measured in session claude/auto-skill-creation on 2026-09-03 at commit c594335 with examples/ clean; restoring the file returned 'doors_checked 4 distinct_plans 1 distinct_actors 4' and exit 0. The <count>-green half of that run is the recorded evidence that the instance does not yet compare one door against another."
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-definition-of-done",
+          "build-evidence-record",
+          "build-skill-authoring",
+          "build-research-record",
+          "build-ceremony",
+          "cap-work-intake",
+          "cap-human-interaction",
+          "cap-capability-registry",
+          "xc-enforcement-chain"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Where do the published description documents for the four doors live, and which of them exists today? Step 7 requires a client built from a description document, and none of the doors ships one in this repository.",
+          "evidence": "A description document per door plus one run of the suite driven from a client built out of it; until then only the raw-script shape is runnable, so the generated-client half of every report is a not-run cell.",
+          "default": "Proposed: run the suite in raw-script shape only, record client_shape as raw-script and the generated half as not-run, and keep the verdict inconclusive rather than pass for any door until both shapes have run.",
+          "sources": [
+            "X-end-to-end-035",
+            "F-b1-05"
+          ],
+          "quote": "If integration requires our SDK, a boundary is bespoke where a standard existed."
+        },
+        {
+          "question": "Which cells of this suite should the repository's measured instance grow next: cross-door manifest comparison, per-door refusal and replay, or the steer-versus-start pair?",
+          "evidence": "Proposed under 1-3-1, the rule build-definition-of-done and build-ceremony both apply: the cross-door comparison is recommended first because the definition of done above measured it catching a divergence that the existing 29 checks reported as green; the other two are additive rows once the matrix exists.",
+          "default": "Proposed: add the cross-door manifest comparison to examples/end-to-end/test.sh first, then per-door refusal and replay, then the steer-versus-start pair; record the other two as not-run cells meanwhile.",
+          "sources": [
+            "T-t5-02"
+          ],
+          "quote": "define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation"
+        },
+        {
+          "question": "Does an internal event get its own door in the report, or is it a refusal case tested against the four? TARGET T6.2's four entries, the shape cap-work-intake fixes, do not name an internal event, while the reference example lists internal as a fourth column that steers only.",
+          "evidence": "A run in which an internal event both steers a live run and is refused as a root; whichever shape makes the refusal countable in one place decides it.",
+          "default": "Proposed: keep four doors and test the internal event as a pair of cases against them, so the report's doors enumeration stays the one TARGET T6.2 fixes.",
+          "sources": [
+            "T-t6-02",
+            "REF-3-4-10"
+          ],
+          "quote": "All four enter through the same shape."
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session claude/auto-skill-creation"
+      }
+    },
+    "build-worked-example": {
+      "name": "build-worked-example",
+      "layer": "build",
+      "wave": 3,
+      "description": "The discipline of writing a worked example of this platform in use, so every example answers the same six questions, shows one document through all four entries, and is graded by the same six criteria. Load it before writing or reviewing any example under docs/reference/ or examples/, when a new entry point, capability or composition needs a demonstration, when someone asks 'what would a caller actually write' or 'what does this look like from the event or schedule door', or when an example names a product or restates a default. v1: it fixes the shape of an example and its check; it does not fix where examples live or how they are run.",
+      "purpose": {
+        "text": "Make every worked example of the platform answer the same questions and pass the same check, so the four entries of TARGET T6.2 are demonstrated rather than assumed and an example can be graded, not just read. The examples exist to show composability from the consumer's side: what a caller does not have to write because defaults, named files and late binding carry it.",
+        "origin": "sourced",
+        "sources": [
+          "T-t6-02"
+        ],
+        "quote": "Four entries cover nearly every situation"
+      },
+      "contract": {
+        "invariants": [
+          {
+            "text": "Every example answers six questions in order: what the caller writes, what resolves and from which layer, what the card shows before spend, where a human decides and what they are shown, what comes back (the return shape cap-consumption fixes, not one restated here), and what could be swapped without the caller noticing. The card question is only answerable because planning completes before execution.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-06"
+            ],
+            "quote": "Cost is knowable before commitment."
+          },
+          {
+            "text": "Every example shows one document through all four entries as cap-consumption names them, byte-identical, with a four-door table whose rows are: what fires it, starts or steers, whose identity, whose money, what the gate does, where the card goes. Only resolution differs between the columns; the entries themselves are not redefined here.",
+            "origin": "sourced",
+            "sources": [
+              "T-t6-02"
+            ],
+            "quote": "a human, an event, a schedule (time), and an external system or agent"
+          },
+          {
+            "text": "Every example is graded on six criteria, pass or fail: compact, composed not restated, priced before spend, decidable (every gate has a view), swappable (no product in the caller's document), provable (the return carries verdict, usage and trace). A product in the caller's document fails swappable, by the adapter-column rule cap-consumption states.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-09"
+            ],
+            "quote": "Products belong in the adapter column only."
+          },
+          {
+            "text": "An example never shows the grading criterion to the thing graded: the instrument is named by reference on the card and never appears in a step's input.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-07"
+            ],
+            "quote": "The grader is never visible to the graded."
+          },
+          {
+            "text": "Every number and every run in an example is labelled claimed or measured. Illustrative numbers are labelled illustrative and never measured.",
+            "origin": "sourced",
+            "sources": [
+              "F-part-c-08"
+            ],
+            "quote": "**claimed** from **measured**"
+          }
+        ]
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Load agentic-stack, then read docs/reference/composable-plan.md sections 3, 4 and 10: the simplicity mechanisms, the four-door example, and the rubric. Copy its section shape; do not copy its numbers. Research query: not externally researchable: this names this repo's own reference document and its section numbers.",
+          "why": "Proposed: the reference is the one worked instance of this discipline. Its shape is the template; its numbers are illustrative and were never measured.",
+          "origin": "proposed"
+        },
+        {
+          "step": 2,
+          "action": "Write the caller's document first, at the smallest size that shows the point: one line of intent if it can, five fields if it must, the optional keys only where the problem needs them. Every value a profile or capability already carries is deleted.",
+          "why": "An example that restates a default teaches the reader to restate defaults, which is the opposite of simple to use.",
+          "origin": "sourced",
+          "sources": [
+            "T-t3-01"
+          ],
+          "quote": "has to be simple to use"
+        },
+        {
+          "step": 3,
+          "action": "Answer the six questions in order under six headings: what the caller writes, what resolves (a table with a layer column: caller, capability, platform), the card before spend, where a human decides and the view they see, what comes back (the fixed return shape), what could be swapped.",
+          "why": "The card is only honest if resolution ran before anything was spent; putting the card before the execution section in the example mirrors the stage order.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-06"
+          ],
+          "quote": "Planning is a pure function and completes before execution"
+        },
+        {
+          "step": 4,
+          "action": "Add the four-door table with the exact header row `| | Human | Time (schedule) | External (system or agent) | Internal (event) |` and the six rows named in the invariants. If a column cannot be filled, write what is missing in that cell rather than dropping the column. Research query: table-design practice on writing 'what is missing' into a cell rather than omitting a column when data for it does not exist.",
+          "why": "Proposed: the source material worked only the human door; the other three were demonstrated nowhere. A missing column hidden by omission is how that happens again.",
+          "origin": "proposed"
+        },
+        {
+          "step": 5,
+          "action": "Grade the example against the six criteria in a table with rows `R-1` to `R-6`, each pass or fail with one reason. A fail stays in the example with its reason; it is not fixed by deleting the row. Research query: rubric-grading practice on labelling each criterion pass or fail with a reason, and keeping a failing row visible rather than removing it.",
+          "why": "Proposed: an example with a visible fail row is a gap register. One with the row removed is marketing.",
+          "origin": "proposed"
+        },
+        {
+          "step": 6,
+          "action": "State in the first paragraph whether the example is reference-only or runnable, label every number claimed, measured or illustrative, keep products out of the caller's document and out of every section except one adapter table, then run this skill's definition-of-done check on the file.",
+          "why": "Products in the caller's document mean the abstraction leaked to the top, which is the adapter-column rule cap-consumption states for every caller of this platform; the check catches a dropped door or rubric row, not a leaked product, so the product rule is read by eye.",
+          "origin": "sourced",
+          "sources": [
+            "F-part-c-09",
+            "F-part-c-08"
+          ],
+          "quote": "Products belong in the adapter column only."
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Proposed: write the event, schedule and external columns before polishing the human one. The human door is the one everybody writes first and the other three are where the design gets tested. Research query: documentation practice on writing the hardest or least-common cases of an example first, then the common case, to test a design rather than merely illustrate it.",
+          "origin": "proposed"
+        },
+        {
+          "text": "Proposed: one example per point. A document that shows depth, fan-out and late binding at once teaches none of them; the reference page shows them as three separate documents for that reason. Research query: worked-example pedagogy on cognitive load: whether a single example that combines multiple concepts teaches each concept less effectively than separate single-concept examples.",
+          "origin": "proposed"
+        },
+        {
+          "text": "Proposed: grade the example before polishing its prose. A rubric row that fails on the first draft is the finding; prose written before the grade tends to argue the row into passing. Research query: review-practice literature on grading or checking a work product before revising its prose, to avoid post-hoc justification of a result already decided.",
+          "origin": "proposed"
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "f=${EXAMPLE:-docs/reference/composable-plan.md}; grep -q 'What the caller writes' \"$f\" && grep -q 'What resolves' \"$f\" && grep -q 'What comes back' \"$f\" && grep -q '^| | Human | Time (schedule) | External (system or agent) | Internal (event) |' \"$f\" && [ \"$(grep -c '^| R-[1-6] |' \"$f\")\" -eq 6 ] && echo PASS || { echo FAIL; exit 1; }",
+        "expected": "Measured by tools/measure.py at fd2fa05: exit 0; last lines: PASS",
+        "breakage": "Copy docs/reference/composable-plan.md to the scratchpad, delete the `| Internal (event) |` cell from the four-door header row, and run the criterion with EXAMPLE pointing at the copy.",
+        "expected_failure": "Measured by tools/measure.py at fd2fa05: exit 1; last lines: FAIL",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04"
+        ],
+        "quote": "the deliberate breakage that proves the check can fail",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "fd2fa05",
+          "clean_exit": 0,
+          "clean_output": "PASS",
+          "breakage_exit": 1,
+          "breakage_output": "FAIL"
+        },
+        "expected_design": "PASS: the six-question headings, the exact four-door header row, and six rubric rows are all present in the example named by EXAMPLE (default: the reference page).",
+        "expected_failure_design": "FAIL: the four-door header grep no longer matches, so the example is missing a door and the check says so."
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-definition-of-done",
+          "build-simplicity-budget",
+          "cap-consumption"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Should examples live under docs/reference/ (reference-only) and examples/ (runnable) as two homes, or one?",
+          "evidence": "A second example written under this skill, and whether its readers found it.",
+          "default": "Proposed: Two homes, as today: reference-only under docs/reference/, runnable under examples/. Revisit when the third example is written."
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session claude/agent-integration-reference-jwnh2q"
+      }
+    },
+    "build-interface-versioning": {
+      "name": "build-interface-versioning",
+      "layer": "build",
+      "wave": 2,
+      "description": "The discipline of versioning a capability interface: every call declares the interface version it speaks, an unsupported version is refused on that call rather than agreed once at connect time, a core field set is frozen as never-changing, and every deprecation carries a stated window. Load it when adding, renaming or removing a field, operation or error on an interface the core imports; when deciding whether a change is breaking; when an adapter and the core disagree about which revision they speak; when one part of a contract (an attribute mapping, a payload profile) needs to move faster than the transport that carries it; or when writing the refusal a caller gets for a revision no longer served. Also load it when someone proposes one version number for the whole platform, when an extension point is about to be treated as an internal detail, or when a change is called additive and therefore safe.",
+      "purpose": {
+        "text": "Make an interface changeable without breaking what is already built on it, so that enhancing one aspect of an element does not touch the rest: an extension point is a public API, and once implementations exist, changing it breaks them.",
+        "origin": "sourced",
+        "sources": [
+          "T-t2-02",
+          "X-cross-structure-060"
+        ],
+        "quote": "Composability allows enhancing particular aspects of any element without touching the rest."
+      },
+      "entities": [
+        "E-rule-b1-1",
+        "E-rule-b1-7",
+        "E-standard-model-context-protocol",
+        "E-standard-otlp",
+        "E-standard-genai-semantic-conventions",
+        "E-standard-json-schema-2020-12",
+        "E-capability-telemetry",
+        "E-finding-a7-2",
+        "E-finding-a7-3"
+      ],
+      "contract": {
+        "standards": [
+          {
+            "entity": "E-standard-model-context-protocol",
+            "version": "revision 2026-07-28",
+            "version_note": "revision 2026-07-28 - cited as a pattern for per-call version declaration and a bounded deprecation window, not as a standard that governs this discipline",
+            "version_status": "unverified",
+            "url": "https://modelcontextprotocol.io/docs/2026-07-28/learn/versioning",
+            "sources": [
+              "X-cross-structure-061"
+            ]
+          },
+          {
+            "entity": "E-standard-otlp",
+            "version": "unverified",
+            "version_note": "unverified - the stable transport half of the telemetry split, pinned while the attribute mapping moves",
+            "version_status": "unverified",
+            "url": null,
+            "sources": [
+              "F-b3-10",
+              "X-cross-structure-012"
+            ]
+          },
+          {
+            "entity": "E-standard-genai-semantic-conventions",
+            "version": "unverified",
+            "version_note": "unverified - the separately versioned attribute mapping half of the telemetry split; the version each run emitted against is recorded",
+            "version_status": "unverified",
+            "url": null,
+            "sources": [
+              "F-b3-10"
+            ]
+          },
+          {
+            "entity": "E-standard-json-schema-2020-12",
+            "version": "2020-12",
+            "version_status": "unverified",
+            "url": null,
+            "sources": [
+              "F-b3-09"
+            ]
+          }
+        ],
+        "operations": [],
+        "shapes": [
+          {
+            "name": "interface_version_declaration (proposed shape; ours, not given by PASS.md)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "title": "interface_version_declaration",
+              "description": "Carried by every call crossing a capability interface. Present per call; a session-level agreement does not satisfy it.",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "interface",
+                "version"
+              ],
+              "properties": {
+                "interface": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "Capability interface id. Never an adapter id, a product name or a hostname."
+                },
+                "version": {
+                  "type": "string",
+                  "minLength": 1,
+                  "description": "The interface revision this call speaks."
+                },
+                "frozen_core_fields_digest": {
+                  "type": "string",
+                  "description": "Optional digest of the frozen core field set the caller was built against, so a drifted core set is detectable at the call rather than at the next incident."
+                }
+              }
+            },
+            "origin": "proposed"
+          },
+          {
+            "name": "interface_version_policy (proposed shape; summary - the per-member deprecation entry is in references/versioning-policy.md)",
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "title": "interface_version_policy",
+              "description": "One per capability interface. Published, machine-readable, and the input to the version check.",
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "interface",
+                "supported",
+                "frozen_core_fields",
+                "deprecation_window_months"
+              ],
+              "properties": {
+                "interface": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "supported": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Every version this interface will admit on a call. Anything else is refused."
+                },
+                "frozen_core_fields": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Field names that must not ever change. Append-only: removal or rename fails the check."
+                },
+                "deprecation_window_months": {
+                  "type": "integer",
+                  "minimum": 12,
+                  "description": "How long a deprecated member keeps being served after it is marked."
+                },
+                "deprecated": {
+                  "type": "array",
+                  "description": "Deprecated members with their dates; entry shape in references/versioning-policy.md.",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            },
+            "origin": "proposed"
+          }
+        ],
+        "invariants": [
+          {
+            "text": "The pattern this discipline copies declares the version per request rather than negotiating it once per session, so what was agreed at connect time is not evidence of what a later call speaks.",
+            "origin": "sourced",
+            "sources": [
+              "X-cross-structure-061"
+            ],
+            "quote": "the version is declared per request instead of negotiated once per session"
+          },
+          {
+            "text": "every call crossing a capability interface carries an interface_version_declaration conforming to the shape in this skill's Shapes section; a declaration made once for a session, a connection or a deployment does not satisfy it.",
+            "origin": "sourced",
+            "sources": [
+              "X-cross-structure-061"
+            ],
+            "quote": "the version is declared per request instead of negotiated once per session"
+          },
+          {
+            "text": "An extension point is a public API: once implementations are built against an interface, changing it breaks them, so the freedom to enhance one aspect is paid for with a version discipline or with breakage.",
+            "origin": "sourced",
+            "sources": [
+              "X-cross-structure-060"
+            ],
+            "quote": "your plugin interface is a public API, and once plugins are built against it, changing it breaks those plugins"
+          },
+          {
+            "text": "The frozen-field model is taken from a specification that hardcodes part of its own attribute set: those attributes are declared unchangeable rather than versioned.",
+            "origin": "sourced",
+            "sources": [
+              "X-cross-structure-012"
+            ],
+            "quote": "These resource attributes MUST NOT be ever changed and are considered a hardcoded part of the specification."
+          },
+          {
+            "text": "every interface publishes a frozen core field set in its interface_version_policy. Membership is append-only - a field may be added, never removed or renamed - and a removal fails the check rather than earning a version bump.",
+            "origin": "sourced",
+            "sources": [
+              "X-cross-structure-012"
+            ],
+            "quote": "MUST NOT be ever changed and are considered a hardcoded part of the specification"
+          },
+          {
+            "text": "The deprecation windows in both policies cited here are bounded and counted in months rather than left open: one keeps deprecated features for at least twelve months, the other keeps stable APIs available for at least 12 months or three minor releases after deprecation.",
+            "origin": "sourced",
+            "sources": [
+              "X-cross-structure-061",
+              "X-build-interface-versioning-002"
+            ],
+            "quote": "Deprecated features remain in the specification for at least twelve months."
+          },
+          {
+            "text": "A version number is not by itself the contract: the convention was designed for libraries, and a change can be additive at the wire level while still being semantically significant to one consumer and invisible to another.",
+            "origin": "sourced",
+            "sources": [
+              "X-build-interface-versioning-006"
+            ],
+            "quote": "SemVer was designed for libraries, but an API contract is different"
+          },
+          {
+            "text": "Proposed: the interface version belongs to the capability, never to whatever implements it. agentic-stack already states design rule 1 (F-b1-02); the consequence here is that an adapter's own release number is never offered as the declared interface version, and swapping adapters does not move it. Research query: unresearched beyond design rule 1 (F-b1-02); no prior-art search has been run for the adapter-release-number-is-never-the-declared-version consequence specifically.",
+            "origin": "proposed",
+            "sources": [
+              "F-b1-02",
+              "E-rule-b1-1"
+            ]
+          },
+          {
+            "text": "no interface version exists in which a cross-cutting guarantee is optional: a version bump may add or narrow fields but may not be the mechanism by which telemetry, policy, provenance or budget stops applying.",
+            "origin": "sourced",
+            "sources": [
+              "F-b1-08",
+              "E-rule-b1-7"
+            ],
+            "quote": "Cross-cutting guarantees are not optional."
+          }
+        ],
+        "not_exposed": []
+      },
+      "instructions": [
+        {
+          "step": 1,
+          "action": "Before assigning any version, name the capability and the standard that governs it, then express the interface version as the profile of that standard we speak - not as a numbering scheme of our own.",
+          "why": "Proposed consequence of design rule 2, which build-skill-authoring states (F-b1-03): a private version number over a standard boundary re-introduces the bespoke shape the standard was adopted to avoid.",
+          "origin": "sourced",
+          "sources": [
+            "F-b1-03"
+          ],
+          "quote": "Where a standard exists, adopt it whole rather than modelling our own shape."
+        },
+        {
+          "step": 2,
+          "action": "Publish one interface_version_policy per interface, conforming to the shape in this skill: the supported set, the frozen core field set, and the deprecation window in months. Store it where the check reads it, not in prose. Research query: unresearched; our own design, no prior-art search has been run for a per-interface published version-policy file (supported set, frozen core, deprecation window) as a distinct artifact from prose documentation.",
+          "why": "Proposed: a policy that lives only in a document cannot be enforced on a call, and the check in this skill's definition of done takes this file as its input.",
+          "origin": "proposed"
+        },
+        {
+          "step": 3,
+          "action": "Make each call declare the interface version it speaks, and treat a session-level or deployment-level agreement as insufficient.",
+          "why": "The pattern cited here moved version declaration from once per session to per request, so a long-lived session cannot go on speaking a revision the interface has stopped serving.",
+          "origin": "sourced",
+          "sources": [
+            "X-cross-structure-061"
+          ],
+          "quote": "the version is declared per request instead of negotiated once per session"
+        },
+        {
+          "step": 4,
+          "action": "Refuse a declared version outside the supported set on that call, with a typed refusal that names every supported version, and never fall back to a default revision. Research query: unresearched beyond the extension-point contract-stability finding (X-cross-structure-060); no prior-art search has been run for a per-call (rather than per-connection) version refusal specifically.",
+          "why": "Proposed: an interface is a public API to everything built against it, so a silent downgrade converts a caller's stale assumption into wrong behaviour deeper in the run instead of an answer the caller can act on.",
+          "origin": "proposed",
+          "sources": [
+            "X-cross-structure-060"
+          ]
+        },
+        {
+          "step": 5,
+          "action": "Choose the smallest field set the interface cannot function without, list it as the frozen core, and document it as never-changing rather than as versioned.",
+          "why": "The specification cited here does exactly this with part of its attribute set, hardcoding it instead of versioning it, which gives every consumer a surface that no revision can move under them.",
+          "origin": "sourced",
+          "sources": [
+            "X-cross-structure-012"
+          ],
+          "quote": "These resource attributes MUST NOT be ever changed and are considered a hardcoded part of the specification."
+        },
+        {
+          "step": 6,
+          "action": "State the deprecation window in months per interface, and compute the earliest removal date from the date the member was marked deprecated rather than deciding it when someone wants the code gone.",
+          "why": "Both policies cited here bound the window rather than leaving it open, keeping stable members available for at least 12 months or three minor releases after deprecation.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-interface-versioning-002",
+            "X-cross-structure-061"
+          ],
+          "quote": "Stable APIs must remain available for at least 12 months or three minor releases after deprecation before removal."
+        },
+        {
+          "step": 7,
+          "action": "Classify every proposed change by its effect on a consumer, not by its shape on the wire, and record the classification with the change. Do not treat an added optional field as automatically safe.",
+          "why": "A change can be additive at the wire level while still being semantically significant to one consumer and invisible to another, so the wire shape does not settle whether the change is breaking.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-interface-versioning-006"
+          ],
+          "quote": "a change can be additive at the wire level while still being semantically significant to one consumer and invisible to another"
+        },
+        {
+          "step": 8,
+          "action": "When one half of a contract must move faster than the other, split it and version the halves separately: pin the stable transport contract, version the attribute or payload mapping on its own cadence, and record with each run the mapping version it was emitted against. Research query: unresearched; our own design, no prior-art search has been run for splitting a transport contract from an attribute/payload mapping into separately versioned halves.",
+          "why": "Proposed, and the first application is the telemetry interface, whose governing row names a transport and a separate attribute mapping side by side; freezing both together would either stall the mapping or churn the transport.",
+          "origin": "proposed",
+          "sources": [
+            "F-b3-10",
+            "E-capability-telemetry"
+          ]
+        },
+        {
+          "step": 9,
+          "action": "Carry the version in a metadata field or header rather than in the identity of the thing being addressed, so an id or a path does not change every revision.",
+          "why": "Proposed: the header-and-media-type approach is described in the research as the most-correct way of versioning an API, and it keeps the frozen core field set - which is about identity - independent of the revision counter.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-interface-versioning-004"
+          ],
+          "quote": "the most-correct way of versioning your API"
+        }
+      ],
+      "best_practices": [
+        {
+          "text": "Proposed: the green-gate finding is stated in the agentic-stack root contract (F-a7-03) and is not restated here. Its consequence for this discipline is to count the refusals a version check actually produced: a suite that never presents an unsupported declaration has proved that supported calls pass and nothing else. Research query: unresearched beyond the green-gate finding (F-a7-03); no prior-art search has been run for counting refusals produced by a version check specifically.",
+          "origin": "proposed",
+          "sources": [
+            "F-a7-03",
+            "E-finding-a7-2"
+          ]
+        },
+        {
+          "text": "Proposed: build-definition-of-done already carries the runtime-effect finding (F-a7-04). Its consequence here is to read the supported set the running interface enforces on a call, rather than the policy file that declares it, before believing a version has been retired. Research query: unresearched beyond the runtime-effect finding (F-a7-04); no prior-art search has been run for reading a running interface's enforced supported set versus its declared policy file specifically.",
+          "origin": "proposed",
+          "sources": [
+            "F-a7-04",
+            "E-finding-a7-3"
+          ]
+        },
+        {
+          "text": "To make a breaking change without breaking existing callers, publish multiple versions side by side under distinct namespaces rather than mutating one in place.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-interface-versioning-003"
+          ],
+          "quote": "A way to maintain backwards compatibility while making breaking changes is to publish multiple versions of a service."
+        },
+        {
+          "text": "Where the version rides in a header and a media type rather than in the path, the resource keeps one identity across revisions; the research on file calls this the most-correct way of versioning an API.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-interface-versioning-004"
+          ],
+          "quote": "Using the Accept and Content-Type header attributes with a custom vendor specific MIME type is the most-correct way of versioning your API."
+        },
+        {
+          "text": "Assume a stated versioning policy is not the practice until a call shows otherwise: on the numbers on file, only 26% of teams actually implement the convention that is recommended nearly everywhere.",
+          "origin": "sourced",
+          "sources": [
+            "X-build-interface-versioning-006"
+          ],
+          "quote": "only 26% of teams actually implement it"
+        },
+        {
+          "text": "Proposed: put the correlation attribute that dispatch sets into the frozen core field set. agentic-stack states the boundary finding (F-a7-02); the consequence here is that the one attribute correlation depends on must be in the set no revision can move, since a run that loses it cannot be reassembled after the fact. Research query: unresearched beyond the correlation boundary finding (F-a7-02) and the resource-attribute stability precedent (X-cross-structure-012); no prior-art search has been run for putting a correlation id specifically inside a frozen core field set.",
+          "origin": "proposed",
+          "sources": [
+            "F-a7-02",
+            "X-cross-structure-012"
+          ]
+        }
+      ],
+      "definition_of_done": {
+        "criterion": "python3 tools/check_interface_versions.py --skills .claude/skills --policies kb/interface-versions/ Gap: kb/interface-versions/ has no policy on file, so this cannot run yet (STATUS row 59).",
+        "expected": "check_interface_versions.py is a proposed tool, built with the first cap- skill that publishes a policy. For every interface with an interface_version_policy it asserts: the policy conforms to the shape in this skill; deprecation_window_months >= 12; every frozen core field present in the previous committed policy is still present; and, replaying one fixture call per adapter, a declaration outside supported produces a typed refusal that names the supported set. exit 0 with `interfaces_checked > 0`, `unsupported_admitted == 0`, `frozen_field_removals == 0`, `refusals_observed == interfaces_checked`",
+        "breakage": "Two runs. (a) Add a fixture adapter that declares interface version `0.0.0-unsupported` on one call and leave the interface admitting it. (b) Restore that, then delete one field name from a frozen_core_fields list in a committed policy and re-run.",
+        "expected_failure": "Run (a) exits 1 with `unsupported_admitted == 1`, naming the interface, the declared version and the supported set that should have been quoted back. Run (b) exits 1 with `frozen_field_removals == 1`, naming the interface and the removed field, and does not offer a version bump as a remedy. Claimed: the tool is not written and no interface_version_policy is committed yet, so neither run has been performed in this repository.",
+        "status": "claimed",
+        "sources": [
+          "F-part-c-04"
+        ],
+        "quote": "A criterion nothing can fail is not a criterion"
+      },
+      "composes_with": {
+        "builds_on": [
+          "agentic-stack",
+          "build-adapter-pair",
+          "build-ceremony",
+          "build-definition-of-done",
+          "build-research-record",
+          "build-skill-authoring"
+        ],
+        "used_by": []
+      },
+      "open_questions": [
+        {
+          "question": "Is a twelve-month deprecation window right for an interface whose only consumers are inside this repository, or does the window belong to the consumer set rather than to the interface?",
+          "evidence": "Count, per interface, the consumers that are not rebuilt by our own pipeline. An interface with none can retire a member as soon as every consumer is rebuilt and the rebuild is recorded; an interface with any external consumer cannot.",
+          "default": "Every interface states a window of at least twelve months, matching the two policies on file, until the consumer count is recorded.",
+          "sources": [
+            "X-cross-structure-061",
+            "X-build-interface-versioning-002"
+          ],
+          "quote": "Deprecated features remain in the specification for at least twelve months."
+        },
+        {
+          "question": "Which of the versioned patterns cited here are current, and at which revision? All research records for this skill are search-only.",
+          "evidence": "A fetch of each cited document recording its revision string and the date fetched, which would let the standards table move from unverified to verified, per the standard-citation rule agentic-stack and build-skill-authoring both state (F-part-c-10).",
+          "default": "Every version in the standards table stays unverified and the two policies are cited as patterns rather than as governing standards.",
+          "sources": [
+            "F-part-c-10"
+          ],
+          "quote": "Cite the standard and its version"
+        }
+      ],
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session claude/build-interface-versioning 2831cb4f"
+      }
+    }
+  }
+}

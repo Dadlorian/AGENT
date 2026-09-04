@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:agentic:example:watch-declaration:0.1",
+  "title": "Watch declaration",
+  "description": "What a caller declares about how it will see the run, carried in payload.watch of the one entry envelope (examples/end-to-end/schemas/entry.schema.json). Validated with that example's own validator, so there is one validator and two documents. Every member is read at the point of decision in run.py. What a caller may NOT declare is as load-bearing as what it may: sampling holds head_percent and nothing else, so `retain_errors: false` is refused at 422 rather than honoured - a caller cannot emit less than the guarantee requires (F-b1-08). redact_additional widens the unit's redact_always set and can never narrow it, for the same reason.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["surface", "since", "detail", "redact_additional", "sampling", "pause_for_decision"],
+  "properties": {
+    "surface": {
+      "enum": ["stream", "poll"],
+      "description": "Where the caller watches from. stream: a subscription that replays from a position. poll: one parked item, request and response. Both are human-interaction adapters selected by configuration; neither is named in the caller's line."
+    },
+    "since": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "The stream position to resume from. A surface that declares replayable_from_position false refuses a non-zero position with a typed problem rather than silently returning the whole stream."
+    },
+    "detail": {
+      "enum": ["unit", "steps"],
+      "description": "unit: the whole unit of agent work as one named lifecycle operation. steps: one operation per step kind the unit declares."
+    },
+    "redact_additional": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "description": "Attribute keys this caller wants redacted on top of the unit's redact_always set. A union, never a replacement."
+    },
+    "sampling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["head_percent"],
+      "description": "The head sampling decision, taken on the shared path. There is no member here by which a caller declines the retention of failures.",
+      "properties": {
+        "head_percent": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100,
+          "description": "Percentage of ok-outcome signals kept. Signals the unit's retain_always names are never subject to it."
+        }
+      }
+    },
+    "pause_for_decision": {
+      "type": "boolean",
+      "description": "Whether this run parks on a person before it finishes. A parked run resumes as a second dispatch with its own trace id, which is what proves correlation does not ride on trace parentage."
+    }
+  }
+}

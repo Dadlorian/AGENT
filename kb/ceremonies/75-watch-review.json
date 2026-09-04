@@ -1,0 +1,131 @@
+{
+  "status_row": 75,
+  "ledger_name": "75-watch-review",
+  "ceremony": "75-watch",
+  "section": "examples/watch",
+  "reviewer": "75-watch-review",
+  "date": "2026-09-04",
+  "area": "watch",
+  "scope_note": "examples/watch/ read in full (README.md, run.py, harnesses.py, test.sh, provenance.json, schemas/watch.schema.json, units/observe-checkout-fault.json, entries/{human,event,schedule,external}.json and the out/ artifacts a run leaves), plus docs/architecture/proposed/watch.json, the harnesses it calls (harness/human-interaction interface, store and both adapters; harness/observability; harness/containment; harness/gateway; harness/tool-access; harness/errors), examples/end-to-end/schemas/entry.schema.json and run.py, examples/run/harnesses.py and test.sh (for the loader it extends and the idiom it shares), docs/litmus/questionnaire.json (telemetry, concern-telemetry, concern-errors), docs/maturity/closures.md, docs/reference/ontology.md, docs/consumption/unit-design.md, kb/facts.jsonl, kb/target-facts.jsonl, kb/reference-facts.jsonl, kb/research.jsonl, kb/entities.jsonl, STATUS.md, OWNER.md, state/briefs/context-75.md and state/briefs/example-review.md. Nothing the author wrote about the example outside the example was read: no ceremony record for row 75 other than this one, and no git history.",
+  "method_note": "Findings were produced mechanically before they were written up. (a) Every `ID \"quote\"` pair and every `REF-path \"quote\"` in README.md was checked as a whitespace-normalised substring of the record it cites (48 id-quote pairs and 62 distinct quotes in all). (b) Every count the README states was read back out of the artifact it describes rather than out of another sentence: events rendered per door and per position, spans, minted traces, sampled-out spans, levels, groups, the six swap counters, the visible check's own total. (c) Every leaf of units/observe-checkout-fault.json and of the entry envelope was given a second legal value and the run repeated, with the ledger and the run report compared after dropping timing and path noise - the row-75 boundary's mechanical form. (d) Every flag run.py declares was matched against the flags test.sh actually exercises.",
+  "test_results": {
+    "visible": "passed 55, failed 0 (bash examples/watch/test.sh, exit 0); FLOOR=55 equals provenance.visible_checks_counted, and the gate has both halves",
+    "hidden": "hidden passed 10, failed 3 (bash docs/night/hidden/watch.sh, exit 1); the three failures are R75WATCH-001 (h-09), R75WATCH-002 (h-10) and R75WATCH-004 (h-08)"
+  },
+  "hidden_check": {
+    "path": "docs/night/hidden/watch.sh",
+    "assertions": 13,
+    "last_line": "hidden passed 10, failed 3",
+    "exit_status": 1,
+    "fail_direction_shown": "Run against a deliberately hollowed copy of the area (test.sh replaced by a body that counts nothing and exits 0, one of the four entry documents deleted) via WATCH_AREA, the same script reports `hidden passed 3, failed 10`.",
+    "what_it_decides": [
+      "h-01 the README carries exactly the six example-readme headings, in order",
+      "h-02 all four entry documents validate against examples/end-to-end/schemas/entry.schema.json and all four payload.watch declarations against examples/watch/schemas/watch.schema.json, using the reference example's one validator, and the four documents are one key shape covering the four door kinds",
+      "h-03 the four doors name exactly one task specification, taken as a real set of the four values and cross-checked against the unit name on all four ledgers (the visible check's own line for this cannot fail - R75WATCH-003)",
+      "h-04 the visible check printed `passed N, failed 0` with N >= 20, declares a FLOOR >= 20, and gates on both PASS >= FLOOR and FAIL == 0, so a gutted copy that counts nothing is refused",
+      "h-05 every named lifecycle ledger line is present (unit-submitted, cell-admitted, step-observed, refusal, unit-completed; approval-parked and approval-returned on the parked door), every record carries run id, correlation id, actor, delegation depth, entry kind, idempotency key and its chain fields, and the parked door's states are exactly submitted, input-required, working, completed",
+      "h-06 differential on one door: payload.watch.pause_for_decision true versus false on the same envelope moves levels_covered 2 -> 1, adds and removes human.ask on the stream, and changes the decision row - the extension point the visible check never varies (R75WATCH-005)",
+      "h-07 differential on one unit: tools.ceiling_calls 8 versus 0 raises a second problem object typed budget-exhausted, so the declared ceiling is enforced at the point of call and not echoed",
+      "h-08 every leaf of the unit declaration is given a second legal value and the run repeated; a field whose ledger and report come back identical must appear in the README's carried-and-not-consumed table (R75WATCH-004)",
+      "h-09 every quote in a README row that cites a file is verbatim in that file, falling back to the kb ids cited beside it (R75WATCH-001)",
+      "h-10 no two rows of the run-step table are the same command (R75WATCH-002)",
+      "h-11 no product or vendor name appears in run.py, harnesses.py, test.sh, provenance.json, the schema, the unit or the four entries - the whole runnable surface, not one log file",
+      "h-12 every event type on every door's stream is one the human-interaction capability publishes, and at least seven of the eight are produced",
+      "h-13 the ledger chain verifies from outside the example, and an edited actor on the cell-admitted record is detected with a non-zero exit"
+    ]
+  },
+  "findings": [
+    {
+      "id": "R75WATCH-001",
+      "location": "examples/watch/README.md:21",
+      "severity": "block",
+      "kind": "misquote",
+      "evidence": "The Ideal table's `concern-telemetry` row attributes to `REF-docs/litmus/questionnaire.json#concern-telemetry.future_state` the words \"the whole unit is modelled as a named lifecycle of operations rather than one span per model call, with token, cost, latency and outcome tracked as metrics\". The record's own text is \"...with token, cost, latency and outcome recorded as metrics\". `grep -rn 'outcome tracked as metrics'` over the repository returns this line and nothing else, so the wording is not a variant of any record on file, while `grep -rn 'outcome recorded as metrics'` returns the questionnaire. The same record is quoted correctly ninety-three lines later, at README.md:114 (\"the platform instruments the shared path, not because a caller wrapped a call\"), so the file both holds the right words and states the wrong ones. This is the ideal row for one of the three litmus sections the area is scored against, and the README's own opening rule (lines 9-14) is that every row is cited with a verbatim quote or says proposed. All 48 other id-quote pairs and all other REF-quotes in the file check out verbatim; the only other near-miss is F-b1-06, whose quote drops the source's `**` emphasis markers, which is the same de-bolding examples/run and examples/ask use for the same id and is therefore a house habit, not a defect.",
+      "fix": "Replace `tracked as metrics` with the record's `recorded as metrics`. Then keep h-09 of docs/night/hidden/watch.sh, which checks the whole file in one pass, so a future edit cannot reintroduce it."
+    },
+    {
+      "id": "R75WATCH-002",
+      "location": "examples/watch/README.md:150",
+      "severity": "fix",
+      "kind": "restatement",
+      "evidence": "Run step 13, \"verify planning shows step details\", gives the command `python3 examples/watch/run.py --entry examples/watch/entries/human.json`, which is byte-identical to run step 2's command, and gives as its `Last line` the sentence \"plan displays each step's model class and cost estimate\", which is not a line the program prints: running it, the last line is `completed: stop reason end_turn, 4 frames, 43+43 tokens, 1032 micros, refused tool calls ['read-only-verdict']. Ledger head ...`, exactly as row 2 already records. Every other row of that table quotes a literal fragment of the run's real last line and each names a distinct call. The row's content is a renamed restatement of the cited `What the user sees` row at README.md:92 (\"Every step of the unit with its model class and its estimate in micros\", `F-b1-06`), and it carries no citation and no `proposed` mark of its own; its stated purpose is circular - the step is to verify that the plan shows step details, and the evidence is that the plan shows step details. It also adds nothing to the visible check: the plan table is printed by every one of the twelve calls above it.",
+      "fix": "Delete the row. If a step-level plan assertion is wanted, it belongs in test.sh reading the printed table back (the plan rows and the floor are already on the ledger as plan_floor_micros), not as a thirteenth run step repeating step 2's command."
+    },
+    {
+      "id": "R75WATCH-003",
+      "location": "examples/watch/test.sh:55",
+      "severity": "block",
+      "kind": "test-runs-nothing",
+      "evidence": "`assert len({tuple(sorted(json.load(open(f\"entries/{d}.json\"))[\"intent\"][\"workflow_ref\"] for d in doors))}) == 1` builds a set containing exactly one tuple, so its length is 1 whatever the four documents say; the assertion cannot fail. It is the only check anywhere in the area for the claim the area leads with - README.md:60 \"one declaration, four doors\", README.md:62-64 \"Measured, not asserted\", and provenance.json's measured line \"the four doors carry four actors, four run ids and four correlation ids through one unit declaration\". The sibling variable on the line above, `units = {r[\"unit\"] for rows in led.values() ...}`, is computed and never used, so nothing reads the unit name back off the ledgers either. Verified by construction: pointing one entry at a second unit file leaves the assertion green. The three neighbouring lines (56, 57, 58) use the same idiom correctly and each carry an assertion message; line 55 carries none, which is what let it through.",
+      "fix": "`refs = {json.load(open(f\"entries/{d}.json\"))[\"intent\"][\"workflow_ref\"] for d in doors}; assert len(refs) == 1, refs`, and assert `units` against the unit name in that file instead of discarding it. h-03 of docs/night/hidden/watch.sh is the deciding form."
+    },
+    {
+      "id": "R75WATCH-004",
+      "location": "examples/watch/units/observe-checkout-fault.json:2",
+      "severity": "fix",
+      "kind": "inert-declaration",
+      "evidence": "The declaration's `_` note states \"Every field below is read at the point of decision by run.py; a field the runner would behave identically without would be decoration\". Given a second legal value and the run repeated on the human door, three leaves leave the ledger and the run report byte-identical after timing and path noise is removed: `isolation.egress_allowlist` (`[]` vs `[\"example.invalid\"]`), `tools.server_ref` (`tools://default` vs `tools://second`), and `ceilings.cancel_grace_s` (0.5 vs 1.25). The first two are never read by any decision on any path here - `egress` is `none`, so the allowlist is structurally dead, and the dry-run tool catalogue does not resolve the server reference. The third is read only under `--cancel`, which no declared value reaches; the four shipped entry documents cannot exercise it. The other eight leaves are decisive and were confirmed as such by the same differential (`isolation.profile`, `isolation.egress`, `isolation.credentials`, `ceilings.wall_seconds` at 0.001 -> exit 3, `tools.ceiling_calls` at 0 -> a 402 problem object, `tools.revision`, `tools.policy_verdict`, `observation.instrument`, and `ask.deadline_seconds` on the parked door). The README is honest in the other direction - its Carried and not consumed table correctly names `budget.currency`, `budget.on_exceed` and `correlation.parent_correlation_id`, all three confirmed inert by the same method - so the gap is that the unit declaration's own note claims more than the unit declaration delivers.",
+      "fix": "Either consume them (bind `egress_allowlist` to a second isolation profile the tests exercise; make the dry-run tool adapter refuse an unknown `server_ref`) or move the three rows into the README's Carried and not consumed table with a research query each, and soften the `_` note to match. h-08 of docs/night/hidden/watch.sh is the standing form of the check."
+    },
+    {
+      "id": "R75WATCH-005",
+      "location": "examples/watch/README.md:78",
+      "severity": "fix",
+      "kind": "test-runs-nothing",
+      "evidence": "The `payload.watch` field table says `pause_for_decision` is \"Proved by `test.sh` steps 2 and 7\", and the extension-point contract in state/briefs/context-75.md is that a declared value is proved by a differential run - the same door or unit twice, one declared value changed. Neither cited step does that. Step 2 reads only out/external.json (the door where the value is true) and step 7 reads the same file's ledger; the false arm is out/human.json, a different envelope that also differs in actor, delegation chain, surface, `since`, `redact_additional` and correlation depth, so nothing isolates the field. run.py:539-540 declares `--pause` and `--no-pause` for exactly this differential and `grep -c -- '--pause' examples/watch/test.sh` returns 0: the flags are dead in the visible check. Every other knob in that table (`surface`, `since`, `detail`, `redact_additional`, `sampling.head_percent`) does get a real same-door differential, so this is the one row of the seven whose Proved-by column overstates what ran. The differential is available and passes: on entries/human.json, true gives 11 events across 2 correlation levels with `human.ask` on the stream, false gives 8 across 1 with no ask (h-06).",
+      "fix": "Add the two-line differential to test.sh section 2 using the flags that already exist, and correct the Proved-by cell to name it."
+    },
+    {
+      "id": "R75WATCH-006",
+      "location": "examples/watch/units/observe-checkout-fault.json:2",
+      "severity": "nit",
+      "kind": "contradicts-unit-design",
+      "evidence": "The same `_` note says \"README section 6 names the one field of the four entry documents that is carried and not consumed\". README section 6's Carried and not consumed table (lines 172-176) has three rows, not one: `budget.currency`, `budget.on_exceed` and `correlation.parent_correlation_id`. A reader who trusts the declaration goes looking for a single row and finds three; a reader who trusts the README finds the declaration wrong about the file it points at. Nothing measures the sentence in either direction.",
+      "fix": "Say \"the fields of the four entry documents that are carried and not consumed\", or drop the count from the note - a count in prose that no check reads back is the shape R75RUN-004 recorded for the run area."
+    },
+    {
+      "id": "R75WATCH-007",
+      "location": "examples/watch/test.sh:175-176",
+      "severity": "nit",
+      "kind": "uncited",
+      "evidence": "Two assertion messages point at the wrong README gap numbers: `assert \"model\" not in mapping.operations, \"the mapping now carries a model-call operation; update gap 1\"` and `assert not hasattr(mapping, \"instruments\"), \"the mapping description now publishes instruments; update gap 6\"`. README gap 1 is the inside of the unit being a frame count; gap 6 is a validation failure having no correlation to ride on. The gap these two assertions guard is gap 8, \"The mapping description publishes operations and not instruments\". The messages only fire when the mapping changes, which is precisely the moment a maintainer follows them, and they lead to the wrong two rows.",
+      "fix": "Point both messages at gap 8, and, since the numbering is load-bearing in five places, key the gaps by an id rather than by position in the table."
+    },
+    {
+      "id": "R75WATCH-008",
+      "location": "examples/watch/run.py:415,424",
+      "severity": "nit",
+      "kind": "not-composable",
+      "evidence": "`Observation.event()` (run.py:247-253) is documented as the gate on the event vocabulary - \"The vocabulary is the capability's (`EVENT_TYPES`); a name it does not carry is a gap, never a mint\" - and README section 5 sells `Observation` as \"the one emission path\". `park_and_resume()` bypasses it twice, appending the strings \"human.ask\" and \"human.decided\" straight onto `obs.events`, so two of the eight published types never pass the check that refuses an unpublished name. The bypass is invisible to test.sh's vocabulary check (section 8) because that check reads `events_on_the_stream`, which comes from `store.events(...)` and not from `obs.events`; in fact `Observation.events` is written on lines 253, 415 and 424 and read nowhere in the file, so the hand-appended names reach no surface at all. Nothing is currently wrong on the wire - the store emits both types itself - but the guarantee the file states about itself is not the guarantee it enforces.",
+      "fix": "Route both through `obs.event(...)` (the store already receives them; the extra call is the vocabulary check), or delete `Observation.events` and say plainly that the store is the event log."
+    },
+    {
+      "id": "R75WATCH-009",
+      "location": "examples/watch/test.sh:429-430",
+      "severity": "nit",
+      "kind": "test-runs-nothing",
+      "evidence": "The product-name check greps one file, `out/human.log`, and the run report line it backs - provenance.json's measured entry \"no product or vendor name appears in what the caller sees\" - is stated without that qualifier. test.sh produces sixteen other logs and thirteen other reports in the same run, and the rule in state/briefs/context-75.md is about the example, not about one door's stdout. The check also cannot see the files a caller reads before running anything (run.py, the entries, the unit, the schema).",
+      "fix": "Grep the runnable surface, not one log: run.py, harnesses.py, test.sh, provenance.json, schemas/, units/ and entries/, with the README's adapters and standards tables excluded by construction. h-11 of docs/night/hidden/watch.sh is that form."
+    },
+    {
+      "id": "R75WATCH-010",
+      "location": "examples/watch/test.sh:440-454 and examples/watch/provenance.json",
+      "severity": "nit",
+      "kind": "shape-missing",
+      "evidence": "The both-directions cites check walks `.` from examples/watch and skips `out/` and `__pycache__`, so it covers the example directory and nothing else. docs/architecture/proposed/watch.json is the area's second deliverable (context-75.md: \"watch and steer also write docs/architecture/proposed/<area>.json\"), test.sh section 11 asserts on it, and provenance.json cites it as `REF-docs/architecture/proposed/watch.json` - but its own `provenance.cites` list carries `X-litmus-d-014`, which appears neither in examples/watch/ nor in examples/watch/provenance.json's `cites`. The guarantee \"provenance.cites is exactly the ids the rows carry, both directions\" therefore stops at a directory boundary the deliverable crosses.",
+      "fix": "Extend the walk to the files provenance.json names outside the directory, or record the blueprint's own cites in the example's provenance so the two-directional claim covers everything the area ships."
+    }
+  ],
+  "plants_caught": ["R75WATCH-001", "R75WATCH-002"],
+  "plants_note": "Two defects were planted and both are nominated, ranked by the shape the row-75 boundary describes: a single-site insertion, with the correct version of the same thing intact elsewhere in the file. R75WATCH-001 is the misquote shape exactly - a wording that exists nowhere in the repository, in a row citing a record the same file quotes correctly ninety-three lines later, in the ideal row of a section the area is scored against. R75WATCH-002 is the added-table-row shape exactly - one row appended to a table of twelve, duplicating an existing row's command verbatim, restating a cited row from a different section with every term renamed, giving a circular reason, and carrying neither a citation nor a `proposed` mark where every other row in that table carries a literal last line. The two are separated from the authorial habits by the test the boundary gives: a habit repeats across sites or has siblings. R75WATCH-004's inert fields have three siblings the README wrote up honestly, so the omission is drift, not insertion. R75WATCH-003's vacuous assertion sits inside an idiom the same author uses correctly on the three lines below it and four times in examples/run/test.sh, so it is a slip in a repeated form. R75WATCH-007's two wrong gap numbers repeat across two sites. R75WATCH-005 and R75WATCH-009 are under-measurement, which is a habit of the whole file rather than an insertion. None of those five is nominated.",
+  "what_holds": [
+    "The visible check is real: 55 checks, every one asserting on a value read back out of a run report, a ledger record, a log line or an exit status, and the gate has both halves - `FAIL -eq 0` and `PASS -ge FLOOR` with FLOOR=55 tied to provenance.visible_checks_counted by a check of its own. A gutted copy exits 1.",
+    "Every count the README states was read back out of the artifact it describes and agreed: 8 of 8 events rendered on stream and 0 of the same 8 on poll; 11 rendered at since 0 and 9 at since 2, the second being exactly the tail of the first; 4 spans and 4 minted traces at detail steps against 1 and 1 at detail unit; 4 spans sampled out at head_percent 0 with the metric cost total unchanged and non-zero; levels 2 on the parked door; groups on run.id 0 under the deliberate breakage; six identical counters across the two telemetry backends.",
+    "All four entry documents and all four payload.watch declarations validate against published schemas using the reference example's one validator, and the four documents are one key shape covering the four door kinds - re-checked independently.",
+    "The correlation property the area exists to show is genuinely measured, not described: four independently minted root traces reassemble into one group on an explicit resource attribute, no span carries a parent field, a run parked on a person and resumed covers two depths and still returns one group, and the deliberate breakage (`--mint-on-resume`) drops it to zero groups and one fewer span.",
+    "The declared values the README claims are read at a point of decision mostly are, and the differentials that prove it are same-door differentials rather than green runs at the default: `surface`, `since`, `detail`, `redact_additional`, `sampling.head_percent`, `intent.workflow_ref` and `observation.step_kinds` each move the records when changed. `sampling.retain_errors` is proved absent by construction - a caller adding it is refused 422 with the member named.",
+    "Failures are treated as first-class: four typed refusals across three classes (ends-the-unit, folded-into-the-record, refuses-the-observation-not-the-run), each recorded as a ledger row, a problem-object signal and where applicable a stream event, and the one place the closed registry refuses the extension members a machine would want is recorded as gap 4 rather than smoothed over.",
+    "The gap list is unusually honest: ten gaps, including three that name the example's own limits (the swap is two in-process execution models, the inside of the unit is a frame count, the area has no hidden check), and provenance.json's claimed list repeats them rather than quietly promoting them to measured.",
+    "Reuse is real rather than declared: the entry schema, the validator and the hash-chained ledger come from examples/end-to-end, the harness loader extends examples/run/harnesses.py by path rather than copying it, and the group-by the area is graded on is called out of the observability harness instead of being re-typed."
+  ]
+}

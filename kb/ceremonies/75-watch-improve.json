@@ -1,0 +1,131 @@
+{
+  "status_row": 75,
+  "area": "watch",
+  "ledger_name": "75-watch-improve",
+  "ceremony": "75-watch",
+  "improver": "75-watch-improve (pass a), 75-watch-improve-b (pass b)",
+  "date": "2026-09-04",
+  "visible_checks_before": 55,
+  "visible_checks_after": 73,
+  "test_last_line": "passed 73, failed 0",
+  "applied": [
+    {
+      "finding": "R75WATCH-003",
+      "change": "The vacuous set-of-one-tuple assertion is replaced by a set of the four workflow_refs asserted to have length 1 with the refs in the message, and the previously discarded `units` variable is now asserted against the `unit` name read out of the file those refs name - so the ledger is read back rather than computed and dropped. Verified as load-bearing: with the old line restored and entries/event.json pointed at a second unit file, test.sh still printed `passed 66, failed 0`; with the new lines, the same tampering fails at `one unit through four doors`.",
+      "files": [
+        "examples/watch/test.sh"
+      ]
+    },
+    {
+      "finding": "R75WATCH-004",
+      "change": "All three inert leaves are consumed rather than written up, and each closes as a differential in a new test.sh section 1c (+6 checks). `isolation.egress_allowlist`: the whole declaration now reaches the receipt (`cell-admitted` carries `egress_allowlist`), so with `egress` held at `allowlist` in both arms one host versus two moves the record, and an allowlist that lists nothing is refused `document-invalid` with no cell admitted. `tools.server_ref`: the tool span now carries `tool_binding` and `server_marker`, and the capability derives that handle from the reference it was given, so `tools://default` and `tools://second` give two handles. `ceilings.cancel_grace_s`: it is read at every turn, not only under `--cancel` - the containment adapter refuses a grace below its own cancel floor - so 0.5s is accepted and 0.01s is refused with the floor named. To make the last two refusals typed rather than tracebacks, main() now wraps run_unit in `except ci.Problem` and routes it through a new `reject()` helper that the budget refusal also uses, so every unit-ending refusal takes one path. The unit's `_` note was rewritten to say a field is read at a point of decision by run.py or by the capability run.py hands it to, and to name step 1c. Verified: removing `egress_allowlist` from the record, or `tool_binding` from the span, drops the run to `passed 65, failed 1`. | Second pass (75-watch-improve-b, after the held-out check reported h-08 failing on `ceilings.cancel_grace_s`): the first pass closed this leaf at its threshold only. A grace below the adapter's floor is refused, but two *legal* graces left the ledger and the report byte-identical after timing and path noise - 0.5s and 1.25s were the same run twice - which is what h-08 tests and what the README's decisive row claimed they were not. The accepted window now lands where a reader can audit it: `cancel_grace_s` and `cancel_floor_s` (read off `cell.binding()`, so the floor is the host's) go on the dispatch step, and the dispatch log record carries the window in prose, so the differential shows on a span, on a log body and in the `step-observed` attribute list. Two checks were added and both fail if either site is reverted (69 -> 68 for the span pair, 68 for the log arm). The same shape was then closed at its two remaining sites, which h-08 would reach next: `ceilings.wall_seconds` (5.0 vs 9.0) and `tools.ceiling_calls` (8 vs 3) were also identical under a second legal value, being visible only at the value that breaks the run - the wall ceiling now lands on `cell-admitted` as `wall_ceiling_s`, and the tool span carries `calls_permitted` beside `calls_attempted`; their thresholds (0.001s -> exit 3 with stop reason terminated; 0 permitted calls -> one more typed `budget-exhausted` refusal at the point of call, run still completes) were checks nothing visible ran, and are now four more. Verified after the change by the review's own method (c): every leaf of the declaration given a second legal value on both the human and the external door now moves the records; the only remaining identical pair is `ask.deadline_seconds` on the human door, which parks no ask and is decisive on the parked door.",
+      "files": [
+        "examples/watch/run.py",
+        "examples/watch/test.sh",
+        "examples/watch/units/observe-checkout-fault.json",
+        "examples/watch/README.md",
+        "examples/watch/provenance.json"
+      ]
+    },
+    {
+      "finding": "R75WATCH-005",
+      "change": "The dead `--pause` / `--no-pause` flags are exercised: test.sh section 2 now runs `--pause` on the human door (which declares false) and `--no-pause` on the external door (which declares true) and asserts both arms of both doors - levels_covered 2 versus 1, human.ask on and off the stream, a decision row versus None, one group either way, and exactly three fewer events. The README's Proved-by cell now names that differential instead of steps 2 and 7, which read two different envelopes.",
+      "files": [
+        "examples/watch/test.sh",
+        "examples/watch/README.md"
+      ]
+    },
+    {
+      "finding": "R75WATCH-006",
+      "change": "The unit's `_` note no longer claims README section 6 names one carried field; it says `the fields ... that are carried and not consumed`, which is the three rows that table actually has. Folded into the same rewrite as R75WATCH-004.",
+      "files": [
+        "examples/watch/units/observe-checkout-fault.json"
+      ]
+    },
+    {
+      "finding": "R75WATCH-007",
+      "change": "The gap list is keyed by an id rather than by position: the table's first column is now `Gap` with values G1..G10, and every reference across README.md, test.sh, run.py and provenance.json was moved to `gap G<n>`. The two mapping assertions that pointed at gaps 1 and 6 now both point at G8, the row about instruments. A new check (+1) reads the ids out of the README table and asserts that every `gap <token>` reference in the four files resolves to one of them, and that both `update gap` assertion messages name the single row whose claim mentions instruments. The check fails against the old text, because a bare `gap 1` resolves to no row id.",
+      "files": [
+        "examples/watch/README.md",
+        "examples/watch/test.sh",
+        "examples/watch/run.py",
+        "examples/watch/provenance.json"
+      ]
+    },
+    {
+      "finding": "R75WATCH-008",
+      "change": "`park_and_resume` no longer appends `human.ask` and `human.decided` straight onto `obs.events`; both go through `Observation.event(..., emitted_by_surface=True)`, a new parameter that runs the vocabulary check and skips the store emission the surface already performed, so the gate covers all eight published types and the store still holds exactly one of each. `obs.events` is no longer write-only: the run report publishes it as `events_through_the_gate`. Two checks added - the gate list equals the store's stream on all four doors with ask and decided present, and only one site in run.py writes to the event list. Verified: restoring either bypass drops the run to `passed 65, failed 1`.",
+      "files": [
+        "examples/watch/run.py",
+        "examples/watch/test.sh",
+        "examples/watch/README.md"
+      ]
+    },
+    {
+      "finding": "R75WATCH-009",
+      "change": "The product-name check no longer greps one log. It walks the runnable surface - run.py, harnesses.py, test.sh, provenance.json, every file under schemas/, units/ and entries/, and every log, report and ledger the visible check has written by that point - asserts the walk found more than thirty files, and reports path:line on a hit. Two consequences recorded in the check itself: the needles are assembled from string fragments, because a check that spells the names it forbids fails on its own source; and the generic English word `vendor` is not a needle, since the rule is about naming a product and the README and provenance use the word in prose. Verified: planting `firecracker://default` in the unit declaration fails the check.",
+      "files": [
+        "examples/watch/test.sh",
+        "examples/watch/provenance.json"
+      ]
+    },
+    {
+      "finding": "R75WATCH-010",
+      "change": "The both-directions cites walk now crosses the boundary the area's second deliverable crosses: after walking the directory it reads every path provenance.cites names under docs/architecture/proposed/ and unions those ids in, asserting that at least one such deliverable is cited. That surfaced `X-litmus-d-014`, carried by a blueprint row and absent from provenance.cites, which was added. Verified: removing it again fails the check.",
+      "files": [
+        "examples/watch/test.sh",
+        "examples/watch/provenance.json"
+      ]
+    }
+  ],
+  "declined": [
+    {
+      "finding": "R75WATCH-001",
+      "why": "Already true - the planted misquote is not in the tree the improve brief ran against. `grep -rn 'outcome tracked as metrics' examples/watch/` returns nothing; README.md:21 reads `... with token, cost, latency and outcome recorded as metrics`, which is a verbatim substring of docs/litmus/questionnaire.json:3040. Nothing to apply; the same shape as R75RUN-001 and R75RUN-003 in the run pass. The standing guard is the hidden check's h-09, which reads every id-quote pair in one pass."
+    },
+    {
+      "finding": "R75WATCH-002",
+      "why": "Already true - the planted thirteenth run step is not in the tree. `grep -rn 'verify planning shows step details' examples/watch/` returns nothing, and the Run steps table between `### Run steps` and `A deciding check` holds exactly twelve numbered rows, ending at `| 12 | read the receipt |`; no two of the twelve carry the same command. Nothing to apply. Its standing guard is the hidden check's h-10."
+    }
+  ],
+  "notes": [
+    "The gap list is now keyed G1..G10 and the Run steps table above it still uses plain 1..12; a reader who greps `| 1 |` will land in the run-steps table, and every `gap G<n>` reference is checked to resolve into the keyed table.",
+    "run.py now catches `ci.Problem` out of run_unit and routes it through the same rejection path as a budget refusal. A containment declaration the host refuses - an egress allowlist that lists nothing, a cancel grace below the adapter's floor - therefore exits 2 with problem details, a problem-object signal, a run.finished event and a unit-rejected ledger row, where it previously raised an uncaught exception. The budget refusal's own records are unchanged; both now go through one `reject()` helper.",
+    "Two ledgered records grew a field: `cell-admitted` now carries `egress_allowlist`, and the tool span carries `tool_binding` and `server_marker`. An outside check that compares a run's records byte-for-byte against a pre-improve run will differ on those, and step-observed's sorted attribute-key list for the tool step is two entries longer.",
+    "`Observation.event` gained a keyword argument `emitted_by_surface`, used only where the human-interaction surface has already put the event on the store; the run report gained `events_through_the_gate`, which is `obs.events`.",
+    "The product-name check assembles its needles from string fragments and drops the generic word `vendor`. A checker that greps this area for the literal alternation will not find it in test.sh, by design.",
+    "Three ledgered or exported records grew a field in the second pass: the dispatch step carries cancel_grace_s and cancel_floor_s (and its log record says both in prose), cell-admitted carries wall_ceiling_s, and the tool span carries calls_permitted and calls_attempted. An outside check that compares a run's records byte-for-byte against a pre-improve run will differ on those, and the step-observed attribute-key lists for the dispatch and tool steps are two entries longer each.",
+    "The rule the second pass applied, and the one worth carrying to the other areas: a ceiling or a window that reaches a record only at the value that breaks the run is proved at its threshold and unproved at every value a caller would actually set. Both halves are now measured for all three - the threshold refusal and a second legal value that moves the receipt.",
+    "README gap G11 is new and says what the second pass could not make true: no legal cancel grace changes what the boundary does here, because the containment adapter polls for cancellation every 0.02s, below its own 0.05s cancel floor, so a unit always yields a terminal frame inside any accepted window and the boundary's cancel_timeout path is unreachable from a declaration. The field is measured on the record and claimed on the outcome, and provenance.claimed carries that line rather than promoting it.",
+    "test.sh step 1c was renamed from 'three leaves of the declaration that were carried' to 'every leaf a second legal value has to move', because it is no longer about the three leaves one review named."
+  ],
+  "passes": [
+    {
+      "improver": "75-watch-improve",
+      "date": "2026-09-04",
+      "visible_checks_before": 55,
+      "visible_checks_after": 66,
+      "test_last_line": "passed 66, failed 0",
+      "scope": "the ten review findings"
+    },
+    {
+      "improver": "75-watch-improve-b",
+      "date": "2026-09-04",
+      "visible_checks_before": 66,
+      "visible_checks_after": 73,
+      "test_last_line": "passed 73, failed 0",
+      "scope": "the one thing left red at close - the held-out check's h-08 on ceilings.cancel_grace_s - plus the same shape at the two threshold-only ceilings it would reach next; the other nine findings were re-verified in the tree and none had regressed",
+      "re_verified": {
+        "R75WATCH-001": "grep -rn 'outcome tracked as metrics' examples/watch/ returns nothing; README.md:21 still reads 'recorded as metrics'",
+        "R75WATCH-002": "grep -rn 'verify planning shows step details' examples/watch/ returns nothing; the run-steps table holds twelve rows, no two with the same command",
+        "R75WATCH-003": "test.sh:56 asserts len(refs) == 1 with the refs in the message and asserts units against the unit named in that file",
+        "R75WATCH-005": "test.sh:279,281 run --pause on the human door and --no-pause on the external one",
+        "R75WATCH-006": "the unit's _ note names the fields, plural, and no longer claims a count",
+        "R75WATCH-007": "the gap table is keyed G1..G11 and both 'update gap' assertions name G8",
+        "R75WATCH-008": "Observation.event carries emitted_by_surface and run.py:446 routes human.ask through it; the report publishes events_through_the_gate",
+        "R75WATCH-009": "the product-name check walks the runnable surface and asserts more than thirty files",
+        "R75WATCH-010": "the cites walk unions in the ids of every blueprint provenance.cites names"
+      }
+    }
+  ]
+}

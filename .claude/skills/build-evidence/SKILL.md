@@ -303,7 +303,7 @@ Each was a skill of its own before STATUS row 71; its full content, with every c
 
 Builds on: `agentic-stack`, `build-ceremony`, `build-skill-authoring`, `cap-capability-packaging`, `cap-human-interaction`, `cap-work-intake`, `xc-guarantees`
 
-Used by: `build-skill-authoring`, `cap-agent-runtime`, `cap-capability-packaging`, `cap-document-validation`, `cap-durable-execution`, `cap-errors`, `cap-evaluation`, `cap-human-interaction`, `cap-idempotency`, `cap-identity`, `cap-isolation`, `cap-model-access`, `cap-policy`, `cap-provenance`, `cap-scheduling`, `cap-state-persistence`, `cap-telemetry`, `cap-tool-access`, `cap-work-intake`, `compose-improvement-loop`, `compose-workflow`, `core-components`, `seam-dispatch`, `seam-state`, `xc-guarantees`
+Used by: `build-example`, `build-skill-authoring`, `cap-agent-runtime`, `cap-capability-packaging`, `cap-document-validation`, `cap-durable-execution`, `cap-errors`, `cap-evaluation`, `cap-human-interaction`, `cap-idempotency`, `cap-identity`, `cap-isolation`, `cap-model-access`, `cap-policy`, `cap-provenance`, `cap-scheduling`, `cap-state-persistence`, `cap-telemetry`, `cap-tool-access`, `cap-work-intake`, `compose-improvement-loop`, `compose-workflow`, `core-components`, `seam-dispatch`, `seam-state`, `xc-guarantees`
 
 ## Open questions
 

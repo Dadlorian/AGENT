@@ -8,4 +8,4 @@
 | 45 | Fetch allowlist | Standards sites are fetchable from the environment | Blocked | Owner decision |
 | 74 | Phase 10: consumption pattern | One call shape from any door runs a contained agent turn | In progress | Design on record, run example closed |
 | 75 | Phase 11: user-view examples | Seven examples pass visible and hidden checks through four doors | In progress | Six closed, done parked on two checks |
-| 76 | Phase 12: answers aligned | Every litmus answer below aligned re-answered at two or better | In progress | 23 sections re-answered, scorecard blocked by drift |
+| 76 | Phase 12: answers aligned | Every litmus answer below aligned re-answered at two or better | In progress | 23 sections re-answered, scorecard pending |

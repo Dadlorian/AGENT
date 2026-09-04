@@ -20,8 +20,9 @@ recorded state is why this harness counts tools instead of reporting green.
 | 3. Swap the server | `ADAPTER=second python3 harness/tool-access/call.py` |
 | 4. Prove the interface held | `python3 harness/tool-access/conformance.py --adapter dryrun --adapter second` |
 | 5. Run against the host | `bash harness/tool-access/test.sh --live` |
-| 6. Check the authorization and transport mechanisms (tool-access-q2) | `python3 harness/tool-access/adapters/auth_exchange.py --check` |
+| 6. Check the authorization and transport mechanisms (tool-access-q2), over real loopback sockets | `python3 harness/tool-access/adapters/auth_exchange.py --check` |
 | 7. Reproduce the real refresh gap (X-maturity-c-002) | `AUTH_BREAK=refresh-omit-resource python3 harness/tool-access/adapters/auth_exchange.py --check` |
+| 8. Point adapters/live.py, unmodified, at a real local endpoint with its token sourced via the same OAuth exchange | `python3 harness/tool-access/adapters/auth_exchange.py --live-demo` |
 
 ## Files
 
@@ -31,11 +32,11 @@ recorded state is why this harness counts tools instead of reporting green.
 | `adapters/dryrun.py` | 117 | Deterministic in-process adapter. A catalogue this platform registers itself, five tools, one slow enough to cancel mid-flight, one that fails inside a successful envelope. No network, no privileges |
 | `adapters/live.py` | 149 | Today's component: the MCP endpoint on this host, reached over JSON-RPC with the revision declared per request. Reached only through the env vars below |
 | `adapters/second.py` | 191 | The second server: a conformant catalogue published outside this platform. Different tool names, an extra required argument on a shared tool, one tool withdrawn between binds, a cancel that can only be recorded. Faithful stub here; `SECOND_SERVER_URL` points it at a real server |
-| `adapters/auth_exchange.py` | ~330 | Answers tool-access-q2: which authorization and transport mechanisms are actually in force, verified from a recorded exchange rather than from configuration - the 401's RFC 9728 pointer, RFC 9728 and RFC 8414 metadata discovery, PKCE S256, an RFC 8707 `resource` parameter on the authorization request and on every token request including refresh, the issued token's audience, Streamable HTTP, a captured token rejected by a second server, and a tool result checked against its declared output schema. `AUTH_BREAK=<mode>` isolates one deliberate deviation at a time (`refresh-omit-resource` reproduces X-maturity-c-002's real client gap) |
+| `adapters/auth_exchange.py` | ~700 | Answers tool-access-q2: which authorization and transport mechanisms are actually in force, verified from a transcript built over real loopback TCP sockets (`LocalDeployment`: an authorization server and two protected-resource servers, each an `http.server` on its own port, an `urllib.request` client on the other end) rather than from configuration or from two halves of the flow calling each other's Python methods directly - the 401's RFC 9728 pointer, RFC 9728 and RFC 8414 metadata discovery, PKCE S256, an RFC 8707 `resource` parameter on the authorization request and on every token request including refresh, the issued token's audience, Streamable HTTP, a captured token rejected by a second server, and a tool result checked against its declared output schema. `AUTH_BREAK=<mode>` isolates one deliberate deviation at a time (`refresh-omit-resource` reproduces X-maturity-c-002's real client gap). `obtain_access_token` is also the function `adapters/live.py` calls (`TOOL_OAUTH_DISCOVER=1`) to source its own bearer token, and `--live-demo` points that unmodified adapter at the local deployment to prove it |
 | `binding.json` | 12 | Configuration. Which adapter, the server reference, the declared surface, the call, the call to cancel, the ceiling, the revision |
 | `call.py` | 139 | The minimal call. 15 lines of caller code below the `>>> CALLER CODE` marker, counted by `harness/caller_lines.py`; everything above it is the platform |
 | `conformance.py` | 466 | The same 17 cases and 6 counts against any adapter, with every argument built from the schema the server published |
-| `test.sh` | 148 | The gate: 36 checks, dry run by default, `--live` for the host |
+| `test.sh` | 166 | The gate: 43 checks, dry run by default, `--live` for the host |
 | `provenance.json` | - | Owner skill, co-skills, kb and research ids, what was measured, what stays claimed |
 | `out/` | written | Conformance reports, run logs, the two variant bindings the refusal checks use |
 
@@ -77,7 +78,9 @@ recorded state is why this harness counts tools instead of reporting green.
 | `POLICY_VERDICT` | any | `allow` or `allow-read-only` |
 | `ACTOR` / `ENTRY_KIND` | any | The stamped subject and which of the four entries this is |
 | `TOOL_ENDPOINT_URL` | live | The MCP endpoint's JSON-RPC URL on this host |
-| `TOOL_ENDPOINT_TOKEN` | live | Bearer token for it |
+| `TOOL_ENDPOINT_TOKEN` | live | Static bearer token for it. Ignored when `TOOL_OAUTH_DISCOVER=1` |
+| `TOOL_OAUTH_DISCOVER` | live | `1` sources the bearer token from `adapters/auth_exchange.py`'s `obtain_access_token` (401 probe, RFC 9728 + RFC 8414 discovery, PKCE, resource-bound authorization code grant and refresh) instead of `TOOL_ENDPOINT_TOKEN` |
+| `TOOL_OAUTH_RESOURCE` | live | The resource origin to run that OAuth exchange against. Defaults to `TOOL_ENDPOINT_URL` with a trailing `/mcp` stripped |
 | `TOOL_TIMEOUT_S` | live | Request timeout. Default 60 |
 | `TOOL_METHOD_LIST` / `_CALL` / `_READ` / `_CANCEL` | live | Method names, default `tools/list`, `tools/call`, `resources/read`, `notifications/cancelled`. Proposed mapping, overridable because both specification records on file are search-only |
 | `TOOL_REVISION_HEADER` | live | Header carrying the per-request revision. Default `MCP-Protocol-Version` |
@@ -134,7 +137,7 @@ Source: the blueprint's `MCP endpoint (live, authenticated, zero tools registere
 
 | Claim | Why it is not measured here |
 |---|---|
-| Live mode | `adapters/live.py` has never reached an endpoint from this environment; the request shape, the method names, the header and the failure mapping are unverified against a real server |
+| Live mode against the product endpoint | `adapters/live.py` has never reached the tool endpoint PASS.md A6 records on this host; the request shape, the method names, the header and the failure mapping are unverified against that real server. Its OAuth 2.1 client path is no longer unmeasured in general: `--live-demo` runs the same unmodified adapter, token sourced via `TOOL_OAUTH_DISCOVER=1`, against a real local HTTP endpoint end to end (step 8 above) |
 | The protocol revision `2026-07-28` | Both specification records on file are search results, never fetched pages (X-cap-tool-access-001, X-cap-tool-access-002). The standard stick is recorded absent by the owner while fetch is blocked |
 | The JSON-RPC method names | This harness's proposed mapping of the four operations onto the protocol; every one is overridable by environment variable |
 | The networked form of the second adapter | Until `SECOND_SERVER_URL` points at a real server, the dry run exercises its state machine in process; the shape and the swap procedure are real either way |

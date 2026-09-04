@@ -46,7 +46,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**IdempotencyLease (proposed summary shape; the full schema, the per-entry key-derivation table and the attach state machine are in references/lease-placement.md)** (proposed; sources: `F-b4-08`, `X-entry-composition-047`, `X-xc-idempotency-lease-001`)
+**IdempotencyLease (proposed summary shape; the full schema, the per-entry key-derivation table and the attach state machine are in references/xc-idempotency-lease-lease-placement.md)** (proposed; sources: `F-b4-08`, `X-entry-composition-047`, `X-xc-idempotency-lease-001`)
 
 ```json
 {

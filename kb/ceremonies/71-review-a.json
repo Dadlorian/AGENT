@@ -1,0 +1,515 @@
+{
+  "status_row": 71,
+  "label": "71-review-a",
+  "reviewer": "claude-opus-5[1m] (71-review-a)",
+  "date": "2026-09-04",
+  "step": "review",
+  "scope": "the 24 skills named in the launch message, judged against state/briefs/review.md and every point of state/briefs/context-71.md in order, against docs/fold/plan.json and the pre-fold sources at c468ad2^",
+  "skills": [
+    "agentic-stack",
+    "core-components",
+    "seam-dispatch",
+    "seam-state",
+    "build-skill-authoring",
+    "build-evidence",
+    "build-ceremony",
+    "cap-model-access",
+    "cap-durable-execution",
+    "cap-capability-packaging",
+    "cap-work-intake",
+    "cap-document-validation",
+    "cap-policy",
+    "cap-provenance",
+    "cap-errors",
+    "cap-identity",
+    "cap-scheduling",
+    "cap-idempotency",
+    "cap-state-persistence",
+    "cap-evaluation",
+    "cap-human-interaction",
+    "xc-guarantees",
+    "compose-workflow",
+    "compose-improvement-loop"
+  ],
+  "method": [
+    "description (context-71 point 1): read all 24 against their folded source lists in docs/fold/plan.json; checked every folded subject is findable in the description and looked for clauses that fire outside the skill's scope",
+    "coherence (point 2): resolved every skill name and every references/<file>.md pointer in each skill.json (body and folded) against .claude/skills/ and the skill's own references/ directory; verified every 'X already states F-nnn' row resolves to a target that carries that id (0 failures)",
+    "duplication (point 3): normalised-text similarity between each body row and every folded row of the same kind, and between every pair of bodies, reporting only pairs where neither side names the other",
+    "lost content (point 4): compared each target against `git show c468ad2^:.claude/skills/<source>/skill.json` for all 24 targets, row by row; the 8 rows dropped with no replacement were checked against kb/ceremonies/71-polish-a.json and 71-source-b.json and each is recorded there as a deletion, so no lost-content finding is raised",
+    "definition of done (point 5): resolved every path each criterion names, ran all 24 criteria once, and compared exit code and output with the recorded expected / measured_run",
+    "ordinary review (point 6): re-implemented the quote check over body and folded rows against kb/{facts,target-facts,reference-facts,research,decisions,architecture,entities,edges,ledger}.jsonl; scanned every references/*.md for product names outside an Adapters section; ran tools/validate_skills.py --only per skill and tools/check_adapter_pairs.py"
+  ],
+  "validator": {
+    "command": "python3 tools/validate_skills.py --only <skill>",
+    "results": {
+      "agentic-stack": "0 errors, 0 warnings",
+      "core-components": "0 errors, 0 warnings",
+      "seam-dispatch": "0 errors, 0 warnings",
+      "seam-state": "0 errors, 0 warnings",
+      "build-skill-authoring": "0 errors, 0 warnings",
+      "build-evidence": "0 errors, 0 warnings",
+      "build-ceremony": "0 errors, 0 warnings",
+      "cap-model-access": "0 errors, 0 warnings",
+      "cap-durable-execution": "0 errors, 0 warnings",
+      "cap-capability-packaging": "0 errors, 0 warnings",
+      "cap-work-intake": "0 errors, 0 warnings",
+      "cap-document-validation": "0 errors, 0 warnings",
+      "cap-policy": "0 errors, 0 warnings",
+      "cap-provenance": "0 errors, 0 warnings",
+      "cap-errors": "0 errors, 0 warnings",
+      "cap-identity": "0 errors, 0 warnings",
+      "cap-scheduling": "0 errors, 0 warnings",
+      "cap-idempotency": "0 errors, 2 warnings: restates F-b1-02 under the same quote as agentic-stack, without naming it; restates F-part-c-04 under the same quote as agentic-stack, build-skill-authoring, without naming it",
+      "cap-state-persistence": "0 errors, 0 warnings",
+      "cap-evaluation": "0 errors, 0 warnings",
+      "cap-human-interaction": "0 errors, 0 warnings",
+      "xc-guarantees": "0 errors, 0 warnings",
+      "compose-workflow": "0 errors, 0 warnings",
+      "compose-improvement-loop": "0 errors, 0 warnings"
+    }
+  },
+  "harness": {
+    "criteria_run": 24,
+    "green": 23,
+    "red": [
+      "build-ceremony"
+    ],
+    "note": "each skill's definition_of_done.criterion was executed once from the repository root; build-ceremony exits 1 with missing_files=11 (R71A-003). No skill file was modified."
+  },
+  "findings": [
+    {
+      "id": "R71A-001",
+      "skill": "cap-idempotency",
+      "location": "best_practices[4]",
+      "severity": "block",
+      "kind": "misquote",
+      "evidence": "Row text 'Every unit of work must be retried three times before it is reported as failed.' is origin=sourced on F-b1-02 with quote 'The core imports interfaces, never implementations'. The quote is verbatim in F-b1-02 (so validate_skills.py passes it) but F-b1-02 is design rule 1 about the core importing interfaces; it says nothing about retries, and no record in kb/ carries a three-retry rule. The row is an invented platform policy wearing someone else's citation, and it also contradicts cap-durable-execution and seam-dispatch, which put retry under the step's idempotency key and the stop-reason vocabulary, not a fixed count.",
+      "fix": "Delete the row. If a retry policy is wanted, research it and land it in cap-durable-execution as origin=proposed with its own research record."
+    },
+    {
+      "id": "R71A-002",
+      "skill": "cap-idempotency",
+      "location": "best_practices[5]",
+      "severity": "block",
+      "kind": "restatement",
+      "evidence": "Row text 'A criterion nothing can fail is not a criterion, so every gate carries a breakage.' is origin=sourced on F-part-c-04 under the same verbatim quote agentic-stack and build-skill-authoring already use, and it restates the discipline build-evidence owns (the criterion/breakage/measured-run triple) without naming build-evidence or agentic-stack. validate_skills.py --only cap-idempotency reports exactly this as two restatement warnings, and tools/final_acceptance.py shows stick T-t9-03 (validator reports zero warnings) failing at '0 errors, 2 warnings' because of it.",
+      "fix": "Delete the row; cap-idempotency's definition of done already carries a breakage, and build-evidence states the rule. If the point is wanted here, rewrite it to name build-evidence rather than re-cite F-part-c-04."
+    },
+    {
+      "id": "R71A-003",
+      "skill": "build-ceremony",
+      "location": "definition_of_done.criterion",
+      "severity": "block",
+      "kind": "dod",
+      "evidence": "The criterion 'python3 tools/check_ceremony.py kb/ceremonies/ceremony-01-review.json kb/ceremonies/ceremony-01-improve.json' was run once for this review: it exits 1 with 'findings_checked=7, unresolved=0, duplicated=0, missing_files=11, unknown_finding_ids=0'. The 11 missing files are .claude/skills/build-adapter-pair/{skill.json,SKILL.md}, .claude/skills/build-evidence-record/{skill.json,SKILL.md,references/evidence-record-shape.md} and so on - directories the fold deleted when both skills folded into build-evidence. definition_of_done.expected still claims 'exit 0 ... missing_files=0' and measured_run.clean_exit is 0, so the recorded evidence no longer reproduces. This skill's gate is red today.",
+      "fix": "Rewrite the file paths in ceremony-01-review.json / ceremony-01-improve.json findings C1-002, C1-003, C1-005, C1-006 and C1-007 to the post-fold paths (.claude/skills/build-evidence/skill.json, SKILL.md and references/build-evidence-record-evidence-record-shape.md), then re-run tools/measure.py to refresh expected and measured_run."
+    },
+    {
+      "id": "R71A-004",
+      "skill": "core-components",
+      "location": "definition_of_done.criterion",
+      "severity": "block",
+      "kind": "dod",
+      "evidence": "core-components folds five components and five implement facets, but took only core-document-implement's gate: 'bash harness/document-validation/test.sh && python3 harness/document-validation/conformance.py --adapter dryrun --adapter second'. It is the same criterion cap-document-validation carries (both skills' measured_run.clean_output are byte-identical). The gates the other four implement facets named are no longer run by this skill: harness/core-graph (with its --cross-store run), harness/dispatch (planner, judge) and harness/provenance + harness/state-persistence (ledger). harness/core-graph is now named by no skill's definition of done at all, so the Graph's conformance suite gates nothing. The criterion runs green (verified once for this review) while four of the five components it describes are unexercised.",
+      "fix": "Make the criterion the conjunction of the five folded implement criteria, or at minimum add 'bash harness/core-graph/test.sh && python3 harness/core-graph/conformance.py --adapter dryrun --adapter second && python3 harness/core-graph/conformance.py --cross-store dryrun second', then re-run tools/measure.py."
+    },
+    {
+      "id": "R71A-005",
+      "skill": "cap-durable-execution",
+      "location": "definition_of_done.criterion",
+      "severity": "fix",
+      "kind": "dod",
+      "evidence": "The body kept only the base implement facet's gate. The folded xc-compensation / xc-compensation-implement reference still states its own definition of done over harness/xc-compensation, and that harness is now named by no skill's definition of done anywhere in the tree - it is dead weight the acceptance sticks cannot see. The body's criterion was run once for this review and passes, so the skill reads as fully gated while the folded half is ungated.",
+      "fix": "Extend definition_of_done.criterion with the folded facet's criterion ('bash harness/xc-compensation/test.sh && python3 harness/xc-compensation/conformance.py --adapter dryrun --adapter second'), then re-run tools/measure.py so expected and measured_run cover both halves."
+    },
+    {
+      "id": "R71A-006",
+      "skill": "cap-capability-packaging",
+      "location": "definition_of_done.criterion",
+      "severity": "fix",
+      "kind": "dod",
+      "evidence": "The body kept only the base implement facet's gate. The folded cap-capability-registry / cap-capability-registry-implement reference still states its own definition of done over harness/capability-registry, and that harness is now named by no skill's definition of done anywhere in the tree - it is dead weight the acceptance sticks cannot see. The body's criterion was run once for this review and passes, so the skill reads as fully gated while the folded half is ungated.",
+      "fix": "Extend definition_of_done.criterion with the folded facet's criterion ('bash harness/capability-registry/test.sh && python3 harness/capability-registry/conformance.py --adapter dryrun --adapter second'), then re-run tools/measure.py so expected and measured_run cover both halves."
+    },
+    {
+      "id": "R71A-007",
+      "skill": "cap-provenance",
+      "location": "definition_of_done.criterion",
+      "severity": "fix",
+      "kind": "dod",
+      "evidence": "The body kept only the base implement facet's gate. The folded xc-audit-trail / xc-audit-trail-implement reference still states its own definition of done over harness/xc-audit-trail, and that harness is now named by no skill's definition of done anywhere in the tree - it is dead weight the acceptance sticks cannot see. The body's criterion was run once for this review and passes, so the skill reads as fully gated while the folded half is ungated.",
+      "fix": "Extend definition_of_done.criterion with the folded facet's criterion ('bash harness/xc-audit-trail/test.sh && python3 harness/xc-audit-trail/conformance.py --adapter dryrun --adapter second'), then re-run tools/measure.py so expected and measured_run cover both halves."
+    },
+    {
+      "id": "R71A-008",
+      "skill": "cap-state-persistence",
+      "location": "definition_of_done.criterion",
+      "severity": "fix",
+      "kind": "dod",
+      "evidence": "The body kept only the base implement facet's gate. The folded cap-memory / cap-memory-implement reference still states its own definition of done over harness/memory, and that harness is now named by no skill's definition of done anywhere in the tree - it is dead weight the acceptance sticks cannot see. The body's criterion was run once for this review and passes, so the skill reads as fully gated while the folded half is ungated.",
+      "fix": "Extend definition_of_done.criterion with the folded facet's criterion ('bash harness/memory/test.sh && python3 harness/memory/conformance.py --adapter dryrun --adapter second'), then re-run tools/measure.py so expected and measured_run cover both halves."
+    },
+    {
+      "id": "R71A-009",
+      "skill": "xc-guarantees",
+      "location": "definition_of_done.criterion",
+      "severity": "fix",
+      "kind": "dod",
+      "evidence": "The body kept only the base implement facet's gate. The folded xc-tenancy / xc-tenancy-implement reference still states its own definition of done over harness/xc-tenancy, and that harness is now named by no skill's definition of done anywhere in the tree - it is dead weight the acceptance sticks cannot see. The body's criterion was run once for this review and passes, so the skill reads as fully gated while the folded half is ungated.",
+      "fix": "Extend definition_of_done.criterion with the folded facet's criterion ('bash harness/xc-tenancy/test.sh && python3 harness/xc-tenancy/conformance.py --adapter dryrun --adapter second'), then re-run tools/measure.py so expected and measured_run cover both halves."
+    },
+    {
+      "id": "R71A-010",
+      "skill": "compose-workflow",
+      "location": "definition_of_done.criterion",
+      "severity": "fix",
+      "kind": "dod",
+      "evidence": "The body kept only the base implement facet's gate. The folded compose-agent / compose-agent-implement reference still states its own definition of done over harness/linked, and that harness is now named by no skill's definition of done anywhere in the tree - it is dead weight the acceptance sticks cannot see. The body's criterion was run once for this review and passes, so the skill reads as fully gated while the folded half is ungated.",
+      "fix": "Extend definition_of_done.criterion with the folded facet's criterion ('bash harness/linked/test.sh && python3 harness/linked/conformance.py --adapter dryrun --adapter second'), then re-run tools/measure.py so expected and measured_run cover both halves."
+    },
+    {
+      "id": "R71A-011",
+      "skill": "cap-state-persistence",
+      "location": "definition_of_done.measured_run",
+      "severity": "fix",
+      "kind": "dod",
+      "evidence": "measured_run.breakage_output is byte-identical to seam-state's (same head sha256:b387fc13..., same 'passed 14, failed 6'), but the two skills declare different breakages: seam-state's is \"sed -i '76s#.*#LEAF_PREFIX = b\\\"\\\\x02\\\"#' harness/state-persistence/interface.py\" while this skill's is 'Append a product-name comment (# breakage: litellm) to the end of harness/state-persistence/call.py'. A product-name comment produces a product-scan failure; the recorded output shows only the merkle tamper walk and no product-scan line. One of the two runs was copied, and this row's evidence does not demonstrate the breakage it states.",
+      "fix": "Apply this skill's own breakage, re-run tools/measure.py, and let it write the real output; or change the breakage text to the one that was actually measured."
+    },
+    {
+      "id": "R71A-012",
+      "skill": "agentic-stack",
+      "location": "definition_of_done.measured_run",
+      "severity": "fix",
+      "kind": "dod",
+      "evidence": "measured_run.clean_output still carries warnings naming core-planner-implement and other skills the fold deleted. The criterion still exits 0, but the recorded evidence describes a tree that no longer exists, so 'measured' now labels a pre-fold run.",
+      "fix": "Re-run tools/measure.py for this skill and let tools/expected_from_measured.py rewrite expected and expected_failure from the post-fold run."
+    },
+    {
+      "id": "R71A-013",
+      "skill": "build-skill-authoring",
+      "location": "definition_of_done.measured_run",
+      "severity": "fix",
+      "kind": "dod",
+      "evidence": "measured_run.clean_output still carries warnings naming xc-identity-delegation, xc-audit-trail and xc-idempotency-lease, all deleted by the fold. The criterion still exits 0, but the recorded evidence describes a tree that no longer exists, so 'measured' now labels a pre-fold run.",
+      "fix": "Re-run tools/measure.py for this skill and let tools/expected_from_measured.py rewrite expected and expected_failure from the post-fold run."
+    },
+    {
+      "id": "R71A-014",
+      "skill": "build-evidence",
+      "location": "definition_of_done.measured_run",
+      "severity": "fix",
+      "kind": "dod",
+      "evidence": "measured_run.clean_output records 'skills_total 102 skills_checked 102' and breakage_output 'skills_total 103 skills_checked 103'; the same criterion run once for this review reports 'skills_total 28 skills_checked 28'. The criterion still exits 0, but the recorded evidence describes a tree that no longer exists, so 'measured' now labels a pre-fold run.",
+      "fix": "Re-run tools/measure.py for this skill and let tools/expected_from_measured.py rewrite expected and expected_failure from the post-fold run."
+    },
+    {
+      "id": "R71A-015",
+      "skill": "agentic-stack",
+      "location": "folded[cap-consumption]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "2 reference pointers resolve to nothing: references/usage.md (named at folded[cap-consumption]); references/load-path.md (named at folded[cap-consumption]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-016",
+      "skill": "core-components",
+      "location": "body.contract.shapes[0]; contract.invariants[2]; folded[core-document-implement]; folded[core-graph]; folded[core-judge]; folded[core-ledger]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "3 rows compose by a name the fold deleted, without naming the skill that now owns it: `build-definition-of-done` (now build-evidence) at contract.invariants[2], contract.invariants[6], instructions[1]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/. 6 reference pointers resolve to nothing: references/document-shapes.md (named at body.contract.shapes[0], body.contract.shapes[0].schema.properties.steps, body.open_questions[1]); references/implementation-notes.md (named at folded[core-document-implement], folded[core-graph-implement], folded[core-judge-implement], folded[core-ledger-implement]); references/planner-shapes.md (named at folded[core-planner]); references/graph-shapes.md (named at folded[core-graph]); references/judge-shapes.md (named at folded[core-judge]); references/ledger-shapes.md (named at folded[core-ledger]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-017",
+      "skill": "seam-dispatch",
+      "location": "best_practices[1]; instructions[2]; instructions[6]; instructions[8]; instructions[9]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "9 rows compose by a name the fold deleted, without naming the skill that now owns it: `xc-identity-delegation` (now cap-identity) at instructions[8], purpose; `core-judge` (now core-components) at best_practices[1], contract.not_exposed[0], instructions[1]; `core-ledger` (now core-components) at instructions[2]; `xc-correlation` (now cap-telemetry) at instructions[6]; `build-adapter-pair` (now build-evidence) at instructions[8]; `cap-consumption` (now agentic-stack) at instructions[9]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-018",
+      "skill": "seam-state",
+      "location": "best_practices[2]; contract.invariants[5]; contract.invariants[6]; contract.invariants[8]; contract.shapes[2].schema.description; instructions[0]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "11 rows compose by a name the fold deleted, without naming the skill that now owns it: `core-graph` (now core-components) at instructions[0], purpose; `core-ledger` (now core-components) at contract.invariants[6], instructions[0], instructions[4], purpose; `cap-consumption` (now agentic-stack) at contract.shapes[2].schema.description; `build-adapter-pair` (now build-evidence) at contract.invariants[5], instructions[8]; `xc-audit-trail` (now cap-provenance) at contract.invariants[8]; `build-interface-versioning` (now build-evidence) at best_practices[2]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-019",
+      "skill": "build-skill-authoring",
+      "location": "folded[build-research-record]; folded[build-simplicity-budget]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "2 reference pointers resolve to nothing: references/research-record-shape.md (named at folded[build-research-record]); references/counting-method.md (named at folded[build-simplicity-budget]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-020",
+      "skill": "build-evidence",
+      "location": "body.contract.shapes[0]; folded[build-adapter-pair]; folded[build-entry-conformance]; folded[build-evidence-record]; folded[build-interface-versioning]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "5 reference pointers resolve to nothing: references/definition-of-done-shapes.md (named at body.contract.shapes[0], body.contract.shapes[1]); references/evidence-record-shape.md (named at folded[build-evidence-record]); references/execution-model-axes.md (named at folded[build-adapter-pair]); references/report.md (named at folded[build-entry-conformance]); references/versioning-policy.md (named at folded[build-interface-versioning]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-021",
+      "skill": "build-ceremony",
+      "location": "folded[build-solution-architecture]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "1 reference pointers resolve to nothing: references/blueprint-shape.md (named at folded[build-solution-architecture]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-022",
+      "skill": "cap-model-access",
+      "location": "contract.invariants[7]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "2 rows compose by a name the fold deleted, without naming the skill that now owns it: `build-adapter-pair` (now build-evidence) at contract.invariants[7], instructions[6]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-023",
+      "skill": "cap-durable-execution",
+      "location": "instructions[3]; instructions[4]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "2 rows compose by a name the fold deleted, without naming the skill that now owns it: `build-adapter-pair` (now build-evidence) at instructions[3]; `build-definition-of-done` (now build-evidence) at instructions[4]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-024",
+      "skill": "cap-capability-packaging",
+      "location": "best_practices[3]; folded[cap-capability-packaging-implement]; folded[cap-capability-registry]; instructions[5]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "2 rows compose by a name the fold deleted, without naming the skill that now owns it: `build-adapter-pair` (now build-evidence) at instructions[5]; `build-simplicity-budget` (now build-skill-authoring) at best_practices[3]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/. 2 reference pointers resolve to nothing: references/implementation-notes.md (named at folded[cap-capability-packaging-implement], folded[cap-capability-registry-implement]); references/registry-shapes.md (named at folded[cap-capability-registry]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-025",
+      "skill": "cap-work-intake",
+      "location": "adapters[1]; contract.standards[2]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "3 rows compose by a name the fold deleted, without naming the skill that now owns it: `cap-consumption` (now agentic-stack) at contract.standards[2]; `build-adapter-pair` (now build-evidence) at adapters[1], instructions[7]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-026",
+      "skill": "cap-document-validation",
+      "location": "folded[cap-document-validation-implement]; instructions[0]; instructions[3]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "3 rows compose by a name the fold deleted, without naming the skill that now owns it: `build-adapter-pair` (now build-evidence) at instructions[0], instructions[5]; `build-definition-of-done` (now build-evidence) at instructions[3]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/. 1 reference pointers resolve to nothing: references/implementation-notes.md (named at folded[cap-document-validation-implement]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-027",
+      "skill": "cap-policy",
+      "location": "folded[xc-policy-gate]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "1 reference pointers resolve to nothing: references/policy-gate.md (named at folded[xc-policy-gate]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-028",
+      "skill": "cap-provenance",
+      "location": "folded[xc-provenance-chain]; instructions[6]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "1 rows compose by a name the fold deleted, without naming the skill that now owns it: `build-definition-of-done` (now build-evidence) at instructions[6]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/. 1 reference pointers resolve to nothing: references/provenance-chain-shapes.md (named at folded[xc-provenance-chain]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-029",
+      "skill": "cap-errors",
+      "location": "folded[xc-typed-errors]; open_questions[2]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "1 rows compose by a name the fold deleted, without naming the skill that now owns it: `build-adapter-pair` (now build-evidence) at open_questions[2]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/. 1 reference pointers resolve to nothing: references/typed-errors-audit.md (named at folded[xc-typed-errors]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-030",
+      "skill": "cap-identity",
+      "location": "folded[cap-identity-implement]; folded[cap-mandate-broker-implement]; folded[xc-identity-delegation]; instructions[6]; open_questions[3]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "2 rows compose by a name the fold deleted, without naming the skill that now owns it: `build-definition-of-done` (now build-evidence) at instructions[6]; `build-adapter-pair` (now build-evidence) at open_questions[3]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/. 4 reference pointers resolve to nothing: references/conformance-run-shape.md (named at folded[cap-identity-implement]); references/identity-adapters.md (named at folded[cap-identity-implement]); references/identity-delegation-checks.md (named at folded[xc-identity-delegation]); references/mandate-broker-shapes.md (named at folded[cap-mandate-broker-implement], folded[cap-mandate-broker]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-031",
+      "skill": "cap-scheduling",
+      "location": "adapters[1]; best_practices[3]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "4 rows compose by a name the fold deleted, without naming the skill that now owns it: `build-adapter-pair` (now build-evidence) at adapters[1], instructions[5]; `xc-audit-trail` (now cap-provenance) at best_practices[3]; `xc-identity-delegation` (now cap-identity) at best_practices[3]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-032",
+      "skill": "cap-idempotency",
+      "location": "contract.invariants[7]; contract.not_exposed[1]; folded[xc-idempotency-lease]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "2 rows compose by a name the fold deleted, without naming the skill that now owns it: `build-adapter-pair` (now build-evidence) at contract.invariants[7]; `xc-tenancy` (now xc-guarantees) at contract.not_exposed[1]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/. 1 reference pointers resolve to nothing: references/lease-placement.md (named at folded[xc-idempotency-lease]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-033",
+      "skill": "cap-state-persistence",
+      "location": "adapters[1]; folded[cap-memory]; folded[cap-state-persistence-implement]; instructions[6]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "2 rows compose by a name the fold deleted, without naming the skill that now owns it: `build-definition-of-done` (now build-evidence) at instructions[6]; `build-adapter-pair` (now build-evidence) at adapters[1]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/. 2 reference pointers resolve to nothing: references/state-adapters.md (named at folded[cap-state-persistence-implement]); references/memory-item.md (named at folded[cap-memory]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-034",
+      "skill": "cap-evaluation",
+      "location": "adapters[1]; contract.invariants[0]; contract.shapes[2].schema.description; folded[cap-evaluation-implement]; open_questions[0]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "8 rows compose by a name the fold deleted, without naming the skill that now owns it: `cap-consumption` (now agentic-stack) at contract.shapes[2].schema.description; `core-judge` (now core-components) at contract.invariants[0], contract.invariants[2], contract.not_exposed[0], instructions[4]; `build-adapter-pair` (now build-evidence) at adapters[1], instructions[7]; `cap-memory` (now cap-state-persistence) at open_questions[0]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/. 1 reference pointers resolve to nothing: references/wiring.md (named at folded[cap-evaluation-implement]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-035",
+      "skill": "cap-human-interaction",
+      "location": "adapters[1]; folded[cap-human-interaction-implement]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "2 rows compose by a name the fold deleted, without naming the skill that now owns it: `build-adapter-pair` (now build-evidence) at adapters[1], open_questions[1]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/. 1 reference pointers resolve to nothing: references/human-interaction-wiring.md (named at folded[cap-human-interaction-implement]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-036",
+      "skill": "xc-guarantees",
+      "location": "body.contract.shapes[0]; contract.invariants[5]; contract.shapes[1].schema.description; folded[xc-budget]; instructions[0]; open_questions[2]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "8 rows compose by a name the fold deleted, without naming the skill that now owns it: `cap-consumption` (now agentic-stack) at contract.shapes[1].schema.description, instructions[8]; `xc-typed-errors` (now cap-errors) at contract.invariants[5], instructions[0]; `xc-policy-gate` (now cap-policy) at instructions[0], instructions[2]; `xc-correlation` (now cap-telemetry) at instructions[0]; `cap-mandate-broker` (now cap-identity) at open_questions[2]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/. 2 reference pointers resolve to nothing: references/usage.md (named at body.contract.shapes[0], body.instructions[9], folded[xc-tenancy]); references/run-budget.md (named at folded[xc-budget]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-037",
+      "skill": "compose-workflow",
+      "location": "best_practices[1]; best_practices[2]; body.contract.shapes[0]; contract.invariants[2]; folded[compose-agent]; instructions[2]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "6 rows compose by a name the fold deleted, without naming the skill that now owns it: `compose-approval` (now cap-human-interaction) at contract.invariants[2], contract.shapes[0].schema.$defs.approval.description, contract.shapes[0].schema.$defs.approval.properties.return_to_step_id.description; `core-planner` (now core-components) at instructions[2]; `core-document` (now core-components) at best_practices[1]; `build-adapter-pair` (now build-evidence) at best_practices[2]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/. 2 reference pointers resolve to nothing: references/operator-shapes.md (named at body.contract.shapes[0]); references/usage.md (named at folded[compose-agent], folded[compose-loop]). The fold renamed each sub-reference to <former>-<name>.md but did not rewrite the rows that name it.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-038",
+      "skill": "compose-improvement-loop",
+      "location": "best_practices[2]; contract.invariants[1]; contract.invariants[3]; instructions[9]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "13 rows compose by a name the fold deleted, without naming the skill that now owns it: `compose-loop` (now compose-workflow) at contract.invariants[1], contract.invariants[4], contract.shapes[0].schema.properties.loop_id.description, instructions[2]; `cap-capability-registry` (now cap-capability-packaging) at contract.invariants[3], contract.operations[0], contract.shapes[1].schema.properties.registry_record.description, instructions[5]; `core-judge` (now core-components) at best_practices[2], contract.invariants[2], contract.not_exposed[0], open_questions[2]; `build-definition-of-done` (now build-evidence) at instructions[9]. The reader is told to consult a skill that is neither a directory under .claude/skills/ nor a file under this skill's references/.",
+      "fix": "Rewrite each pointer: replace the deleted skill name with its fold target from docs/fold/plan.json (keeping the 'formerly <name>' parenthesis the polish pass used elsewhere), and repoint every references/<name>.md to the file that exists on disk."
+    },
+    {
+      "id": "R71A-039",
+      "skill": "core-components",
+      "location": "instructions[8]",
+      "severity": "fix",
+      "kind": "padding",
+      "evidence": "The same instruction survives three times in one skill without any copy naming another: body instructions[8] 'Record the schema dialect as unverified until its published specification has been read...', folded[core-planner].instructions[8] and folded[core-graph].instructions[7] each state it (the folded pair also covering the problem-details standard). A reader who opens references/core-planner.md is told the rule a second and third time as though it were that component's own.",
+      "fix": "Keep the body row as the single statement and cut it from the two folded references, or have each folded copy say 'core-components states this once in the body'."
+    },
+    {
+      "id": "R71A-040",
+      "skill": "cap-provenance",
+      "location": "contract.operations[2]",
+      "severity": "fix",
+      "kind": "coherence",
+      "evidence": "Two different operations named 'resolve (proposed)' live in one skill and neither names the other. Body contract.operations[2] is 'a subject digest -> every envelope whose statement names that digest as a subject'; folded[xc-provenance-chain].contract.operations[2] is 'one artifact digest, held by someone who has the bytes and nothing else -> the statement whose subject is that digest and the sealed head it was recorded under, fetchable without our credentials'. A caller reading SKILL.md plus references/xc-provenance-chain.md sees one operation name with two signatures.",
+      "fix": "Merge the two rows into the body's operation with the reference's fetchable-standalone clause as the output, or rename the folded one (for example verify_standalone) and have each name the other."
+    },
+    {
+      "id": "R71A-041",
+      "skill": "seam-dispatch",
+      "location": "folded[seam-dispatch-details]",
+      "severity": "nit",
+      "kind": "padding",
+      "evidence": "folded['seam-dispatch-details'] is not one of this target's sources in docs/fold/plan.json (they are seam-dispatch and seam-dispatch-implement); it is an overflow split of the body carrying one shape, and its purpose object is byte-identical to the body's purpose. The rendered folded table lists it under 'Was', so it reads as a former skill that never existed, and the purpose is stated twice.",
+      "fix": "Render the overflow as a plain references/dispatch-context.md named from the body (the plan's over-500-lines rule) rather than as a folded skill, or drop its duplicated purpose and mark the row in the table as an overflow reference."
+    },
+    {
+      "id": "R71A-042",
+      "skill": "build-evidence",
+      "location": "folded[build-adapter-pair]",
+      "severity": "fix",
+      "kind": "adapter",
+      "evidence": "Nothing checks the execution-model half of the adapter-pair rule this skill owns. tools/check_adapter_pairs.py --skills .claude/skills reports 'pairs_checked=18, single_adapter=0, empty_axis=18, same_model_pairs=18': it reads a differs_in_execution_model list off each adapter, and schemas/skill.schema.json sets additionalProperties:false on adapters with no such property, so every pair in the tree fails it and no skill can ever pass. Review item (g), 'a second adapter with the same execution model as the first', is therefore unenforced across all 18 pairs.",
+      "fix": "Either add differs_in_execution_model to the adapters schema and populate it from each skill's execution-model prose, or rewrite check_adapter_pairs.py to read the axes out of the maps_to / cannot text it actually has, then wire it into the acceptance run."
+    },
+    {
+      "id": "R71A-043",
+      "skill": "agentic-stack",
+      "location": "description",
+      "severity": "nit",
+      "kind": "trigger",
+      "evidence": "The trigger clause enumerates the subject of nearly every sibling: 'core components, capability interfaces, standards, adapters, the Dispatch or State seams, cross-cutting guarantees, workflows, loops, or any skill here'. Post-fold there are 28 descriptions competing for the same router, and this one matches the scope sentence of core-components, seam-dispatch, seam-state, xc-guarantees and compose-workflow almost word for word, so it fires on tasks those skills own. The 'load first' intent is legitimate; the enumeration is what over-matches.",
+      "fix": "Cut the enumeration to the root's own subjects (vocabulary, the seven design rules, claimed versus measured, done, kb citation, the consumption contract) and say 'load first alongside the skill for the layer you are working in'."
+    },
+    {
+      "id": "R71A-044",
+      "skill": "build-ceremony",
+      "location": "description",
+      "severity": "nit",
+      "kind": "trigger",
+      "evidence": "'when someone would skip the check because output looked fine' is build-evidence's green-run trigger; build-evidence's own description says 'judging whether a green run checked anything'. Two of the three build skills claim the same clause, so a green-gate question routes ambiguously.",
+      "fix": "Leave the green-run clause to build-evidence and keep this one on the ceremony boundary (a wave or section ending, writing or checking a record under kb/ceremonies/)."
+    },
+    {
+      "id": "R71A-045",
+      "skill": "build-ceremony",
+      "location": "best_practices",
+      "severity": "nit",
+      "kind": "padding",
+      "evidence": "42 percent of this skill's rows are origin=proposed (10 of 24), the highest of the 24 reviewed and above the T-t9-02 stick of at most 30 percent that tools/acceptance_check.py applies; the seven-skill sourcing pass recorded in kb/ceremonies/71-source-b.json did not reach it. tools/final_acceptance.py still shows T-t9-02 holding because it measures the aggregate, so the per-skill overshoot is invisible.",
+      "fix": "Run a sourcing pass over this skill's proposed rows as 71-source-b did for cap-policy, cap-provenance and cap-errors, or record the overshoot as an open question naming the records that would source it."
+    },
+    {
+      "id": "R71A-046",
+      "skill": "cap-evaluation",
+      "location": "contract.invariants[5]",
+      "severity": "nit",
+      "kind": "unsupported",
+      "evidence": "Row claims 'Reports and baselines are appended and retained, never overwritten' as origin=sourced on T-t4-04 under the quote 'improves the skills that produced it, and the loop continues'. The quote supports that a loop continues, not that reports and baselines are append-only; the retention rule is the author's consequence and rides in on the citation.",
+      "fix": "Split the row: keep the T-t4-04 sentence about the loop as sourced, and restate the append-and-retain rule as its own origin=proposed row (or cite the record that carries retention)."
+    }
+  ],
+  "metrics": {
+    "skills_reviewed": 24,
+    "rows_checked": 2981,
+    "sourced": 1730,
+    "proposed": 729,
+    "quotes_verified": 1730,
+    "misquotes_mechanical": 0,
+    "harness_runs": 24,
+    "pre_fold_sources_diffed": 79,
+    "rows_dropped_since_c468ad2_all_recorded_as_deletions": 8,
+    "stale_skill_names": 84,
+    "dangling_reference_pointers": 35,
+    "findings_by_severity": {
+      "block": 4,
+      "fix": 37,
+      "nit": 5
+    }
+  },
+  "summary": "24 skills reviewed; 46 findings: 4 block, 37 fix, 5 nit. Both planted defects were found, both in cap-idempotency: best_practices[4] is an invented three-retry rule wearing F-b1-02's verbatim quote, and best_practices[5] restates the criterion/breakage rule build-evidence owns under agentic-stack's quote - the two validator warnings, which also break stick T-t9-03. The fold's own damage is in the gates and the pointers: build-ceremony's definition of done now exits 1 because the ceremony-01 records name skill directories the fold deleted; core-components kept only core-document-implement's gate, so four of its five components are ungated and harness/core-graph is named by no skill at all; six more skills silently dropped their second folded harness (xc-compensation, capability-registry, xc-audit-trail, memory, xc-tenancy, linked); three skills' measured_run text still describes the 102-skill pre-fold tree; and cap-state-persistence's breakage evidence is seam-state's run under a different breakage. Across the 24 skills 84 rows still compose by a skill name the fold deleted without naming its new owner, and 35 references/<file>.md pointers resolve to nothing because the sub-references were renamed <former>-<name>.md. Quotes are clean: all 1730 sourced rows in body and folded content quote their cited records verbatim, no origin=sourced row lacks a quote, every 'X already states F-nnn' row resolves, and no product name appears outside an Adapters section in any reference file. Every row dropped since c468ad2^ is recorded as a deletion in kb/ceremonies/71-polish-a.json or 71-source-b.json, so no lost-content block is raised. No skill was edited; nothing committed.",
+  "status": "measured"
+}

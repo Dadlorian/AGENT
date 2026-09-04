@@ -19,6 +19,9 @@ Checks: visible (in /contract, the unit may run them) and hidden (host only: hel
 Advisor: on the host side of the boundary: seeds the harness from /contract, drives it turn by turn over the agent protocol, runs measure, counts attempts, applies the escalation policy (higher model class, a person, or stop). Inside the cell only the harness and a seed reader.
 Open decisions: escalation default; whether system.md is authored per task or generated from the document plus named skills.
 
+## Vocabulary
+Use the terms in docs/reference/ontology.md: task, task specification, execution context, attempt, execution, trajectory, step, tool call, artifact, work product, evaluation, result, disposition; the success ladder (execution, instruction, candidate, validation, task, outcome, promotion) instead of one word success; the cell lifecycle verbs (provision to dispose). Run means one execution of one attempt. Where a term is better than one you would have used, use it; where the ontology conflicts with a standard on file, the standard wins and say so.
+
 ## What exists (read these, nothing else in the repo)
 - examples/end-to-end/schemas/entry.schema.json and entries/*.json: the one envelope every door produces.
 - harness/containment/README.md and harness/containment/call.py: the nine-line contained turn (admit, session over the agent protocol, dispatch under a ceiling, cancel, finish, containment report from the host); adapters dryrun / live (Firecracker + goose) / second (capability-granted process, no cancellation).

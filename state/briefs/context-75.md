@@ -21,6 +21,9 @@ Direction (owner, 2026-09-04; intent to improve past, never a wording to keep): 
 5. Composition: how the example is built from units and the six operators; a run step table (`bash examples/<area>/test.sh` then the door commands).
 6. Extension points: where a builder adds without touching the core, and the gaps the example exposed (each with a research query).
 
+## Vocabulary
+Use the terms in docs/reference/ontology.md: task, task specification, execution context, attempt, execution, trajectory, step, tool call, artifact, work product, evaluation, result, disposition; the success ladder (execution, instruction, candidate, validation, task, outcome, promotion) instead of one word success; the cell lifecycle verbs (provision to dispose). Run means one execution of one attempt. Where a term is better than one you would have used, use it; where the ontology conflicts with a standard on file, the standard wins and say so.
+
 ## Rules
 - Dry-run cells only: adapters from the harnesses under harness/ (containment, gateway, observability, workflow, linked, and the rest) selected by configuration; the call shape is identical to live. Never a product name outside an adapter or the standards table.
 - Runnable, dependency-free Python 3.11 plus bash, no network. `bash examples/<area>/test.sh` is the visible check and prints `passed N, failed 0`. A test that runs nothing is a defect.

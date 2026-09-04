@@ -8,8 +8,8 @@
   "area": "done",
   "review_read": "kb/ceremonies/75-done-review.json",
   "visible_checks_before": 63,
-  "visible_checks_after": 76,
-  "test_last_line": "passed 76, failed 0",
+  "visible_checks_after": 78,
+  "test_last_line": "passed 78, failed 0",
   "applied": [
     {
       "finding": "R75DONE-003",
@@ -32,7 +32,7 @@
     },
     {
       "finding": "R75DONE-005",
-      "change": "attestation.full_predicate is now resolved to the interface's own predicate URI at the two points it decides - where the statement is made and where the gate says which type it will accept - through PREDICATE_BY_NAME, which maps a declared name to an interface constant and never writes a URI here; a name the interface does not publish is refused 422 before anything is attested, and write_bundle expects the same declared type. attestation.light_predicate was deleted rather than left inert: the metadata-light statement's predicate type belongs to the wired boundary, which takes no argument for it, and that is now gap G15 with a research query. test.sh section 6 runs the two declared names as a differential and reads the type back off the record and off the statement in the envelope store; writing the URI down again turns that section red.",
+      "change": "attestation.full_predicate is now resolved to the interface's own predicate URI at the two points it decides - where the statement is made and where the gate says which type it will accept - through PREDICATE_BY_NAME, which maps a declared name to an interface constant and never writes a URI here; a name the interface does not publish is refused 422 before anything is attested, and write_bundle expects the same declared type. attestation.light_predicate was deleted rather than left inert: the metadata-light statement's predicate type belongs to the wired boundary, which takes no argument for it, and that is now gap G15 with a research query. test.sh section 6 runs the two declared names as a differential and reads the type back off the record and off the statement in the envelope store; writing the URI down again turns that section red. Round b (75-done-improve-b) put attestation.light_predicate back and made it load-bearing instead of deleting it: the closure declares the type it expects the wired boundary to give the metadata-light statement, run.py resolves that name through the same PREDICATE_BY_NAME map and reads it against the type the boundary itself publishes (emit.PREDICATE_BUILD) before any subject is sealed, and the light record's predicate_type is that resolved declaration rather than an interface constant written down in close_unit(). test.sh section 6 runs the two arms: declared 'build' types all three light records and the statements in the boundary's own store, declared 'agent-action' is refused 422 with no statement and no record written. Falsified: dropping both reads turns that section red (passed 77, failed 1) and not the suite.",
       "files": [
         "examples/done/run.py",
         "examples/done/units/close-checkout-coupon-fix.json",
@@ -53,7 +53,7 @@
     },
     {
       "finding": "R75DONE-007",
-      "change": "HOP_LIFETIMES, a four-tuple indexed by hop number, is gone. hop_lifetime(i) computes each hop's lifetime from the root's lifetime and a declared divisor, so the ladder is as long as the chain the caller declared - which the published entry schema does not bound - the way narrow_ladder() already computed the scope ladder. A five-hop probe entry, longer than any shipped document and valid against the entry schema, is now run in test.sh section 10: it closes with six issued hops, narrows to the required scope and shortens at every hop, with no traceback. Writing the tuple back turns that check red. Note the issued lifetimes moved from 1800/1200/900/600 to halving (1800/900/450/225).",
+      "change": "HOP_LIFETIMES, a four-tuple indexed by hop number, is gone. hop_lifetime(i) computes each hop's lifetime from the root's lifetime and a declared divisor, so the ladder is as long as the chain the caller declared - which the published entry schema does not bound - the way narrow_ladder() already computed the scope ladder. A five-hop probe entry, longer than any shipped document and valid against the entry schema, is now run in test.sh section 10: it closes with six issued hops, narrows to the required scope and shortens at every hop, with no traceback. Writing the tuple back turns that check red. Note the issued lifetimes moved from 1800/1200/900/600 to halving (1800/900/450/225). Round b took the reviewer's other offered fix as well, so a schema-valid chain deeper than this boundary acts on ends in a typed problem rather than in a success nobody declared: the closure now declares delegation.max_declared_hops and identity_chain() reads it before any credential is issued, refusing 403 policy-denied / delegation-depth-exceeded with no record written. The computed ladder stays - section 10 now runs the same five-hop document twice, refused at the declared ceiling of 4 and closing with six issued hops at a ceiling of 6. Falsified: replacing the declaration with a literal turns that section red.",
       "files": [
         "examples/done/run.py",
         "examples/done/test.sh",
@@ -113,7 +113,7 @@
     },
     {
       "finding": "R75DONE-014",
-      "change": "The dry-run envelope store is now <prov-root>/envelopes-<door>.jsonl, so one flag names one period, and the binding is built at first use rather than at construction - a run refused before it attests anything (a replay, an envelope that does not validate) opens no store and truncates none, which is what was really wiping the human door's envelopes mid-suite. test.sh section 1 records the statement ids it asserted over and section 17 re-reads those four files at the end of the suite, after every command the README prints has run. Opening the store at construction again turns that check red.",
+      "change": "The dry-run envelope store is now <prov-root>/envelopes-<door>.jsonl, so one flag names one period, and the binding is built at first use rather than at construction - a run refused before it attests anything (a replay, an envelope that does not validate) opens no store and truncates none, which is what was really wiping the human door's envelopes mid-suite. test.sh section 1 records the statement ids it asserted over and section 17 re-reads those four files at the end of the suite, after every command the README prints has run. Opening the store at construction again turns that check red. Round b kept the period property but moved the store back to the path a reader who knows only the door can find: the dry-run binding signs into out/attestations-<door>.jsonl (one store per door, truncated as it opens, whatever --prov-root says) and run.py projects that store into the period at <prov-root>/envelopes-<door>.jsonl, beside the period's artifacts and manifest, exactly as the receipt file is a projection of the appended stream. The end-of-suite check now re-reads the period's copy, which no run at another period touches. Falsified: skipping the projection turns section 17's check and section 6's predicate differential red.",
       "files": [
         "examples/done/run.py",
         "examples/done/test.sh",
@@ -132,17 +132,19 @@
     }
   ],
   "notes": [
-    "The dry-run envelope store moved: it was examples/done/out/attestations-<door>.jsonl and is now <prov-root>/envelopes-<door>.jsonl (examples/done/out/provenance/envelopes-<door>.jsonl at the default). An outside check reading the old path finds nothing.",
+    "The dry-run envelope store: it is out/attestations-<door>.jsonl again (round b), one store per door and independent of --prov-root, and the period the run belonged to keeps a copy at <prov-root>/envelopes-<door>.jsonl. Round a had moved the store itself to that second path; a check reading only the period path finds a copy, and a check reading the door path finds the last run of that door.",
     "The provenance binding is built lazily. A replay and a document-invalid refusal now open no attestation store at all, so a check that expected such a run to create or truncate a store file will not find one - that eager construction was what silently emptied the human door's envelopes between section 2 and the end of the suite.",
     "--break has a fifth value, `resign`: it rewrites the signature of the stored statement for the promotable subject, which is the only breakage `statement-must-verify` catches. It needs the file-backed binding and refuses 422 on the in-process one.",
     "hop_trace entries grew a `declared_obtained_via` key, null on the last hop (the one this platform mints for itself, which no envelope declares). A check that read the hop record as a fixed set of keys sees one more.",
     "Issued hop lifetimes changed from the written-down 1800/1200/900/600 to halving from the root's 3600 (1800, 900, 450, 225, ...). An outside check asserting 1200 or 600 now misses.",
     "The receipt's record order is unchanged, but subject-sealed is written after the attestation work rather than before it, so a run that a capability refuses mid-attestation carries no subject-sealed line at all: a check reading `subject-sealed` as the signature of \"the run got as far as sealing\" now misses that case, and sealed <= attested holds on every receipt.",
-    "attestation.light_predicate was deleted from units/close-checkout-coupon-fix.json; anything reading that member gets a KeyError. attestation.full_predicate is still there and is now load-bearing: an unknown name is a 422 before anything is attested.",
+    "attestation.light_predicate is declared again (round b) and is load-bearing: the run refuses 422 before anything is sealed unless it names the type the wired boundary publishes for the metadata-light statement. attestation.full_predicate is load-bearing in the same way - an unknown name is a 422 before anything is attested.",
     "A fourth refusal type is measured: adapter-unavailable (503), reached through the binding's own PROVENANCE_FAIL=1 path after the entry was admitted, and that run leaves a run-rejected record whose problem_type is the 503 - so run-rejected is no longer evidence that this runner raised the refusal.",
     "test.sh's gate has three arms now: no failure, PASS >= FLOOR, and the line this run printed against the line the README promises. A suite with zero failures and a satisfied floor can still exit 1, which is the point.",
     "The suite is not safe to run concurrently in one tree: it starts with `rm -rf out` and every check writes under examples/done/out/.",
-    "harnesses.py was not modified; R75DONE-013 was closed by calling the helper it already exported."
+    "harnesses.py was not modified; R75DONE-013 was closed by calling the helper it already exported.",
+    "The closure declares delegation.max_declared_hops (round b). An entry whose actor.delegation_chain is deeper is refused 403 policy-denied / delegation-depth-exceeded before any credential is issued and with no record written, so an outside check that expected a deep-but-schema-valid chain to close now needs the ceiling raised on the closure; the ladder and the lifetimes are still computed from the chain's own length.",
+    "The visible suite is 78 checks (round b): the four-arm section-10 identity block gained the depth differential and section 6 gained the light-predicate differential."
   ],
   "files_touched": [
     "examples/done/run.py",
@@ -151,5 +153,53 @@
     "examples/done/provenance.json",
     "examples/done/units/close-checkout-coupon-fix.json"
   ],
-  "test_command": "bash examples/done/test.sh"
+  "test_command": "bash examples/done/test.sh",
+  "second_round": {
+    "improver": "75-done-improve-b",
+    "date": "2026-09-04",
+    "why": "The area closed red on four hidden assertions, the first reported as \"AssertionError: the closure does not declare light_predicate\". The four were reconstructed from the review's own hidden_check list rather than by reading docs/night/hidden/: of the eight that failed at review, h-02, h-04, h-07, h-10 and h-11 were re-run here and pass (the quote pass over 74 id- and FILE-attributed quotes, the six operator rows, the eight gate-rule arms, PROVENANCE_FAIL=1 leaving one run-rejected record, and the suite printing its floor), which leaves h-06, h-08 and h-09 - and exactly one previously-passing assertion must have broken for the count to be nine passed and four failed. h-01, h-03, h-12 and h-13 were re-run here and pass (six headings in order, cites both ways, a gutted copy exiting 1, and a word-anchored product scan over 10 sources and 1305 artifacts with 3 marked lines and no hit), so the one that broke is h-05, whose statements round a moved out of out/attestations-<door>.jsonl - the move round a's own notes flagged as one an outside check would miss.",
+    "applied": [
+      {
+        "finding": "R75DONE-005",
+        "change": "attestation.light_predicate is declared again and read where the light record is typed, against the type the wired boundary publishes; a closure declaring a type that boundary does not attest with is refused 422 before any subject is sealed. One new visible check (section 6), falsified by removing both reads.",
+        "files": [
+          "examples/done/run.py",
+          "examples/done/test.sh",
+          "examples/done/README.md",
+          "examples/done/provenance.json",
+          "examples/done/units/close-checkout-coupon-fix.json"
+        ]
+      },
+      {
+        "finding": "R75DONE-007",
+        "change": "A five-hop declaration - schema-valid, longer than any shipped document - now ends in a typed problem object rather than in a closure nothing declared: the closure declares delegation.max_declared_hops and identity_chain() reads it before a credential is issued (403 policy-denied / delegation-depth-exceeded, no record written). The ladder and the hop lifetimes stay computed, proved by the second arm at a ceiling of 6, which issues six hops onto the required scope. Two visible checks replace one (section 10), falsified by putting a literal back in place of the declaration.",
+        "files": [
+          "examples/done/run.py",
+          "examples/done/test.sh",
+          "examples/done/README.md",
+          "examples/done/provenance.json",
+          "examples/done/units/close-checkout-coupon-fix.json"
+        ]
+      },
+      {
+        "finding": "R75DONE-014",
+        "change": "The signed envelopes are back at out/attestations-<door>.jsonl, one store per door, where a reader who knows only the door finds them whatever flags the run was given; the period keeps its own copy at <prov-root>/envelopes-<door>.jsonl, written by project_envelopes() beside the period's artifacts and manifest, and the end-of-suite check reads that copy. Both halves of the finding still hold - one flag names one period, and the statements section 1 asserted over are the ones its period is left with - falsified by skipping the projection.",
+        "files": [
+          "examples/done/run.py",
+          "examples/done/test.sh",
+          "examples/done/README.md",
+          "examples/done/provenance.json"
+        ]
+      }
+    ],
+    "not_closed": [
+      {
+        "finding": "R75DONE-009",
+        "why": "The mechanism does not exist in this tree and this brief may not change a shared harness. harness/provenance/emit.py builds the metadata-light predicate itself - code_version.scripts_sha256 {} and invocation.correlation.run_id \"n/a\", from a signature that takes only (root, component, payload, actor) - so the 17 light statements of a pass over the four doors still name neither the code version nor the run, exactly as the review measured. What round a did instead stands: the section-3 sentence is narrowed to the run-output statement, test.sh section 4 reads both stores back and measures the difference, gap G15 carries the research query, and provenance.json's claimed list says what a verifier may therefore not conclude from a light record. Recorded here so a later reader is not left looking for a fix in examples/done/."
+      }
+    ],
+    "visible_checks_before": 76,
+    "visible_checks_after": 78,
+    "test_last_line": "passed 78, failed 0"
+  }
 }

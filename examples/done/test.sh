@@ -12,7 +12,7 @@
 #
 # The deciding check for this example is held out and is not in this directory.
 set -u
-FLOOR=76
+FLOOR=78
 cd "$(dirname "$0")"
 ROOT=$(cd ../.. && pwd)
 PASS=0; FAIL=0
@@ -44,7 +44,7 @@ assert len(sealed["human"]) == 4, sealed["human"]
 # the run-output predicate: same materials, same code version, four actors
 mats = {}
 for d in doors:
-    env = [json.loads(l) for l in open(f"out/provenance/envelopes-{d}.jsonl")]
+    env = [json.loads(l) for l in open(f"out/attestations-{d}.jsonl")]
     import base64
     stmts = [json.loads(base64.b64decode(e["envelope"]["payload"])) for e in env]
     full = [s for s in stmts if s["predicateType"].endswith("agent-action:0.1")]
@@ -54,11 +54,11 @@ for d in doors:
                json.dumps(p["code_version"], sort_keys=True))
 assert len(set(mats.values())) == 1, "the doors named different inputs or code versions"
 assert len({tuple(sorted((m["name"], m["digest"]) for m in
-                         json.loads(base64.b64decode([json.loads(l) for l in open(f"out/provenance/envelopes-{d}.jsonl")][0]["envelope"]["payload"]))["predicate"]["materials"]))
+                         json.loads(base64.b64decode([json.loads(l) for l in open(f"out/attestations-{d}.jsonl")][0]["envelope"]["payload"]))["predicate"]["materials"]))
             for d in doors}) == 4, "the entry envelope did not reach the predicate"
 # what section 17 re-reads at the end of the suite: this is the store these
 # assertions were made over, so a later run that rewrote it would be caught.
-json.dump({d: [json.loads(l)["id"] for l in open(f"out/provenance/envelopes-{d}.jsonl")]
+json.dump({d: [json.loads(l)["id"] for l in open(f"out/attestations-{d}.jsonl")]
            for d in doors}, open("out/doors-envelopes.json", "w"))
 actors = {d: {r["actor"] for r in v} for d, v in rows.items()}
 assert all(len(a) == 1 for a in actors.values()) and len({next(iter(a)) for a in actors.values()}) == 4, actors
@@ -204,7 +204,7 @@ import base64, json
 # statements of the same run carry, so gap G15 is measured rather than asserted.
 full, light = [], []
 for d in ("human", "event", "schedule", "external"):
-    for line in open(f"out/provenance/envelopes-{d}.jsonl"):
+    for line in open(f"out/attestations-{d}.jsonl"):
         doc = json.loads(base64.b64decode(json.loads(line)["envelope"]["payload"]))
         full.append((d, doc))
 for line in open("out/provenance/attestations.jsonl"):
@@ -386,6 +386,53 @@ print("the declared predicate name reaches the statement and the gate's expectat
       [seen[k][0][0].rsplit(":", 2)[-2] for k in ("pred-agent-action", "pred-build")])
 PY7
 check "attestation.full_predicate is read where the statement is made (differential)" "$?" "0"
+py <<'PY9' > out/predicate-light.log 2>&1
+import base64, json, os, subprocess
+# attestation.light_predicate names the type this closure expects the wired
+# boundary to put on the metadata-light statement. The boundary takes no
+# argument for it (gap G15), so the declaration is read against the type that
+# boundary publishes, before any subject is sealed: declaring a type it does
+# not attest with ends the run with a typed problem and no statement written.
+base = json.load(open("units/close-checkout-coupon-fix.json"))
+declared = base["attestation"]["light_predicate"]
+assert declared != base["attestation"]["full_predicate"], base["attestation"]
+seen = {}
+for label, name in (("light-declared", declared), ("light-wrong", base["attestation"]["full_predicate"])):
+    doc = json.loads(json.dumps(base)); doc["attestation"]["light_predicate"] = name
+    json.dump(doc, open(f"out/v/closure-{label}.json", "w"))
+    entry = json.load(open("entries/human.json"))
+    entry["intent"]["workflow_ref"] = f"out/v/closure-{label}.json"
+    entry["correlation"] = {"run_id": f"run-{label}", "correlation_id": f"corr-{label}", "depth": 0}
+    entry["idempotency_key"] = f"light-{label}-2026-09-03"
+    json.dump(entry, open(f"out/v/entry-{label}.json", "w"))
+    r = subprocess.run(["python3", "run.py", "--entry", f"out/v/entry-{label}.json",
+                        "--ledger", f"out/v/{label}.jsonl", "--prov-root", f"out/v/{label}/prov"],
+                       capture_output=True, text=True,
+                       env=dict(os.environ, OBJSTORE_DIR=f"out/v/{label}/os"))
+    seen[label] = r
+ok_run = seen["light-declared"]
+assert ok_run.returncode == 0, ok_run.stdout + ok_run.stderr
+rows = [json.loads(l) for l in open("out/v/light-declared.jsonl")]
+light = [x["predicate_type"] for x in rows if x["kind"] == "attested"
+         and x["fidelity"] == "metadata-light"]
+# what the boundary actually wrote, read back out of its own store rather than
+# off the record that claims it
+written = {json.loads(base64.b64decode(json.loads(l)["envelope"]["payload"]))["predicateType"]
+           for l in open("out/v/light-declared/prov/attestations.jsonl")}
+assert len(light) == 3 and set(light) == written, (light, written)
+assert all(t.endswith(f"{declared}:0.1") for t in light), light
+wrong = seen["light-wrong"]
+assert wrong.returncode == 2, wrong.stdout + wrong.stderr
+body = json.JSONDecoder().raw_decode(wrong.stdout.split("json):\n", 1)[1])[0]
+assert body["status"] == 422 and body["type"].endswith("document-invalid"), body
+assert base["attestation"]["full_predicate"] in body["detail"], body
+assert not os.path.exists("out/v/light-wrong/prov/attestations.jsonl"), "a statement was written"
+assert not os.path.exists("out/v/light-wrong.jsonl"), "a record was written before the refusal"
+print(f"the declared light predicate {declared!r} is the type on all {len(light)} metadata-light "
+      f"records and in the boundary's own store; declaring "
+      f"{base['attestation']['full_predicate']!r} for it is refused 422 with nothing attested")
+PY9
+check "attestation.light_predicate is read against the boundary that types it (differential)" "$?" "0"
 PROVENANCE_FAIL=1 OBJSTORE_DIR=out/v/capability-refusal/os python3 run.py \
   --entry entries/human.json --ledger out/v/capability-refusal.jsonl \
   --prov-root out/v/capability-refusal/prov > out/v/capability-refusal.log 2>&1
@@ -673,9 +720,10 @@ PY9
 check "a non-root hop's declared obtained_via is read and recorded (differential)" "$?" "0"
 py <<'PYA' > out/identity-deep.log 2>&1
 import json, os, subprocess
-# the entry schema puts no upper bound on the declared chain, so the ladder is
-# computed rather than written down: a chain longer than any shipped document
-# closes instead of reaching a traceback.
+# The entry schema puts no upper bound on the declared chain and nothing in the
+# runner does either: how deep a chain is acted on is declared by the closure
+# (delegation.max_declared_hops) and read before any credential is issued. Both
+# arms run the same five-hop document, longer than any shipped one.
 entry = json.load(open("entries/external.json"))
 entry["actor"]["delegation_chain"] = [
     {"actor": "agent:partner-sre-bot", "obtained_via": "token_exchange"},
@@ -685,32 +733,57 @@ entry["actor"]["delegation_chain"] = [
     {"actor": "user:corey", "obtained_via": "direct"}]
 entry["correlation"] = {"run_id": "run-deep-chain", "correlation_id": "corr-deep-chain", "depth": 1}
 entry["idempotency_key"] = "deep-chain-2026-09-03"
-json.dump(entry, open("out/v/entry-deep-chain.json", "w"))
 shipped = max(len(json.load(open(f"entries/{d}.json"))["actor"]["delegation_chain"])
               for d in ("human", "event", "schedule", "external"))
-assert len(entry["actor"]["delegation_chain"]) > shipped, shipped
+declared = len(entry["actor"]["delegation_chain"])
+assert declared > shipped, shipped
+base = json.load(open("units/close-checkout-coupon-fix.json"))
+assert base["delegation"]["max_declared_hops"] < declared, base["delegation"]
 import importlib.util
 spec = importlib.util.spec_from_file_location("ref", "../end-to-end/run.py")
 ref = importlib.util.module_from_spec(spec); spec.loader.exec_module(ref)
-assert not ref.validate(entry, json.load(open("../end-to-end/schemas/entry.schema.json")))
-r = subprocess.run(["python3", "run.py", "--entry", "out/v/entry-deep-chain.json",
-                    "--ledger", "out/v/deep-chain.jsonl", "--prov-root", "out/v/deep-chain/prov"],
-                   capture_output=True, text=True,
-                   env=dict(os.environ, OBJSTORE_DIR="out/v/deep-chain/os"))
-assert "Traceback" not in r.stderr, r.stderr[-400:]
-assert r.returncode == 0, r.stdout + r.stderr
-trace = [x for x in (json.loads(l) for l in open("out/v/deep-chain.jsonl"))
+seen = {}
+for label, limit in (("deep-refused", base["delegation"]["max_declared_hops"]), ("deep-admitted", 6)):
+    doc = json.loads(json.dumps(base)); doc["delegation"]["max_declared_hops"] = limit
+    json.dump(doc, open(f"out/v/closure-{label}.json", "w"))
+    doc_entry = json.loads(json.dumps(entry))
+    doc_entry["intent"]["workflow_ref"] = f"out/v/closure-{label}.json"
+    doc_entry["correlation"]["run_id"] = f"run-{label}"
+    doc_entry["correlation"]["correlation_id"] = f"corr-{label}"
+    doc_entry["idempotency_key"] = f"{label}-2026-09-03"
+    json.dump(doc_entry, open(f"out/v/entry-{label}.json", "w"))
+    # the document a reader would write is schema-valid at both limits: what
+    # separates the arms is the declaration, not the entry.
+    assert not ref.validate(doc_entry, json.load(open("../end-to-end/schemas/entry.schema.json")))
+    r = subprocess.run(["python3", "run.py", "--entry", f"out/v/entry-{label}.json",
+                        "--ledger", f"out/v/{label}.jsonl", "--prov-root", f"out/v/{label}/prov"],
+                       capture_output=True, text=True,
+                       env=dict(os.environ, OBJSTORE_DIR=f"out/v/{label}/os"))
+    assert "Traceback" not in r.stderr, r.stderr[-400:]
+    seen[label] = r
+refused = seen["deep-refused"]
+assert refused.returncode == 2, refused.stdout + refused.stderr
+body = json.JSONDecoder().raw_decode(refused.stdout.split("json):\n", 1)[1])[0]
+assert body["status"] == 403 and body["type"].endswith("policy-denied"), body
+assert body["rule_id"] == "delegation-depth-exceeded", body
+assert not os.path.exists("out/v/deep-refused.jsonl"), "a record was written before the refusal"
+admitted = seen["deep-admitted"]
+assert admitted.returncode == 0, admitted.stdout + admitted.stderr
+trace = [x for x in (json.loads(l) for l in open("out/v/deep-admitted.jsonl"))
          if x["kind"] == "identity-resolved"][0]["hop_trace"]
-assert len(trace) == 6, trace
+assert len(trace) == declared + 1, trace
 for older, newer in zip(trace, trace[1:]):
     assert set(newer["scope"]) <= set(older["scope"]), (older, newer)
     assert newer["remaining_s"] < older["remaining_s"], (older, newer)
-assert trace[-1]["scope"] == json.load(
-    open("units/close-checkout-coupon-fix.json"))["promotion"]["requires_scope"], trace[-1]
-print(f"a {len(entry['actor']['delegation_chain'])}-hop declaration, longer than any shipped one "
-      f"({shipped}), issues {len(trace)} hops and still lands on the required scope")
+assert trace[-1]["scope"] == base["promotion"]["requires_scope"], trace[-1]
+print(f"a {declared}-hop declaration, longer than any shipped one ({shipped}): refused 403 "
+      f"{body['rule_id']} at a declared ceiling of {base['delegation']['max_declared_hops']} with "
+      f"no record written, and at a ceiling of 6 it issues {len(trace)} hops onto the required scope")
 PYA
-check "the ladder is as long as the declared chain, not as long as a list here" "$?" "0"
+check "a chain deeper than the closure declares is refused before a credential is issued" "$?" "0"
+grep -q "issues 6 hops onto the required scope" out/identity-deep.log \
+  && ok "the ladder is as long as the declared chain, not as long as a list here" \
+  || bad "the raised ceiling did not issue the whole declared chain"
 
 echo "11. the promotion the door asked for (differential)"
 py <<'PY' > out/promotion.log 2>&1
@@ -1097,17 +1170,24 @@ PYC
 check "every gap reference resolves to a key in the gap table" "$?" "0"
 py <<'PYD' > out/envelopes-stable.log 2>&1
 import json
-# section 1 asserted over the four doors' envelope stores. The suite has run
-# every command in the README since, including two that close the same doors
-# again: this re-reads the files those assertions were made over.
+# section 1 asserted over the statements the four doors signed at the default
+# period. The suite has run every command in the README since, and every
+# differential arm besides, many of them closing the same doors at other
+# periods: this re-reads the period's own copy of those envelopes, written
+# beside its artifacts and its manifest, and the door store as the tree ends.
 was = json.load(open("out/doors-envelopes.json"))
 now = {d: [json.loads(l)["id"] for l in open(f"out/provenance/envelopes-{d}.jsonl")] for d in was}
 assert now == was, {d: (was[d], now[d]) for d in was if now[d] != was[d]}
 assert all(len(v) == 1 for v in now.values()), now
-print(f"the {len(now)} envelope stores section 1 read hold the same statements at the end of the "
-      f"suite: one flag names one period")
+# and the door store itself: keyed by the door alone, it holds the last run of
+# that door, whichever period it belonged to - which is why the period keeps a
+# copy. Every statement in it is one this suite wrote.
+ids = {d: [json.loads(l)["id"] for l in open(f"out/attestations-{d}.jsonl")] for d in was}
+assert all(v for v in ids.values()), ids
+print(f"the {len(now)} periods section 1 read hold the same statements at the end of the suite: "
+      f"one --prov-root names one period")
 PYD
-check "the artifact section 1 asserted over is the artifact left in the tree" "$?" "0"
+check "the statements section 1 asserted over are the ones its period is left with" "$?" "0"
 
 py <<'PY3' > out/floor.log 2>&1
 import json, re

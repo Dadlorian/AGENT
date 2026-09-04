@@ -30,6 +30,9 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "out")
+# The default period: the artifact store, the manifest and the envelope stores
+# of a run given no --prov-root all accumulate under it.
+DEFAULT_PROV_ROOT = os.path.join(OUT, "provenance")
 sys.path.insert(0, HERE)
 import harnesses  # noqa: E402
 
@@ -134,11 +137,8 @@ class Close:
         os.makedirs(OUT, exist_ok=True)
         # one binding takes a store path, the other holds its log in process: the
         # difference is the binding's, so it is asked for rather than assumed.
-        # The path is derived from --prov-root, so one flag names one period:
-        # the envelopes, the artifacts and the manifest of a run move together
-        # and two runs with different roots cannot share and truncate one store.
         self._prov_adapter = prov_adapter
-        self._prov_kwargs = ({"path": os.path.join(self.prov_root, f"envelopes-{self.door}.jsonl")}
+        self._prov_kwargs = ({"path": self.envelope_store_path()}
                              if args.prov_adapter == "dryrun" else {})
         self._prov = None
         self.state = state_adapter()
@@ -156,6 +156,30 @@ class Close:
         self.locations = {}                # subject digest -> where it was published
         self.rows = []                     # one row per closed unit
         self.promoted = []
+
+    def envelope_store_path(self) -> str:
+        """Where the dry-run binding keeps this door's signed envelopes: one
+        store per door, at `out/attestations-<door>.jsonl`, so a reader who
+        knows only the door - an outside check included - finds the statements
+        it wrote without being told which flags the run was given. The binding
+        truncates it as it opens, so it holds one run of one door; the period
+        the run belongs to gets its own copy from project_envelopes()."""
+        return os.path.join(OUT, f"attestations-{self.door}.jsonl")
+
+    def project_envelopes(self) -> None:
+        """The period's copy of the envelopes this run signed, written beside
+        the period's artifacts and its manifest so that one `--prov-root` still
+        names one period, exactly as the receipt file is a projection of the
+        appended stream. The binding's own store is keyed by the door alone, so
+        the next run of that door - at whatever period - starts it again."""
+        if self._prov is None:
+            return                          # nothing was attested; there is nothing to project
+        path = getattr(self._prov, "path", "")
+        if not path or not os.path.exists(path):
+            return                          # this binding holds its log in process
+        os.makedirs(self.prov_root, exist_ok=True)
+        with open(os.path.join(self.prov_root, f"envelopes-{self.door}.jsonl"), "w") as projection:
+            projection.write(open(path).read())
 
     @property
     def prov(self):
@@ -189,10 +213,28 @@ class Close:
                               f"schema this platform publishes; nothing was closed", causes=errs[:4])
         self.closure_path = os.path.join(HERE, self.envelope["intent"]["workflow_ref"])
         self.closure = json.load(open(self.closure_path))
+        # both declared predicate names are resolved here, before any subject is
+        # sealed or attested, so a name this platform does not publish ends the
+        # run with a typed problem and no statement written anywhere.
+        self.full_predicate_type()
+        self.light_predicate_type()
 
     # --- 2. the chain the envelope declares, plus one hop for the executor ---
     def identity_chain(self) -> None:
         declared = self.envelope["actor"]["delegation_chain"]
+        # How deep a declared chain this closure will act on. The published entry
+        # schema sets no maximum, and the scope ladder and the hop lifetimes are
+        # computed from the chain's own length rather than written down here, so
+        # the ceiling is a declaration read at the decision: a deeper chain is
+        # refused with a typed problem before any credential is issued and before
+        # any record is written, never carried into the issuing loop.
+        limit = self.closure["delegation"]["max_declared_hops"]
+        if len(declared) > limit:
+            raise self.refuse("policy-denied",
+                              f"the entry declares a delegation chain {len(declared)} hops deep and "
+                              f"the closure {self.closure['closure_id']} acts on at most {limit}; "
+                              f"no credential was issued and nothing was closed",
+                              rule_id="delegation-depth-exceeded")
         root = declared[-1]
         self.root_subject = root["actor"]
         required = tuple(self.closure["promotion"]["requires_scope"])
@@ -294,13 +336,14 @@ class Close:
         # The wired boundary: every subject gets a record here whatever the
         # materiality declaration says, and nothing below this call names a
         # signer, a key or a store.
+        light_type = self.light_predicate_type()          # read where the light record is typed
         light = self.emit.attest_and_record(self.prov_root, produced["name"], payload,
                                             actor=self.publisher.actor)
         thresholds = self.closure["attestation"]["materiality"]       # read at the decision
         full = "every-unit" in thresholds or THRESHOLD_OF[produced["subject_kind"]] in thresholds
         if self.args.brk == "unattested" and produced["subject_kind"] == "work_product":
             full = False                    # the breakage: the promotable subject is never attested
-        statement_id, predicate_type = light["statement_id"], self.prov_iface.PREDICATE_BUILD
+        statement_id, predicate_type = light["statement_id"], light_type
         if full:
             predicate_type = (self.prov_iface.PREDICATE_BUILD
                               if self.args.brk == "build-predicate"
@@ -340,18 +383,41 @@ class Close:
         self.rows.append(row)
         return row
 
+    def predicate_type(self, member: str) -> str:
+        """One declared predicate name resolved to the URI the provenance
+        interface publishes for it: the names are the closure's, the URIs are
+        the interface's, and neither is written down in this file."""
+        declared = self.closure["attestation"][member]
+        if declared not in PREDICATE_BY_NAME:
+            raise self.refuse("document-invalid",
+                              f"the closure declares {member} {declared!r}, which is not a "
+                              f"predicate type this platform publishes; nothing was attested",
+                              causes=[f"predicates published: {sorted(PREDICATE_BY_NAME)}"])
+        return getattr(self.prov_iface, PREDICATE_BY_NAME[declared])
+
     def full_predicate_type(self) -> str:
         """The predicate a full statement carries, resolved from the name the
         closure declares to the URI the provenance interface publishes. Read
         twice: where the statement is made, and where the gate says which type
         it will accept - so the two can never drift apart."""
-        declared = self.closure["attestation"]["full_predicate"]
-        if declared not in PREDICATE_BY_NAME:
+        return self.predicate_type("full_predicate")
+
+    def light_predicate_type(self) -> str:
+        """The predicate type the metadata-light statement carries. The wired
+        boundary chooses that type itself and takes no argument for it (README
+        gap G15), so the declared name is read against the type the boundary
+        publishes rather than passed to it: a closure declaring a type that
+        boundary does not attest with is refused before any subject is sealed,
+        and what the record says a light statement carries is the closure's
+        declaration checked against the boundary, never a label copied here."""
+        declared = self.predicate_type("light_predicate")
+        if declared != self.emit.PREDICATE_BUILD:
             raise self.refuse("document-invalid",
-                              f"the closure declares full_predicate {declared!r}, which is not a "
-                              f"predicate type this platform publishes; nothing was attested",
-                              causes=[f"predicates published: {sorted(PREDICATE_BY_NAME)}"])
-        return getattr(self.prov_iface, PREDICATE_BY_NAME[declared])
+                              f"the closure declares light_predicate "
+                              f"{self.closure['attestation']['light_predicate']!r}, but the wired "
+                              f"boundary attests every metadata-light statement as "
+                              f"{self.emit.PREDICATE_BUILD}; nothing was attested")
+        return declared
 
     def predicate(self, unit: dict, digest: str, rung: str, disposition: str) -> dict:
         """The run-output predicate: what would let someone reproduce or dispute
@@ -434,15 +500,19 @@ class Close:
         unit that was refused leaves a record like one that produced an
         artifact, on the same path, without the caller asking."""
         try:
-            return self.closure_run()
+            code = self.closure_run()
+            self.project_envelopes()
+            return code
         except Refusal as refusal:
             self.record_rejection(refusal.body)
+            self.project_envelopes()
             raise
         except self.problems as problem:
             # a capability refused after the entry was admitted. It reaches the
             # caller as its own problem object, and it leaves the same record a
             # refusal this runner raised would have left.
             self.record_rejection(problem.body)
+            self.project_envelopes()
             raise
 
     def record_rejection(self, body: dict) -> None:
@@ -664,7 +734,7 @@ def main(argv=None) -> int:
     ap.add_argument("--ledger", default=os.path.join(OUT, "done.jsonl"),
                     help="the receipt file this run projects the appended stream into")
     ap.add_argument("--records-out", help="write the appended state records here, as JSON")
-    ap.add_argument("--prov-root", default=os.path.join(OUT, "provenance"),
+    ap.add_argument("--prov-root", default=DEFAULT_PROV_ROOT,
                     help="the artifact store, attestation manifest and envelope store this period "
                          "accumulates in: one flag names one period")
     ap.add_argument("--bundle-out", help="write the promoted subject's envelope, verifying material "

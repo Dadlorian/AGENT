@@ -30,7 +30,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**evidence-record (proposed shape; summary - the full schema with per-field constraints and the dirty-tree rule is in references/evidence-record-shape.md)** (proposed; sources: `F-a5-04`, `F-part-c-08`)
+**evidence-record (proposed shape; summary - the full schema with per-field constraints and the dirty-tree rule is in references/build-evidence-record-evidence-record-shape.md)** (proposed; sources: `F-a5-04`, `F-part-c-08`)
 
 ```json
 {

@@ -34,7 +34,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**run-budget (proposed summary shape; the full schema, the reservation lease, the cost record and the three worked declarations are in references/run-budget.md)** (proposed; sources: `F-b4-02`, `X-end-to-end-045`, `X-end-to-end-046`)
+**run-budget (proposed summary shape; the full schema, the reservation lease, the cost record and the three worked declarations are in references/xc-budget-run-budget.md)** (proposed; sources: `F-b4-02`, `X-end-to-end-045`, `X-end-to-end-046`)
 
 ```json
 {

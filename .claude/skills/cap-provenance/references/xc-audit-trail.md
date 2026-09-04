@@ -50,7 +50,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**audit-entry (proposed summary shape; the full entry, the monitor report, the three worked entries and the worked rejection are in references/usage.md)** (proposed; sources: `F-b4-03`, `X-xc-audit-trail-002`, `X-xc-audit-trail-005`)
+**audit-entry (proposed summary shape; the full entry, the monitor report, the three worked entries and the worked rejection are in references/xc-audit-trail-usage.md)** (proposed; sources: `F-b4-03`, `X-xc-audit-trail-002`, `X-xc-audit-trail-005`)
 
 ```json
 {
@@ -138,7 +138,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**monitor-report (proposed summary shape; the fields the definition of done asserts on, expanded in references/usage.md)** (proposed; sources: `X-cross-structure-053`, `F-a7-03`)
+**monitor-report (proposed summary shape; the fields the definition of done asserts on, expanded in references/xc-audit-trail-usage.md)** (proposed; sources: `X-cross-structure-053`, `F-a7-03`)
 
 ```json
 {

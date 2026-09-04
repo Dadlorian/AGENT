@@ -46,7 +46,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**EntryActorBinding (proposed summary shape; cap-identity owns the ActorIdentity object this points at, and the full chain-validity schema is in references/identity-delegation-checks.md)** (proposed; sources: `F-b4-03`, `T-t2-03`)
+**EntryActorBinding (proposed summary shape; cap-identity owns the ActorIdentity object this points at, and the full chain-validity schema is in references/xc-identity-delegation-identity-delegation-checks.md)** (proposed; sources: `F-b4-03`, `T-t2-03`)
 
 ```json
 {

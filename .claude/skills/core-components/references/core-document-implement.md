@@ -27,7 +27,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**document-store-binding (proposed shape; the migration procedure and the wiring table are in references/implementation-notes.md)** (proposed; sources: `F-meta-04`)
+**document-store-binding (proposed shape; the migration procedure and the wiring table are in references/core-document-implement-implementation-notes.md)** (proposed; sources: `F-meta-04`)
 
 ```json
 {
@@ -142,7 +142,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | Wire the cross-cutting concerns into the construction path: stamp the correlation attribute at construction, consult policy before the first metered call, attest the document digest, and read the budget ceiling from the envelope as a constant the declarer cannot override. | agentic-stack states design rule 7 (F-b1-08); the build consequence is placement - a concern attached after construction is a concern a second intake path can be written without. | sourced | `F-b1-08`, `F-a7-02` "Correlation must ride on an explicit resource attribute set at dispatch" |
 | 7 | Add a lint over recorded dispatch requests that greps each declared criterion string against every request built from that document, and fail the build when the count is non-zero. | core-document states the grader rule on this artifact (F-b1-07). A rule that is only stated is a rule the next refactor breaks silently; the grep is what turns it into something that fails. | sourced | `F-b1-07` "The grader is never visible to the graded" |
 | 8 | Record every round-trip run as an evidence record naming what was run, the code version and tree hash under test, whether the tree was dirty, and the output; label the result claimed until such a record exists. | build-evidence-record owns the record's fields (F-a5-04); the consequence here is that a store swap is the kind of change that looks identical in review and differs in a run, so the run is the only thing that separates a claim from a measurement. | sourced | `F-a5-04` "tree hash under test, and whether the tree was dirty" |
-| 9 | Proposed: open references/implementation-notes.md when you are writing the construction path, the migration script or the wiring, or reviewing someone who did. The body of this skill is enough to review a design and to run the definition of done without it. | Proposed: the wiring table and the migration procedure are longer than the progressive-disclosure budget allows in the body, and a reader judging the build does not need them. | proposed | - |
+| 9 | Proposed: open references/core-document-implement-implementation-notes.md when you are writing the construction path, the migration script or the wiring, or reviewing someone who did. The body of this skill is enough to review a design and to run the definition of done without it. | Proposed: the wiring table and the migration procedure are longer than the progressive-disclosure budget allows in the body, and a reader judging the build does not need them. | proposed | - |
 
 ## Best practices
 

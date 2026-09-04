@@ -39,7 +39,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**step (proposed summary shape; the six operator schemas in full, the fan-out tolerance member and the worked nesting are in references/operator-shapes.md)** (proposed; sources: -)
+**step (proposed summary shape; the six operator schemas in full, the fan-out tolerance member and the worked nesting are in references/compose-operators-operator-shapes.md)** (proposed; sources: -)
 
 ```json
 {

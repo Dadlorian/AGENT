@@ -34,7 +34,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**admission-token (proposed summary shape; the full token and policy-decided record schemas and the three full entry envelopes are in references/policy-gate.md)** (proposed; sources: `F-b4-04`, `F-b1-08`)
+**admission-token (proposed summary shape; the full token and policy-decided record schemas and the three full entry envelopes are in references/xc-policy-gate-policy-gate.md)** (proposed; sources: `F-b4-04`, `F-b1-08`)
 
 ```json
 {

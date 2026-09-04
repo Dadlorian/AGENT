@@ -29,7 +29,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**loop-spec (proposed summary shape, field names kept identical to the loop operator in examples/end-to-end; the full schema, the three worked declarations and the worked rejections are in references/usage.md)** (sourced; sources: `F-b1-06`, `F-b4-02`)
+**loop-spec (proposed summary shape, field names kept identical to the loop operator in examples/end-to-end; the full schema, the three worked declarations and the worked rejections are in references/compose-loop-usage.md)** (sourced; sources: `F-b1-06`, `F-b4-02`)
 
 ```json
 {

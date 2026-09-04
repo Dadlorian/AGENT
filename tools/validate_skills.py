@@ -264,6 +264,14 @@ def check_frontmatter(skill_dir: Path, name: str, errs: list[str]):
         errs.append(f"{name}: SKILL.md description is {len(d['description'])} characters; the Agent Skills limit is 1024")
 
 
+def check_reference_links(skill_dir: Path, name: str, errs: list[str]):
+    """Every `references/<file>` a skill's text points at must exist in its own references/ (review 71-review-b: the fold renamed files)."""
+    text = (skill_dir / "skill.json").read_text()
+    for m in sorted(set(re.findall(r"references/([A-Za-z0-9._-]+\.md)", text))):
+        if not (skill_dir / "references" / m).is_file():
+            errs.append(f"{name}: text points at references/{m}, which does not exist in its references/")
+
+
 def check_structure(sk: dict, name: str, errs: list[str], warns: list[str]):
     req = ["name", "layer", "description", "purpose", "instructions", "definition_of_done", "composes_with", "provenance"]
     for k in req:
@@ -360,7 +368,7 @@ def main() -> int:
             errs.append(f"{name}: skill.json is not valid JSON: {e}")
             continue
         skills[name] = sk
-        check_structure(sk, name, errs, warns); check_frontmatter(d, name, errs)
+        check_structure(sk, name, errs, warns); check_frontmatter(d, name, errs); check_reference_links(d, name, errs)
         walk_sourced(sk, "", errs, kb_ids, name)
         for e in sk.get("entities", []):
             if e not in kb_ids:

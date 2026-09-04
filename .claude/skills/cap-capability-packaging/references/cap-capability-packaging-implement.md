@@ -26,7 +26,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**package-source-binding (proposed shape; the migration procedure and the wiring table are in references/implementation-notes.md)** (proposed; sources: -)
+**package-source-binding (proposed shape; the migration procedure and the wiring table are in references/cap-capability-packaging-implement-implementation-notes.md)** (proposed; sources: -)
 
 ```json
 {
@@ -94,7 +94,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**packaging-conformance-report (proposed shape; the per-package rows are in references/implementation-notes.md)** (proposed; sources: -)
+**packaging-conformance-report (proposed shape; the per-package rows are in references/cap-capability-packaging-implement-implementation-notes.md)** (proposed; sources: -)
 
 ```json
 {
@@ -169,7 +169,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 5 | Wire resolution on the load path: record every resolution with the correlation attribute the platform sets at dispatch, consult policy before a package from a namespace the platform does not own is loaded, and count the load against the unit's ceiling. | agentic-stack states that the cross-cutting guarantees are applied and not requested (F-b1-08); a package that can be loaded without a record is a capability that entered the system without one. | sourced | `F-b1-08`, `F-b4-01` "The platform applies each; a caller cannot decline them." |
 | 6 | Write one conformance run parameterised over the binding records: resolve the same identity set through every configured source, assert the spec-conformance counters per source, and diff the resolved packages across sources. | build-adapter-pair owns the rule that every interface ships with two adapters (F-b1-04); the consequence here is that one run over two sources is what makes the swap a tested property rather than a plan, because a per-source suite would let each source define conformance as whatever it happens to do. | sourced | `F-b1-04` "Every interface ships with at least two adapters" |
 | 7 | Have each adapter report the source and digest it actually resolved and compare them against its binding record at start-up; a mismatch fails the definition of done for that source. | build-definition-of-done requires the effective configuration to be attested rather than assumed, because configuration written in the documented place has been observed to take no effect at all (F-a7-04). | sourced | `F-a7-04` "was silently discarded" |
-| 8 | Proposed: open references/implementation-notes.md when running the migration diff, wiring the load path, or reviewing a binding record. The body of this skill is enough to build and judge the pair without it. | Proposed: the migration procedure and the wiring table are longer than the body's budget and are needed only while doing those two jobs. | proposed | - |
+| 8 | Proposed: open references/cap-capability-packaging-implement-implementation-notes.md when running the migration diff, wiring the load path, or reviewing a binding record. The body of this skill is enough to build and judge the pair without it. | Proposed: the migration procedure and the wiring table are longer than the body's budget and are needed only while doing those two jobs. | proposed | - |
 
 ## Best practices
 

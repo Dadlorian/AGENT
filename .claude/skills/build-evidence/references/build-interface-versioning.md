@@ -76,7 +76,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**interface_version_policy (proposed shape; summary - the per-member deprecation entry is in references/versioning-policy.md)** (proposed; sources: -)
+**interface_version_policy (proposed shape; summary - the per-member deprecation entry is in references/build-interface-versioning-versioning-policy.md)** (proposed; sources: -)
 
 ```json
 {
@@ -119,7 +119,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
     },
     "deprecated": {
       "type": "array",
-      "description": "Deprecated members with their dates; entry shape in references/versioning-policy.md.",
+      "description": "Deprecated members with their dates; entry shape in references/build-interface-versioning-versioning-policy.md.",
       "items": {
         "type": "object"
       }

@@ -47,7 +47,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**capability-record (proposed summary shape; the full record, the rollout members and the standards table are in references/registry-shapes.md)** (proposed; sources: -)
+**capability-record (proposed summary shape; the full record, the rollout members and the standards table are in references/cap-capability-registry-registry-shapes.md)** (proposed; sources: -)
 
 ```json
 {
@@ -130,7 +130,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**resolution-outcome (proposed summary shape; the refusal members are in references/registry-shapes.md)** (proposed; sources: -)
+**resolution-outcome (proposed summary shape; the refusal members are in references/cap-capability-registry-registry-shapes.md)** (proposed; sources: -)
 
 ```json
 {
@@ -264,7 +264,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 7 | Choose the second adapter on a different distribution model: content-addressed records fetched from a network registry, not a second index file on the same host. Name the axis the two execution models differ on before writing either. | build-adapter-pair owns why there is a second adapter (F-b1-04). The consequence here is specific: two host-local indexes would leave the interface free to keep assuming the records and the packages share a filesystem, and only a fetched, digest-verified record forces identity and integrity to become contractual. | sourced | `F-b1-04`, `X-end-to-end-069` "Every interface ships with at least two adapters" |
 | 8 | Expose the interface as a specification other people implement rather than as an API of ours, and require no client library of ours to publish or resolve. | agentic-stack states rule 4 as a test (F-b1-05): a boundary that needs our client is bespoke where a standard existed, and a registry interface that downstream aggregators can implement is exactly the case where one existed. | sourced | `F-b1-05`, `X-cap-capability-registry-002` "The MCP Registry defines an OpenAPI spec that other MCP registries can implement" |
 | 9 | To use a capability or an agent: write down its namespace-scoped name and a version constraint, call resolve, and read what comes back. Do not join a path, open an index, pick a store or pin a digest yourself. | The store, the index format and the transport are the capability's business, and a caller that reaches around them has bound itself to today's store and will break the first time it changes. | sourced | `T-t2-01` "Composability hides the complexity." |
-| 10 | Proposed: open references/registry-shapes.md when you are implementing the record schema, wiring the rollout members, or reviewing a record someone published. The body of this skill is enough to judge this interface and to call it without opening that file. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed: the full record schema, the rollout members and the standards table are longer than the body's budget allows, and a reader deciding whether to resolve or publish does not need them. | proposed | - |
+| 10 | Proposed: open references/cap-capability-registry-registry-shapes.md when you are implementing the record schema, wiring the rollout members, or reviewing a record someone published. The body of this skill is enough to judge this interface and to call it without opening that file. Open references/cap-capability-registry-usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed: the full record schema, the rollout members and the standards table are longer than the body's budget allows, and a reader deciding whether to resolve or publish does not need them. | proposed | - |
 
 ## Best practices
 

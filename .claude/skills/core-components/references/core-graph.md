@@ -49,7 +49,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**graph-node (proposed summary shape; the full node and edge schemas, the edge typing table, a worked assertion for each of TARGET T1's three ways in and a worked rejection are in references/graph-shapes.md)** (proposed; sources: `F-b2-04`)
+**graph-node (proposed summary shape; the full node and edge schemas, the edge typing table, a worked assertion for each of TARGET T1's three ways in and a worked rejection are in references/core-graph-graph-shapes.md)** (proposed; sources: `F-b2-04`)
 
 ```json
 {
@@ -96,7 +96,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**graph-edge (proposed summary shape; the three type rules in full are in references/graph-shapes.md)** (proposed; sources: `F-b2-04`)
+**graph-edge (proposed summary shape; the three type rules in full are in references/core-graph-graph-shapes.md)** (proposed; sources: `F-b2-04`)
 
 ```json
 {
@@ -251,7 +251,7 @@ Used by: `compose-operators`, `core-graph-implement`, `core-planner`, `seam-stat
 
 | Question | Deciding evidence | Default until then | Evidence |
 |---|---|---|---|
-| cap-errors' closed problem registry has no row for a refused graph assertion, so which type does a rejected edge carry? | cap-errors requires 1-3-1 rather than minting a suffix at the call site, so the three options were: reuse `document-invalid`, which misnames the artifact and makes a caller repairing an edge parse a document error; mint a suffix locally, which the closed registry forbids; or add one row `graph-assertion-invalid` (422, not retryable, extension member `causes`, one per refused edge) to docs/decomposition.md section 2.1.6 and use it. The third is recommended and is what references/graph-shapes.md shows, pending that row. | `urn:agentic:problem:graph-assertion-invalid`, marked proposed and pending registration; until the row lands, an implementation returns `document-invalid` with the offending edge in `causes` rather than inventing a type. | `T-t5-02`, `F-b3-13` "define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation" |
+| cap-errors' closed problem registry has no row for a refused graph assertion, so which type does a rejected edge carry? | cap-errors requires 1-3-1 rather than minting a suffix at the call site, so the three options were: reuse `document-invalid`, which misnames the artifact and makes a caller repairing an edge parse a document error; mint a suffix locally, which the closed registry forbids; or add one row `graph-assertion-invalid` (422, not retryable, extension member `causes`, one per refused edge) to docs/decomposition.md section 2.1.6 and use it. The third is recommended and is what references/core-graph-graph-shapes.md shows, pending that row. | `urn:agentic:problem:graph-assertion-invalid`, marked proposed and pending registration; until the row lands, an implementation returns `document-invalid` with the offending edge in `causes` rather than inventing a type. | `T-t5-02`, `F-b3-13` "define the problem, identify the three best possible solutions that align to the goal, and follow the recommendation" |
 | Is an agent a node kind of its own, or an `implementation` node bound to an `interface` node that names what it is good at? | Count, over the agent registry, how many agents carry an attribute no implementation node can hold and how many selections need a rule that is not reachability. A non-trivial count argues for a sixth kind; a count near zero argues that agents are implementations and nothing more. | An `implementation` node, because TARGET T6.5 defines an agent by what it is good at, which is exactly an interface it implements, and this keeps the closed kind set at five and reuses the walk the planner already performs. | `T-t6-05`, `F-b2-04` "Each agent is defined up front by what it is good at" |
 | Does one `existence` edge type carry both containment and derivation, or do those need separate types? | Audit the walks the planner and the composition layer actually perform: if either has to filter existence edges by an attribute to get a correct answer, the single type is doing two jobs and the filter is a fourth edge type in disguise. | One `existence` type. PASS.md fixes three edge kinds, and adding a fourth changes the core's own surface, so the bar for it is a measured walk that cannot be written correctly without it. | `F-b2-04`, `F-b2-07` "This is the entire owned surface." |
 

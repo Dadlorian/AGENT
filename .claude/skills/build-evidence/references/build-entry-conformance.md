@@ -24,7 +24,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**entry-conformance-report (proposed summary shape; the full schema and the check matrix are in references/report.md)** (proposed; sources: `T-t6-02`)
+**entry-conformance-report (proposed summary shape; the full schema and the check matrix are in references/build-entry-conformance-report.md)** (proposed; sources: `T-t6-02`)
 
 ```json
 {

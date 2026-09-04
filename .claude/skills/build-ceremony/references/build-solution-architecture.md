@@ -112,7 +112,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
   "$defs": {
     "entry": {
       "type": "object",
-      "description": "One row. It lists resolving kb ids under \"sources\" with a \"quote\" that is a verbatim substring of one of them, or it carries \"status\": \"gap\", or its text says proposed. The per-section columns are in references/blueprint-shape.md.",
+      "description": "One row. It lists resolving kb ids under \"sources\" with a \"quote\" that is a verbatim substring of one of them, or it carries \"status\": \"gap\", or its text says proposed. The per-section columns are in references/build-solution-architecture-blueprint-shape.md.",
       "anyOf": [
         {
           "required": [

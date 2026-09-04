@@ -30,7 +30,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**research-record (proposed shape; the field-by-field rules, a worked example and the lens naming convention are in references/research-record-shape.md)** (proposed; sources: `F-b3-09`)
+**research-record (proposed shape; the field-by-field rules, a worked example and the lens naming convention are in references/build-research-record-research-record-shape.md)** (proposed; sources: `F-b3-09`)
 
 ```json
 {

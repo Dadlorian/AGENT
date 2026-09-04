@@ -42,7 +42,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**definition-of-done (proposed summary shape; the full schema, with the measured_at requirement and the breakage scope rule, is in references/definition-of-done-shapes.md)** (proposed; sources: `F-part-c-04`)
+**definition-of-done (proposed summary shape; the full schema, with the measured_at requirement and the breakage scope rule, is in references/build-definition-of-done-definition-of-done-shapes.md)** (proposed; sources: `F-part-c-04`)
 
 ```json
 {
@@ -135,7 +135,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**gate-outcome (proposed summary shape; the full schema and the ordered decision rule are in references/definition-of-done-shapes.md)** (proposed; sources: `F-a7-03`)
+**gate-outcome (proposed summary shape; the full schema and the ordered decision rule are in references/build-definition-of-done-definition-of-done-shapes.md)** (proposed; sources: `F-a7-03`)
 
 ```json
 {

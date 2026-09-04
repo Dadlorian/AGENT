@@ -38,7 +38,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**TenantScope (proposed summary shape; the full ScopedRecord schema and the complete worked entries are in references/usage.md)** (proposed; sources: `F-b4-03`)
+**TenantScope (proposed summary shape; the full ScopedRecord schema and the complete worked entries are in references/xc-enforcement-chain-usage.md)** (proposed; sources: `F-b4-03`)
 
 ```json
 {
@@ -90,7 +90,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**ScopeByWayIn (proposed worked instances, one per TARGET T6.2 entry; the complete envelopes are in references/usage.md)** (proposed; sources: `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t6-02`, `REF-3-4-10`)
+**ScopeByWayIn (proposed worked instances, one per TARGET T6.2 entry; the complete envelopes are in references/xc-enforcement-chain-usage.md)** (proposed; sources: `T-t1-01`, `T-t1-02`, `T-t1-03`, `T-t6-02`, `REF-3-4-10`)
 
 ```json
 {
@@ -223,7 +223,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 7 | Wire the identical scope check on all four of TARGET T6.2's entries - a human, an event, a schedule, and an external system or agent - by replaying one corpus with at least two principals represented through each door and asserting the same zero cross-principal counts for all four, including a schedule-originated unit that starts a new root run under its own principal rather than steering one already open, and an event-originated unit that steers an existing run rather than starting one. | xc-enforcement-chain already wires the identical chain on all four of TARGET T6.2's entries; a guarantee wired only on the door someone remembered is declined by choosing another door, and replaying through all four while requiring more than one principal in the corpus is what keeps a single-tenant test from reporting a false zero. REF-3-4-10 states starts-or-steers per door directly: schedule starts only, internal event steers only - a corpus that never exercises the schedule door cannot prove the guarantee holds on a run it did not start through the shared choke points. | sourced | `T-t6-02`, `REF-3-4-10` "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent." |
 | 8 | For usability, add nothing to the caller's side: a human, an event, a schedule and an external system or agent all reach this guarantee by submitting the entry envelope cap-consumption fixes, supply no principal field and no scope flag, and read back either the normal result - narrowed to their own principal by construction - or one urn:agentic:problem:policy-denied naming the enforcement-chain point and the rule_id that refused. | cap-consumption states the caller doctrine once; restating it here would give it a second owner. The principal already rides on the actor xc-identity-delegation stamps, so there is nothing tenancy-shaped for a caller to configure. | sourced | `T-t6-02`, `T-t3-01` "All four enter through the same shape." |
 | 9 | Attest the guarantee by replaying a corpus at a pinned state head and counting cross-principal reads, recalls and spend directly, the way xc-enforcement-chain's attest_chain counts slots - never by reading the absence of an error. | agentic-stack states the structurally-green-gate finding: well-formedness checks are not correctness checks, and a gate whose behavioural stages all skipped proves nothing. | sourced | `F-a7-03` "Those establish well-formedness, not correctness" |
-| 10 | Proposed: open references/usage.md when you need the full ScopedRecord schema, the three complete worked entries, or the worked refusal in full. The body of this skill is enough to judge whether a boundary is tenant-scoped without it. | Proposed: the complete envelopes exceed the progressive-disclosure budget for a skill body, and a reader deciding whether a choke point is scoped does not need them open. | proposed | - |
+| 10 | Proposed: open references/xc-enforcement-chain-usage.md when you need the full ScopedRecord schema, the three complete worked entries, or the worked refusal in full. The body of this skill is enough to judge whether a boundary is tenant-scoped without it. | Proposed: the complete envelopes exceed the progressive-disclosure budget for a skill body, and a reader deciding whether a choke point is scoped does not need them open. | proposed | - |
 
 ## Best practices
 

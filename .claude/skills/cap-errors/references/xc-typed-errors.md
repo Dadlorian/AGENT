@@ -46,7 +46,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**TypedErrorAudit (proposed): the machine-readable report the definition of done asserts on; the per-boundary mapping and the audit's blind spots are in references/typed-errors-audit.md** (proposed; sources: `F-part-c-04`, `F-b4-07`)
+**TypedErrorAudit (proposed): the machine-readable report the definition of done asserts on; the per-boundary mapping and the audit's blind spots are in references/xc-typed-errors-typed-errors-audit.md** (proposed; sources: `F-part-c-04`, `F-b4-07`)
 
 ```json
 {

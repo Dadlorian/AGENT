@@ -49,7 +49,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**credential-handle (proposed summary shape; the mint request, the refusal members and the full mandate record are in references/mandate-broker-shapes.md)** (proposed; sources: -)
+**credential-handle (proposed summary shape; the mint request, the refusal members and the full mandate record are in references/cap-mandate-broker-mandate-broker-shapes.md)** (proposed; sources: -)
 
 ```json
 {
@@ -103,7 +103,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**mandate (proposed summary shape; the signature members, the bounds vocabulary and the verification outcome are in references/mandate-broker-shapes.md)** (proposed; sources: -)
+**mandate (proposed summary shape; the signature members, the bounds vocabulary and the verification outcome are in references/cap-mandate-broker-mandate-broker-shapes.md)** (proposed; sources: -)
 
 ```json
 {
@@ -254,7 +254,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 6 | For anything irreversible - spend, deploy, send - require a mandate signed by the approving actor, stating the ceiling, the destinations and the validity period, and verify it at the point of action rather than at the point of planning. | Two approval modes have to work: a person approving one action now, and a person approving bounds up front for an agent that acts later on its own. A mandate covers both, and verifying at the point of action is what stops an approval from outliving the bounds it was given. | sourced | `X-end-to-end-071`, `X-end-to-end-070` "real-time purchases where the human approves a Cart Mandate with a cryptographic signature, and delegated tasks where the human signs an Intent Mandate upfront and the agent acts autonomously later" |
 | 7 | Choose the second adapter on a different verification model, not a second token service: one authority validated by its issuer, one credential a party that did not issue it can verify offline. Name that axis before writing either. | build-adapter-pair owns why there is a second adapter (F-b1-04). The consequence here is specific: two issuer-validated token services would leave the interface free to keep assuming the issuer is reachable at verification time, and only an offline-verifiable mandate forces the bounds and the signature to become part of the object rather than of the service. | sourced | `F-b1-04`, `X-cap-mandate-broker-005` "Every interface ships with at least two adapters, and the second exists to prove the first is not load-bearing" |
 | 8 | To reach something outside the sandbox: name the one destination you are calling and use the handle you get back. Do not look for a key, an environment variable, a config file or a secret in your prompt - there is not one, and there is not meant to be. | The credential is added outside the sandbox after you have made an ordinary call, so a caller that goes looking for one is trying to rebuild a thing the platform removed on purpose. | sourced | `T-t2-01` "Composability hides the complexity." |
-| 9 | Proposed: open references/mandate-broker-shapes.md when you are implementing the mint request, the mandate record or the verification outcome. The body of this skill is enough to judge this interface and to call it without opening that file. Open references/usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed: the full shapes and the bounds vocabulary are longer than the body's budget allows, and a reader deciding whether an authority is correctly scoped does not need them. | proposed | - |
+| 9 | Proposed: open references/cap-mandate-broker-mandate-broker-shapes.md when you are implementing the mint request, the mandate record or the verification outcome. The body of this skill is enough to judge this interface and to call it without opening that file. Open references/cap-mandate-broker-usage.md instead when you are calling this capability rather than serving it: it carries the caller's minimal inputs and outputs, the two worked calls and the worked rejection in full. The body of this skill is enough to call it without either file. | Proposed: the full shapes and the bounds vocabulary are longer than the body's budget allows, and a reader deciding whether an authority is correctly scoped does not need them. | proposed | - |
 
 ## Best practices
 

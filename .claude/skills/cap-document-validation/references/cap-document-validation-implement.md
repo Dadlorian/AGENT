@@ -26,7 +26,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**validator-adapter-binding (proposed shape; the migration corpus procedure and the wiring table are in references/implementation-notes.md)** (proposed; sources: -)
+**validator-adapter-binding (proposed shape; the migration corpus procedure and the wiring table are in references/cap-document-validation-implement-implementation-notes.md)** (proposed; sources: -)
 
 ```json
 {
@@ -111,7 +111,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | 5 | Wire validation at admission: validate the entry document before any metered call, record the outcome with the correlation attribute the platform sets at dispatch, and return a typed failure rather than raising the adapter's exception. | agentic-stack states that cross-cutting guarantees are applied not requested (F-b1-08) and that correlation must ride on an explicit attribute; a rejection that is not recorded is a rejection nobody can count. | sourced | `F-b4-01`, `F-b1-08` "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller" |
 | 6 | Write one conformance run parameterised over the binding records, point it at a vendored copy of the official suite for the dialect at a pinned revision, and run it for every adapter on every change. | cap-document-validation names the official suite this pins (X-cap-document-validation-004). One suite over two adapters is what makes the swap a tested property; pinning the suite is what makes a new failure attributable to our change rather than to the suite moving underneath it. | sourced | `X-cap-document-validation-004` "The JSON Schema Test Suite is a language agnostic test suite for validator implementations" |
 | 7 | Have each adapter report, at start-up, the dialect it actually resolved, and compare it against its binding record's declared dialect; a mismatch fails the definition of done for that adapter. | build-definition-of-done requires the effective configuration to be attested rather than assumed, and cap-document-validation carries why this capability in particular needs it (F-a7-04). | sourced | `F-a7-04` "Values written to YAML validated, reviewed correctly, and had no runtime effect" |
-| 8 | Proposed: open references/implementation-notes.md when running the migration diff, wiring the admission path, or reviewing a binding record. The body of this skill is enough to build and judge the pair without it. | Proposed: the migration corpus procedure and the wiring table are longer than the body's budget and are needed only while doing those two jobs. | proposed | - |
+| 8 | Proposed: open references/cap-document-validation-implement-implementation-notes.md when running the migration diff, wiring the admission path, or reviewing a binding record. The body of this skill is enough to build and judge the pair without it. | Proposed: the migration corpus procedure and the wiring table are longer than the body's budget and are needed only while doing those two jobs. | proposed | - |
 
 ## Best practices
 

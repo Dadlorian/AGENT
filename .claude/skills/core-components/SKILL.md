@@ -48,7 +48,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**document (proposed summary shape; the full schema, the step vocabulary, a worked example for each of TARGET T1's three ways in and a worked rejection are in references/document-shapes.md)** (proposed; sources: `F-b2-02`)
+**document (proposed summary shape; the full schema, the step vocabulary, a worked example for each of TARGET T1's three ways in and a worked rejection are in references/core-document-document-shapes.md)** (proposed; sources: `F-b2-02`)
 
 ```json
 {
@@ -95,7 +95,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
     "steps": {
       "type": "array",
       "minItems": 1,
-      "description": "Each step names one operator from the closed set; the step schema is in references/document-shapes.md."
+      "description": "Each step names one operator from the closed set; the step schema is in references/core-document-document-shapes.md."
     },
     "declared_by": {
       "type": "string",
@@ -285,7 +285,7 @@ Used by: `cap-durable-execution`, `cap-evaluation`, `cap-provenance`, `compose-i
 | Question | Deciding evidence | Default until then | Evidence |
 |---|---|---|---|
 | Does a document carry its steps inline, or reference a named workflow that carries them? | Count, over a representative corpus of declarations, how many reuse an existing step list unchanged. High reuse argues for a reference plus overrides; low reuse argues for inline steps and one artifact to read. | Inline steps, with an optional reference for the reuse case, because the reference consumption example in examples/end-to-end/ already carries a workflow reference on the envelope and one artifact a reader can diff is the simpler default. | `T-t3-01` "It has to be simple to use." |
-| How many risk tiers does a definition-of-done check need, and what evidence does each tier oblige? | Across the run history, count how many distinct evidence levels callers actually distinguish. If the answer is two, three tiers are over-modelled; if reviewers keep adding an ad hoc tier, three are too few. | Three tiers - low, standard, high - with the obligation attached per tier in references/document-shapes.md, since evidence appropriate to risk is the property being bought and a single tier collapses back into an unconditional gate. | `X-end-to-end-078` "it is accepted because it satisfies evidence appropriate to its risk level" |
+| How many risk tiers does a definition-of-done check need, and what evidence does each tier oblige? | Across the run history, count how many distinct evidence levels callers actually distinguish. If the answer is two, three tiers are over-modelled; if reviewers keep adding an ad hoc tier, three are too few. | Three tiers - low, standard, high - with the obligation attached per tier in references/core-document-document-shapes.md, since evidence appropriate to risk is the property being bought and a single tier collapses back into an unconditional gate. | `X-end-to-end-078` "it is accepted because it satisfies evidence appropriate to its risk level" |
 | Is the document digest computed over correlation and budget fields, or over the declared work alone? | Submit one logical job through each way in and diff the canonical forms field by field; any field that differs purely because of the way in must be outside the digest for cross-entry digest equality to be assertable at all. | Over the declared work alone - intent, definition of done and steps - because digest equality across the ways in is the property this component is judged on, and correlation and budget necessarily differ per entry. | `T-t1-02`, `F-b2-02` "declared intent, definition of done, steps" |
 
 ## Provenance

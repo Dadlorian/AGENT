@@ -47,7 +47,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**attestation-recorded (proposed summary shape of the record kind named in docs/decomposition.md section 2.2.1; the full record, the sweep report and the expanded worked instances are in references/provenance-chain-shapes.md)** (proposed; sources: `F-b4-05`, `X-xc-provenance-chain-001`)
+**attestation-recorded (proposed summary shape of the record kind named in docs/decomposition.md section 2.2.1; the full record, the sweep report and the expanded worked instances are in references/xc-provenance-chain-provenance-chain-shapes.md)** (proposed; sources: `F-b4-05`, `X-xc-provenance-chain-001`)
 
 ```json
 {

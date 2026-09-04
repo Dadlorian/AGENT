@@ -23,7 +23,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 
 ### Shapes (JSON Schema 2020-12)
 
-**simplicity-budget-declaration (proposed shape; the worked declaration for the entry envelope is in references/counting-method.md)** (proposed; sources: `T-t3-01`)
+**simplicity-budget-declaration (proposed shape; the worked declaration for the entry envelope is in references/build-simplicity-budget-counting-method.md)** (proposed; sources: `T-t3-01`)
 
 ```json
 {
@@ -90,7 +90,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**simplicity-budget-check-result (proposed shape; the three counting expressions behind it are in references/counting-method.md)** (proposed; sources: `F-b4-02`)
+**simplicity-budget-check-result (proposed shape; the three counting expressions behind it are in references/build-simplicity-budget-counting-method.md)** (proposed; sources: `F-b4-02`)
 
 ```json
 {

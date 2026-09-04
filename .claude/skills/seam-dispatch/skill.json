@@ -2,7 +2,7 @@
   "name": "seam-dispatch",
   "layer": "seam",
   "wave": 5,
-  "description": "The Dispatch seam as it should be: one unit of agent work executes under a declared ceiling and returns one typed result whose partial progress is already durable, with the request shape, the result shape, cancellation, ceiling enforcement, partial results, the context a unit receives and folds back, and what a failure returns. It also carries the caller's view - how a person, an agent and an event reach it, the smallest call, and the refusal. Load it when deciding how a unit of agent work is started, bounded, cancelled or resumed; when asking 'what happens to the work already done if this run is killed', 'why did this unit stop', 'what does a retry of this re-do', or 'can we run this somewhere else without changing the caller'; when a request may arrive twice and must execute once; when the context handed down to a sub-unit or the summary handed back is about to be left implicit; and whenever a dispatcher is about to invent its own state names, its own stop reasons or its own error body.",
+  "description": "The Dispatch seam, contract and build: one unit of agent work runs under a declared ceiling and returns one typed result whose partial progress is durable. Load it when deciding how work is started, bounded, cancelled or resumed, when a request may arrive twice, when asking why a unit stopped, or before inventing stop reasons.",
   "purpose": {
     "text": "Fix one contract for executing a single unit of agent work and returning one result, so agent execution is pluggable, the F-b5-03 sentence xc-identity-delegation also carries: the request, the result, cancellation, the ceilings, the partial and the failure are the seam's, and what runs the unit is an adapter.",
     "origin": "sourced",
@@ -401,109 +401,6 @@
         }
       },
       {
-        "name": "dispatch-context (proposed): what the unit receives, what it folds back, and every compaction in between",
-        "origin": "proposed",
-        "sources": [
-          "X-end-to-end-004",
-          "X-end-to-end-005"
-        ],
-        "schema": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "$id": "urn:agentic:dispatch:context:0.1",
-          "title": "DispatchContext",
-          "type": "object",
-          "additionalProperties": false,
-          "description": "Proposed. The request declares what context the unit receives; the result declares the summary folded back to the parent; a compaction is a recorded transition rather than an invisible one, so a reader can tell that context was dropped and by which strategy.",
-          "required": [
-            "inherits",
-            "budget_tokens"
-          ],
-          "properties": {
-            "inherits": {
-              "enum": [
-                "none",
-                "folded_summary",
-                "full_parent"
-              ],
-              "default": "none",
-              "description": "none is the default: a sub-unit starts fresh unless the parent says otherwise."
-            },
-            "budget_tokens": {
-              "type": "integer",
-              "minimum": 0,
-              "description": "The context ceiling for this unit, independent of the spend ceiling."
-            },
-            "carried_digests": {
-              "type": "array",
-              "items": {
-                "type": "string",
-                "pattern": "^sha256:[0-9a-f]{64}$"
-              },
-              "description": "Handed down by reference, never by value, so what a unit read is auditable."
-            }
-          },
-          "$defs": {
-            "folded": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "summary_digest",
-                "media_type"
-              ],
-              "description": "What the parent receives back. Appending only this is what keeps a parent's context bounded when a sub-unit ran long.",
-              "properties": {
-                "summary_digest": {
-                  "type": "string",
-                  "pattern": "^sha256:[0-9a-f]{64}$"
-                },
-                "media_type": {
-                  "type": "string"
-                },
-                "dropped_token_estimate": {
-                  "type": "integer",
-                  "minimum": 0
-                }
-              }
-            },
-            "compaction": {
-              "type": "object",
-              "additionalProperties": false,
-              "required": [
-                "at",
-                "strategy",
-                "before_tokens",
-                "after_tokens"
-              ],
-              "properties": {
-                "at": {
-                  "type": "string",
-                  "format": "date-time"
-                },
-                "strategy": {
-                  "enum": [
-                    "summarise_and_restart",
-                    "branch_and_fold"
-                  ],
-                  "description": "The two strategies the adapter pair must be able to declare. Which one is the platform default is an open question of this skill."
-                },
-                "before_tokens": {
-                  "type": "integer",
-                  "minimum": 0
-                },
-                "after_tokens": {
-                  "type": "integer",
-                  "minimum": 0
-                },
-                "summary_digest": {
-                  "type": "string",
-                  "pattern": "^sha256:[0-9a-f]{64}$"
-                }
-              }
-            }
-          }
-        }
-      },
-      {
         "name": "What a refusal looks like (proposed worked instance): a registered problem object, never prose",
         "origin": "proposed",
         "sources": [
@@ -572,7 +469,7 @@
         "quote": "maintain a dedicated and sequenced log of steps per workflow invocation"
       },
       {
-        "text": "Two ceilings, spend and wall clock, are independent, both enforced outside the unit, and both terminate the unit rather than the platform - xc-budget owns that rule (F-b4-02). What this seam adds: the on_exceed member is a const rather than an enum, so there is no request that opts out, and a unit that enforced its own ceiling could decline to.",
+        "text": "Two ceilings, spend and wall clock, are independent, both enforced outside the unit, and both terminate the unit rather than the platform - xc-guarantees owns that rule (F-b4-02). What this seam adds: the on_exceed member is a const rather than an enum, so there is no request that opts out, and a unit that enforced its own ceiling could decline to.",
         "origin": "sourced",
         "sources": [
           "F-b4-02"
@@ -605,7 +502,7 @@
         "quote": "Typed and machine-readable. Never parsed from prose"
       },
       {
-        "text": "The three ways in that TARGET T1 lists - a human, an agent, an internal or external event - reach a unit of work through the same request. How the work arrived is a member of the entry envelope cap-work-intake owns and never a member of the dispatch, so one dispatcher covers all three and no adapter branches on the producer.",
+        "text": "The three ways in that TARGET T1 lists - a human, an agent, an internal or external event - reach a unit of work through the same request. xc-guarantees cites the same T1 entry requirement for the guarantee chain; the consequence on this seam is that how the work arrived is a member of the entry envelope cap-work-intake owns and never a member of the dispatch, so one dispatcher covers all three and no adapter branches on the producer.",
         "origin": "sourced",
         "sources": [
           "T-t1-01",
@@ -791,7 +688,7 @@
       "quote": "derived, for example, from the run identifier and step identifier"
     },
     {
-      "text": "Never promote a partial into a complete result. Resume with a new dispatch id naming the previous one, because the ledger is append-only across runs and is the deduplication authority; rewriting a prior result would put the answer and the history in disagreement with no way to tell which is right.",
+      "text": "Never promote a partial into a complete result. Resume with a new dispatch id naming the previous one, because the ledger is append-only across runs and is the deduplication authority cap-idempotency contracts for; rewriting a prior result would put the answer and the history in disagreement with no way to tell which is right.",
       "origin": "sourced",
       "sources": [
         "F-b2-06"
@@ -924,6 +821,167 @@
     "author": "session seam-dispatch 2831cb4f, 2026-09-03"
   },
   "folded": {
+    "seam-dispatch-details": {
+      "name": "seam-dispatch-details",
+      "layer": "seam",
+      "description": "Overflow reference for seam-dispatch: contract shapes cut from the body, unchanged with their citations, to keep the body inside the progressive-disclosure budget. Load it when you need the full dispatch-context schema.",
+      "purpose": {
+        "text": "Fix one contract for executing a single unit of agent work and returning one result, so agent execution is pluggable, the F-b5-03 sentence xc-identity-delegation also carries: the request, the result, cancellation, the ceilings, the partial and the failure are the seam's, and what runs the unit is an adapter.",
+        "origin": "sourced",
+        "sources": [
+          "F-b5-02",
+          "F-b5-03",
+          "E-seam-dispatch"
+        ],
+        "quote": "This is the seam that decides whether agent execution is pluggable at all."
+      },
+      "contract": {
+        "shapes": [
+          {
+            "name": "dispatch-context (proposed): what the unit receives, what it folds back, and every compaction in between",
+            "origin": "proposed",
+            "sources": [
+              "X-end-to-end-004",
+              "X-end-to-end-005"
+            ],
+            "schema": {
+              "$schema": "https://json-schema.org/draft/2020-12/schema",
+              "$id": "urn:agentic:dispatch:context:0.1",
+              "title": "DispatchContext",
+              "type": "object",
+              "additionalProperties": false,
+              "description": "Proposed. The request declares what context the unit receives; the result declares the summary folded back to the parent; a compaction is a recorded transition rather than an invisible one, so a reader can tell that context was dropped and by which strategy.",
+              "required": [
+                "inherits",
+                "budget_tokens"
+              ],
+              "properties": {
+                "inherits": {
+                  "enum": [
+                    "none",
+                    "folded_summary",
+                    "full_parent"
+                  ],
+                  "default": "none",
+                  "description": "none is the default: a sub-unit starts fresh unless the parent says otherwise."
+                },
+                "budget_tokens": {
+                  "type": "integer",
+                  "minimum": 0,
+                  "description": "The context ceiling for this unit, independent of the spend ceiling."
+                },
+                "carried_digests": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "pattern": "^sha256:[0-9a-f]{64}$"
+                  },
+                  "description": "Handed down by reference, never by value, so what a unit read is auditable."
+                }
+              },
+              "$defs": {
+                "folded": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "summary_digest",
+                    "media_type"
+                  ],
+                  "description": "What the parent receives back. Appending only this is what keeps a parent's context bounded when a sub-unit ran long.",
+                  "properties": {
+                    "summary_digest": {
+                      "type": "string",
+                      "pattern": "^sha256:[0-9a-f]{64}$"
+                    },
+                    "media_type": {
+                      "type": "string"
+                    },
+                    "dropped_token_estimate": {
+                      "type": "integer",
+                      "minimum": 0
+                    }
+                  }
+                },
+                "compaction": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "at",
+                    "strategy",
+                    "before_tokens",
+                    "after_tokens"
+                  ],
+                  "properties": {
+                    "at": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "strategy": {
+                      "enum": [
+                        "summarise_and_restart",
+                        "branch_and_fold"
+                      ],
+                      "description": "The two strategies the adapter pair must be able to declare. Which one is the platform default is an open question of this skill."
+                    },
+                    "before_tokens": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "after_tokens": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "summary_digest": {
+                      "type": "string",
+                      "pattern": "^sha256:[0-9a-f]{64}$"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "instructions": [],
+      "definition_of_done": {
+        "criterion": "bash harness/dispatch/test.sh && python3 harness/dispatch/conformance.py --adapter dryrun --adapter second",
+        "expected": "Measured by tools/measure.py at 595225d: exit 0; last lines: adapter=second marker=queue-and-poll-oneshot/0.1 assertions_run=33 failed=0 untyped=0 plan_digest=4bce5f723c26 verdict=pass cancel_stop=cancel_timeout criterion_hits=0 | adapters_run=2 migrated_paths=3 plan_digest_mismatches=0 verdict_mismatches=0 distinct_markers=2",
+        "breakage": "In harness/dispatch/adapters/base.py, make the dispatcher assemble the result before the state-seam write returns unconditionally (the durability branch the gate only enables under its own flag), run the criterion (partial_outputs_without_head becomes 1 on the targeted dispatcher and the gate exits 1), then git checkout harness/dispatch/adapters/base.py.",
+        "expected_failure": "Measured by tools/measure.py at 595225d: exit 1; last lines:   FAIL the same suite exits 0 again (expected 0, got 1) | passed 31, failed 8",
+        "status": "measured",
+        "sources": [
+          "F-part-c-04",
+          "F-b5-03"
+        ],
+        "quote": "a machine-checkable definition of done, plus the deliberate breakage that proves the check can fail",
+        "measured_run": {
+          "by": "tools/measure.py",
+          "commit": "595225d",
+          "clean_exit": 0,
+          "clean_output": "  ok   call.py exits 0 (0)\n  ok   dry-run conformance exits 0 (0)\n  ok   the durability breakage exits non-zero (nonzero)\n  ok   the criterion breakage exits non-zero (nonzero)\n  ok   the head breakage exits non-zero (nonzero)\n  ok   the same suite exits 0 again (0)\n...\nadapter=dryrun marker=session-held-inprocess/0.1 assertions_run=33 failed=0 untyped=0 plan_digest=4bce5f723c26 verdict=pass cancel_stop=cancelled criterion_hits=0\nadapter=second marker=queue-and-poll-oneshot/0.1 assertions_run=33 failed=0 untyped=0 plan_digest=4bce5f723c26 verdict=pass cancel_stop=cancel_timeout criterion_hits=0\nadapters_run=2 migrated_paths=3 plan_digest_mismatches=0 verdict_mismatches=0 distinct_markers=2",
+          "breakage_exit": 1,
+          "breakage_output": "  ok   call.py exits 0 (0)\n  FAIL an output has no recorded_at_head\n  FAIL dry-run conformance exits 0 (expected 0, got 1)\n  FAIL every assertion passed (expected [], got [{\"check\": \"S4 at least one output is durable: recorded_at_head is not null\", \"detail\": \"1 outputs, nulls=1\"}])\n  FAIL after: queue-and-poll dispatcher (expected 0, got 1)\n  FAIL both dispatchers in one report (expected 0, got 1)\n  ok   the durability breakage exits non-zero (nonzero)\n  FAIL the other dispatcher still reports no failure (expected [], got [{\"check\": \"S4 at least one output is durable: recorded_at_head is not null\", \"detail\": \"8 outputs, nulls=8\"}])\n  ok   the criterion breakage exits non-zero (nonzero)\n  ok   the head breakage exits non-zero (nonzero)\n  FAIL every per-binding assertion stays green, which isolates the fault to one loader (expected True, got False)\n  FAIL the same suite exits 0 again (expected 0, got 1)\n...\n  FAIL the same suite exits 0 again (expected 0, got 1)\n\npassed 31, failed 8",
+          "restored": true
+        },
+        "expected_design": "What the run proves: Proposed tool: `python3 tools/conformance_dispatch.py --adapter today --adapter second --assert-migrated-paths 3 --report out/dispatch-conformance.json`. This is decomposition.md section 3.3 row S1 run against the two built adapters, with the migration counter added. Per adapter it asserts: a malformed request is refused with `urn:agentic:problem:document-invalid`; a cancel reaches a terminal state within `deadline.cancel_grace_s`; a request whose ceiling is exceeded terminates with `stop_reason: \"budget_exhausted\"` and a recorded spend that is non-zero and at most the ceiling; an interrupted run leaves `partial: true` with at least one output whose `recorded_at_head` is non-null; and every failure body is `application/problem+json` with a `type` in the closed registry. Across adapters it asserts `adapters_run >= 2`, `assertions_run > 0` per adapter, and `migrated_paths == 3`. | exit 0 and one line per adapter of the form `adapter=<today|second> assertions_run=5 failed=0 untyped=0`, then `adapters_run=2 migrated_paths=3`. On the first real run the identity and typed-error assertions are expected red and named per adapter, because there is no identity field anywhere in the system and typed errors are absent today; that red is the correct first output and is recorded as such, not suppressed.",
+        "expected_failure_design": "That adapter's interrupted run comes back with `partial: true` and an output whose `recorded_at_head` is null, so the durability assertion fails for that adapter only, the run exits non-zero, and the report names it while the other adapter still reports `failed=0`. The failure is the seam's central promise breaking: a result naming an output no later reader can find."
+      },
+      "composes_with": {
+        "builds_on": [],
+        "used_by": []
+      },
+      "provenance": {
+        "kb_source_sha256": "cfe8ca287e66ec24c6a317e394937b1dbdce2f2e0ddfe6ee49ac34846ef03b96",
+        "kb_heads": {
+          "facts": "9cf193b3b5fc00700bd36c572e0a2bff3c7a7b9512b94d22fbb6e6d78a24c04e",
+          "entities": "747fc34d69f35eba6092afb9af0ff7bd4df64f577da79e1e58cfba21e4859604",
+          "edges": "a14cd00838048f03ae4c25794163429bce87c24794c70f6949dc42ce444c1dc6",
+          "target_facts": "d6ff020f9c07d8c23e88694059c2e7d235c523d7d9a7b903701357da5bc66521",
+          "reference_facts": "c64a731eac32c51361023bcb8cf28ae111ea790c521fc238a1a1f316121f7cf5"
+        },
+        "author": "session seam-dispatch 2831cb4f, 2026-09-03"
+      }
+    },
     "seam-dispatch-implement": {
       "name": "seam-dispatch-implement",
       "layer": "seam",

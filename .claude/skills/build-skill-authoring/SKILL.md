@@ -1,6 +1,6 @@
 ---
 name: "build-skill-authoring"
-description: "How to author a skill in this repository as data rather than prose: a skill.json conforming to schemas/skill.schema.json, rendered to SKILL.md, with every statement either cited to knowledge-base ids and anchored by a verbatim quote, or marked proposed. Load this before writing or changing any skill here, before adding a skill to docs/skill-manifest.json, before adding a layer prefix or touching the schema or the validator, and when onboarding an author who has not written a skill in this repo. Covers finding kb records before writing a claim, the field order the schema lists, honest proposed marking, a description that says when to load, choosing builds_on narrowly and keeping links symmetric with the manifest, wave ordering for a new skill, the progressive-disclosure budget and when long material moves to references/, and the render-then-validate loop that must end at zero errors."
+description: "How to author a skill here as data: skill.json against the schema, rendered to SKILL.md, every claim cited to knowledge-base ids with a verbatim quote or marked proposed. Load before writing or changing a skill, or editing the manifest, schema or validator. Also covers research records per source, the owner's status table, and the simplicity budget."
 ---
 
 # build-skill-authoring
@@ -59,7 +59,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Practice | Origin | Evidence |
 |---|---|---|
 | Keep products out of every field but adapters[], per agentic-stack: a product name in a purpose, invariant or instruction is the signal that the skill has been written around today's implementation instead of the contract. | sourced | `F-part-c-09` "Products belong in the adapter column only" |
-| Do not restate a fact a skill under builds_on has stated elsewhere. The green-gate finding - that a deterministic gate can be structurally green and mean nothing, because those checks establish well-formedness, not correctness - is held once in the agentic-stack root contract (F-a7-03); cite it from there and add only what is new here, namely that a skill's check asserts on a non-zero count of things actually checked rather than on an exit code. | sourced | `F-a7-03` "Those establish well-formedness, not correctness." |
+| Do not restate a fact a skill under builds_on has stated elsewhere. The green-gate finding - that a deterministic gate can be structurally green and mean nothing, because those checks establish well-formedness, not correctness - is held once in the agentic-stack root contract (F-a7-03) and worked out as a discipline in build-evidence; cite it from there and add only what is new here, namely that a skill's check asserts on a non-zero count of things actually checked rather than on an exit code. | sourced | `F-a7-03` "Those establish well-formedness, not correctness." |
 | Record what you could not source as an open question with the evidence that would decide it and the default until then, instead of filling the gap with a plausible sentence. | sourced | `F-part-c-06` "A required output, not an apology" |
 
 ## Definition of done

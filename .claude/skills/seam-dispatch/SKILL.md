@@ -1,6 +1,6 @@
 ---
 name: "seam-dispatch"
-description: "The Dispatch seam as it should be: one unit of agent work executes under a declared ceiling and returns one typed result whose partial progress is already durable, with the request shape, the result shape, cancellation, ceiling enforcement, partial results, the context a unit receives and folds back, and what a failure returns. It also carries the caller's view - how a person, an agent and an event reach it, the smallest call, and the refusal. Load it when deciding how a unit of agent work is started, bounded, cancelled or resumed; when asking 'what happens to the work already done if this run is killed', 'why did this unit stop', 'what does a retry of this re-do', or 'can we run this somewhere else without changing the caller'; when a request may arrive twice and must execute once; when the context handed down to a sub-unit or the summary handed back is about to be left implicit; and whenever a dispatcher is about to invent its own state names, its own stop reasons or its own error body."
+description: "The Dispatch seam, contract and build: one unit of agent work runs under a declared ceiling and returns one typed result whose partial progress is durable. Load it when deciding how work is started, bounded, cancelled or resumed, when a request may arrive twice, when asking why a unit stopped, or before inventing stop reasons."
 ---
 
 # seam-dispatch
@@ -327,106 +327,6 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 }
 ```
 
-**dispatch-context (proposed): what the unit receives, what it folds back, and every compaction in between** (proposed; sources: `X-end-to-end-004`, `X-end-to-end-005`)
-
-```json
-{
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:agentic:dispatch:context:0.1",
-  "title": "DispatchContext",
-  "type": "object",
-  "additionalProperties": false,
-  "description": "Proposed. The request declares what context the unit receives; the result declares the summary folded back to the parent; a compaction is a recorded transition rather than an invisible one, so a reader can tell that context was dropped and by which strategy.",
-  "required": [
-    "inherits",
-    "budget_tokens"
-  ],
-  "properties": {
-    "inherits": {
-      "enum": [
-        "none",
-        "folded_summary",
-        "full_parent"
-      ],
-      "default": "none",
-      "description": "none is the default: a sub-unit starts fresh unless the parent says otherwise."
-    },
-    "budget_tokens": {
-      "type": "integer",
-      "minimum": 0,
-      "description": "The context ceiling for this unit, independent of the spend ceiling."
-    },
-    "carried_digests": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "pattern": "^sha256:[0-9a-f]{64}$"
-      },
-      "description": "Handed down by reference, never by value, so what a unit read is auditable."
-    }
-  },
-  "$defs": {
-    "folded": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "summary_digest",
-        "media_type"
-      ],
-      "description": "What the parent receives back. Appending only this is what keeps a parent's context bounded when a sub-unit ran long.",
-      "properties": {
-        "summary_digest": {
-          "type": "string",
-          "pattern": "^sha256:[0-9a-f]{64}$"
-        },
-        "media_type": {
-          "type": "string"
-        },
-        "dropped_token_estimate": {
-          "type": "integer",
-          "minimum": 0
-        }
-      }
-    },
-    "compaction": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "at",
-        "strategy",
-        "before_tokens",
-        "after_tokens"
-      ],
-      "properties": {
-        "at": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "strategy": {
-          "enum": [
-            "summarise_and_restart",
-            "branch_and_fold"
-          ],
-          "description": "The two strategies the adapter pair must be able to declare. Which one is the platform default is an open question of this skill."
-        },
-        "before_tokens": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "after_tokens": {
-          "type": "integer",
-          "minimum": 0
-        },
-        "summary_digest": {
-          "type": "string",
-          "pattern": "^sha256:[0-9a-f]{64}$"
-        }
-      }
-    }
-  }
-}
-```
-
 **What a refusal looks like (proposed worked instance): a registered problem object, never prose** (proposed; sources: `F-b4-07`)
 
 ```json
@@ -463,11 +363,11 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | This is one of the two boundaries agentic-stack names as having no standard to adopt (F-b5-01), so the design effort spent here is warranted; what that buys is an obligation, because the seam must specify all six of the request shape, the result shape, cancellation semantics, timeout and budget enforcement, partial-result handling and what a failure returns. A dispatcher that specifies five of the six is not this seam. | sourced | `F-b5-03`, `F-b5-01` "It must specify: the request shape, the result shape, cancellation semantics, timeout and budget enforcement, partial-result handling, and what a failure returns." |
 | Proposed: an output is durable before the dispatch is terminal, or it does not exist. Every output is written through the state seam and carries the head digest at which it became durable before the result is assembled, so a result never names an output a later reader cannot find, and partial is true whenever the state is not completed and outputs is non-empty. | sourced | `X-cross-structure-045` "human-in-the-loop workflows, time travel, and fault tolerance" |
 | Proposed: every dispatch is a recorded step carrying a run id, a stable step id, an idempotency key derived from the two, and a checkpoint reference that is null until the first output is durable. A restart resumes at the first step whose checkpoint reference is null, and a repeat under a claimed key returns the recorded result rather than re-executing the effect. Both are satisfiable by a durable engine and by a queue plus a state machine, which is why the obligation is written as a record and not as an engine. | sourced | `X-cross-structure-042`, `X-cross-structure-043`, `F-b3-04` "maintain a dedicated and sequenced log of steps per workflow invocation" |
-| Two ceilings, spend and wall clock, are independent, both enforced outside the unit, and both terminate the unit rather than the platform - xc-budget owns that rule (F-b4-02). What this seam adds: the on_exceed member is a const rather than an enum, so there is no request that opts out, and a unit that enforced its own ceiling could decline to. | sourced | `F-b4-02` "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform" |
+| Two ceilings, spend and wall clock, are independent, both enforced outside the unit, and both terminate the unit rather than the platform - xc-guarantees owns that rule (F-b4-02). What this seam adds: the on_exceed member is a const rather than an enum, so there is no request that opts out, and a unit that enforced its own ceiling could decline to. | sourced | `F-b4-02` "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform" |
 | Cancellation is a request that a unit reach a terminal state, not a kill: it is asynchronous and idempotent, late frames are legal until the terminal frame, the grace window is per request, and expiry of the window is a failure carrying cancel_timeout rather than a clean cancellation. cap-agent-runtime owns the reference point on the substrate (F-a3-09), recorded claimed; the seam's addition is that a cancelled dispatch with durable outputs is a partial and not a loss. | sourced | `F-a3-09` "`session/cancel` mid-tool-call ends the turn in ~8s against a 45s operation, zero trailing frames" |
 | Proposed: context is declared, not assumed. The request says what context the unit receives and under what token ceiling, the result says what summary is folded back to the parent, and every compaction is a recorded transition naming its strategy, its timestamp and the tokens before and after. A context that shrinks invisibly makes a result irreproducible and gives a reader no way to tell a short answer from a truncated one. | sourced | `X-end-to-end-004`, `X-end-to-end-005` "summarizing its contents, and reinitiating a new context window with the summary" |
 | A failure returns a typed, machine-readable problem object whose type is a member of the closed registry cap-errors owns (F-b4-07), never prose and never an adapter's native error. A failure an adapter cannot type is itself a conformance failure of that adapter: it is reported against the registered adapter-unavailable type with the untyped payload in the detail member, and it is counted, and a non-zero count means the adapter is not conformant. | sourced | `F-b4-07` "Typed and machine-readable. Never parsed from prose" |
-| The three ways in that TARGET T1 lists - a human, an agent, an internal or external event - reach a unit of work through the same request. How the work arrived is a member of the entry envelope cap-work-intake owns and never a member of the dispatch, so one dispatcher covers all three and no adapter branches on the producer. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03` "3. An internal or external event must be able to enter the system." |
+| The three ways in that TARGET T1 lists - a human, an agent, an internal or external event - reach a unit of work through the same request. xc-guarantees cites the same T1 entry requirement for the guarantee chain; the consequence on this seam is that how the work arrived is a member of the entry envelope cap-work-intake owns and never a member of the dispatch, so one dispatcher covers all three and no adapter branches on the producer. | sourced | `T-t1-01`, `T-t1-02`, `T-t1-03` "3. An internal or external event must be able to enter the system." |
 | Enhancing one aspect of a dispatch leaves the rest untouched, and the cross-cutting guarantees ride on it whichever entry point was used: swapping what executes the unit, adding a stop reason, tightening a ceiling or changing where the unit runs changes nothing in a caller that reads state, stop_reason, outputs, usage and problem. cap-errors and cap-isolation state the same composability record for their own boundaries; here it is the test that decides whether the seam is drawn correctly. | sourced | `T-t2-02`, `T-t2-03` "enhancing particular aspects of any element without touching the rest" |
 
 ### Deliberately not exposed
@@ -502,7 +402,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 | Proposed - no record in this knowledge base carries the stop-reason vocabulary, so this is our reading, not a sourced fact: state completed with stop_reason end_turn says the unit ended, not that its output is acceptable; ask core-judge and never substitute the stop reason for a verdict. Research query: has any adapter actually been caught reporting stop_reason end_turn as a substitute for a judge verdict, or is this a preventive rule with no observed incident behind it? | proposed | - |
 | agentic-stack and cap-agent-runtime state the silent-configuration finding (F-a7-04). What it adds here, as this seam's own consequence and proposed: read back the grace window, the isolation profile and the ceiling the adapter actually applied from the recorded step, not from the request you sent, because an adapter that silently floors a ten-second grace at sixty looks identical to one that honoured it until the day a cancel matters. | sourced | `F-a7-04` "Values written to YAML validated, reviewed correctly, and had no runtime effect" |
 | Proposed: derive the idempotency key from the run id and the step id rather than minting one per attempt. A key that changes on retry deduplicates nothing, and a key reused across two logical steps merges two answers into one. | sourced | `X-seam-dispatch-007` "derived, for example, from the run identifier and step identifier" |
-| Never promote a partial into a complete result. Resume with a new dispatch id naming the previous one, because the ledger is append-only across runs and is the deduplication authority; rewriting a prior result would put the answer and the history in disagreement with no way to tell which is right. | sourced | `F-b2-06` "append-only across runs; the deduplication authority" |
+| Never promote a partial into a complete result. Resume with a new dispatch id naming the previous one, because the ledger is append-only across runs and is the deduplication authority cap-idempotency contracts for; rewriting a prior result would put the answer and the history in disagreement with no way to tell which is right. | sourced | `F-b2-06` "append-only across runs; the deduplication authority" |
 | Proposed: set each adapter's grace default from its own measured cancel floor and store it beside the adapter, rather than shipping one platform-wide constant. Ten seconds is generous for a dispatcher that stops in about eight and impossible for a hosted single-shot executor that cannot stop at all, and one constant would make the honest adapter look broken. | sourced | `F-a3-09` "ends the turn in ~8s against a 45s operation" |
 
 ## Adapters
@@ -529,6 +429,7 @@ Each was a skill of its own before STATUS row 71; its full content, with every c
 
 | Was | Purpose | Read |
 |---|---|---|
+| `seam-dispatch-details` | Fix one contract for executing a single unit of agent work and returning one result, so agent execution is pluggable, the F-b5-03 sentence xc-identity-delegation also carries: the request, the result, cancellation, the ceilings, the partial and the failure are the seam's, and what runs the unit is an adapter. | `references/seam-dispatch-details.md` |
 | `seam-dispatch-implement` | Turn the contract seam-dispatch fixes into running code on this substrate: shim what executes today, build a second executor whose execution model differs, migrate the paths that share no contract onto one interface, and attach every cross-cutting guarantee where no dispatch can skip it. | `references/seam-dispatch-implement.md` |
 
 ## Composes with

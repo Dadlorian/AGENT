@@ -2,7 +2,7 @@
   "name": "seam-state",
   "layer": "seam",
   "wave": 5,
-  "description": "The State seam: the graph and the ledger as two projections of one append-only, tamper-evident log, written by one writer per run and read at a pinned snapshot. Load it when deciding where a node, an edge, a ledger entry, a policy decision or an attestation is written; when a planner query has to give the same answer twice; when asking 'how would anyone know a record was edited', 'what can a third party check without holding the log', 'what happens when two writers race for the same run', or 'can a leaked field be removed without invalidating everything after it'; and whenever a component is about to open a second store for its own records, read the newest state instead of the head it was handed, or update a record in place.",
+  "description": "The State seam, contract and build: graph and ledger as two projections of one append-only, tamper-evident log, one writer per run, read at a pinned snapshot. Load it when deciding where a node, edge, entry, policy decision or attestation is written, when a query must answer the same twice, or before opening a second store.",
   "purpose": {
     "text": "Settle the one boundary where the graph and the ledger persist: a single append-only, tamper-evident log of immutable facts, one writer per run, every read pinned to a head, with the graph and the ledger as folds over it rather than as two stores. core-graph and core-ledger both defer persistence to this row (F-b5-04); cap-state-persistence supplies the opaque record store underneath, and this seam fixes what the records mean, who may write them and what a planner may ask.",
     "origin": "sourced",
@@ -386,7 +386,7 @@
     ],
     "invariants": [
       {
-        "text": "One log, two projections. core-graph and core-ledger both hand persistence to this row (F-b5-04), and the consequence here is that there is no graph store and no ledger store: there is one log of immutable facts and both components are folds over it, so the two can never disagree about what happened and no distributed transaction is needed to keep them together.",
+        "text": "One log, two projections. core-components hands the graph's and the ledger's persistence to cap-state-persistence (F-b5-04), and the consequence here is that there is no graph store and no ledger store: there is one log of immutable facts and both components are folds over it, so the two can never disagree about what happened and no distributed transaction is needed to keep them together.",
         "origin": "sourced",
         "sources": [
           "F-b5-04",
@@ -480,7 +480,7 @@
     ],
     "not_exposed": [
       {
-        "text": "The criterion a result is judged against. agentic-stack states design rule 6 (F-b1-07): an agent sees its outcome, never the criterion. The consequence on this seam is concrete, because a log is the easiest place for it to leak: no record body carries criterion text, no projection returns it, and a graded unit reading the log at its own head finds the handle and never the text.",
+        "text": "The criterion a result is judged against. agentic-stack states design rule 6 (F-b1-07), which core-components applies to the Judge's criterion: an agent sees its outcome, never the criterion. The consequence on this seam is concrete, because a log is the easiest place for it to leak: no record body carries criterion text, no projection returns it, and a graded unit reading the log at its own head finds the handle and never the text.",
         "origin": "sourced",
         "sources": [
           "F-b1-07"
@@ -488,7 +488,7 @@
         "quote": "An agent sees its outcome"
       },
       {
-        "text": "The medium. Proposed: no file path, byte offset, row id, bucket name, object key or table appears in a record, a projection answer or a head. core-graph and core-ledger state the rule this follows (F-part-c-09); the consequence here is that a consumer cannot tell which adapter answered, which is the property the swap depends on.",
+        "text": "The medium. Proposed: no file path, byte offset, row id, bucket name, object key or table appears in a record, a projection answer or a head. core-components states the rule this follows (F-part-c-09); the consequence here is that a consumer cannot tell which adapter answered, which is the property the swap depends on.",
         "origin": "sourced",
         "sources": [
           "F-part-c-09",
@@ -497,7 +497,7 @@
         "quote": "Products belong in the adapter column only"
       },
       {
-        "text": "Proposed: there is no read without a head, no operation that rehashes the whole log, and no update or delete call. Each absence is load-bearing - a default head would make planning impure, a full rehash would be unimplementable over a store of any size and is therefore a file-format detail, and an update would make every proof taken before it a lie.",
+        "text": "Proposed: there is no read without a head, no operation that rehashes the whole log, and no update or delete call. core-components carries design rule 5 for the planner (F-b1-06); each absence here is load-bearing - a default head would make planning impure, a full rehash would be unimplementable over a store of any size and is therefore a file-format detail, and an update would make every proof taken before it a lie.",
         "origin": "sourced",
         "sources": [
           "F-b1-06",
@@ -608,7 +608,7 @@
     {
       "step": 10,
       "action": "Open references/state-seam.md when you need the full record schema, the closed kind list, the eight projections with their signatures or the retention table; this skill body is enough to decide where a record goes and what a read may assume without it.",
-      "why": "Proposed: our convention. Long material behind one pointer keeps the contract readable, which is the usability requirement TARGET T3 states, and keeps one copy of the schema instead of a paraphrase in every skill that touches state.",
+      "why": "Proposed: our convention. Long material behind one pointer keeps the contract readable, which is the usability requirement TARGET T3 states and core-components cites for the Document, and keeps one copy of the schema instead of a paraphrase in every skill that touches state.",
       "origin": "sourced",
       "sources": [
         "T-t3-01"

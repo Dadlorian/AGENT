@@ -126,6 +126,10 @@ Each skill's description is at most 60 words, so the text Claude Code keeps resi
 | Honesty check | a verifier re-answered 15 seeded questions without the crew's answers: 13 exact, 15 within one step, 0 contradictions | same: 13 of 15 exact, 2 contradictions (A2-F, S2-F), both under the one-in-five rule |
 | Joined | `docs/combined/reading.md` (row 69): 42 PASS.md rows, 23 answered by both, 6 tensions, every one "proven against the brief, behind the future state" | |
 
+## The standards and the journey
+
+`STANDARDS.md` is the registry of every standard the platform knows, forty-one at last render, each with a computed status (contract, researched, known), a position (adopt, hold, watch, decline), the skills that name it, the research records that match, and the example that shows it. `JOURNEY.md` is the same platform read left to right as seven single-letter steps, A Ask to G Grow, that a person and an agent both walk; each step exposes the skills, ontology entities, cell lifecycle verbs, standards, examples and litmus sections it needs, and ends with its gaps. Both are rendered by `tools/standards.py render` from `docs/standards/standards.json` and `docs/journey/journey.json`; a standard in no step, or a step naming a skill, example, entity or section that does not exist, fails the check.
+
 ## Human review
 
 `HUMAN-REVIEW.md` is the checklist: for every folder, what it holds, the command that checks it by machine, what only a person can judge, and what a problem looks like. It starts with six commands that cover the whole repo, and ends with where a finding is recorded (a line in `OWNER.md`, a review record under `kb/ceremonies/`, or a decision on a Blocked row in `STATUS.md`).
@@ -164,6 +168,7 @@ Each skill's description is at most 60 words, so the text Claude Code keeps resi
 | `tools/blueprint_check.py` | Hold `docs/architecture/blueprint.json` to the source-of-truth rule |
 | `tools/litmus_check.py` | Check, merge and render the litmus questionnaire: coverage of every B3 row and B4 concern, angles, citations, contamination |
 | `tools/litmus_answers.py` | Check the litmus answers (re-read every quote, re-run every command, refuse cross-references) and write the scorecard |
+| `tools/standards.py` | Check the standards registry and the journey against the skills, the knowledge base, the examples and the scorecard, and render `STANDARDS.md` and `JOURNEY.md` |
 | `tools/conformance_answers.py` | Check the conformance answers against the repo and run the owner's grader |
 | `tools/spot_check.py` | Seeded sample for a verifier who never saw the crew's answers; agreement and contradictions |
 | `tools/combined_reading.py` | Join the two answer sets per PASS.md row; reads nothing else |

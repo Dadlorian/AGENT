@@ -50,3 +50,10 @@ After A and B: `python3 tools/examples_index.py`, `python3 tools/night_report.py
 ## E. Still yours
 
 Rows 14 and 45 (fetch access for standards), 37 (live host access so the cells stop being simulated), and the unit design's escalation default and seed choice if you want them changed before the run example is taken as the pattern. Row 21 (the continuous loop) starts against the plan from C.
+
+## F. Standards registry and journey (row 77, 2026-09-08)
+
+- `tools/standards.py check` warns that four E-standard entities named by skill contracts (ag-ui, openapi-asyncapi, rfc-8785-json-canonicalization, rfc-9162-certificate-transparency) are not in `kb/entities.jsonl`, because entities are built from PASS.md and those standards entered through research. Fix: let `tools/kb.py build` also emit entities for every `contract.standards` entry, or add the four to PASS.md's standards table.
+- Eight standards sit at position adopt without a contract (see `STANDARDS.md`, Gaps). Six have research records and need naming in the owning skill's contract: JSON-RPC 2.0 (cap-agent-runtime), W3C Trace Context (cap-telemetry), OAuth 2.1 (cap-tool-access), Sigstore (cap-provenance), OWASP LLM and Agentic (cap-policy). Three have no record and need research first: AGENTS.md, RFC 9396, CycloneDX ML-BOM.
+- Step G Grow has no litmus section; the improvement loop is measured by `tools/improvement_loop.py` only. Decide whether a 24th section is wanted or the loop's plan check is the measure.
+- Every step's litmus median is 1.0 except B Bound at 1.8. The journey's gaps column is the target list for the next boundary pass.

@@ -154,7 +154,7 @@ def compute(reg, jour, entities, research, skills, readmes):
     ontology = (ROOT / "docs/reference/ontology.md").read_text()
     used_std, used_skill, used_ex = set(), set(), set()
     for st in steps:
-        for k in ("person", "agent", "name"):
+        for k in ("person", "agent", "name", "person_short", "agent_short"):
             if not st.get(k):
                 errors.append(f"step {st['letter']}: missing {k}")
         for sid in st["standards"]:
@@ -224,12 +224,16 @@ def render_standards(reg, rows, h):
         if not rs:
             continue
         L.append(f"## {axis}\n")
-        L.append("| Standard | Body | Status | Position | Version claimed | Skills | Records | Examples | Journey | Why |\n|---|---|---|---|---|---|---|---|---|---|")
+        L.append("| Standard | Status | Position | Version claimed | Skills | Journey |\n|---|---|---|---|---|---|")
         for r in rs:
             name = f"[{r['name']}]({r['url']})" if r.get("url") else r["name"]
             ver = ", ".join(r["versions"]) if r["versions"] else ("unverified" if r["skills"] else "-")
-            recs = f"{r['records']}" + (f" ({', '.join(r['record_ids'])})" if r["record_ids"] else "")
-            L.append(f"| {name} | {r['body']} | {r['status']} | {r['position']} | {ver} | {', '.join(r['skills']) or '-'} | {recs} | {', '.join(r['examples']) or '-'} | {' '.join(r['journey'])} | {r['why']} |")
+            L.append(f"| {name} | {r['status']} | {r['position']} | {ver} | {', '.join(f'`{s}`' for s in r['skills']) or '-'} | {' '.join(r['journey'])} |")
+        L.append("")
+        for r in rs:
+            recs = f"{r['records']} records" + (f" ({', '.join(r['record_ids'])})" if r["record_ids"] else "")
+            exs = f"examples {', '.join(r['examples'])}" if r["examples"] else "no example names it"
+            L.append(f"- **{r['name']}** ({r['body']}). {r['why']} {recs}; {exs}; provenance {r['provenance']}.")
         L.append("")
     L.append("## Implementations behind the standards\n\nThese are products and patterns, not standards. Each sits behind one standard above, which is what makes it swappable.\n")
     L.append("| Implementation | Behind | Role here | Note |\n|---|---|---|---|")
@@ -259,22 +263,37 @@ def render_journey(jour, rows, steps, sc, ex_tab, skills, h):
     L.append("## Actors\n")
     for k, v in jour["actors"].items():
         L.append(f"- **{k}**: {v}")
-    L.append("\n## Overview\n")
-    L.append("| Step | The person asks | Skills | Standards (in contract) | Litmus median | Examples |\n|---|---|---|---|---|---|")
-    for st in steps:
-        stds = [rows[s] for s in st["standards"]]
-        inc = sum(1 for r in stds if r["status"] == "contract")
-        meds = []
+    L.append("\n## The journey, left to right\n\nColumns are the steps; rows are what each step exposes. Counts and names only; the sections below carry the sentences.\n")
+    def med(st):
+        vals = []
         for sec in st["litmus"]:
             r = litmus_row(sc, sec)
             if r:
                 try:
-                    meds.append(float(r["median"]))
+                    vals.append(float(r["median"]))
                 except ValueError:
                     pass
-        med = f"{statistics.median(meds):.1f}" if meds else "-"
-        exs = ", ".join(f"`{e}` {ex_tab.get(e, {}).get('last', '')}".strip() for e in st["examples"])
-        L.append(f"| **{st['letter']} {st['name']}** | {st['person']} | {len(st['skills'])} | {inc} of {len(stds)} | {med} | {exs} |")
+        return f"{statistics.median(vals):.1f}" if vals else "-"
+    def short(sid):
+        return rows[sid].get("short") or re.sub(r"\s*\(.*?\)", "", rows[sid]["name"])
+    facets = [
+        ("Step", lambda st: f"**{st['letter']} {st['name']}**"),
+        ("Person asks", lambda st: st["person_short"]),
+        ("Agent asks", lambda st: st["agent_short"]),
+        ("Skills", lambda st: "<br>".join(f"`{s}`" for s in st["skills"])),
+        ("Entities", lambda st: "<br>".join(st["entities"]) or "-"),
+        ("Cell verbs", lambda st: "<br>".join(st["verbs"]) or "-"),
+        ("Standards in contract", lambda st: "<br>".join(short(s) for s in st["standards"] if rows[s]["status"] == "contract") or "-"),
+        ("Standards to adopt", lambda st: "<br>".join(short(s) for s in st["standards"] if rows[s]["position"] == "adopt" and rows[s]["status"] != "contract") or "-"),
+        ("Watching", lambda st: "<br>".join(short(s) for s in st["standards"] if rows[s]["position"] in ("watch", "hold", "decline") and rows[s]["status"] != "contract") or "-"),
+        ("Examples", lambda st: "<br>".join(f"`{e}` {ex_tab.get(e, {}).get('last', '').replace(', failed 0', '')}".strip() for e in st["examples"]) or "-"),
+        ("Litmus median", med),
+        ("Litmus flags", lambda st: "<br>".join(x for sec in st["litmus"] for r in [litmus_row(sc, sec)] if r for x in (r["misaligned"], r["absent"]) if x != "-") or "-"),
+    ]
+    L.append("| " + " | ".join(f[0] if i == 0 else "" for i, f in enumerate(facets[:1])) + " | " + " | ".join(f"{st['letter']} {st['name']}" for st in steps) + " |")
+    L.append("|---|" + "|".join("---" for _ in steps) + "|")
+    for label, fn in facets[1:]:
+        L.append(f"| **{label}** | " + " | ".join(fn(st) for st in steps) + " |")
     L.append("")
     for st in steps:
         L.append(f"## {st['letter']}. {st['name']}\n")

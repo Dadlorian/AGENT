@@ -154,7 +154,7 @@ def compute(reg, jour, entities, research, skills, readmes):
     ontology = (ROOT / "docs/reference/ontology.md").read_text()
     used_std, used_skill, used_ex = set(), set(), set()
     for st in steps:
-        for k in ("person", "agent", "name", "person_short", "agent_short"):
+        for k in ("person", "agent", "name", "summary"):
             if not st.get(k):
                 errors.append(f"step {st['letter']}: missing {k}")
         for sid in st["standards"]:
@@ -263,7 +263,6 @@ def render_journey(jour, rows, steps, sc, ex_tab, skills, h):
     L.append("## Actors\n")
     for k, v in jour["actors"].items():
         L.append(f"- **{k}**: {v}")
-    L.append("\n## The journey, left to right\n\nColumns are the steps; rows are what each step exposes. Counts and names only; the sections below carry the sentences.\n")
     def med(st):
         vals = []
         for sec in st["litmus"]:
@@ -276,24 +275,31 @@ def render_journey(jour, rows, steps, sc, ex_tab, skills, h):
         return f"{statistics.median(vals):.1f}" if vals else "-"
     def short(sid):
         return rows[sid].get("short") or re.sub(r"\s*\(.*?\)", "", rows[sid]["name"])
-    facets = [
-        ("Step", lambda st: f"**{st['letter']} {st['name']}**"),
-        ("Person asks", lambda st: st["person_short"]),
-        ("Agent asks", lambda st: st["agent_short"]),
-        ("Skills", lambda st: "<br>".join(f"`{s}`" for s in st["skills"])),
-        ("Entities", lambda st: "<br>".join(st["entities"]) or "-"),
-        ("Cell verbs", lambda st: "<br>".join(st["verbs"]) or "-"),
-        ("Standards in contract", lambda st: "<br>".join(short(s) for s in st["standards"] if rows[s]["status"] == "contract") or "-"),
-        ("Standards to adopt", lambda st: "<br>".join(short(s) for s in st["standards"] if rows[s]["position"] == "adopt" and rows[s]["status"] != "contract") or "-"),
-        ("Watching", lambda st: "<br>".join(short(s) for s in st["standards"] if rows[s]["position"] in ("watch", "hold", "decline") and rows[s]["status"] != "contract") or "-"),
-        ("Examples", lambda st: "<br>".join(f"`{e}` {ex_tab.get(e, {}).get('last', '').replace(', failed 0', '')}".strip() for e in st["examples"]) or "-"),
-        ("Litmus median", med),
-        ("Litmus flags", lambda st: "<br>".join(x for sec in st["litmus"] for r in [litmus_row(sc, sec)] if r for x in (r["misaligned"], r["absent"]) if x != "-") or "-"),
-    ]
-    L.append("| " + " | ".join(f[0] if i == 0 else "" for i, f in enumerate(facets[:1])) + " | " + " | ".join(f"{st['letter']} {st['name']}" for st in steps) + " |")
-    L.append("|---|" + "|".join("---" for _ in steps) + "|")
-    for label, fn in facets[1:]:
-        L.append(f"| **{label}** | " + " | ".join(fn(st) for st in steps) + " |")
+    def lines(items):
+        return "<br>".join(items) or "-"
+    def step_cell(st):
+        return f"**{st['letter']} {st['name']}**"
+    L.append("\n## The steps\n\nRead top to bottom in letter order; that is the left-to-right walk. Each later table adds one layer to the same seven rows.\n")
+    L.append("| Step | What happens here | The person asks | The agent asks |\n|---|---|---|---|")
+    for st in steps:
+        L.append(f"| {step_cell(st)} | {st['summary']} | {st['person']} | {st['agent']} |")
+    L.append("\n## The domains each step exposes\n\nSkills are the platform's own layers. Entities are the industry ontology objects (`docs/reference/ontology.md`). Verbs are the cell lifecycle the containment interface maps onto.\n")
+    L.append("| Step | Skills | Ontology entities | Cell lifecycle verbs |\n|---|---|---|---|")
+    for st in steps:
+        L.append(f"| {step_cell(st)} | {lines(f'`{x}`' for x in st['skills'])} | {lines(st['entities'])} | {lines(st['verbs'])} |")
+    L.append("\n## The standards at play\n\nIn contract: a skill names it. To adopt: the registry says adopt but no skill names it yet, so it is a gap. Watching: held, watched or declined, with the reason in `STANDARDS.md`.\n")
+    L.append("| Step | In contract | To adopt | Watching |\n|---|---|---|---|")
+    for st in steps:
+        inc = [short(x) for x in st["standards"] if rows[x]["status"] == "contract"]
+        adopt = [short(x) for x in st["standards"] if rows[x]["position"] == "adopt" and rows[x]["status"] != "contract"]
+        watch = [short(x) for x in st["standards"] if rows[x]["position"] != "adopt" and rows[x]["status"] != "contract"]
+        L.append(f"| {step_cell(st)} | {lines(inc)} | {lines(adopt)} | {lines(watch)} |")
+    L.append("\n## The evidence per step\n\nExamples are the runnable folders with their last visible test line. The litmus median is over the sections mapped to the step (closed scale: -1 misaligned, 0 absent, 1 exists, 2 aligned, 3 leading). Flags are the questions scored misaligned or absent.\n")
+    L.append("| Step | Examples | Litmus sections | Median | Flags |\n|---|---|---|---|---|")
+    for st in steps:
+        exs = [f"`{e}` {ex_tab.get(e, {}).get('last', '')}".strip() for e in st["examples"]]
+        flags = [x for sec in st["litmus"] for r in [litmus_row(sc, sec)] if r for x in (r["misaligned"], r["absent"]) if x != "-"]
+        L.append(f"| {step_cell(st)} | {lines(exs)} | {lines(st['litmus'])} | {med(st)} | {lines(flags)} |")
     L.append("")
     for st in steps:
         L.append(f"## {st['letter']}. {st['name']}\n")

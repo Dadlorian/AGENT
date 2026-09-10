@@ -193,70 +193,74 @@ each other. Step 7 is gated on all of them.
 
 ## 7. Starter prompt
 
-Copy this whole block into a fresh context. It is written to stand alone: it orients, gives the
-first command, states the job and the stopping condition, and carries only the traps that have
-actually bitten. Everything else lives in this file, which it tells you to read.
+Copy the block below into a fresh context. It is written to stand alone.
 
 ```
-This repo is a design-and-evidence repo for a target agentic platform. Its centre is a 40-card
-reference model (docs/reference/reference-model.json); 32 cards have a sourced profile under
-docs/reference/cards/. Nothing here runs as an application. examples/reference/ is empty on
-purpose, and the previous attempt at examples was archived for being built on an unproven
-structure. Your job is to make it ready to build -- not to build it.
+You are picking up a design-and-evidence repo for a target agentic platform. Nothing here
+runs as an application: it is a 40-card reference model, 29 skills, 28 harnesses, and a
+hash-chained knowledge base where every claim is either cited to a source with a verbatim
+quote or explicitly marked proposed.
 
-FIRST, RUN THIS:
-  python3 tools/ready_to_build.py
+The goal is to take this future-state framework and make it alive -- decide where everything
+belongs, prove the path works on one thing, then let a workflow build the rest. We are not
+there yet, and the last attempt at examples was archived for being built on an unproven
+structure. Your job is to make it ready to build. Not to build it.
 
-It prints 8 conditions and exits 1 until all hold. It reads 0 of 8 today. That output is your
-task list and your progress report for the whole session -- report it verbatim, never as prose.
+FIRST COMMAND, BEFORE ANYTHING ELSE:
 
-Then read, in order: bridge.md (all of it), docs/reference/knowledge-pool.md, and
-docs/reference/cards/BRIEF.md.
+    python3 tools/ready_to_build.py
+
+It prints 8 conditions and exits 1 until they all hold. It reads 0 of 8 today. That output is
+your task list, your progress report, and how you end the session. Report it verbatim; never
+paraphrase it into prose.
+
+Then read bridge.md in full, then docs/reference/knowledge-pool.md (what stands behind each of
+the 40 cards), then docs/reference/cards/BRIEF.md (the authoring rule).
 
 THE JOB
-Work bridge.md section 6, steps 1 through 6. Stop when ready_to_build.py exits 0, or when you are
-blocked on the owner -- whichever comes first -- and report. Do NOT start step 7 (building the
-areas). Building nine areas on an unproven structure is exactly how the previous seven ended up in
-examples/archived/, and five artifacts in this repo still describe those seven, two of them inside
-passing gates. bridge.md section 4 lists them.
+Work bridge.md section 6, steps 1 through 6. Stop when ready_to_build.py exits 0, or when you
+are blocked on the owner -- whichever comes first -- and report. Do not start step 7.
 
-STEP 1 IS TWO QUESTIONS FOR THE OWNER. Ask them in one message, early, with the consequences
-stated. They are not research and you cannot infer them:
-  a. Is the reference model an industry-aligned description, or a description of this platform?
-     31.7% of its citations are this repo citing its own documents, so today it is both. Card 1.2
-     Scheduled is 12 of 13 internal -- an example built from it would demonstrate our design, not
-     an industry pattern.
-  b. Which example-area set is real: the nine region-based areas in examples/reference/README.md,
-     the seven journey areas the rest of the repo still names, or neither?
-Record both answers in docs/reference/build-principles.json. Steps 4 and 7 depend on (b).
+STEP 1 IS TWO QUESTIONS FOR THE OWNER. Ask both in one message, early. They are intent, not
+research, and you cannot infer them:
+  (a) Is the reference model an industry-aligned description, or a description of this
+      platform? 31.7% of its citations are this repo citing its own documents, so today it is
+      both. Card 1.2 Scheduled is 12 of 13 internal -- an example built from it would
+      demonstrate our own design, not an industry pattern.
+  (b) Which example-area set is real: the nine region-based areas proposed in
+      examples/reference/README.md, the seven journey areas the rest of the repo still names,
+      or neither?
+Record both in docs/reference/build-principles.json. Steps 4 and 7 depend on (b).
 
-STEP 2 IS THE ONE THAT TEACHES YOU SOMETHING, so start it as soon as (b) is answered. "The card
-profile is the spec" has never been tested. It may well hold -- nobody has pulled the data. Build
-ONE area from ONE profile, using only that profile, and write every question it could not answer
-into docs/reference/profile-sufficiency.md. If the list is empty, the profile IS the spec and that
-is a real result. Do not change the profile schema before you have the list.
+STEP 2 IS THE ONE THAT TEACHES YOU SOMETHING. Start it as soon as (b) is answered. "The card
+profile is the spec" has never been tested -- it may well hold; nobody has pulled the data.
+Build ONE area from ONE profile using only that profile, and write every question the profile
+could not answer into docs/reference/profile-sufficiency.md. An empty list is a real result.
+Do not change the profile schema before you have the list.
 
-TRAPS -- every one of these cost a session to find; bridge.md section 3 has the incidents
-- Re-run any number before you repeat it. Stale figures are this repo's most expensive habit.
-- Citable means checked. Run tools/stamp_verification.py --fetch before validating a citation.
-- Quote verdicts are typed, never true/false. `partial` means a person must read it, not that it
-  failed. A boolean is how a flattened bullet list and an invented statistic got reported alike.
-- Capture with tools/capture.py, never WebFetch. Build snippets from the GATE's fetch path --
-  verify_snippets.py does a plain GET and strips HTML, which is not what capture.py returns.
-- Never patch a contradicted record to fit its claim. The contradiction is the finding.
-- A subagent's report is not evidence. Open the artifact. Three subagent summaries miscounted
-  their own output last session; the artifacts were right every time.
-- Mint egress ids centrally after a batch, then re-derive every egress_ref after any rebuild.
-- Nothing writes to citation-debt.json automatically. It is debt, not permission.
+TRAPS -- each cost a session to find. bridge.md section 3 carries the incidents.
+  - Re-run any number before repeating it. Stale figures are this repo's most expensive habit.
+  - Citable means checked: run tools/stamp_verification.py --fetch before validating a citation.
+  - Quote verdicts are typed, never true/false. `partial` means a person must read it, not that
+    it failed. A boolean is how a flattened bullet list and an invented statistic were reported
+    with the same word.
+  - Capture with tools/capture.py, never WebFetch -- and build snippets from the GATE's fetch
+    path: verify_snippets.py does a plain GET and strips HTML, which is not what capture.py
+    returns.
+  - Never patch a contradicted record to fit its claim. The contradiction is the finding.
+  - A subagent's report is not evidence. Open the artifact it produced. Three subagent summaries
+    miscounted their own output last session; the artifacts were right every time.
+  - Mint egress ids centrally after a batch, then re-derive every egress_ref after any rebuild.
+  - Nothing writes to citation-debt.json automatically. It is debt, not permission.
 
 CLOSING A STEP
-python3 tools/phase.py open <name>  ...  python3 tools/phase.py close <name>
+    python3 tools/phase.py open <name>   ...   python3 tools/phase.py close <name>
 Green closes it. Two reds stop the phase and it refuses to reopen -- when that happens, stop and
-leave the evidence rather than forcing a third attempt. Then: review, improve, ledger record,
-checkpoint. tools/checkpoint.sh commits AND pushes to origin, so only run it when you mean to.
+leave the evidence rather than forcing a third attempt. Then review, improve, ledger record,
+checkpoint. tools/checkpoint.sh commits AND pushes to origin, so run it only when you mean to.
 
 ENDING THE SESSION
-Print python3 tools/ready_to_build.py, say which conditions you closed and which you did not, name
-anything still waiting on the owner, and update bridge.md so the next context starts where you
+Print python3 tools/ready_to_build.py. Say which conditions you closed, which you did not, and
+what is still waiting on the owner. Update bridge.md so the next context starts where you
 stopped.
 ```

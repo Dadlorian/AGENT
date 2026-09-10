@@ -192,7 +192,7 @@ Rendered from `skill.json` by `tools/render_skill.py`. Do not edit by hand. Sour
 |---|---|---|
 | Proposed: test the loop with a body that never passes, not with one that passes on the second attempt. The happy path exercises the verdict; only a permanently failing body exercises the ceiling, which is the part that keeps a loop from running forever. | proposed | `F-part-c-04` |
 | Proposed: bound what each iteration carries forward as well as how many iterations there are. The records on file name history growth as the reason long-running loops have to be restarted deliberately in workflow engines, so carry a digest and a bounded window rather than the whole transcript. | proposed | `X-compose-loop-002`, `X-cap-state-persistence-006` "to avoid running into the history scalability issue when workflows involve long-running loops" |
-| Proposed: unlimited retries are not a reliability strategy, and neither is a very large ceiling. Pick max_iterations from what the body can plausibly improve in one attempt, and let the cap escalate rather than raising the number until the failures stop being visible. | proposed | `X-compose-loop-003` "unlimited retries are not a reliability strategy" |
+| Proposed: unlimited retries are not a reliability strategy, and neither is a very large ceiling. Pick max_iterations from what the body can plausibly improve in one attempt, and let the cap escalate rather than raising the number until the failures stop being visible. | proposed | `X-compose-loop-003` "Unlimited retries are not a reliability strategy." |
 
 ## Definition of done
 

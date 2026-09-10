@@ -151,6 +151,26 @@ def main():
         region, num = PLACEMENT[key]
         areas.append({"order": i, "key": key, "num": num, "region": region, **found[key]})
 
+    # Evidenced status overrides: cards the diagram calls built where this repo's own
+    # evidence says otherwise. Applied here rather than by editing the diagram (which is
+    # the owner's statement of intent) or the derived file (which this tool overwrites).
+    status_fixes = []
+    override_path = ROOT / "docs" / "reference" / "status-corrections.json"
+    if override_path.exists():
+        by_addr = {c["address"]: c for c in json.loads(override_path.read_text())["corrections"]}
+        for area in areas:
+            tag = area["num"][:-1] if area["num"] else area["region"]
+            for card in area["cards"]:
+                fix = by_addr.get(f"{tag}.{card['order']}")
+                if not fix:
+                    continue
+                for field, key in (("status", "status"), ("sub", "sub")):
+                    if field in fix and card[key] != fix[field]:
+                        status_fixes.append({"card": fix["card"], "address": fix["address"],
+                                             "field": key, "was": card[key], "now": fix[field],
+                                             "why": fix["why"], "evidence": fix["evidence"]})
+                        card[key] = fix[field]
+
     standards = [{"ref": m.group(1), "name": m.group(2),
                   "maturity": "established" if m.group(3) == "est" else "emerging",
                   "what": m.group(4)}
@@ -168,7 +188,7 @@ def main():
         "standards": standards,
         "corrections": [{"card": k, "was": "rendered built", "now": "planned",
                          "why": f"source passed phase {v} into the boolean si slot, so the phase never applied"}
-                        for k, v in sorted(misplaced.items())],
+                        for k, v in sorted(misplaced.items())] + status_fixes,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n")
@@ -186,9 +206,12 @@ def check():
     text = OUT.read_text()
     doc = json.loads(text)
     cards = [c for a in doc["areas"] for c in a["cards"]]
+    corrected_subs = {f["now"] for f in doc.get("corrections", []) if f.get("field") == "sub"}
     std_names = {s["name"] for s in doc["standards"]}
     badged = [(c["name"], c["standard"]) for c in cards if c["standard"]]
     corrected = {c["card"] for c in doc["corrections"]}
+    want = {f["card"]: f["now"] for f in doc.get("corrections", [])
+            if f.get("field", "status") == "status"}
 
     results = [
         ("every item() captured",
@@ -196,8 +219,14 @@ def check():
         ("every area present", len(doc["areas"]) == len(ORDER)),
         ("every name verbatim in source",
          all(f"'{c['name']}'" in script for c in cards)),
-        ("every sub verbatim in source",
-         all(f"'{c['sub']}'" in script for c in cards if c["sub"])),
+        # a corrected sub-line is deliberately not in the source; that is the point of a
+        # correction. Exempt exactly the fields a recorded correction changed, no more.
+        ("every uncorrected sub verbatim in source",
+         all(f"'{c['sub']}'" in script for c in cards
+             if c["sub"] and c["sub"] not in corrected_subs)),
+        ("every correction names its evidence",
+         all(f.get("evidence") and f.get("why") for f in doc.get("corrections", [])
+             if "field" in f)),
         ("no empty name or sub", all(c["name"] and c["sub"] for c in cards)),
         ("card order contiguous in every area",
          all([c["order"] for c in a["cards"]] == list(range(1, len(a["cards"]) + 1))
@@ -210,8 +239,10 @@ def check():
         ("every standard used by a card", {s for _, s in badged} == std_names),
         ("status only built or planned",
          {c["status"] for c in cards} <= {"built", "planned"}),
-        ("every corrected card is planned",
-         all(c["status"] == "planned" for c in cards if c["name"] in corrected)),
+        # a correction may raise a card as well as lower it: evidence promoted 5.1 to built.
+        # Assert the card matches what its correction says, not one fixed direction.
+        ("every corrected card matches its correction",
+         all(c["status"] == want.get(c["name"], c["status"]) for c in cards)),
         ("no escaped unicode", "\\u" not in text),
     ]
     for label, passed in results:

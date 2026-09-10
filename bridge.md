@@ -1,149 +1,398 @@
-# Bridge — standards vocabulary & reference model work
+# Bridge — 2026-09-10
 
-Handoff for continuing the work from session `session_01EJDuHajL33cqyQg6dvta3T` (2026-09-08/09).
-Everything below is checked against the actual repo state at commit `6da1205`, not recalled from
-conversation — a fact here is either on disk or explicitly marked as discussed-but-not-built.
+Handoff. Supersedes the 2026-09-08/09 version entirely. `HANDOFF.md` covers the same ground from
+one session earlier and is now redundant with this file.
 
-## What's real and committed
+**Every figure here was measured when written. Re-run the command before trusting it.** The most
+expensive mistakes of the last two sessions were confident restatements of numbers that had moved.
 
-- `standards/<id>/standard.json` — all 41 standards migrated out of the old
-  `docs/standards/standards.json` monolith, one file per standard, verified byte-identical render
-  of `STANDARDS.md`/`JOURNEY.md` before and after. `standards/registry.json` and
-  `standards/journey.json` hold the shared top-level data. `tools/standards.py` reads from this
-  tree now (`load_registry()`); its CLI (`check`/`render`) is unchanged.
-- `standards/archive/` — frozen, hash-verified copies of the pre-migration
-  `docs/standards/standards.json` and `docs/journey/journey.json`. The **originals are still on
-  disk in `docs/`, untouched** — deleting them is a separate, later, explicitly-approved step,
-  not done yet.
-- `standards/agent-client-protocol/standard.json` has real `acronym` and `not_to_be_confused_with`
-  fields (disambiguating Zed/JetBrains' Agent Client Protocol from IBM's now-archived Agent
-  Communication Protocol, cited to two real URLs). This is the only standard with either field
-  populated.
-- Live `WebFetch` against real spec pages works in an interactive session — proven against
-  `agentclientprotocol.com/protocol/v2/schema.md`, which returned ~90 real type/enum/method names
-  (StopReason, RequestPermissionOutcome, ContentBlock types, ToolCall, etc.). This is the first
-  evidence in this repo's history that `STATUS.md` rows 14 and 45 ("standard version fetch
-  blocked") may not hold in every execution context — **scoped to this interactive session only**,
-  not proven for the harness's own isolated environment.
-- Governance/maturity research (real, from live web search, not yet written into any file):
-  MCP and A2A are both foundation-governed under the Linux Foundation's Agentic AI Foundation
-  (AAIF), broad independent multi-vendor adoption. AG-UI and Agent Skills specification have broad
-  adoption but are still single-company-stewarded (CopilotKit; Anthropic) and young. ACP (Zed) is
-  real and growing but its v2 spec is currently in Draft.
-- A published reference-model Artifact —
-  https://claude.ai/code/artifact/bdec9640-bd78-40f5-a6b6-81473ab10679 — showing this platform's
-  real 27 named elements (18 `cap-` skills, 2 seams, `core-components`, `xc-guarantees`,
-  `compose-workflow`, stripped of file-naming prefixes) as a hub-and-flanks diagram: **Entries**
-  and **Reach** as peers either side of the **Agent** hub (split only where a real sequence exists:
-  Plan & Orchestrate before a cell exists, Runtime & State once it does), **Guarantees &
-  Observability** as one rail underneath. Not a layered depth stack — that was tried and rejected
-  (see "What was tried and reverted" below).
+---
 
-## What was designed in conversation but never written to disk
+## 1. Where the system is
 
-- **No `vocabulary.json` file exists anywhere.** The ACP term extraction (StopReason, ToolCall,
-  RequestPermissionOutcome, ContentBlock, session methods — from the real fetch above) was
-  discussed and shown in chat but never saved to `standards/agent-client-protocol/vocabulary.json`.
-  Vocabulary work for A2A, AG-UI, MCP, and Agent Skills specification was never started at all.
-- **No `kb/research.jsonl` record has `status: "fetched"`** — confirmed by grep, count is 0. The
-  fetched-status research record for ACP (which would be the first non-`search-only` record in
-  this repo's history, and the actual evidence needed to reconsider STATUS rows 14/45) was never
-  created. `tools/build_egress_log.py` already supports this mechanically the moment a record with
-  `status: "fetched"` exists — this is a small, well-understood next step, not a design problem.
-- **No `schemas/standard.schema.json` or `schemas/vocabulary.schema.json`.** No
-  `tools/validate_standards.py`. Schema and validator work for the new folder structure hasn't
-  started.
-- **No `kb/edges.jsonl` records for the new relationship types** (`applies_to_step`, `aligns_with`,
-  `implemented_by`) that were designed to replace the embedded `journey` field on `standard.json`
-  and to model the cross-standard vocabulary alignment matrix. The `journey` field is still present
-  on every `standard.json` (kept deliberately, to preserve the byte-identical render proof) and
-  hasn't been migrated to edges yet.
-- **`xc-guarantees` still cites no standard and is still not listed in `STANDARDS.md`'s own "Areas
-  with no open standard" table** — confirmed by grep just now. `cap-state-persistence`,
-  `cap-evaluation`, `cap-durable-execution`, and the `cap-isolation` cell-lifecycle gap are all
-  honestly disclosed there; `xc-guarantees` is the one real, still-undisclosed gap this whole
-  exercise surfaced. Independent of anything else here, this is a one-line fix worth doing.
-- The real cross-domain standard connections identified by hand (not yet in any `aligns_with`
-  edge): **A2A** connects Entries → Agent (Runtime & State) → Guarantees & Observability;
-  **MCP** connects Reach → Guarantees & Observability; **GenAI semantic conventions** connects
-  within Guarantees & Observability (Telemetry/Evaluation). Agent Client Protocol, AG-UI, and
-  Agent Skills specification are real but stay inside one grouping each — not cross-cutting by the
-  same test.
+### Measured state
 
-## What was tried and reverted (so it isn't retried)
+| | |
+|---|---|
+| Research corpus | **932 records — 158 fetched, 767 search-only, 7 blocked** |
+| Reference model | 40 cards, 19 built / 21 planned, **15 recorded corrections** |
+| Card profiles | **27 of 40**, 365 individually verified citations, 119 recorded gaps |
+| Knowledge pool | **25 documented · 2 unread · 13 undocumented** |
+| Examples | `archived/` (the old seven), `reference/` (empty, structure defined), `end-to-end/` |
+| STATUS | 11 live rows, 0 stale |
 
-1. A seven-column "journey" layout (Ask/Bound/Contain/Do/Evidence/Finish/Grow, then relabeled to
-   industry terms like Admission Control/Provisioning/Execution) — dropped because it's a temporal
-   axis, not a modularity axis, and real capabilities span multiple time-columns, producing false
-   coupling.
-2. `STANDARDS.md`'s own 11-axis registry categories (agent-protocol, tool-access, model-access,
-   observability, isolation, identity, provenance, formats, policy, workflow, governance) as a
-   capability grouping — dropped after checking the real data: 3 capabilities span multiple axes,
-   3 have no axis at all (no standard cited), and the "workflow" axis contains one declined
-   standard unrelated to `compose-workflow` itself. Legitimate for categorizing standards; wrong
-   tool for grouping capabilities.
-3. A 5-layer "Consumers → Experience/Orchestration → Core → Data & Integration → Infrastructure"
-   depth stack with Governance/Security as edge bars — a generic enterprise-architecture template,
-   force-fit onto a system that doesn't have that shape. An agent is a loop (plan → act → observe →
-   replan), not a one-directional request pipeline through discrete depth tiers; forcing it into
-   one produced "arbitrary layers" that didn't reflect real dependency structure. Superseded by the
-   hub-and-flanks model above, which matches both Cloudflare's own agent-platform diagram and the
-   classical sense→decide→act framing in agent architecture literature.
-4. Three hand-coded raw-SVG diagram attempts with manually computed pixel coordinates — abandoned
-   for CSS Grid/Flexbox after two confirmed overlap/text-bleed bugs from hand arithmetic. The
-   published Artifact is CSS-laid-out, not SVG-positioned.
-
-## Known-good facts worth not re-deriving
-
-- 18 `cap-` skills + 2 seams (`seam-dispatch`, `seam-state`) + `core-components` +
-  `xc-guarantees` + `compose-workflow` = 23 framework-runtime elements (`compose-improvement-loop`
-  and the 4 `build-*` skills are excluded — they're the meta-engine that authors this repo's own
-  skills, not part of the platform they describe).
-- Real dependency depth (`builds_on`, filtered to drop `agentic-stack`/`build-*` authoring-only
-  deps): zero-dependency leaves are `cap-errors` (used by 20 of 23 others), `cap-model-access`,
-  `cap-document-validation`. Most framework-coupled: `seam-dispatch` (11 real deps),
-  `compose-workflow` and `xc-guarantees` (8 each).
-- Real per-capability standard citations (from each skill's own `contract.standards`), already
-  separated into agentic-specific (Agent Client Protocol, A2A, MCP, AG-UI, Agent Skills
-  specification, GenAI semantic conventions) versus table-stakes (JSON Schema, RFC 9457,
-  CloudEvents, OpenAPI/AsyncAPI, RFC 5545, OAuth2 token exchange, SPIFFE, OCI Runtime Spec,
-  Idempotency-Key convention, RFC 9162, RFC 8785, in-toto/DSSE/SLSA, Rego/OPA, OTLP) — the
-  agentic/table-stakes split is real and worth preserving in any future work, it's not a stylistic
-  choice.
-
-## Starter prompt for a new session
+### Gates — all green except two, both recorded
 
 ```
-Read bridge.md at the repo root first — it's a handoff from a prior session covering standards
-vocabulary research and a reference-model diagram for this platform's real architecture. Don't
-re-derive anything it already states as verified; do re-verify anything it flags as "designed but
-not written to disk" before building on it, since none of that exists yet.
+python3 tools/validate_skills.py            29 skills, 0 errors, 0 warnings
+python3 tools/kb.py verify                  chains intact, rebuild identical
+python3 tools/kb.py ledger-verify           322 records
+python3 tools/validate_card_profiles.py     27 profiles, 0 errors
+python3 tools/card_profile_test.py          10/10 (9 planted defects caught)
+python3 tools/check_card_example_map.py     40 entries, 0 errors
+python3 tools/extract_reference_model.py --check   14/14
+python3 tools/reconcile_egress.py           RECONCILED
+python3 tools/status_check.py --freshness   11 rows, 0 stale
+python3 tools/knowledge_pool.py             regenerates the pool view
+python3 tools/standards.py check            10 errors  <- row 77, journey names archived paths
+python3 tools/verify_snippets.py --check    drift 39   <- all `read`-field only, no citation uses them
+```
 
-Pick up with whichever of these you want to prioritize, they're independent:
+---
 
-1. Close the fetched-status gap: write standards/agent-client-protocol/vocabulary.json (the ACP
-   term extraction is described in bridge.md, re-fetch agentclientprotocol.com/protocol/v2/schema.md
-   to get it fresh rather than trusting the bridge doc's paraphrase), add the matching
-   kb/research.jsonl record with status "fetched" (schema at schemas/research.schema.json already
-   supports this), run tools/build_egress_log.py to generate its egress-log entry, then decide
-   with the owner whether STATUS.md rows 14/45 should change given this is the first fetched
-   (not search-only) record in the repo's history.
+## 2. What was found, and why it matters
 
-2. Extend vocabulary.json + governance/maturity research (bridge.md has the findings already) to
-   A2A, AG-UI, MCP, and Agent Skills specification, the same way ACP was done.
+Two sessions of building checks that had never existed. Every defect below was found by a machine
+check, not by suspicion — and none of it was visible before.
 
-3. Fix the xc-guarantees disclosure gap in STANDARDS.md's "Areas with no open standard" table --
-   small, independent, one line.
+**Research records were misrepresenting their sources at scale.**
 
-4. Build schemas/standard.schema.json, schemas/vocabulary.schema.json, and
-   tools/validate_standards.py (mirror tools/validate_skills.py's hand-rolled style, no jsonschema
-   package available).
+- **30 of 101 `fetched` snippets were not verbatim.** One presented invented statistics as a quote
+  from an arXiv abstract. Cause: WebFetch returns a language model's *rendering* of a page, not the
+  page. All repaired.
+- **17 of 68 `search-only` records checked contradicted their own page** — one in four. Failure
+  modes: a fabricated comparison and metric attributed to a real Microsoft URL
+  (`X-litmus-c-016`); a source stating the **opposite** of its claim — an unimplemented feature
+  request cited as evidence of graceful degradation (`X-xc-budget-004`); and **snippets carrying
+  verbatim text from a different record's page** (`X-end-to-end-058`, `X-cap-evaluation-003`).
+- **767 search-only records remain unchecked.** At the observed rate that is roughly 190 records
+  carrying claims their pages do not support.
 
-5. Model the real cross-domain standard connections (listed in bridge.md) as kb/edges.jsonl
-   records with new rel types (applies_to_step, aligns_with, implemented_by), replacing the
-   embedded `journey` field on standard.json once the edges are proven equivalent.
+**Citations were unverifiable by construction.**
 
-Whatever you pick, verify against the actual files before asserting anything is done -- this
-session's main lesson, repeated many times, was catching claims that sounded right but weren't
-checked against what's actually on disk.
+- `validate_skills.py` fell back to `json.dumps(record)` for research records, making the
+  agent-written `claim` field quotable. **18 of 946 skill citations were the repo quoting itself.**
+- **1,079 of 3,024 skill citations still have no quote of their own** — one quote standing in for
+  several cited ids (row 78). Of those, 171 are `E-` entity ids that structurally cannot be quoted.
+
+**The reference model contradicted the repo's own documents.**
+
+Found by writing a profile per card, which forced two documents to be compared for the first time.
+7 cards moved built → planned on evidence — `harness/work-intake/test.sh` at passed 4 / failed 24,
+`F-a6-02` recording Temporal's server as not listening, `F-a6-05` recording no identity field
+anywhere. One card moved planned → **built** because `F-a7-03` is a measured fact.
+
+---
+
+## 3. The process that works
+
+Proven over ~40 agent runs. Do not improvise around it.
+
+### Capture
+
+**Never use WebFetch to capture a quote.** It returns a model's rendering of a page. Use:
+
+```
+python3 tools/capture.py <url>      # api -> markdown -> service -> html
+```
+
+Record which rung succeeded in `fetch_tool`. `service` uses pure.md / urltomarkdown, both keyless.
+A snippet must be a **byte-for-byte** substring of what capture returns — no tidying punctuation,
+no joining fragments across an ellipsis.
+
+### Search before researching
+
+```
+python3 tools/kb_index.py search "<terms>"     # ~2,400 citable records
+python3 tools/kb.py show <id>
+```
+
+`merge-research` dedupes on **id only**, so nothing stops the same question being researched twice
+under a new id. The index is the only thing that prevents it.
+
+### The three rules adopted, now in `build-skill-authoring`
+
+1. **A citation is typed by what the record is.** `F`/`T`/`X`/`REF` are documents and carry a
+   verbatim quote from their own source text. `E`/`A`/`R` name things and relations, have no text
+   to quote, and belong in a skill's `entities` array — never a row's `sources`. Of 184 `E-`
+   records only 9 carry text at all.
+2. **Profile before you constrain.** Measure what the records actually carry before writing a rule
+   about them. Three rules were written and rejected in one session for skipping this.
+3. **Matching proposes, evidence decides.** A similarity score or keyword hit produces a shortlist
+   to read. It never settles a question and never drives a state change. Violated four times,
+   caught four times; once a regex nearly flipped a card's status by matching a failure pattern
+   against a **passing** test.
+
+### Source text is not the `claim` field
+
+A research record's `claim` is this repo's prose *about* a source. Only `snippet` and `read` are
+source text. A quote matching `claim` is the repo citing itself.
+
+### Egress is minted centrally
+
+Research agents must **never** set `egress_ref` or append to `kb/egress-log.jsonl`. Two agents
+appending concurrently mint the same `G-` id. The coordinator mints after the batch, then runs
+`merge-research` and `reconcile_egress.py`.
+
+---
+
+## 4. The cycle that needs completing
+
+Three loops, in dependency order. Each is independently runnable.
+
+### Loop A — verify the search-only pile
+
+767 records unchecked, ~190 expected to misrepresent their source. Highest value per token spent,
+because it corrects claims already in use.
+
+Priority order: records cited by a card profile first, then records cited by a skill, then the
+rest. Batch by **source file** so agents never touch the same `kb/research/*.jsonl`.
+
+A contradicted record is **left `search-only` and reported**, never patched to fit. That is the
+finding.
+
+### Loop B — profile the 13 undocumented cards
+
+`1.5 · 2.3 · 3.1 · 3.2 · 3.4 · 3.5 · 4.1 · 6.1 · 6.3 · base.1 · base.2 · base.4 · rail.1`
+
+**Core Agent is 4 of those 13** — Harness, Model Interface, Workspace, Tool Interface. The engine
+of the model is its emptiest area, while Self-Improvement is 4-for-4 documented. Start there.
+
+**`2.3 Planning` already has a 9-record research lens and no profile** — the research is done and
+unattached. Cheapest card on the board.
+
+Every one of these 13 is marked `built`. Every `built` card profiled so far produced a
+contradiction. **Run the card's harness** where one exists; the two most damning findings came from
+executing `test.sh`, not from reading.
+
+Method: `docs/reference/cards/BRIEF.md`, gated by `validate_card_profiles.py`.
+
+### Loop C — build the examples
+
+`examples/reference/README.md` defines nine areas derived from the model, regions preserved
+(spine / loop / base / rail). **It is empty on purpose.**
+
+Do not start until Loop B is done and the 31 model-correction gaps are triaged. Building against a
+model with 31 known-wrong things is precisely how the old seven areas ended up in
+`examples/archived/`.
+
+The card profile is the spec: write the example from it. If the profile does not say what a card
+means, the profile is incomplete — that is not licence to write prose.
+
+---
+
+## 5. Overnight workflow
+
+The failure mode when nobody is watching is not agents doing nothing. It is agents producing
+confident, plausible, wrong output — which is exactly what the last two sessions kept catching by
+hand. The ceremony discipline exists for this.
+
+### The phase controller
+
+`tools/phase.py` is the scriptable half of this. It runs the gates, counts failed attempts and
+**stops** — an unattended run that keeps retrying a phase which will not go green burns a night and
+leaves a mess.
+
+```
+python3 tools/phase.py gates        11 gates, a table, exit 1 on blocking red
+python3 tools/phase.py open <name>  record that a phase started
+python3 tools/phase.py close <name> run gates; green closes, red records an attempt
+python3 tools/phase.py status       what is open, what stopped, and why
+```
+
+**Two failed attempts on the same phase marks it `stopped`, and it refuses to reopen.** Two
+failures mean the problem is not something the loop can fix; the evidence is worth more than a
+third attempt.
+
+Gates that are red for recorded reasons (row 76's snippet drift, row 77's journey paths) are
+carried as `known_red`: reported every run, never able to halt a phase that did not cause them.
+Otherwise every phase fails on someone else's debt.
+
+State is in `state/phases.json` and is written to be read: which gate went red, on which attempt,
+at what time.
+
+**Proven 2026-09-10** on phase `verify-search-only` — opened, went red on 94 stale citations,
+self-improved, closed green on attempt 1.
+
+
+### The phase plan
+
+Six phases, three ceremonies. A ceremony every two phases, and at every section boundary — that is
+where a reviewer who did not do the work checks it, and where the planted defects test the reviewer.
+
+| # | Phase | Work | Batch |
+|---|---|---|---|
+| 1 | `B-core-agent` | Profile 3.1 Harness, 3.2 Model Interface, 3.4 Workspace, 3.5 Tool Interface, and 2.3 Planning (its 9-record lens already exists) | 5 agents, one card each |
+| 2 | `B-remainder` | Profile the other 8: 1.5, 4.1, 6.1, 6.3, base.1, base.2, base.4, rail.1 | 4 agents, two cards each |
+| — | **CEREMONY 1** | All 40 cards profiled. Review, improve, ledger, checkpoint | |
+| 3 | `A-cited` | Verify search-only records cited by a skill or profile | 4-6 agents, split by source file |
+| 4 | `A-remainder` | Verify the rest of the 767, highest-cited first | 4-6 agents, split by source file |
+| — | **CEREMONY 2** | The corpus is verified. Review, improve, ledger, checkpoint | |
+| 5 | `C-triage` | Triage the model-correction gaps into a decision list; apply what evidence settles, mark the rest for the owner | 1 agent + owner |
+| 6 | `C-first-area` | Build one example area in `examples/reference/` from its corrected profiles | 2-3 agents |
+| — | **CEREMONY 3** | First area built. Review, improve, ledger, checkpoint. **Stop and report** — do not build the other eight unattended | |
+
+**Phase 1 is the right start.** Core Agent is the model's engine and its emptiest area: 4 of its 5
+cards have no profile at all, while Self-Improvement is 4-for-4. And `2.3 Planning` is the cheapest
+card on the board — the research is done and unattached.
+
+**Do not run phase 6 more than once unattended.** Building the first example area is the test of
+whether the structure works. Eight more built on an unproven structure is how the old seven ended
+up in `examples/archived/`.
+
+### Ceremony, concretely
+
+```
+python3 tools/plant.py plant <skill>          plant two known defects
+  ... a reviewer agent that did NOT do the work reviews the phase ...
+python3 tools/plant.py check <review.json>    exit 1 = the review missed them, DISCARD and re-run
+python3 tools/check_ceremony.py <review.json> <improve.json>
+python3 tools/kb.py ledger '<json>'
+bash tools/checkpoint.sh "<phase>: <summary>" <paths>
+python3 tools/plant.py unplant
+```
+
+A review that misses a planted defect is not a weak review, it is not a review. Discard it.
+
+### Batch shape
+
+```
+1. plant          python3 tools/plant.py plant <skill>      (Loop B/C batches only)
+2. work           4-6 parallel agents, split so no two touch the same file
+3. gates          the definition of done below, all must be green
+4. review         one agent that did NOT do the work reviews the batch
+5. plant check    python3 tools/plant.py check <review.json> -- a review that misses both
+                  planted defects is DISCARDED and re-run
+6. improve        each finding applied or declined exactly once
+7. ceremony       python3 tools/check_ceremony.py <review.json> <improve.json>
+8. ledger         python3 tools/kb.py ledger '<json>'
+9. checkpoint     bash tools/checkpoint.sh "<row>: <summary>" <paths>
+```
+
+Steps 4–5 are the ones that make unattended running safe. A batch that skips them is a batch
+nobody checked.
+
+### Definition of done per batch
+
+```
+python3 tools/verify_snippets.py --check
+python3 tools/validate_card_profiles.py
+python3 tools/card_profile_test.py
+python3 tools/validate_skills.py
+python3 tools/kb.py verify
+python3 tools/reconcile_egress.py
+python3 tools/knowledge_pool.py
+```
+
+**A red gate stops the batch. It does not get worked around.** `checkpoint.sh` already refuses on a
+red `validate_skills` or `kb verify`.
+
+### Concurrency limits, learned the hard way
+
+- **4–6 agents per batch.** Beyond that they collide on shared files.
+- **Split work by file, never by topic** — two agents editing one `.jsonl` corrupt it.
+- The workflow engine caps at CPUs minus two (2 here) — run lanes as direct agents.
+- **Never run assessors while examples or records are being edited.** That is what produced the 36
+  litmus evidence errors on row 76.
+
+### What must never happen unattended
+
+- Editing a derived file by hand — `reference-model.json`, `entities.jsonl`, `SKILL.md`. Corrections
+  go in `status-corrections.json` and are applied by the extractor.
+- Weakening a checker to make a batch pass.
+- Patching a contradicted record to fit its claim.
+- Minting `G-` ids inside a research agent.
+
+---
+
+## 6. Open work (STATUS.md, 11 rows)
+
+| Row | What |
+|---|---|
+| 14 | 17 of 42 standards have a fetched research record |
+| 21 | Improvement loop, not started |
+| 37 | **Blocked on you** — live host credentials |
+| 74, 75 | Superseded by 79, areas archived |
+| 76 | 144 litmus answers, 36 errors from evidence drift. `NEXTSTEP.md` B.1 has the durable fix |
+| 77 | `standards.py check` 10 errors — `JOURNEY.md` names archived example paths |
+| 78 | 1,079 unquoted skill citations, 171 of them entity ids to relocate |
+| 79 | Reference examples — structure defined, nothing built |
+| 80 | 27 of 40 cards profiled |
+| 81 | 31 model corrections recorded, none applied |
+
+Also outstanding, no row: **SARIF** needs a `standards/` entry (the interchange format card 5.1
+needs), and **DSSE** is cited by two skills with no fetched record.
+
+---
+
+## 7. Known limits
+
+- **The gates do not validate prose.** `text`, `covers` and `note` fields in a card profile are
+  never checked. A profile can pass every gate carrying a fabricated figure in its narrative, and
+  several did — a "$47,000 / 264-hour runaway loop" and a "28.7x-35.2x" benchmark among them, both
+  unsupported anywhere in the corpus, both repeated to the owner as verified before a second pass
+  caught them. Extending the checker to prose is open work.
+- **A subagent's report is not evidence.** Two figures were relayed to the owner as verified purely
+  because an agent said so. Check the artifact, not the summary.
+- **The gates validate form, not truth.** They prove a quote is genuine and from source text. They
+  cannot tell whether it *supports* the claim it is attached to. One claim was found resting on a
+  five-word quote backing a four-clause assertion. Closing this needs a reader.
+- **39 `read` fields are non-verbatim** — stitched fragments, not fabrication. No citation depends
+  on them.
+- **Every reviewer to date has been a model.** `HUMAN-REVIEW.md` is the checklist for a first human
+  pass.
+- **An auto-commit hook is running.** Work lands in commits with unrelated messages (`saved`, "Add
+  new usage entry…"). Ledger records point at commits whose messages do not describe them.
+
+---
+
+## 8. Starter prompt
+
+Copy this whole block into a fresh context.
+
+```
+Read bridge.md end to end before doing anything. Then docs/reference/cards/BRIEF.md, which is the
+authoring rule, and docs/reference/provenance-methodology.md, which is how sourcing works here.
+
+Do not trust any number in those files without re-running the command that produced it. That is
+this repo's most repeated lesson: three sessions of confident figures that had already moved.
+
+GOAL
+Complete the reference architecture and build its examples. The model is 40 cards in
+docs/reference/reference-model.json. 27 have a profile; 13 do not. The research corpus is 932
+records of which 767 have never been opened, and one in four of the last 68 checked turned out to
+misrepresent its own page. examples/reference/ is empty and waiting. examples/archived/ is the
+superseded approach - do not add to it.
+
+HOW TO WORK
+Follow the six-phase plan in bridge.md section 5. Start with phase 1, B-core-agent.
+
+Run every phase as:
+  python3 tools/phase.py open <phase-name>
+  ... 4-6 parallel agents, split by FILE so no two touch the same one ...
+  python3 tools/phase.py close <phase-name>
+
+A green close moves to the next phase. A red close means self-improve and close again. TWO failed
+closes marks the phase stopped and it refuses to reopen - when that happens, stop and leave the
+evidence. Do not work around a red gate and do not weaken a checker to pass one.
+
+Hold a ceremony after phases 2, 4 and 6, per bridge.md section 5. A reviewer agent that did not do
+the work reviews it, and tools/plant.py tests the reviewer: a review that misses its planted
+defects is discarded and re-run.
+
+NON-NEGOTIABLE
+- A claim carries a verbatim quote from a named record, or is marked proposed. Both are good
+  answers. A stretched quote is not.
+- Source text is a record's snippet or read. Never its claim field - that is this repo's own prose
+  about a source, and quoting it is the repo citing itself.
+- Capture pages with tools/capture.py. NEVER WebFetch: it returns a model's rendering of a page,
+  which is how 30 snippets acquired invented statistics.
+- Search tools/kb_index.py before researching anything. merge-research dedupes on id only, so
+  nothing else stops the same question being answered twice.
+- Profile the data before writing a rule about it.
+- Matching proposes, evidence decides. Never flip a state on a keyword match.
+- A subagent's report is not evidence. Check the artifact it produced, not its summary. Two
+  fabricated figures reached the owner because this was skipped.
+- Mint egress ids centrally after a batch, never inside a research agent - concurrent agents mint
+  the same G- id.
+- Never hand-edit a derived file: reference-model.json, entities.jsonl, SKILL.md. Corrections go in
+  docs/reference/status-corrections.json and are applied by the extractor.
+
+WHEN A SOURCE CONTRADICTS ITS CLAIM
+Leave the record as search-only and report it. Do not patch it to fit. That contradiction is the
+most valuable thing a verification pass produces.
+
+REPORT PROGRESS AS MEASURED NUMBERS
+python3 tools/knowledge_pool.py is the scoreboard. It reads 24 documented / 3 unread /
+13 undocumented right now. python3 tools/phase.py status says what is open, closed or stopped.
 ```

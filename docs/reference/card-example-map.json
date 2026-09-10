@@ -1,0 +1,477 @@
+{
+  "note": "Hand mapping between two vocabularies that have never been joined: the 40 reference-model cards (docs/reference/reference-model.json) and the seven user-view example areas under examples/ (ask, run, watch, steer, progress, done, improve). examples/end-to-end/ is excluded: it is the original reference the seven build on, not one of the seven user-view areas the owner's question is about. Inclusion test: an area is listed for a card only when that area's own README proves something about the card's specific subject -- a named step in its run-steps table, a row in its Extension points table backed by a differential run, or a recorded gap -- not merely because the area happens to use the door, capability or record shape in passing. Every row is origin=proposed: this is a judgment mapping, not a sourced fact. 13 of the 40 cards (1.5, 2.3, 3.1, 3.2, 3.4, 3.5, 4.1, 6.1, 6.3, base.1, base.2, base.4, rail.1) have no profile under docs/reference/cards/, so their mapping rests on the card's name and sub-line in reference-model.json alone and is lower-confidence than a profiled card's.",
+  "cards": [
+    {
+      "address": "1.1",
+      "card": "Human",
+      "areas": [
+        "ask"
+      ],
+      "origin": "proposed",
+      "why": "ask's doors.py maps a raw shell/IDE argv to the human entry and step 9 (`--door human --format smtp-mail`) proves an unmapped format at that door is refused; no other area differentiates the human door from the other three.",
+      "litmus": [
+        "work-intake",
+        "identity"
+      ]
+    },
+    {
+      "address": "1.2",
+      "card": "Scheduled",
+      "areas": [
+        "ask",
+        "progress",
+        "done"
+      ],
+      "origin": "proposed",
+      "why": "ask derives the schedule door's idempotency key from (schedule, occurrence) and proves a catch-up delivery is one key not two (run steps table, step 7); progress's section 8 runs four recurrence/zone/catch-up/lookback differentials against the same door's payload; done's gap G9 records that its own schedule door carries payload.recurrence and never fires anything on it.",
+      "litmus": [
+        "scheduling",
+        "work-intake"
+      ]
+    },
+    {
+      "address": "1.3",
+      "card": "Internal Event",
+      "areas": [
+        "ask"
+      ],
+      "origin": "proposed",
+      "why": "the registered cloudevents-http producer is a workload-attested internal service (service:alerting / service:checkout-ci / service:ceremony-runner), not a third-party webhook, and ask's run step 8 (`--door event --redeliveries 8`) is the only area-specific differential against that door's own dedup identity.",
+      "litmus": [
+        "work-intake"
+      ]
+    },
+    {
+      "address": "1.4",
+      "card": "External Event",
+      "areas": [],
+      "origin": "proposed",
+      "why": "no producer registered in any area's admission/entry documents represents an inbound webhook or queue delivery from outside the platform; the door every area calls 'external' is agent:partner-*, which is Agent-to-Agent (1.5), not this card.",
+      "litmus": [
+        "work-intake"
+      ]
+    },
+    {
+      "address": "1.5",
+      "card": "Agent-to-Agent",
+      "areas": [
+        "ask"
+      ],
+      "origin": "proposed",
+      "why": "ask's extension point 'A producer whose own correlation becomes the parent' (run step 2) is the only differential specific to the A2A door's contextId-as-parent-correlation mechanic; the other six areas use the same door only as one of four generic entries with no door-specific test.",
+      "litmus": [
+        "work-intake",
+        "identity"
+      ]
+    },
+    {
+      "address": "2.1",
+      "card": "Intake",
+      "areas": [
+        "ask"
+      ],
+      "origin": "proposed",
+      "why": "ask's doors.py:MAPPERS is the only place a raw producer message (argv, CloudEvents, schedule occurrence, A2A message) is normalised into the canonical envelope; every other area consumes an already-built entries/*.json document directly and never re-derives one from a native message.",
+      "litmus": [
+        "work-intake",
+        "document-validation"
+      ]
+    },
+    {
+      "address": "2.2",
+      "card": "Policy",
+      "areas": [
+        "ask",
+        "run",
+        "steer"
+      ],
+      "origin": "proposed",
+      "why": "steer is built entirely around one decision API (Gate.gated()), two swappable engines and a decision-record journal (test.sh section 9); ask's run step 7 differential changes policy.actions_permitted and gets a different admission rule id; run's tool calls are refused by a policy verdict (read-only-verdict, declared-surface, test.sh step 10).",
+      "litmus": [
+        "policy",
+        "concern-policy"
+      ]
+    },
+    {
+      "address": "2.3",
+      "card": "Planning",
+      "areas": [
+        "ask",
+        "run",
+        "watch",
+        "steer",
+        "progress",
+        "improve"
+      ],
+      "origin": "proposed",
+      "why": "every area except done prints 'the plan table, before anything runs' from the same pure document->plan+cost function (F-b1-06) before any cell, decision or effect exists; done closes already-run units and has no plan table at all.",
+      "litmus": []
+    },
+    {
+      "address": "2.4",
+      "card": "Workflow & Dispatch",
+      "areas": [],
+      "origin": "proposed",
+      "why": "the card's own profile says its four bundled concerns (schedule, durable state, route, handoff) are already kept as separate rows in this repo's own target facts, and each is demonstrated individually under 1.2/4.3/3.2/3.1 rather than as one bundle; no area's README treats them as one card.",
+      "litmus": []
+    },
+    {
+      "address": "3.1",
+      "card": "Harness",
+      "areas": [
+        "run"
+      ],
+      "origin": "proposed",
+      "why": "run's whole subject is one prompt turn closed by an explicit stop reason, with session capabilities negotiated at open and defaulting to absent (run step 5, the --stuck attempter); no other area's README differentiates the harness/turn mechanic from the containment cell it runs inside.",
+      "litmus": [
+        "agent-runtime"
+      ]
+    },
+    {
+      "address": "3.2",
+      "card": "Model Interface",
+      "areas": [
+        "run"
+      ],
+      "origin": "proposed",
+      "why": "run's run.ladder() sorts the gateway's own routing table by price and proves an escalation stops at the top rung rather than stepping past it (test.sh step 5, the extension point 'A different class ladder'), which is unique to run.",
+      "litmus": [
+        "model-access"
+      ]
+    },
+    {
+      "address": "3.3",
+      "card": "Runtime / Sandbox",
+      "areas": [
+        "run",
+        "steer",
+        "watch"
+      ],
+      "origin": "proposed",
+      "why": "run swaps the whole example onto a second containment class (test.sh step 9, capability grants instead of a machine); steer runs the same swap to test checkpoint/restore/clone operator verbs (test.sh section 6); watch differentially sets isolation.egress_allowlist and gets a different admitted host list on the cell-admitted record (run step 1c).",
+      "litmus": [
+        "isolation"
+      ]
+    },
+    {
+      "address": "3.4",
+      "card": "Workspace",
+      "areas": [],
+      "origin": "proposed",
+      "why": "no area's README exercises a mutable, shared workspace: run's contract mounts are read-only and its output is sealed write-once, and nothing in any area tests a shared-state member changing mid-run.",
+      "litmus": []
+    },
+    {
+      "address": "3.5",
+      "card": "Tool Interface",
+      "areas": [
+        "run"
+      ],
+      "origin": "proposed",
+      "why": "run is the only area that binds a tool catalogue at dispatch time, checks arguments against the published schema, and names a second, remotely-versioned catalogue as the swap candidate (harness/tool-access/adapters/second.py), proved in that harness's own gate.",
+      "litmus": [
+        "tool-access"
+      ]
+    },
+    {
+      "address": "4.1",
+      "card": "Isolated Runtime Profiles",
+      "areas": [
+        "run",
+        "steer"
+      ],
+      "origin": "proposed",
+      "why": "the same harness/containment swap that proves card 3.3 in run (test.sh step 9) and steer (test.sh section 6) is the only evidence on file for this card too -- the two cards are demonstrated by one mechanism, not two.",
+      "litmus": [
+        "isolation"
+      ]
+    },
+    {
+      "address": "4.2",
+      "card": "Compute Resources",
+      "areas": [],
+      "origin": "proposed",
+      "why": "run's own gap #8 states its fleet of fifty is 'fifty threads in one process... not fifty machines, and nothing here measures what fifty concurrent cells cost'; the card's own profile agrees it is 'proposed framing... the evidence does not cleanly support it as a separate element.'",
+      "litmus": []
+    },
+    {
+      "address": "4.3",
+      "card": "State & Recovery",
+      "areas": [
+        "progress",
+        "steer",
+        "improve"
+      ],
+      "origin": "proposed",
+      "why": "progress kills the process mid-workflow with --crash-at and resumes at the first incomplete step (test.sh section 9); steer's operator restart returns to a checkpoint digest taken before the turn (test.sh section 6); improve's one-iteration-per-fire parks and resumes from a checkpoint a fresh process has never seen (test.sh section 5).",
+      "litmus": [
+        "durable-execution",
+        "state-persistence"
+      ]
+    },
+    {
+      "address": "4.4",
+      "card": "Context / Memory Handling",
+      "areas": [],
+      "origin": "proposed",
+      "why": "no area reads or writes a working-memory or long-term-memory store; watch's gap G1 says the only thing visible inside a turn is a frame count, not a memory or retrieval operation.",
+      "litmus": []
+    },
+    {
+      "address": "5.1",
+      "card": "Validation",
+      "areas": [
+        "run",
+        "progress",
+        "improve"
+      ],
+      "origin": "proposed",
+      "why": "run's whole visible/hidden check split is the Judge, (result, criterion) -> verdict, kept opaque to the graded unit (assessor.py:measure()); progress's loop step calls the same pure judge() against a criterion handle; improve's gate scores a candidate the same way. done explicitly says it implements no Judge of its own, only reads an already-judged report.",
+      "litmus": []
+    },
+    {
+      "address": "5.2",
+      "card": "Admit",
+      "areas": [
+        "done"
+      ],
+      "origin": "proposed",
+      "why": "done's Close.gate() is a pure decision over rules the closure declares -- the statement must resolve, verify, match the bytes on disk and carry the named predicate -- and test.sh section 6 removes each rule in turn and shows the one breakage only it catches.",
+      "litmus": [
+        "provenance",
+        "concern-provenance"
+      ]
+    },
+    {
+      "address": "5.3",
+      "card": "Complete / Return",
+      "areas": [
+        "done"
+      ],
+      "origin": "proposed",
+      "why": "done's per-door notification line (shell-line, callback, digest, task-status) and its closing line are the only place in any area a finished unit is delivered back through the door it came in by.",
+      "litmus": []
+    },
+    {
+      "address": "6.1",
+      "card": "Telemetry",
+      "areas": [
+        "watch"
+      ],
+      "origin": "proposed",
+      "why": "watch's entire subject is the typed event stream, spans/metrics/logs/problem objects and a backend swap that leaves six counters unchanged (test.sh step 9); no other area's README treats telemetry as its own object rather than incidental output.",
+      "litmus": [
+        "telemetry",
+        "concern-telemetry"
+      ]
+    },
+    {
+      "address": "6.2",
+      "card": "Evaluation Data",
+      "areas": [
+        "progress",
+        "improve"
+      ],
+      "origin": "proposed",
+      "why": "progress's test stage produces a report id, per-case verdicts against a stored baseline and shard counts (test.sh section 5); improve's gate replays a registered case set and scores a candidate against it (test.sh section 5) -- both produce the scores/report shape this card names, over different case sets.",
+      "litmus": []
+    },
+    {
+      "address": "6.3",
+      "card": "Lineage",
+      "areas": [
+        "done"
+      ],
+      "origin": "proposed",
+      "why": "done seals four subjects at their digests and writes an in-toto/SLSA statement naming the code version, actor and materials for each (test.sh section 1), which is exactly this card's 'inputs, outputs, artifacts, provenance.'",
+      "litmus": [
+        "provenance",
+        "state-persistence"
+      ]
+    },
+    {
+      "address": "7.1",
+      "card": "Analyze",
+      "areas": [],
+      "origin": "proposed",
+      "why": "no area mines production failures into named opportunities; improve's Scorecard.furthest() only picks the metric with the largest normalised distance on a fixed scorecard, which is metric selection, not failure analysis.",
+      "litmus": []
+    },
+    {
+      "address": "7.2",
+      "card": "Experiment",
+      "areas": [
+        "improve"
+      ],
+      "origin": "proposed",
+      "why": "improve authors one candidate revision per iteration and runs it against the gate without shipping it (test.sh section 3 differential, rev-mp-01 vs rev-th-01); no other area tries an unshipped candidate change.",
+      "litmus": []
+    },
+    {
+      "address": "7.3",
+      "card": "Evaluate (Blind)",
+      "areas": [
+        "improve"
+      ],
+      "origin": "proposed",
+      "why": "improve's own gap G5 says the held-in/held-out split this card names is one corpus here -- every candidate, including the partner's offered one, is gated over the same six registered cases, so 'a candidate cannot see or optimise against' the test set is declared, not measured.",
+      "litmus": []
+    },
+    {
+      "address": "7.4",
+      "card": "Promote",
+      "areas": [
+        "improve"
+      ],
+      "origin": "proposed",
+      "why": "improve's promote_on_pass moves a checkpoint and a metric value only on a passing gate (test.sh section 2 differential: value_if_promoted reached vs not), which is this card's own definition; done's promotion ships a different kind of artifact (a source-controlled branch/PR, see base.1) and is not this.",
+      "litmus": []
+    },
+    {
+      "address": "base.1",
+      "card": "Source Control",
+      "areas": [
+        "done"
+      ],
+      "origin": "proposed",
+      "why": "done's extension point 'A different promotion target' differentially sets payload.promotion.kind and gets branch (1 subject, 4 records) versus pull_request (2 subjects, 5 records, test.sh section 11) -- but done's own gap G6 says nothing is actually merged, released or deployed; the record is staged only.",
+      "litmus": []
+    },
+    {
+      "address": "base.2",
+      "card": "Artifact Storage",
+      "areas": [
+        "done"
+      ],
+      "origin": "proposed",
+      "why": "done writes sealed subject digests, per-door attestation bundles (out/<door>.bundle.json) and per-door envelope stores (envelopes-<door>.jsonl) to disk -- the only area that persists artifacts and their signed statements as first-class objects.",
+      "litmus": [
+        "state-persistence"
+      ]
+    },
+    {
+      "address": "base.3",
+      "card": "Knowledge",
+      "areas": [],
+      "origin": "proposed",
+      "why": "no area retrieves from or writes to a shared corpus; improve's and progress's evaluation cases are a fixed, versioned replay set, not a retrieval-augmented knowledge base.",
+      "litmus": []
+    },
+    {
+      "address": "base.4",
+      "card": "Metadata & State",
+      "areas": [
+        "done"
+      ],
+      "origin": "proposed",
+      "why": "done's state-persistence binding advances a head by compare-and-swap, hands out an inclusion proof for one record and a consistency proof between two heads, and an independent verifier recomputes the root (test.sh section 8) -- the append-only catalogue this card names.",
+      "litmus": [
+        "state-persistence"
+      ]
+    },
+    {
+      "address": "base.5",
+      "card": "Registry",
+      "areas": [
+        "run"
+      ],
+      "origin": "proposed",
+      "why": "run's second capability-packaging adapter resolves a namespace-scoped identity to a content digest and verifies the digest against the bytes returned before anything is read (harness/capability-packaging/adapters/second.py) -- a registry lookup, not a second directory listing.",
+      "litmus": [
+        "capability-packaging"
+      ]
+    },
+    {
+      "address": "rail.1",
+      "card": "Security",
+      "areas": [
+        "ask",
+        "done"
+      ],
+      "origin": "proposed",
+      "why": "ask builds a delegation chain hop by hop with per-hop scope narrowing and shortening lifetime, and refuses a chain longer than the declared ladder (run step 6); done rebuilds the same chain at promotion time and refuses one rooted in a token exchange it does not trust (test.sh section 10).",
+      "litmus": [
+        "identity",
+        "concern-identity"
+      ]
+    },
+    {
+      "address": "rail.2",
+      "card": "Governance",
+      "areas": [
+        "steer"
+      ],
+      "origin": "proposed",
+      "why": "steer's Gate.gated() is the one mediation point every one of the run's six decision points (admission, tool call, effect, three operator verbs) passes through, decided fresh each time and journalled with the bundle version that produced it -- the continuous, cross-run posture this card names, distinct from the single decision at card 2.2.",
+      "litmus": [
+        "policy",
+        "concern-policy"
+      ]
+    },
+    {
+      "address": "rail.3",
+      "card": "Reliability",
+      "areas": [
+        "ask",
+        "run",
+        "watch"
+      ],
+      "origin": "proposed",
+      "why": "ask's redelivery differential claims a key 8 times under contention and gets exactly 1 fresh claim (run step 8); run ends a unit terminated when a wall-clock ceiling is shorter than the turn (run step 8); watch's gap G11 says its own cancel-grace window is unreachable from any legal declared value, because the adapter's poll interval always wins first.",
+      "litmus": [
+        "idempotency",
+        "errors",
+        "concern-errors",
+        "concern-idempotency"
+      ]
+    },
+    {
+      "address": "rail.4",
+      "card": "Cost Management",
+      "areas": [
+        "ask",
+        "run",
+        "watch",
+        "steer",
+        "progress",
+        "improve"
+      ],
+      "origin": "proposed",
+      "why": "every area but done refuses or caps a unit against its own declared ceiling with a measured differential: progress's three exit codes for spent-nothing/spent-and-failed/completed (test.sh section 10) is the most complete; ask, run, watch, steer and improve each show a ceiling-below-floor refusal or an in-run cap.",
+      "litmus": [
+        "concern-budget"
+      ]
+    },
+    {
+      "address": "rail.5",
+      "card": "Data Privacy",
+      "areas": [
+        "watch",
+        "done"
+      ],
+      "origin": "proposed",
+      "why": "watch redacts prompt and completion on every run and additionally redacts task_summary only when the caller names it (run step 5, differential); done's retention differential either tombstones a redactable stream or refuses the redaction and keeps the words (test.sh section 9).",
+      "litmus": []
+    },
+    {
+      "address": "rail.6",
+      "card": "Model Management",
+      "areas": [
+        "run"
+      ],
+      "origin": "proposed",
+      "why": "run's model door is the same routing-class/ladder/gateway-swap mechanism already cited for card 3.2 Model Interface -- one mechanism serving two cards, one on the spine and one on the rail.",
+      "litmus": [
+        "model-access"
+      ]
+    },
+    {
+      "address": "rail.7",
+      "card": "Operations",
+      "areas": [],
+      "origin": "proposed",
+      "why": "no area runs a deploy, a monitor loop or an incident response; run's fleet of fifty is concurrency inside one process (see card 4.2), not fleet operations.",
+      "litmus": []
+    }
+  ]
+}

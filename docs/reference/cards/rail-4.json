@@ -35,7 +35,7 @@
         "text": "Not part of this repo's own stack; cited to show the same 'ceiling' concept enforced at a different layer and granularity.",
         "origin": "sourced",
         "evidence": [
-          {"id": "X-build-simplicity-budget-004", "quote": "Kubernetes strictly enforces this budget through the ResourceQuota admission controller by rejecting the creation of resources that would exceed the established limits."}
+          {"id": "X-build-simplicity-budget-004", "quote": "If creating or updating a resource violates a quota constraint, the control plane rejects that request with HTTP status code 403 Forbidden."}
         ]
       }
     },
@@ -54,20 +54,19 @@
     }
   ],
   "landscape": {
-    "text": "The unsettled question is not whether to cap spend but where the cap is enforced and at what granularity. Two shipped platforms picked different layers a day apart -- \"Two major agent platforms shipped run-level spend enforcement a day apart, and they picked different layers to do it - Anthropic in the session object, AWS at the gateway\" -- which matters because a session-level guard and a gateway-level guard fail differently when a caller's own code has a bug. Showback and unit economics, the other half of this card's own subtitle, have a real, differently-shaped industry pattern again: \"gateways provide token and agent budget management to cap tokens per request and per session to stop runaway agent loops, hierarchical budgets with per-team and per-project limits, and per-request cost and token attribution so you can see which features and teams drive spend\" -- attribution by team/project is a reporting axis orthogonal to the enforcement-layer question, and this repo's own live mechanism (a LiteLLM virtual key per model group, F-a4-07) caps by model group, not by team or project. The stakes of getting either question wrong are concrete, not hypothetical: \"An agent running in an unintended loop for 264 hours -- making thousands of calls, each carrying an expanding context window -- reaches $47,000.\"",
+    "text": "The unsettled question is not whether to cap spend but where the cap is enforced and at what granularity. Two shipped platforms picked different layers a day apart -- \"Two major agent platforms shipped run-level spend enforcement a day apart, and they picked different layers to do it - Anthropic in the session object, AWS at the gateway\" -- which matters because a session-level guard and a gateway-level guard fail differently when a caller's own code has a bug. Showback and unit economics, the other half of this card's own subtitle, have a real, differently-shaped industry pattern again: monitoring guidance names token usage by model and team and cost per request as the reporting axes gateways actually expose -- attribution by team/project is a reporting axis orthogonal to the enforcement-layer question, and this repo's own live mechanism (a LiteLLM virtual key per model group, F-a4-07) caps by model group, not by team or project. Proposed, not evidenced by any record found in this pass after re-verification: the stakes of getting either question wrong are concrete, illustrated elsewhere in the field by runaway-loop cost blowouts running into the tens of thousands of dollars.",
     "origin": "sourced",
     "evidence": [
       {"id": "X-litmus-c-016", "quote": "Two major agent platforms shipped run-level spend enforcement a day apart, and they picked different layers to do it - Anthropic in the session object, AWS at the gateway."},
-      {"id": "X-litmus-a-007", "quote": "gateways provide token and agent budget management to cap tokens per request and per session to stop runaway agent loops, hierarchical budgets with per-team and per-project limits, and per-request cost and token attribution so you can see which features and teams drive spend"},
-      {"id": "X-build-simplicity-budget-003", "quote": "An agent running in an unintended loop for 264 hours — making thousands of calls, each carrying an expanding context window — reaches $47,000."},
+      {"id": "X-litmus-a-007", "quote": "Monitor latency (p50, p95, p99), error rates by type, cache hit rate, token usage by model and team, cost per request and aggregated, and provider availability."},
       {"id": "F-a4-07", "quote": "Each group carries a scoped LiteLLM virtual key with a hard budget cap"}
     ]
   },
   "usage": {
-    "text": "The shape of the call this card implies is a pre-flight check, not a post-hoc report: \"Enforcement must live outside the agent's prompt; real enforcement is code, not prose. Budget guards check current spend before making the next API call and refuse to proceed if the budget is exhausted.\" This repo's own target contract states the same timing and the same outcome for the unit, not the platform: \"Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform.\" What happens between that pre-flight check and the settled figure this repo's own architecture graph calls 'the reconciled figure' is not described anywhere in the evidence gathered here -- see gaps.",
+    "text": "The shape of the call this card implies is a pre-flight check, not a post-hoc report: \"The budget check and the circuit breaker are only useful if they run before the next API call, not after. The enforcement gate is the code that sits between your orchestrator and your model API client.\" This repo's own target contract states the same timing and the same outcome for the unit, not the platform: \"Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform.\" What happens between that pre-flight check and the settled figure this repo's own architecture graph calls 'the reconciled figure' is not described anywhere in the evidence gathered here -- see gaps.",
     "origin": "sourced",
     "evidence": [
-      {"id": "X-build-simplicity-budget-003", "quote": "Enforcement must live outside the agent's prompt; real enforcement is code, not prose. Budget guards check current spend before making the next API call and refuse to proceed if the budget is exhausted."},
+      {"id": "X-build-simplicity-budget-003", "quote": "The budget check and the circuit breaker are only useful if they run before the next API call, not after. The enforcement gate is the code that sits between your orchestrator and your model API client."},
       {"id": "F-b4-02", "quote": "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform"}
     ]
   },

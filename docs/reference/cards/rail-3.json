@@ -29,11 +29,8 @@
       "role": "supplies the typed failure a retry decision has to read before it decides whether to retry at all -- a status alone is not enough to say what caused it.",
       "covers": "does not itself define retry policy, backoff or idempotency; it only standardizes the shape of the failure that reliability logic consumes.",
       "evidence": {
-        "text": "Current API resilience guidance built on RFC 9457's typed error body states which statuses are safe to retry and which are not: \"429, 502, 503, and 504 are retryable with exponential backoff and jitter. Nearly all other 4xx codes are terminal.\"",
-        "origin": "sourced",
-        "evidence": [
-          {"id": "X-litmus-b-024", "quote": "429, 502, 503, and 504 are retryable with exponential backoff and jitter. Nearly all other 4xx codes are terminal."}
-        ]
+        "text": "Proposed: typed RFC 9457 error bodies commonly support classifying statuses like 429/502/503/504 as retryable and most other 4xx as terminal, but after X-litmus-b-024's text was corrected to the article's actual content (jitter and retry-storm anti-patterns, not a status-code retryability table), no fetched record here states that specific status-code breakdown, so it is carried as an unsourced note pending re-verification.",
+        "origin": "proposed"
       }
     }
   ],
@@ -47,7 +44,7 @@
         "text": "Stripe stores idempotency keys for 24 hours.",
         "origin": "sourced",
         "evidence": [
-          {"id": "X-cap-idempotency-004", "quote": "Stripe stores idempotency keys for 24 hours."}
+          {"id": "X-cap-idempotency-004", "quote": "If Stripe receives two requests with the same key for the same endpoint within a 24-hour window, it returns the result of the first request rather than processing a second operation."}
         ]
       }
     },
@@ -60,28 +57,28 @@
         "text": "The runtime guarantees that each activity runs at least once during an orchestration.",
         "origin": "sourced",
         "evidence": [
-          {"id": "X-seam-dispatch-006", "quote": "The runtime guarantees that each activity runs at least once during an orchestration."}
+          {"id": "X-seam-dispatch-006", "quote": "At-least-once per retry (default). The SDK initiates a START checkpoint and then\nimmediately runs the code inside the step without waiting for the checkpoint\nresponse."}
         ]
       }
     }
   ],
   "landscape": {
-    "text": "What separates this from ordinary service reliability is not the failure taxonomy -- timeouts, 5xx, throttling all still apply -- but what a retry re-executes. An ordinary idempotent retry resends the identical request and expects the identical answer; an agent's retried unit can re-run a non-deterministic model call that generates a different tool-call payload for the same logical intent on a second attempt, so the idempotency mechanism has to detect that case rather than assume it away: \"on key match, comparing fingerprints - if they differ, return a 422 or 409 with a clear error message\" (X-litmus-c-011) -- a same-key, different-payload replay is a conflict to surface, not a request to silently execute either version of. Durable-execution platforms already build retry in at the activity level and say so plainly: \"The runtime guarantees that each activity runs at least once during an orchestration\" (X-seam-dispatch-006), which is why at-least-once, not exactly-once, is the honest default and idempotency -- not retry avoidance -- is what turns repeated execution into one observable effect. Not every failure should even trigger a retry: \"Only transient errors should be retried; others require different handling\" (X-xc-typed-errors-003), and unbounded retry is itself a documented failure mode: \"Production environments encounter failures daily, with multi-agent failure rates of 41-86.7% without deliberate fault tolerance design\" (X-xc-budget-006).",
+    "text": "What separates this from ordinary service reliability is not the failure taxonomy -- timeouts, 5xx, throttling all still apply -- but what a retry re-executes. An ordinary idempotent retry resends the identical request and expects the identical answer; an agent's retried unit can re-run a non-deterministic model call that generates a different tool-call payload for the same logical intent on a second attempt, so the idempotency mechanism has to detect that case rather than assume it away: \"A parameter fingerprint is stored, and mismatches are rejected rather than replayed\" (X-litmus-c-011) -- a same-key, different-payload replay is a conflict to surface, not a request to silently execute either version of. Durable-execution platforms already build retry in at the activity level and say so plainly: \"At-least-once per retry (default). The SDK initiates a START checkpoint and then immediately runs the code inside the step without waiting for the checkpoint response\" (X-seam-dispatch-006), which is why at-least-once, not exactly-once, is the honest default and idempotency -- not retry avoidance -- is what turns repeated execution into one observable effect. Not every failure should even trigger a retry: \"a failure category chooses the recovery action. Retry count is a detail inside one category\" (X-xc-typed-errors-003), and unbounded retry is itself a documented failure mode: \"Research shows that multi-agent systems fail at 41-86.7% rates in production without deliberate fault tolerance design\" (X-xc-budget-006).",
     "origin": "sourced",
     "evidence": [
-      {"id": "X-litmus-c-011", "quote": "on key match, comparing fingerprints - if they differ, return a 422 or 409 with a clear error message."},
-      {"id": "X-seam-dispatch-006", "quote": "The runtime guarantees that each activity runs at least once during an orchestration"},
-      {"id": "X-xc-typed-errors-003", "quote": "Only transient errors should be retried; others require different handling"},
-      {"id": "X-xc-budget-006", "quote": "Production environments encounter failures daily, with multi-agent failure rates of 41-86.7% without deliberate fault tolerance design"}
+      {"id": "X-litmus-c-011", "quote": "A parameter fingerprint is stored, and mismatches are rejected rather than replayed"},
+      {"id": "X-seam-dispatch-006", "quote": "At-least-once per retry (default). The SDK initiates a START checkpoint and then\nimmediately runs the code inside the step without waiting for the checkpoint\nresponse."},
+      {"id": "X-xc-typed-errors-003", "quote": "This is the central design rule: a failure category chooses the recovery action. Retry count is a detail inside one category."},
+      {"id": "X-xc-budget-006", "quote": "Research shows that multi-agent systems fail at 41-86.7% rates in production without deliberate fault tolerance design"}
     ]
   },
   "usage": {
-    "text": "As a cross-cutting concern, reliability is applied at every step's own timeout/retry/backoff boundary rather than requested once by a caller -- the same posture this repo states for every cross-cutting guarantee: \"Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller\" (F-b1-08). Concretely: a step carries its own idempotency key and payload digest before it runs (this repo's own adapter today is only 'key on the wire, no lease' -- F-b3-16, the weaker of the two shapes cap-idempotency's own contract distinguishes); a failed step is classified before any retry is attempted, since \"Only transient errors should be retried; others require different handling\" (X-xc-typed-errors-003); the retry itself is bounded rather than open-ended, because \"A bounded retry window forces the architecture to decide what happens after repeated unsuccessful attempts\" (X-compose-loop-003); and the attempt carries its own cause class, backoff and attempt number as first-class state, per this repo's own proposed (and currently unbuilt) dispatch-level retry design.",
+    "text": "As a cross-cutting concern, reliability is applied at every step's own timeout/retry/backoff boundary rather than requested once by a caller -- the same posture this repo states for every cross-cutting guarantee: \"Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller\" (F-b1-08). Concretely: a step carries its own idempotency key and payload digest before it runs (this repo's own adapter today is only 'key on the wire, no lease' -- F-b3-16, the weaker of the two shapes cap-idempotency's own contract distinguishes); a failed step is classified before any retry is attempted, since \"a failure category chooses the recovery action. Retry count is a detail inside one category\" (X-xc-typed-errors-003); the retry itself is bounded rather than open-ended, because \"A bounded retry window forces the architecture to decide what happens after repeated unsuccessful attempts\" (X-compose-loop-003); and the attempt carries its own cause class, backoff and attempt number as first-class state, per this repo's own proposed (and currently unbuilt) dispatch-level retry design.",
     "origin": "sourced",
     "evidence": [
       {"id": "F-b1-08", "quote": "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller."},
       {"id": "F-b3-16", "quote": "key on the wire, no lease"},
-      {"id": "X-xc-typed-errors-003", "quote": "Only transient errors should be retried; others require different handling"},
+      {"id": "X-xc-typed-errors-003", "quote": "This is the central design rule: a failure category chooses the recovery action. Retry count is a detail inside one category."},
       {"id": "X-compose-loop-003", "quote": "A bounded retry window forces the architecture to decide what happens after repeated unsuccessful attempts."},
       {"id": "A-state-dispatch-level-retry-attempt-one-transparent-re-try-of-a-single-dispatch-call-its-cause-class-its-backoff-and-its-attempt-number", "quote": "its cause class, its backoff and its attempt number"}
     ]

@@ -4,7 +4,7 @@
   "area": "Observe",
   "status": "planned",
   "definition": {
-    "text": "Evaluation Data is the record an evaluation produces -- scores, test results, and human feedback -- not the gate that consumes it (contrast card 7.3 Evaluate (Blind), a distinct card in this reference model). The evidence gathered here names four scored dimensions: \"AI agent evaluation measures the quality of autonomous, multi-step LLM systems across four dimensions: trajectory (the path of steps), tool use (correct tool selection and arguments), task completion (whether the user's goal was met), and multi-turn quality (whether performance holds across a conversation).\" A separate, sourced convention treats the produced verdict the same way -- as something to carry, not something to perform: \"Evaluation is represented—but not performed—by OpenTelemetry, with gen_ai.evaluation.result providing a standard carrier for evaluator scores and explanations.\"",
+    "text": "Evaluation Data is the record an evaluation produces -- scores, test results, and human feedback -- not the gate that consumes it (contrast card 7.3 Evaluate (Blind), a distinct card in this reference model). The evidence gathered here names four scored dimensions: \"AI agent evaluation measures the quality of autonomous, multi-step LLM systems across four dimensions: trajectory (the path of steps), tool use (correct tool selection and arguments), task completion (whether the user's goal was met), and multi-turn quality (whether performance holds across a conversation).\" A separate, sourced convention treats the produced verdict the same way -- as something to carry, not something to perform: OpenTelemetry's GenAI semantic conventions name \"gen_ai.evaluation.result: records quality evaluation results via gen_ai.evaluation.score.value and gen_ai.evaluation.score.label\" -- a carrier attribute, not an evaluator.",
     "origin": "sourced",
     "evidence": [
       {
@@ -13,7 +13,7 @@
       },
       {
         "id": "X-end-to-end-006",
-        "quote": "Evaluation is represented—but not performed—by OpenTelemetry, with gen_ai.evaluation.result providing a standard carrier for evaluator scores and explanations."
+        "quote": "gen_ai.evaluation.result: records quality evaluation results via gen_ai.evaluation.score.value and gen_ai.evaluation.score.label"
       }
     ]
   },
@@ -21,14 +21,14 @@
     {
       "id": "genai-semantic-conventions",
       "role": "defines the attribute a produced evaluation verdict travels on -- gen_ai.evaluation.result -- so a score is comparable across collectors regardless of which framework produced it.",
-      "covers": "does not perform the evaluation, define a rubric, or decide pass/fail -- the same source that names the carrier says this directly: \"Evaluation is represented—but not performed—by OpenTelemetry.\"",
+      "covers": "does not perform the evaluation, define a rubric, or decide pass/fail -- the same source that names the carrier only says it \"records quality evaluation results via gen_ai.evaluation.score.value and gen_ai.evaluation.score.label\": a carrier attribute, not an evaluation engine.",
       "evidence": {
         "text": "This is the standard cap-evaluation's own skill.json names for the same carrier, cited here to its underlying source.",
         "origin": "sourced",
         "evidence": [
           {
             "id": "X-end-to-end-006",
-            "quote": "Evaluation is represented—but not performed—by OpenTelemetry, with gen_ai.evaluation.result providing a standard carrier for evaluator scores and explanations."
+            "quote": "gen_ai.evaluation.result: records quality evaluation results via gen_ai.evaluation.score.value and gen_ai.evaluation.score.label"
           }
         ]
       }
@@ -78,33 +78,33 @@
         "evidence": [
           {
             "id": "X-cap-evaluation-008",
-            "quote": "MCPEval provides automatic deep evaluation for AI agent models using the Model Context Protocol (MCP) interface, allowing evaluation of agent behavior across standard tool-use patterns and external service calls."
+            "quote": "We introduce MCPEval, an open-source Model Context Protocol (MCP)-based framework that automates end-to-end task generation and deep evaluation of LLM agents across diverse domains."
           }
         ]
       }
     }
   ],
   "landscape": {
-    "text": "The real tradeoff inside 'evaluation data' is cost and variance versus coverage, and it falls on the boundary between automated and human-produced scores: \"LLM-as-judge is fine for offline scoring on a held-out sample, where cost and variance are bounded and you can ensemble or human-review the edge cases. However, each judgment is a full model call, so it is too expensive to run on every production turn.\" That same held-out-sample practice is also how a regression is caught at all: \"Regression testing catches performance degradation when prompts, models, or integrations change before production deployment.\" Both quotes describe evaluation output as something compared against a prior baseline or a human check, not a number computed once and discarded -- which is what makes it data rather than a one-time verdict.",
+    "text": "The real tradeoff inside 'evaluation data' is cost and variance versus coverage, and it falls on the boundary between automated and human-produced scores: \"Run offline evaluations on datasets before shipping changes and online evaluations on sampled production traffic after. Use deterministic code checks for anything decidable, LLM-as-a-judge for semantic judgments, and human annotation to calibrate both.\" That same held-out-sample practice is also how a regression is caught at all: \"Run a curated benchmark against every candidate version in CI and gate the release on the results.\" Both quotes describe evaluation output as something compared against a prior baseline or a human check, not a number computed once and discarded -- which is what makes it data rather than a one-time verdict.",
     "origin": "sourced",
     "evidence": [
       {
         "id": "X-cap-evaluation-007",
-        "quote": "LLM-as-judge is fine for offline scoring on a held-out sample, where cost and variance are bounded and you can ensemble or human-review the edge cases. However, each judgment is a full model call, so it is too expensive to run on every production turn."
+        "quote": "Run offline evaluations on datasets before shipping changes and online evaluations on sampled production traffic after. Use deterministic code checks for anything decidable, LLM-as-a-judge for semantic judgments, and human annotation to calibrate both."
       },
       {
         "id": "X-end-to-end-040",
-        "quote": "Regression testing catches performance degradation when prompts, models, or integrations change before production deployment."
+        "quote": "Run a curated benchmark against every candidate version in CI and gate the release on the results."
       }
     ]
   },
   "usage": {
-    "text": "The shape of a written evaluation record is a scored trajectory compared against a stored baseline, not a bare pass/fail: \"Regression testing catches performance degradation when prompts, models, or integrations change before production deployment.\" The score itself carries the same four dimensions this card's own definition names -- trajectory, tool use, task completion, multi-turn quality -- and a held-out human or LLM-judge pass over edge cases is a second, separate write onto the same record type, not a different data shape: \"you can ensemble or human-review the edge cases.\"",
+    "text": "The shape of a written evaluation record is a scored trajectory compared against a stored baseline, not a bare pass/fail: \"Run a curated benchmark against every candidate version in CI and gate the release on the results.\" The score itself carries the same four dimensions this card's own definition names -- trajectory, tool use, task completion, multi-turn quality -- and a held-out human or LLM-judge pass over edge cases is a second, separate write onto the same record type, not a different data shape: \"human annotation to calibrate both.\"",
     "origin": "sourced",
     "evidence": [
       {
         "id": "X-end-to-end-040",
-        "quote": "Regression testing catches performance degradation when prompts, models, or integrations change before production deployment."
+        "quote": "Run a curated benchmark against every candidate version in CI and gate the release on the results."
       },
       {
         "id": "X-cap-evaluation-003",
@@ -112,7 +112,7 @@
       },
       {
         "id": "X-cap-evaluation-007",
-        "quote": "you can ensemble or human-review the edge cases"
+        "quote": "human annotation to calibrate both"
       }
     ]
   },

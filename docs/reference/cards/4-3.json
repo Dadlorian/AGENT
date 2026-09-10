@@ -58,7 +58,7 @@
         "evidence": [
           {
             "id": "X-maturity-c-009",
-            "quote": "a Checkpoint/Restore Working Group was announced on January 21, 2026"
+            "quote": "2026-01-21, Announcing the Checkpoint/Restore Working Group"
           }
         ]
       }
@@ -113,7 +113,7 @@
     }
   ],
   "landscape": {
-    "text": "The real tradeoff is what layer 'checkpoint' operates at, not whether to checkpoint at all. At the application/workflow layer, current disaster-recovery practice names the tool call, not the session or run, as the durability unit, and prescribes a structured step log written before every externally-visible action: \"Right before the agent invokes a tool, the orchestrator persists: the current plan, the prompt prefix, the tool name, the arguments, the idempotency key, and the step ordinal.\" At the infrastructure layer, process/VM-level snapshotting captures a coarser unit instead -- Firecracker's snapshot-restore resumes a whole sandbox, memory and filesystem included, in 5-30ms, and a dedicated Checkpoint/Restore Working Group (CRIU, formed January 2026) is standardizing that layer, not the application step log. A correct resume must also carry non-positional state, not just position: a production durable-execution runtime is measured preserving accumulated token spend across a checkpoint/restart, not only workflow position -- \"The Durable Task runtime checkpoints every state transition to durable storage, and when a failure occurs, execution resumes automatically from the last checkpoint, preserving both token spend and wall-clock time.\"",
+    "text": "The real tradeoff is what layer 'checkpoint' operates at, not whether to checkpoint at all. At the application/workflow layer, current disaster-recovery practice names the tool call, not the session or run, as the durability unit, and prescribes a structured step log written before every externally-visible action: \"Right before the agent invokes a tool, the orchestrator persists: the current plan, the prompt prefix, the tool name, the arguments, the idempotency key, and the step ordinal.\" At the infrastructure layer, process/VM-level snapshotting captures a coarser unit instead -- Firecracker's snapshot-restore resumes a whole sandbox, memory and filesystem included, in 5-30ms, and a dedicated Checkpoint/Restore Working Group (CRIU, formed January 2026) is standardizing that layer, not the application step log. A correct resume must also carry non-positional state, not just position: a production durable-execution runtime is measured preserving accumulated token spend across a checkpoint/restart, not only workflow position -- it \"checkpoints every state transition (LLM responses, tool call results, control flow decisions) to durable storage. Resume from last checkpoint — When a failure occurs, execution resumes automatically on a healthy VM. Completed LLM calls aren't repeated, preserving both token spend and wall-clock time.\"",
     "origin": "sourced",
     "evidence": [
       {
@@ -126,21 +126,21 @@
       },
       {
         "id": "X-maturity-c-009",
-        "quote": "a Checkpoint/Restore Working Group was announced on January 21, 2026"
+        "quote": "2026-01-21, Announcing the Checkpoint/Restore Working Group"
       },
       {
         "id": "X-maturity-b-032",
-        "quote": "The Durable Task runtime checkpoints every state transition to durable storage, and when a failure occurs, execution resumes automatically from the last checkpoint, preserving both token spend and wall-clock time."
+        "quote": "checkpoints every state transition (LLM responses, tool call results, control flow decisions) to durable storage.\n\nResume from last checkpoint — When a failure occurs, execution resumes automatically on a healthy VM. Completed LLM calls aren't repeated, preserving both token spend and wall-clock time."
       }
     ]
   },
   "usage": {
-    "text": "A caller does not talk to a workflow engine directly: this repo's own target contract (cap-durable-execution) exposes begin_run, whose output is a resume point -- the first step index for a new run, or the first incomplete step for a key that has run before, so starting and resuming are the same call -- plus checkpoint_step, resume_point and read_run. The class of engine this assumes is one that journals every step: \"Durable execution is a class of workflow engine that journals every step so an agent can resume from exactly where it stopped, regardless of what crashed.\" Every step commits under its own idempotency key, per this repo's own target contract: \"Every externally-triggered action is safe to replay.\"",
+    "text": "A caller does not talk to a workflow engine directly: this repo's own target contract (cap-durable-execution) exposes begin_run, whose output is a resume point -- the first step index for a new run, or the first incomplete step for a key that has run before, so starting and resuming are the same call -- plus checkpoint_step, resume_point and read_run. The class of engine this assumes is a durable-execution engine: \"A durable execution engine ensures reliable, stateful execution of workflows and processes in distributed systems.\" It persists state to durable storage and handles retries so a run can resume rather than restart. Every step commits under its own idempotency key, per this repo's own target contract: \"Every externally-triggered action is safe to replay.\"",
     "origin": "sourced",
     "evidence": [
       {
         "id": "X-cap-durable-execution-001",
-        "quote": "Durable execution is a class of workflow engine that journals every step so an agent can resume from exactly where it stopped, regardless of what crashed."
+        "quote": "A durable execution engine ensures reliable, stateful execution of workflows and processes in distributed systems."
       },
       {
         "id": "F-b4-08",

@@ -1,0 +1,101 @@
+{
+  "address": "rail.4",
+  "card": "Cost Management",
+  "area": "Cross-Cutting Concerns",
+  "status": "planned",
+  "definition": {
+    "text": "Cost Management is the Budget cross-cutting concern given its own card: a ceiling is carried by a root unit of work and inherited down to every descendant it spawns. This repo's own architecture graph names the state a budget concern must hold as \"one ceiling per root unit, the slice each descendant drew, and the reconciled figure\" -- a ceiling, an allocation, and a settled actual-spend figure are three distinct pieces of state, not one number. The cross-cutting contract itself is stated in this repo's own target facts: \"Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform.\"",
+    "origin": "sourced",
+    "evidence": [
+      {"id": "A-state-budget-reservation-and-spend-one-ceiling-per-root-unit-the-slice-each-descendant-drew-and-the-reconciled-figure", "quote": "one ceiling per root unit, the slice each descendant drew, and the reconciled figure"},
+      {"id": "F-b4-02", "quote": "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform"}
+    ]
+  },
+  "standards": [],
+  "tools": [
+    {
+      "name": "LiteLLM (virtual keys)",
+      "kind": "open-source",
+      "note": "This repo's own current-state inventory records the live mechanism: each model group carries a scoped LiteLLM virtual key with a hard cap, and that cap is verified to actually stop spend rather than only record it -- the one piece of this card that is running today, not merely planned.",
+      "in_use_here": true,
+      "evidence": {
+        "text": "This repo's own current-state facts (PASS.md A4) record this directly.",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "F-a4-07", "quote": "verified to terminate spend rather than merely record it"}
+        ]
+      }
+    },
+    {
+      "name": "Kubernetes ResourceQuota",
+      "kind": "open-source",
+      "note": "A structurally different budget mechanism from a token-spend gateway guard: an admission controller that refuses to create a resource outright, at cluster-namespace granularity, rather than metering an in-flight session's spend against a ceiling.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Not part of this repo's own stack; cited to show the same 'ceiling' concept enforced at a different layer and granularity.",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-build-simplicity-budget-004", "quote": "Kubernetes strictly enforces this budget through the ResourceQuota admission controller by rejecting the creation of resources that would exceed the established limits."}
+        ]
+      }
+    },
+    {
+      "name": "Run-scoped session/gateway budget guard (Anthropic session object, AWS gateway)",
+      "kind": "unknown",
+      "note": "Named illustratively, not as a specific product this repo uses: two shipped implementations of the same real-time, run-scoped enforcement pattern this card's own ceiling-per-root-unit state matches, built at two different layers a day apart.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Cited to show enforcement layer is a live, unsettled design choice industry-wide, not a solved question this card can assume an answer to.",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-litmus-c-016", "quote": "Two major agent platforms shipped run-level spend enforcement a day apart, and they picked different layers to do it - Anthropic in the session object, AWS at the gateway."}
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The unsettled question is not whether to cap spend but where the cap is enforced and at what granularity. Two shipped platforms picked different layers a day apart -- \"Two major agent platforms shipped run-level spend enforcement a day apart, and they picked different layers to do it - Anthropic in the session object, AWS at the gateway\" -- which matters because a session-level guard and a gateway-level guard fail differently when a caller's own code has a bug. Showback and unit economics, the other half of this card's own subtitle, have a real, differently-shaped industry pattern again: \"gateways provide token and agent budget management to cap tokens per request and per session to stop runaway agent loops, hierarchical budgets with per-team and per-project limits, and per-request cost and token attribution so you can see which features and teams drive spend\" -- attribution by team/project is a reporting axis orthogonal to the enforcement-layer question, and this repo's own live mechanism (a LiteLLM virtual key per model group, F-a4-07) caps by model group, not by team or project. The stakes of getting either question wrong are concrete, not hypothetical: \"An agent running in an unintended loop for 264 hours -- making thousands of calls, each carrying an expanding context window -- reaches $47,000.\"",
+    "origin": "sourced",
+    "evidence": [
+      {"id": "X-litmus-c-016", "quote": "Two major agent platforms shipped run-level spend enforcement a day apart, and they picked different layers to do it - Anthropic in the session object, AWS at the gateway."},
+      {"id": "X-litmus-a-007", "quote": "gateways provide token and agent budget management to cap tokens per request and per session to stop runaway agent loops, hierarchical budgets with per-team and per-project limits, and per-request cost and token attribution so you can see which features and teams drive spend"},
+      {"id": "X-build-simplicity-budget-003", "quote": "An agent running in an unintended loop for 264 hours — making thousands of calls, each carrying an expanding context window — reaches $47,000."},
+      {"id": "F-a4-07", "quote": "Each group carries a scoped LiteLLM virtual key with a hard budget cap"}
+    ]
+  },
+  "usage": {
+    "text": "The shape of the call this card implies is a pre-flight check, not a post-hoc report: \"Enforcement must live outside the agent's prompt; real enforcement is code, not prose. Budget guards check current spend before making the next API call and refuse to proceed if the budget is exhausted.\" This repo's own target contract states the same timing and the same outcome for the unit, not the platform: \"Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform.\" What happens between that pre-flight check and the settled figure this repo's own architecture graph calls 'the reconciled figure' is not described anywhere in the evidence gathered here -- see gaps.",
+    "origin": "sourced",
+    "evidence": [
+      {"id": "X-build-simplicity-budget-003", "quote": "Enforcement must live outside the agent's prompt; real enforcement is code, not prose. Budget guards check current spend before making the next API call and refuse to proceed if the budget is exhausted."},
+      {"id": "F-b4-02", "quote": "Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform"}
+    ]
+  },
+  "gaps": [
+    {
+      "what": "This card's own sub-line ('Budgets, quotas, showback, unit economics') and card 2.2 Policy's own sub-line ('Guardrails - authN/Z, budgets, safety, compliance') both claim the Budget concern (F-b4-02: 'Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform'). Nothing in the reference model or the evidence gathered here says which card owns budget enforcement itself versus which owns its reporting (showback, unit economics).",
+      "why_it_matters": "A caller implementing budget enforcement has two cards claiming the same concern with no stated boundary; code could end up deciding budget policy twice, once inside a policy engine and once inside a cost-management layer.",
+      "research_query": "does the Policy card's own definition or the Cost Management card's own definition say which one enforces the ceiling and which one only reports on it"
+    },
+    {
+      "what": "This repo's own architecture graph names 'the reconciled figure' as one of three required pieces of budget state (alongside the ceiling and the per-descendant slice), but no sourced evidence gathered here describes the mechanism that produces it -- how a reservation made before a call is reconciled against the actual cost that call incurred.",
+      "why_it_matters": "Without a described reconciliation mechanism, 'the reconciled figure' is a named field with no known writer; a caller cannot know whether reported spend is ever corrected after the fact or only ever the pre-call estimate.",
+      "research_query": "kb_index.py search \"budget reservation reconciled actual spend post-call correction\""
+    },
+    {
+      "what": "The one live mechanism this card can point to (F-a4-07: a scoped LiteLLM virtual key per model group, verified to terminate spend) caps spend per model group, not per root unit and its descendants the way this card's own target architecture state names the ceiling. The shape actually running does not match the shape the target state describes.",
+      "why_it_matters": "A caller reading this card's own architecture record could assume a per-run-tree ceiling exists today; the only measured mechanism is a coarser, per-model-group cap that does not follow a single unit of work's descendants at all.",
+      "research_query": "does any harness or example enforce a budget ceiling that follows one root unit's own descendant calls, rather than a shared per-model-group key"
+    },
+    {
+      "what": "standards is an empty array. The wider FinOps ecosystem has ratified a real, versioned cost-and-usage schema in this window -- \"The FOCUS Steering Committee ratified the FOCUS version 1.3 specification on December 5, 2025. It adds a dedicated Contract Commitment dataset, columns for splitting shared costs and flags that report data recency and completeness\" -- and a follow-up source states it is being extended to token spend specifically, but this repo has no standards/ directory for it and does not cite it anywhere in its own current or target facts.",
+      "why_it_matters": "A card named 'Cost Management' with a real, ratified, actively-extending-to-AI cost schema in its own domain and no standards entry for it is a specific, checkable absence, not a general one -- unlike concerns where no standard exists at all.",
+      "research_query": "would FOCUS 1.3's schema fit this repo's own budget state (ceiling, per-descendant slice, reconciled figure), or does it solve a different problem (billing-data interchange, not runtime enforcement)"
+    },
+    {
+      "what": "Showback and unit economics -- half of this card's own subtitle -- have a real, sourced industry shape (hierarchical per-team/per-project budgets, per-request cost and token attribution), but nothing in this repo's own current-state facts describes attribution below the model-group level (F-a4-07's virtual key is scoped to a model group, not a team or a project).",
+      "why_it_matters": "If no per-team or per-project attribution exists, 'showback' and 'unit economics' on this card's subtitle name a capability this repo has not built any part of yet, distinct from and further behind the budget-enforcement half of the same card.",
+      "research_query": "kb_index.py search \"per-team per-project cost attribution tag request creation\""
+    }
+  ]
+}

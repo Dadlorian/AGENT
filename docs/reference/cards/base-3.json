@@ -1,0 +1,140 @@
+{
+  "address": "base.3",
+  "card": "Knowledge",
+  "area": "Shared Platform Services",
+  "status": "planned",
+  "definition": {
+    "text": "This reference-model card names a shared platform service other units draw context from beyond their own working context -- distinct from the per-run working memory and per-principal long-term memory that live on card 4.4 (Context / Memory Handling), which itself argues the seam is lifetime and scope, not content: working memory is declared `lifetime: run`, while Knowledge is treated there as an unscoped, shared corpus. This card profile agrees with that boundary. This repo's own target architecture defines no F-/T- fact or architecture entity for base.3 directly -- unlike 4.4's three memory entities, there is no A-state-knowledge row -- so this definition rests on general industry evidence rather than this repo's own blueprint. The closest cross-vendor primitive to 'a shared corpus a unit retrieves from' is the Model Context Protocol's Resources concept: \"Resources allow servers to share data that provides context to language models, such as files, database schemas, or application-specific information.\"",
+    "origin": "sourced",
+    "evidence": [
+      {"id": "X-refmodel-base-3-knowledge-009", "quote": "Resources allow servers to share data that provides context to language models, such as files, database schemas, or application-specific information."}
+    ]
+  },
+  "standards": [
+    {
+      "id": "model-context-protocol",
+      "role": "Standardizes generic resource discovery and read (resources/list, resources/read; a URI, mimeType, and lastModified annotation) that a Knowledge service could expose over.",
+      "covers": "No retrieval-specific request shape: no query field, no similarity score, and no ranked-result-set schema, and no schema for describing a knowledge collection/corpus as a unit. This repo's own reference model gives this card no standard badge (standard: null), consistent with there being no standard that actually governs retrieval.",
+      "evidence": {
+        "text": "MCP's Resources primitive is the nearest cross-vendor standard touching this card, but it governs generic resource exposure, not retrieval semantics: \"The Model Context Protocol (MCP) provides a standardized way for servers to expose resources to clients.\"",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-base-3-knowledge-009", "quote": "The Model Context Protocol (MCP) provides a standardized way for servers to expose resources to clients."}
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "Milvus",
+      "kind": "open-source",
+      "note": "Self-hostable, distributed vector database; cited by GitHub-star count (44,000+) as a proxy for production adoption in a source with no independently recovered publish date. Fits this area's declared open-source-only constraint. Not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "A self-hostable, distributed vector database built to scale to billions of vectors: \"Distributed database that scales to billions of vectors for enterprise GenAI workloads.\"",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-base-3-knowledge-004", "quote": "Distributed database that scales to billions of vectors for enterprise GenAI workloads."}
+        ]
+      }
+    },
+    {
+      "name": "Vespa",
+      "kind": "open-source",
+      "note": "Yahoo-originated, self-hostable search/recommendation engine; the longest-running fleet-scale precedent found among self-hostable vector-search options. Not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "\"Started inside Yahoo and has been running search and recommendation workloads at billion-scale for over a decade.\"",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-base-3-knowledge-005", "quote": "Started inside Yahoo and has been running search and recommendation workloads at billion-scale for over a decade."}
+        ]
+      }
+    },
+    {
+      "name": "Qdrant",
+      "kind": "open-source",
+      "note": "Self-hostable, written in Rust. Named production users (Bazaarvoice, Kakao) come from a search-only source that was not independently fetched or verified against the underlying case studies. Not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "\"Real-world case studies demonstrate Qdrant's effectiveness in large-scale applications, such as Bazaarvoice's reduction of vector storage by approximately 100x and Kakao's AI-powered internal Service Desk.\"",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-base-3-knowledge-006", "quote": "Real-world case studies demonstrate Qdrant's effectiveness in large-scale applications, such as Bazaarvoice's reduction of vector storage by approximately 100x and Kakao's AI-powered internal Service Desk."}
+        ]
+      }
+    },
+    {
+      "name": "OpenSearch",
+      "kind": "open-source",
+      "note": "Self-hostable; combines vector, keyword and analytics search in one platform rather than being a single-purpose vector store. Not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "\"Combines vector, keyword, and analytics in one platform\"",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-base-3-knowledge-004", "quote": "Combines vector, keyword, and analytics in one platform"}
+        ]
+      }
+    },
+    {
+      "name": "Pinecone",
+      "kind": "hosted",
+      "note": "Proprietary hosted vector database, named here only incidentally as a naming-convention example in a vendor-fragmentation paper, not evaluated on its own merits. It is not among the self-hostable open-source options this pass found (Milvus, Qdrant, Vespa, OpenSearch); this repo has not independently verified its pricing model, but a hosted, closed-source product sits in tension with this area's own declared constraint, \"Open source only -- no per-seat or metered platform cost.\" Not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Named as one of three vendors with an inconsistent name for the same atomic operation: \"the atomic operation of inserting or updating a record is upsert in Pinecone [6], insert in Milvus [7] ... and add or upsert in Chroma [8].\"",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-base-3-knowledge-010", "quote": "the atomic operation of inserting or updating a record is upsert in Pinecone"}
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "2026 practice has moved past pre-indexing everything into an embedding store, toward just-in-time / agentic retrieval: agents built with the 'just in time' approach maintain lightweight identifiers (file paths, stored queries, web links, etc.) and use these references to dynamically load data into context at runtime using tools -- trading query-time latency for avoiding a stale index. A March 2026 systematization paper frames this as 'Agentic RAG,' a sequential decision process rather than one-shot static lookup, and a search-only (fetch-refused, HTTP 403) 2026 practitioner claim names several production coding agents -- Claude Code, Cursor, Windsurf -- as having already dropped pre-indexed vector search for exactly this pattern; that specific claim is unverified beyond its search snippet. Where a pre-indexed embedding store is still used, staleness is a measured problem, not a theoretical one: a June 2026 paper finds plain similarity-ranked retrieval 'serves superseded values 15-40% of the time,' driven toward ~0% only by an explicit, deterministic supersession layer -- freshness has to be tracked as metadata (a last-verified timestamp, a certification status), not inferred from an embedding. Separately, no standard interface spans vector databases: the same atomic write is named differently by every vendor (upsert in Pinecone, insert in Milvus, add or upsert in Chroma), so a retrieval implementation is not portable the way this repo's other capability interfaces are designed to be.",
+    "origin": "sourced",
+    "evidence": [
+      {"id": "X-refmodel-base-3-knowledge-001", "quote": "agents built with the 'just in time' approach maintain lightweight identifiers (file paths, stored queries, web links, etc.) and use these references to dynamically load data into context at runtime using tools."},
+      {"id": "X-refmodel-base-3-knowledge-002", "quote": "Agentic RAG as a sequential decision-making system"},
+      {"id": "X-refmodel-base-3-knowledge-003", "quote": "systems like Claude Code, Cursor, Windsurf, and others no longer index their target corpora into a vector database"},
+      {"id": "X-refmodel-base-3-knowledge-007", "quote": "RAG serves superseded values 15-40% of the time; MemStrata drives this to ~0%"},
+      {"id": "X-refmodel-base-3-knowledge-010", "quote": "the atomic operation of inserting or updating a record is upsert in Pinecone [6], insert in Milvus [7] (with separate upsert for updates) and add or upsert in Chroma [8]."}
+    ]
+  },
+  "usage": {
+    "text": "A caller does not, under 2026 practice, send a similarity-ranked query and get back ranked chunks; a unit holds a lightweight reference and dynamically loads it into its own context at call time via a tool call. Where an MCP-shaped implementation exposes the corpus, that is a two-step call: list what is available, then read one resource by URI -- \"The Model Context Protocol (MCP) provides a standardized way for servers to expose resources to clients.\" Where a service still filters before returning content, production guidance frames that filter as applied over explicit freshness/certification metadata (a last-verified timestamp, a certification_status field) rather than an embedding-space similarity threshold: \"Keeping a knowledge base current for RAG requires freshness signals, metadata that tracks when content was last verified, by whom, and against what source.\"",
+    "origin": "sourced",
+    "evidence": [
+      {"id": "X-refmodel-base-3-knowledge-009", "quote": "The Model Context Protocol (MCP) provides a standardized way for servers to expose resources to clients."},
+      {"id": "X-refmodel-base-3-knowledge-008", "quote": "Keeping a knowledge base current for RAG requires freshness signals, metadata that tracks when content was last verified, by whom, and against what source."}
+    ]
+  },
+  "gaps": [
+    {
+      "what": "This card's own sub-line, \"Vector · RAG, embeddings, knowledge bases,\" describes the pre-2026 pattern this pass's evidence finds superseded in practice: pre-indexing a corpus into an embedding store and retrieving by similarity search. The sourced evidence instead supports a just-in-time / agentic retrieval pattern -- agents holding lightweight references (file paths, stored queries, links) and pulling content via tool calls at run time, not a vector index queried by embedding similarity. Recommended reword: \"Retrieval · just-in-time context, embeddings, knowledge bases\" -- this keeps embeddings/vector search as one still-real mechanism (self-hostable engines exist and are in production, see tools) while leading with the retrieval pattern the 2026 evidence actually supports, instead of naming \"Vector\" first and \"RAG\" as the method.",
+      "why_it_matters": "A subtitle that names the superseded pattern as the definition invites building base.3 around the wrong mechanism -- a pre-indexed vector store -- when sourced 2026 practice (and several production coding agents, per a search-only claim) has moved to reference-based, tool-mediated retrieval.",
+      "research_query": "kb_index.py search \"just-in-time retrieval agentic search vectorless RAG 2026\""
+    },
+    {
+      "what": "No open standard defines a retrieval request/result envelope. MCP standardizes generic resource discovery and read (a URI, mimeType, lastModified annotation) but has no query field, similarity score, or ranked-result-set schema, and no schema for describing a knowledge collection as a unit. A January 2026 paper independently confirms fragmentation at the vector-database layer itself: the same atomic write is named differently by every vendor.",
+      "why_it_matters": "Without a shared request/result shape, base.3's own capability interface -- if this card is ever built -- would be this repo's design alone, the same status this repo already gives durable execution and state persistence.",
+      "research_query": "is any working group extending MCP Resources, or a competing protocol, toward a retrieval-specific request/result schema?"
+    },
+    {
+      "what": "Freshness/supersession is a measured failure mode of similarity-only retrieval (a 15-40% stale-answer rate in one 2026 paper), fixed only by an explicit, deterministic supersession layer, not by embedding similarity. Any base.3 implementation that relies on vector similarity alone inherits this failure class.",
+      "why_it_matters": "This is a concrete design constraint, not a preference: a Knowledge service without explicit freshness/version metadata is measurably wrong on superseded facts a substantial fraction of the time, per the cited paper.",
+      "research_query": "kb_index.py search \"deterministic supersession layer retrieval freshness metadata\""
+    },
+    {
+      "what": "Several citations here rest on search-only or blocked fetches: -003's page fetch was refused (HTTP 403) and its named-agent claim (Claude Code, Cursor, Windsurf dropping vector search) is unverified beyond the search snippet; -005/-006 have no independently recovered publish date; and the named customer/adoption figures (Bazaarvoice, Kakao, BIGO, VIPSHOP, 44,000 GitHub stars) are carried from secondary reporting, not the underlying case studies.",
+      "why_it_matters": "The vendor landscape and the \"agents have already moved on\" claim both rest on secondary reporting, consistent with this repo's standing limit that page fetch is blocked in this environment (STATUS rows 14, 45).",
+      "research_query": "capture the underlying vendor and case-study articles with tools/capture.py for verbatim, source-checked figures"
+    },
+    {
+      "what": "This repo's own target architecture defines no F-/T- fact or A- architecture entity for base.3 as a capability row, unlike card 4.4's three memory entities (A-state-working-memory, A-state-episodic-memory, A-state-long-term-memory). Card 4.4's own profile already reasons about the seam against base.3 (lifetime and per-principal scope vs. an unscoped shared corpus) but flags that reasoning as argued, not measured against a real running Knowledge service, since base.3 carried status planned and, until this profile, had no card profile written.",
+      "why_it_matters": "The lifetime/scope boundary this profile agrees with 4.4 on is still untested against an actual implementation on either side.",
+      "research_query": "once base.3 is built, does its own contract describe scoping the same way 4.4 assumes, or as a single unscoped corpus?"
+    }
+  ]
+}

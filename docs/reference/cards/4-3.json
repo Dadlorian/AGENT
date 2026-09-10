@@ -1,0 +1,178 @@
+{
+  "address": "4.3",
+  "card": "State & Recovery",
+  "area": "Execution & Runtime",
+  "status": "built",
+  "definition": {
+    "text": "State & Recovery pairs two contracts this repo keeps as separate skills: cap-durable-execution (step, idempotency key, checkpoint, resume point) and cap-state-persistence (the durable store those checkpoints and other records are written into). For a resume to be correct, current 2026 disaster-recovery practice names the tool call, not the session or run, as the unit that must be made durable, and states exactly what a checkpoint must capture: \"Right before the agent invokes a tool, the orchestrator persists: the current plan, the prompt prefix, the tool name, the arguments, the idempotency key, and the step ordinal.\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-rail-7-operations-007",
+        "quote": "Right before the agent invokes a tool, the orchestrator persists: the current plan, the prompt prefix, the tool name, the arguments, the idempotency key, and the step ordinal."
+      }
+    ]
+  },
+  "standards": [],
+  "tools": [
+    {
+      "name": "Temporal",
+      "kind": "open-source",
+      "note": "named as this repo's own target-architecture adapter for durable execution (F-b3-04, a target declaration, not a measurement); this repo's own current-state inventory separately records its data directory present but its server not listening -- installed, not running.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Data directory present; server not listening on `7233`/`8233`. Durable workflow orchestration and human-in-the-loop signals are designed around it and it is currently down.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-a6-02",
+            "quote": "Data directory present; server not listening on `7233`/`8233`. Durable workflow orchestration and human-in-the-loop signals are designed around it and it is currently down"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Restate · DBOS · Inngest (and: a queue plus a state machine)",
+      "kind": "unknown",
+      "note": "named together as this repo's own target-architecture swap candidates for durable execution, alongside Temporal (F-b3-04, a target declaration, not a measurement); none confirmed in use here.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Restate · DBOS · Inngest · a queue plus a state machine",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-b3-04",
+            "quote": "Restate · DBOS · Inngest · a queue plus a state machine"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CRIU (Checkpoint/Restore In Userspace)",
+      "kind": "open-source",
+      "note": "process/VM-level checkpoint-restore, now the subject of a dedicated Checkpoint/Restore Working Group (announced January 2026) -- a different layer than the application-level step log this card's own sourced definition names as the correct durability unit for agent work.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "a Checkpoint/Restore Working Group was announced on January 21, 2026",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-maturity-c-009",
+            "quote": "a Checkpoint/Restore Working Group was announced on January 21, 2026"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Firecracker microVM snapshot-restore",
+      "kind": "open-source",
+      "note": "the same isolation adapter this repo uses for sandboxing (F-a3-01, cited on card 3.3); its snapshot-restore feature pauses a sandbox and resumes it in 5-30ms by capturing whole memory and filesystem state, but no evidence found that this repo exercises that feature for checkpoint/resume specifically, as distinct from using Firecracker purely for isolation.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Firecracker's snapshot-restore mechanism lets you pause a sandbox, preserve its memory and filesystem state, and resume it in 5-30ms.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-maturity-a-001",
+            "quote": "Firecracker's snapshot-restore mechanism lets you pause a sandbox, preserve its memory and filesystem state, and resume it in 5-30ms."
+          }
+        ]
+      }
+    },
+    {
+      "name": "JSONL + hash chain",
+      "kind": "unknown",
+      "note": "this repo's own target-architecture name for its state-persistence adapter (F-b3-17, a target declaration, not a measurement); the actual running evidence is this repo's own kb/*.jsonl append-only files, continuously checked by `python3 tools/kb.py verify` -- including the very citations this card profile relies on -- which is a measured, not merely claimed, running instance of this pattern.",
+      "in_use_here": true,
+      "evidence": {
+        "text": "JSONL + hash chain",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-b3-17",
+            "quote": "JSONL + hash chain"
+          }
+        ]
+      }
+    },
+    {
+      "name": "object store · relational store · event log (state-persistence swap candidates)",
+      "kind": "unknown",
+      "note": "named together as this repo's own target-architecture swap candidates for state persistence (F-b3-17, a target declaration, not a measurement); none in use here.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "object store · relational · event log",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-b3-17",
+            "quote": "object store · relational · event log"
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The real tradeoff is what layer 'checkpoint' operates at, not whether to checkpoint at all. At the application/workflow layer, current disaster-recovery practice names the tool call, not the session or run, as the durability unit, and prescribes a structured step log written before every externally-visible action: \"Right before the agent invokes a tool, the orchestrator persists: the current plan, the prompt prefix, the tool name, the arguments, the idempotency key, and the step ordinal.\" At the infrastructure layer, process/VM-level snapshotting captures a coarser unit instead -- Firecracker's snapshot-restore resumes a whole sandbox, memory and filesystem included, in 5-30ms, and a dedicated Checkpoint/Restore Working Group (CRIU, formed January 2026) is standardizing that layer, not the application step log. A correct resume must also carry non-positional state, not just position: a production durable-execution runtime is measured preserving accumulated token spend across a checkpoint/restart, not only workflow position -- \"The Durable Task runtime checkpoints every state transition to durable storage, and when a failure occurs, execution resumes automatically from the last checkpoint, preserving both token spend and wall-clock time.\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-rail-7-operations-007",
+        "quote": "Right before the agent invokes a tool, the orchestrator persists: the current plan, the prompt prefix, the tool name, the arguments, the idempotency key, and the step ordinal."
+      },
+      {
+        "id": "X-maturity-a-001",
+        "quote": "Firecracker's snapshot-restore mechanism lets you pause a sandbox, preserve its memory and filesystem state, and resume it in 5-30ms."
+      },
+      {
+        "id": "X-maturity-c-009",
+        "quote": "a Checkpoint/Restore Working Group was announced on January 21, 2026"
+      },
+      {
+        "id": "X-maturity-b-032",
+        "quote": "The Durable Task runtime checkpoints every state transition to durable storage, and when a failure occurs, execution resumes automatically from the last checkpoint, preserving both token spend and wall-clock time."
+      }
+    ]
+  },
+  "usage": {
+    "text": "A caller does not talk to a workflow engine directly: this repo's own target contract (cap-durable-execution) exposes begin_run, whose output is a resume point -- the first step index for a new run, or the first incomplete step for a key that has run before, so starting and resuming are the same call -- plus checkpoint_step, resume_point and read_run. The class of engine this assumes is one that journals every step: \"Durable execution is a class of workflow engine that journals every step so an agent can resume from exactly where it stopped, regardless of what crashed.\" Every step commits under its own idempotency key, per this repo's own target contract: \"Every externally-triggered action is safe to replay.\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-cap-durable-execution-001",
+        "quote": "Durable execution is a class of workflow engine that journals every step so an agent can resume from exactly where it stopped, regardless of what crashed."
+      },
+      {
+        "id": "F-b4-08",
+        "quote": "Every externally-triggered action is safe to replay"
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "This card bundles three concerns this repo otherwise keeps apart: cap-durable-execution (checkpoint/resume/replay, its own harness at harness/workflow), cap-state-persistence (the store underneath, harness/state-persistence), and \"DR\", which this repo's own operations research (the rail-7-operations batch) treats as an incident-response/operations concern -- alert conditions, kill switches, failover policy -- rather than an execution-layer contract.",
+      "why_it_matters": "A reader auditing 'is State & Recovery done' has to check two different skills, two different harnesses, and a third concern with no harness at all, under one card and one status.",
+      "research_query": "should DR move out of 4.3 into an Operations-area card, given rail-7-operations' own incident-response framing?"
+    },
+    {
+      "what": "\"Checkpoint\" as a concept already recurs across 3.3 Runtime/Sandbox, 4.1 Isolated Runtime Profiles and 4.2 Compute Resources (Firecracker and CRIU-style memory-snapshot restore; 4-2.json's own gaps already flag that the 3.3/4.1/4.2 boundary is this repo's own bucketing, not one the evidence forces). This card adds a fourth, genuinely different meaning: an application-level step log, not a process/VM memory snapshot.",
+      "why_it_matters": "The same word names two different mechanisms (infrastructure snapshot vs. application step log) across four cards; a reader could credit one card's evidence to another's claim.",
+      "research_query": "should the reference model split 'checkpoint' terminology into an infrastructure-snapshot sense and an application-step-log sense, or keep one word for both?"
+    },
+    {
+      "what": "The durable-execution half of this 'built' card is unsupported: this repo's own current-state inventory records Temporal's data directory present but its server not listening (F-a6-02). Only the state-persistence half -- the JSONL hash chain this repo's own kb/*.jsonl files and `kb.py verify` actually run and check continuously -- is measured, not merely claimed.",
+      "why_it_matters": "A capability marked 'built' whose checkpoint/resume half has never run a live engine is a different risk than one that has been measured, per STATUS row 37's standing caveat about live adapters generally.",
+      "research_query": "has harness/workflow's live adapter ever run against a real Temporal (or Restate/DBOS/Inngest) server from a session?"
+    },
+    {
+      "what": "No standard applies to either half: both are declared \"-- (no standard; see B5)\" in this repo's own target architecture (F-b3-04, F-b3-17). The closest emerging effort, a dedicated Checkpoint/Restore Working Group (CRIU, formed January 2026), targets process/VM-level checkpoint, not the application-level step log this card's own sourced evidence names as the correct durability unit for agent work.",
+      "why_it_matters": "Even a successful standardization of CRIU-style checkpoint/restore would not standardize the half of this card that is actually about agent step history, idempotency keys and resume points.",
+      "research_query": "is any standards body (CNCF, W3C, or a workflow-engine vendor consortium) drafting a spec for the application-level agent-step checkpoint shape specifically, as opposed to process/VM snapshot?"
+    },
+    {
+      "what": "Disaster-recovery specifics for agent state -- which state surfaces are at risk on failover, a fail-safe-abort-over-fail-forward-replay default policy, and the finding that no numeric RPO/RTO target was stated in the source -- exist only in this pass's own paraphrase of X-refmodel-rail-7-operations-007 (its `claim` field), not in a verbatim-quotable `snippet` or `read` field, so none of that DR-specific content could be used as a sourced claim in this profile.",
+      "why_it_matters": "The DR half of this card's own name is the least evidenced part of it: only the tool-call-as-durability-unit finding from the same record made it into this profile as a genuine citation.",
+      "research_query": "capture the tianpan.co DR article (or an equivalent) with tools/capture.py to get a verbatim, quotable read of its fail-safe-abort and RPO/RTO claims"
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "address": "rail.7",
+  "card": "Operations",
+  "area": "Cross-Cutting Concerns",
+  "status": "built",
+  "definition": {
+    "text": "Operations is deploy/monitor/incident-response practice for a running agent fleet, and the evidence names a specific reason it cannot be ordinary service ops: an agent can loop, call the wrong tool, or hallucinate and still return a normal-looking response, so \"Traditional APM can show that a request returned a 200\" while reporting nothing wrong -- Online evaluation attaches scorers to live production traces, so quality regressions surface as they happen.",
+    "origin": "sourced",
+    "sources": [
+      "X-refmodel-rail-7-operations-006"
+    ],
+    "quote": "Traditional APM can show that a request returned a 200"
+  },
+  "standards": [],
+  "tools": [
+    {
+      "name": "Langfuse + OpenTelemetry",
+      "kind": "open-source",
+      "note": "this repo's own adapter for the telemetry half of operations (monitor), per its own target table listing OTLP/GenAI semantic conventions as the standard and Langfuse + OpenTelemetry as the adapter in use.",
+      "in_use_here": true,
+      "evidence": {
+        "text": "Langfuse + OpenTelemetry",
+        "origin": "sourced",
+        "sources": [
+          "F-b3-10"
+        ],
+        "quote": "Langfuse + OpenTelemetry"
+      }
+    },
+    {
+      "name": "Braintrust",
+      "kind": "commercial",
+      "note": "a named swap candidate for this repo's own telemetry adapter (F-b3-10); its own 2026 agent-observability guide is one of this card's evidence sources.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Phoenix · Braintrust · any OTLP collector",
+        "origin": "sourced",
+        "sources": [
+          "F-b3-10",
+          "X-refmodel-rail-7-operations-006"
+        ],
+        "quote": "Phoenix · Braintrust · any OTLP collector"
+      }
+    },
+    {
+      "name": "UptimeRobot (AI agent monitoring)",
+      "kind": "hosted",
+      "note": "named source of illustrative (not industry-standard) agent alert thresholds; not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Success rate drops below 85% for “billing” prompts.",
+        "origin": "sourced",
+        "sources": [
+          "X-refmodel-rail-7-operations-005"
+        ],
+        "quote": "Success rate drops below 85% for “billing” prompts."
+      }
+    },
+    {
+      "name": "RuntimeAI (kill switch / circuit breaker)",
+      "kind": "commercial",
+      "note": "named vendor whose kill switch stops a running agent process below its own instruction-following layer; not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "The agent is stopped inside the process it is running in, before the next byte moves.",
+        "origin": "sourced",
+        "sources": [
+          "X-refmodel-rail-7-operations-003"
+        ],
+        "quote": "The agent is stopped inside the process it is running in, before the next byte moves."
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The real difference from ordinary service ops is where the failure hides and how a stop must act. An ordinary uptime/latency check is blind to agent failure because \"Traditional APM can show that a request returned a 200\"; agent-specific alerting instead watches for things like \"silent failure where the agent looks alive but stops doing useful work\". Stopping a runaway agent is also not the same as stopping a service: revoking a token or blocking the next call is not enough, because \"The agent is stopped inside the process it is running in, before the next byte moves.\" -- a documented 2026 incident (OpenClaw) shows why: \"The AI agent ignored the instructions and continued deleting emails until the process was manually terminated at the operating system level.\" No industry-standard numeric alert threshold exists yet for agent systems; teams are told to set their own from historical baseline rather than adopt a universal number.",
+    "origin": "sourced",
+    "sources": [
+      "X-refmodel-rail-7-operations-006",
+      "X-refmodel-rail-7-operations-001",
+      "X-refmodel-rail-7-operations-003",
+      "X-refmodel-rail-7-operations-004"
+    ],
+    "quote": "The agent is stopped inside the process it is running in, before the next byte moves."
+  },
+  "usage": {
+    "text": "The concrete shape of an operations-relevant write, per current DR practice, is a per-tool-call checkpoint rather than a per-session one: \"Right before the agent invokes a tool, the orchestrator persists: the current plan, the prompt prefix, the tool name, the arguments, the idempotency key, and the step ordinal.\" -- the unit of durability is the tool call, not the session. This repo's own admission path has one matching, narrower control: a policy rule fires when \"an incident window is open\", refusing new work at admission -- which stops new work from starting, not a unit of work already running.",
+    "origin": "sourced",
+    "sources": [
+      "X-refmodel-rail-7-operations-007",
+      "REF-5-3-06"
+    ],
+    "quote": "Right before the agent invokes a tool, the orchestrator persists: the current plan, the prompt prefix, the tool name, the arguments, the idempotency key, and the step ordinal."
+  },
+  "gaps": [
+    {
+      "what": "No standard applies: standards is an empty array. The only standards-adjacent evidence found is a Cloud Security Alliance research note on OWASP's separate agentic-AI governance maturity model (\"real-time anomaly detection, working kill switches, and governance enforced as machine-readable policy\" at its top level), which is a governance/maturity framework, not an incident-response, alerting, or DR runbook standard, and it does not correspond to the OWASP entry this repo already lists under standards/ (owasp-llm-agentic, a threat-category list, not this maturity model).",
+      "why_it_matters": "A card marked 'built' with no governing standard means operations correctness here depends entirely on this repo's own practice, not on conformance to anything externally checkable.",
+      "research_query": "is there a published operations-specific runbook or incident-response standard for agent platforms as of 2027"
+    },
+    {
+      "what": "This repo's own admission-time incident-window policy rule (REF-5-3-06) refuses new work at admission; none of the evidence gathered shows this repo has the mid-execution, sub-process-level kill switch the research describes as necessary (stopping the agent inside the process it is running in, before the next byte moves).",
+      "why_it_matters": "The OpenClaw incident in this evidence shows an agent can keep acting after being told to stop through its own instruction-following channel; an admission-time-only control does not reach a unit of work already running.",
+      "research_query": "does any harness in this repo implement a mid-execution stop, not just an admission-time refusal"
+    },
+    {
+      "what": "No numeric alert thresholds (success-rate floor, cost-per-run ceiling, latency budget) are set anywhere in this repo's own operations practice; the evidence confirms no industry-standard numbers exist to fall back on either.",
+      "why_it_matters": "Without either a chosen threshold or an industry default, 'monitor' on this card has no defined trigger for when operations should act.",
+      "research_query": "what alert thresholds, if any, does this repo's telemetry (Langfuse + OpenTelemetry) actually fire on"
+    }
+  ]
+}

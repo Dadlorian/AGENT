@@ -1,0 +1,157 @@
+{
+  "address": "7.2",
+  "card": "Experiment",
+  "area": "Self-Improvement",
+  "status": "planned",
+  "definition": {
+    "text": "This card's own subtitle -- \"try new prompts, tools · Workflows (isolated)\" -- names the loop's trial stage: a candidate change (prompt, tool, or whole agent workflow) runs against real or replayed inputs without its output reaching production, before 7.3 Evaluate judges it. \"Isolated\" is not one mechanism but a spectrum of controlled-deployment strategies with different exposure guarantees; the fully isolated end is shadow testing, where \"the candidate model runs in parallel with the legacy model and receives the same live requests as the production system. However, only the legacy model's predictions are returned to users, while the candidate model's outputs are simply logged.\" For an agent specifically, as opposed to a stateless prompt call, the field states isolation as a behavioral rule rather than a traffic percentage: \"In shadow mode, the agent processes the same inputs as the production workflow but does not execute the final action.\" Nothing has been built for this card; status is planned.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-7-2-experiment-009",
+        "quote": "the candidate model runs in parallel with the legacy model and receives the same live requests as the production system. However, only the legacy model's predictions are returned to users, while the candidate model's outputs are simply logged."
+      },
+      {
+        "id": "X-refmodel-7-2-experiment-008",
+        "quote": "In shadow mode, the agent processes the same inputs as the production workflow but does not execute the final action."
+      }
+    ]
+  },
+  "standards": [
+    {
+      "id": "genai-semantic-conventions",
+      "role": "This repo's own cap-telemetry card already names this standard as governing what a unit of work emits; it is the standard closest in the stack to this card, one layer below it.",
+      "covers": "Does not cover this card at all: it has no experiment, variant, cohort, or A/B-test attribute of any kind. Confirmed directly against the standard itself, still pre-1.0: \"as of July 17, 2026, no GenAI-specific span, event, metric, or attribute in the dedicated repository is marked Stable; the GenAI conventions remain Development.\" The only experiment-adjacent knob found is a schema-version opt-in flag, not experiment tracking; guidance for anyone needing this is to build a private attribute namespace outside gen_ai.*.",
+      "evidence": {
+        "text": "The standard cap-telemetry depends on is itself unfinished and, separately, defines no experiment-layer vocabulary: \"as of July 17, 2026, no GenAI-specific span, event, metric, or attribute in the dedicated repository is marked Stable; the GenAI conventions remain Development.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-7-2-experiment-007",
+            "quote": "as of July 17, 2026, no GenAI-specific span, event, metric, or attribute in the dedicated repository is marked Stable; the GenAI conventions remain Development"
+          }
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "Braintrust",
+      "kind": "commercial",
+      "note": "Enforces isolation procedurally rather than via traffic routing: a candidate is gated before it ever reaches production, not run alongside it.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "\"GitHub Actions run evaluations on every pull request and block merges automatically when scores fall below defined thresholds, preventing regressions from reaching production\" -- isolation here means gated before merge, not shadow traffic at runtime.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-7-2-experiment-001",
+            "quote": "GitHub Actions run evaluations on every pull request and block merges automatically when scores fall below defined thresholds, preventing regressions from reaching production."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Langfuse",
+      "kind": "open-source",
+      "note": "Vendor-conceded gap in variant/version addressing: an experiment cannot be pinned to a specific dataset version as of this source.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "\"Experiments always run on the latest dataset version at experiment time. Support for running experiments on specific dataset versions will be added to the SDK shortly.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-7-2-experiment-002",
+            "quote": "Experiments always run on the latest dataset version at experiment time. Support for running experiments on specific dataset versions will be added to the SDK shortly."
+          }
+        ]
+      }
+    },
+    {
+      "name": "GrowthBook",
+      "kind": "open-source",
+      "note": "Variant addressing and versioning done the way feature flags are: deterministic hashing keeps a user pinned to one arm, since a prompt or model swap does not touch a codebase a CI/CD pipeline can track.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "\"GrowthBook uses MurmurHash3 to hash user identifiers into consistent bucket assignments -- the same user always resolves to the same model variant, preventing the kind of mid-session inconsistency that would corrupt evaluation data and confuse users.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-7-2-experiment-006",
+            "quote": "GrowthBook uses MurmurHash3 to hash user identifiers into consistent bucket assignments"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Decagon",
+      "kind": "commercial",
+      "note": "Experiments on the whole agent as a composite unit (procedure, tone, knowledge and tools together) against a held-out control group, with traffic ramped only as performance improves -- not a single-prompt A/B test.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "\"Test changes to AOP logic, tone, knowledge, and tools against a control group\" and \"manage rollouts by gradually increasing traffic to the variable group as performance improves.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-7-2-experiment-004",
+            "quote": "Test changes to AOP logic, tone, knowledge, and tools against a control group"
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "Isolation for experimentation is a spectrum, not a single mechanism, ranked by how much of the candidate's output ever reaches a real user: shadow (none -- only the incumbent's output is ever returned, the candidate's is logged only), canary (a small, deterministically-hashed cohort), interleaved (candidate output mixed directly into a live response), and A/B (both arms fully live, typically 90/10 split). Current staged-rollout practice chains these rather than picking one: \"Shadow first, canary second, ramp third,\" with cohort-stable hashing so a given user stays in the same arm across phases and an automatic eval-gated rollback if a rubric's rolling pass rate drops. For an agent specifically, as opposed to a stateless prompt call, the field layers a distinct behavioral rule on top of the traffic-routing spectrum: the candidate \"decides but does not act\" -- it runs against real inputs and its proposed action is logged and compared against the real outcome, but a human or the existing system remains the actual decision-maker, and promotion out of that mode is staged as an autonomy ladder rather than a single traffic-percentage ramp. Variant addressing and versioning converges on feature-flag-style deterministic hashing (GrowthBook: MurmurHash3 on user id) rather than code-level versioning, because swapping a prompt or model does not touch a codebase a CI/CD pipeline tracks -- and even a mainstream tool (Langfuse) cannot yet pin an experiment to a specific dataset version.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-7-2-experiment-009",
+        "quote": "Four distinct isolation strategies, each with a load-bearing distinction"
+      },
+      {
+        "id": "X-refmodel-7-2-experiment-005",
+        "quote": "Shadow first, canary second, ramp third."
+      },
+      {
+        "id": "X-refmodel-7-2-experiment-008",
+        "quote": "The existing system (human or current automation) stays the actual decision-maker while the candidate agent runs in parallel"
+      },
+      {
+        "id": "X-refmodel-7-2-experiment-006",
+        "quote": "GrowthBook uses MurmurHash3 to hash user identifiers into consistent bucket assignments"
+      }
+    ]
+  },
+  "usage": {
+    "text": "No call exists in this repo for this card -- this paragraph describes industry precedent, not anything built here. The shape: a caller declares a candidate (prompt, tool or workflow variant) and an isolation tier; at the shadow tier the candidate runs against the same inputs as production, but \"in shadow mode, the agent processes the same inputs as the production workflow but does not execute the final action.\" What gets tracked is not an aggregate score but per-case disagreement between candidate and baseline: \"Capture disagreements as the main event,\" tracking inputs, retrieved context, proposed actions, confidence signals and reviewer verdicts per case. Graduation out of shadow is staged in steps -- \"Suggest only -> Human approves with one click -> Agent executes low-risk cases automatically -> Expand scope gradually\" -- rather than a single cutover. A passing trial is what would seed 7.3 Evaluate; this repo has designed no shape for that handoff.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-7-2-experiment-008",
+        "quote": "Capture disagreements as the main event"
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "The GenAI semantic-conventions standard this platform's own telemetry card (cap-telemetry) depends on has no experiment, variant, cohort or A/B-test attribute at all, and is itself still pre-1.0 Development as of the source's own July 2026 check.",
+      "why_it_matters": "cap-telemetry names this same standard as governing what a unit of work emits; the standard this platform's telemetry layer already depends on does not extend upward to cover what this card would need to emit (which variant, which arm, which cohort a run belongs to) -- this card cannot inherit a schema for free from the layer directly below it, and would have to invent its own attribute namespace outside gen_ai.*, per the standard's own guidance to anyone needing this.",
+      "research_query": "kb_index.py search \"cap-telemetry genai-semantic-conventions correlation run id attribute\""
+    },
+    {
+      "what": "This card is status: planned; no harness or adapter exists here. Even a mainstream, actively developed experimentation product (Langfuse) does not yet let a caller pin an experiment to a specific dataset version -- \"experiments always run on the latest dataset version at experiment time\" -- so exact-reproducibility of an isolated trial is an open problem in the tools this platform would adopt, not only in this repo's own unbuilt version.",
+      "why_it_matters": "If this platform builds toward this card by adopting an existing tool's model, dataset-version drift during a trial is a known, unsolved failure mode to design around from the start rather than something a mature dependency already handles.",
+      "research_query": "has any experimentation platform since added dataset-version pinning for prompt/agent experiments"
+    },
+    {
+      "what": "This card's own subtitle says \"Workflows (isolated)\" without naming which point on the shadow/canary/interleaved/A-B spectrum it means, and this repo's own compose-improvement-loop skill -- which this card would presumably feed candidates into -- describes a candidate retrying inside \"one bounded compose-workflow instance\" with no isolation-tier field anywhere in its ImprovementCandidate schema.",
+      "why_it_matters": "Without picking a tier, \"isolated\" could mean anything from fully-shadowed (safe, slower to get a signal) to A/B (fast signal, real user exposure) -- these have materially different safety properties for a system that is proposing changes to its own prompts, tools or workflows, and this repo has not chosen one.",
+      "research_query": "should compose-improvement-loop's ImprovementCandidate schema carry an isolation-tier field, and if so which of shadow/canary/interleaved/A-B"
+    },
+    {
+      "what": "This card's own evidence base uses \"isolation\" for two unrelated things: execution-sandbox containment of a running process (filesystem/network/host, already owned in full by this repo's cap-isolation skill) and traffic-routing isolation (what fraction of real users see a candidate's output, the subject of this card). The subtitle \"Workflows (isolated)\" does not say which axis it means, or whether both are required.",
+      "why_it_matters": "If 7.2 silently assumes cap-isolation's sandbox already covers \"isolated,\" a candidate could be perfectly sandboxed against host compromise while still fully exposed to production traffic -- the two guarantees are orthogonal, and a card that conflates them could ship an experiment that is safe on one axis and unsafe on the other.",
+      "research_query": "does cap-isolation's own skill.json distinguish execution sandboxing from traffic/exposure isolation, or is that distinction entirely this card's to make"
+    }
+  ]
+}

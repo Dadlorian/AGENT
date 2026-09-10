@@ -1,0 +1,153 @@
+{
+  "address": "7.4",
+  "card": "Promote",
+  "area": "Self-Improvement",
+  "status": "planned",
+  "definition": {
+    "text": "Promote is the step that ships a validated candidate -- a config, prompt, tool, routing rule or playbook -- from candidate to what callers actually resolve. Every production system examined here implements this the same way, independent of artifact type: repoint a mutable, named alias or label onto an already-immutable, versioned artifact, so promotion never rewrites content and rollback is just re-pointing the alias to what it named a moment before. LangSmith states this directly for prompts: \"Environments represent named deployment targets, Staging and Production, that you can assign to specific commits.\" The same shape recurs one layer down, in general artifact-registry survey work not specific to prompts: \"Mutable metadata are represented as new versioned records rather than in-place edits.\" This repo's own target facts require the surrounding loop to promote only a candidate a ceremony has reviewed and improved (T-t4-04), in service of TARGET's stated scale requirement that agents keep 'working together, managing state, breaking problems down, and self-improving where they can' (T-t6-06); compose-improvement-loop's own skill.json sketches reusing exactly this alias-over-immutable-version shape, but that skill and the registry it depends on are themselves unbuilt, so this card's status is planned, not measured, here.",
+    "origin": "sourced",
+    "evidence": [
+      {"id": "X-refmodel-7-4-promote-002", "quote": "Environments represent named deployment targets, Staging and Production, that you can assign to specific commits."},
+      {"id": "X-cap-capability-registry-007", "quote": "Mutable metadata are represented as new versioned records rather than in-place edits"},
+      {"id": "T-t4-04", "quote": "a ceremony re-reviews the output, improves the skills that produced it, and the loop continues"},
+      {"id": "T-t6-06", "quote": "working together, managing state, breaking problems down, and self-improving where they can"}
+    ]
+  },
+  "standards": [
+    {
+      "id": "in-toto",
+      "role": "the nearest existing open, signed-statement format for a promotion/release record -- a subject digest bound to a predicate describing how it was produced -- that this platform could reuse to attest a promoted config, prompt, tool or routing table.",
+      "covers": "does not cover the alias/pointer mechanism that actually performs promotion, and its published predicate catalogue is scoped to generic software build/source/package supply-chain claims -- nothing in it names a prompt, an agent, a routing table, or a playbook, so using it here means authoring a new domain-specific predicate, not adopting an off-the-shelf one.",
+      "evidence": {
+        "text": "The in-toto Attestation Framework provides a specification for generating verifiable claims about any aspect of how a piece of software is produced.",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-7-4-promote-007", "quote": "The in-toto Attestation Framework provides a specification for generating verifiable claims about any aspect of how a piece of software is produced."}
+        ]
+      }
+    },
+    {
+      "id": "slsa",
+      "role": "the build-provenance predicate an in-toto attestation typically carries -- binds an artifact's content digest to a build definition and builder identity -- a plausible wrapper around a promoted artifact, not the alias/pointer mechanism that performs the promotion itself.",
+      "covers": "built for software build outputs (source repo plus build platform as the primary inputs); has no built-in vocabulary for prompts, models, routing tables, or playbooks, so fitting it to those artifact types means defining custom buildTypes rather than using the standard as-is.",
+      "evidence": {
+        "text": "SLSA provenance is a signed statement whose subject is an artifact digest and whose predicate describes verifiable information about software artifacts describing where, when, and how something was produced.",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-base-5-registry-008", "quote": "verifiable information about software artifacts describing where, when, and how something was produced"}
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "LaunchDarkly AI Configs",
+      "kind": "commercial",
+      "note": "Layers an automated canary ('guarded rollout') on top of the pointer flip: gradually serves a new prompt/model/routing variation while monitoring metrics, and can auto-restore the previous variation on a detected regression -- rollback as a monitored reaction, not a manual step someone has to remember to run.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "If LaunchDarkly detects a regression, it can pause the release or restore the previous variation automatically.",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-7-4-promote-001", "quote": "If LaunchDarkly detects a regression, it can pause the release or restore the previous variation automatically."}
+        ]
+      }
+    },
+    {
+      "name": "LangSmith Prompt Hub",
+      "kind": "hosted",
+      "note": "Promotes a prompt by moving a named 'environment' pointer (Staging/Production) onto an already-versioned, immutable commit without removing it from the other environment; rollback re-points the same pointer using each environment's own kept history of prior values.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Promoting a commit to Production does not remove it from Staging.",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-7-4-promote-002", "quote": "Promoting a commit to Production does not remove it from Staging."}
+        ]
+      }
+    },
+    {
+      "name": "MLflow Model Registry",
+      "kind": "open-source",
+      "note": "Originally promoted a model via an explicit lifecycle-stage transition (Staging/Production/Archived); the published docs now deprecate that stage machine in favor of mutable, named aliases (e.g. champion/challenger) pointing at one immutable registered-model version -- the same alias-over-immutable-version shape used for prompts.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Model aliases allow you to assign a mutable, named reference to a particular version of a registered model.",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-7-4-promote-003", "quote": "Model Stages are deprecated and will be removed in a future major release."},
+          {"id": "X-refmodel-base-5-registry-006", "quote": "Model aliases allow you to assign a mutable, named reference to a particular version of a registered model."}
+        ]
+      }
+    },
+    {
+      "name": "PromptLayer",
+      "kind": "hosted",
+      "note": "An application resolves 'the current prompt' by asking the registry's API for (name, release label) and gets back whichever immutable version currently carries that label; swapping the label updates every consuming service at once.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Swap the label and every service updates at once; keep the old versions and you have an audit trail of exactly what ran when.",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-base-5-registry-002", "quote": "Swap the label and every service updates at once; keep the old versions and you have an audit trail of exactly what ran when."}
+        ]
+      }
+    },
+    {
+      "name": "MCP Registry (server.json)",
+      "kind": "open-source",
+      "note": "Genuinely different from the alias-pinned pattern above: publishes an immutable, unique-per-publication version string and computes a moving 'latest' pointer from semver comparison rather than an operator explicitly repointing a named alias to one fixed version -- version pinning plus an automatically-advancing 'latest', not alias-to-fixed-version indirection.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "The version string MUST be unique for each publication of the server. Once published, the version string (and other metadata) cannot be changed.",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-base-5-registry-003", "quote": "The version string MUST be unique for each publication of the server. Once published, the version string (and other metadata) cannot be changed."}
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "Every production system found here converges on the same two-layer shape independent of artifact type -- prompts (LangSmith, PromptLayer), models (MLflow), gateway configs (LaunchDarkly): an immutable, versioned artifact plus a mutable alias or label pointer, so 'the current production X' means whatever the pointer currently names, and rollback is re-pointing rather than restoring content. MLflow is a live counter-example inside its own project: its original explicit lifecycle-stage machine is now deprecated in the published docs in favor of the same alias mechanism the other tools use -- 'Model Stages are deprecated and will be removed in a future major release.' On top of that pointer flip, a further practitioner layer exists for how a promotion is exposed gradually: a canary rollout serves the new version to a small, monitored slice of traffic, scoped by route, tenant, or intent for an agent specifically rather than a whole service instance, because 'a candidate model that chooses a different first tool can cascade into wrong state, stale context, or an expensive loop three steps later.' Whether the underlying registry resolves via a fixed, explicitly-repointed alias (MLflow, LangSmith, PromptLayer) or via a version constraint against a moving 'latest' (the MCP registry) is itself a live difference in the field, not a settled convention.",
+    "origin": "sourced",
+    "evidence": [
+      {"id": "X-refmodel-7-4-promote-002", "quote": "Environments represent named deployment targets, Staging and Production, that you can assign to specific commits."},
+      {"id": "X-refmodel-7-4-promote-003", "quote": "Model Stages are deprecated and will be removed in a future major release."},
+      {"id": "X-refmodel-7-4-promote-005", "quote": "A candidate model that chooses a different first tool can cascade into wrong state, stale context, or an expensive loop three steps later."},
+      {"id": "X-refmodel-base-5-registry-003", "quote": "When a server is published, the MCP Registry will attempt to parse its version as a semantic version string for sorting purposes"},
+      {"id": "X-refmodel-base-5-registry-006", "quote": "Model aliases allow you to assign a mutable, named reference to a particular version of a registered model."}
+    ]
+  },
+  "usage": {
+    "text": "The shape of a promote call, per every industry example found: identify a candidate already built as an immutable, addressable version, then move a named pointer (an environment, a stage alias, a config's active label) to reference it -- the content already exists before the call; the call only ever changes what the pointer names. Rollback reuses the identical call shape against the same pointer, pointed back at the prior value: LangSmith's environments keep the value history needed to do exactly this -- 'Each environment maintains an ordered history of which commits were assigned to it and when.' LaunchDarkly layers an automatic version of the same call onto a guarded rollout, restoring the previous variation without a person invoking rollback by hand. This repo's own target facts require the gating half of that shape -- a candidate is only carried forward once a ceremony has reviewed and improved it (T-t4-04), toward TARGET's self-improving-at-scale requirement (T-t6-06) -- but the promote call itself, and the pointer mechanism it would move, is this repo's own proposed design (compose-improvement-loop's promote_revision, cap-capability-packaging's registry); neither is built, so nothing here is evidence this repo's own promote call exists or has run.",
+    "origin": "sourced",
+    "evidence": [
+      {"id": "X-refmodel-7-4-promote-002", "quote": "Each environment maintains an ordered history of which commits were assigned to it and when."},
+      {"id": "X-refmodel-7-4-promote-001", "quote": "it can pause the release or restore the previous variation automatically"},
+      {"id": "T-t4-04", "quote": "a ceremony re-reviews the output, improves the skills that produced it"},
+      {"id": "T-t6-06", "quote": "well over a hundred agents running at a time, working together, managing state, breaking problems down, and self-improving where they can"}
+    ]
+  },
+  "gaps": [
+    {
+      "what": "This repo's own compose-improvement-loop already sketches reusing exactly the alias-over-immutable-version shape found in industry (promote_revision via cap-capability-packaging's registry, with a rollback target set to the prior resolved version), but neither that operation nor the registry it depends on has been built or run.",
+      "why_it_matters": "This card's 'planned' status is accurate on the current evidence -- nothing gathered here should be read as more than a design intent, and a future pass marking this 'built' would need to point at a running registry and a promote call that actually executed.",
+      "research_query": "has cap-capability-packaging's registry resolver or compose-improvement-loop's promote_revision been implemented and run against a real or dry-run registry"
+    },
+    {
+      "what": "cap-capability-packaging's own contract resolves 'by name and version constraint' -- the newest version satisfying a range, semver-style -- which is a different mechanism from the fixed, explicitly-repointed alias (production/staging, champion/challenger) every industry example here actually promotes through: a version-constraint resolver can silently pick up a newer version satisfying the same constraint on its own, while an alias only moves when someone deliberately repoints it.",
+      "why_it_matters": "If this repo's own registry resolves by constraint rather than by pinned alias, a 'promotion' here may not behave like the industry mechanism it is being modeled on -- callers could see a version change with no promote call at all.",
+      "research_query": "does cap-capability-packaging's version-constraint resolution support a pinned, explicitly-repointed alias distinct from 'newest satisfying'"
+    },
+    {
+      "what": "No open standard or schema exists for an agent, prompt, or tool-routing promotion or release record. in-toto and SLSA are the nearest signed-statement formats, but both are scoped to generic software build/source/package supply-chain claims -- nothing in in-toto's published predicate catalogue, and nothing in SLSA's buildType vocabulary, names a prompt, an agent, a routing table, or a playbook.",
+      "why_it_matters": "Adopting either standard here means authoring a new domain-specific predicate or buildType from scratch, not reusing an off-the-shelf one -- a real cost this card's eventual build should budget for rather than assume away.",
+      "research_query": "is there a 2027+ predicate or buildType proposal, built on in-toto or SLSA, that names prompts, agents, or routing configs specifically"
+    },
+    {
+      "what": "Alias-repointing answers what a new call resolves to, not what happens to work already in flight under the old resolution. A not-yet-peer-reviewed preprint on canarying embodied (physical/robotic) agents -- explicitly a design proposal in that specific domain, not a report of shipped LLM/chat-agent practice -- documents two failure modes the pointer flip alone does not address: a crash mid-canary can leave the provisional candidate silently serving unless the rollback is specifically wrapped to run on that path, and per its account of the AEROS pipeline, 'episodic memory entries written before, during, and after the canary refer to different identity hashes,' forcing per-event identity resolution and making full re-certification per canary 'the safest practice, and prohibitive' at scale.",
+      "why_it_matters": "Neither compose-improvement-loop nor cap-evaluation addresses in-flight session state or memory-identity entanglement across a promotion -- alias-repointing is necessary but, on this evidence, not sufficient for agent rollback specifically, as distinct from a stateless API or config rollback. Whether this identity-entanglement concern transfers from an embodied-agent domain to a non-embodied LLM/prompt-routing agent is itself untested.",
+      "research_query": "does compose-improvement-loop or cap-state-persistence define what happens to a run already in flight, or to memory entries already written, under the version active before a promotion or rollback"
+    }
+  ]
+}

@@ -154,7 +154,15 @@ def load_kb() -> tuple[set[str], dict]:
             if line.strip():
                 r = json.loads(line)
                 ids.add(r["id"])
-                KB_TEXT[r["id"]] = r.get("text") or json.dumps(r, ensure_ascii=False)
+                if f == "research":
+                    # A research record has no `text` field, so the json.dumps fallback below
+                    # made every field quotable - including `claim`, which is this repo's own
+                    # prose about the source. A quote matching that is the repo citing itself.
+                    # Only text actually taken off the page counts as source text.
+                    KB_TEXT[r["id"]] = "\n".join(
+                        filter(None, (r.get("snippet"), r.get("read"), r.get("title"))))
+                else:
+                    KB_TEXT[r["id"]] = r.get("text") or json.dumps(r, ensure_ascii=False)
                 if f == "entities":
                     ENTITIES[r["id"]] = r
     return ids, json.loads((KB / "meta.json").read_text())

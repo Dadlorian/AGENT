@@ -1,0 +1,117 @@
+{
+  "address": "2.2",
+  "card": "Policy",
+  "area": "Orchestration & Control Plane",
+  "status": "built",
+  "definition": {
+    "text": "Policy is a decision point every consequential action passes through before it runs: a structured request -- who is acting, what they want to do, on what, under which run context -- goes in, and a deterministic allow or deny plus the rule that decided it comes out, evaluated before anything is spent or done, never after. This repo's own target contract states the timing directly: \"Refusal is deterministic and happens before execution, not after spend.\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "F-b4-04",
+        "quote": "Refusal is deterministic and happens before execution, not after spend"
+      }
+    ]
+  },
+  "standards": [
+    {
+      "id": "rego-opa",
+      "role": "governs the decision engine's language and query API behind this card's interface: rules as declarative Rego data, evaluated by OPA, answering a JSON decision request with a JSON decision.",
+      "covers": "does not standardize the wire contract between an enforcement point and a decision point -- a gap the AuthZEN Authorization API (published as a Standards Track specification in March 2026, no directory under standards/ in this repo) was built to close by deliberately avoiding the decision method itself; and it does not cover authentication, budget accounting, or the safety/compliance rule content this card's own sub-line also names -- those are separate concerns.",
+      "evidence": {
+        "text": "To make an authorization decision, an application queries OPA with JSON input, and OPA evaluates the input against the specified policies to return an access decision in JSON.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-cross-structure-031",
+            "quote": "To make an authorization decision, an application queries OPA with JSON input, and OPA evaluates the input against the specified policies to return an access decision in JSON."
+          }
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "Open Policy Agent (OPA) / Rego",
+      "kind": "open-source",
+      "note": "the engine this repo names as its adapter today for the Policy capability.",
+      "in_use_here": true,
+      "evidence": {
+        "text": "| Policy | Rego / Open Policy Agent |",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-a5-05",
+            "quote": "Rego / Open Policy Agent"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Cedar",
+      "kind": "open-source",
+      "note": "the named second engine behind the same decision API; reported substantially faster than Rego on equivalent scenarios, and restricted-by-design for static analysis. Not in use here.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "The Cedar authorizer is 28.7x-35.2x faster than OpenFGA and 42.8x-80.8x faster than Rego when compared on the same authorization scenarios.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-litmus-b-017",
+            "quote": "The Cedar authorizer is 28.7x-35.2x faster than OpenFGA and 42.8x-80.8x faster than Rego when compared on the same authorization scenarios."
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The decision engine's own market is unsettled even as its interface converges: OPA's creators were acqui-hired by Apple in August 2025 and its commercial sponsor Styra has since wound down, though OPA itself remains an open-source CNCF Graduated project. \"In August 2025, Apple acqui-hired the three OPA creators plus several Styra engineers, and Styra the company has since wound down; its enterprise products were discontinued or open-sourced. However, OPA remains an open-source CNCF Graduated project.\" Cedar is a live, faster, more restricted alternative, and the property that actually settled in this window is not a winning engine but a language-neutral wire contract between the enforcement point and the decision point (AuthZEN, published March 2026), so an engine is now a swappable adapter rather than the interface itself.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-litmus-b-015",
+        "quote": "In August 2025, Apple acqui-hired the three OPA creators plus several Styra engineers, and Styra the company has since wound down; its enterprise products were discontinued or open-sourced. However, OPA remains an open-source CNCF Graduated project."
+      },
+      {
+        "id": "X-litmus-b-017",
+        "quote": "Behind an AuthZEN interface, organizations can continue using RBAC, ABAC, ReBAC, XACML, graph-based approaches, Rego, Cedar, or even fully proprietary engines."
+      }
+    ]
+  },
+  "usage": {
+    "text": "A caller does not embed permission logic in the code that acts: it sends one decision request -- the actor, the action, the resource, and the run context -- to a decision point reached the same way from every enforcement point, and gets back an allow or deny plus the deciding rule before the action runs, never after. The most-cited production shape for an agent runtime puts this call in front of the tool gateway itself: \"the gateway calls OPA before invoking the tool, and OPA answers in well under a millisecond.\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-litmus-b-018",
+        "quote": "the gateway calls OPA before invoking the tool, and OPA answers in well under a millisecond"
+      },
+      {
+        "id": "F-b4-04",
+        "quote": "Refusal is deterministic and happens before execution, not after spend"
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "This card's own sub-line, 'Guardrails · authN/Z, budgets, safety, compliance', bundles four concerns this repo names as belonging elsewhere. AuthN/Z is cap-identity's own contract -- \"Every action names an actor, including delegated agent actors. Delegation chains are explicit\" (F-b4-03) -- and reappears verbatim at rail.1 Security ('Identity, authN/Z, secrets, isolation'). Budgets is concern-budget's contract -- \"Every unit of work carries a ceiling. Exceeding it terminates the unit, not the platform\" (F-b4-02) -- and reappears at rail.4 Cost Management ('Budgets, quotas, showback, unit economics'). Compliance also reappears at rail.2 Governance ('Policy, compliance, audit, access controls'), which names 'Policy' a second time too. Only 'safety' and the deterministic-decision mechanism itself are uniquely this card's.",
+      "why_it_matters": "A card whose sub-line lists four concerns two of which are already owned by named capabilities (cap-identity, concern-budget) and all four of which reappear on other rail cards is not describing one seam; code written against this card risks re-deciding authN/Z or budget inside the policy engine instead of calling the capability that already owns it, and the Policy/Governance boundary is drawn twice with no stated rule for which wins.",
+      "research_query": "does any harness or example call cap-identity's or concern-budget's own interface from inside the policy decision path, or does the policy adapter decide those questions itself"
+    },
+    {
+      "what": "Measured directly for this card: `bash harness/policy/test.sh` returns 'passed 45, failed 0' -- the swap proof, resume-after-pause check and deliberate breakage all hold. But PASS.md's own current-state table records the opposite about production wiring: \"Policy in the gate path | Conformance checks exist; not wired into the enforcement path\" (F-a6-04, status defined_not_running).",
+      "why_it_matters": "The two facts are compatible once separated -- the harness proves the interface and its adapters can swap, not that a live enforcement point calls it today -- but a flat 'built' status collapses that distinction, and the record on file for the live wiring is older than the harness result and may be stale either way.",
+      "research_query": "has PASS.md A6's 'not wired into the enforcement path' row been re-checked since the policy harness gate went green, or does a real caller still bypass the decision point"
+    },
+    {
+      "what": "The identity input a decision request depends on is itself unbuilt: \"No identity field anywhere in the system\" (F-a6-05, status defined_not_running).",
+      "why_it_matters": "A DecisionRequest's subject/actor is exactly the field cap-identity is supposed to supply; if identity is not running, the authN/Z half of this card's own bundled sub-line has no real actor to decide about, which is the concrete mechanism behind gap 1's overlap.",
+      "research_query": "what value does the live policy adapter put in the decision request's subject field today, given F-a6-05"
+    },
+    {
+      "what": "No fetch of either OPA/Rego's or AuthZEN's specification text has been verified in this environment; every record on file for both is a search result, not fetched publisher text.",
+      "why_it_matters": "The version and even the exact decision-API shape cited here rest on search snippets rather than the specification itself, consistent with this repo's known, repo-wide limit that page fetch is blocked (STATUS rows 14, 45).",
+      "research_query": "can standards/rego-opa's cited version be fetched and verified now that STATUS rows 14/45 are revisited"
+    }
+  ]
+}

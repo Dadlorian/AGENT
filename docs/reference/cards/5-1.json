@@ -1,0 +1,120 @@
+{
+  "address": "5.1",
+  "card": "Validation",
+  "area": "Assurance & Completion",
+  "status": "planned",
+  "definition": {
+    "text": "This card's subtitle -- tests, security scan, quality gates -- names the concrete tool classes for the pure function this repo's own target architecture already defines: the runtime Judge, \"(result, criterion) -> verdict\" (F-b2-05). This is not hypothetical for this repo: its own measured current-state pipeline already ran exactly this stage set and named it precisely, distinguishing it from mere well-formedness checks: \"Our 9-stage pipeline recently ran with every behavioural stage skipped -- static analysis, tests, type checking, security scanning, coverage -- because the generated work contained nothing those tools apply to. Only diff, syntax and format ran. Those establish well-formedness, not correctness\" (F-a7-03). So Validation is the step where a produced result is run through mechanical, executable checks and reduced to a verdict before anything downstream (Admit, 5.2) treats it as done -- and this repo's own evidence shows a gate built from these exact tool classes can be structurally green while checking nothing.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "F-b2-05",
+        "quote": "pure function `(result, criterion) → verdict`"
+      },
+      {
+        "id": "F-a7-03",
+        "quote": "static analysis, tests, type checking, security scanning, coverage"
+      }
+    ]
+  },
+  "standards": [],
+  "tools": [
+    {
+      "name": "pytest",
+      "kind": "open-source",
+      "note": "Canonical open-source test-runner implementation for the 'Tests' half of this card's subtitle: a framework that executes test code and reports pass/fail. This repo does not use it -- CLAUDE.md states the repo is \"dependency-free Python 3 (stdlib only, no requirements.txt/pyproject.toml)\", and no requirements.txt or pyproject.toml exists in this tree; every gate here (validate_skills.py, kb.py verify, harness test.sh files) is a hand-written stdlib script, not a pytest suite.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "The pytest framework makes it easy to write small, readable tests, and can scale to support complex functional testing for applications and libraries.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-5-1-validation-001",
+            "quote": "The pytest framework makes it easy to write small, readable tests, and can scale to support complex functional testing for applications and libraries."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Semgrep",
+      "kind": "open-source",
+      "note": "Named static-analysis/security-scan implementation for the 'security scan' half of this card's subtitle, spanning bug-finding, dependency-vulnerability scanning and coding-standard enforcement in one tool class. Not in use in this repo (stdlib-only, no scanner configuration found).",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Find bugs and reachable dependency vulnerabilities in code. Enforce your code standards on every commit.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-5-1-validation-002",
+            "quote": "Find bugs and reachable dependency vulnerabilities in code. Enforce your code standards on every commit."
+          }
+        ]
+      }
+    },
+    {
+      "name": "SonarQube",
+      "kind": "commercial",
+      "note": "Names the industry term 'quality gate' this card's subtitle uses verbatim, and defines it as an explicit release-readiness gate rather than a development-time signal. Not in use in this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Quality gates enforce a quality policy for the results of code review and analysis in your organization by answering one question: is my project ready for release?",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-5-1-validation-003",
+            "quote": "Quality gates enforce a quality policy for the results of code review and analysis in your organization by answering one question: is my project ready for release?"
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The task framing this card was written against -- that the command-line half of the tool interface (linters, type checkers, test runners) IS the external grader, the same binaries an agent uses as hands, now run by something other than the agent -- survives contact with the evidence gathered here only in part. What is well supported: execution-based test suites are the actual verification signal in current agent-grading practice, and current-practice literature explicitly warns that when the agent controls the harness running them, 'stronger agents can find exploitable weaknesses such as retrieving solution artifacts or tampering with tests' (X-unit-design-025) -- which is exactly why this repo's own design states 'the grader is never visible to the graded' (F-b1-07) and why its example architecture keeps the deciding check outside the directory the graded work publishes, run by 'an independent verifier we did not write, invoked as a subprocess with no access to our reader' (cap-state-persistence's own contract, citing the same rule). Current practice also confirms a visible/hidden split is the norm, not this repo's invention: 'Tests are typically partitioned into visible tests (40-70%) used during compilation and hidden tests (30-60%) held out during compilation and used only for reporting' (X-unit-design-022). What is NOT sourced anywhere in this corpus is the narrower, stronger claim in the framing -- that validation reuses the identical binaries/descriptors the agent itself calls through the tool interface (cap-tool-access/MCP), merely invoked by a different actor. No record found compares cap-tool-access's own catalogue against what a validation gate would invoke; that identity is this repo's own plausible extension, not an industry-documented pattern, and is carried into gaps below.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-unit-design-025",
+        "quote": "stronger agents can find exploitable weaknesses such as retrieving solution artifacts or tampering with tests"
+      },
+      {
+        "id": "F-b1-07",
+        "quote": "An agent sees its outcome, never the criterion it is judged against."
+      },
+      {
+        "id": "X-unit-design-022",
+        "quote": "Tests are typically partitioned into visible tests (40-70%) used during compilation and hidden tests (30-60%) held out during compilation and used only for reporting."
+      }
+    ]
+  },
+  "usage": {
+    "text": "No target fact defines an operation signature for this card by name. The nearest sourced shape is the runtime Judge's own: a pure function of one result and one criterion returning one verdict (F-b2-05). Proposed extension, following this repo's own measured pipeline shape (F-a7-03) and its example architecture's visible/hidden split: a caller submits one result plus a reference to a criterion set (never the criterion body itself -- 'An agent sees its outcome, never the criterion it is judged against,' F-b1-07); the interface runs some stages inline for developer feedback (structural: diff, syntax, format) and holds others out to decide (behavioural: static analysis, tests, type checking, security scanning, coverage); the caller gets back a verdict, never a raw tool log, so that a tool swap (pytest for a different runner, Semgrep for a different scanner) does not change what the caller reads.",
+    "origin": "proposed"
+  },
+  "gaps": [
+    {
+      "what": "This card is marked planned, yet F-a7-03 is a MEASURED fact (not a target aspiration): this repo's own current-state pipeline already ran a 9-stage gate including the exact stage set this card's subtitle names (static analysis, tests, type checking, security scanning, coverage), and found it could run structurally green while behaviourally checking nothing.",
+      "why_it_matters": "A card marked planned with nothing built understates what has already been measured about this exact failure mode in this repo; the honest state is closer to 'attempted and found to have a specific documented weakness' than 'not started'.",
+      "research_query": "PASS.md A7 section: what pipeline produced the 9-stage run F-a7-03 describes, and does any tool in this repo's own tree correspond to its stages"
+    },
+    {
+      "what": "Standards is empty and no standards/ directory in this repo governs the combination of test-runner, linter/type-checker and security-scanner output as one interchange format. SARIF (the actual OASIS/industry standard for static-analysis result interchange) was searched for in this citable corpus and not found.",
+      "why_it_matters": "Every other card with a named tool class in this reference model cites at least one governing standard; Validation's tool classes are real and well-established but this repo has not yet researched or adopted a shared results format across them, so a caller integrating multiple tools here has no interoperability guarantee from this card alone.",
+      "research_query": "capture SARIF (OASIS Static Analysis Results Interchange Format) specification and re-run this search"
+    },
+    {
+      "what": "The framing that validation reuses the SAME binaries the agent calls as its tool-access 'hands' (cap-tool-access/MCP), merely invoked by a different actor, is not sourced anywhere in the corpus searched. What is sourced is the weaker, adjacent claim that execution-based checks must run outside the graded agent's control (F-b1-07, X-unit-design-025).",
+      "why_it_matters": "If validation in fact calls a disjoint set of tools from the agent's own MCP catalogue (a real possibility -- an agent's own tool access could be curated to exclude the very scanners that grade it), the 'same hands' framing is actively misleading about the architecture rather than merely unproven.",
+      "research_query": "does cap-tool-access's own contract or not_exposed list say whether a unit's tool catalogue may overlap with the tool set an external validator invokes"
+    },
+    {
+      "what": "This card overlaps two capabilities this repo's own architecture already separates: cap-evaluation (offline, dev-time regression scoring of a versioned unit against a versioned case set) and core-components' Judge (an inline runtime verdict on one result against one criterion). cap-evaluation's own contract states evaluation 'is a different artifact from the runtime Judge' (F-b2-05 cited there). Nothing found here settles whether this card is a third thing, a rename of one of the two, or the CI-pipeline instantiation F-a7-03 describes.",
+      "why_it_matters": "A reference-model card that silently re-merges two capabilities this repo went to the trouble of separating elsewhere invites the same confusion flagged on card 2.4 (bundling schedule/durable-state/route/handoff).",
+      "research_query": "kb_index.py search \"cap-evaluation core-components Judge Validation boundary CI pipeline\""
+    },
+    {
+      "what": "F-a7-03's 9-stage pipeline is measured but not attributed to a named tool: the fact records that stages ran and were skipped, not which binaries (a specific test runner, linter, scanner) executed them.",
+      "why_it_matters": "Without a named implementation behind the measured pipeline, the tools listed on this card (pytest, Semgrep, SonarQube) remain industry examples chosen for their fit to the subtitle, not evidence of what this repo itself would run -- a caller should not read this card as endorsing those three specifically.",
+      "research_query": "search PASS.md A7 and any CI configuration in this repo for the tool names behind the 9-stage pipeline in F-a7-03"
+    }
+  ]
+}

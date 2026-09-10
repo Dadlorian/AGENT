@@ -1,0 +1,177 @@
+{
+  "address": "7.3",
+  "card": "Evaluate (Blind)",
+  "area": "Self-Improvement",
+  "status": "planned",
+  "definition": {
+    "text": "Evaluate (Blind) is the self-improvement loop's scoring gate: a candidate change is scored against a test set the candidate cannot see or optimise against, so a pass reflects genuine capability rather than tuning to the eval. The clearest industry operating example of that separation is ARC-AGI-2's tiered holdout on top of its public evaluation set: \"A semi-private set intended for testing remotely-hosted commercial models with low leakage probability. It is calibrated to be the same human-facing difficulty as the public evaluation set,\" plus a further fully-private tier used only for the competition proper. This repo's own target facts require the surrounding loop -- a ceremony closing each section by re-reviewing and improving (T-t4-04) -- but say nothing about a hidden or tiered test set; the 'blind' half of this card's own subtitle is this repo's own design intent, not something TARGET.md itself specifies.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-7-3-evaluate-002",
+        "quote": "A semi-private set intended for testing remotely-hosted commercial models with low leakage probability. It is calibrated to be the same human-facing difficulty as the public evaluation set."
+      },
+      {
+        "id": "T-t4-04",
+        "quote": "at the end of each section a ceremony re-reviews the output, improves the skills that produced it, and the loop continues."
+      }
+    ]
+  },
+  "standards": [],
+  "tools": [
+    {
+      "name": "ARC-AGI-2 tiered holdout",
+      "kind": "open-source",
+      "note": "The clearest public example of tiered blind evaluation: a public evaluation set, a calibrated semi-private set for remotely-hosted commercial models, and a fully-private set for the competition proper, each held to the same human-facing difficulty so a model can't be tuned to an easier hidden split.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "The fully-private tier is reserved for testing self-contained models during the ARC Prize competition itself, at the same calibrated difficulty as the public and semi-private tiers.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-7-3-evaluate-002",
+            "quote": "A fully-private set intended for testing self-contained models during the ARC Prize competition, with near-zeo leakage probability."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Kaggle ARC Prize 2025 sandbox",
+      "kind": "hosted",
+      "note": "Runs submissions offline inside a sandboxed server environment with no internet access and a fixed wall-clock budget, so the system under test cannot see or query the private set it is scored against. Recorded here as a search-only finding (two direct-fetch attempts failed against a JS-rendered page), not a page this agent actually read.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Each submission is executed offline inside Kaggle's secure sandbox server environment on four NVIDIA L4 GPUs.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-7-3-evaluate-010",
+            "quote": "Each submission is executed offline inside Kaggle's secure sandbox server environment on four NVIDIA L4 GPUs."
+          }
+        ]
+      }
+    },
+    {
+      "name": "METR Task Standard",
+      "kind": "open-source",
+      "note": "Standardizes only the task definition -- environment, instructions, optional scoring method -- so different evaluators can run their own agents against tasks someone else authored. It does not define a schema for the resulting scored-result object, and no convention filling that gap was found.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "The goal of the METR Task Standard is to define a common format for such tasks, so that everyone can evaluate their agents on tasks developed by other parties, rather than just their own.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-7-3-evaluate-007",
+            "quote": "The goal of the METR Task Standard is to define a common format for such tasks, so that everyone can evaluate their agents on tasks developed by other parties, rather than just their own."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Inspect AI / inspect_evals",
+      "kind": "open-source",
+      "note": "The eval framework most cited as the current standard tool (built by the UK AI Security Institute with Arcadia Impact and the Vector Institute, reportedly adopted by METR and Apollo Research). Individual evals name a 'test split' but the repository defines no explicit held-out/hidden-test-set convention and no schema for a scored result shared across evals -- each eval implements its own scorer.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "This repository is maintained by the Inspect Evals maintainers. We evaluate on questions from the test split.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-7-3-evaluate-008",
+            "quote": "We evaluate on questions from the test split."
+          }
+        ]
+      }
+    },
+    {
+      "name": "DyePack",
+      "kind": "unknown",
+      "note": "A black-box contamination-detection method: mixes backdoor 'dye pack' samples into public test data so a model trained on that data reproduces the backdoor, giving a provable, bounded-false-positive-rate contamination flag without needing access to the model's training loss, logits or weights. Detects after the fact whether training data leaked; it is not an admission-time control on a live evaluation.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Like how banks mix dye packs with their money to mark robbers, DyePack mixes backdoor samples with the test data to flag models that trained on it.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-7-3-evaluate-006",
+            "quote": "Like how banks mix dye packs with their money to mark robbers, DyePack mixes backdoor samples with the test data to flag models that trained on it."
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "Three genuinely different mechanisms answer overlapping but distinct threats, and the evidence gathered here does not show any one of them solving the others' problem. Physical isolation -- ARC-AGI-2's public/semi-private/private tiers, or Kaggle's offline sandboxed submission -- denies the system under test access to the scoring set at all, which is the only mechanism that stops a candidate from being tuned directly against its own eval. Rotating the benchmark is a second, weaker mitigation for the same leakage threat, used when a private holdout isn't kept at all: 'A benchmark that you upload to GitHub is a benchmark with a sell-by date. Keep a private holdout, version the public release, and rotate,' with LiveCodeBench implementing this concretely by pulling new problems monthly and scoring only on problems dated after a model's training cutoff. Statistical or planted-marker detection -- canary strings ('Embed a unique identifier in every benchmark file. If the model can reproduce the identifier, it saw the benchmark.'), Min-K% probability, time-based pre/post-cutoff partitioning, and DyePack -- is the third and weakest guarantee: it measures, after training has already happened, whether benchmark text leaked into a model's weights; none of these stop the leak, they only flag it. Separately, no tooling convention closes the standards gap: the METR Task Standard and Inspect AI both standardize how a task is defined and run, not what makes a case set 'blind' or how a scored result is structured -- no open standard covers either.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-7-3-evaluate-002",
+        "quote": "A semi-private set intended for testing remotely-hosted commercial models with low leakage probability."
+      },
+      {
+        "id": "X-refmodel-7-3-evaluate-003",
+        "quote": "Embed a unique identifier in every benchmark file. If the model can reproduce the identifier, it saw the benchmark."
+      },
+      {
+        "id": "X-refmodel-7-3-evaluate-004",
+        "quote": "An unseen text always has some words the model finds surprising (high negative log-likelihood, low probability). A seen text rarely does, because the model has memorized the rare words too."
+      },
+      {
+        "id": "X-refmodel-7-3-evaluate-005",
+        "quote": "A benchmark that you upload to GitHub is a benchmark with a sell-by date. Keep a private holdout, version the public release, and rotate."
+      },
+      {
+        "id": "X-refmodel-7-3-evaluate-006",
+        "quote": "Like how banks mix dye packs with their money to mark robbers, DyePack mixes backdoor samples with the test data to flag models that trained on it."
+      },
+      {
+        "id": "X-refmodel-7-3-evaluate-007",
+        "quote": "The goal of the METR Task Standard is to define a common format for such tasks, so that everyone can evaluate their agents on tasks developed by other parties, rather than just their own."
+      },
+      {
+        "id": "X-refmodel-7-3-evaluate-008",
+        "quote": "We evaluate on questions from the test split."
+      },
+      {
+        "id": "X-refmodel-7-3-evaluate-010",
+        "quote": "Each submission is executed offline inside Kaggle's secure sandbox server environment on four NVIDIA L4 GPUs."
+      }
+    ]
+  },
+  "usage": {
+    "text": "The shape a blind-evaluate call needs, per the industry practice gathered here, is: a versioned candidate, a case_set_id whose contents are held out from whatever the candidate saw during development or tuning, and a baseline_id, returning passed/failed/inconclusive -- structurally the same regression-testing shape already established elsewhere: 'Regression testing catches performance degradation when prompts, models, or integrations change before production deployment.' This repo's own target facts require the loop this feeds: a candidate is only carried forward once a ceremony has re-reviewed and improved it (T-t4-04). This repo's own cap-evaluation skill already proposes an evaluate operation with that same request/response shape (unit, case_set_id, baseline_id, mode of live or replay -> passed/failed/inconclusive), but its mode field distinguishes only live vs. replay execution, not visible-to-candidate vs. held-out -- adding that visibility axis is this repo's own unbuilt design gap, not something sourced here.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-end-to-end-040",
+        "quote": "Regression testing catches performance degradation when prompts, models, or integrations change before production deployment."
+      },
+      {
+        "id": "T-t4-04",
+        "quote": "at the end of each section a ceremony re-reviews the output, improves the skills that produced it, and the loop continues."
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "No open standard covers an evaluation case set or a scored result. The METR Task Standard standardizes the task definition only -- 'The goal of the METR Task Standard is to define a common format for such tasks, so that everyone can evaluate their agents on tasks developed by other parties, rather than just their own' -- and the one proposed reporting standard found, STREAM, is explicitly proposed rather than adopted, and scoped only to dangerous ChemBio capability evaluations, not general agent evaluation.",
+      "why_it_matters": "Without an open case-set or result schema, this card's own eventual case-set and report format is inevitably this repo's own invention, and cannot claim interoperability with any external evaluator or reporting convention.",
+      "research_query": "is there a 2027+ candidate open schema for a scored agent-evaluation result that is general-purpose, not ChemBio-scoped like STREAM"
+    },
+    {
+      "what": "This repo's own cap-evaluation skill contract (register_case_set / evaluate / replay_case) does not mention 'hidden', 'blind', or 'gaming' anywhere -- the evaluate operation's mode field distinguishes only live vs. replay execution, not visible-to-candidate vs. held-out from it, despite this card's own subtitle being exactly 'Hidden test sets - Prevent gaming'.",
+      "why_it_matters": "A gate with no held-out/visibility axis cannot itself refuse a candidate that was tuned directly against the same case set it is later scored on -- the precise failure mode this card's own name exists to prevent.",
+      "research_query": "does cap-evaluation's register_case_set or evaluate operation, or compose-improvement-loop's ImprovementCandidate schema, carry any visibility or held-out field"
+    },
+    {
+      "what": "The contamination-detection literature found here (canary strings, Min-K% probability, time-based partitioning, DyePack) answers a different question than this card's subtitle asks: those methods detect, after training, whether a pretrained model's weights memorized public benchmark text. None of them stop a live, running self-improvement loop from reading its own scoring case set while authoring the next candidate, which is closer to what 'prevent gaming' names for an agent platform as opposed to a foundation-model benchmark.",
+      "why_it_matters": "Adopting a contamination-detection tool wholesale would answer the wrong question for this card and leave the actual threat -- a loop reading its own eval set -- unaddressed.",
+      "research_query": "access-control or capability-scoping mechanisms that keep a running improvement loop from reading the case set it will be scored against, distinct from post-hoc contamination detection"
+    },
+    {
+      "what": "Whether ARC-AGI-2's three-tier model (public / semi-private / private) is the right shape for this platform's own loop is untested: cap-evaluation's evaluate operation is proposed with a single case_set_id, not three tiered ones, and no evidence gathered here shows any agent-platform evaluation framework (Inspect AI, DeepEval, MCPEval), as opposed to a foundation-model benchmark, implementing tiered visibility.",
+      "why_it_matters": "Importing a foundation-model-benchmark pattern wholesale, without checking whether an agent-platform improvement loop has the same threat model, risks building the wrong shape of gate.",
+      "research_query": "does any production agent-evaluation framework implement tiered or held-out visibility rather than a single case set"
+    }
+  ]
+}

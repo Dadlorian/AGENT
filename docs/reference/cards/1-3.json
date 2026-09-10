@@ -1,0 +1,154 @@
+{
+  "address": "1.3",
+  "card": "Internal Event",
+  "area": "Invocation / Entry Points",
+  "status": "built",
+  "definition": {
+    "text": "Internal Event is the entry door for a system-generated occurrence, as distinct from a request that arrives from outside the platform at 1.4. This repo's own target architecture draws the internal/external line once, at the top of its ways-in list: \"An internal or external event must be able to enter the system.\" Elsewhere in the same source document the two halves are folded back into one undifferentiated bucket -- \"a human, an event, a schedule (time), and an external system or agent\" -- so the split is stated explicitly in one place (TARGET T1) and not repeated consistently everywhere this repo's own ways-in are enumerated (TARGET T6).",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "T-t1-03",
+        "quote": "An internal or external event must be able to enter the system."
+      },
+      {
+        "id": "T-t6-02",
+        "quote": "a human, an event, a schedule (time), and an external system or agent"
+      }
+    ]
+  },
+  "standards": [
+    {
+      "id": "cloudevents",
+      "role": "Standardises the envelope an internal event is normalised into once it reaches intake -- the same id/source/type/time identity every producer gets, which this repo's own idempotency key for the 'event' kind is derived from (source + id).",
+      "covers": "CloudEvents' own attribute set carries no internal/external distinction -- every event gets the same id/source/subject regardless of where it originated, so the line this card sits on is not a CloudEvents concept; it is drawn by this repo's own target architecture (T-t1-03) and layered on top of a producer-agnostic envelope.",
+      "evidence": {
+        "text": "CloudEvents' core identity attributes (id, source) are assigned uniformly to every event; the specification does not carry a separate internal/external attribute.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-cross-structure-017",
+            "quote": "The id uniquely identifies the event instance to distinguish separate occurrences of a same-named event. The source attribute identifies the origin or context of an event."
+          },
+          {
+            "id": "X-cap-work-intake-005",
+            "quote": "Producers MUST ensure that source + id is unique for each distinct event."
+          }
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "This repo's own git-event / HTTP adapters",
+      "kind": "unknown",
+      "note": "F-b3-08 is a Part B (target-architecture) row -- PASS.md states Part B is 'a target architecture for a greenfield build. No code carries over' -- so this names the intended adapter, not a verified running one. The harness meant to prove it, harness/work-intake/, currently fails 24 of 28 checks (`bash harness/work-intake/test.sh`), and the row does not itself say which adapter serves which door. See gaps.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "This repo's recorded adapters for work intake today are CLI, git event, HTTP and schedule.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-b3-08",
+            "quote": "CLI, git event, HTTP, schedule"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Knative Eventing (Broker/Trigger event mesh)",
+      "kind": "open-source",
+      "note": "A named, live implementation of a system generating an event without the receiver hard-wired to it -- decouples sender from recipient so either side changes independently. Not used by this repo; no broker or mesh is recorded anywhere in the corpus.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "An Event Mesh decouples event senders from recipients so either side can change independently.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-entry-composition-006",
+            "quote": "An Event Mesh is dynamic, interconnected infrastructure designed to simplify distributing events from senders to recipients."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Agent Development Kit (ADK) ambient-agent triggers",
+      "kind": "open-source",
+      "note": "Normalises every trigger type -- a system-generated event included -- into one consistent JSON structure before the agent sees it, the same normalise-once idea cap-work-intake owns. Not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "ADK's trigger endpoints normalise the incoming event into one consistent structure before the agent sees it.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-entry-composition-005",
+            "quote": "All trigger endpoints normalize the incoming event into a consistent JSON structure before passing it to your agent as the user message"
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "Named implementations of a 'something happened, start or continue work' door differ mainly in how decoupled the producer is from the consumer: an event-mesh broker (Knative Eventing) explicitly separates the two so either side changes independently, while an agent framework's trigger normaliser (ADK) couples a fixed set of producers to one consumer with no broker in between, just a shared JSON shape. This repo's own worked example for this door sits at the coupled end of that spectrum -- one internal service posts straight into intake with no broker, mesh, or queue recorded anywhere in the corpus -- so the decoupling tradeoff itself is not a decision this repo is shown to have made either way.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-entry-composition-006",
+        "quote": "An Event Mesh is dynamic, interconnected infrastructure designed to simplify distributing events from senders to recipients."
+      },
+      {
+        "id": "X-entry-composition-005",
+        "quote": "All trigger endpoints normalize the incoming event into a consistent JSON structure before passing it to your agent as the user message"
+      }
+    ]
+  },
+  "usage": {
+    "text": "Per this repo's own worked reference model (composable-plan.md, mapped explicitly from TARGET T6.2), what fires this door is 'a running plan reports a result' -- an already-executing unit of work reporting back into the platform. The same source states the consequence directly: \"Internal steers but never starts\" -- this door continues work already admitted rather than admitting a fresh root job. Its identity for audit is inherited as the parent run rather than freshly authenticated at the door, and its budget is subdivided from the parent's allocation rather than a fresh ceiling. That is a different shape from the un-parented, fresh run (depth 0, no parent_correlation_id) this repo's own cap-work-intake worked example shows for the same 'event' label -- see gaps.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "REF-3-4-15",
+        "quote": "Internal steers but never starts"
+      },
+      {
+        "id": "REF-3-4-09",
+        "quote": "a running plan reports a result"
+      },
+      {
+        "id": "REF-3-4-11",
+        "quote": "authenticated | the parent run"
+      },
+      {
+        "id": "REF-3-4-12",
+        "quote": "subdivided from the parent"
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "'Internal Event' means two different things across this repo's own sourced documents. composable-plan.md's four-doors table (tied explicitly to T-t6-02) defines 'Internal (event)' as steers-only -- it can never start new root work, is scoped to and authorised by its parent run, and its budget is subdivided from the parent's. cap-work-intake's own worked example for the `event` kind (examples/end-to-end/entries/event.json) is the opposite: a fresh, un-parented run (depth 0, no parent_correlation_id) started outright by an internal alerting service. Reference-model.json's placement of card 1.3 as a peer 'Invocation / Entry Point' alongside Human/Scheduled/External matches the second reading, not the sourced first one.",
+      "why_it_matters": "If this door is genuinely steers-only, per the sourced four-doors table, it should not be modelled as an independent entry point that starts work at all -- it would belong under the composability/loop machinery this repo's own doc gates self-improvement loops with, not the entry-points area, and the 'built' status here would need to be judged against a different contract than the one it currently carries.",
+      "research_query": "does the entry envelope's kind=event value distinguish a fresh internally-started run from a parented mid-run report, or does one value cover both without a field to tell them apart"
+    },
+    {
+      "what": "No named internal producer (an alerting/monitoring tool, a queue consumer, an internal service) is evidenced authenticating itself before this door accepts its event. The one worked example's actor.subject ('service:alerting') is asserted directly in the fixture with no issuing mechanism shown; the schema declares a delegation-chain field (obtained_via: workload_attestation) but no adapter in the corpus is shown exercising it for an internal producer.",
+      "why_it_matters": "A 'built' claim for this door implies the platform can already tell a legitimate internal service from anything else reaching the same endpoint; without a shown attestation flow, that distinction is asserted, not demonstrated.",
+      "research_query": "has any harness exercised workload_attestation for an internal event producer end to end, or is it declared in the schema only"
+    },
+    {
+      "what": "cap-idempotency frames its guarantee as covering 'every externally-triggered action', and its dedup evidence (webhook id/source keying, retry-window retention) is drawn entirely from webhook/external-delivery literature. No evidence in the searched corpus describes redelivery or duplicate suppression specifically for an internally-generated event, e.g. a flapping alert firing twice for the same incident.",
+      "why_it_matters": "Internal producers duplicate too; if the same claim/lease mechanism built for external redelivery is assumed to cover them without change, that assumption is untested by anything found here.",
+      "research_query": "is idempotency dedup evidenced for an internal producer specifically, or only ever demonstrated against webhook redelivery"
+    },
+    {
+      "what": "The harness meant to prove this capability's adapter swap, harness/work-intake/, currently fails: `bash harness/work-intake/test.sh` reports 'passed 4, failed 24' -- conformance does not reach 15/15, the swap proof between adapters fails, the deliberate-breakage case does not isolate to one adapter, and the product-name scan fails. `tools/final_acceptance.py` records the same finding at the stack level: stick T-t9-06 ('every harness executes one adapter swap with its gate green') holds 'no', naming work-intake as one of three red harnesses out of 28. This door and 1.4 sit on the same failing harness and the same fixture set (examples/end-to-end/entries/*.json).",
+      "why_it_matters": "This is stronger and more direct than an absence-of-evidence gap: it is a measured, machine-checked failure of the gate this repo itself wrote to prove the capability works, directly contradicting this card's 'built' status.",
+      "research_query": "what specifically fails in harness/work-intake/conformance.py, and does fixing it change either the 1.3 or 1.4 card's evidence"
+    },
+    {
+      "what": "The canonical entry envelope (cap-work-intake's EntryEnvelope) has one `kind` enum -- human, event, schedule, external -- and ten properties total, none of which is a trust or origin marker. The schema's own description of `kind` says it is 'recorded for audit and routing; nothing downstream of intake branches on it.' Nothing in the shape distinguishes an internally-fired event from an inbound external one once either is normalised into kind=event or kind=external.",
+      "why_it_matters": "The owner's stated intent for the internal/external split is one envelope with a trust field. The evidence supports the 'one envelope' half but not the 'trust field' half: there is no field to audit or police the internal/external boundary post-intake, which is exactly the boundary this card and 1.4 exist to name.",
+      "research_query": "should the entry envelope carry an explicit trust/origin attribute distinct from kind, and if so what would read it downstream"
+    }
+  ]
+}

@@ -71,3 +71,4 @@
 | 72 | Phase 8: improvement loop rebuilt | Per-skill usage and issue counts drive improvement toward TARGET at ceremonies | Done | Hook, health table, plan and check built | 2026-09-04 f2bf74d |
 | 64 | Skill structure review | An independent review against the Agent Skills guidance proposes the organisation | Done | Owner chose the fold, row 71 | 2026-09-04 b06346f |
 | 73 | Phase 9: maturity research | Every item below the future state has a researched mechanism on record | Done | 60 items, 52 sourced, 122 records | 2026-09-04 b3d173b |
+| 45 | Fetch allowlist | One standards page fetched with status fetched | Done | 101 fetched, spec pages included | 2026-09-09 a4a31ce |

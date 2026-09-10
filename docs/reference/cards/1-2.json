@@ -1,0 +1,158 @@
+{
+  "address": "1.2",
+  "card": "Scheduled",
+  "area": "Invocation / Entry Points",
+  "status": "built",
+  "definition": {
+    "text": "Scheduled is the door where a clock, not a person or an outside system, causes work to start. This repo's own target architecture names it as one of four canonical entries and is explicit that a schedule is not an event: \"Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent.\" Operationally, the reference example spells out what that means for this door: a schedule fires, the actor of record is whoever registered the schedule, the gate queues rather than asking live, and the resulting card returns to the schedule's owner next time they open it.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "T-t6-02",
+        "quote": "a human, an event, a schedule (time), and an external system or agent"
+      },
+      {
+        "id": "REF-3-4-09",
+        "quote": "a schedule fires"
+      },
+      {
+        "id": "REF-3-4-11",
+        "quote": "whoever registered the schedule"
+      },
+      {
+        "id": "REF-3-4-13",
+        "quote": "queues for later"
+      },
+      {
+        "id": "REF-3-4-14",
+        "quote": "the schedule's owner, on next open"
+      }
+    ]
+  },
+  "standards": [
+    {
+      "id": "rfc-5545-recurrence-rules",
+      "role": "computes when the recurring unit is next due -- a pure function of one recurrence rule, a time zone and a window -- exactly the standard this repo's own capability table names for the Scheduling capability behind this door.",
+      "covers": "does not define the envelope the firing arrives in once it is due (that is shared with every other entry door via cap-work-intake / A2A messaging · CloudEvents), and does not itself settle catch-up or misfire policy across a clock change or leap day.",
+      "evidence": {
+        "text": "Scheduling | RFC 5545 recurrence rules | Temporal schedules | cron · any RFC 5545 parser",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-b3-15",
+            "quote": "RFC 5545 recurrence rules"
+          }
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "Temporal Schedules",
+      "kind": "open-source",
+      "note": "this repo's own capability table names this as the adapter today for Scheduling.",
+      "in_use_here": true,
+      "evidence": {
+        "text": "Scheduling | RFC 5545 recurrence rules | Temporal schedules | cron · any RFC 5545 parser",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-b3-15",
+            "quote": "Temporal schedules"
+          }
+        ]
+      }
+    },
+    {
+      "name": "cron",
+      "kind": "standard-implementation",
+      "note": "named swap candidate in the same table row -- the older, timezone-naive convention RFC 5545 and Temporal Schedules both improve on.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Scheduling | RFC 5545 recurrence rules | Temporal schedules | cron · any RFC 5545 parser",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-b3-15",
+            "quote": "cron · any RFC 5545 parser"
+          }
+        ]
+      }
+    },
+    {
+      "name": "rrule-temporal",
+      "kind": "open-source",
+      "note": "a real, named RFC 5545 parser -- the literal \"any RFC 5545 parser\" swap candidate the capability table gestures at, built on the Temporal API for timezone/DST-correct recurrence.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "The first and only fully compliant Recurrence rule (RFC-5545) processing JS/TS library built on the Temporal API.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-litmus-c-006",
+            "quote": "The first and only fully compliant Recurrence rule (RFC-5545) processing JS/TS library built on the Temporal API"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Temporal Cron Job",
+      "kind": "open-source",
+      "note": "a second, simpler primitive inside the same adapter this repo already names -- a Unix-cron-shaped alternative to a full Temporal Schedule.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "A Temporal Cron Job is similar to a classic unix cron job, accepting a schedule on which to execute a Workflow Execution.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-cap-scheduling-005",
+            "quote": "A Temporal Cron Job is similar to a classic unix cron job, accepting a schedule on which to execute a Workflow Execution."
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "This repo's own proposed synthesis: RRULE (RFC 5545) and cron both express recurrence, but RRULE is the strictly more expressive grammar -- named frequencies from SECONDLY to YEARLY, BYDAY/BYMONTH-style constraints, and explicit time-zone handling with UNTIL forced to UTC for DST correctness -- where cron is a five-field, timezone-naive shorthand. Temporal's own Schedule primitive already offers both a cron-compatible mode and a calendar-based mode, which is consistent with this repo's adapter-today sitting on Temporal while still naming RFC 5545, not cron, as the governing standard. None of this touches the entry question directly, though: recurrence math only decides whether to fire; it says nothing about the envelope the firing enters through, which is the same one every other door uses.",
+    "origin": "proposed"
+  },
+  "usage": {
+    "text": "A caller enters through this door not by submitting but by registering a rule in advance; the reference model's own comparison table says of this door that \"a schedule fires,\" that the identity of record is \"whoever registered the schedule,\" that when the run needs a decision the gate \"queues for later\" rather than asking live, and that the resulting card returns to \"the schedule's owner, on next open.\" That is an absentee caller -- the mirror image of the Human door's synchronous, present one.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "REF-3-4-09",
+        "quote": "a schedule fires"
+      },
+      {
+        "id": "REF-3-4-11",
+        "quote": "whoever registered the schedule"
+      },
+      {
+        "id": "REF-3-4-13",
+        "quote": "queues for later"
+      },
+      {
+        "id": "REF-3-4-14",
+        "quote": "the schedule's owner, on next open"
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "this card's sub-line reads \"Time or event driven,\" which duplicates cards 1.3 Internal Event (\"System generated\") and 1.4 External Event (\"Webhooks / queues\"). This repo's own target architecture (T-t6-02) is explicit that a schedule (time) and an event are two of four distinct canonical entries, not one and the same, and the worked reference example (REF-3-4-09/11/13/14) gives Scheduled and the two event doors different actors, different gate behaviour and different return paths throughout.",
+      "why_it_matters": "with the collision left in place, a reader cannot tell from the reference model alone whether an incoming webhook belongs on this card or on 1.3/1.4; the owner has already agreed Scheduled means time-driven only, so this sub-line should read as a clock-only description, matching this card's own icon (\"clock\").",
+      "research_query": "confirm against the reference-model source doc (ref_arch/Reference Model.dc.html) whether \"Time or event driven\" was copied from a sibling card's sub-line"
+    },
+    {
+      "what": "reference-model.json badges this card with AG-UI, a UI-to-agent event protocol (confirmed by its own standards-catalog entry and by every AG-UI research record gathered here) that has no clock-driven use case at all. This repo's own sourced capability table already names the correct standard for Scheduling: RFC 5545 recurrence rules, adapter Temporal schedules (F-b3-15).",
+      "why_it_matters": "AG-UI cannot be implemented against a clock-driven trigger -- there is no UI and no person to stream events to -- so the badge as it stands describes a contract this card cannot speak; a caller trying to conform a scheduled entry to AG-UI would find no applicable interface.",
+      "research_query": "should reference-model.json's badge for card 1.2 be corrected from AG-UI to rfc-5545-recurrence-rules?"
+    },
+    {
+      "what": "catch-up and misfire policy across a clock change or a leap day is not settled by RFC 5545 itself, and no record in this repo's evidence for this card addresses what this platform does when a scheduled firing is missed (skip, fire-once-on-catch-up, or fire-every-missed-occurrence).",
+      "why_it_matters": "without a stated policy, the same missed-firing situation could be handled inconsistently between the Temporal-schedules adapter today and any future RFC-5545-parser swap candidate, silently changing behaviour on a swap this card's own \"built\" status implies should be safe.",
+      "research_query": "does Temporal Schedules' catch-up window setting map onto a documented policy this repo has adopted, or is it still an open choice"
+    }
+  ]
+}

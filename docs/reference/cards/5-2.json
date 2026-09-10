@@ -1,0 +1,166 @@
+{
+  "address": "5.2",
+  "card": "Admit",
+  "area": "Assurance & Completion",
+  "status": "planned",
+  "definition": {
+    "text": "This card's subtitle bundles two concerns this repo's own architecture keeps as separate capability rows: an approval decision (a human or a policy gate saying an output may proceed) and provenance (a signed statement about that output). Only the second half has a named contract on this card. This repo's own target states the provenance contract as: \"Every artifact is attributable to the code version, inputs and actor that produced it, verifiable with a tool we did not write\" (F-b4-05), and names its standard and today's adapter in the same table: \"in-toto · SLSA · DSSE | JSONL evidence records | Sigstore · any attestation store\" (F-b3-12). So Admit, on its provenance half, is the step that turns a validated result (5.1) into a signed, outside-checkable statement before it is returned (5.3) -- the approval half has no equivalent sourced definition on this card and is carried into gaps.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "F-b4-05",
+        "quote": "Every artifact is attributable to the code version, inputs and actor that produced it, verifiable with a tool we did not write"
+      },
+      {
+        "id": "F-b3-12",
+        "quote": "in-toto · SLSA · DSSE | JSONL evidence records | Sigstore · any attestation store"
+      }
+    ]
+  },
+  "standards": [
+    {
+      "id": "in-toto",
+      "role": "The statement format an admitted output's provenance would be recorded in: a fixed, lightweight Statement carrying a predicate and one or more subjects, the layer directly above the DSSE envelope.",
+      "covers": "in-toto's own predicate catalogue and worked examples are generic build/source/package software-supply-chain claims -- 'nothing in the README or the predicate list names a prompt, an agent, a routing table, or a playbook' (this repo's own finding, X-refmodel-7-4-promote-007) -- so admitting an agent-generated output is not a use its published vocabulary already covers.",
+      "evidence": {
+        "text": "The in-toto Attestation Framework defines a fixed, lightweight Statement that communicates information about software supply chain execution through a Predicate using context-specific schema identified by a Predicate Type, applying to one or more software supply chain Subjects.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-xc-provenance-chain-001",
+            "quote": "The in-toto Attestation Framework defines a fixed, lightweight Statement that communicates information about software supply chain execution"
+          }
+        ]
+      }
+    },
+    {
+      "id": "slsa",
+      "role": "Names the specific predicate type (SLSA Provenance v1.0/v1.1) an outside verifier expects when checking build-style provenance, signed via DSSE and bound to an artifact through the subject field.",
+      "covers": "SLSA's own worked example is a software build platform (builder identity, build instructions, dependency digests) -- not a human-or-policy admit decision over a generated artifact that was never compiled.",
+      "evidence": {
+        "text": "SLSA Provenance v1.0 is a predicate type within the in-toto framework. When a SLSA-compliant build platform generates provenance, it produces an in-toto attestation with predicateType: https://slsa.dev/provenance/v1, signs it with DSSE, and associates it with the built artifact via the subject field.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-xc-provenance-chain-003",
+            "quote": "SLSA Provenance v1.0 is a predicate type within the in-toto framework."
+          }
+        ]
+      }
+    },
+    {
+      "id": "dsse",
+      "role": "The signing envelope an in-toto statement travels in: a lightweight container for signed payloads that provides signature verification without embedding public keys, the mechanism that lets an outside tool check the seal without our cooperation.",
+      "covers": "DSSE only wraps and signs; it says nothing about who may approve an output or when a statement is written, so it covers none of this card's 'Approve' half.",
+      "evidence": {
+        "text": "An in-toto attestation has two layers: the DSSE envelope and the statement. DSSE is a lightweight container format for signed payloads standardized at secure-systems-lab. DSSE provides signature verification without embedding public keys in the attestation, enabling portable verification by external tools.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-xc-provenance-chain-002",
+            "quote": "DSSE is a lightweight container format for signed payloads standardized at secure-systems-lab."
+          }
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "This repo's own evidence ledger (kb/ledger.jsonl, written and read by tools/kb.py)",
+      "kind": "unknown",
+      "note": "Matches F-b3-12's named target adapter, 'JSONL evidence records', by shape: append-only, hash-chained, and each record this repo actually writes carries a git_commit, an agent field and an inputs list (verified by inspecting kb/ledger.jsonl directly). It is genuinely running -- `python3 tools/kb.py ledger-verify` is a live command in this repo. But it is checked only by kb.py, the tool that wrote it, so it does not meet F-b4-05's own bar of 'verifiable with a tool we did not write': there is no outside verifier, no signature and no transparency log standing behind it.",
+      "in_use_here": true,
+      "evidence": {
+        "text": "| **Provenance** | in-toto · SLSA · DSSE | JSONL evidence records | Sigstore · any attestation store |",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-b3-12",
+            "quote": "JSONL evidence records"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Sigstore (cosign, Rekor, Fulcio)",
+      "kind": "open-source",
+      "note": "Named swap candidate for provenance in this repo's own target table (F-b3-12); provides exactly the external-verifier mechanism this repo's own ledger currently lacks -- keyless signing plus a public, append-only transparency log a third party can check independent of the signer.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Sigstore provides keyless signing through ephemeral key signing where users verify artifacts using a transparency log for signature verification rather than keys. Sigstore's keyless methods include Fulcio (certificate authority for short-lived signing certificates issued based on OpenID Connect identity) and Rekor (transparency log recording every signature in a non-modifiable way).",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-xc-provenance-chain-004",
+            "quote": "Sigstore provides keyless signing through ephemeral key signing where users verify artifacts using a transparency log for signature verification rather than keys."
+          }
+        ]
+      }
+    },
+    {
+      "name": "GitHub Actions Artifact Attestations",
+      "kind": "hosted",
+      "note": "Real production example of provenance moving from an opt-in extra to a default, always-on pipeline behaviour for public repositories -- evidence that the industry direction is toward attestation-by-default rather than attestation-on-request, which bears on whether Admit should be an optional post-hoc step or a mandatory stage.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "GitHub has been steadily tightening enforcement through 2025 and into 2026, and for public repositories, attestation generation is shifting from opt-in to default behavior.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-maturity-a-005",
+            "quote": "attestation generation is shifting from opt-in to default behavior"
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The provenance half of this card sits on real, adopted standards -- in-toto's Statement/predicate/subject structure, SLSA's build-provenance predicate, DSSE's signing envelope -- that this repo's own target table already names together (F-b3-12) and that industry is moving toward enforcing by default rather than on request (X-maturity-a-005). The real tradeoff is not which standard to adopt (this repo has already picked one triad) but what predicate an agent's admitted OUTPUT would use: every source found describes this stack's worked examples as software builds and packages, and this repo's own research explicitly checked and found no published predicate or schema for 'an agent/prompt/tool-routing promotion or release record' (X-refmodel-7-4-promote-007) -- so adopting in-toto/SLSA/DSSE here means authoring a new predicate type, not reusing an existing one. Separately, this repo's own current implementation (the JSONL evidence ledger) already satisfies the append-only and attributable-fields half of the contract but not the externally-verifiable half, which is exactly the gap Sigstore's keyless-signing-plus-transparency-log model exists to close.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "F-b3-12",
+        "quote": "in-toto · SLSA · DSSE | JSONL evidence records | Sigstore · any attestation store"
+      },
+      {
+        "id": "X-refmodel-7-4-promote-007",
+        "quote": "The in-toto Attestation Framework provides a specification for generating verifiable claims about any aspect of how a piece of software is produced."
+      },
+      {
+        "id": "X-maturity-a-005",
+        "quote": "attestation generation is shifting from opt-in to default behavior"
+      }
+    ]
+  },
+  "usage": {
+    "text": "No target fact defines a call signature for this card by name. Proposed, following the provenance contract's own shape (F-b4-05, F-b3-12): a caller submits one validated result (the Judge verdict from 5.1) plus the artifact it decided about; Admit's approval half returns an allow/deny (this repo's own cap-policy contract: 'a structured request in, a deterministic allow or deny plus the deciding rule out, before anything is spent' -- proposed reuse, not yet checked against this card) or routes to a human via cap-human-interaction's approval gate; on allow, Admit's provenance half writes one attestation binding the artifact to its code version, inputs and actor, and returns a reference to that attestation, never the attestation's private signing material.",
+    "origin": "proposed"
+  },
+  "gaps": [
+    {
+      "what": "This card's subtitle bundles 'Approve outputs' and 'Store provenance' -- a decision and a record -- which this repo's own architecture keeps as separate capabilities: cap-human-interaction and cap-policy own the decision; cap-provenance owns the record. Nothing found here justifies merging them onto one reference-model card, echoing the same pattern flagged on card 2.4.",
+      "why_it_matters": "A caller could read this card as one mechanism when it is at least two independently swappable ones -- an approval gate can change (human review today, a policy engine tomorrow) without touching how provenance is recorded, and vice versa.",
+      "research_query": "kb_index.py search \"cap-human-interaction cap-policy cap-provenance admit boundary approval before record\""
+    },
+    {
+      "what": "in-toto and SLSA's own published scope and worked examples are software builds and packages. This repo's own prior research explicitly searched for and did not find a predicate or schema for an agent/prompt/routing/promotion record (X-refmodel-7-4-promote-007).",
+      "why_it_matters": "Citing in-toto/SLSA/DSSE as 'the standard' for Admit is accurate for the envelope and signing mechanism but overstates coverage: the actual predicate content for 'what was admitted and why' would be this repo's own design, not an adopted schema, until a predicate type is authored and, ideally, registered.",
+      "research_query": "has any project defined and published an in-toto predicate type for an LLM/agent output review or promotion decision"
+    },
+    {
+      "what": "DSSE has no fetched (status: fetched) research record in this corpus as of this writing -- the sole record found, X-xc-provenance-chain-002, is status: search-only (a title and search-result snippet, no page body retrieved), unlike in-toto and SLSA's promotion research which include a fetched record (X-refmodel-7-4-promote-007).",
+      "why_it_matters": "This is a real, currently-standing evidence gap, not a hypothetical one: DSSE is cited on this card at the weakest evidence grade this repo's own research schema recognises, one step below the other two legs of the same standard triad.",
+      "research_query": "capture https://github.com/secure-systems-lab/dsse (or its README) directly and write a fetched research record"
+    },
+    {
+      "what": "This repo's own running evidence ledger (kb/ledger.jsonl) already resembles a provenance mechanism -- it is append-only, hash-chained, and each record carries a git_commit, an actor (agent field) and an inputs list -- but it is verified only by kb.py, a tool this repo wrote itself, not by an outside party.",
+      "why_it_matters": "F-b4-05's own bar for provenance is 'verifiable with a tool we did not write.' By that bar this repo's most Admit-like existing mechanism does not yet qualify as provenance at all, which is a sharper and more specific finding than simply marking the card planned.",
+      "research_query": "would running slsa-verifier or an in-toto verification tool against a DSSE-wrapped export of kb/ledger.jsonl records constitute meeting F-b4-05's bar, or does the ledger's own hash-chain format need to change first"
+    },
+    {
+      "what": "No sourced definition exists anywhere in this corpus for what the 'Approve' decision itself checks -- the criterion an output must meet to be admitted is undefined here; only how a decision would later be recorded (provenance) has a contract.",
+      "why_it_matters": "A card that specifies the record format for a decision but not the decision's own criterion cannot yet be implemented end to end; a caller would have to invent the approval logic from scratch.",
+      "research_query": "kb_index.py search \"cap-policy operation allow deny criterion output approval before spend\""
+    }
+  ]
+}

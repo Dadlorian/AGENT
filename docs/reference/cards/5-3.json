@@ -1,0 +1,181 @@
+{
+  "address": "5.3",
+  "card": "Complete / Return",
+  "area": "Assurance & Completion",
+  "status": "planned",
+  "definition": {
+    "text": "This is the step where an admitted result (5.2) crosses back out of the platform to whoever asked for it, and the run closes. No ratified open standard defines a general completion/result-delivery envelope: the nearest candidate found is draft-ratnawat-httpapi-async-problem-details-00, which reuses RFC 9457 Problem Details' envelope and adds job-outcome extension members -- 'the extension members are equally useful for communicating successful job outcomes (e.g., a COMPLETED status with timing information)' -- but the document's own page states plainly that 'This I-D is not endorsed by the IETF and has no formal standing in the IETF standards process,' and separately labels itself 'Expired Internet-Draft (individual), Expired & archived.' So Complete/Return is real, necessary work with no single governing standard behind it: this repo's own research instead found several protocol-specific precedents for the same underlying pattern -- reply through the channel the request specified.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-5-3-complete-006",
+        "quote": "the extension members are equally useful for communicating successful job outcomes (e.g., a COMPLETED status with timing information)."
+      },
+      {
+        "id": "X-refmodel-5-3-complete-008",
+        "quote": "This I-D is not endorsed by the IETF and has no formal standing in the IETF standards process."
+      }
+    ]
+  },
+  "standards": [
+    {
+      "id": "a2a-messaging",
+      "role": "Defines a concrete completion-delivery mechanism for agent-to-agent callers: a registered PushNotificationConfig (url, token, auth) the server POSTs to on terminal state change, after which the client re-fetches the full Task and its artifacts.",
+      "covers": "Scoped to agent-to-agent callers only, not a general cross-channel envelope for the other four entry doors (human, scheduled, internal event, external event) this card's reference model also names.",
+      "evidence": {
+        "text": "the client typically uses the GetTask RPC method with the taskId from the notification to retrieve the complete, updated Task object, including any new artifacts.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-5-3-complete-001",
+            "quote": "the client typically uses the GetTask RPC method with the taskId from the notification to retrieve the complete, updated Task object, including any new artifacts."
+          }
+        ]
+      }
+    },
+    {
+      "id": "cloudevents",
+      "role": "Standardizes the event envelope (id/source/type/time) a completion notification could carry, and its separate Subscriptions API names both push-style (manager-initiated) and pull-style (consumer-initiated) delivery modes.",
+      "covers": "Leaves acknowledgement and delivery-proof to the underlying transport's own QoS semantics rather than defining a delivery-proof contract at the CloudEvents layer -- 'CloudEvents gives a shared envelope, not a shared delivery-proof contract' is this repo's own reading of the finding.",
+      "evidence": {
+        "text": "Subscriptions with subscription-manager-initiated delivery (\"push\"-style) are configured on the subscription manager for delivering events through a communication channel that the subscription manager initiates when events are available for delivery on the subscription.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-5-3-complete-005",
+            "quote": "Subscriptions with subscription-manager-initiated delivery (\"push\"-style) are configured on the subscription manager for delivering events through a communication channel that the subscription manager initiates when events are available for delivery on the subscription."
+          }
+        ]
+      }
+    },
+    {
+      "id": "openapi-asyncapi",
+      "role": "AsyncAPI 3.0 formalizes the same same-channel-return idea at the message-broker layer: an operation declares a reply.channel, and a separate correlationId component (a runtime expression pointing at a field in the original request) matches the reply back to its request without the replier hard-coding either.",
+      "covers": "A schema-description language for what a channel and message look like, not a delivery-proof or acknowledgement contract -- it says how the reply is addressed and correlated, not how the requester proves it arrived.",
+      "evidence": {
+        "text": "reply:\n  channel:\n    $ref: '#/channels/pong'",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-5-3-complete-007",
+            "quote": "reply:\n  channel:\n    $ref: '#/channels/pong'"
+          }
+        ]
+      }
+    },
+    {
+      "id": "rfc-9457-problem-details",
+      "role": "The base envelope the nearest completion-record candidate (draft-ratnawat-httpapi-async-problem-details-00) extends: 'Problem Details for HTTP APIs' provides the envelope and the draft defines asynchronous-job-specific extension members on top of it.",
+      "covers": "RFC 9457 itself is ratified but scoped to error reporting; the extension that would make it fit a success/completion outcome is exactly the unratified, expired draft, not the base RFC.",
+      "evidence": {
+        "text": "\"Problem Details for HTTP APIs\" (RFC 9457) provides the envelope; this document defines extension members that fill it with asynchronous-job-specific context.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-5-3-complete-006",
+            "quote": "\"Problem Details for HTTP APIs\" (RFC 9457) provides the envelope; this document defines extension members that fill it with asynchronous-job-specific context."
+          }
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "A2A push notifications (reference protocol)",
+      "kind": "standard-implementation",
+      "note": "The concrete, spec-defined completion-delivery mechanism for the agent-to-agent door specifically: a registered webhook the server calls on terminal state, then a client pull for the full result. Not in use in this repo (no running agent-to-agent deployment exists here).",
+      "in_use_here": false,
+      "evidence": {
+        "text": "The A2A Server decides when to send a push notification, typically when a task reaches a significant state change (for example, terminal state, input-required, or auth-required).",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-5-3-complete-001",
+            "quote": "The A2A Server decides when to send a push notification, typically when a task reaches a significant state change (for example, terminal state, input-required, or auth-required)."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Webhook delivery infrastructure (e.g. Hookdeck)",
+      "kind": "hosted",
+      "note": "Real production category for the retry-until-acked mechanism that answers 'how do you prove a completion notification was delivered': treats a missing acknowledgement as ambiguous among four failure modes and retries with backoff rather than claiming exactly-once.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "When a webhook sender doesn't receive an acknowledgment, it cannot distinguish between four scenarios: The message was lost in transit The message was delivered, but the acknowledgment was lost The receiver crashed before processing The network is just slow",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-5-3-complete-003",
+            "quote": "The message was lost in transit"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Server-Sent Events (EventSource)",
+      "kind": "standard-implementation",
+      "note": "The one delivery mechanism among the four current-practice options (polling, webhooks, websockets, SSE) with a built-in reconnect-and-resume story, relevant when the entry door was a live human or browser session rather than a server-to-server caller.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Automatic reconnection. EventSource reconnects on its own after a network blip, and can resume via a Last-Event-ID header — you don't have to hand-write that logic.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-5-3-complete-004",
+            "quote": "EventSource reconnects on its own after a network blip, and can resume via a Last-Event-ID header"
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "Every mechanism found answers 'reply through the channel the request specified' for one protocol at a time -- Hohpe & Woolf's generic Return Address pattern ('The request message should contain a Return Address that indicates where to send the reply message'), A2A's PushNotificationConfig, and AsyncAPI's reply.channel plus correlationId component -- but none of them is a cross-protocol standard a five-door reference model could cite once. The real tradeoff among the four concrete delivery mechanisms (polling, webhooks, websockets, SSE) is forced by which door the original request came through, not chosen freely: webhooks are server-to-server only and cannot reach a browser caller directly, websockets have no built-in catch-up, polling trades latency (roughly half the poll interval) for working against any API, and SSE alone reconnects and resumes on its own. Delivery proof is a second, orthogonal axis: current practice treats a receiver-returned acknowledgement as the only proof, retries until it arrives, and pushes de-duplication onto the receiver, because 'Exactly-once delivery is a proven impossibility in distributed computing, not a feature any vendor can ship.'",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-5-3-complete-002",
+        "quote": "The request message should contain a Return Address that indicates where to send the reply message."
+      },
+      {
+        "id": "X-refmodel-5-3-complete-004",
+        "quote": "EventSource reconnects on its own after a network blip, and can resume via a Last-Event-ID header"
+      },
+      {
+        "id": "X-refmodel-5-3-complete-003",
+        "quote": "Exactly-once delivery is a proven impossibility in distributed computing, not a feature any vendor can ship."
+      }
+    ]
+  },
+  "usage": {
+    "text": "No target fact defines a call signature for this card by name. Proposed, following the Return Address pattern this repo found generalizes across every protocol-specific precedent: the original entry envelope (whichever of the five doors it arrived through) carries its own return address at intake time -- a webhook URL, a poll token, an SSE stream id, a queue reply-to, or an agent callback config -- and Complete/Return's only job is to read that address back off the envelope and deliver the admitted result (5.2) to it, retrying on a missing acknowledgement rather than assuming delivery. The correlation id that matches a reply to its original request (AsyncAPI's correlationId, A2A's taskId) travels alongside the address so a caller juggling many outstanding requests can tell which reply is which.",
+    "origin": "proposed"
+  },
+  "gaps": [
+    {
+      "what": "No ratified open standard for a general completion/result envelope exists. The nearest candidate, draft-ratnawat-httpapi-async-problem-details-00, is an expired, unendorsed individual IETF submission with no formal standing, confirmed in the document's own page text.",
+      "why_it_matters": "Any envelope this card specifies for cross-door completion delivery would be this repo's own design, not an adopted standard -- a materially different footing from cards like 1.5 (A2A) or 3.5 (MCP) that cite a governance-backed spec.",
+      "research_query": "has a successor draft to draft-ratnawat-httpapi-async-problem-details-00 been submitted, or has any other individual/WG draft addressed the same gap since 2026-03"
+    },
+    {
+      "what": "Every same-channel-return precedent found (EIP Return Address, A2A PushNotificationConfig, AsyncAPI reply.channel) is protocol-specific; none is a cross-protocol standard, and no evidence was found that this repo has reconciled the three into one door-agnostic 'return address' field on its own entry envelope.",
+      "why_it_matters": "Without that reconciliation, each of the five entry doors would need its own bespoke completion path, which is exactly the kind of per-producer coupling cap-work-intake's own single-envelope design was built to remove upstream.",
+      "research_query": "kb_index.py search \"cap-work-intake entry envelope return address field five doors\""
+    },
+    {
+      "what": "Delivery proof (an HTTP 200 acknowledgement, retried with backoff) and idempotent de-duplication on the receiving side are both current practice, but no record found here checks whether this repo's own cap-idempotency capability's lease mechanism is actually the right fit for de-duplicating a retried completion delivery specifically, as opposed to a retried inbound request.",
+      "why_it_matters": "Completion delivery is outbound (platform to caller) while cap-idempotency's stated scope is framed around inbound retries/redelivery; if the same key-and-lease mechanism does not transfer cleanly to an outbound direction, this card would need its own de-duplication story.",
+      "research_query": "does cap-idempotency's own contract cover outbound delivery retries, or only inbound request retries"
+    },
+    {
+      "what": "None of the delivery mechanisms found (webhooks, SSE, polling, websockets) has a built-in answer for a caller that is not just slow to acknowledge but genuinely gone (a human who closed their browser, a service that was decommissioned) -- current-practice sources describe retry-with-backoff, not a terminal give-up policy.",
+      "why_it_matters": "Without a stated give-up policy, a run that cannot complete delivery would retry indefinitely or need an undocumented cutoff, and 'close' (this card's own subtitle) has no defined meaning for a run whose result was produced but never collected.",
+      "research_query": "current practice for dead-letter or terminal-failure handling on webhook/completion delivery after N retries or T time"
+    },
+    {
+      "what": "This card's own subtitle joins two actions -- deliver to requester, and notify/close -- that the evidence gathered treats as one act (a single push or reply) rather than two sequential steps; no source distinguishes 'the caller received the result' from 'the run is recorded as closed.'",
+      "why_it_matters": "If closing the run is really a State/Ledger write (core-components' Ledger, 'append-only across runs; the deduplication authority') separate from the delivery act itself, conflating them on one card could hide a real ordering question: does the run close before, after, or independent of confirmed delivery?",
+      "research_query": "kb_index.py search \"core-components Ledger run closes delivery confirmed independent\""
+    }
+  ]
+}

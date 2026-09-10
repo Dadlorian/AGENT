@@ -1,0 +1,195 @@
+{
+  "address": "2.4",
+  "card": "Workflow & Dispatch",
+  "area": "Orchestration & Control Plane",
+  "status": "built",
+  "definition": {
+    "text": "This card's own subtitle bundles four concerns -- schedule, durable state, route, handoff -- that this repo's own target facts already keep as separate capability rows. Dispatch is defined narrowly: \"one unit of agent work executes and returns one result\" (F-b5-02). Durable execution and scheduling are each named as their own capability row with their own adapter and swap-candidate columns (F-b3-04, F-b3-15), and workflow composition is a fifth, separate mechanism -- a caller-authored document of operators -- that this repo's own compose-workflow skill treats as its own concern, not part of the dispatch contract.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "F-b5-02",
+        "quote": "one unit of agent work executes and returns one result"
+      },
+      {
+        "id": "F-b3-04",
+        "quote": "Temporal | Restate · DBOS · Inngest · a queue plus a state machine"
+      },
+      {
+        "id": "F-b3-15",
+        "quote": "RFC 5545 recurrence rules | Temporal schedules | cron · any RFC 5545 parser"
+      }
+    ]
+  },
+  "standards": [],
+  "tools": [
+    {
+      "name": "Temporal",
+      "kind": "open-source",
+      "note": "Named as \"today's adapter\" for both durable execution and scheduling in this repo's own target tables, but this repo's own current-state inventory records the server as not running: \"Data directory present; server not listening on 7233/8233... it is currently down.\" Named adapter and measured state contradict each other.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Data directory present; server not listening on `7233`/`8233`. Durable workflow orchestration and human-in-the-loop signals are designed around it and it is currently down",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-a6-02",
+            "quote": "Data directory present; server not listening on `7233`/`8233`. Durable workflow orchestration and human-in-the-loop signals are designed around it and it is currently down"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Restate",
+      "kind": "open-source",
+      "note": "Named swap candidate for durable execution in this repo's own table (F-b3-04); architecturally lighter than Temporal -- no dedicated cluster.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Temporal | Restate · DBOS · Inngest · a queue plus a state machine",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-b3-04",
+            "quote": "Temporal | Restate · DBOS · Inngest · a queue plus a state machine"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DBOS",
+      "kind": "open-source",
+      "note": "Named swap candidate (F-b3-04); genuinely different architecture from Temporal, not a clone of it -- it reuses an existing Postgres database as the durability layer instead of running a dedicated server.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "DBOS reuses Postgres as the durability layer for workflows, while Temporal runs a dedicated cluster. Restate focuses on providing a lightweight, cloud-native engine for resilient process execution, offering APIs for workflow orchestration and state tracking.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-cap-durable-execution-006",
+            "quote": "DBOS reuses Postgres as the durability layer for workflows, while Temporal runs a dedicated cluster."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Inngest",
+      "kind": "hosted",
+      "note": "Named swap candidate (F-b3-04); event-driven model that hides queue/worker machinery from the caller entirely, distinct from Temporal's explicit worker/task-queue model.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "In Inngest, everything is triggered by an event. This approach fundamentally removes the need for developers to manage or even think about traditional queues or worker processes.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-entry-composition-028",
+            "quote": "This approach fundamentally removes the need for developers to manage or even think about traditional queues or worker processes."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Orkes Conductor",
+      "kind": "commercial",
+      "note": "A real production composition-operator implementation, not named in this repo's own tables; its operator vocabulary (Switch, Fork, Do While, Wait, ...) is wider than a fixed set of six, which bears on whether a closed six-operator set is representative of the field or this repo's own choice.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Operators are built-in primitives in Conductor that allow you to define the workflow's control flow, similar to programming constructs such as for loops and if-else selections.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-compose-operators-001",
+            "quote": "Operators are built-in primitives in Conductor that allow you to define the workflow's control flow, similar to programming constructs such as for loops and if-else selections."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Microsoft Agent Framework (Magentic orchestration)",
+      "kind": "open-source",
+      "note": "A production multi-agent orchestrator whose control flow is decided dynamically at runtime by a manager, not selected in advance from a fixed, author-declared set of operators -- direct counter-evidence to a closed operator set as the industry norm.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "a dedicated Magentic manager coordinates a team of specialized agents, selecting which agent should act next based on the evolving context, task progress, and agent capabilities.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-2-3-planning-003",
+            "quote": "a dedicated Magentic manager coordinates a team of specialized agents, selecting which agent should act next based on the evolving context, task progress, and agent capabilities."
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "What a durable-execution/workflow engine actually provides is a journal of every step so a crash can resume without redoing work; this is a class of engine (Temporal, Restate, DBOS, Inngest, plus AWS Step Functions, LangGraph and Cloudflare Workflows named in the same source), and Temporal is one option in it with a materially different architecture from at least one alternative, not the representative design: \"DBOS reuses Postgres as the durability layer for workflows, while Temporal runs a dedicated cluster.\" Separately, whether a closed set of composition operators is how the field actually works is not settled by the evidence gathered here: Orkes Conductor exposes a wider, open-ended operator vocabulary than six, and Microsoft's Magentic orchestration and handoff-pattern orchestration both select the next step dynamically at runtime rather than from an author-fixed graph -- production multi-agent orchestration includes control flow this repo's own closed-set design (marked proposed in compose-workflow's own skill.json) does not represent.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-cap-durable-execution-001",
+        "quote": "Durable execution platforms include Temporal, Restate, DBOS, and other tools like AWS Step Functions, LangGraph, and Cloudflare Workflows."
+      },
+      {
+        "id": "X-cap-durable-execution-006",
+        "quote": "DBOS reuses Postgres as the durability layer for workflows, while Temporal runs a dedicated cluster."
+      },
+      {
+        "id": "X-compose-operators-001",
+        "quote": "Operators are built-in primitives in Conductor that allow you to define the workflow's control flow, similar to programming constructs such as for loops and if-else selections."
+      },
+      {
+        "id": "X-refmodel-2-3-planning-003",
+        "quote": "a dedicated Magentic manager coordinates a team of specialized agents, selecting which agent should act next based on the evolving context, task progress, and agent capabilities."
+      },
+      {
+        "id": "X-compose-agent-005",
+        "quote": "The handoff orchestration pattern enables dynamic delegation of tasks between specialized agents."
+      }
+    ]
+  },
+  "usage": {
+    "text": "This card conflates two different calls this repo otherwise keeps apart. Dispatch's call is deliberately thin: a caller submits one unit of work and gets back one result, and the seam's contract, not an engine's native API, \"must specify: the request shape, the result shape, cancellation semantics, timeout and budget enforcement, partial-result handling, and what a failure returns.\" Composing steps ahead of that call is this repo's own proposed design, not sourced to a PASS/TARGET fact: a caller writes a document whose step is one of six operator objects -- sequence, parallel, bounded loop, approval gate, agent call, judge -- each nesting because a step is itself a document, per compose-workflow's own schema.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "F-b5-03",
+        "quote": "must specify: the request shape, the result shape, cancellation semantics, timeout and budget enforcement, partial-result handling, and what a failure returns"
+      },
+      {
+        "id": "F-b5-02",
+        "quote": "one unit of agent work executes and returns one result"
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "This card's subtitle names four concerns -- schedule, durable state, route (dispatch), handoff (workflow composition) -- that this repo's own architecture already keeps as four separate skills: compose-workflow, cap-scheduling, cap-durable-execution, seam-dispatch. Nothing in the evidence gathered here justifies re-merging them onto one reference-model card.",
+      "why_it_matters": "A card that bundles four separately-contracted capabilities invites a caller to think one adapter (Temporal) satisfies all four, when this repo's own design keeps them independently swappable.",
+      "research_query": "kb_index.py search \"compose-workflow cap-scheduling cap-durable-execution seam-dispatch boundary\""
+    },
+    {
+      "what": "This card names a specific vendor (Temporal) in its subtitle, while this repo's own stated rule elsewhere (cap-model-access) is that a caller requests a class, never a vendor. The reference model gives this card no standard badge, so there is no capability-class vocabulary standing in for the vendor name here the way there is for, e.g., isolation (OCI Runtime Spec).",
+      "why_it_matters": "Naming a product in an architecture document that otherwise insists on vendor-neutral class names is inconsistent with this repo's own design rule, and it papers over that durable execution and dispatch each have a real standard-free capability-class definition (F-b3-04, F-b5-02) that does not require naming Temporal at all.",
+      "research_query": "does any other 'built' card in the reference model name a specific vendor in its subtitle rather than a capability class"
+    },
+    {
+      "what": "This repo's own current-state inventory (PASS.md A6, \"Defined but not running\") records Temporal's data directory as present but its server not listening, with durable workflow orchestration and human-in-the-loop signals \"designed around it\" while it is down. This card is nonetheless marked status: built.",
+      "why_it_matters": "A 'built' status resting on a named adapter that is itself recorded elsewhere in this repo as not running is an unevidenced claim for at least the durable-execution and scheduling portions of this card, mirroring the pattern flagged on other 'built' cards where the live path is claimed, not measured.",
+      "research_query": "is Temporal listening on 7233/8233 in the current environment, and has any dispatch or durable-execution harness's live adapter run against it"
+    },
+    {
+      "what": "Scheduling may not belong on this card at all. cap-scheduling's own load trigger explicitly warns against \"an orchestrator would own recurrence,\" RFC 5545 recurrence rules is scheduling's own named standard (F-b3-15) and does not appear on this card, and card 1.2 (a Scheduled entry door, per this card's own area map) already exists as a separate address for firing recurring work.",
+      "why_it_matters": "If recurrence is computed once, as a pure function of a rule, time zone and window, and enters through the ordinary envelope like any other trigger, folding \"schedule\" into a workflow-engine card re-introduces the coupling cap-scheduling was written to remove.",
+      "research_query": "kb_index.py search \"cap-scheduling orchestrator owns recurrence RFC 5545\""
+    },
+    {
+      "what": "Whether dispatch is genuinely separable from the workflow engine in practice is not settled by the evidence gathered here. Even inside Temporal's own architecture, an activity (one unit of work) and the workflow that calls it run on different workers, connected only through the engine's own trace-propagation and task-queue machinery -- Temporal already contains an internal dispatch layer rather than treating it as an externally pluggable seam.",
+      "why_it_matters": "If the named adapter for this card does not itself treat dispatch as swappable independent of the workflow engine, this repo's seam-dispatch boundary may be a bucketing choice that a real adapter swap would not respect, and no evidence was found either way from a working integration.",
+      "research_query": "has any harness call.py exercised seam-dispatch against Temporal's own activity/task-queue model rather than a dry-run stand-in"
+    },
+    {
+      "what": "No open standard defines the request/result envelope a dispatch call should use. The one governance-backed agent-to-agent standard found (A2A)'s Task object has exactly six fields (id, contextId, status, artifacts, history, metadata) and by explicit design excludes a plan or decomposition field -- \"agents collaborate based on declared capabilities and exchanged information, without needing to share their internal thoughts, plans, or tool implementations\" -- consistent with this card's own dispatch definition of one opaque, typed result, but that is a convergence this repo has not itself checked its seam-dispatch contract against.",
+      "why_it_matters": "If seam-dispatch's request/result shape has never been compared field-by-field against A2A's Task object, a claim that they agree (or a claim that A2A is irrelevant) is unevidenced either way.",
+      "research_query": "does seam-dispatch's request/result schema map onto A2A's Task object fields, or diverge, and where"
+    }
+  ]
+}

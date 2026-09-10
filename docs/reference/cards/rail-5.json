@@ -1,0 +1,100 @@
+{
+  "address": "rail.5",
+  "card": "Data Privacy",
+  "area": "Cross-Cutting Concerns",
+  "status": "planned",
+  "definition": {
+    "text": "Data Privacy, as a cross-cutting concern, is keeping personally identifying content out of -- or removably out of -- every surface a run touches across the whole journey, not one redaction step. This repo's own current design already contains the sharpest version of the problem: an append-only, hash-chained ledger (F-b5-05) that must also support a data subject's right to erasure. This repo's own target architecture already proposes the shape that reconciles the two, named as its own state: a \"redaction tombstone - a body removed while its digest and every proof over it still verify\" -- i.e. erasing content while every existing proof over its digest keeps verifying, rather than deleting or mutating a chained row.",
+    "origin": "sourced",
+    "evidence": [
+      {"id": "F-b5-05", "quote": "Today a JSONL file with a hash chain."},
+      {"id": "A-state-redaction-tombstone-a-body-removed-while-its-digest-and-every-proof-over-it-still-verify", "quote": "redaction tombstone - a body removed while its digest and every proof over it still verify"}
+    ]
+  },
+  "standards": [],
+  "tools": [
+    {
+      "name": "Philter",
+      "kind": "open-source",
+      "note": "self-hosted redaction API/proxy using purpose-built NLP plus pattern matching, placed as a hard-dependency redaction stage in front of every outbound model call. Not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Detection is not another LLM. Philter detects PII and PHI with purpose-built NLP models plus pattern matching",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-rail-5-privacy-004", "quote": "Detection is not another LLM. Philter detects PII and PHI with purpose-built NLP models plus pattern matching"}
+        ]
+      }
+    },
+    {
+      "name": "Microsoft Presidio",
+      "kind": "open-source",
+      "note": "the standard-bearer batch entity-detection tool, but current guidance says agent-trace redaction needs the live request path, not a standalone batch scrubber, making Presidio's own shape the wrong fit for this concern. Not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Unlike Microsoft Presidio-style entity detection used as a standalone batch scrubber, production LLM redaction must sit in the live request path.",
+        "origin": "sourced",
+        "sources": ["X-refmodel-rail-5-privacy-005"],
+        "quote": "Unlike Microsoft Presidio-style entity detection used as a standalone batch scrubber, production LLM redaction must sit in the live request path."
+      }
+    },
+    {
+      "name": "FastGPT",
+      "kind": "open-source",
+      "note": "names per-data-class retention TTLs by environment variable (e.g. model-call traces kept six hours by default), though its own vendor disclosure admits automatic cleanup depends on background tasks that can fail. Not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "FastGPT, an open-source AI application platform for organizations, has consolidated in its public documentation how four classes of data are retained and removed: conversation records, knowledge base files, model-call traces and audit logs.",
+        "origin": "sourced",
+        "sources": ["X-refmodel-rail-5-privacy-006"],
+        "quote": "FastGPT, an open-source AI application platform for organizations, has consolidated in its public documentation how four classes of data are retained and removed: conversation records, knowledge base files, model-call traces and audit logs."
+      }
+    },
+    {
+      "name": "VeritasChain Protocol",
+      "kind": "unknown",
+      "note": "the closest published candidate to a redaction/erasure event schema (it elsewhere advertises an ERASURE event type), but on direct fetch it states its own spec is not an adopted standard, only a vendor proposal.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "This specification is non-normative unless formally adopted by a recognized standards body or regulatory authority.",
+        "origin": "sourced",
+        "sources": ["X-refmodel-rail-5-privacy-007"],
+        "quote": "This specification is non-normative unless formally adopted by a recognized standards body or regulatory authority."
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The real tension in this window is architectural, not procedural: an append-only, hash-chained provenance ledger is built to make rows undeletable and unmutable, while a data-subject erasure right requires removing content on demand -- \"Public permissionless ledgers are append-only by design, yet are increasingly asked to host data subject to statutory erasure obligations (GDPR Art. 17, EDPB Guidelines 02/2025)\" (X-refmodel-rail-5-privacy-001). The published resolution is cryptographic erasure, not deletion: encrypt each subject's data under its own key, hash the ciphertext rather than the plaintext for chain integrity, and destroy the key to erase -- \"Hash chain integrity is independent of plaintext recoverability\" (X-refmodel-rail-5-privacy-008) -- a mechanism EDPB guidance itself treats as legally sufficient once the key is destroyed: \"Where personal data has been encrypted using state of the art encryption technology and the encryption key has been securely destroyed, the encrypted data may be considered to have been erased, provided that decryption is not computationally feasible\" (X-refmodel-rail-5-privacy-008). The closest published analogue to this repo's own agent-trace ledger applies the identical mechanism at the epoch level: \"Hash chaining and Merkle batching provide tamper evidence and compact inclusion proofs,\" with erasure achieved by destroying epoch-key material rather than deleting log rows (X-refmodel-rail-5-privacy-003, arXiv:2609.01931) -- though that paper is explicit the mechanism is operational, not itself a legal-sufficiency finding. No adopted open standard governs the resulting erasure record: the one candidate schema, VeritasChain, 'is non-normative unless formally adopted by a recognized standards body or regulatory authority' (X-refmodel-rail-5-privacy-007), and IETF's neighboring receipt work (Vaara Receipt, ACTA signed decision receipts) is scoped to decision receipts generally, not to redaction or erasure specifically (X-refmodel-rail-5-privacy-010).",
+    "origin": "sourced",
+    "sources": ["X-refmodel-rail-5-privacy-001", "X-refmodel-rail-5-privacy-003", "X-refmodel-rail-5-privacy-007", "X-refmodel-rail-5-privacy-008", "X-refmodel-rail-5-privacy-010"],
+    "quote": "Hash chaining and Merkle batching provide tamper evidence and compact inclusion proofs."
+  },
+  "usage": {
+    "text": "Because this spans the whole journey rather than one call, the concern is applied at three separate places, not once at intake: redaction sits in the live request path in front of every outbound model call rather than as a batch job afterward -- \"production LLM redaction must sit in the live request path\" (X-refmodel-rail-5-privacy-005); retention is enforced per data class with its own window rather than one blanket period, as FastGPT's own documentation names \"conversation records, knowledge base files, model-call traces and audit logs\" as four separately-retained classes (X-refmodel-rail-5-privacy-006); and erasure, when it reaches this repo's own hash-chained ledger, removes a body while leaving its digest and every proof over it verifying (A-state-redaction-tombstone-a-body-removed-while-its-digest-and-every-proof-over-it-still-verify) rather than deleting or editing a chained row -- a proposed design this repo has not yet built, since that same architecture entity records its own home state as absent: retention is named as something the state seam must specify and is not specified.",
+    "origin": "sourced",
+    "sources": ["X-refmodel-rail-5-privacy-005", "X-refmodel-rail-5-privacy-006", "A-state-redaction-tombstone-a-body-removed-while-its-digest-and-every-proof-over-it-still-verify", "F-b5-05"],
+    "quote": "production LLM redaction must sit in the live request path."
+  },
+  "gaps": [
+    {
+      "what": "No adopted open standard exists for a verifiable redaction/erasure record. VeritasChain, the one candidate industry schema found, calls itself non-normative unless adopted by a standards body; IETF's neighboring autonomous-decision-receipt drafts (Vaara Receipt, x402, ACTA) are not scoped to redaction or erasure. The standards array on this card is empty, and that is the honest answer, not an omission.",
+      "why_it_matters": "Two implementations of 'verifiable erasure' built today would not be comparable or interoperable; the mechanism (crypto-shredding) is converging in research, but the record format that proves it happened is not.",
+      "research_query": "has any standards body picked up VeritasChain's ERASURE event type, or a competing verifiable-erasure schema, since this research pass"
+    },
+    {
+      "what": "This repo's own redaction-tombstone design (A-state-redaction-tombstone-...) is marked status: sourced -- the concept is grounded in F-b5-05 -- but its home_today field states plainly that it is absent: retention is named as something the state seam must specify and is not specified. Cryptographic erasure over this repo's own hash chain is a named architecture entity only -- no harness, adapter or example implements it.",
+      "why_it_matters": "The corroborating academic mechanism (arXiv:2609.01931's epoch-key destruction) shows the idea is implementable, but this repo has not measured it; a claim that this repo already reconciles ledger integrity with erasure would be unevidenced.",
+      "research_query": "kb_index.py search \"cap-state-persistence redaction tombstone build epoch key destruction\""
+    },
+    {
+      "what": "The EDPB legal-sufficiency statement for crypto-shredding (record 008) was published 2026-01-18, before this research pass's own 2026-03+ recency preference, and reaches this corpus via a vendor blog restating the guideline rather than a direct fetch of EDPB Guidelines 02/2025 itself.",
+      "why_it_matters": "The legal basis this card leans on for 'crypto-shredding counts as erasure' is one step removed from the regulator's own text and is dated earlier than this pass otherwise prefers; treat the attribution as flagged, not as a fetched primary source.",
+      "research_query": "fetch EDPB Guidelines 02/2025 directly and confirm the crypto-shredding-as-erasure language verbatim"
+    },
+    {
+      "what": "Record X-refmodel-rail-5-privacy-009, the only source claiming VeritasChain shared its ERASURE event type with the W3C Credentials Community Group, is status: blocked (HTTP 403 Forbidden) -- the claim rests on a search-result snippet only, never a page read.",
+      "why_it_matters": "Whether any standards body has even informally discussed a redaction/erasure event type is unconfirmed from primary text, which weakens (without refuting) the 'no adopted standard exists' finding above -- it remains the best-supported reading, but on a partial evidence base.",
+      "research_query": "can the VeritasChain W3C Credentials Community Group press release be fetched from a different source or mirror"
+    }
+  ]
+}

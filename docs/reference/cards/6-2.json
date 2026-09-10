@@ -1,0 +1,146 @@
+{
+  "address": "6.2",
+  "card": "Evaluation Data",
+  "area": "Observe",
+  "status": "planned",
+  "definition": {
+    "text": "Evaluation Data is the record an evaluation produces -- scores, test results, and human feedback -- not the gate that consumes it (contrast card 7.3 Evaluate (Blind), a distinct card in this reference model). The evidence gathered here names four scored dimensions: \"AI agent evaluation measures the quality of autonomous, multi-step LLM systems across four dimensions: trajectory (the path of steps), tool use (correct tool selection and arguments), task completion (whether the user's goal was met), and multi-turn quality (whether performance holds across a conversation).\" A separate, sourced convention treats the produced verdict the same way -- as something to carry, not something to perform: \"Evaluation is represented—but not performed—by OpenTelemetry, with gen_ai.evaluation.result providing a standard carrier for evaluator scores and explanations.\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-cap-evaluation-003",
+        "quote": "AI agent evaluation measures the quality of autonomous, multi-step LLM systems across four dimensions: trajectory (the path of steps), tool use (correct tool selection and arguments), task completion (whether the user's goal was met), and multi-turn quality (whether performance holds across a conversation)."
+      },
+      {
+        "id": "X-end-to-end-006",
+        "quote": "Evaluation is represented—but not performed—by OpenTelemetry, with gen_ai.evaluation.result providing a standard carrier for evaluator scores and explanations."
+      }
+    ]
+  },
+  "standards": [
+    {
+      "id": "genai-semantic-conventions",
+      "role": "defines the attribute a produced evaluation verdict travels on -- gen_ai.evaluation.result -- so a score is comparable across collectors regardless of which framework produced it.",
+      "covers": "does not perform the evaluation, define a rubric, or decide pass/fail -- the same source that names the carrier says this directly: \"Evaluation is represented—but not performed—by OpenTelemetry.\"",
+      "evidence": {
+        "text": "This is the standard cap-evaluation's own skill.json names for the same carrier, cited here to its underlying source.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-end-to-end-006",
+            "quote": "Evaluation is represented—but not performed—by OpenTelemetry, with gen_ai.evaluation.result providing a standard carrier for evaluator scores and explanations."
+          }
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "Langfuse",
+      "kind": "open-source",
+      "note": "This repo actually runs Langfuse (observe-langfuse-web-1, observe-langfuse-worker-1, observe-postgres-1, per PASS.md A1) and Langfuse ships its own evals/scoring feature alongside tracing -- but PASS.md's own container inventory documents only trace ingestion and async trace processing, never evals; nothing gathered here confirms the evals half of Langfuse is exercised in this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Cited for what Langfuse the platform provides; this repo's own running use of it is documented for tracing only (see gaps).",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-cap-telemetry-003",
+            "quote": "Langfuse is an open source AI engineering platform providing LLM evals, observability, metrics, prompt management, playground, and datasets."
+          }
+        ]
+      }
+    },
+    {
+      "name": "DeepEval",
+      "kind": "open-source",
+      "note": "A named evaluation-data framework distinct from a tracing platform: pytest-style test cases, reusable metrics and thresholds, run in CI, producing exactly the kind of stored test result this card names.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Not part of this repo's own stack; cited as a real implementation of the data shape this card describes.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-cap-evaluation-001",
+            "quote": "It works like Pytest for LLM applications, with test cases, reusable metrics, assertions, thresholds, and a runner designed for local development and CI/CD."
+          }
+        ]
+      }
+    },
+    {
+      "name": "MCPEval",
+      "kind": "open-source",
+      "note": "A research implementation scoring agent behaviour specifically over MCP tool-use patterns and external service calls, a narrower and more recent entrant than DeepEval.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Not part of this repo's own stack; cited to show the tool landscape is not limited to one shape of framework.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-cap-evaluation-008",
+            "quote": "MCPEval provides automatic deep evaluation for AI agent models using the Model Context Protocol (MCP) interface, allowing evaluation of agent behavior across standard tool-use patterns and external service calls."
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The real tradeoff inside 'evaluation data' is cost and variance versus coverage, and it falls on the boundary between automated and human-produced scores: \"LLM-as-judge is fine for offline scoring on a held-out sample, where cost and variance are bounded and you can ensemble or human-review the edge cases. However, each judgment is a full model call, so it is too expensive to run on every production turn.\" That same held-out-sample practice is also how a regression is caught at all: \"Regression testing catches performance degradation when prompts, models, or integrations change before production deployment.\" Both quotes describe evaluation output as something compared against a prior baseline or a human check, not a number computed once and discarded -- which is what makes it data rather than a one-time verdict.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-cap-evaluation-007",
+        "quote": "LLM-as-judge is fine for offline scoring on a held-out sample, where cost and variance are bounded and you can ensemble or human-review the edge cases. However, each judgment is a full model call, so it is too expensive to run on every production turn."
+      },
+      {
+        "id": "X-end-to-end-040",
+        "quote": "Regression testing catches performance degradation when prompts, models, or integrations change before production deployment."
+      }
+    ]
+  },
+  "usage": {
+    "text": "The shape of a written evaluation record is a scored trajectory compared against a stored baseline, not a bare pass/fail: \"Regression testing catches performance degradation when prompts, models, or integrations change before production deployment.\" The score itself carries the same four dimensions this card's own definition names -- trajectory, tool use, task completion, multi-turn quality -- and a held-out human or LLM-judge pass over edge cases is a second, separate write onto the same record type, not a different data shape: \"you can ensemble or human-review the edge cases.\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-end-to-end-040",
+        "quote": "Regression testing catches performance degradation when prompts, models, or integrations change before production deployment."
+      },
+      {
+        "id": "X-cap-evaluation-003",
+        "quote": "trajectory (the path of steps), tool use (correct tool selection and arguments), task completion (whether the user's goal was met), and multi-turn quality (whether performance holds across a conversation)"
+      },
+      {
+        "id": "X-cap-evaluation-007",
+        "quote": "you can ensemble or human-review the edge cases"
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "This card (6.2 Evaluation Data, in Observe) and card 7.3 Evaluate (Blind) (in Self-Improvement) are not cleanly separated by the evidence gathered here. 7.3's own subtitle ('Hidden test sets - Prevent gaming') names a specific practice -- keeping part of the case set unseen by whoever tunes a candidate -- documented in real competitions: a hidden holdout set of games released only after a competition window closes. This card, by contrast, is the general data plane: whatever scores, test results and human feedback an evaluation produces. Nothing in the evidence gathered here states whether a 7.3 hidden-set verdict is stored as an ordinary 6.2 record, or is deliberately withheld from the general data store so the hidden set itself never leaks back to whoever is being evaluated.",
+      "why_it_matters": "If the two cards are not separated by a stated rule, a caller cannot tell whether writing every evaluation verdict to one common data store (this card) would itself defeat 7.3's own anti-gaming purpose by exposing the hidden set's answers through the data plane meant to record them.",
+      "research_query": "does compose-improvement-loop's own schema, or cap-evaluation's own operations, say whether a hidden-set verdict is excluded from the general evaluation-data store"
+    },
+    {
+      "what": "This exact card's status was corrected during extraction from this reference model's own source data: docs/reference/reference-model.json's own corrections list records 'Evaluation Data' as rendered 'built' by a defect and manually corrected to 'planned', with the stated reason 'source passed phase 2 into the boolean si slot, so the phase never applied'. This is a repo-internal extraction-tooling note, not a KB research or fact record, and is recorded here for that reason rather than as a sourced claim above.",
+      "why_it_matters": "A caller trusting this reference model's status column should know at least one card's status came from a caught rendering bug rather than a direct read of PASS.md/TARGET.md, which is worth checking on other cards too.",
+      "research_query": "were 'Analyze', 'Complete / Return', 'Experiment' and 'Validation' -- the other four cards in the same corrections list -- given the same scrutiny this card received"
+    },
+    {
+      "what": "Langfuse is the one telemetry platform this repo actually runs (observe-langfuse-web-1, -worker-1, -postgres-1), and Langfuse's own product description includes an evals feature alongside tracing, but PASS.md's own container inventory documents only 'Trace UI and ingestion API' and 'Async trace processing' for it -- nothing gathered here confirms this repo exercises Langfuse's evals/scoring surface at all.",
+      "why_it_matters": "If Langfuse's evals feature is unused, this card has no running adapter at all, consistent with its 'planned' status, but also means the nearest available tool for evaluation data sits mostly idle in this repo today.",
+      "research_query": "does this repo's own Langfuse instance have any evaluation, score or annotation records in it, or only trace spans"
+    },
+    {
+      "what": "'Human feedback' is one of two things this card's own subtitle names, but only one sourced sentence gathered here touches it at all -- 'you can ensemble or human-review the edge cases' -- and it describes human review as an adjunct to LLM-as-judge scoring, not a separate capture mechanism (a rating, an annotation queue, a thumbs up/down). No sourced evidence distinguishes this from cap-human-interaction's own approval/steering contract, which already owns a person entering a run and answering on a correlation id.",
+      "why_it_matters": "If 'human feedback' as evaluation data and cap-human-interaction's own approval/answer mechanism are the same underlying event captured twice under two different card names, this card's subtitle may be claiming a concept that already has an owner elsewhere in the reference model.",
+      "research_query": "does cap-human-interaction's own event stream ever get written into an evaluation case set or score record, or are the two kept structurally separate"
+    },
+    {
+      "what": "The only standard on this card governs the wire carrier for an already-decided verdict (gen_ai.evaluation.result). No standard covers the rubric definition, scoring thresholds, or case-set versioning scheme itself -- those are entirely this repo's own or a vendor framework's design, with no cited external specification.",
+      "why_it_matters": "A card whose only standard covers how a result is transmitted, not how it is produced, means the actual evaluation methodology (what counts as a passing score) is unstandardized and framework-specific, which is a different and larger gap than a missing carrier would be.",
+      "research_query": "is there a published, framework-neutral rubric or scoring-threshold standard for agent evaluation as of 2027, beyond the OTel result carrier"
+    }
+  ]
+}

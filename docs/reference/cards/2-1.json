@@ -1,0 +1,147 @@
+{
+  "address": "2.1",
+  "card": "Intake",
+  "area": "Orchestration & Control Plane",
+  "status": "built",
+  "definition": {
+    "text": "Intake is the boundary where whatever produced a job -- a person, an alert, a clock, or another agent -- is turned into one canonical envelope before anything downstream sees it, so the core agent sees the same shape no matter which door the job entered. This repo's own target architecture states the property directly: \"Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent. All four enter through the same shape.\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "T-t6-02",
+        "quote": "Four entries cover nearly every situation: a human, an event, a schedule (time), and an external system or agent. All four enter through the same shape."
+      }
+    ]
+  },
+  "standards": [
+    {
+      "id": "cloudevents",
+      "role": "governs the canonical envelope's transport-identity attributes shared by the human, event, schedule and CLI/HTTP doors -- type, source, subject and time -- giving intake one uniform identity regardless of which of those producers a job arrived through.",
+      "covers": "does not cover the external-agent door's task lifecycle (A2A's job, not CloudEvents'), and does not name or require the fields this repo's own design layers on top of it -- actor with delegation chain, budget ceiling, idempotency key -- which are this platform's own proposed additions, not part of the published standard's own attribute set.",
+      "evidence": {
+        "text": "The standard CloudEvents attributes (type, source, subject, time) provide essential metadata about the event itself, independent of the payload, which is invaluable for routing, filtering, auditing, and debugging event streams.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-cap-work-intake-003",
+            "quote": "The standard CloudEvents attributes (type, source, subject, time) provide essential metadata about the event itself, independent of the payload, which is invaluable for routing, filtering, auditing, and debugging event streams."
+          }
+        ]
+      }
+    },
+    {
+      "id": "a2a-messaging",
+      "role": "governs the external-agent door only: an explicit task lifecycle with named terminal states for a unit of work that outlives one request, which the other three producers do not need.",
+      "covers": "does not cover the human, event or schedule doors' envelope shape (CloudEvents' job), and this repo's own current-state row lists only CLI, git event, HTTP and schedule as the adapters running today -- not an agent-message producer -- so this standard governs a door this repo names in its target table but has not built as a live adapter (its A2A-shaped mapper exists only as the harness's 'second', proof-of-swap execution model).",
+      "evidence": {
+        "text": "Tasks progress through a defined lifecycle including submitted, working, input-required, completed, and failed states. Tasks reach terminal states including TASK_STATE_COMPLETED, TASK_STATE_FAILED, TASK_STATE_CANCELED, and TASK_STATE_REJECTED.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-litmus-b-003",
+            "quote": "Tasks progress through a defined lifecycle including submitted, working, input-required, completed, and failed states. Tasks reach terminal states including TASK_STATE_COMPLETED, TASK_STATE_FAILED, TASK_STATE_CANCELED, and TASK_STATE_REJECTED."
+          }
+        ]
+      }
+    },
+    {
+      "id": "json-schema-2020-12",
+      "role": "governs whether an instance document -- including a normalized envelope, wherever one is declared as a schema resource -- conforms to a declared dialect, reporting every violation of shape in a single pass rather than stopping at the first.",
+      "covers": "does not decide the envelope's shape (CloudEvents' and this repo's own design do that) and does not perform the 'enrich' step this card's own sub-line names: no research record or operation on file for either cap-work-intake or cap-document-validation describes what enrichment adds to a request or how it is computed, only that it is validated.",
+      "evidence": {
+        "text": "Validation output includes evaluation path, schema location, instance location, and specific errors with descriptions. Error reports list failures using RFC 6901 JSON Pointer notation in the path field, allowing you to drill straight to the offending node in nested data. All errors are reported in a single pass instead of stopping at the first failure.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-cap-document-validation-005",
+            "quote": "All errors are reported in a single pass instead of stopping at the first failure."
+          }
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "This repo's own stdlib producer mappers (adapters/dryrun.py, adapters/live.py)",
+      "kind": "unknown",
+      "note": "no CloudEvents SDK, broker or A2A library is imported; each of the four producers this repo actually runs today is a hand-written mapper into the envelope.",
+      "in_use_here": true,
+      "evidence": {
+        "text": "| **Work intake** | A2A messaging · CloudEvents | CLI, git event, HTTP, schedule | any conformant producer |",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-b3-08",
+            "quote": "CLI, git event, HTTP, schedule"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Knative Eventing",
+      "kind": "open-source",
+      "note": "a CloudEvents-conformant event broker (source/trigger/sink over HTTP); this repo does not run a broker -- its live adapter POSTs to one operator-supplied URL instead.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Knative Eventing uses standard HTTP POST requests to send and receive events between event producers and sinks. These events conform to the CloudEvents specifications.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-entry-composition-007",
+            "quote": "Knative Eventing uses standard HTTP POST requests to send and receive events between event producers and sinks. These events conform to the CloudEvents specifications."
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The real tradeoff is not between competing envelope formats for the same job, but between a settled and a fast-moving standard governing two different doors of one intake boundary. CloudEvents graduated in the CNCF in January 2024 and its current v1.0.2 revision is unchanged and backward-compatible, so the event/schedule/CLI/HTTP doors have a genuinely stable envelope to normalize into. The external-agent door's standard is still moving -- A2A reached v1.0 only in March 2026 and added an extension mechanism in v1.0.1 two months later -- and the alternative to adopting either is worse: \"Custom HTTP endpoints for agent communication in 2026 are creating technical debt.\" Both protocols now sit under the same Linux Foundation Agentic AI Foundation, which this repo's own litmus evidence calls institutional consolidation, not technical convergence into one wire format.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-litmus-b-002",
+        "quote": "moved to the Graduated maturity level on January 25, 2024"
+      },
+      {
+        "id": "X-litmus-b-001",
+        "quote": "Version 1.0.1 (May 2026) introduced an extension mechanism supporting new data, requirements, RPC methods, and state machines."
+      },
+      {
+        "id": "X-litmus-b-005",
+        "quote": "Custom HTTP endpoints for agent communication in 2026 are creating technical debt."
+      }
+    ]
+  },
+  "usage": {
+    "text": "A caller does not address Intake with a bespoke request: it sends one producer-native message (an HTTP POST, a CLI invocation, a repository hook, or an agent message) into whichever door matches its origin, and gets back only an acknowledgement -- an entry id and a correlation id, nothing about the outcome -- because the envelope is handed to the ordinary entry path where \"any entry can call complex workflows, agents, and loops that run across the entire stack\" only after intake has finished normalising it.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "T-t6-03",
+        "quote": "Any entry can call complex workflows, agents, and loops that run across the entire stack."
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "Measured directly for this card: `bash harness/work-intake/test.sh` returns 'passed 4, failed 24' -- the swap proof, the replay/idempotency check, and the no-product-name-leaked check all fail on this host today, against this repo's own target stick T-t9-06 ('every harness section executes one adapter swap with the conformance run before and after').",
+      "why_it_matters": "This is the one harness of 28 in this repo's own final-acceptance run that fails its gate for reasons beyond a claimed-vs-measured live adapter, so 'built' overstates what currently holds for this specific card more than for most others.",
+      "research_query": "what specifically broke the work-intake harness's swap proof and product-name scan, and is a fix already tracked on a STATUS row"
+    },
+    {
+      "what": "The canonical envelope's specific field list -- kind, actor with delegation chain, intent, correlation, budget ceiling, idempotency key, payload -- appears in this repo's own skill prose and architecture blueprint, but not verbatim in any citable research, fact or target record; CloudEvents' own required attributes are id, source, type, subject and time, not this list.",
+      "why_it_matters": "The definition of 'canonical envelope' this card rests on is this repo's own proposed synthesis layered on top of a cited standard, not a requirement the standard itself makes -- a caller reading only the standard would not arrive at this field list.",
+      "research_query": "is there a schema file that actually declares the seven envelope fields, checked by document-validation, or only prose describing them"
+    },
+    {
+      "what": "'Enrich', the middle word of this card's own sub-line ('Normalize, enrich, validate the request'), has no cited capability, standard, or operation anywhere in the evidence searched: cap-work-intake's operations are accept/normalise/job_digest/admit, and cap-document-validation only checks shape.",
+      "why_it_matters": "A sub-line promising three verbs when only two are evidenced is either an undocumented capability or an inaccurate label; either way it should not be asserted as built without naming what enrichment adds.",
+      "research_query": "does any adapter or downstream component add data to the envelope after normalise and before admit, and is that step named anywhere"
+    },
+    {
+      "what": "No third-party tool or SDK backs this capability today for either standard; the live adapter is described as standard-library-only, and A2A -- despite being named as this row's own governing standard alongside CloudEvents -- is not one of the four producers this repo's current-state table lists as running.",
+      "why_it_matters": "A capability can be 'built' as a hand-rolled mapper without any conformance run against a real CloudEvents or A2A implementation, which is a narrower claim than the standard badge implies.",
+      "research_query": "has any adapter here been run against a real CloudEvents-conformant broker or A2A endpoint, or only against this repo's own fixtures"
+    }
+  ]
+}

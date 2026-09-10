@@ -1,0 +1,111 @@
+{
+  "address": "rail.3",
+  "card": "Reliability",
+  "area": "Cross-Cutting Concerns",
+  "status": "planned",
+  "definition": {
+    "text": "Reliability, as a cross-cutting concern, is keeping a unit of agent work correct under failure and retry across the whole journey, not a property of one call. This repo's own dispatch contract already names the boundary reliability has to make safe to exercise: one unit must specify \"the request shape, the result shape, cancellation semantics, timeout and budget enforcement, partial-result handling, and what a failure returns\" (F-b5-03). This repo's own architecture already names the state a reliable retry needs and records it as unbuilt: a \"dispatch-level retry attempt - one transparent re-try of a single dispatch call, its cause class, its backoff and its attempt number\" (A-state-dispatch-level-retry-attempt-one-transparent-re-try-of-a-single-dispatch-call-its-cause-class-its-backoff-and-its-attempt-number), whose own status is marked gap: its home_today field states plainly that today there are three separate dispatch implementations and no shared contract between them for what a retry does.",
+    "origin": "sourced",
+    "evidence": [
+      {"id": "F-b5-03", "quote": "the request shape, the result shape, cancellation semantics, timeout and budget enforcement, partial-result handling, and what a failure returns"},
+      {"id": "A-state-dispatch-level-retry-attempt-one-transparent-re-try-of-a-single-dispatch-call-its-cause-class-its-backoff-and-its-attempt-number", "quote": "dispatch-level retry attempt - one transparent re-try of a single dispatch call, its cause class, its backoff and its attempt number"}
+    ]
+  },
+  "standards": [
+    {
+      "id": "idempotency-key-convention",
+      "role": "the wire-level convention this repo's own target table names as the standard for the Idempotency capability: an idempotency key travels with the request so a repeated delivery is recognized as the same one, not a fresh execution (F-b3-16).",
+      "covers": "does not by itself supply a lease, a payload-fingerprint conflict check, or a retention window -- cap-idempotency's own contract adds those. This repo's own adapter today implements only the bare key: 'key on the wire, no lease' (F-b3-16), which is weaker than the fingerprint-and-lease shape production guidance describes (see landscape and gaps).",
+      "evidence": {
+        "text": "This repo's own target table names the idempotency-key convention as Idempotency's standard, 'key on the wire, no lease' as today's adapter, and 'any keyed lease store' as the swap candidate.",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "F-b3-16", "quote": "key on the wire, no lease"}
+        ]
+      }
+    },
+    {
+      "id": "rfc-9457-problem-details",
+      "role": "supplies the typed failure a retry decision has to read before it decides whether to retry at all -- a status alone is not enough to say what caused it.",
+      "covers": "does not itself define retry policy, backoff or idempotency; it only standardizes the shape of the failure that reliability logic consumes.",
+      "evidence": {
+        "text": "Current API resilience guidance built on RFC 9457's typed error body states which statuses are safe to retry and which are not: \"429, 502, 503, and 504 are retryable with exponential backoff and jitter. Nearly all other 4xx codes are terminal.\"",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-litmus-b-024", "quote": "429, 502, 503, and 504 are retryable with exponential backoff and jitter. Nearly all other 4xx codes are terminal."}
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "Stripe (Idempotency-Key header)",
+      "kind": "commercial",
+      "note": "named production reference implementation of a client-generated idempotency key with a fixed 24-hour retention window. Not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Stripe stores idempotency keys for 24 hours.",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-cap-idempotency-004", "quote": "Stripe stores idempotency keys for 24 hours."}
+        ]
+      }
+    },
+    {
+      "name": "AWS Durable Execution SDK",
+      "kind": "hosted",
+      "note": "documents at-least-once, not exactly-once, activity execution as the default reliability semantic a caller must design idempotency around. Not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "The runtime guarantees that each activity runs at least once during an orchestration.",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-seam-dispatch-006", "quote": "The runtime guarantees that each activity runs at least once during an orchestration."}
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "What separates this from ordinary service reliability is not the failure taxonomy -- timeouts, 5xx, throttling all still apply -- but what a retry re-executes. An ordinary idempotent retry resends the identical request and expects the identical answer; an agent's retried unit can re-run a non-deterministic model call that generates a different tool-call payload for the same logical intent on a second attempt, so the idempotency mechanism has to detect that case rather than assume it away: \"on key match, comparing fingerprints - if they differ, return a 422 or 409 with a clear error message\" (X-litmus-c-011) -- a same-key, different-payload replay is a conflict to surface, not a request to silently execute either version of. Durable-execution platforms already build retry in at the activity level and say so plainly: \"The runtime guarantees that each activity runs at least once during an orchestration\" (X-seam-dispatch-006), which is why at-least-once, not exactly-once, is the honest default and idempotency -- not retry avoidance -- is what turns repeated execution into one observable effect. Not every failure should even trigger a retry: \"Only transient errors should be retried; others require different handling\" (X-xc-typed-errors-003), and unbounded retry is itself a documented failure mode: \"Production environments encounter failures daily, with multi-agent failure rates of 41-86.7% without deliberate fault tolerance design\" (X-xc-budget-006).",
+    "origin": "sourced",
+    "evidence": [
+      {"id": "X-litmus-c-011", "quote": "on key match, comparing fingerprints - if they differ, return a 422 or 409 with a clear error message."},
+      {"id": "X-seam-dispatch-006", "quote": "The runtime guarantees that each activity runs at least once during an orchestration"},
+      {"id": "X-xc-typed-errors-003", "quote": "Only transient errors should be retried; others require different handling"},
+      {"id": "X-xc-budget-006", "quote": "Production environments encounter failures daily, with multi-agent failure rates of 41-86.7% without deliberate fault tolerance design"}
+    ]
+  },
+  "usage": {
+    "text": "As a cross-cutting concern, reliability is applied at every step's own timeout/retry/backoff boundary rather than requested once by a caller -- the same posture this repo states for every cross-cutting guarantee: \"Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller\" (F-b1-08). Concretely: a step carries its own idempotency key and payload digest before it runs (this repo's own adapter today is only 'key on the wire, no lease' -- F-b3-16, the weaker of the two shapes cap-idempotency's own contract distinguishes); a failed step is classified before any retry is attempted, since \"Only transient errors should be retried; others require different handling\" (X-xc-typed-errors-003); the retry itself is bounded rather than open-ended, because \"A bounded retry window forces the architecture to decide what happens after repeated unsuccessful attempts\" (X-compose-loop-003); and the attempt carries its own cause class, backoff and attempt number as first-class state, per this repo's own proposed (and currently unbuilt) dispatch-level retry design.",
+    "origin": "sourced",
+    "evidence": [
+      {"id": "F-b1-08", "quote": "Telemetry, policy, provenance and budget are applied by the platform, not requested by the caller."},
+      {"id": "F-b3-16", "quote": "key on the wire, no lease"},
+      {"id": "X-xc-typed-errors-003", "quote": "Only transient errors should be retried; others require different handling"},
+      {"id": "X-compose-loop-003", "quote": "A bounded retry window forces the architecture to decide what happens after repeated unsuccessful attempts."},
+      {"id": "A-state-dispatch-level-retry-attempt-one-transparent-re-try-of-a-single-dispatch-call-its-cause-class-its-backoff-and-its-attempt-number", "quote": "its cause class, its backoff and its attempt number"}
+    ]
+  },
+  "gaps": [
+    {
+      "what": "idempotency-key-convention is cited in contract.standards by exactly two skills (cap-idempotency, seam-dispatch) as their governing standard, and named in the entities list of two more (cap-durable-execution, core-components), yet the entity's own KB source is exclusively F-b3-16 -- this repo's own PASS.md row -- with zero fetched research record behind it. Every research record touching the underlying IETF draft (draft-ietf-httpapi-idempotency-key-header-07), across eight separate record ids in this corpus, is status: search-only; none is status: fetched.",
+      "why_it_matters": "A standard cited by two skills' formal contracts as the thing they conform to has never had its own specification text verified in this environment -- version, MUST/SHOULD language and scope all rest on search snippets, consistent with this repo's known page-fetch block (STATUS rows 14, 45), but that limit has not been separately flagged on this card until now.",
+      "research_query": "can draft-ietf-httpapi-idempotency-key-header-07 be fetched now, and does its text match what cap-idempotency's skill.json claims about MUST-uniqueness"
+    },
+    {
+      "what": "Whether this repo's own idempotency design implements payload-fingerprint comparison -- the mechanism that catches a same-key, different-payload replay from a non-deterministic retry -- is unverified. F-b3-16 describes today's adapter as 'key on the wire, no lease', which names only the key, not a digest or fingerprint check; the fingerprint mechanism (X-litmus-c-011) is generic API-reliability guidance, not evidence about this repo's own implementation.",
+      "why_it_matters": "Without a fingerprint check, a retried unit that regenerates a different tool-call payload under the same key would either silently execute the new payload or silently return the old result -- neither of which is the conflict-and-refuse behavior reliability for a non-deterministic unit requires.",
+      "research_query": "does harness/dispatch or cap-idempotency's own conformance suite assert a same-key different-payload request is refused as a conflict"
+    },
+    {
+      "what": "This repo's own architecture already names dispatch-level retry attempt as a state, but records its home_today as a gap: 'there are three implementations of dispatch and no contract between them, so a retry is whatever each one does.'",
+      "why_it_matters": "Reliability's own sub-line names retries first; if each of the three dispatch adapters retries on its own terms, 'Reliability' as a cross-cutting concern has no single behavior to describe yet, only three uncoordinated ones.",
+      "research_query": "kb_index.py search \"seam-dispatch three implementations retry contract\""
+    },
+    {
+      "what": "No harness or example in this repo demonstrates bounded retry, fingerprint-conflict detection, or backoff as a conformance-checked behavior. This card's 'planned' status is accurate and unqualified by anything measured.",
+      "why_it_matters": "Every claim in this profile about how reliability should behave is sourced to external research or to this repo's own unbuilt architecture entities, not to a passing test; that distinction should not collapse once the card is later marked built.",
+      "research_query": "bash harness/dispatch/test.sh -- does any case exercise retry attempt state, and does it pass"
+    }
+  ]
+}

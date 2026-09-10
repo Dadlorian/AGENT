@@ -1,0 +1,207 @@
+{
+  "address": "3.3",
+  "card": "Runtime / Sandbox",
+  "area": "Core Agent",
+  "status": "built",
+  "definition": {
+    "text": "Runtime/Sandbox is the boundary one unit of agent work runs inside. This repo's own target architecture states the requirement directly and names the standard it is checked against: \"a unit of work runs isolated, per the OCI Runtime Spec\" -- satisfied today by a Firecracker microVM per unit of work.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "F-b3-18",
+        "quote": "a unit of work runs isolated, per the OCI Runtime Spec"
+      }
+    ]
+  },
+  "standards": [
+    {
+      "id": "oci-runtime-spec",
+      "role": "governs the boundary itself: the lifecycle and configuration interface every isolation adapter (a plain process, Docker, gVisor, Kata, Firecracker) must implement so callers see one declare/admit/inspect contract regardless of which adapter is behind it.",
+      "covers": "does not say anything about what is inside the sandbox (base image, toolchain, dependency versions) -- that is the Image Spec's job, not the Runtime Spec's.",
+      "evidence": {
+        "text": "The OCI Runtime Spec defines the behavior and the configuration interface of low-level container runtimes such as runc.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-cap-isolation-001",
+            "quote": "The OCI Runtime Spec defines the behavior and the configuration interface of low-level container runtimes such as runc."
+          },
+          {
+            "id": "X-maturity-c-010",
+            "quote": "The OCI Runtime Specification defines standard container lifecycle phases including creating, created, running, and deleted states with associated hooks."
+          }
+        ]
+      }
+    },
+    {
+      "id": "oci-image-spec",
+      "role": "governs the contents half: the image manifest, content-addressable filesystem layers, and image config that get unpacked into the OCI Runtime Bundle the Runtime Spec already governs.",
+      "covers": "packaging and distribution/addressing only -- it does not select a toolchain, decide a caching policy, or provide reuse across many agent runs; current release is v1.1.1 (March 2025), older than this pass's recency preference but cited as the canonical spec itself.",
+      "evidence": {
+        "text": "The goal of this specification is to enable the creation of interoperable tools for building, transporting, and preparing a container image to run.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-3-3-environment-001",
+            "quote": "The goal of this specification is to enable the creation of interoperable tools for building, transporting, and preparing a container image to run."
+          }
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "Firecracker microVM",
+      "kind": "open-source",
+      "note": "this repo's current isolation adapter -- hardware virtualisation, not a container.",
+      "in_use_here": true,
+      "evidence": {
+        "text": "Firecracker microVM — hardware virtualisation, not a container",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-a3-01",
+            "quote": "Firecracker microVM — hardware virtualisation, not a container"
+          },
+          {
+            "id": "F-b3-02",
+            "quote": "OCI Runtime Spec | Firecracker microVM | gVisor · Kata Containers · Cloud Hypervisor · hosted sandbox services"
+          }
+        ]
+      }
+    },
+    {
+      "name": "gVisor",
+      "kind": "open-source",
+      "note": "a named OCI Runtime Spec swap candidate for Firecracker in this repo's own target table (F-b3-02); not in use here today.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "The spec is also implemented by crun, youki, gVisor, Kata Containers, and others.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-cap-isolation-001",
+            "quote": "The spec is also implemented by crun, youki, gVisor, Kata Containers, and others."
+          },
+          {
+            "id": "F-b3-02",
+            "quote": "gVisor · Kata Containers · Cloud Hypervisor · hosted sandbox services"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Kata Containers",
+      "kind": "open-source",
+      "note": "orchestrates Firecracker/Cloud Hypervisor/QEMU through standard container APIs; another named swap candidate in F-b3-02, not in use here.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Kata Containers orchestrates multiple VMMs (Firecracker, Cloud Hypervisor, QEMU) to provide microVM isolation through standard container APIs.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-4-2-compute-001",
+            "quote": "Kata Containers orchestrates multiple VMMs (Firecracker, Cloud Hypervisor, QEMU) to provide microVM isolation through standard container APIs."
+          },
+          {
+            "id": "X-cap-isolation-001",
+            "quote": "The spec is also implemented by crun, youki, gVisor, Kata Containers, and others."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Docker / Podman (devcontainer.json wrappers)",
+      "kind": "open-source",
+      "note": "one of several concurrently-used, non-standardized ways coding-agent CLIs currently declare sandbox contents.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Gemini CLI — Seatbelt on macOS or Docker/Podman containers via .gemini/sandbox.Dockerfile",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-3-3-environment-003",
+            "quote": "Gemini CLI — Seatbelt on macOS or Docker/Podman containers via .gemini/sandbox.Dockerfile"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Nix flakes + Cachix",
+      "kind": "open-source",
+      "note": "a reproducible, content-addressed alternative to Dockerfile/devcontainer.json for declaring an agent's toolchain; not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Nix solves the complementary problem: ensuring the agent has a consistent, complete set of tools to work with.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-3-3-environment-007",
+            "quote": "Nix solves the complementary problem: ensuring the agent has a consistent, complete set of tools to work with."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Kubernetes SIG Agent Sandbox (SandboxTemplate)",
+      "kind": "open-source",
+      "note": "a live implementation that already separates a cacheable environment template from the per-run sandbox claim/bind step; not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "The SandboxTemplate describes the pod the warm pool keeps ready",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-3-3-environment-006",
+            "quote": "The SandboxTemplate describes the pod the warm pool keeps ready"
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The real, measured tradeoff in how much a sandbox's declared contents cost is not storage, it is startup latency: \"Dependency size has a measurable effect on cold start latency on many serverless platforms. Larger payloads drive longer initialization windows.\" Current production practice answers this with pre-warmed memory/filesystem snapshotting rather than image shrinking alone. Separately, no single convention governs how an agent's environment contents are declared in the first place: devcontainer.json, hand-written Dockerfiles, and Nix flakes are all in concurrent, unreconciled use across different agent CLIs as of mid-2026.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-3-3-environment-008",
+        "quote": "Dependency size has a measurable effect on cold start latency on many serverless platforms. Larger payloads drive longer initialization windows."
+      },
+      {
+        "id": "X-refmodel-3-3-environment-003",
+        "quote": "Dev Containers (devcontainer.json) — VS Code spec; used by trailofbits/claude-code-devcontainer."
+      },
+      {
+        "id": "X-refmodel-3-3-environment-007",
+        "quote": "Nix solves the complementary problem: ensuring the agent has a consistent, complete set of tools to work with."
+      }
+    ]
+  },
+  "usage": {
+    "text": "This repo's own planning layer treats isolation as one of several smart-defaulted concerns the caller does not configure directly: the mechanism exists specifically to remove the need to \"decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger\" -- a caller writes `intent:`, and one word of `profile:` only if the default bundle picked for it is wrong.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "REF-3-02",
+        "quote": "decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger"
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "No named standard declares an agent's environment contents end to end (base image, toolchain, exact dependency versions); only fragmented point solutions exist today (devcontainer.json, hand-written Dockerfiles, Nix flakes, Kubernetes SandboxTemplate).",
+      "why_it_matters": "Without one, reproducibility and caching policy for the contents half of the sandbox is reinvented per agent CLI, and this repo has not picked one either.",
+      "research_query": "is there a 2027+ convergence candidate for declaring agent-sandbox environment contents beyond OCI Image Spec"
+    },
+    {
+      "what": "The split between a cacheable, warm-pool environment template and the per-run sandbox claim/bind step -- already implemented by Kubernetes SIG Agent Sandbox's SandboxTemplate resource -- is not built in this repo's own cap-isolation.",
+      "why_it_matters": "Without the split, every sandbox likely pays the full cold-start cost this card's own evidence shows is dominated by dependency/image size, rather than amortizing it across a warm pool.",
+      "research_query": "does this repo's cap-isolation harness distinguish an environment template resource from a sandbox claim"
+    },
+    {
+      "what": "Every harness's live adapter, Firecracker included, is claimed rather than measured against a real host from a session (per STATUS row 37) -- so the 'built' status on this card rests on unverified claims for the live path.",
+      "why_it_matters": "A capability marked 'built' whose live adapter has never run is a different risk than one that has been measured.",
+      "research_query": "has any harness run its live adapter against a real host and recorded the result"
+    }
+  ]
+}

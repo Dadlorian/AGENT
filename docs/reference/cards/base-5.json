@@ -1,0 +1,156 @@
+{
+  "address": "base.5",
+  "card": "Registry",
+  "area": "Shared Platform Services",
+  "status": "planned",
+  "definition": {
+    "text": "Across every named production system in this pass's evidence -- prompt registries (MLflow, PromptLayer), model registries (MLflow), the MCP tool/server registry, and OCI/ORAS artifact references -- a registry is the same two-layer shape: an immutable version or content digest underneath that never changes once published, and a mutable named pointer (an alias, a release label, or a tag) that a caller addresses instead of the raw version. Resolving \"the current X\" is asking the registry for (name, pointer) and getting back whichever immutable artifact the pointer presently names: \"Model aliases allow you to assign a mutable, named reference to a particular version of a registered model.\" Promoting a new version reassigns the pointer server-side; the prior version stays addressable for rollback. This repo's own target architecture defines no F-/T- fact or architecture entity for base.5 as a capability row -- like base.3, it rests on general industry evidence, not this repo's own blueprint.",
+    "origin": "sourced",
+    "evidence": [
+      {"id": "X-refmodel-base-5-registry-001", "quote": "allowing teams to promote tested prompt versions through environments without redeploying application code"},
+      {"id": "X-refmodel-base-5-registry-002", "quote": "creates a new immutable version with a commit message"},
+      {"id": "X-refmodel-base-5-registry-003", "quote": "The version string MUST be unique for each publication of the server. Once published, the version string (and other metadata) cannot be changed."},
+      {"id": "X-refmodel-base-5-registry-006", "quote": "Model aliases allow you to assign a mutable, named reference to a particular version of a registered model."},
+      {"id": "X-refmodel-base-5-registry-007", "quote": "Tags are mutable. This means that the same tag can point to different digests over time."}
+    ]
+  },
+  "standards": [
+    {
+      "id": "model-context-protocol",
+      "role": "Governs immutable version-string uniqueness and \"latest\" resolution for the MCP server/tool registry specifically: once published, a server's version string and metadata cannot be changed, and the registry computes which published version is \"latest\" by parsing it as semver.",
+      "covers": "Only the tools slice of this card. Nothing in MCP's registry spec addresses prompts, models, or datasets -- this card's other three artifact kinds have no shared cross-vendor standard at all.",
+      "evidence": {
+        "text": "\"The version string MUST be unique for each publication of the server. Once published, the version string (and other metadata) cannot be changed.\"",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-base-5-registry-003", "quote": "The version string MUST be unique for each publication of the server. Once published, the version string (and other metadata) cannot be changed."}
+        ]
+      }
+    },
+    {
+      "id": "sigstore",
+      "role": "Provides keyless signing (short-lived Fulcio certs bound to a CI/CD or human identity) plus a public transparency log (Rekor) that can attest to a registry record's artifact digest once one exists -- demonstrated for model artifacts specifically, where the model plus its files and metadata are hashed into a manifest before signing.",
+      "covers": "Does not define the registry's own name/version/alias resolution shape; it only binds a digest to a signer identity after the registry already has one.",
+      "evidence": {
+        "text": "\"a cryptographic hash of the model and all its files and metadata is generated and written to a serialized manifest.\"",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-base-5-registry-005", "quote": "a cryptographic hash of the model and all its files and metadata is generated and written to a serialized manifest."}
+        ]
+      }
+    },
+    {
+      "id": "slsa",
+      "role": "A candidate provenance predicate binding an artifact digest to a build definition and builder identity -- a \"URI indicating the transitive closure of the trusted build platform\" -- that could wrap around a registry record to say what produced it.",
+      "covers": "Built for software build outputs (source repo + build platform as the primary inputs); has no built-in vocabulary for prompts, models, or datasets. Fitting it to those artifact types means defining custom buildTypes, not using the standard as-is.",
+      "evidence": {
+        "text": "\"URI indicating the transitive closure of the trusted build platform\"",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-base-5-registry-008", "quote": "URI indicating the transitive closure of the trusted build platform"}
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "MLflow",
+      "kind": "open-source",
+      "note": "Self-hostable; implements both a Prompt Registry (alias-addressed, e.g. prompts:/qa-assistant/production) and a Model Registry (immutable, strictly sequential versions plus mutable aliases such as champion/challenger, replacing the deprecated Staging/Production stage labels) in one open-source platform. Fits this area's declared open-source-only constraint. Not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "\"Model aliases allow you to assign a mutable, named reference to a particular version of a registered model.\" -- \"you can create an alias named champion that points to version 1 of a model named MyModel.\"",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-base-5-registry-001", "quote": "prompt = mlflow.genai.load_prompt(\"prompts:/qa-assistant/production\")"},
+          {"id": "X-refmodel-base-5-registry-006", "quote": "you can create an alias named champion that points to version 1 of a model named MyModel."}
+        ]
+      }
+    },
+    {
+      "name": "ORAS (OCI Registry As Storage)",
+      "kind": "open-source",
+      "note": "Self-hostable, general-purpose artifact registry; reuses the OCI registry/repository/tag-or-digest reference shape, so a human-friendly mutable tag (\"latest\", \"v1.0\") always resolves to an immutable content digest underneath -- the same two-layer pattern as the prompt/model registries, generalized to any artifact type including datasets. This repo's own prior research (X-cap-capability-registry-004, -005, -008) already names OCI artifacts / ORAS as a distribution mechanism for agent skills and capability records with signing support. Not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "\"Tags are mutable. This means that the same tag can point to different digests over time.\"",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-base-5-registry-007", "quote": "Tags are mutable. This means that the same tag can point to different digests over time."}
+        ]
+      }
+    },
+    {
+      "name": "MCP Registry (official)",
+      "kind": "open-source",
+      "note": "Reference implementation for publishing and resolving MCP server/tool descriptors; enforces per-publication version-string uniqueness and computes a \"latest\" pointer via semver-sort rules rather than letting a publisher set it directly. Covers only the tools slice of this card. Not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "\"The version string MUST be unique for each publication of the server. Once published, the version string (and other metadata) cannot be changed.\"",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-base-5-registry-003", "quote": "The version string MUST be unique for each publication of the server. Once published, the version string (and other metadata) cannot be changed."}
+        ]
+      }
+    },
+    {
+      "name": "PromptLayer",
+      "kind": "hosted",
+      "note": "Hosted, commercial prompt-management platform; every save is stored as an immutable version and an application resolves \"the current prompt\" by asking for (name, release label). This repo has not independently verified its pricing model, but a hosted, per-account SaaS product is in tension with this area's own declared constraint, \"Open source only -- no per-seat or metered platform cost.\" It is not among the self-hostable open-source options this pass found (MLflow, ORAS, the official MCP Registry). Not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "\"Your application calls the registry's API or SDK, asks for something like \\\"customer-support-reply, prod,\\\" and gets back the exact template and parameters currently labeled for production. Swap the label and every service updates at once; keep the old versions and you have an audit trail of exactly what ran when.\"",
+        "origin": "sourced",
+        "evidence": [
+          {"id": "X-refmodel-base-5-registry-002", "quote": "Your application calls the registry's API or SDK, asks for something like \"customer-support-reply, prod,\""}
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The two-layer pattern -- an immutable version or digest, plus a mutable named pointer callers actually address -- repeats across every artifact kind this pass found evidence for, but via a different mechanism per kind, and no single standard spans all four (models, prompts, tools, datasets). Prompt registries (MLflow, PromptLayer) resolve a (name, alias) pair to whichever prompt version currently carries that alias, promoting a prompt by reassigning the alias server-side rather than redeploying code. MLflow's Model Registry is the same shape for models: registered versions are immutable and strictly sequential, while aliases (champion/challenger) are mutable pointers resolved through a models:/<name>@<alias> URI, with the prior version always still addressable for rollback. The MCP registry gives the tools slice a narrower, already-standardized version: a server's version string is immutable and unique per publication, and \"latest\" is a computed pointer (via semver-sort), not an arbitrary alias a publisher sets. OCI/ORAS generalizes the pattern furthest: any artifact's mutable tag resolves to an immutable content digest, which is why this repo's own prior research already treats OCI artifacts / ORAS as a distribution mechanism for capability records generally. Provenance and signing sit on top of, not inside, this pattern: Sigstore's keyless signing plus the Rekor transparency log can attest to an artifact's digest once a registry has minted one, and SLSA provenance can bind that digest to a build definition and builder identity -- but SLSA was built for software build outputs and has no vocabulary for prompts, models, or datasets, so using it here means defining custom predicate types rather than adopting the standard as-is.",
+    "origin": "sourced",
+    "evidence": [
+      {"id": "X-refmodel-base-5-registry-001", "quote": "each version can be tagged with aliases like \"production\" or \"staging,\""},
+      {"id": "X-refmodel-base-5-registry-002", "quote": "Every time you save a prompt, the system creates a new immutable version with a commit message"},
+      {"id": "X-refmodel-base-5-registry-003", "quote": "The version string MUST be unique for each publication of the server. Once published, the version string (and other metadata) cannot be changed."},
+      {"id": "X-refmodel-base-5-registry-006", "quote": "you can create an alias named champion that points to version 1 of a model named MyModel."},
+      {"id": "X-refmodel-base-5-registry-007", "quote": "Tags are mutable. This means that the same tag can point to different digests over time."},
+      {"id": "X-refmodel-base-5-registry-008", "quote": "verifiable information about software artifacts describing where, when, and how something was produced"}
+    ]
+  },
+  "usage": {
+    "text": "A caller never asks for a raw version when it means \"whatever is current\": it calls the registry's API or SDK with a (name, release-label) pair and gets back the exact immutable artifact currently bound to that label -- \"Your application calls the registry's API or SDK, asks for something like 'customer-support-reply, prod,' and gets back the exact template and parameters currently labeled for production.\" Promotion is a single, governed reassignment of the label rather than a redeploy of calling code, and every prior version stays addressable by its own immutable identifier for rollback or audit -- \"keep the old versions and you have an audit trail of exactly what ran when.\"",
+    "origin": "sourced",
+    "evidence": [
+      {"id": "X-refmodel-base-5-registry-002", "quote": "Your application calls the registry's API or SDK, asks for something like \"customer-support-reply, prod,\""}
+    ]
+  },
+  "gaps": [
+    {
+      "what": "This card bundles four different artifact kinds (models, prompts, tools, datasets) under one \"Registry.\" All four follow the same two-layer immutable-version-plus-mutable-alias shape, but via different, non-interoperable mechanisms per kind: MLflow for models/prompts, the MCP registry for tools, OCI/ORAS for generic artifacts. There is no single registry standard spanning all four; a caller integrating \"the Registry\" would actually integrate several different systems, not one.",
+      "why_it_matters": "A card that names one capability invites a caller to expect one interface; the evidence here shows this card is a bucketing of at least three separately-standardized (or unstandardized) mechanisms.",
+      "research_query": "kb_index.py search \"model registry prompt registry tool registry single interface boundary\""
+    },
+    {
+      "what": "This repo's own standards ledger already marks a boundary question unresolved here: agntcy-oasf sits at position \"watch\" in standards/, with its own recorded reason being \"Agent schema and directory that overlaps the A2A Agent Card. Unsettled; re-check at the next phase boundary.\" Separately, a2a-messaging's own standards/ entry states of the Agent Card: \"The Agent Card is the discovery document the registry lacks.\" Neither OASF nor A2A's Agent Card is about models, prompts, tools, or datasets as this card names them -- both are agent-record/discovery schemas -- so whether agent-record discovery belongs on base.5 at all, on a different card, or nowhere yet, is unresolved by the evidence gathered here.",
+      "why_it_matters": "If agent-record discovery is folded into this card later without resolving the OASF/A2A overlap first, base.5 would inherit an unsettled standards conflict rather than a chosen one.",
+      "research_query": "kb_index.py search \"agntcy-oasf A2A Agent Card registry overlap watch\""
+    },
+    {
+      "what": "This card is marked improvable: true in the reference model, meaning the self-improvement loop (compose-improvement-loop) may revise what it registers over time. None of the evidence gathered here checks that loop directly, but the two-layer version/alias pattern established above is structurally the rollback primitive an automated revision loop needs: reassign the alias back to the prior immutable version rather than deleting or overwriting it. Whether compose-improvement-loop's own rollback state actually uses this pattern, or a different one, has not been checked.",
+      "why_it_matters": "If the improvement loop's rollback mechanism does not match the alias/version shape this card's own evidence establishes as the norm, revising a registered prompt, model, or tool could lose the audit trail (\"an audit trail of exactly what ran when\") the evidence says a registry is supposed to provide.",
+      "research_query": "kb_index.py search \"compose-improvement-loop rollback state promote candidate\""
+    },
+    {
+      "what": "Two of the standards cited here (sigstore, slsa) are provenance/signing layers, not registry-resolution mechanisms: neither defines how a caller names or resolves \"the current X.\" This card has not settled which of the three resolution shapes actually found (MLflow-style mutable alias, MCP-style immutable-version-plus-computed-latest, or OCI-style tag-vs-digest) it would adopt if built, or whether it would need all three for its different artifact kinds.",
+      "why_it_matters": "Naming Sigstore/SLSA as \"the standards\" for this card without naming a resolution-shape standard would leave the actual thing a caller calls -- name-plus-pointer-in, artifact-out -- entirely unspecified.",
+      "research_query": "does a Models/Prompts/Tools/Datasets registry need one resolution shape or three, one per artifact-kind mechanism already in production use?"
+    },
+    {
+      "what": "One citation here rests on a blocked fetch: -004's primary source (mdpi.com) returned HTTP 403, so its three-layer trust-framework claim (RFC 8615 Well-Known URIs, Sigstore Keyless signing, JCS+JWS) rests on search-result text only, not a verified page read, and its own explicit limit -- that registry acceptance does not prove downstream directories have synchronized or that a server is safe -- is likewise unverified beyond the snippet.",
+      "why_it_matters": "The strongest single statement here about what registry trust does NOT prove is exactly the kind of claim this repo's own capture discipline (tools/capture.py) exists to verify rather than take from a search snippet.",
+      "research_query": "capture https://doi.org/10.3390/fi18050243 with tools/capture.py once the fetch path is unblocked"
+    }
+  ]
+}

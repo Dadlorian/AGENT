@@ -1,0 +1,166 @@
+{
+  "address": "4.2",
+  "card": "Compute Resources",
+  "area": "Execution & Runtime",
+  "status": "built",
+  "definition": {
+    "text": "Proposed framing, because the evidence does not cleanly support it as a separate element: this reference model treats Compute Resources (CPU/GPU pools, autoscaling) as distinct from Runtime/Sandbox isolation (3.3) and Isolated Runtime Profiles (4.1), but the fetched evidence shows the same system typically does both jobs at once -- a per-tenant Firecracker microVM is simultaneously the isolation boundary and the unit of CPU/GPU allocation, and Kata Containers/gVisor appear in both this card's and 3.3's evidence under the same names. This repo's own three-way card split (3.3 / 4.1 / 4.2) is our design's own bucketing choice, not one the evidence forces.",
+    "origin": "proposed"
+  },
+  "standards": [],
+  "tools": [
+    {
+      "name": "Firecracker microVM",
+      "kind": "open-source",
+      "note": "the same isolation adapter this repo uses (F-a3-01/F-b3-02) also functions as the per-unit-of-work compute allocation boundary; one Firecracker VM per tenant is the named per-tenant compute-pooling pattern in the evidence.",
+      "in_use_here": true,
+      "evidence": {
+        "text": "One isolated Firecracker MicroVM per tenant — cold-started, resumed, and reaped on demand.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-4-2-compute-002",
+            "quote": "One isolated Firecracker MicroVM per tenant — cold-started, resumed, and reaped on demand."
+          },
+          {
+            "id": "F-a3-01",
+            "quote": "Firecracker microVM — hardware virtualisation, not a container"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SGLang",
+      "kind": "open-source",
+      "note": "this repo's actual local serving engine, run on its own owned GPU pool (six named contracts: f-grunt, f-3090-q14, f-3090-q30, f-5090-q30, f-runpod-dsv4, f-smoke).",
+      "in_use_here": true,
+      "evidence": {
+        "text": "Local inference: SGLang serving Qwen3-Coder-30B on an RTX 3090 Ti, plus additional cards.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-a4-06",
+            "quote": "Local inference: SGLang serving Qwen3-Coder-30B on an RTX 3090 Ti, plus additional cards."
+          },
+          {
+            "id": "F-a4-02",
+            "quote": "`f-grunt`, `f-3090-q14`, `f-3090-q30`, `f-5090-q30`, `f-runpod-dsv4`, `f-smoke`"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Kubernetes Dynamic Resource Allocation (DRA)",
+      "kind": "open-source",
+      "note": "a claim-based schema (ResourceClaim/ResourceClaimTemplate/DeviceClass) for requesting a device by class and attribute rather than bare quantity; a Kubernetes API, not a cross-runtime OCI-level standard. Not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "DRA is a Kubernetes feature that lets you request and share resources among Pods.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-4-2-compute-004",
+            "quote": "DRA is a Kubernetes feature that lets you request and share resources among Pods."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Run:ai",
+      "kind": "commercial",
+      "note": "fleet-level GPU scheduler with guaranteed per-project quota plus weighted over-quota borrowing and gang scheduling; not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "deservedGpus is the allocation that Run:ai will never preempt.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-4-2-compute-006",
+            "quote": "deservedGpus is the allocation that Run:ai will never preempt."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Modal",
+      "kind": "hosted",
+      "note": "shared function-container pool with buffer_containers/min_containers/scaledown_window autoscaling knobs; not used by this repo.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Containers boot in about one second.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-4-2-compute-007",
+            "quote": "Containers boot in about one second."
+          }
+        ]
+      }
+    },
+    {
+      "name": "NVIDIA MIG (Multi-Instance GPU)",
+      "kind": "commercial",
+      "note": "hardware-partitioned GPU sharing (up to 7 isolated instances per H100); not used by this repo, which runs one model per owned card rather than partitioning a card.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "MIG (Multi-Instance GPU): partitions the physical GPU into isolated slices at the silicon level",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-4-2-compute-003",
+            "quote": "MIG (Multi-Instance GPU): partitions the physical GPU into isolated slices at the silicon level"
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The real tradeoff is isolation/simplicity versus density: dedicated per-tenant microVMs (Firecracker) give hardware isolation and scale-to-zero economics but leave capacity idle between tenants, while GPU-sharing mechanisms trade isolation for density -- time-slicing (software-only, zero memory isolation, up to 48 concurrent), MIG (hardware-partitioned, up to 7 slices per H100) and MPS (concurrent kernel execution, limited fault protection). The measured cost of not sharing is stark: \"Average GPU utilization in production Kubernetes clusters is just 5%, according to the Cast AI 2026 State of Kubernetes Optimization Report.\" This repo's own compute resources are a fixed local/rented GPU fleet (F-a4-02) rather than a shared, autoscaled pool, so none of these sharing mechanisms currently apply here -- a hosted model API needs none of this at all, since \"Serverless APIs abstract these hardware complexities, allowing you to avoid GPU shortages, quota limits, and provisioning delays.\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-4-2-compute-003",
+        "quote": "Average GPU utilization in production Kubernetes clusters is just 5%, according to the Cast AI 2026 State of Kubernetes Optimization Report."
+      },
+      {
+        "id": "X-refmodel-4-2-compute-005",
+        "quote": "Serverless APIs abstract these hardware complexities, allowing you to avoid GPU shortages, quota limits, and provisioning delays."
+      },
+      {
+        "id": "F-a4-02",
+        "quote": "`f-grunt`, `f-3090-q14`, `f-3090-q30`, `f-5090-q30`, `f-runpod-dsv4`, `f-smoke`"
+      }
+    ]
+  },
+  "usage": {
+    "text": "The closest real illustration found of a compute-resource request shaped as a declaration rather than a raw device count is Kubernetes DRA: \"app operators don't need to specify device quantities in Pod resource requests; instead, the Pod references a resource claim, and the device configuration in that claim applies to the Pod.\" This is not confirmed as this repo's own implementation -- this repo's actual usage is a fixed named GPU inventory (the `f-` prefixed contracts) rather than a claim-based API; per this repo's own target framing, callers reach compute only indirectly, in that \"a fleet of GPUs serves local models\" behind one model-gateway call, never a bare device request.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-4-2-compute-004",
+        "quote": "app operators don't need to specify device quantities in Pod resource requests; instead, the Pod references a resource claim, and the device configuration in that claim applies to the Pod."
+      },
+      {
+        "id": "T-t6-04",
+        "quote": "a fleet of GPUs serves local models"
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "No standard applies: standards is an empty array because no standards-track spec was found governing fleet compute-resource allocation for agent sandboxes (CPU/GPU pooling, autoscaling policy). Kubernetes DRA is the closest schema found, but it is a project API, not a cross-runtime standard the way the OCI Runtime Spec is.",
+      "why_it_matters": "Without a standard, a caller's compute-resource request is not portable across a Kubernetes-DRA fleet, a Run:ai-scheduled fleet, and a Modal-style container pool -- three different call shapes for the same underlying need.",
+      "research_query": "is there an emerging cross-runtime standard for declaring a fractional or claim-based compute resource request"
+    },
+    {
+      "what": "This repo's own compute-resource pool (six named local/rented GPU contracts) has no measured utilization figure to compare against the cited industry average of 5% (best cluster 49%).",
+      "why_it_matters": "Without a measured number, it is unknown whether this repo's fixed-inventory model is efficient or leaves capacity idle the way unmanaged shared clusters do.",
+      "research_query": "what is the measured utilization of this repo's own GPU fleet (f-grunt, f-3090-q14, f-3090-q30, f-5090-q30, f-runpod-dsv4, f-smoke)"
+    },
+    {
+      "what": "The card boundary between 3.3 Runtime/Sandbox, 4.1 Isolated Runtime Profiles, and 4.2 Compute Resources is this repo's own bucketing, not one the fetched evidence draws the same way (Firecracker and Kata Containers recur as answers to both isolation and compute-pooling questions).",
+      "why_it_matters": "A reader could file the same real tool under two different cards and reasonably conclude the reference model double-counts capability.",
+      "research_query": "should 4.2 Compute Resources be merged with 4.1 Isolated Runtime Profiles in the reference model"
+    }
+  ]
+}

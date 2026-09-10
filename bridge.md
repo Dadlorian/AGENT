@@ -102,72 +102,91 @@ being debt and becomes permission. STATUS row 84 burns it down.
 
 ---
 
-## 4. What the next session is for
+## 4. Definition of ready to build
 
-Not building. **Deciding how to build, then proving the decision on one thing before scaling it.**
-The previous seven example areas were archived because they were built on an unproven structure;
-repeating that at nine areas is the failure mode to avoid.
+**Ready is a command, not an opinion.** `python3 tools/ready_to_build.py` prints these eight and
+exits non-zero until all hold. Opinion is how the previous seven example areas got built on an
+unproven structure and then archived.
 
-### Questions principles must settle first
+| # | Condition | How it is checked | Now |
+|---|---|---|---|
+| R1 | Every card profiled, gate green | `validate_card_profiles.py` = 40 profiles, 0 errors | 32 of 40 |
+| R2 | No quote still needs a reader | `knowledge_pool.py` → 0 need a person | 4 |
+| R3 | No undecided citation debt | every `citation-debt.json` entry carries `owner_decision` | 23 undecided |
+| R4 | Prose carries no unsourced quote or figure | `tools/prose_gate.py` exits 0 | tool does not exist |
+| R5 | Card→example map names the areas we will build | map vs `build-principles.json` | map names the archived seven |
+| R6 | The model's purpose is decided | `build-principles.json.model_purpose` | not recorded |
+| R7 | One example built from a profile, gaps written down | an area under `examples/reference/` + `profile-sufficiency.md` | none |
+| R8 | Internal-heavy cards labelled | `build-principles.json.internal_share_policy` | not recorded |
 
-1. **What is the reference model *for*?** An industry-aligned description, or a description of this
-   platform? 31.7% internal citations means it is currently both, and the two lead to different
-   examples. This is an owner decision, not a research question.
-2. **What is an example?** A runnable demo of one card? A path across several? The four doors
-   (human/event/schedule/external) on one envelope? `examples/reference/README.md` proposes nine
-   region-based areas; the archived seven were user-journey based. Neither has been justified
-   against the other.
-3. **Is a card profile a specification?** If not, what is missing — a per-card interface contract,
-   a call shape, a conformance case? Answer by attempting exactly one and seeing what is absent.
-4. **What does "alive" mean here?** Today everything is dry-run. No harness has ever executed
-   against a real host (STATUS row 37, blocked on owner credentials). "Alive" may mean real
-   execution, or it may mean a faithful dry-run whose call shape matches live. Decide explicitly.
-5. **How do the four parallel structures relate?** 40 cards, 29 skills, 28 harnesses, N example
-   areas. The card→example map asserts one relationship and points at archived areas. Are these
-   four views of one thing, or four things?
-6. **Close the prose hole before scaling.** See §2.3.
+**0 of 8 met** as of 2026-09-10 evening.
 
-### Sequence that respects what has been learned
+Two of the eight are deliberately not machine-decidable:
 
-- Settle 1–2 with the owner; they are intent, not evidence.
-- Close the prose gate (§2.3) — mechanical, and it protects everything built afterward.
-- Profile the 8 remaining cards **capture-first**, never against unverified records.
-- Build **one** example area end to end. Ceremony it. Only then consider a workflow to fan out.
-- `tools/phase.py open/close` around each; two red closes stops a phase and it refuses to reopen.
+- **R6 is owner intent.** Is the reference model an *industry-aligned description*, or a description
+  of *this platform*? 31.7% of citations are this repo citing its own documents, so today it is both,
+  and the answer changes which cards can carry an example at all. Ask; do not infer.
+- **R7 is empirical, and it is the one that matters.** "The card profile is the spec" has never been
+  tested. It may well hold — nobody has pulled the data to find out. The test is to build exactly one
+  area from a profile and write down what the profile failed to tell you. If the answer is "nothing",
+  R7 closes and the spec holds. If not, the missing pieces are named rather than guessed at.
+
+R7 is the only condition whose failure is informative, so attempt it early even while others are open
+— just do not fan out to nine areas on its result until R1–R6 and R8 hold.
 
 ---
 
 ## 5. Starter prompt
 
+Copy this whole block into a fresh context.
+
 ```
-Read bridge.md end to end. Then docs/reference/knowledge-pool.md (what stands behind each card),
-docs/reference/cards/BRIEF.md (the authoring rule), and examples/reference/README.md (the nine
-areas currently proposed, and unproven).
+Read bridge.md end to end, then docs/reference/knowledge-pool.md (what stands behind each of the 40
+cards), docs/reference/cards/BRIEF.md (the authoring rule), and examples/reference/README.md (nine
+proposed areas, unproven).
 
-Re-run every number before repeating it. `python3 tools/knowledge_pool.py` and
-`python3 tools/phase.py gates` are the scoreboards. This repo's most expensive and most repeated
-mistake is confident restatement of figures that had moved -- including, last session, a model
-reporting a corpus-wide crisis that measurement did not support.
+Re-run every number before repeating it. This repo's most repeated and most expensive mistake is
+confident restatement of figures that had moved -- last session a model reported a corpus-wide
+crisis that measurement did not support, and had to walk it back twice in one conversation. The
+scoreboards are:
+  python3 tools/ready_to_build.py     the definition of ready, 8 conditions, exits 1 until all hold
+  python3 tools/knowledge_pool.py     what stands behind every card
+  python3 tools/phase.py gates        11 gates; two are known-red and recorded
 
-YOUR JOB IS TO DESIGN, NOT TO BUILD.
-The reference model is 40 cards, 32 profiled and sourced. examples/reference/ is empty on purpose.
-Before anything is built, settle the six questions in bridge.md section 4 -- especially what the
-reference model is FOR, and whether a card profile is actually a specification. Answer that last
-one empirically: attempt one example, see what the profile does not tell you, and write that down.
+YOUR JOB
+Get from 0 of 8 ready conditions to 8 of 8, then build ONE example area and stop.
+Do not build nine areas. That is exactly how the previous seven ended up in examples/archived/.
 
-Do not profile the 8 remaining cards against unverified records, and do not build nine areas on an
-unproven structure -- that is exactly how the previous seven ended up in examples/archived/.
+START HERE, IN THIS ORDER
+1. R6 is the owner's to answer, and it gates the rest: is the reference model an industry-aligned
+   description, or a description of this platform? Ask them directly, in one question, with the
+   consequence stated -- 31.7% of citations are this repo citing itself, and cards like 1.2
+   Scheduled (12 of 13 internal) would demonstrate our own design rather than an industry pattern.
+   Record the answer in docs/reference/build-principles.json.
+2. R7 next, because its failure is the only informative one. Pick one card, attempt one example area
+   from its profile alone, and write down every question the profile could not answer into
+   docs/reference/profile-sufficiency.md. If it answers everything, the profile IS the spec and that
+   is a real finding. Do not fix the profile schema before you have this list.
+3. Then R4 (the prose gate -- the largest open hole: nothing reads text/role/covers/note, which is
+   how two invented statistics survived every gate), R1 (the 8 unprofiled cards, capture-first),
+   R2, R3, R5, R8.
 
-NON-NEGOTIABLE (all proven the hard way, see bridge.md section 3)
+NON-NEGOTIABLE -- every one of these was learned expensively; bridge.md section 3 has the incidents
 - A claim carries a verbatim quote from a stamped record, or is marked proposed. Both are good.
 - Citable means checked: run tools/stamp_verification.py --fetch before validating.
-- Verdicts are typed, never boolean. `partial` means a person must read it.
-- Capture with tools/capture.py, never WebFetch -- and build snippets from the gate's fetch path.
-- Never patch a contradicted record to fit. The contradiction is the finding.
-- A subagent's report is not evidence. Check the artifact it produced.
-- Mint egress ids centrally after a batch; re-derive every egress_ref after any rebuild.
+- Verdicts are typed, never boolean. `partial` means a person must read it, not that it failed.
+- Capture with tools/capture.py, never WebFetch -- and build snippets from the GATE's fetch path,
+  which is not the same text capture.py returns.
+- Never patch a contradicted record to fit its claim. The contradiction is the finding.
+- A subagent's report is not evidence. Check the artifact it produced; three subagent summaries
+  miscounted their own output last session.
+- Mint egress ids centrally after a batch, and re-derive every egress_ref after any rebuild.
+- Nothing writes to citation-debt.json automatically. It is debt, not permission.
 
 WHEN YOU FINISH A PIECE
-python3 tools/phase.py close <name>. Green closes. Two reds stop the phase and it will not reopen.
-Then review, improve, ledger, checkpoint -- in that order.
+python3 tools/phase.py open <name> ... close <name>. Green closes; two reds stop the phase and it
+refuses to reopen -- when that happens, stop and leave the evidence. Then review, improve, ledger,
+checkpoint, in that order. checkpoint.sh pushes to origin.
+
+REPORT PROGRESS AS `python3 tools/ready_to_build.py` OUTPUT, NOT AS PROSE.
 ```

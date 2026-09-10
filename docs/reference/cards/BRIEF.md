@@ -52,6 +52,31 @@ were not in the source, including one with invented statistics. `capture.py` wal
 the rung that succeeded. A snippet must be copied byte-for-byte from what capture returns —
 do not tidy punctuation, do not join two fragments across an ellipsis.
 
+**Build the snippet from the text the GATE will re-read, not from `capture.py`'s output.**
+`capture.py` walks a ladder (api -> markdown -> service -> html). On a site that serves its own
+markdown -- `modelcontextprotocol.io`, `langfuse.com`, `docs.mem0.ai` and others -- the `markdown`
+rung returns the `.md` source, complete with `**bold**`, backticks, `[text](url)` links and `* `
+bullets. `tools/verify_snippets.py` does something different: it re-fetches with a plain GET and
+strips the rendered HTML, so none of those markers exist in what it compares against. A snippet
+copied faithfully from the markdown rung is therefore *correct* and still fails the gate.
+
+This is not hypothetical. On 2026-09-10 a repair batch wrote 39 records following this brief; 13 of
+them carried snippet-level drift for exactly this reason, while the one agent that built against the
+gate's own path scored 8 of 8. Before writing a record, verify against the path that will judge it:
+
+```python
+import sys; sys.path.insert(0, "tools")
+import verify_snippets as V
+status, html, err = V.Fetcher().fetch(url)
+page = V.html_to_text(html)          # what the gate will actually compare against
+assert my_snippet in page            # if this fails, the record will drift
+```
+
+Both fields are checked: `snippet` and `read`. A fabricated `read` is the more dangerous of the two,
+because `validate_card_profiles.py` accepts a quote drawn from *either* -- so an invented `read`
+launders an invented quote past both checkers. Never stitch two non-adjacent passages together, and
+never flatten a table or list into prose: take one contiguous run of page text, or drop the field.
+
 If a fetch is refused, record `status: "blocked"` and say so. A blocked record is honest.
 
 ## Filling the fields
@@ -75,11 +100,48 @@ not a failed task. Do not manufacture support for it.
 Equally, if defining a card reveals it overlaps another card, or that its boundary is our
 bucketing rather than a real seam, put that in `gaps`. That is how the model gets better.
 
+## Citable means checked
+
+A record is not citable because it exists. It is citable because someone opened its page and the
+gate can prove it. `tools/stamp_verification.py` fetches a record's `url` through the exact path
+the checker uses and stamps it with which of *your quotes* were found there:
+
+```json
+"verification": {"checked_at": "2026-09-10", "method": "http+html_to_text", "http_status": 200,
+                 "snippet_verbatim": true, "read_verbatim": false,
+                 "verified_quotes": ["<sha256 of each quote found on the page>"]}
+```
+
+`validate_card_profiles.py` then refuses any citation whose quote is not in that list. This closes
+the hole that produced every defect of 2026-09-10: a record whose page nobody had opened used to be
+exactly as citable as one read line by line, and 45 of 46 profile-cited records failed when finally
+checked. It also closes the laundering route — a fabricated `read` used to make a fabricated quote
+pass both checkers, because the quote rule accepted text from *either* field.
+
+Verification is per quote, not per record, on purpose: a long `read` excerpt can drift on one
+markdown artifact while the sentence you actually quoted is genuinely on the page.
+
+**So the authoring loop is: write the profile -> stamp -> validate.**
+
+```
+python3 tools/stamp_verification.py --fetch   # fetches every cited page, stamps what it finds
+python3 tools/validate_card_profiles.py       # now the quote rule can be enforced offline
+```
+
+If a page cannot be retrieved at all, the stamp records `unreachable` with the reason and the
+citation still stands — a page you could not fetch proves nothing about the record, and treating
+"I could not check it" as "it is wrong" would be the same overreach this repo keeps catching.
+
+`docs/reference/citation-debt.json` enumerates citations that predate this rule and cannot yet be
+confirmed. It exists so the rule can block *new* defects without the repo going red on old ones.
+Nothing writes to it automatically. Do not add to it to make your card pass.
+
 ## Done means
 
 ```
-python3 tools/validate_card_profiles.py     # 0 errors
-python3 tools/verify_snippets.py --check    # only if you wrote new research records
+python3 tools/stamp_verification.py --fetch  # stamp every page you cited
+python3 tools/validate_card_profiles.py      # 0 errors
+python3 tools/verify_snippets.py --check     # only if you wrote new research records
 ```
 
 Iterate until clean. **Do not weaken the checker to pass** — if you think the checker is

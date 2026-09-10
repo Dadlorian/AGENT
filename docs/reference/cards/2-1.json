@@ -40,15 +40,15 @@
     },
     {
       "id": "json-schema-2020-12",
-      "role": "governs whether an instance document -- including a normalized envelope, wherever one is declared as a schema resource -- conforms to a declared dialect, reporting every violation of shape in a single pass rather than stopping at the first.",
-      "covers": "does not decide the envelope's shape (CloudEvents' and this repo's own design do that) and does not perform the 'enrich' step this card's own sub-line names: no research record or operation on file for either cap-work-intake or cap-document-validation describes what enrichment adds to a request or how it is computed, only that it is validated.",
+      "role": "governs whether an instance document -- including a normalized envelope, wherever one is declared as a schema resource -- conforms to a declared dialect, and defines a standard machine-readable output format: each output unit carries an evaluation path, schema location and instance location, and the results property is required to be an array precisely so more than one result -- including a validation error, not only the first -- can be reported.",
+      "covers": "does not decide the envelope's shape (CloudEvents' and this repo's own design do that), does not itself mandate that an implementation continue past the first failure (the output-format spec describes the shape of a result set, not a runtime policy), and does not perform the 'enrich' step this card's own sub-line names: no research record or operation on file for either cap-work-intake or cap-document-validation describes what enrichment adds to a request or how it is computed, only that it is validated.",
       "evidence": {
-        "text": "Validation output includes evaluation path, schema location, instance location, and specific errors with descriptions. Error reports list failures using RFC 6901 JSON Pointer notation in the path field, allowing you to drill straight to the offending node in nested data. All errors are reported in a single pass instead of stopping at the first failure.",
+        "text": "The official output-format specification requires each output unit to carry an evaluation path, schema location and instance location, and requires the results property to hold potentially more than one of them: \"In order to accommodate\npotentially multiple results, the value of this property MUST be an array of\noutput units, even if only a single output unit is produced.\"",
         "origin": "sourced",
         "evidence": [
           {
-            "id": "X-cap-document-validation-005",
-            "quote": "All errors are reported in a single pass instead of stopping at the first failure."
+            "id": "X-refmodel-2-1-intake-001",
+            "quote": "In order to accommodate\npotentially multiple results, the value of this property MUST be an array of\noutput units, even if only a single output unit is produced."
           }
         ]
       }
@@ -89,20 +89,20 @@
     }
   ],
   "landscape": {
-    "text": "The real tradeoff is not between competing envelope formats for the same job, but between a settled and a fast-moving standard governing two different doors of one intake boundary. CloudEvents graduated in the CNCF in January 2024 and its current v1.0.2 revision is unchanged and backward-compatible, so the event/schedule/CLI/HTTP doors have a genuinely stable envelope to normalize into. The external-agent door's standard is still moving -- A2A reached v1.0 only in March 2026 and added an extension mechanism in v1.0.1 two months later -- and the alternative to adopting either is worse: \"Custom HTTP endpoints for agent communication in 2026 are creating technical debt.\" Both protocols now sit under the same Linux Foundation Agentic AI Foundation, which this repo's own litmus evidence calls institutional consolidation, not technical convergence into one wire format.",
+    "text": "The real tradeoff is not between competing envelope formats for the same job, but between a settled and a fast-moving standard governing two different doors of one intake boundary. CNCF's own project page states CloudEvents \"moved to the Graduated maturity level on January 25, 2024\", so the event/schedule/CLI/HTTP doors have a mature, graduated envelope to normalize into -- though this corpus has no source confirming a specific current spec revision or exact backward-compatibility claim beyond that graduation. The external-agent door's own specification is still evolving its own capability surface: A2A names Extension a first-class concept distinct from its core operations, defined as \"A mechanism for agents to provide additional functionality or data beyond the core A2A specification\", something CloudEvents' settled envelope does not need. On the agent-protocol side specifically (not CloudEvents), governance has also consolidated: \"With MCP (under AAIF), A2A, and ACP all now under Linux Foundation governance, and with the same platinum sponsors (AWS, Google, Microsoft, IBM, Anthropic, Salesforce) backing multiple protocols, the industry is signaling a future where these protocols are formally layered and complementary rather than independently competing\" -- which this repo reads as institutional consolidation among the agent protocols, not technical convergence into one wire format, and not something CloudEvents itself is party to.",
     "origin": "sourced",
     "evidence": [
       {
-        "id": "X-litmus-b-002",
+        "id": "X-refmodel-2-1-intake-002",
         "quote": "moved to the Graduated maturity level on January 25, 2024"
       },
       {
-        "id": "X-litmus-b-001",
-        "quote": "Version 1.0.1 (May 2026) introduced an extension mechanism supporting new data, requirements, RPC methods, and state machines."
+        "id": "X-refmodel-2-1-intake-003",
+        "quote": "A mechanism for agents to provide additional functionality or data beyond the core A2A specification."
       },
       {
-        "id": "X-litmus-b-005",
-        "quote": "Custom HTTP endpoints for agent communication in 2026 are creating technical debt."
+        "id": "X-refmodel-2-1-intake-004",
+        "quote": "With MCP (under AAIF), A2A, and ACP all now under Linux Foundation governance, and with the same platinum sponsors (AWS, Google, Microsoft, IBM, Anthropic, Salesforce) backing multiple protocols, the industry is signaling a future where these protocols are formally layered and complementary rather than independently competing."
       }
     ]
   },
@@ -136,6 +136,11 @@
       "what": "No third-party tool or SDK backs this capability today for either standard; the live adapter is described as standard-library-only, and A2A -- despite being named as this row's own governing standard alongside CloudEvents -- is not one of the four producers this repo's current-state table lists as running.",
       "why_it_matters": "A capability can be 'built' as a hand-rolled mapper without any conformance run against a real CloudEvents or A2A implementation, which is a narrower claim than the standard badge implies.",
       "research_query": "has any adapter here been run against a real CloudEvents-conformant broker or A2A endpoint, or only against this repo's own fixtures"
+    },
+    {
+      "what": "An earlier version of this card's landscape section cited a record for A2A reaching \"v1.0\" with a \"v1.0.1 (May 2026)\" extension-mechanism release, and a record naming an \"Agentic AI Foundation (AAIF)\" launched in December 2025 with six named co-founders. On repair, neither of those specific figures (the v1.0.1 date, the six-founder list) was found on the pages the old records cited, or on any alternative source checked; the extension mechanism and the shared Linux Foundation governance are real, per A2A's own specification and a separate protocol-comparison source, but the exact version-history dates and founder list have been dropped rather than re-asserted from a different guess.",
+      "why_it_matters": "This is a direct instance of the pattern this card exists to catch: a plausible, specific-sounding figure (a version number with a date, a founder list) that does not trace to any citable source. Removing it narrows what this card can claim about A2A's release history, and that narrowing is itself informative.",
+      "research_query": "what is A2A's actual version-release history (dates for reaching v1.0 and any subsequent minor releases), and when and with which named founding members was the Agentic AI Foundation actually launched, per the foundation's own charter or announcement rather than a secondary blog"
     }
   ]
 }

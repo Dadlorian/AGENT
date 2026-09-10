@@ -66,15 +66,15 @@
     {
       "name": "Firecracker microVM snapshot-restore",
       "kind": "open-source",
-      "note": "the same isolation adapter this repo uses for sandboxing (F-a3-01, cited on card 3.3); its snapshot-restore feature pauses a sandbox and resumes it in 5-30ms by capturing whole memory and filesystem state, but no evidence found that this repo exercises that feature for checkpoint/resume specifically, as distinct from using Firecracker purely for isolation.",
+      "note": "the same isolation adapter this repo uses for sandboxing (F-a3-01, cited on card 3.3); its snapshot-restore feature pauses a microVM and resumes the guest workload in a new process by restoring saved guest memory and emulated hardware state, but no evidence found that this repo exercises that feature for checkpoint/resume specifically, as distinct from using Firecracker purely for isolation. A previous draft of this card cited a '5-30ms' resume-time figure that does not appear anywhere in its source page (a fabrication, confirmed by a full-text search); no page found in this repair states a specific resume-time figure, so none is claimed here (see gaps).",
       "in_use_here": false,
       "evidence": {
-        "text": "Firecracker's snapshot-restore mechanism lets you pause a sandbox, preserve its memory and filesystem state, and resume it in 5-30ms.",
+        "text": "Firecracker's own documentation describes snapshot-restore as resuming a guest workload in a new Firecracker process by restoring the full saved state of guest memory and emulated hardware, without stating a specific resume-time figure.",
         "origin": "sourced",
         "evidence": [
           {
-            "id": "X-maturity-a-001",
-            "quote": "Firecracker's snapshot-restore mechanism lets you pause a sandbox, preserve its memory and filesystem state, and resume it in 5-30ms."
+            "id": "X-refmodel-4-3-state-recovery-001",
+            "quote": "A Firecracker microVM snapshot can be used for loading it later in a different\nFirecracker process, and the original guest workload is being simply resumed."
           }
         ]
       }
@@ -113,7 +113,7 @@
     }
   ],
   "landscape": {
-    "text": "The real tradeoff is what layer 'checkpoint' operates at, not whether to checkpoint at all. At the application/workflow layer, current disaster-recovery practice names the tool call, not the session or run, as the durability unit, and prescribes a structured step log written before every externally-visible action: \"Right before the agent invokes a tool, the orchestrator persists: the current plan, the prompt prefix, the tool name, the arguments, the idempotency key, and the step ordinal.\" At the infrastructure layer, process/VM-level snapshotting captures a coarser unit instead -- Firecracker's snapshot-restore resumes a whole sandbox, memory and filesystem included, in 5-30ms, and a dedicated Checkpoint/Restore Working Group (CRIU, formed January 2026) is standardizing that layer, not the application step log. A correct resume must also carry non-positional state, not just position: a production durable-execution runtime is measured preserving accumulated token spend across a checkpoint/restart, not only workflow position -- it \"checkpoints every state transition (LLM responses, tool call results, control flow decisions) to durable storage. Resume from last checkpoint — When a failure occurs, execution resumes automatically on a healthy VM. Completed LLM calls aren't repeated, preserving both token spend and wall-clock time.\"",
+    "text": "The real tradeoff is what layer 'checkpoint' operates at, not whether to checkpoint at all. At the application/workflow layer, current disaster-recovery practice names the tool call, not the session or run, as the durability unit, and prescribes a structured step log written before every externally-visible action: \"Right before the agent invokes a tool, the orchestrator persists: the current plan, the prompt prefix, the tool name, the arguments, the idempotency key, and the step ordinal.\" At the infrastructure layer, process/VM-level snapshotting captures a coarser unit instead -- Firecracker's own documentation describes snapshot-restore as saving the full state of guest memory and emulated hardware and resuming the guest workload in a new process, without stating a specific resume-time figure (a previously-cited '5-30ms' figure was fabricated and has been removed; see gaps): \"In order to make restoring possible, Firecracker snapshots save the full state of the following resources: - the guest memory, - the emulated HW state (both KVM and Firecracker emulated HW).\" A dedicated Checkpoint/Restore Working Group (CRIU, formed January 2026) is standardizing that layer, not the application step log. A correct resume must also carry non-positional state, not just position: a production durable-execution runtime is measured preserving accumulated token spend across a checkpoint/restart, not only workflow position -- it \"checkpoints every state transition (LLM responses, tool call results, control flow decisions) to durable storage. Resume from last checkpoint — When a failure occurs, execution resumes automatically on a healthy VM. Completed LLM calls aren't repeated, preserving both token spend and wall-clock time.\"",
     "origin": "sourced",
     "evidence": [
       {
@@ -121,8 +121,8 @@
         "quote": "Right before the agent invokes a tool, the orchestrator persists: the current plan, the prompt prefix, the tool name, the arguments, the idempotency key, and the step ordinal."
       },
       {
-        "id": "X-maturity-a-001",
-        "quote": "Firecracker's snapshot-restore mechanism lets you pause a sandbox, preserve its memory and filesystem state, and resume it in 5-30ms."
+        "id": "X-refmodel-4-3-state-recovery-001",
+        "quote": "In order to make restoring possible, Firecracker snapshots save the full state\nof the following resources:\n\n- the guest memory,\n- the emulated HW state (both KVM and Firecracker emulated HW)."
       },
       {
         "id": "X-maturity-c-009",
@@ -173,6 +173,11 @@
       "what": "Disaster-recovery specifics for agent state -- which state surfaces are at risk on failover, a fail-safe-abort-over-fail-forward-replay default policy, and the finding that no numeric RPO/RTO target was stated in the source -- exist only in this pass's own paraphrase of X-refmodel-rail-7-operations-007 (its `claim` field), not in a verbatim-quotable `snippet` or `read` field, so none of that DR-specific content could be used as a sourced claim in this profile.",
       "why_it_matters": "The DR half of this card's own name is the least evidenced part of it: only the tool-call-as-durability-unit finding from the same record made it into this profile as a genuine citation.",
       "research_query": "capture the tianpan.co DR article (or an equivalent) with tools/capture.py to get a verbatim, quotable read of its fail-safe-abort and RPO/RTO claims"
+    },
+    {
+      "what": "A '5-30ms' Firecracker resume-time figure previously cited twice on this card (tools and landscape) was found, on re-verification, to be a fabrication: the string '5-30' does not appear anywhere in its 67KB cited source page, which instead explicitly warns that provider startup figures 'do not form a speed ranking.' Firecracker's own official documentation (github.com/firecracker-microvm/firecracker) was captured directly for this repair and states no specific resume-time figure at all -- only that restoring saves and reloads guest memory and emulated hardware state, with 'very fast snapshot loading' left unquantified.",
+      "why_it_matters": "No source found in this repair -- including Firecracker's own docs -- supports any specific millisecond figure for snapshot-restore latency; this card previously stated one as settled fact. Any future re-addition of a timing number for this card should be sourced to a real, fetched benchmark, not a search-result paraphrase.",
+      "research_query": "does any Firecracker benchmark (AWS's own engineering blog, a CNCF talk, or a reproducible third-party benchmark) report a real, methodology-stated resume-time figure"
     }
   ]
 }

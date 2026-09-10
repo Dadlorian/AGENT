@@ -42,7 +42,7 @@
     {
       "name": "Restate",
       "kind": "open-source",
-      "note": "Named swap candidate for durable execution in this repo's own table (F-b3-04); architecturally lighter than Temporal -- no dedicated cluster.",
+      "note": "Named swap candidate for durable execution in this repo's own table (F-b3-04). An earlier version of this note also claimed 'no dedicated cluster,' echoing a sentence about Restate that came from the same fabricated snippet the DBOS entry below was built on (see that entry's fix and this card's gaps); a direct check of Restate's own site found no mention of 'cluster' at all, so that specific architectural claim has been dropped rather than repeated unverified.",
       "in_use_here": false,
       "evidence": {
         "text": "Temporal | Restate · DBOS · Inngest · a queue plus a state machine",
@@ -61,12 +61,16 @@
       "note": "Named swap candidate (F-b3-04); genuinely different architecture from Temporal, not a clone of it -- it reuses an existing Postgres database as the durability layer instead of running a dedicated server.",
       "in_use_here": false,
       "evidence": {
-        "text": "DBOS reuses Postgres as the durability layer for workflows, while Temporal runs a dedicated cluster. Restate focuses on providing a lightweight, cloud-native engine for resilient process execution, offering APIs for workflow orchestration and state tracking.",
+        "text": "DBOS's own site states that installing its library and connecting it to a Postgres database requires \"No new infrastructure\" -- a materially different architecture from Temporal, which this repo's own inventory records as a dedicated server that must listen on ports `7233`/`8233`, and is currently down.",
         "origin": "sourced",
         "evidence": [
           {
-            "id": "X-cap-durable-execution-006",
-            "quote": "DBOS reuses Postgres as the durability layer for workflows, while Temporal runs a dedicated cluster."
+            "id": "X-refmodel-2-4-dispatch-001",
+            "quote": "Just install the open-source DBOS library to your code and connect it to a Postgres database. No new infrastructure required."
+          },
+          {
+            "id": "F-a6-02",
+            "quote": "Data directory present; server not listening on `7233`/`8233`. Durable workflow orchestration and human-in-the-loop signals are designed around it and it is currently down"
           }
         ]
       }
@@ -77,12 +81,12 @@
       "note": "Named swap candidate (F-b3-04); event-driven model that hides queue/worker machinery from the caller entirely, distinct from Temporal's explicit worker/task-queue model.",
       "in_use_here": false,
       "evidence": {
-        "text": "In Inngest, everything is triggered by an event. This approach fundamentally removes the need for developers to manage or even think about traditional queues or worker processes.",
+        "text": "Inngest's own current homepage states its event-driven model plainly: \"No workers. No queues. No refactoring.\"",
         "origin": "sourced",
         "evidence": [
           {
-            "id": "X-entry-composition-028",
-            "quote": "This approach fundamentally removes the need for developers to manage or even think about traditional queues or worker processes."
+            "id": "X-refmodel-2-4-dispatch-002",
+            "quote": "No workers. No queues. No refactoring."
           }
         ]
       }
@@ -121,7 +125,7 @@
     }
   ],
   "landscape": {
-    "text": "What a durable-execution/workflow engine actually provides is a journal of every step so a crash can resume without redoing work; this is a class of engine (Temporal, Restate, DBOS, Inngest, plus AWS Step Functions, LangGraph and Cloudflare Workflows named in the same source), and Temporal is one option in it with a materially different architecture from at least one alternative, not the representative design: \"DBOS reuses Postgres as the durability layer for workflows, while Temporal runs a dedicated cluster.\" Separately, whether a closed set of composition operators is how the field actually works is not settled by the evidence gathered here: Orkes Conductor exposes a wider, open-ended operator vocabulary than six, and Microsoft's Magentic orchestration and handoff-pattern orchestration both select the next step dynamically at runtime rather than from an author-fixed graph -- production multi-agent orchestration includes control flow this repo's own closed-set design (marked proposed in compose-workflow's own skill.json) does not represent.",
+    "text": "What a durable-execution/workflow engine actually provides is a journal of every step so a crash can resume without redoing work; this is a class of engine (Temporal, Restate, DBOS, Inngest, plus AWS Step Functions, LangGraph and Cloudflare Workflows named in the same source), and Temporal is one option in it with a materially different architecture from at least one alternative, not the representative design: DBOS's own site describes its setup as \"Just install the open-source DBOS library to your code and connect it to a Postgres database. No new infrastructure required.\" -- unlike Temporal, which this repo's own inventory records as a dedicated server that must listen on ports `7233`/`8233` and is currently down. Separately, whether a closed set of composition operators is how the field actually works is not settled by the evidence gathered here: Orkes Conductor exposes a wider, open-ended operator vocabulary than six, and Microsoft's Magentic orchestration and handoff-pattern orchestration both select the next step dynamically at runtime rather than from an author-fixed graph -- production multi-agent orchestration includes control flow this repo's own closed-set design (marked proposed in compose-workflow's own skill.json) does not represent.",
     "origin": "sourced",
     "evidence": [
       {
@@ -129,8 +133,12 @@
         "quote": "A durable execution engine ensures reliable, stateful execution of workflows and processes in distributed systems."
       },
       {
-        "id": "X-cap-durable-execution-006",
-        "quote": "DBOS reuses Postgres as the durability layer for workflows, while Temporal runs a dedicated cluster."
+        "id": "X-refmodel-2-4-dispatch-001",
+        "quote": "Just install the open-source DBOS library to your code and connect it to a Postgres database. No new infrastructure required."
+      },
+      {
+        "id": "F-a6-02",
+        "quote": "Data directory present; server not listening on `7233`/`8233`. Durable workflow orchestration and human-in-the-loop signals are designed around it and it is currently down"
       },
       {
         "id": "X-compose-operators-001",
@@ -190,6 +198,11 @@
       "what": "No open standard defines the request/result envelope a dispatch call should use. The one governance-backed agent-to-agent standard found (A2A)'s Task object has exactly six fields (id, contextId, status, artifacts, history, metadata) and by explicit design excludes a plan or decomposition field -- \"agents collaborate based on declared capabilities and exchanged information, without needing to share their internal thoughts, plans, or tool implementations\" -- consistent with this card's own dispatch definition of one opaque, typed result, but that is a convergence this repo has not itself checked its seam-dispatch contract against.",
       "why_it_matters": "If seam-dispatch's request/result shape has never been compared field-by-field against A2A's Task object, a claim that they agree (or a claim that A2A is irrelevant) is unevidenced either way.",
       "research_query": "does seam-dispatch's request/result schema map onto A2A's Task object fields, or diverge, and where"
+    },
+    {
+      "what": "A verification pass found this card previously cited a record (X-cap-durable-execution-006) at two json_paths (the DBOS tool entry and landscape) for a claim that 'DBOS reuses Postgres as the durability layer for workflows, while Temporal runs a dedicated cluster. Restate focuses on providing a lightweight, cloud-native engine...' -- attributed to a Spheron blog post that compares exactly three engines (Temporal, Inngest, Restate) and never mentions DBOS anywhere in the ~5,000-word article (0 occurrences, grepped). The Restate sentence in that same fabricated snippet has been dropped from this card entirely (Restate already has its own separately, cleanly sourced tool entry). The original record is left unedited as the discovered defect; this card now cites a freshly captured DBOS primary source (X-refmodel-2-4-dispatch-001) instead. A second, lower-severity citation (X-entry-composition-028, Inngest) quoted a sentence not found on a fresh capture of the same URL, though the page's current headline and framing do support the underlying claim -- re-sourced to X-refmodel-2-4-dispatch-002.",
+      "why_it_matters": "An entire named product (DBOS) with a specific architectural claim attached to it was fabricated relative to its cited page -- the cleanest kind of citation defect, since the page is silent rather than merely paraphrased. A reader who trusted the old citation would have no way to know the comparison never happened on that page.",
+      "research_query": "does a future tools/verify_snippets.py pass flag X-cap-durable-execution-006, and should its status be annotated so other cards do not cite it"
     }
   ]
 }

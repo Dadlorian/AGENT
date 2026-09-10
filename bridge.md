@@ -14,28 +14,28 @@ expensive mistakes of the last two sessions were confident restatements of numbe
 
 | | |
 |---|---|
-| Research corpus | **932 records — 158 fetched, 767 search-only, 7 blocked** |
+| Research corpus | **977 records — 204 fetched, 766 search-only, 7 blocked** (2026-09-10) |
 | Reference model | 40 cards, 19 built / 21 planned, **15 recorded corrections** |
-| Card profiles | **27 of 40**, 365 individually verified citations, 119 recorded gaps |
-| Knowledge pool | **25 documented · 2 unread · 13 undocumented** |
+| Card profiles | **32 of 40** at 0 errors, 451 citations, 8 cards unprofiled |
+| Citation quality | **292 read · 16 unread · 143 internal · 0 broken** — `tools/knowledge_quality.py` |
+| Citations verified at the gate | **191 records stamped, 23 recorded as debt** — `tools/stamp_verification.py` |
+| Verified against source | 46 profile-cited records captured: **1 clean, 18 contradicted, 18 snippet-off, 9 unreachable** |
 | Examples | `archived/` (the old seven), `reference/` (empty, structure defined), `end-to-end/` |
 | STATUS | 11 live rows, 0 stale |
 
 ### Gates — all green except two, both recorded
 
 ```
-python3 tools/validate_skills.py            29 skills, 0 errors, 0 warnings
+python3 tools/phase.py gates                9 of 11 green, the two reds recorded below
 python3 tools/kb.py verify                  chains intact, rebuild identical
-python3 tools/kb.py ledger-verify           322 records
-python3 tools/validate_card_profiles.py     27 profiles, 0 errors
+python3 tools/kb.py ledger-verify           325 records
+python3 tools/validate_card_profiles.py     32 profiles, 0 errors, 2469 citable records
 python3 tools/card_profile_test.py          10/10 (9 planted defects caught)
-python3 tools/check_card_example_map.py     40 entries, 0 errors
-python3 tools/extract_reference_model.py --check   14/14
-python3 tools/reconcile_egress.py           RECONCILED
-python3 tools/status_check.py --freshness   11 rows, 0 stale
-python3 tools/knowledge_pool.py             regenerates the pool view
+python3 tools/reconcile_egress.py           RECONCILED, 977 decisions
+python3 tools/status_check.py --freshness   13 rows, 0 stale
+python3 tools/knowledge_quality.py          451 citations: 292 read, 16 unread, 143 internal; exit 0
 python3 tools/standards.py check            10 errors  <- row 77, journey names archived paths
-python3 tools/verify_snippets.py --check    drift 39   <- all `read`-field only, no citation uses them
+python3 tools/verify_snippets.py --check    204 records, drift 47  <- ALL `read`-field, 0 snippet-field
 ```
 
 ---
@@ -57,6 +57,16 @@ check, not by suspicion — and none of it was visible before.
   verbatim text from a different record's page** (`X-end-to-end-058`, `X-cap-evaluation-003`).
 - **767 search-only records remain unchecked.** At the observed rate that is roughly 190 records
   carrying claims their pages do not support.
+
+**2026-09-10 update — the rate is far worse than one in four, on the records that matter.** The 46
+search-only records that card profiles actually cite were captured and compared. **One was clean.**
+18 contradicted their page, 18 had the claim supportable but the quote not on the page, 9 could not
+be retrieved. Three fabrication patterns recur: invented specifics (a Firecracker "5-30ms" resume
+figure absent from its page; an "Agentic AI Foundation" with six named co-founders, 0 occurrences),
+cross-record contamination (a snippet verbatim on a *sibling record's* page, found in 3 records, not
+the 2 named above), and wrong-page attribution (a DBOS claim citing a page where "DBOS" appears 0
+times). All 49 affected citations were repaired or downgraded; `tools/knowledge_quality.py` exits
+non-zero if any profile cites a record a capture pass proved unsupported.
 
 **Citations were unverifiable by construction.**
 
@@ -81,6 +91,7 @@ Proven over ~40 agent runs. Do not improvise around it.
 ### Capture
 
 **Never use WebFetch to capture a quote.** It returns a model's rendering of a page. Use:
+*(but see the warning below: `capture.py` and the gate do not read the same text)*
 
 ```
 python3 tools/capture.py <url>      # api -> markdown -> service -> html
@@ -89,6 +100,21 @@ python3 tools/capture.py <url>      # api -> markdown -> service -> html
 Record which rung succeeded in `fetch_tool`. `service` uses pure.md / urltomarkdown, both keyless.
 A snippet must be a **byte-for-byte** substring of what capture returns — no tidying punctuation,
 no joining fragments across an ellipsis.
+
+**`capture.py` and `verify_snippets.py` do not read the same text, and that mismatch generates
+defects.** The ladder's `markdown` rung returns a site's `.md` source (with `**bold**`, backticks,
+`[text](url)`); the gate re-fetches with a plain GET and strips rendered HTML, where none of those
+markers exist. A snippet copied faithfully from the markdown rung is correct and still drifts. On
+2026-09-10 a 39-record batch produced 13 snippet-level drifts this way, while the one agent that
+built against the gate's own path scored 8 of 8. Build snippets from
+`verify_snippets.Fetcher().fetch(url)` + `verify_snippets.html_to_text(...)`, which is what will
+judge them. `docs/reference/cards/BRIEF.md` now carries the runnable check.
+
+**A fabricated `read` field is the most dangerous defect available here.**
+`validate_card_profiles.py` accepts a quote drawn from `snippet` *or* `read`, so an invented `read`
+launders an invented quote past both checkers — and `verify_snippets.py` only flags it as a
+`read`-field drift, which the phase gates carry as known-red. Repair agents fabricated `read` fields
+in their own new records twice on 2026-09-10, both caught by review, neither by tooling.
 
 ### Search before researching
 
@@ -112,6 +138,30 @@ under a new id. The index is the only thing that prevents it.
    to read. It never settles a question and never drives a state change. Violated four times,
    caught four times; once a regex nearly flipped a card's status by matching a failure pattern
    against a **passing** test.
+
+### Citable means checked — the rule that stops this recurring
+
+Repair is not a process. The reason 45 of 46 records failed is that **nothing connected "cited" to
+"checked"**: `validate_card_profiles.py` never consulted a record's status, so a record whose page
+nobody had opened was exactly as citable as one read line by line. Verification lived in a separate,
+non-blocking, network-dependent gate.
+
+That is now closed. `tools/stamp_verification.py` fetches each cited record's page through the same
+path the checker uses and stamps it with the SHA-256 of every profile quote actually found there;
+`validate_card_profiles.py` refuses any citation whose quote is not in that list. Proven by
+deliberate breakage: a quote verbatim in a record but absent from its page is rejected, and so is a
+citation to an unstamped record.
+
+Verification is **per quote, not per record** — a long `read` can drift on one markdown artifact
+while the quoted sentence is genuinely on the page, and a field-level verdict would reject honest
+citations while catching nothing extra. It also closes the laundering route: a fabricated `read`
+used to legitimise a fabricated quote, because the quote rule accepted text from either field.
+
+`docs/reference/citation-debt.json` enumerates the 23 pre-existing citations that cannot yet be
+confirmed, so the rule blocks new defects without the repo going red on old ones. 16 of those 23 are
+"page retrieved, quote not found" — the same class as the fabrications repaired on 2026-09-10, not
+yet re-sourced. STATUS row 84 burns it down. **An exemption list that grows quietly stops being debt
+and becomes permission; nothing writes to that file automatically.**
 
 ### Source text is not the `claim` field
 
@@ -230,10 +280,17 @@ self-improved, closed green on attempt 1.
 Six phases, three ceremonies. A ceremony every two phases, and at every section boundary — that is
 where a reviewer who did not do the work checks it, and where the planted defects test the reviewer.
 
+**Phases 1, 3 and a new phase 3b are CLOSED as of 2026-09-10. Phase 2 is deliberately held.**
+The owner reordered the plan: verify the corpus before profiling more cards against it, because
+profiling 8 more cards against a corpus measured at 1-clean-in-46 reproduces the defect class.
+`python3 tools/phase.py status` is the authority on what is closed.
+
 | # | Phase | Work | Batch |
 |---|---|---|---|
-| 1 | `B-core-agent` | Profile 3.1 Harness, 3.2 Model Interface, 3.4 Workspace, 3.5 Tool Interface, and 2.3 Planning (its 9-record lens already exists) | 5 agents, one card each |
-| 2 | `B-remainder` | Profile the other 8: 1.5, 4.1, 6.1, 6.3, base.1, base.2, base.4, rail.1 | 4 agents, two cards each |
+| 1 | `B-core-agent` **CLOSED** | Profiled 3.1, 3.2, 3.4, 3.5, 2.3 — 32 of 40 cards now at 0 errors | 5 agents, one card each |
+| 3 | `A-cited` **CLOSED** | Captured and compared all 46 profile-cited search-only records | 5 agents, split by source file |
+| 3b | `A-repair` **CLOSED** | Repaired all 49 bad citations: 39 new fetched records, claims dropped or marked proposed where no source supported them | 5 agents, split by card |
+| 2 | `B-remainder` **HELD** | Profile the other 8: 1.5, 4.1, 6.1, 6.3, base.1, base.2, base.4, rail.1 | do NOT run against unverified records; require capture-first citations |
 | — | **CEREMONY 1** | All 40 cards profiled. Review, improve, ledger, checkpoint | |
 | 3 | `A-cited` | Verify search-only records cited by a skill or profile | 4-6 agents, split by source file |
 | 4 | `A-remainder` | Verify the rest of the 767, highest-cited first | 4-6 agents, split by source file |

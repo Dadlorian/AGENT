@@ -83,12 +83,12 @@
       "note": "Snapshots full run state to a pluggable store keyed by a thread id so a run can pause, resume, rewind or branch -- a durable-execution/state-recovery mechanism (this repo's own 4.3 State & Recovery / cap-state-persistence territory) rather than a workspace-context mechanism, even though it is the closest real, named tool found to this card's 'shared state' wording. Not used here.",
       "in_use_here": false,
       "evidence": {
-        "text": "LangGraph's checkpointer is named prior art for durable, resumable run state, snapshotted after every step and keyed by thread.",
+        "text": "LangGraph's checkpointer is named prior art for durable, resumable run state, kept separate per thread and reconstructed from the last checkpoint on resume.",
         "origin": "sourced",
         "evidence": [
           {
-            "id": "X-cross-structure-046",
-            "quote": "LangGraph checkpoints turn a graph into a durable program: after every super-step the full state is snapshotted to a Checkpointer (in-memory, SQLite, or Postgres), keyed by thread_id"
+            "id": "X-refmodel-3-4-workspace-004",
+            "quote": "Persist: After each step, the new state is serialized and saved to the database as a new checkpoint."
           }
         ]
       }
@@ -111,7 +111,7 @@
     }
   ],
   "landscape": {
-    "text": "Tooling splits along the card's own three-part name rather than converging on one thing. For files/context, the pattern that has actually converged across vendors is a single, human-edited Markdown file loaded automatically at session start: AGENTS.md's site walks through exactly that step, 'Create an AGENTS.md file at the root of the repository,' and Claude Code implements the same idea under its own vendor-specific name (CLAUDE.md). For memory, the industry treats it as a separate, runtime-written layer built on embedding retrieval rather than a static file: 'Agent memory systems typically embed queries and stored memories, rank candidate memories by cosine similarity, and place the top-ranked memories into the model context.' Distinct again from either file is the more basic question of what sits inside a running context window at all -- Anthropic's own engineering guidance names this its own technique, compaction, defined as 'taking a conversation nearing the context window limit, summarizing its contents, and reinitiating a new context window with the summary.' For shared state specifically, the closest real, named tooling found says plainly that it does not do that across machines: Claude Code's own memory docs state 'Auto memory is machine-local. All worktrees and subdirectories within the same git repository share one auto memory directory. Files are not shared across machines or cloud environments,' and the closest durable-state mechanism found, LangGraph's checkpointer, snapshots full run state to a store rather than exposing a live workspace multiple agents write into concurrently: 'LangGraph checkpoints turn a graph into a durable program: after every super-step the full state is snapshotted to a Checkpointer (in-memory, SQLite, or Postgres), keyed by thread_id.' And no ratified standard governs sharing memory across agents from different vendors at all: 'Portable Agent Memory addresses a critical gap in the emerging agent interoperability stack: while MCP standardizes tool access and A2A standardizes task delegation, no prior protocol provides verified memory portability.'",
+    "text": "Tooling splits along the card's own three-part name rather than converging on one thing. For files/context, the pattern that has actually converged across vendors is a single, human-edited Markdown file loaded automatically at session start: AGENTS.md's site walks through exactly that step, 'Create an AGENTS.md file at the root of the repository,' and Claude Code implements the same idea under its own vendor-specific name (CLAUDE.md). For memory, the industry's baseline pattern is a separate, runtime-written layer built on embedding retrieval rather than a static file, though vendors describe it as a starting point rather than the whole story: 'The simplest approach is vector similarity — embed the query, find the closest stored embeddings.' Distinct again from either file is the more basic question of what sits inside a running context window at all -- Anthropic's own engineering guidance names this its own technique, compaction, defined as 'taking a conversation nearing the context window limit, summarizing its contents, and reinitiating a new context window with the summary.' For shared state specifically, the closest real, named tooling found says plainly that it does not do that across machines: Claude Code's own memory docs state 'Auto memory is machine-local. All worktrees and subdirectories within the same git repository share one auto memory directory. Files are not shared across machines or cloud environments,' and the closest durable-state mechanism found, LangGraph's checkpointer, snapshots full run state to a store rather than exposing a live workspace multiple agents write into concurrently: 'After each step, the new state is serialized and saved to the database as a new checkpoint.' And no ratified standard governs sharing memory across agents from different vendors at all: 'Portable Agent Memory addresses a critical gap in the emerging agent interoperability stack: while MCP standardizes tool access and A2A standardizes task delegation, no prior protocol provides verified memory portability.'",
     "origin": "sourced",
     "evidence": [
       {
@@ -119,8 +119,8 @@
         "quote": "Create an AGENTS.md file at the root of the repository."
       },
       {
-        "id": "X-cap-memory-001",
-        "quote": "Agent memory systems typically embed queries and stored memories, rank candidate memories by cosine similarity, and place the top-ranked memories into the model context."
+        "id": "X-refmodel-3-4-workspace-003",
+        "quote": "The simplest approach is vector similarity — embed the query, find the closest stored embeddings."
       },
       {
         "id": "X-end-to-end-004",
@@ -131,8 +131,8 @@
         "quote": "Auto memory is machine-local. All worktrees and subdirectories within the same git repository share one auto memory directory. Files are not shared across machines or cloud environments."
       },
       {
-        "id": "X-cross-structure-046",
-        "quote": "LangGraph checkpoints turn a graph into a durable program: after every super-step the full state is snapshotted to a Checkpointer (in-memory, SQLite, or Postgres), keyed by thread_id"
+        "id": "X-refmodel-3-4-workspace-004",
+        "quote": "Persist: After each step, the new state is serialized and saved to the database as a new checkpoint."
       },
       {
         "id": "X-end-to-end-003",
@@ -179,6 +179,11 @@
       "what": "No source found names a ratified, cross-vendor standard for sharing or moving agent memory or workspace state across agents built by different vendors, unlike this repo's other Core Agent cards, which each name one (AGENTS.md here; MCP for 3.5 Tool Interface). The closest found is an unratified academic protocol proposal, Portable Agent Memory.",
       "why_it_matters": "Even a correctly-scoped Workspace standard badge would only ever cover the files third of the definition until (if ever) a memory/shared-state standard emerges industry-wide; the remaining gap is not just this repo's citation work.",
       "research_query": "has Portable Agent Memory or a similar proposal been adopted by any production agent framework since 2026-09"
+    },
+    {
+      "what": "Three citations on this card were found, on re-verification, not to be supported by their cited pages, and have been repaired. (1) The 'embed queries... rank candidate memories by cosine similarity' sentence was cross-record contamination: it was cited to mem0.ai but the words 'cosine' and that sentence never appear there -- the sentence is verbatim only on a sibling record's page (vectorize.io), and mem0.ai's own editorial stance actually argues memory systems are moving beyond pure vector similarity. (2, 3) The LangGraph quote using 'super-step' and 'SQLite' does not appear on its cited fast.io page at all -- fast.io only documents in-memory and Postgres checkpointers, and 'super-step' is LangGraph's own official-docs terminology, not this third-party guide's. All three are now repointed to genuinely re-fetched, page-verified text.",
+      "why_it_matters": "Two of this card's six landscape citations and its only LangGraph tool citation were unsupported by their claimed pages -- a higher defect rate than the card's own prose suggested, and a caller trusting the original citations would have been trusting fabricated or misattributed text.",
+      "research_query": "none -- resolved by this repair; re-run tools/verify_snippets.py to confirm the new records' snippets stay byte-for-byte verbatim if the cited pages change"
     }
   ]
 }

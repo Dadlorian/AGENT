@@ -40,24 +40,24 @@
       }
     },
     {
-      "name": "Run-scoped session/gateway budget guard (Anthropic session object, AWS gateway)",
+      "name": "TokenOps vs. gateway-scoped budget tools (LiteLLM, Portkey, Cloudflare AI Gateway, Langfuse)",
       "kind": "unknown",
-      "note": "Named illustratively, not as a specific product this repo uses: two shipped implementations of the same real-time, run-scoped enforcement pattern this card's own ceiling-per-root-unit state matches, built at two different layers a day apart.",
+      "note": "The cited page's own scope table shows LiteLLM, Portkey, Cloudflare AI Gateway and Langfuse each budget at request/key/workspace granularity, while TokenOps budgets at run/agent-type/user-segment granularity -- and of the four, this repo's own in-use adapter (LiteLLM, F-a4-07) comes closest to a run-spanning cap.",
       "in_use_here": false,
       "evidence": {
-        "text": "Cited to show enforcement layer is a live, unsettled design choice industry-wide, not a solved question this card can assume an answer to.",
+        "text": "\"LiteLLM is the closest to the landscape we describe above. Its per-team budgets can cap a multi-step loop, not just one call as long as the calls use the same key for the team.\" The other three named tools (Portkey, Cloudflare AI Gateway, Langfuse) are scoped at request/key/workspace granularity in the same page's own comparison table, not at the run level.",
         "origin": "sourced",
         "evidence": [
-          {"id": "X-litmus-c-016", "quote": "Two major agent platforms shipped run-level spend enforcement a day apart, and they picked different layers to do it - Anthropic in the session object, AWS at the gateway."}
+          {"id": "X-refmodel-rail-4-cost-001", "quote": "LiteLLM is the closest to the landscape we describe above. Its per-team budgets can cap a multi-step loop, not just one call as long as the calls use the same key for the team."}
         ]
       }
     }
   ],
   "landscape": {
-    "text": "The unsettled question is not whether to cap spend but where the cap is enforced and at what granularity. Two shipped platforms picked different layers a day apart -- \"Two major agent platforms shipped run-level spend enforcement a day apart, and they picked different layers to do it - Anthropic in the session object, AWS at the gateway\" -- which matters because a session-level guard and a gateway-level guard fail differently when a caller's own code has a bug. Showback and unit economics, the other half of this card's own subtitle, have a real, differently-shaped industry pattern again: monitoring guidance names token usage by model and team and cost per request as the reporting axes gateways actually expose -- attribution by team/project is a reporting axis orthogonal to the enforcement-layer question, and this repo's own live mechanism (a LiteLLM virtual key per model group, F-a4-07) caps by model group, not by team or project. Proposed, not evidenced by any record found in this pass after re-verification: the stakes of getting either question wrong are concrete, illustrated elsewhere in the field by runaway-loop cost blowouts running into the tens of thousands of dollars.",
+    "text": "The unsettled question is not whether to cap spend but where the cap is enforced and at what granularity. A structural limit of any gateway-layer guard is that its unit of accounting is narrower than a run: \"the gateway's unit of accounting is the key, and the money is spent by the run\" -- a request- or key-scoped budget cannot see a multi-step agent loop as one thing, which matters because a request-level guard and a run-level guard fail differently when a caller's own code loops. Showback and unit economics, the other half of this card's own subtitle, have a real, differently-shaped industry pattern again: monitoring guidance names token usage by model and team and cost per request as the reporting axes gateways actually expose -- attribution by team/project is a reporting axis orthogonal to the enforcement-layer question, and this repo's own live mechanism (a LiteLLM virtual key per model group, F-a4-07) caps by model group, not by team or project. Proposed, not evidenced by any record found in this pass after re-verification: the stakes of getting either question wrong are concrete, illustrated elsewhere in the field by runaway-loop cost blowouts running into the tens of thousands of dollars.",
     "origin": "sourced",
     "evidence": [
-      {"id": "X-litmus-c-016", "quote": "Two major agent platforms shipped run-level spend enforcement a day apart, and they picked different layers to do it - Anthropic in the session object, AWS at the gateway."},
+      {"id": "X-refmodel-rail-4-cost-001", "quote": "That’s the core limit, and it isn’t a missing feature: the gateway’s unit of accounting is the key, and the money is spent by the run."},
       {"id": "X-litmus-a-007", "quote": "Monitor latency (p50, p95, p99), error rates by type, cache hit rate, token usage by model and team, cost per request and aggregated, and provider availability."},
       {"id": "F-a4-07", "quote": "Each group carries a scoped LiteLLM virtual key with a hard budget cap"}
     ]
@@ -95,6 +95,11 @@
       "what": "Showback and unit economics -- half of this card's own subtitle -- have a real, sourced industry shape (hierarchical per-team/per-project budgets, per-request cost and token attribution), but nothing in this repo's own current-state facts describes attribution below the model-group level (F-a4-07's virtual key is scoped to a model group, not a team or a project).",
       "why_it_matters": "If no per-team or per-project attribution exists, 'showback' and 'unit economics' on this card's subtitle name a capability this repo has not built any part of yet, distinct from and further behind the budget-enforcement half of the same card.",
       "research_query": "kb_index.py search \"per-team per-project cost attribution tag request creation\""
+    },
+    {
+      "what": "This card previously cited an invented comparison to this same Microsoft TokenOps URL (\"two major agent platforms shipped run-level spend enforcement a day apart -- Anthropic in the session object, AWS at the gateway\"); a direct re-capture of the full page (27,218 characters) confirms it names neither Anthropic nor AWS anywhere -- the page's actual comparison set is LiteLLM, Portkey, Cloudflare AI Gateway and Langfuse. The repaired citation now rests on that one vendor's own self-comparison table, not on two independently-sourced shipped platforms picking different layers.",
+      "why_it_matters": "The corrected evidence is weaker in kind than what it replaced: 'the enforcement layer is a live, industry-wide unsettled design choice' is now supported by one company's blog post about its own product rather than by an independent, cross-vendor example. The underlying point (gateway-layer accounting is narrower than a run) still holds, but the 'two platforms, two layers' framing that motivated this card's own tool entry no longer has any evidenced basis and should not be reintroduced without a real, independently-verifiable source.",
+      "research_query": "kb_index.py search \"Anthropic session budget\" OR \"AWS Bedrock AgentCore gateway budget\" -- does either vendor document a shipped, run-scoped spend ceiling at the layer this card describes"
     }
   ]
 }

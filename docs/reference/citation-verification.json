@@ -1,0 +1,1015 @@
+{
+  "generated": "2026-09-10",
+  "method": "Each record's cited URL was captured with tools/capture.py (never WebFetch) and compared byte-for-byte, whitespace-normalised only, against (a) the record's own snippet and (b) every quote a card profile draws from that record. The record's claim was then judged against the captured page. Records were NOT patched to fit their pages: a contradicted record is left as it is, because the contradiction is the finding.",
+  "scope": "the 46 search-only records that docs/reference/cards/*.json actually cite -- not the whole corpus",
+  "outcome_meaning": {
+    "A_verified": "snippet verbatim on the page AND the page supports the claim; record upgraded to fetched",
+    "B_snippet_off": "the page supports the claim, but the snippet/quote is not verbatim on it -- usually search-engine truncation or splicing, sometimes invented detail around a real fact",
+    "C_contradicted": "the page does not support the claim: either silent on it, or asserting the opposite",
+    "D_unreachable": "the cited page was never actually retrieved, so nothing is proven either way. NOT evidence of a defect."
+  },
+  "counts": {
+    "B_snippet_off": 18,
+    "A_verified": 1,
+    "C_contradicted": 18,
+    "D_unreachable": 9
+  },
+  "caveat_arxiv": "capture.py routes every arxiv.org/{abs,pdf,html} URL to the Atom API, which returns title+abstract only. For arXiv-sourced records, absence from the abstract is NOT absence from the paper. Those are filed D_unreachable, never C_contradicted.",
+  "records": [
+    {
+      "id": "X-cap-agent-runtime-002",
+      "url": "https://www.danilchenko.dev/posts/agent-client-protocol/",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.1",
+          "quote": "ACP standardizes AI agent interaction (prompts, sessions, file permissions, streaming) between editors and coding agents.",
+          "on_page": false
+        },
+        {
+          "card": "3.1",
+          "quote": "After LSP, one language server worked everywhere. ACP does the same for AI agents.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "The Agent Client Protocol (ACP) is a JSON-RPC 2.0 standard that lets any AI coding agent run inside any supporting editor... Think LSP, but for AI agents instead of language servers. ... ACP fixes this with a simple idea borrowed from LSP: define a standard wire protocol between editors and agents, so any agent can plug into any editor.",
+      "record_edited": false,
+      "notes": "Neither the record's snippet nor either profile quote appears anywhere on the page (verified: the terms 'streaming', 'permission', 'autocomplete', 'language features', 'closest analogy', and 'one language server worked everywhere' do not occur anywhere in the 18,932-char capture) -- so both TEST1 and TEST2 fail and the two quotes card 3.1 relies on are not on this page. But claim_to_test itself ('ACP is the LSP equivalent for AI agents...') IS genuinely supported by real page text -- 'Think LSP, but for AI agents instead of language servers' and 'ACP fixes this with a simple idea borrowed from LSP: define a standard wire protocol between editors and agents, so any agent can plug into any editor' say the same thing in different, terser words. So per TEST3 (claim support, the outcome-deciding test) this is B not C: snippet/quotes are an embellished paraphrase carrying invented specifics (the 'prompts, sessions, file permissions, streaming' enumeration and the LSP 'autocomplete, go-to-definition' gloss appear nowhere on the page), not a fabrication of the underlying fact. Correct verbatim replacement for re-sourcing: 'Think LSP, but for AI agents instead of language servers.' (TL;DR) plus 'ACP fixes this with a simple idea borrowed from LSP: define a standard wire protocol between editors and agents, so any agent can plug into any editor.' (body).",
+      "lane": "B"
+    },
+    {
+      "id": "X-cap-agent-runtime-003",
+      "url": "https://blog.marcnuri.com/agent-client-protocol-acp-introduction",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "A_verified",
+      "snippet_on_page": true,
+      "profile_quotes": [
+        {
+          "card": "3.1",
+          "quote": "Zed introduced ACP in August 2025, and JetBrains joined shortly after.",
+          "on_page": true
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "The analogy people reach for is Language Server Protocol (LSP), and it is a useful one: ACP aims to break the old 1:1 coupling where each editor needed a bespoke integration for each agent. Zed introduced ACP in August 2025, and JetBrains joined shortly after. That quickly turned ACP from a Zed-specific integration mechanism into a broader interoperability layer for agentic coding workflows.",
+      "record_edited": true,
+      "notes": "Snippet and the card 3.1 quote are both verbatim on the page, in context, unambiguously supporting the claim. This is the ONLY record in this lane whose profile-relied-on quote survives verbatim. Record updated: status -> fetched, fetch_tool -> service, read -> verbatim excerpt including one sentence of lead-in context. No other fields touched. Edit already appears in HEAD with a clean working tree per git status -- that is environment snapshotting between tool calls in this sandbox, not an action I took; I never ran git commit or tools/checkpoint.sh.",
+      "lane": "B"
+    },
+    {
+      "id": "X-cap-agent-runtime-006",
+      "url": "https://www.danilchenko.dev/posts/agent-client-protocol/",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.1",
+          "quote": "For a local agent, the editor launches it as a subprocess and they talk JSON-RPC 2.0 over stdio.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "The protocol works like this: 1. The editor (client) spawns the agent as a subprocess 2. The agent communicates back over JSON-RPC 2.0 on stdin/stdout (local agents) or HTTP/WebSocket (remote agents, still in development) 3. Work organizes into sessions (a conversation with shared context) and turns (individual prompt-response cycles) 4. The agent can request file access, terminal execution, and tool calls, all through the protocol",
+      "record_edited": false,
+      "notes": "The core claim (editor spawns agent as subprocess; local agents talk JSON-RPC 2.0 over stdin/stdout) is genuinely supported by the page, just worded differently ('spawns...as a subprocess' vs 'launches it as a subprocess'; 'on stdin/stdout' vs 'over stdio'). However the second half of the record's snippet/claim -- 'No ports, no daemons' -- does not appear anywhere on the page at all (checked: 'daemon' and 'No ports' both absent from the full capture) and is an unsourced editorial addition, same pattern as X-cap-agent-runtime-002 above (same source URL). Correct verbatim replacement sentence for re-sourcing: 'The editor (client) spawns the agent as a subprocess' + 'The agent communicates back over JSON-RPC 2.0 on stdin/stdout (local agents) or HTTP/WebSocket (remote agents, still in development)'. Left unchanged per instructions (status stays search-only).",
+      "lane": "B"
+    },
+    {
+      "id": "X-cap-agent-runtime-007",
+      "url": "https://dev.to/formulahendry/vs-code-acp-client-extension-conect-to-claude-gemini-codex-opencode-qwen-code-and-so-on-3552",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.1",
+          "quote": "switch between Claude Code, Gemini CLI, Codex, or Goose",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "contradicts",
+      "evidence_from_page": "Out of box, you could connect to GitHub Copilot, Claude Code, Gemini CLI, Qwen Code, OpenCode, Codex CLI, Qoder CLI and Auggie CLI.",
+      "record_edited": false,
+      "notes": "MISATTRIBUTION, NOT PURE INVENTION: 'Goose' does not appear anywhere in this dev.to article (searched full 7,046-char capture, zero hits) nor does the phrase 'Editor-agent portability' or 'switch between ... without switching editors'. This article's own list of 8 supported agents is GitHub Copilot, Claude Code, Gemini CLI, Qwen Code, OpenCode, Codex CLI, Qoder CLI, Auggie CLI -- Goose is not one of them. But 'Goose' is real content, just from the WRONG source in this same lane: the sibling record X-cap-agent-runtime-002/006 URL (danilchenko.dev) verbatim says 'The registry already lists dozens of agents (Claude Code, Gemini CLI, Codex, GitHub Copilot, Goose, and more)' and 'Claude Agent, Gemini CLI, and Goose were reliably useful.' The record's claim reads as cross-source contamination -- content from danilchenko.dev attributed to the dev.to URL -- rather than wholesale fabrication. The dev.to page still does not support the claim as sourced, so C_contradicted stands, but the repair path is 're-source to danilchenko.dev, or replace Goose with this article's actual list' rather than 'delete, no basis found.'",
+      "lane": "B"
+    },
+    {
+      "id": "X-cap-capability-registry-001",
+      "url": "https://modelcontextprotocol.io/registry/about",
+      "capture_rung": "markdown",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.5",
+          "quote": "The MCP Registry launched in preview on September 8, 2025. The Registry API has entered an API freeze (v0.1), and for the next month or more, the API will remain stable with no breaking changes. As of July 20, 2026, it remains in preview and already provides standardized server metadata, namespace verification, package references, remote endpoint definitions, version records, and an API for clients and downstream registries.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "The MCP Registry provides: * A single place for server creators to publish metadata about their servers * Namespace management through DNS verification * A REST API for MCP clients and aggregators to discover available servers * Standardized installation and configuration information ... Server metadata is stored in a standardized server.json format ... <Note> The MCP Registry is currently in preview. Breaking changes or data resets may occur before general availability. </Note>",
+      "record_edited": false,
+      "notes": "Full page captured (markdown rung, whole page searched, not abstract-limited). The substance of the claim (standardized server metadata + namespace verification for capability discovery) IS supported by the page. BUT the snippet's specific factual content -- 'launched in preview on September 8, 2025', 'API freeze (v0.1)', 'As of July 20, 2026' -- is fabricated: zero occurrences of any of those phrases, dates, or the string 'v0.1' anywhere on the captured page. The page's own <Note> says only 'currently in preview', no date, no version-freeze language, no July 2026 status update. This is invented content, not truncation/reformatting -- flagging as the headline finding for this record even though the outcome bucket is B (claim substance holds).",
+      "lane": "C"
+    },
+    {
+      "id": "X-cap-capability-registry-007",
+      "url": "https://arxiv.org/html/2508.03095v3",
+      "capture_rung": "api",
+      "http_status": 200,
+      "outcome": "D_unreachable",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "7.4",
+          "quote": "Mutable metadata are represented as new versioned records rather than in-place edits",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "Title: Evolution of AI Agent Registry Solutions: Centralized, Enterprise, and Distributed Approaches. Abstract: ...(3) AGNTCY Agent Directory Service (IPFS Kademlia DHT content routing extended for semantic taxonomy-based content discovery, OCI artifact storage, and Sigstore-backed integrity)... (no mention of CIDs, versioned records, or namespace/name/version triples)",
+      "record_edited": false,
+      "notes": "NOT genuinely captured. The cited URL is the /html/ full-text rendition, but capture.py's arXiv regex treats /abs/, /pdf/, and /html/ identically and always routes to export.arxiv.org's Atom API, which returns title+abstract only (1295 chars). The full HTML paper body was never retrieved by this tool. Title matches the record exactly, confirming the right paper was identified. The abstract does not contain the snippet's specific technical claims (CIDs, versioned records vs. in-place edits, namespace/name/version triples), but it is topically well-aligned (the paper explicitly covers IPFS/CID-style content-addressing and OCI-based registries for this exact system), so the claim is plausibly true and simply unverified by the abstract -- not contradicted. Filed as D_unreachable per the rule that C requires quoting page text that shows non-support, which I cannot do for content I never retrieved.",
+      "lane": "C"
+    },
+    {
+      "id": "X-cap-document-validation-005",
+      "url": "https://json-schema.org/blog/posts/interpreting-output",
+      "capture_rung": "html",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "2.1",
+          "quote": "All errors are reported in a single pass instead of stopping at the first failure.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "This is a Nov 8, 2023 Greg Dennis blog post 'Interpreting JSON Schema Output.' Its whole subject is why a PASSING validation can still contain output nodes marked invalid (if/then/else and anyOf/oneOf semantics) -- e.g. 'looking at the validation output for the second instance...we notice that the output node for the /if subschema has valid: false. But the overall validation passed.' The page never discusses single-pass vs. stop-at-first-failure error reporting, and never says or cites 'RFC 6901'. It does use fields named evaluationPath/schemaLocation/instanceLocation (which are JSON-Pointer-shaped) and its 'List format' example does show multiple detail nodes on one level -- a weak, indirect partial-support thread -- but the record's specific claim (single-pass reporting, RFC 6901 framing) is not made anywhere on the page.",
+      "record_edited": false,
+      "notes": "Snippet and both quoted sentences are absent verbatim. Page is real, reachable, and on-topic (JSON Schema output) but is not about the claim it is cited for -- it's about interpreting seemingly-contradictory valid/invalid subschema nodes, a different question. claim_verdict is 'silent' rather than 'contradicts': nothing on the page asserts the opposite of single-pass reporting, it simply never raises the topic. Card 2.1's quote is a live defect: it asserts text on this URL's authority that the URL does not contain.",
+      "lane": "D"
+    },
+    {
+      "id": "X-cap-durable-execution-006",
+      "url": "https://www.spheron.network/blog/ai-agent-workflow-orchestration-temporal-inngest-restate-gpu-cloud/",
+      "capture_rung": "markdown",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "2.4",
+          "quote": "DBOS reuses Postgres as the durability layer for workflows, while Temporal runs a dedicated cluster.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "Full ~5,000-word article captured (markdown rung, 200). It compares exactly three engines -- Temporal, Inngest, and Restate -- in a table and in prose ('This guide covers three engines (Temporal, Inngest, and Restate) for production AI agent workflows'). Grepping the captured text (case-insensitive) for 'DBOS' returns zero hits anywhere in the document. Temporal is described as needing 'Self-hosted complexity: High (Cassandra/Postgres)' and Restate is called low self-hosted complexity with native exactly-once semantics via ctx.run() journaling -- so the Temporal/Restate texture in the claim has some loose resemblance, but DBOS -- the specific vendor the snippet and claim are built around -- is never mentioned once.",
+      "record_edited": false,
+      "notes": "DBOS: 0 occurrences in the entire article. This is the cleanest fabrication in the lane -- an entire named product, central to both the snippet and the claim, does not exist anywhere on the cited page. claim_verdict is 'silent' (the page doesn't discuss DBOS at all, doesn't contradict a claim about it) rather than 'contradicts'. Card 2.4's quote is a live defect.",
+      "lane": "D"
+    },
+    {
+      "id": "X-cap-evaluation-003",
+      "url": "https://www.morphllm.com/ai-agent-evaluation",
+      "capture_rung": "markdown",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "6.2",
+          "quote": "AI agent evaluation measures the quality of autonomous, multi-step LLM systems across four dimensions: trajectory (the path of steps), tool use (correct tool selection and arguments), task completion (whether the user's goal was met), and multi-turn quality (whether performance holds across a conversation).",
+          "on_page": false
+        },
+        {
+          "card": "6.2",
+          "quote": "trajectory (the path of steps), tool use (correct tool selection and arguments), task completion (whether the user's goal was met), and multi-turn quality (whether performance holds across a conversation)",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "contradicts",
+      "evidence_from_page": "Evaluation has to cover three layers, and they answer different questions. * Final-answer evaluation... [stat tile] 3 layers / Final-answer, trajectory, per-turn ... | DeepEval | Pytest-style local evals; 50+ metrics (G-Eval, task completion, faithfulness); span-level agent scoring |",
+      "record_edited": false,
+      "notes": "CONFIRMS already_known_bad. None of the snippet's key phrases ('four dimensions', 'multi-turn quality', 'tool selection and arguments', 'goal was met') appear anywhere in the 19.8KB captured page. The real page's own framework is '3 layers: final-answer, trajectory, per-turn' (a stat-tile callout), a materially different taxonomy from the claimed 'four dimensions'. 'task completion' appears exactly once, only as one of DeepEval's 50+ listed metrics in a framework-comparison table -- not as part of any four-dimension scheme. Strongly consistent with the prior finding that this snippet carries text from a different source's page entirely.",
+      "lane": "E"
+    },
+    {
+      "id": "X-cap-isolation-001",
+      "url": "https://opencontainers.org/",
+      "capture_rung": "html",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.3",
+          "quote": "The OCI Runtime Spec defines the behavior and the configuration interface of low-level container runtimes such as runc.",
+          "on_page": false
+        },
+        {
+          "card": "3.3",
+          "quote": "The spec is also implemented by crun, youki, gVisor, Kata Containers, and others.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "'The Open Container Initiative is an open governance structure for the express purpose of creating open industry standards around container formats and runtimes.' and 'the OCI currently contains three specifications: the Runtime Specification (runtime-spec), the Image Specification (image-spec) and the Distribution Specification (distribution-spec). The Runtime Specification outlines how to run a \"filesystem bundle\" that is unpacked on disk... the OCI Runtime Bundle would be run by an OCI Runtime.'",
+      "record_edited": false,
+      "notes": "The record's claim ('OCI Runtime Spec is the standard interface for container isolation implementations') is genuinely supported by the homepage's own description of itself as the body that creates open standards for container runtimes. But the snippet's specific sentences -- naming runc, crun, youki, gVisor, Kata Containers, and describing a 'configuration interface of low-level container runtimes' -- are not on this page in any form; those terms have zero occurrences on opencontainers.org's homepage (verified by grep). That implementation-list content most likely lives on a different OCI page (e.g. the runtime-spec repo README), not the homepage this record cites. Recommend re-sourcing card 3.3's two quotes to the correct page, using the homepage sentences above for the general standard-interface claim instead. Both profile quotes remain a live defect regardless of bucket.",
+      "lane": "D"
+    },
+    {
+      "id": "X-cap-memory-001",
+      "url": "https://mem0.ai/blog/state-of-ai-agent-memory-2026",
+      "capture_rung": "markdown",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.4",
+          "quote": "Agent memory systems typically embed queries and stored memories, rank candidate memories by cosine similarity, and place the top-ranked memories into the model context.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "It is that memory systems are moving beyond pure vector similarity. ... Vector memory retrieves semantically similar facts. Graph-style memory retrieves facts through entities and relationships. Both are useful; neither is sufficient alone. (the string 'cosine' does not appear anywhere on this page -- 0 occurrences)",
+      "record_edited": false,
+      "notes": "HEADLINE FINDING: cross-record contamination. The second sentence of this record's snippet -- 'The simplest approach is vector similarity \u2014 embed the query, find the closest stored embeddings.' -- is verbatim present NOT on this record's own claimed URL (mem0.ai) but on the SIBLING record X-cap-memory-002's URL (https://vectorize.io/articles/best-ai-agent-memory-systems), confirmed by exact whitespace-normalized substring match there and absence on mem0.ai. mem0.ai's own page never uses the word 'cosine' at all, and its own editorial framing explicitly argues memory systems are 'moving beyond pure vector similarity' -- i.e. the opposite emphasis from what the snippet presents as the current typical approach. This is the same failure pattern already flagged on X-end-to-end-058 (snippet text lifted from a different record's page), found here independently on a record with no already_known_bad flag. Verdict is 'silent' not 'contradicts': the page never states cosine-similarity ranking is NOT used, it just doesn't say it IS the typical approach, and argues for supplementing it.",
+      "lane": "C"
+    },
+    {
+      "id": "X-cap-memory-002",
+      "url": "https://vectorize.io/articles/best-ai-agent-memory-systems",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "4.4",
+          "quote": "Memory is scoped along four independent dimensions: user (user_id), agent (agent_id), app (app_id), and session/run (run_id), which are tagging dimensions, not nested layers.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "An extraction pipeline converts conversation messages into atomic memory facts, scoped to users, sessions, or agents. ... Memories are stored as JSON documents in LangGraph's structured store, scoped by configurable namespaces (user, team, app route). ... 'user_id' and 'agent_id' appear only inside unrelated SDK code samples (memory.add(messages, user_id=\"alice\"), agent_id=agent.id); 'app_id', 'run_id', 'four independent dimensions', 'tagging dimensions', 'not nested layers', and 'cross-user contamination' do not appear anywhere on the page.",
+      "record_edited": false,
+      "notes": "Snippet's central claim -- a unified 'four independent dimensions (user/agent/app/session), tagging not nesting, by-construction contamination prevention' architectural principle -- is nowhere on this page. The page instead describes scoping piecemeal, per individual product (Mem0's own product: user/session/agent; LangGraph: user/team/app-route), never as one general principle in this vocabulary. Notably, 'user_id, agent_id, app_id, run_id' together is exactly Mem0's own actual API parameter naming convention (not vectorize.io's), which raises the same suspicion as X-cap-memory-001 above: this may be a second instance of content drawn from the wrong source page. I did not chase down Mem0's own docs to confirm since that URL is outside this record and outside my lane -- flagging the pattern only. Verdict 'silent': the page doesn't contradict the four-dimension claim, it simply never states it.",
+      "lane": "C"
+    },
+    {
+      "id": "X-cap-model-access-003",
+      "url": "https://www.truefoundry.com/blog/litellm-vs-openrouter",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.2",
+          "quote": "LiteLLM supports 100+ providers behind a single OpenAI-compatible API, handles fallbacks and budget controls, and runs free on any VPS.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "contradicts",
+      "evidence_from_page": "LiteLLM: Supports 100+ models from providers like OpenAI, Azure OpenAI, Anthropic, Hugging Face, Vertex AI, and Cohere.",
+      "record_edited": false,
+      "notes": "Source-fidelity finding, not a claim about LiteLLM's real-world capabilities: THIS page explicitly says LiteLLM supports '100+ models' from about 6 named providers -- not '100+ providers' as the record's snippet and card 3.2's quote both claim. Whatever LiteLLM actually supports elsewhere is not what's being tested here; what's tested is whether this cited page says what the record attributes to it, and it does not -- it says something different (models vs. providers is a real distinction the source itself draws). 'runs free on any VPS' also does not appear anywhere on the page (searched, zero hits for 'VPS' or 'free on any'). claim_to_test repeats the same '100+ provider support' error, so the page contradicts the claim as attributed to it.",
+      "lane": "B"
+    },
+    {
+      "id": "X-cap-model-access-005",
+      "url": "https://orq.ai/blog/openrouter-vs-litellm",
+      "capture_rung": "markdown",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.2",
+          "quote": "OpenRouter provides hosted access to hundreds of models across dozens of providers through a single OpenAI-compatible API",
+          "on_page": false
+        },
+        {
+          "card": "3.2",
+          "quote": "OpenRouter provides hosted access to hundreds of models across dozens of providers through a single OpenAI-compatible API",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "OpenRouter prioritizes speed and breadth; one hosted API to hundreds of models across dozens of providers, but trades deep governance, data residency control, and routing customization for simplicity. LiteLLM gives you maximum control by running your own gateway in your infrastructure, but requires platform maturity to operate reliably and you build routing, budgets, and governance yourself.",
+      "record_edited": false,
+      "notes": "Manifest lists this same card-3.2 quote twice; duplicated here to match cardinality. Substance is genuinely supported (OpenRouter = hosted, hundreds of models, dozens of providers; LiteLLM = self-hosted, max control, own infrastructure), but the snippet is a reworded/combined paraphrase: it inserts 'through a single OpenAI-compatible API' (that exact qualifier is not attached to this sentence on the page -- 'OpenAI-compatible' does appear elsewhere re: OpenRouter's SDK compatibility) and drops the word 'you' from the LiteLLM half. Correct verbatim replacement: the 'Key Takeaways' sentence quoted above.",
+      "lane": "B"
+    },
+    {
+      "id": "X-cap-telemetry-003",
+      "url": "https://langfuse.com/docs/observability/overview",
+      "capture_rung": "markdown",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "6.2",
+          "quote": "Langfuse is an open source AI engineering platform providing LLM evals, observability, metrics, prompt management, playground, and datasets.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "contradicts",
+      "evidence_from_page": "# Observability & Application Tracing\n\nGenerative AI systems are inherently non-deterministic... The core of this is application tracing -- structured logs of every request that capture the exact prompt sent, the model's response, token usage, latency, and any tools or retrieval steps in between. ... [page ends with an 'Agent Instructions' footer about querying the docs; no mention of OpenTelemetry, OTLP, or OTEL anywhere]",
+      "record_edited": false,
+      "notes": "Searched the full 6.5KB captured text for 'OpenTelemetry', 'OTLP', and 'OTEL' -- zero matches. Neither the record's snippet sentence nor the claim's specific assertion (OTLP-native / OpenTelemetry SDK v4 wrapper) appears anywhere on this docs/observability/overview page. The snippet text reads like Langfuse's marketing/homepage or GitHub description, not this URL's actual content -- this page is a plain product-tracing overview with no OTEL discussion at all.",
+      "lane": "E"
+    },
+    {
+      "id": "X-cap-tool-access-001",
+      "url": "https://modelcontextprotocol.io/specification/2026-07-28",
+      "capture_rung": "markdown",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.5",
+          "quote": "Tools are software functions that an LLM can directly call to gain access to external resource data, Resources are passive data sources that can provide read only access to data for context, and Prompts are pre-built instruction templates that tell the model how to work with specific tools and resources.",
+          "on_page": false
+        },
+        {
+          "card": "3.5",
+          "quote": "Tools are software functions that an LLM can directly call to gain access to external resource data, Resources are passive data sources that can provide read only access to data for context, and Prompts are pre-built instruction templates that tell the model how to work with specific tools and resources.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "### Features\n\nServers offer any of the following features to clients:\n\n* Resources: Context and data, for the user or the AI model to use\n* Prompts: Templated messages and workflows for users\n* Tools: Functions for the AI model to execute",
+      "record_edited": false,
+      "notes": "Manifest lists this same card-3.5 quote twice; duplicated here to match cardinality. MCP SPECIFICATION REVISION QUESTION -- this lane's capture settles part of it, but the earlier framing of 'settled' overclaimed and I'm correcting it: capturing https://modelcontextprotocol.io/specification/2026-07-28 confirms that revision is live and published (HTTP 200), but publication alone doesn't prove it is CURRENT (MCP keeps superseded revision pages live indefinitely). So I additionally captured the canonical https://modelcontextprotocol.io/specification/latest (HTTP 200, markdown rung) and it returns text BYTE-IDENTICAL to the 2026-07-28 capture (same 5,816 chars, same schema.ts reference at .../2026-07-28/schema.ts, same /specification/2026-07-28/... sub-links). Since 'latest' canonically resolves to 2026-07-28 content, 2026-07-28 IS the current MCP spec revision as of this capture (today 2026-09-10), not merely a published one -- that genuinely closes the revision-string disagreement card 3.5 flags. HOWEVER this does NOT resolve card 3.5's separate 'no fetched record of the MCP spec exists' gap: this record (t001) stays at status search-only per the B-outcome rule (snippet not verbatim), so the corpus still has zero fetched-status MCP-spec records after this pass -- a capture is now demonstrably obtainable, but the gap only closes once a record is re-sourced to the verbatim page text below. On the record's own content: the general claim (MCP standardizes tool/resource/prompt access) is supported by the real Features section, but the quoted wording is an embellished paraphrase, not verbatim -- the real spec text is much terser and does not say 'to gain access to external resource data' or 'read only access' or 'pre-built instruction templates'. Correct verbatim replacement is the Features list quoted above.",
+      "lane": "B"
+    },
+    {
+      "id": "X-cap-tool-access-003",
+      "url": "https://www.descope.com/blog/post/mcp-vs-function-calling",
+      "capture_rung": "markdown",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.5",
+          "quote": "MCP avoids provider lock-in by being provider-agnostic, defining a universal protocol for exposing and accessing tools independent of which LLM you use, so the same MCP server can work seamlessly with both OpenAI and Anthropic models without code changes.",
+          "on_page": false
+        },
+        {
+          "card": "3.5",
+          "quote": "MCP avoids provider lock-in by being provider-agnostic, defining a universal protocol for exposing and accessing tools independent of which LLM you use, so the same MCP server can work seamlessly with both OpenAI and Anthropic models without code changes.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "MCP avoids this problem by being provider-agnostic. It defines a universal protocol for exposing and accessing tools, independent of which LLM you use. The same MCP server can work seamlessly with both OpenAI and Anthropic models, no code changes required.",
+      "record_edited": false,
+      "notes": "Manifest lists this same card-3.5 quote twice; duplicated here to match cardinality. Substance matches closely and is genuinely on the page -- this is search-engine-style sentence merging/light rewording ('avoids this problem' -> 'avoids provider lock-in'; three sentences compressed into one; 'no code changes required' -> 'without code changes'), not fabrication. Correct verbatim replacement is the three-sentence passage quoted above.",
+      "lane": "B"
+    },
+    {
+      "id": "X-cap-tool-access-005",
+      "url": "https://platform.claude.com/docs/en/agents-and-tools/mcp-connector",
+      "capture_rung": "markdown",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.5",
+          "quote": "MCP is an open-source standard developed by Anthropic to connect AI applications, such as Claude Code, to external tools, data sources, and workflows\u2014a universal adapter that lets AI plug in to various systems without custom-built integrations.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "Claude's Model Context Protocol (MCP) connector feature enables you to connect to remote MCP servers directly from the Messages API without a separate MCP client. ... Key features: Direct API integration, Tool calling support, Flexible tool configuration, Per-tool configuration, OAuth authentication, Multiple servers...",
+      "record_edited": false,
+      "notes": "PROBABLE WRONG-URL ATTRIBUTION, not necessarily pure invention: none of 'Claude Code', 'universal', 'open-source', 'open source', 'plug in', or 'adapter' appear anywhere in this 49,438-char capture -- the quoted sentence is not a reworded version of anything on this specific page. The captured URL is the narrow Messages-API MCP-connector BETA reference doc (beta header mcp-client-2025-11-20, OAuth, tool allowlisting) -- not a general 'what is MCP' explainer. The quoted sentence reads exactly like the opening blurb of a general MCP-overview page (Anthropic almost certainly publishes one, e.g. under docs/en/agents-and-tools/model-context-protocol or similar), so the likely repair is re-pointing this record's url to that overview page rather than assuming the sentence was invented from nothing -- but I did not locate or capture that page, since guessing an alternate URL is out of scope for this pass; flagging it for the coordinator/human to re-source.",
+      "lane": "B"
+    },
+    {
+      "id": "X-cross-structure-046",
+      "url": "https://fast.io/resources/langgraph-persistence/",
+      "capture_rung": "markdown",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.4",
+          "quote": "LangGraph checkpoints turn a graph into a durable program: after every super-step the full state is snapshotted to a Checkpointer (in-memory, SQLite, or Postgres), keyed by thread_id",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "'Persistence writes a \"checkpoint\" to a database or file every time the graph moves to a new node... By giving every action a thread_id, LangGraph keeps different users and tasks separate. When you resume a thread, the agent picks up where it left off. It reconstructs its internal state from the last checkpoint.' and 'MemorySaver stores checkpoints in the computer's RAM, so data is lost when the program stops. PostgresSaver stores checkpoints in a PostgreSQL database, allowing state to persist across restarts.' and 'LangGraph persistence supports \"time travel.\" By using the thread_id and a specific checkpoint_id, you can inspect previous states, fork the conversation, or even restart from a middle point.'",
+      "record_edited": false,
+      "notes": "The claim ('a checkpointer interface with in-memory/SQLite/Postgres adapters is working prior art for a swappable state persistence boundary') is substantially supported: the page walks through MemorySaver (in-memory) and PostgresSaver (Postgres) as swappable Checkpointer implementations keyed by thread_id, with pause/resume and 'time travel' (fork/rewind) as first-class features. However: (a) the exact snippet sentence, including the words 'super-step' and 'SQLite', never appears -- grepped for both, zero hits; SQLite as a checkpointer backend is never mentioned in this article at all (only in-memory and Postgres are covered); 'super-step' is LangGraph's own internal terminology from its official docs, not this third-party fast.io guide. Recommend re-sourcing the exact snippet to LangGraph's own persistence documentation, which is more likely to use 'super-step' and mention the SQLite adapter. The card 3.4 quote is a live defect on this URL even though the underlying claim holds up.",
+      "lane": "D"
+    },
+    {
+      "id": "X-end-to-end-003",
+      "url": "https://arxiv.org/html/2605.11032v1",
+      "capture_rung": "api",
+      "http_status": 200,
+      "outcome": "D_unreachable",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.4",
+          "quote": "Portable Agent Memory addresses a critical gap in the emerging agent interoperability stack: while MCP standardizes tool access and A2A standardizes task delegation, no prior protocol provides verified memory portability.",
+          "on_page": false
+        },
+        {
+          "card": "3.4",
+          "quote": "Portable Agent Memory addresses a critical gap in the emerging agent interoperability stack: while MCP standardizes tool access and A2A standardizes task delegation, no prior protocol provides verified memory portability.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "Title: Portable Agent Memory: A Protocol for Cryptographically-Verified Memory Transfer Across Heterogeneous AI Agents. Abstract: We present Portable Agent Memory, an open protocol and reference implementation for transferring persistent memory state across heterogeneous AI agents. ... but this context remains locked within vendor-specific runtimes. Portable Agent Memory addresses this through: (1) a five-component structured memory model with content-addressable entries linked by a Merkle-DAG provenance graph...",
+      "record_edited": false,
+      "notes": "NOT genuinely captured -- same capture.py arXiv-routing limitation as X-cap-capability-registry-007 (see that record's notes): the /html/ URL was routed to the Atom API abstract only, full paper body never retrieved. SEPARATE RED FLAG worth surfacing: the title returned by the API for this exact id+version (2605.11032v1) is 'Portable Agent Memory: A Protocol for Cryptographically-Verified Memory Transfer Across Heterogeneous AI Agents', which does NOT match the record's stored title 'Portable Agent Memory: A Protocol for Provenance-Verified Memory Transfer Across Heterogeneous LLM Agents' ('Cryptographically' vs 'Provenance', 'AI Agents' vs 'LLM Agents'). None of the snippet's distinctive phrasing ('critical gap', 'MCP standardizes', 'A2A standardizes', 'task delegation', 'verified memory portability', 'interoperability stack') appears in the abstract, which instead frames the paper around a five-component memory model / Merkle-DAG / capability-based access control with no MCP/A2A comparison at all. I cannot rule out this framing exists in the paper's introduction (not fetched), but combined with the title mismatch this record deserves human re-verification, not just a capture retry.",
+      "lane": "C"
+    },
+    {
+      "id": "X-end-to-end-028",
+      "url": "https://modelcontextprotocol.io/specification/2025-11-25/basic/authorization",
+      "capture_rung": "markdown",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.5",
+          "quote": "MCP servers, acting in their role as an OAuth 2.1 resource server, MUST validate access tokens as described in OAuth 2.1 Section 5.2 and MUST validate that access tokens were issued specifically for them as the intended audience, according to RFC 8707 Section 2.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "### Token Handling\n\nMCP servers, acting in their role as an OAuth 2.1 resource server, **MUST** validate access tokens as described in [OAuth 2.1 Section 5.2](https://datatracker.ietf.org/doc/html/draft-ietf-oauth-v2-1-13#section-5.2).\nMCP servers **MUST** validate that access tokens were issued specifically for them as the intended audience,\naccording to [RFC 8707 Section 2](https://www.rfc-editor.org/rfc/rfc8707.html#section-2).",
+      "record_edited": false,
+      "notes": "Full page captured (markdown rung, 200). Content is genuinely on the page and clearly supports the claim, but not byte-for-byte as the snippet states it: the raw page has TWO separate sentences (period after 'Section 5.2', 'MCP servers' repeated as the subject of the second sentence) plus markdown bold markers (**MUST**) and markdown link syntax ([text](url)) that the snippet silently strips and merges into one continuous sentence joined by 'and'. Rendered substitute quote a human could re-source with: \"MCP servers, acting in their role as an OAuth 2.1 resource server, MUST validate access tokens as described in OAuth 2.1 Section 5.2. MCP servers MUST validate that access tokens were issued specifically for them as the intended audience, according to RFC 8707 Section 2.\" This is the strongest candidate in the lane for promotion to 'fetched' status by a human re-sourcing pass.",
+      "lane": "C"
+    },
+    {
+      "id": "X-end-to-end-058",
+      "url": "https://arxiv.org/pdf/2603.21354",
+      "capture_rung": "api",
+      "http_status": 200,
+      "outcome": "D_unreachable",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "rail.6",
+          "quote": "composes routing, policies, reasoning budgets and workflow signals into a unified inference layer",
+          "on_page": false
+        },
+        {
+          "card": "rail.6",
+          "quote": "composes routing, policies, reasoning budgets and workflow signals into a unified inference layer",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "Title: The Workload-Router-Pool Architecture for LLM Inference Optimization: A Vision Paper from the vLLM Semantic Router Project. Abstract: Over the past year, the vLLM Semantic Router project has released a series of work spanning... This paper distills those results into the Workload-Router-Pool (WRP) architecture, a three-dimensional framework for LLM inference optimization... we map our prior work onto a 3x3 WRP interaction matrix... and propose twenty-one concrete research directions.",
+      "record_edited": false,
+      "notes": "ALREADY_KNOWN_BAD verification for X-end-to-end-058, requested explicitly by the task. Capture.py routed the cited /pdf/ URL to the abstract-only Atom API (2002 chars); the PDF body itself was never fetched by this tool -- same limitation as X-cap-capability-registry-007 and X-end-to-end-003. PROVED by my evidence: the title returned exactly matches the record's title (correct paper identified), and none of the snippet's distinctive phrases -- 'Mixture of Models', 'announced Semantic Router', 'next step toward', 'unified inference layer', 'composes routing, policies, reasoning budgets and workflow signals' -- appear anywhere in the abstract; the abstract's actual content and register (a dry academic taxonomy of a WRP framework and 21 research directions) is stylistically and topically unrelated to the snippet's announcement/marketing-style prose ('vLLM announced X, describing it as...'). NOT PROVED by my evidence: absence from the full PDF body, since it was never retrieved. VERDICT: my evidence is CONSISTENT WITH and supportive of the already_known_bad conclusion (right paper confirmed, zero phrase overlap, register mismatch) but does NOT independently and fully CONFIRM it, since I cannot rule out the phrase appearing verbatim deep in the PDF body that this tool does not access. This is the same abstract-only ceiling that applies to every arXiv /pdf/ or /html/ URL in this lane.",
+      "lane": "C"
+    },
+    {
+      "id": "X-entry-composition-028",
+      "url": "https://www.inngest.com/",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "2.4",
+          "quote": "This approach fundamentally removes the need for developers to manage or even think about traditional queues or worker processes.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "No workers. No queues. No refactoring. ... Add durable functions to your existing code, to keep event-driven workflows, background jobs, and agents running. No infrastructure to... ... Write functions that know when to run, wait, fan-out, and throttle\u2014during any event, at any scale.",
+      "record_edited": false,
+      "notes": "Full page captured (service/pure.md rung, 200; page frontmatter shows access_date 2026-09-10T11:59:40Z). Exact snippet sentence not found (0 hits for 'everything is triggered by an event', 'fundamentally removes the need', 'traditional queues or worker processes'), but the page's actual current headline ('No workers. No queues. No refactoring.') plus its event-driven framing throughout directly support the claim. Caveat: the record is dated 2026-09-03, a week before my capture; this is a marketing homepage, which plausibly churns copy on a similar timescale, so 'not present today' is weaker evidence of a bad original citation than it would be on a stable spec/reference page -- the original researcher may simply have captured an earlier, now-revised, version of the same page.",
+      "lane": "C"
+    },
+    {
+      "id": "X-entry-composition-059",
+      "url": "https://arxiv.org/abs/2606.31498",
+      "capture_rung": "api",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "rail.2",
+          "quote": "Current protocols can transport governance-related messages as opaque payloads (e.g., via A2A task messages or MCP tool calls), but cannot interpret, validate, or enforce their governance semantics",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "Title: Governance Gaps in Agent Interoperability Protocols: What MCP, A2A, and ACP Cannot Express. Abstract: ...The resulting gap matrix reveals that voting and dissent preservation are universally absent across all five protocols, deliberation is absent or at most partial, and no protocol encodes the full set of primitives required for governed agent communities. ...The analysis establishes that agent community governance constitutes a missing architectural layer above current interoperability standards, not a missing feature within them.",
+      "record_edited": false,
+      "notes": "IMPORTANT DISTINCTION from the three D_unreachable records above: this URL is arxiv.org/abs/2606.31498 -- the /abs/ path IS the abstract page itself, so capture.py's Atom-API routing is a faithful, complete capture of the actually-cited page (not a shortcut past /html/ or /pdf/ content). Title matches the record exactly. The specific snippet sentence (about 'opaque payloads... A2A task messages or MCP tool calls') is not verbatim in the abstract -- likely from the paper's body/introduction -- but the abstract's own closing sentence directly and explicitly supports claim_to_test ('governed agent communities' require an architectural layer above MCP/A2A/ACP, i.e. governance is not delivered by adopting the protocols alone).",
+      "lane": "C"
+    },
+    {
+      "id": "X-litmus-a-006",
+      "url": "https://docs.bswen.com/blog/2026-04-16-responses-api-vs-chat-completions/",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.2",
+          "quote": "OpenAI has stated that the Chat Completions API will remain supported indefinitely as an industry standard.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "Mistake 1: Assuming Chat Completions is deprecated -- WRONG assumption: \"Chat Completions is deprecated, I must migrate immediately\" -- FACT: Chat Completions is supported and stable. Responses API is recommended for NEW projects. Migrate incrementally when native tools would simplify your code. ... Keep Chat Completions for: + Existing integrations working well + ... + When you don't want to change existing code",
+      "record_edited": false,
+      "notes": "Full snippet and the 3.2 quote are not on the page at all: 'indefinitely', 'industry standard', 'items and responses', 'architectural difference' all return zero hits on the full captured text (12,753 chars, nothing truncated). The page's actual position is materially weaker than what is quoted -- it says Chat Completions is 'supported and stable' and recommends Responses API for NEW projects while keeping Chat Completions for existing integrations. That substance does support the record's claim_to_test (message format not retired, new agentic work drifting to Responses), so claim_verdict=supports, but the specific quote attributed to 'OpenAI has stated ... indefinitely as an industry standard' is invented -- it is not an OpenAI statement reproduced anywhere on this page. Re-source sentence for card 3.2: 'Chat Completions is supported and stable. Responses API is recommended for NEW projects.'",
+      "lane": "A"
+    },
+    {
+      "id": "X-litmus-a-023",
+      "url": "https://mcp.directory/blog/oauth-21-for-remote-mcp-servers-streamable-http-explained-2026",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.5",
+          "quote": "SSE (Server-Sent Events) was deprecated in the 2025-06-18 specification and was replaced by Streamable HTTP. OAuth 2.1 with PKCE is now mandatory for all remote MCP servers, not optional - and RFC 8707 Resource Indicators are required to prevent token replay attacks.",
+          "on_page": false
+        },
+        {
+          "card": "3.5",
+          "quote": "SSE (Server-Sent Events) was deprecated in the 2025-06-18 specification and was replaced by Streamable HTTP. OAuth 2.1 with PKCE is now mandatory for all remote MCP servers, not optional - and RFC 8707 Resource Indicators are required to prevent token replay attacks.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "contradicts",
+      "evidence_from_page": "'The 2025-03-26 spec replaced the older HTTP+SSE transport with Streamable HTTP' (not 2025-06-18 as the record states -- that date is instead when OAuth 2.1 became the basis of the auth section). And, decisively, under the FAQ heading 'Is OAuth required for remote MCP servers, or is it optional?': 'The spec says authorization is OPTIONAL. Verbatim from modelcontextprotocol.io: \"Authorization is OPTIONAL for MCP implementations...\" ... In practice every public remote MCP server ships OAuth ... because anything else is unauditable and unrevocable.'",
+      "record_edited": false,
+      "notes": "Two distinct factual errors, both load-bearing for card 3.5's claim: (1) the record misdates the SSE-to-Streamable-HTTP transport change to the 2025-06-18 spec; the page attributes it to 2025-03-26. (2) the record asserts OAuth 2.1 is 'mandatory ... not optional' -- the page's own FAQ states the opposite in the spec text, that authorization is OPTIONAL per spec (it is merely universal in practice). This is a direct contradiction on the page's own terms, not just an absent quote, so C_contradicted rather than B. Duplicate quote entries in the manifest are mirrored above as given (identical text listed twice for card 3.5).",
+      "lane": "A"
+    },
+    {
+      "id": "X-litmus-a-025",
+      "url": "https://anomity.ai/blog/agent-skills-open-standard-adoption-governance/",
+      "capture_rung": "markdown",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.1",
+          "quote": "Block's Goose",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "'Agent Skills, the SKILL.md format Anthropic created for packaging agent capabilities, is now an open standard stewarded at agentskills.io and open to ecosystem contributions.' / 'Adoption is far wider than most security teams realize - 40+ clients including Claude Code, Cursor, GitHub Copilot, VS Code, OpenAI Codex, Gemini CLI, Goose, and data platforms like Databricks and Snowflake.' / table row 'Open-source coding agents: OpenCode, OpenHands, Goose, Roo Code, Amp, Cline-class tools, pi, VT Code'.",
+      "record_edited": false,
+      "notes": "Page supports the general claim (public spec, broad cross-vendor implementation, no competing packaging spec surfaced) so claim_verdict=supports. But every specific number in the snippet is fabricated: full text has zero occurrences of '2025' anywhere (confirmed by count), so 'December 18, 2025' and 'first week of March 2026 - about 12 weeks later' do not appear; the page only says adoption happened 'in under a year' with no dates given. '25 other agent products' vs page's own '40+ clients' figure is also not a match. The profile quote 'Block's Goose' is not verbatim either: the page lists 'Goose' plainly in a vendor list/table and never pairs it with 'Block's' -- that attribution, while factually plausible in the real world, is not sourced to this page. Re-source for card 3.1: use 'Goose' from the table row 'Open-source coding agents ... Goose ...' without the 'Block's' possessive, or cite a different source for the Block attribution.",
+      "lane": "A"
+    },
+    {
+      "id": "X-litmus-b-001",
+      "url": "https://www.linuxfoundation.org/press/a2a-protocol-surpasses-150-organizations-lands-in-major-cloud-platforms-and-sees-enterprise-production-use-in-first-year",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "2.1",
+          "quote": "Version 1.0.1 (May 2026) introduced an extension mechanism supporting new data, requirements, RPC methods, and state machines.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "Full 8,670-char press release (Linux Foundation, 9 April 2026) covers: v1.0 release with 'multi-protocol support, enterprise-grade multi-tenancy, modernized security flows'; 'Since April 2025, the number of supporting organizations has grown from more than 50 to over 150'; Microsoft (Azure AI Foundry / Copilot Studio) and AWS (Bedrock AgentCore Runtime) integrations; 'The introduction of the Agent Payments Protocol (AP2)'; and 'UCP is fully compatible with AP2 via its AP2 mandates extension, enabling it to capture strong cryptographic evidence of the user's consent to purchase.' Zero occurrences of '1.0.1', 'May 2026', or 'extension mechanism'.",
+      "record_edited": false,
+      "notes": "The only 'extension' language anywhere on the page is the unrelated UCP/AP2 payments-consent extension quoted above -- a different subject from an A2A protocol-version extension mechanism for 'new data, requirements, RPC methods, and state machines'. The page is silent on any 'v1.0.1' release; it discusses only v1.0 as the current stable spec. Card 2.1's quote appears to be invented outright and grafted onto an otherwise-real press release (the surrounding facts in the record's snippet -- 150 orgs, April 2026, AWS/Microsoft/Google integration -- do genuinely match the page).",
+      "lane": "A"
+    },
+    {
+      "id": "X-litmus-b-002",
+      "url": "https://www.cncf.io/projects/cloudevents/",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "2.1",
+          "quote": "moved to the Graduated maturity level on January 25, 2024",
+          "on_page": true
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "'CloudEvents was accepted to CNCF on May 15, 2018, moved to the **Incubating** maturity level on October 24, 2019, and then moved to the **Graduated** maturity level on January 25, 2024.' Metrics widget: 'Total contributors 1,531 (+70% vs. previous year)', 'Total contributing organizations 672 (+99% vs. previous year)'.",
+      "record_edited": false,
+      "notes": "Card 2.1's quote differs from the page only by markdown bold delimiters ('**') inserted by the capture service's markdown rendering around 'Graduated' -- with those stripped the sentence is character-identical, so on_page=true; that ** artifact never affects a whole-word/whole-phrase match, only literal byte-adjacency, so I'm treating it as a fetch-pipeline artifact rather than a real page difference. However, the rest of the record's snippet ('On February 5, 2022, the CloudEvents project released v1.0.2...This release is compatible with the existing CloudEvents v1.0 specification...1,534 total contributors and 671 contributing organizations as of 2026') has zero support on this page: no 'v1.0.2', no 'February 5, 2022', and the live contributor/org counts on the page today are 1,531 / 672, not 1,534 / 671. That second half looks collaged in from a different source (a changelog/release-notes page) rather than this CNCF project page. B_snippet_off because the decisive card-relied quote is genuinely (content-wise) on the page and the core claim (graduated, still maintained) is supported, but flag this fabricated/mismatched appendage as a real defect worth a human's attention even though it isn't what card 2.1 currently cites. IMPORTANT: claim_verdict=supports covers only the 'graduated foundation project' conjunct of claim_to_test; the page is entirely silent on the other conjunct, 'current revision is backward compatible and unchanged inside the window' -- no spec-version information appears anywhere on this page, so that half of the claim is unverified from this source, not confirmed.",
+      "lane": "A"
+    },
+    {
+      "id": "X-litmus-b-005",
+      "url": "https://www.digitalapplied.com/blog/ai-agent-protocol-ecosystem-map-2026-mcp-a2a-acp-ucp",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "2.1",
+          "quote": "Custom HTTP endpoints for agent communication in 2026 are creating technical debt.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "'The protocols are complementary, not competing: A complete enterprise agent stack in 2026 will use all four protocols: MCP for tool access, A2A for agent coordination, and ACP or UCP for commerce transactions depending on the environment.' 'The AI agent protocol ecosystem emerged from chaos into structure remarkably quickly. In 2024, every AI agent framework had its own tool-calling convention, its own agent coordination mechanism, and its own approach to handling transactions.'",
+      "record_edited": false,
+      "notes": "23,589-char capture, checked in full. Zero occurrences of: 'technical debt', 'institutional convergence', 'Agentic AI Foundation', 'AAIF', 'December 2025', 'co-founders', 'Block'. The page's own institutional framing is entirely different -- it attributes MCP to Anthropic, A2A to Google, ACP to IBM/Linux Foundation, and UCP to Google, with no single governing foundation mentioned anywhere (only ACP is described as having 'Linux Foundation governance'). The record's central claim (a joint six-founder 'Agentic AI Foundation (AAIF)' launched Dec 2025 covering both MCP and A2A) is simply not on this page. Only the record's closing sentence about 'four protocols' is genuinely verbatim from the page; everything else in the snippet -- the load-bearing part for card 2.1's quote -- is fabricated relative to this source.",
+      "lane": "A"
+    },
+    {
+      "id": "X-litmus-b-015",
+      "url": "https://www.cncf.io/projects/open-policy-agent-opa/",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "2.2",
+          "quote": "In August 2025, Apple acqui-hired the three OPA creators plus several Styra engineers, and Styra the company has since wound down; its enterprise products were discontinued or open-sourced. However, OPA remains an open-source CNCF Graduated project.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "Entire captured page (2,075 chars): 'Open Policy Agent (OPA) was accepted to CNCF on March 29, 2018, moved to the **Incubating** maturity level on April 2, 2019, and then moved to the **Graduated** maturity level on January 29, 2021.' followed only by case-study callouts and recent-news headlines (none about Apple/Styra).",
+      "record_edited": false,
+      "notes": "This is the CNCF bare project landing page -- one descriptive sentence plus case studies and news links, nothing else. Token counts on the full text: 'Apple'=0, 'Styra'=0, 'acqui'=0, 'Rego'=0, 'decouples'=0. The entire load-bearing claim for card 2.2 (Apple acqui-hiring the OPA creators/Styra engineers, Styra winding down) is completely absent from this page -- it may be true in the real world and sourced elsewhere, but this specific URL contains no trace of it. Only the CNCF acceptance/incubating/graduated-date sentence (not the part the card cites) is genuinely on the page.",
+      "lane": "A"
+    },
+    {
+      "id": "X-litmus-c-004",
+      "url": "https://workos.com/blog/mcp-2026-spec-agent-authentication",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "3.5",
+          "quote": "MCP servers are now formally OAuth 2.1 resource servers that MUST implement OAuth 2.0 Protected Resource Metadata (RFC 9728) so clients can discover the correct authorization server automatically.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "'MCP servers are now formally OAuth 2.1 resource servers. This was introduced in the 2025-11-25 spec but 2026-07-28 tightens it considerably. MCP servers MUST implement OAuth 2.0 Protected Resource Metadata (RFC 9728) so clients can discover the correct authorization server automatically. MCP clients MUST implement Resource Indicators (RFC 8707) to explicitly specify which MCP server a token is intended for, preventing a malicious server from obtaining tokens meant for a different server.'",
+      "record_edited": false,
+      "notes": "Both required-metadata MUSTs (RFC 9728, RFC 8707) are genuinely on the page, so claim_verdict=supports. But the card 3.5 quote is not verbatim: it splices together the first sentence ('MCP servers are now formally OAuth 2.1 resource servers.') and the third ('...MUST implement OAuth 2.0 Protected Resource Metadata...') with 'that', silently dropping the middle sentence: 'This was introduced in the 2025-11-25 spec but 2026-07-28 tightens it considerably.' That's a substantive omission, not just trimming -- it hides that the OAuth-2.1-resource-server requirement predates the 2026-07-28 spec update and was only tightened by it, which matters for a claim about what's newly true 'inside the window'. Also checked and matching (paraphrased, not verbatim): 'On May 21, 2026, the Model Context Protocol's lead maintainers published the release candidate for MCP 2026-07-28' and 'The final specification ships on July 28, 2026.' Re-source for card 3.5: quote the three page sentences separately, or restore the dropped middle sentence.",
+      "lane": "A"
+    },
+    {
+      "id": "X-litmus-c-012",
+      "url": "https://www.hooklistener.com/learn/webhook-idempotency-and-deduplication",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "1.4",
+          "quote": "Your deduplication cache must persist at least as long as the provider's full retry window.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "'Give the key a TTL. You don't need to remember every event forever - only as long as a duplicate can plausibly arrive. Work backwards from the provider's retry window: Stripe retries for up to 3 days, Shopify for 48 hours. A TTL of the retry window plus a safety margin (say, 7 days for Stripe, 72 hours for Shopify) bounds your storage while covering every automatic retry. Manual replays months later will slip past an expired key.'",
+      "record_edited": false,
+      "notes": "The retention/retry-window half of the claim is genuinely supported -- the page's real advice (retain at least the provider's retry window, or duplicates from late retries slip through unrecognized) matches the substance of card 1.4's quote even though the exact sentence is a paraphrase, not a verbatim lift. Re-source sentence for card 1.4: 'Work backwards from the provider's retry window ... A TTL of the retry window plus a safety margin ... bounds your storage while covering every automatic retry.' Separately, and worth flagging even though it doesn't change this outcome: the record's opening two sentences attribute this advice to 'The CloudEvents specification' and its 'id' field -- the string 'CloudEvents' (any case) has zero occurrences anywhere on this 18,922-char page. The page's actual advice is about provider-specific event IDs (Stripe evt_*, Shopify), scoped/prefixed per source, not a converged CloudEvents envelope field. That attribution is fabricated relative to this URL, even though the underlying retention principle it's attached to is real.",
+      "lane": "A"
+    },
+    {
+      "id": "X-litmus-c-016",
+      "url": "https://commandline.microsoft.com/tokenops-real-time-run-scoped-cost-control-ai-agents/",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "rail.4",
+          "quote": "Two major agent platforms shipped run-level spend enforcement a day apart, and they picked different layers to do it - Anthropic in the session object, AWS at the gateway.",
+          "on_page": false
+        },
+        {
+          "card": "rail.4",
+          "quote": "Two major agent platforms shipped run-level spend enforcement a day apart, and they picked different layers to do it - Anthropic in the session object, AWS at the gateway.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "Microsoft's own Command Line blog post (by Tisha Chawla and Susheem Koul, Microsoft, dated 2026.08.13) describes Microsoft's own 'TokenOps' system and compares it, in a table, only to: 'LiteLLM | Portkey | Cloudflare AI Gateway | Langfuse | TokenOps' -- scoping each by Request/Trace/Run etc. No other agent platform is named as a comparison.",
+      "record_edited": false,
+      "notes": "CONFIRMS the already_known_bad flag ('fabricated comparison and metric attributed to a real Microsoft URL'). Full 27,218-char page checked: 'Anthropic' = 0 occurrences, 'AWS' = 0 occurrences, 'session object' = 0 occurrences anywhere on the page. This is not a page about a two-platform, one-day-apart race between Anthropic and AWS at all -- it's Microsoft's own writeup of building TokenOps in-house and comparing it against LiteLLM/Portkey/Cloudflare AI Gateway/Langfuse. The rail.4 quote is invented in its entirety and attributed to a URL that never discusses either Anthropic or AWS.",
+      "lane": "A"
+    },
+    {
+      "id": "X-maturity-a-001",
+      "url": "https://slavadubrov.github.io/blog/2026/05/26/ai-agent-runtime/",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "4.3",
+          "quote": "Firecracker's snapshot-restore mechanism lets you pause a sandbox, preserve its memory and filesystem state, and resume it in 5-30ms.",
+          "on_page": false
+        },
+        {
+          "card": "4.3",
+          "quote": "Firecracker's snapshot-restore mechanism lets you pause a sandbox, preserve its memory and filesystem state, and resume it in 5-30ms.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "contradicts",
+      "evidence_from_page": "_Persistent paused_ sandboxes keep the filesystem and a memory snapshot between runs. The next resume can avoid a full boot. _Snapshot or fork_ branches a copy-on-write image from a prepared parent... | Vercel Sandbox | Firecracker microVM | 45 min Hobby / 24 h Pro and Enterprise; snapshot expiry defaults to 30 days after last use and is configurable | ... 'Provider startup figures measure different intervals and do not form a speed ranking.'",
+      "record_edited": false,
+      "notes": "The phrase 'snapshot-restore' and the figure '5-30ms' do not appear anywhere in the 70KB captured page -- a full-text search for any N-ms timing figure (regex \\d+\\s?ms) returns zero matches in the entire document. The page does discuss Firecracker microVMs and pause/resume/snapshot sandboxes generically (E2B, Vercel Sandbox both listed as Firecracker-based), and explicitly warns that 'Provider startup figures measure different intervals and do not form a speed ranking' -- the opposite spirit of citing one specific number as a settled figure. The claimed 5-30ms resume time is not sourced from this page.",
+      "lane": "E"
+    },
+    {
+      "id": "X-refmodel-7-2-experiment-009",
+      "url": "https://www.marktechpost.com/2026/03/21/safely-deploying-ml-models-to-production-four-controlled-strategies-a-b-canary-interleaved-shadow-testing/",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "7.2",
+          "quote": "the candidate model runs in parallel with the legacy model and receives the same live requests as the production system. However, only the legacy model's predictions are returned to users, while the candidate model's outputs are simply logged.",
+          "on_page": false
+        },
+        {
+          "card": "7.2",
+          "quote": "Four distinct isolation strategies, each with a load-bearing distinction",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "In this approach, the **candidate model** runs in parallel with the **legacy model** and receives the same live requests as the production system. However, only the legacy model's predictions are returned to users, while the candidate model's outputs are simply logged for analysis. || ab_route() is the core of this strategy -- for every incoming request, it draws a random number and routes to the candidate model only if that number falls below 0.10, otherwise the request goes to legacy. This gives the candidate roughly 10% of traffic.",
+      "record_edited": false,
+      "notes": "Two distinct findings here. (1) The main snippet is substantively on the page but fails byte-for-byte match for two reasons: this capture rung (service/pure.md) renders 'candidate model' and 'legacy model' with markdown bold markers (**candidate model**) inline in the sentence, and the page's sentence continues '...simply logged for analysis.' where the record's snippet stops at '...simply logged.' -- a genuine reformatting/truncation case (B_snippet_off). Correct verbatim sentence for re-sourcing: \"the candidate model runs in parallel with the legacy model and receives the same live requests as the production system. However, only the legacy model's predictions are returned to users, while the candidate model's outputs are simply logged for analysis.\" (2) Separately and more seriously: the second quote card 7.2 relies on, 'Four distinct isolation strategies, each with a load-bearing distinction', is NOT page text at all -- it is the research agent's own topic-sentence framing, taken verbatim from the start of this record's own 'read' field (its synthesis prose), not from marktechpost.com. The card is citing analysis prose as if it were a page quote. This is a citation defect independent of the reformatting issue in (1). The underlying claim (shadow testing is the only one of the four strategies with true production isolation) IS supported by the page's Shadow/A-B/Canary/Interleaved sections.",
+      "lane": "E"
+    },
+    {
+      "id": "X-refmodel-7-3-evaluate-010",
+      "url": "https://www.kaggle.com/competitions/arc-prize-2025",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "D_unreachable",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "7.3",
+          "quote": "Each submission is executed offline inside Kaggle's secure sandbox server environment on four NVIDIA L4 GPUs.",
+          "on_page": false
+        },
+        {
+          "card": "7.3",
+          "quote": "Each submission is executed offline inside Kaggle's secure sandbox server environment on four NVIDIA L4 GPUs.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "---\nurl: https://www.kaggle.com/competitions/arc-prize-2025\ntitle: ARC Prize 2025 | Kaggle\ndescription: Create an AI capable of novel reasoning\naccess_date: 2026-09-10T12:00:37.000Z\ncurrent_date: 2026-09-10T12:00:37.805Z\n---\n\n\n\n---\n\nOutput not what you expected? Email puremd@crawlspace.dev",
+      "record_edited": false,
+      "notes": "capture.py returned HTTP 200 via the service (pure.md) rung, but the body is only 290 bytes of YAML frontmatter (title + description) -- no article/rules body text at all, because this Kaggle competition page is JS-rendered. This independently reproduces the record's own honest self-assessment ('two direct-fetch attempts... returned only a page title or unrelated results content'). Treating this as effectively unreachable for content-verification purposes even though the HTTP layer returned 200. The record is already correctly marked search-only and should stay that way.",
+      "lane": "E"
+    },
+    {
+      "id": "X-refmodel-base-3-knowledge-003",
+      "url": "https://buzzgrewal.medium.com/ai-agents-dont-need-vector-search-anymore-inside-the-agentic-search-stack-replacing-rag-in-2026-58efcabe4f6f",
+      "capture_rung": "failed",
+      "http_status": 403,
+      "outcome": "D_unreachable",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "4.4",
+          "quote": "By 2026, systems like Claude Code, Cursor, Windsurf, and others no longer index their target corpora into a vector database, instead exposing retrieval as a set of tools and letting the LLM decide what to call, when, and how often.",
+          "on_page": false
+        },
+        {
+          "card": "base.3",
+          "quote": "systems like Claude Code, Cursor, Windsurf, and others no longer index their target corpora into a vector database",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "capture.py returned rung=failed, http_status=403, error='HTTPError 403: Forbidden'. No text was captured.",
+      "record_edited": false,
+      "notes": "Matches the record's own already-recorded status ('blocked', HTTP 403). Re-confirmed independently with tools/capture.py today (2026-09-10). Cannot verify snippet, quotes, or claim against the real page; record correctly stays search-only/blocked and unedited.",
+      "lane": "D"
+    },
+    {
+      "id": "X-refmodel-base-3-knowledge-006",
+      "url": "https://medium.com/@pratik-rupareliya/top-15-vector-databases-in-2026-a-production-decision-guide-from-100-enterprise-deployments-dd58a04f51a5",
+      "capture_rung": "failed",
+      "http_status": 403,
+      "outcome": "D_unreachable",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "4.4",
+          "quote": "Real-world case studies demonstrate Qdrant's effectiveness in large-scale applications, such as Bazaarvoice's reduction of vector storage by approximately 100x and Kakao's AI-powered internal Service Desk.",
+          "on_page": false
+        },
+        {
+          "card": "base.3",
+          "quote": "Real-world case studies demonstrate Qdrant's effectiveness in large-scale applications, such as Bazaarvoice's reduction of vector storage by approximately 100x and Kakao's AI-powered internal Service Desk.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "capture.py returned rung=failed, http_status=403, error='HTTPError 403: Forbidden'. No text was captured.",
+      "record_edited": false,
+      "notes": "Medium blocks the fetch (403), same as the other Medium URL in this lane. Cannot verify the named-customer claims (Qdrant/Bazaarvoice/Kakao, Milvus/BIGO/VIPSHOP) against the real article. Record correctly stays search-only and unedited.",
+      "lane": "D"
+    },
+    {
+      "id": "X-refmodel-rail-5-privacy-010",
+      "url": "https://datatracker.ietf.org/doc/draft-sirkkavaara-vaara-receipt/07/",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "B_snippet_off",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "rail.5",
+          "quote": "The Vaara Receipt (draft-sirkkavaara-vaara-receipt-07) specifies vaara.receipt/v1, a signed and independently recomputable record that binds a decision about an autonomous action to the evidence the decision was made on, and optionally to one or more external timestamp anchors.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "supports",
+      "evidence_from_page": "Abstract\n\n   This document specifies vaara.receipt/v1, a signed and independently\n   recomputable record that binds a decision about an autonomous action\n   to the evidence the decision was made on, and optionally to one or\n   more external timestamp anchors.  The format is canonicalized with\n   the JSON Canonicalization Scheme (JCS) so that any third party can\n   recompute its digests and verify its signature without access to the\n   issuer.",
+      "record_edited": false,
+      "notes": "Near-miss: everything from 'specifies vaara.receipt/v1...' through '...external timestamp anchors.' matches the page's Abstract verbatim. Only the opening clause differs -- the record substitutes 'The Vaara Receipt (draft-sirkkavaara-vaara-receipt-07) specifies' for the page's actual 'This document specifies', which breaks a byte-for-byte match. Correct verbatim sentence for re-sourcing: \"This document specifies vaara.receipt/v1, a signed and independently recomputable record that binds a decision about an autonomous action to the evidence the decision was made on, and optionally to one or more external timestamp anchors.\" Also confirmed 'erasure', 'redact', and 'GDPR' each occur zero times across the full 65.7KB draft, supporting the record's claim that this draft is NOT scoped to redaction/erasure.",
+      "lane": "E"
+    },
+    {
+      "id": "X-unit-design-022",
+      "url": "https://arxiv.org/pdf/2603.08806",
+      "capture_rung": "api",
+      "http_status": 200,
+      "outcome": "D_unreachable",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "5.1",
+          "quote": "Tests are typically partitioned into visible tests (40-70%) used during compilation and hidden tests (30-60%) held out during compilation and used only for reporting.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "capture.py's 'api' rung for arxiv.org routes both /abs/ and /pdf/ URLs to the export.arxiv.org Atom API, which returns ONLY the title and abstract, never the paper body. Captured abstract: '...TDAD introduces three mechanisms: (1) visible/hidden test splits that withhold evaluation tests during compilation, (2) semantic mutation testing... (3) spec evolution scenarios...' Grepped the captured text for '40-70', '30-60', and 'partitioned': zero hits for all three.",
+      "record_edited": false,
+      "notes": "Classified D_unreachable, not C, because the captured text does not represent the document the URL points to -- the URL is a /pdf/ link to the full paper, but capture.py structurally can only retrieve the abstract for arXiv, by design (see capture.py's own docstring). No claim about this paper's body text (the specific 40-70%/30-60% split) can be honestly verified or refuted from what was captured; ruling C_contradicted would misrepresent 'the paper doesn't say this' when actually 'this tool never reached the paper.' Worth flagging, not ruling on: the abstract frames visible/hidden test splitting as a mechanism TDAD itself 'introduces' to mitigate specification gaming -- in tension with the record's claim that such a split 'is standard' practice generally. That framing tension is visible even at the abstract level and is worth a human's attention when this record is re-sourced. This is a tool-wide constraint (capture.py cannot verify body-text claims on any arxiv.org/pdf/ or /abs/ record) -- worth flagging to the coordinator for all lanes, not just this one.",
+      "lane": "D"
+    },
+    {
+      "id": "X-unit-design-025",
+      "url": "https://arxiv.org/pdf/2606.26300",
+      "capture_rung": "api",
+      "http_status": 200,
+      "outcome": "D_unreachable",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "5.1",
+          "quote": "stronger agents can find exploitable weaknesses such as retrieving solution artifacts or tampering with tests",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "Same arXiv 'api' rung limitation: only title+abstract captured, not the paper body. Captured abstract discusses verification-vs-generation difficulty, reward hacking, and four reward constructions (test verifier, rubric verifier, user-as-verifier, automated agent verifier) in general terms, but never gets specific about exploit mechanisms. Grepped the captured text for 'tamper', 'artifact', 'SWE', 'exploitable': zero hits for all four.",
+      "record_edited": false,
+      "notes": "Classified D_unreachable for the same reason as X-unit-design-022: the URL points to the full PDF, capture.py can only retrieve the arXiv abstract, and the abstract genuinely does not contain (or need to contain) this level of mechanism-specific detail -- it reads as body-text material (likely from a related-work or threat-model section) that this tool structurally cannot reach. Not evidence the claim is false; evidence the claim is unverified. Same tool-wide arXiv-abstract-only constraint noted on X-unit-design-022 applies here.",
+      "lane": "D"
+    },
+    {
+      "id": "X-xc-budget-004",
+      "url": "https://github.com/paperclipai/paperclip/issues/2743",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "rail.6",
+          "quote": "When budget is exceeded or models are unavailable, systems can automatically retry with a fallback chain of alternative models, providing zero downtime and graceful degradation instead of hard failure.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "contradicts",
+      "evidence_from_page": "Feature Request\n\n### Problem\n\nCurrently, each agent is locked to a single adapter type and model. When the model hits a rate limit or budget cap, the agent simply fails and waits for retry. There is no way to define fallback models or adapters.\n\n### Proposed Solution\n\nAllow agents to define a **fallback chain** of models/adapters that automatically switch when the primary model is unavailable. ... ### Benefits\n\n*   **Zero downtime** -- Agents keep working even when one provider has issues\n*   **Rate limit handling** -- Graceful degradation instead of hard failure",
+      "record_edited": false,
+      "notes": "CONFIRMS already_known_bad -- and confirms it decisively. This GitHub issue is titled 'feat: automatic model/adapter fallback when rate limited or budget exceeded'; it is an open, unimplemented feature request. Its own 'Problem' section states the CURRENT behavior is the exact opposite of the claim: 'When the model hits a rate limit or budget cap, the agent simply fails and waits for retry' (hard failure). The fallback-chain / graceful-degradation behavior the record's snippet describes as if it were an existing system capability is listed under 'Proposed Solution' and 'Benefits' -- aspirational bullet points for something that does not exist yet. The snippet also isn't a verbatim sentence from the page; it's a synthesis stitched from separate bullet fragments ('Zero downtime', 'Rate limit handling -- Graceful degradation instead of hard failure').",
+      "lane": "E"
+    },
+    {
+      "id": "X-xc-enforcement-chain-006",
+      "url": "https://milanjovanovic.tech/blog/balancing-cross-cutting-concerns-in-clean-architecture",
+      "capture_rung": "markdown",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "rail.2",
+          "quote": "Authorization is a cross-cutting concern where enforcement must be interposed at every action and consult policy-relevant context accumulated across the execution.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "contradicts",
+      "evidence_from_page": "A few examples of cross-cutting concerns are:\n\n- Authentication & Authorization\n- Logging and tracing\n- Exception handling\n- Validation\n- Caching\n\n... Common examples are authentication and authorization, logging and tracing, exception handling, validation, and caching.",
+      "record_edited": false,
+      "notes": "This record has no 'claim' field (claim_to_test is null in the manifest), so I judged the snippet's own assertion directly. The word 'Authorization' occurs exactly twice in the 13KB page, both times only as one bare item in a five-item bullet list of cross-cutting-concern examples. There is zero discussion anywhere on the page of authorization needing to be 'interposed at every action' or 'consult policy-relevant context accumulated across the execution' -- that entire second sentence of the snippet is not a paraphrase of anything present, it is invented elaboration attributed to this source. Same failure pattern as the X-refmodel-7-2-experiment-009 second quote: analytical prose presented as if it were page-sourced text.",
+      "lane": "E"
+    },
+    {
+      "id": "X-xc-provenance-chain-001",
+      "url": "https://github.com/in-toto/attestation",
+      "capture_rung": "service",
+      "http_status": 200,
+      "outcome": "C_contradicted",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "5.2",
+          "quote": "The in-toto Attestation Framework defines a fixed, lightweight Statement that communicates information about software supply chain execution",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "Captured content (via markdown-rendering service) is the GitHub repo-root README: 'The in-toto Attestation Framework provides a specification for generating verifiable claims about any aspect of how a piece of software is produced... The core of the in-toto Attestation Framework is the specification that defines the format for in-toto attestations and the metadata they contain. We also provide a set of attestation predicates...' Grepped (case-insensitive) for 'Statement', 'Subject', 'lightweight': zero hits for all three anywhere in the captured page; 'Predicate Type' appears once, in an unrelated heading ('Want to propose a new predicate type?').",
+      "record_edited": false,
+      "notes": "Title/URL mismatch is the crisp, actionable defect here: the record's own title field says 'Predicate type: SLSA Provenance - in-toto/attestation', which names a specific spec sub-page (the SLSA Provenance predicate-type document), but the url field is the bare repo root https://github.com/in-toto/attestation, whose README is generic project-landing text with none of the structural vocabulary (Statement/Subject/lightweight) the snippet and claim depend on. That specific structural language most likely lives in a spec markdown file under this repo (e.g. spec/v1/statement.md) that the record never actually points to. Recommend re-pointing url to the correct spec sub-page before re-sourcing.",
+      "lane": "D"
+    },
+    {
+      "id": "X-xc-provenance-chain-002",
+      "url": "https://secure-systems-lab.org/",
+      "capture_rung": "failed",
+      "http_status": null,
+      "outcome": "D_unreachable",
+      "snippet_on_page": false,
+      "profile_quotes": [
+        {
+          "card": "5.2",
+          "quote": "DSSE is a lightweight container format for signed payloads standardized at secure-systems-lab.",
+          "on_page": false
+        }
+      ],
+      "claim_verdict": "silent",
+      "evidence_from_page": "capture.py returned rung=failed, http_status=null, error='URLError: [Errno -2] Name or service not known'.",
+      "record_edited": false,
+      "notes": "Confirms the record's own already_known_bad note verbatim: DNS lookup for secure-systems-lab.org fails (NXDOMAIN) as of 2026-09-10. Domain does not resolve at all. Record correctly stays blocked/search-only and unedited.",
+      "lane": "D"
+    }
+  ]
+}

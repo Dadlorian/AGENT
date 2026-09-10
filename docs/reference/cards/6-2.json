@@ -4,12 +4,12 @@
   "area": "Observe",
   "status": "planned",
   "definition": {
-    "text": "Evaluation Data is the record an evaluation produces -- scores, test results, and human feedback -- not the gate that consumes it (contrast card 7.3 Evaluate (Blind), a distinct card in this reference model). The evidence gathered here names four scored dimensions: \"AI agent evaluation measures the quality of autonomous, multi-step LLM systems across four dimensions: trajectory (the path of steps), tool use (correct tool selection and arguments), task completion (whether the user's goal was met), and multi-turn quality (whether performance holds across a conversation).\" A separate, sourced convention treats the produced verdict the same way -- as something to carry, not something to perform: OpenTelemetry's GenAI semantic conventions name \"gen_ai.evaluation.result: records quality evaluation results via gen_ai.evaluation.score.value and gen_ai.evaluation.score.label\" -- a carrier attribute, not an evaluator.",
+    "text": "Evaluation Data is the record an evaluation produces -- scores, test results, and human feedback -- not the gate that consumes it (contrast card 7.3 Evaluate (Blind), a distinct card in this reference model). The evidence gathered here names three scored layers, not the four-dimension taxonomy an earlier draft of this card cited to the wrong page (see gaps): \"An agent turns one user request into a sequence: model calls, tool calls, retries, sometimes subagents. Evaluation has to cover three layers, and they answer different questions.\" -- final-answer, trajectory, and per-turn (production) evaluation. A separate, sourced convention treats the produced verdict the same way -- as something to carry, not something to perform: OpenTelemetry's GenAI semantic conventions name \"gen_ai.evaluation.result: records quality evaluation results via gen_ai.evaluation.score.value and gen_ai.evaluation.score.label\" -- a carrier attribute, not an evaluator.",
     "origin": "sourced",
     "evidence": [
       {
-        "id": "X-cap-evaluation-003",
-        "quote": "AI agent evaluation measures the quality of autonomous, multi-step LLM systems across four dimensions: trajectory (the path of steps), tool use (correct tool selection and arguments), task completion (whether the user's goal was met), and multi-turn quality (whether performance holds across a conversation)."
+        "id": "X-refmodel-6-2-evaluation-data-001",
+        "quote": "An agent turns one user request into a sequence: model calls, tool calls, retries, sometimes subagents. Evaluation has to cover three layers, and they answer different questions."
       },
       {
         "id": "X-end-to-end-006",
@@ -41,12 +41,12 @@
       "note": "This repo actually runs Langfuse (observe-langfuse-web-1, observe-langfuse-worker-1, observe-postgres-1, per PASS.md A1) and Langfuse ships its own evals/scoring feature alongside tracing -- but PASS.md's own container inventory documents only trace ingestion and async trace processing, never evals; nothing gathered here confirms the evals half of Langfuse is exercised in this repo.",
       "in_use_here": false,
       "evidence": {
-        "text": "Cited for what Langfuse the platform provides; this repo's own running use of it is documented for tracing only (see gaps).",
+        "text": "Cited for what Langfuse the platform provides, from Langfuse's own homepage (an earlier draft cited this same description to a docs/observability/overview URL that does not carry it -- see gaps); this repo's own running use of it is documented for tracing only (see gaps).",
         "origin": "sourced",
         "evidence": [
           {
-            "id": "X-cap-telemetry-003",
-            "quote": "Langfuse is an open source AI engineering platform providing LLM evals, observability, metrics, prompt management, playground, and datasets."
+            "id": "X-refmodel-6-2-evaluation-data-002",
+            "quote": "Trace, evaluate, and improve AI agents with one open platform. Use production data to understand behavior, collaborate on fixes, and ship better quality at lower cost and latency."
           }
         ]
       }
@@ -99,7 +99,7 @@
     ]
   },
   "usage": {
-    "text": "The shape of a written evaluation record is a scored trajectory compared against a stored baseline, not a bare pass/fail: \"Run a curated benchmark against every candidate version in CI and gate the release on the results.\" The score itself carries the same four dimensions this card's own definition names -- trajectory, tool use, task completion, multi-turn quality -- and a held-out human or LLM-judge pass over edge cases is a second, separate write onto the same record type, not a different data shape: \"human annotation to calibrate both.\"",
+    "text": "The shape of a written evaluation record is a scored trajectory compared against a stored baseline, not a bare pass/fail: \"Run a curated benchmark against every candidate version in CI and gate the release on the results.\" The score itself carries the same three layers this card's own definition now names -- final-answer, trajectory, and per-turn, not the four-dimension taxonomy an earlier draft cited to the wrong page (see gaps) -- for example: \"Trajectory evaluation. Score the sequence of steps that produced the answer. Did the agent call the right tools with the right arguments?\" -- and a held-out human or LLM-judge pass over edge cases is a second, separate write onto the same record type, not a different data shape: \"human annotation to calibrate both.\"",
     "origin": "sourced",
     "evidence": [
       {
@@ -107,8 +107,8 @@
         "quote": "Run a curated benchmark against every candidate version in CI and gate the release on the results."
       },
       {
-        "id": "X-cap-evaluation-003",
-        "quote": "trajectory (the path of steps), tool use (correct tool selection and arguments), task completion (whether the user's goal was met), and multi-turn quality (whether performance holds across a conversation)"
+        "id": "X-refmodel-6-2-evaluation-data-001",
+        "quote": "**Trajectory evaluation.** Score the sequence of steps that produced the answer. Did the agent call the right tools with the right arguments?"
       },
       {
         "id": "X-cap-evaluation-007",
@@ -141,6 +141,11 @@
       "what": "The only standard on this card governs the wire carrier for an already-decided verdict (gen_ai.evaluation.result). No standard covers the rubric definition, scoring thresholds, or case-set versioning scheme itself -- those are entirely this repo's own or a vendor framework's design, with no cited external specification.",
       "why_it_matters": "A card whose only standard covers how a result is transmitted, not how it is produced, means the actual evaluation methodology (what counts as a passing score) is unstandardized and framework-specific, which is a different and larger gap than a missing carrier would be.",
       "research_query": "is there a published, framework-neutral rubric or scoring-threshold standard for agent evaluation as of 2027, beyond the OTel result carrier"
+    },
+    {
+      "what": "This card's definition and usage previously rested on a 'four dimensions: trajectory, tool use, task completion, multi-turn quality' taxonomy cited to morphllm.com. On direct re-fetch, none of those phrases appear anywhere on that 19.8KB page; its own stated framework is three layers -- final-answer, trajectory, and per-turn evaluation -- shown as its own stat-tile callout ('3 layers / Final-answer, trajectory, per-turn'). Separately, the Langfuse product-description quote in this card's tools section was cited to langfuse.com/docs/observability/overview, a page whose full text never carries that sentence at all (it is homepage-style copy). Both citations have been repaired: the definition and usage now cite morphllm.com's genuine three-layer framing, and the Langfuse quote is now cited to langfuse.com's actual homepage.",
+      "why_it_matters": "This card's central taxonomy was fabricated relative to its own cited source -- not a minor wording slip but a different number of categories with different names. Any downstream skill or example that adopted the 'four dimensions' vocabulary from this card should be checked against the corrected three-layer framing.",
+      "research_query": "does compose-improvement-loop or any example under examples/ reference the old 'trajectory, tool use, task completion, multi-turn quality' four-dimension vocabulary, and if so does it need updating to match this card's corrected three-layer framing"
     }
   ]
 }

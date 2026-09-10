@@ -14,3 +14,5 @@
 | 80 | Card profiles | Every reference model card has a profile at zero errors | Open | 32 of 40 profiled, 8 remain |
 | 81 | Reference model corrections | Recorded model gaps applied or declined | Open | 31 model changes recorded, none applied |
 | 82 | Egress log integrity | reconcile_egress.py checks egress_ref matches its own log entry | Open | 5 refs went stale on rebuild, repaired |
+| 83 | Citation repair | Every card citation quotes text present on its source page | Open | 23 recorded in citation-debt.json |
+| 84 | Citable means checked | citation-debt.json is empty and the gate needs no exemptions | Open | 23 entries, 16 need re-sourcing |

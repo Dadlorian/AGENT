@@ -130,7 +130,7 @@
     ]
   },
   "usage": {
-    "text": "A producer submits by pushing over HTTP (a webhook) or via a queue. For the push case, CloudEvents' HTTP WebHook binding is the specification found, defining the delivery method plus 'an authorization model for event delivery to protect the delivery target, and a registration handshake that protects the sender from being abused for flooding arbitrary HTTP sites with requests.' Because delivery is at-least-once, the same message can arrive more than once; the receiver is expected to deduplicate on the CloudEvents id/source pair -- that id field is the same stable identifier a dedup layer wants -- and hold that dedup record at least as long as the provider's full retry window, the same key-and-window shape cap-idempotency's own claim/lease contract requires. Per this repo's own worked reference model, whichever party submits this way is authenticated as 'the external party' and runs under 'a pre-authorised ceiling per source' rather than a budget it can set itself.",
+    "text": "A producer submits by pushing over HTTP (a webhook) or via a queue. For the push case, CloudEvents' HTTP WebHook binding is the specification found, defining the delivery method plus 'an authorization model for event delivery to protect the delivery target, and a registration handshake that protects the sender from being abused for flooding arbitrary HTTP sites with requests.' Because delivery is at-least-once, the same message can arrive more than once; the receiver is expected to deduplicate on the CloudEvents id/source pair -- that id field is the same stable identifier a dedup layer wants -- and its TTL should be set by working backwards from the provider's own retry window plus a safety margin, 'Work backwards from the provider's retry window: Stripe retries for up to 3 days, Shopify for 48 hours. A TTL of the retry window plus a safety margin (say, 7 days for Stripe, 72 hours for Shopify) bounds your storage while covering every automatic retry,' the same key-and-window shape cap-idempotency's own claim/lease contract requires. Per this repo's own worked reference model, whichever party submits this way is authenticated as 'the external party' and runs under 'a pre-authorised ceiling per source' rather than a budget it can set itself.",
     "origin": "sourced",
     "evidence": [
       {
@@ -138,8 +138,8 @@
         "quote": "This specification defines a HTTP method by how notifications are delivered by the sender, an authorization model for event delivery to protect the delivery target, and a registration handshake that protects the sender from being abused for flooding arbitrary HTTP sites with requests."
       },
       {
-        "id": "X-litmus-c-012",
-        "quote": "Your deduplication cache must persist at least as long as the provider's full retry window."
+        "id": "X-refmodel-1-4-external-event-001",
+        "quote": "Work backwards from the provider's retry window: Stripe retries for up to 3 days, Shopify for 48 hours. A TTL of the retry window plus a safety margin (say, 7 days for Stripe, 72 hours for Shopify) bounds your storage while covering every automatic retry."
       },
       {
         "id": "REF-3-4-11",
@@ -181,6 +181,11 @@
       "what": "The canonical entry envelope (cap-work-intake's EntryEnvelope) has one `kind` enum -- human, event, schedule, external -- and ten properties total, none of which is a trust or origin marker. The schema's own description of `kind` says it is 'recorded for audit and routing; nothing downstream of intake branches on it.' Nothing in the shape distinguishes an authenticated external party from an internal one once either is normalised into kind=event or kind=external.",
       "why_it_matters": "The owner's stated intent for the internal/external split is one envelope with a trust field. The evidence supports the 'one envelope' half but not the 'trust field' half: there is no field to audit or police the internal/external boundary post-intake, which is exactly the boundary this card and 1.3 exist to name.",
       "research_query": "should the entry envelope carry an explicit trust/origin attribute distinct from kind, and if so what would read it downstream"
+    },
+    {
+      "what": "An earlier version of this card's usage section cited a record whose own snippet opened by attributing this dedup-TTL advice to 'The CloudEvents specification' and its 'id' field; on repair, the string 'CloudEvents' does not appear anywhere on that record's own page. The retry-window-plus-safety-margin advice itself is genuinely on the page (now re-cited to a freshly captured record), but it is the page's own general webhook-dedup guidance, not something CloudEvents itself specifies -- this card's separate claim that id/source is the CloudEvents-native dedup key is carried on CloudEvents' own webhook binding evidence elsewhere in this card, not on this record.",
+      "why_it_matters": "The old record blended a real piece of advice with a fabricated standards attribution, which is exactly the pattern that made this repair pass necessary. Keeping the two claims (what CloudEvents' id field is for, vs. how long to keep a dedup cache) traceable to separate, accurately-attributed sources prevents a reader from assuming CloudEvents itself mandates a specific TTL policy, which it does not.",
+      "research_query": "does the CloudEvents specification itself say anything about deduplication cache retention, or is TTL policy entirely left to the receiving implementation as this card's evidence now suggests"
     }
   ]
 }

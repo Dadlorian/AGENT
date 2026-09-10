@@ -16,15 +16,15 @@
   "standards": [
     {
       "id": "oci-runtime-spec",
-      "role": "governs the boundary itself: the lifecycle and configuration interface every isolation adapter (a plain process, Docker, gVisor, Kata, Firecracker) must implement so callers see one declare/admit/inspect contract regardless of which adapter is behind it.",
+      "role": "governs the boundary itself: how a filesystem bundle unpacked from an OCI Image is run by an OCI Runtime, the contract this card's adapters implement (a plain process, Docker, gVisor, Firecracker) so callers see one declare/admit/inspect contract regardless of which adapter is behind it. Kata Containers is a named swap candidate in this repo's own target table, but its own OCI-implementation status is not independently verified in this pass (see gaps).",
       "covers": "does not say anything about what is inside the sandbox (base image, toolchain, dependency versions) -- that is the Image Spec's job, not the Runtime Spec's.",
       "evidence": {
-        "text": "The OCI Runtime Spec defines the behavior and the configuration interface of low-level container runtimes such as runc.",
+        "text": "The Open Container Initiative's own site states the Runtime Specification's job directly: \"At a high-level an OCI implementation would download an OCI Image then unpack that image into an OCI Runtime filesystem bundle. At this point the OCI Runtime Bundle would be run by an OCI Runtime.\"",
         "origin": "sourced",
         "evidence": [
           {
-            "id": "X-cap-isolation-001",
-            "quote": "The OCI Runtime Spec defines the behavior and the configuration interface of low-level container runtimes such as runc."
+            "id": "X-refmodel-3-3-environment-011",
+            "quote": "At a high-level an OCI implementation would download an OCI Image then unpack that image into an OCI Runtime filesystem bundle. At this point the OCI Runtime Bundle would be run by an OCI Runtime."
           },
           {
             "id": "X-maturity-c-010",
@@ -76,12 +76,12 @@
       "note": "a named OCI Runtime Spec swap candidate for Firecracker in this repo's own target table (F-b3-02); not in use here today.",
       "in_use_here": false,
       "evidence": {
-        "text": "The spec is also implemented by crun, youki, gVisor, Kata Containers, and others.",
+        "text": "gVisor's own documentation states directly that its runtime, runsc, \"implements the Open Container Initiative (OCI) runtime specification, which is used by Docker and Kubernetes.\"",
         "origin": "sourced",
         "evidence": [
           {
-            "id": "X-cap-isolation-001",
-            "quote": "The spec is also implemented by crun, youki, gVisor, Kata Containers, and others."
+            "id": "X-refmodel-3-3-environment-012",
+            "quote": "implements the Open Container Initiative (OCI) runtime specification, which is used by Docker and Kubernetes."
           },
           {
             "id": "F-b3-02",
@@ -102,10 +102,6 @@
           {
             "id": "X-refmodel-4-2-compute-001",
             "quote": "Kata Containers orchestrates multiple VMMs (Firecracker, Cloud Hypervisor, QEMU) to provide microVM isolation through standard container APIs."
-          },
-          {
-            "id": "X-cap-isolation-001",
-            "quote": "The spec is also implemented by crun, youki, gVisor, Kata Containers, and others."
           }
         ]
       }
@@ -202,6 +198,11 @@
       "what": "Every harness's live adapter, Firecracker included, is claimed rather than measured against a real host from a session (per STATUS row 37) -- so the 'built' status on this card rests on unverified claims for the live path.",
       "why_it_matters": "A capability marked 'built' whose live adapter has never run is a different risk than one that has been measured.",
       "research_query": "has any harness run its live adapter against a real host and recorded the result"
+    },
+    {
+      "what": "A verification pass found this card (this repo's own worked example, imitated by other card authors) had three citations to X-cap-isolation-001 quoting sentences -- naming runc, crun, youki, gVisor, and Kata Containers as OCI Runtime Spec implementations -- that do not appear anywhere on opencontainers.org's homepage, the page that record cites (0 occurrences of any of those names, verified by grep on the full captured page). The original record is left unedited as the discovered defect. Two of the three citations (the standards entry's general definition, and gVisor's tool entry) are now re-sourced to freshly captured primary pages: opencontainers.org's own genuine description of the Runtime Specification, and gVisor's own documentation, which states directly that it implements the OCI runtime spec via `runsc`. The third (Kata Containers' second evidence entry, which existed only to back the same unsupported implementation-list sentence) was dropped outright rather than re-sourced: neither Kata's own homepage nor its GitHub README mentions OCI, runc, or the runtime spec at all (checked directly), so no primary source was found to support 'Kata Containers implements the OCI Runtime Spec' as a standalone claim. Kata's tool entry keeps only its other, already-valid citation (its VMM-orchestration claim), so it no longer asserts OCI-implementation status at all.",
+      "why_it_matters": "This card is held up elsewhere in this repo as the rigour standard other card authors should match, so a fabrication here is worse than the same defect on an ordinary card. It also means this card can no longer state, even implicitly, that Kata Containers is a verified OCI Runtime Spec implementation -- that fact may well be true (Kata's architecture docs likely say so somewhere), but this pass could not find it on the two pages checked, and per this card's own rule an unverified claim is not asserted.",
+      "research_query": "find and capture (with tools/capture.py, not WebFetch) a Kata Containers page that states directly whether it implements the OCI Runtime Spec, and re-add that citation to the Kata Containers tool entry if found"
     }
   ]
 }

@@ -25,7 +25,7 @@
     {
       "id": "openai-compatible-completions",
       "role": "governs the wire shape (request/response fields) that this repo's gateway adapter and every named swap candidate speak in common, so a completion call is portable across LiteLLM, OpenRouter, direct provider SDKs and vLLM/SGLang native without the caller's request shape changing.",
-      "covers": "not a specification with a governing body or a published version; this repo's own standards entity records its version as unverified. The convention itself does not decide routing, budget, or which class an adapter serves, and it does not cover a second, competing wire shape (an items-and-response format) that the same vendor whose message-shaped API this repo adopted has also published and separately committed to keep supporting.",
+      "covers": "not a specification with a governing body or a published version; this repo's own standards entity records its version as unverified. The convention itself does not decide routing, budget, or which class an adapter serves, and it does not cover a second, competing wire shape (an items-and-response format) that the same vendor whose message-shaped API this repo adopted has also published. This card cites no vendor statement committing to keep supporting the older shape indefinitely -- an earlier version of this card made that claim and it did not hold up under verification (see gaps); the strongest support found is third-party coverage stating the older API remains 'supported and stable' today.",
       "evidence": {
         "text": "The completions wire shape has no standards body behind it: \"there is currently (Dec. 2025) no formally specified standard like HTTP or SQL that is standardized by a governing body. Instead, a de facto standard has emerged that is supported by most providers.\"",
         "origin": "sourced",
@@ -45,7 +45,7 @@
       "note": "this repo's current gateway adapter -- self-hosted, one OpenAI-compatible API over every provider, bound to loopback. This repo's own harness (harness/gateway/adapters/live.py) is written to call it directly, but see gaps: that path has never been exercised against a real host from a session.",
       "in_use_here": true,
       "evidence": {
-        "text": "This repo's own host inventory names the running container directly: \"`ghcr.io/berriai/litellm-database:v1.97.0` | `127.0.0.1:4000` | Model gateway — one OpenAI-compatible API over every provider\", and the target table names it as this capability's adapter today, checked against \"OpenAI-compatible completions | LiteLLM | OpenRouter · direct provider SDKs · vLLM/SGLang native.\"",
+        "text": "This repo's own host inventory names the running container directly: \"ghcr.io/berriai/litellm-database:v1.97.0 | 127.0.0.1:4000 | Model gateway — one OpenAI-compatible API over every provider\", and the target table names it as this capability's adapter today, checked against \"OpenAI-compatible completions | LiteLLM | OpenRouter · direct provider SDKs · vLLM/SGLang native.\"",
         "origin": "sourced",
         "evidence": [
           {
@@ -65,7 +65,7 @@
       "note": "named swap candidate for LiteLLM in this repo's own target table; a hosted OpenAI-compatible gateway rather than a self-run one. Not run here.",
       "in_use_here": false,
       "evidence": {
-        "text": "This repo's own target table names OpenRouter as a swap candidate for the current adapter. Independent coverage (a search result, not a fetched page) describes the tradeoff it represents: \"OpenRouter provides hosted access to hundreds of models across dozens of providers through a single OpenAI-compatible API\", against a self-hosted LiteLLM install.",
+        "text": "This repo's own target table names OpenRouter as a swap candidate for the current adapter. A head-to-head comparison of the two describes the tradeoff it represents: \"OpenRouter prioritizes speed and breadth; one hosted API to hundreds of models across dozens of providers, but trades deep governance, data residency control, and routing customization for simplicity,\" against a self-hosted LiteLLM install.",
         "origin": "sourced",
         "evidence": [
           {
@@ -73,8 +73,8 @@
             "quote": "OpenAI-compatible completions | LiteLLM | OpenRouter · direct provider SDKs · vLLM/SGLang native"
           },
           {
-            "id": "X-cap-model-access-005",
-            "quote": "OpenRouter provides hosted access to hundreds of models across dozens of providers through a single OpenAI-compatible API"
+            "id": "X-refmodel-3-2-model-interface-002",
+            "quote": "OpenRouter prioritizes speed and breadth; one hosted API to hundreds of models across dozens of providers, but trades deep governance, data residency control, and routing customization for simplicity."
           }
         ]
       }
@@ -113,24 +113,24 @@
     }
   ],
   "landscape": {
-    "text": "LiteLLM and OpenRouter trade control for breadth: reviewed head-to-head, \"LiteLLM supports 100+ providers behind a single OpenAI-compatible API, handles fallbacks and budget controls, and runs free on any VPS\" as something you operate yourself, against \"OpenRouter provides hosted access to hundreds of models across dozens of providers through a single OpenAI-compatible API\" with the operational burden on the vendor instead (both search results, not fetched pages). The wire shape both speak sits on no governing body: \"there is currently (Dec. 2025) no formally specified standard like HTTP or SQL that is standardized by a governing body. Instead, a de facto standard has emerged that is supported by most providers.\" Even inside that convention two shapes are live at once -- the same vendor has also published a newer, items-and-response shaped API, yet \"OpenAI has stated that the Chat Completions API will remain supported indefinitely as an industry standard,\" which is the shape this repo's own target row names.",
+    "text": "LiteLLM and OpenRouter trade control for breadth. Reviewed head-to-head, LiteLLM \"Supports 100+ models from providers like OpenAI, Azure OpenAI, Anthropic, Hugging Face, Vertex AI, and Cohere,\" self-hosted and run by the caller, against \"OpenRouter prioritizes speed and breadth; one hosted API to hundreds of models across dozens of providers, but trades deep governance, data residency control, and routing customization for simplicity,\" with the operational burden on the vendor instead. The wire shape both speak sits on no governing body: \"there is currently (Dec. 2025) no formally specified standard like HTTP or SQL that is standardized by a governing body. Instead, a de facto standard has emerged that is supported by most providers.\" Even inside that convention two shapes are live at once -- the same vendor has also published a newer, items-and-response shaped API, while a third-party comparison of the two describes the older, message-shaped API this repo's own target row names as \"Chat Completions is supported and stable\" today, recommending the newer shape chiefly for new projects rather than as a forced migration.",
     "origin": "sourced",
     "evidence": [
       {
-        "id": "X-cap-model-access-003",
-        "quote": "LiteLLM supports 100+ providers behind a single OpenAI-compatible API, handles fallbacks and budget controls, and runs free on any VPS."
+        "id": "X-refmodel-3-2-model-interface-001",
+        "quote": "Supports 100+ models from providers like OpenAI, Azure OpenAI, Anthropic, Hugging Face, Vertex AI, and Cohere."
       },
       {
-        "id": "X-cap-model-access-005",
-        "quote": "OpenRouter provides hosted access to hundreds of models across dozens of providers through a single OpenAI-compatible API"
+        "id": "X-refmodel-3-2-model-interface-002",
+        "quote": "OpenRouter prioritizes speed and breadth; one hosted API to hundreds of models across dozens of providers, but trades deep governance, data residency control, and routing customization for simplicity."
       },
       {
         "id": "X-maturity-b-012",
         "quote": "there is currently (Dec. 2025) no formally specified standard like HTTP or SQL that is standardized by a governing body. Instead, a de facto standard has emerged that is supported by most providers"
       },
       {
-        "id": "X-litmus-a-006",
-        "quote": "OpenAI has stated that the Chat Completions API will remain supported indefinitely as an industry standard."
+        "id": "X-refmodel-3-2-model-interface-003",
+        "quote": "Chat Completions is supported and stable"
       }
     ]
   },
@@ -178,6 +178,11 @@
       "what": "This card's own target-architecture source names vLLM/SGLang native serving as a swap candidate for the gateway/interface layer itself, while this card's own current-state source separately records SGLang already serving a model directly on this host as one member of the free local-GPU routing group. The same name is doing two different jobs across two of this repo's own sources -- swap candidate for the interface versus backend already running behind it -- and this card does not disentangle them from whatever card covers compute or local inference.",
       "why_it_matters": "If the boundary between 'the gateway in front of models' and 'a model server behind the gateway' is this repo's own bucketing rather than a real seam, a reader comparing this card to a compute or local-inference card could reasonably expect SGLang to appear as in-use on one and as a swap candidate on the other, without either card explaining why both are true.",
       "research_query": "does a compute or local-inference card in this reference model already cover SGLang as an in-use serving backend, and if so does it cross-reference this card's swap-candidate framing of the same name"
+    },
+    {
+      "what": "A verification pass found this card's landscape previously cited a record (X-cap-model-access-003) whose snippet claimed LiteLLM \"supports 100+ providers behind a single OpenAI-compatible API, handles fallbacks and budget controls, and runs free on any VPS.\" A fresh capture of the same URL (truefoundry.com/blog/litellm-vs-openrouter) shows \"budget controls\" and \"VPS\" occur zero times anywhere on the page. The page's own comparison table states LiteLLM \"Supports 100+ models\" (not providers) under a \"Provider Support\" heading; elsewhere on the same page, in a different section, it also says LiteLLM lets you \"route requests across over 100 LLM providers\" -- the page itself uses both framings in different places, so it is not perfectly clean either way. This card's replacement citation (X-refmodel-3-2-model-interface-001) uses the comparison-table cell as the cleaner, more precisely labelled statement. A second citation (X-litmus-a-006) attributed to OpenAI a statement -- that it \"has stated\" Chat Completions will remain supported \"indefinitely as an industry standard\" -- that also appears nowhere on its cited page. Both original records are left unedited as the discovered defect; this card's landscape.text and evidence now point to newly captured, verified records instead (X-refmodel-3-2-model-interface-001/002/003).",
+      "why_it_matters": "A reader who trusted the old wording would overstate LiteLLM's provider count, believe a deployment claim (\"runs free on any VPS\") the source never made, and believe OpenAI made a permanence promise it never made on the cited page. This is the concrete instance in this repo's own corpus that shows swapping a citation without rewriting the prose that echoed the bad quote would not have fixed the underlying misrepresentation.",
+      "research_query": "does a future tools/verify_snippets.py pass flag X-cap-model-access-003 and X-litmus-a-006, and should those records' status be annotated so other cards do not cite them"
     }
   ]
 }

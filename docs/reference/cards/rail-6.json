@@ -7,8 +7,14 @@
     "text": "Model Management is this repo's own model-access contract: a caller submits a request naming a routing class -- never a vendor, model or endpoint -- and a routing layer resolves that class to one endpoint at call time. This repo's own current-state facts state the rule directly: \"Callers request a class, never a vendor. Prefix carries the contract.\" What the class actually resolved to on a given call is a separately-named, currently-unrecorded piece of state in this repo's own architecture graph: \"model version pin behind a resolved routing class - the exact member model and its version that a class resolved to on this call.\"",
     "origin": "sourced",
     "evidence": [
-      {"id": "F-a4-01", "quote": "Callers request a class, never a vendor. Prefix carries the contract."},
-      {"id": "A-state-model-version-pin-behind-a-resolved-routing-class-the-exact-member-model-and-its-version-that-a-class-resolved-to-on-this-call", "quote": "model version pin behind a resolved routing class - the exact member model and its version that a class resolved to on this call"}
+      {
+        "id": "F-a4-01",
+        "quote": "Callers request a class, never a vendor. Prefix carries the contract."
+      },
+      {
+        "id": "A-state-model-version-pin-behind-a-resolved-routing-class-the-exact-member-model-and-its-version-that-a-class-resolved-to-on-this-call",
+        "quote": "model version pin behind a resolved routing class - the exact member model and its version that a class resolved to on this call"
+      }
     ]
   },
   "standards": [
@@ -20,7 +26,10 @@
         "text": "This repo's own registry marks this standard's version 'unverified' for the same reason this source states plainly: nobody governs it.",
         "origin": "sourced",
         "evidence": [
-          {"id": "X-maturity-b-012", "quote": "In the LLM world, there is currently (Dec. 2025) no formally specified standard like HTTP or SQL that is standardized by a governing body."}
+          {
+            "id": "X-maturity-b-012",
+            "quote": "In the LLM world, there is currently (Dec. 2025) no formally specified standard like HTTP or SQL that is standardized by a governing body."
+          }
         ]
       }
     }
@@ -35,7 +44,10 @@
         "text": "PASS.md's own current-state container inventory (A1).",
         "origin": "sourced",
         "evidence": [
-          {"id": "F-a1-02", "quote": "Model gateway — one OpenAI-compatible API over every provider"}
+          {
+            "id": "F-a1-02",
+            "quote": "Model gateway — one OpenAI-compatible API over every provider"
+          }
         ]
       }
     },
@@ -48,40 +60,64 @@
         "text": "PASS.md's own target table (B3).",
         "origin": "sourced",
         "evidence": [
-          {"id": "F-b3-03", "quote": "OpenRouter · direct provider SDKs · vLLM/SGLang native"}
+          {
+            "id": "F-b3-03",
+            "quote": "OpenRouter · direct provider SDKs · vLLM/SGLang native"
+          }
         ]
       }
     },
     {
       "name": "vLLM Semantic Router",
       "kind": "open-source",
-      "note": "A genuinely different architecture from a fixed class-prefix map: it composes routing with policy, budget and reasoning signals into one inference layer, rather than resolving a caller-named class through a separate lookup.",
+      "note": "A genuinely different architecture from a fixed class-prefix map: the project's own README describes it composing routing with per-request signals and policy into one layer, rather than resolving a caller-named class through a separate lookup.",
       "in_use_here": false,
       "evidence": {
-        "text": "Not part of this repo's own stack; cited to show routing-as-a-composed-layer is a real, different design from a prefix convention.",
+        "text": "\"vLLM Semantic Router is a programmable routing layer for building Mixture-of-Models systems across heterogeneous LLM infrastructure. It evaluates request signals, user preferences, and application policies to select -- or compose -- the right model path for each request.\"",
         "origin": "sourced",
         "evidence": [
-          {"id": "X-end-to-end-058", "quote": "composes routing, policies, reasoning budgets and workflow signals into a unified inference layer"}
+          {
+            "id": "X-refmodel-rail-6-model-mgmt-002",
+            "quote": "vLLM Semantic Router is a programmable routing layer for building Mixture-of-Models systems across heterogeneous LLM infrastructure. It evaluates request signals, user preferences, and application policies to select—or compose—the right model path for each request."
+          }
         ]
       }
     }
   ],
   "landscape": {
-    "text": "This card's own class-prefix design is a narrower answer than what the wider field calls 'routing', which is treated as its own active decision layer rather than a fixed lookup table: \"Infrastructure providers are adding routing rules. Agent companies are routing between frontier and smaller models. Research papers are proposing learned routers, cascades and verification loops.\" vLLM's Semantic Router is one production instance of that wider claim, folding routing, policy, budget and reasoning signals into a single composed layer rather than keeping them as separate lookups the way this repo's own prefix tables (F-a4-02, F-a4-03) do. Fallback is a related but separate axis: when a call's budget is exceeded or a model becomes unavailable, the sourced industry pattern is to retry against a fallback chain of alternative models rather than fail hard, which is the same 'budget exceeded' trigger this repo's own rail.4 Cost Management card also names.",
+    "text": "This card's own class-prefix design is a narrower answer than what the wider field calls 'routing', which is treated as its own active decision layer rather than a fixed lookup table: \"Infrastructure providers are adding routing rules. Agent companies are routing between frontier and smaller models. Research papers are proposing learned routers, cascades and verification loops.\" vLLM's Semantic Router is one production instance of that wider claim: its own README describes evaluating \"request signals, user preferences, and application policies\" to select or compose a model path, folding routing and policy into a single layer rather than keeping them as separate lookups the way this repo's own prefix tables (F-a4-02, F-a4-03) do. Fallback is a related but separate axis. A real, shipped example of it: this repo's own in-use gateway, LiteLLM, retries against a fallback chain of alternative models when a call fails or a model group is rate-limited -- \"if a call fails after num_retries, LiteLLM falls back to another model group, so a failing model or provider automatically fails over to a healthy backup\" -- though that confirmed trigger is call failure/rate-limiting, not specifically a budget ceiling; whether the same or a different mechanism fires on a budget cap is unsettled (see gaps).",
     "origin": "sourced",
     "evidence": [
-      {"id": "X-end-to-end-056", "quote": "Infrastructure providers are adding routing rules. Agent companies are routing between frontier and smaller models. Research papers are proposing learned routers, cascades and verification loops."},
-      {"id": "X-end-to-end-058", "quote": "composes routing, policies, reasoning budgets and workflow signals into a unified inference layer"},
-      {"id": "X-xc-budget-004", "quote": "When budget is exceeded or models are unavailable, systems can automatically retry with a fallback chain of alternative models, providing zero downtime and graceful degradation instead of hard failure."}
+      {
+        "id": "X-end-to-end-056",
+        "quote": "Infrastructure providers are adding routing rules. Agent companies are routing between frontier and smaller models. Research papers are proposing learned routers, cascades and verification loops."
+      },
+      {
+        "id": "X-refmodel-rail-6-model-mgmt-002",
+        "quote": "vLLM Semantic Router is a programmable routing layer for building Mixture-of-Models systems across heterogeneous LLM infrastructure. It evaluates request signals, user preferences, and application policies to select—or compose—the right model path for each request."
+      },
+      {
+        "id": "X-refmodel-rail-6-model-mgmt-001",
+        "quote": "Fallbacks are how LiteLLM does automatic failover. If a call fails after num_retries, LiteLLM falls back to another model group, so a failing model or provider automatically fails over to a healthy backup."
+      }
     ]
   },
   "usage": {
     "text": "A caller submits an idempotent request naming a class and gets back a claim ticket rather than a synchronous guarantee of which vendor answered: \"Callers request a class, never a vendor. Prefix carries the contract\"; \"Every externally-triggered action is safe to replay.\" Resolving that class to an endpoint is not a static lookup alone -- this repo's own architecture graph names free serving capacity as one of the inputs the resolution reads: \"GPU and fleet capacity - free-class serving capacity as a routing input, alongside budget remaining and latency class.\"",
     "origin": "sourced",
     "evidence": [
-      {"id": "F-a4-01", "quote": "Callers request a class, never a vendor. Prefix carries the contract."},
-      {"id": "F-b4-08", "quote": "Every externally-triggered action is safe to replay"},
-      {"id": "A-state-gpu-and-fleet-capacity-free-class-serving-capacity-as-a-routing-input-alongside-budget-remaining-and-latency-class", "quote": "free-class serving capacity as a routing input, alongside budget remaining and latency class"}
+      {
+        "id": "F-a4-01",
+        "quote": "Callers request a class, never a vendor. Prefix carries the contract."
+      },
+      {
+        "id": "F-b4-08",
+        "quote": "Every externally-triggered action is safe to replay"
+      },
+      {
+        "id": "A-state-gpu-and-fleet-capacity-free-class-serving-capacity-as-a-routing-input-alongside-budget-remaining-and-latency-class",
+        "quote": "free-class serving capacity as a routing input, alongside budget remaining and latency class"
+      }
     ]
   },
   "gaps": [
@@ -91,7 +127,7 @@
       "research_query": "does any operator-facing (not caller-facing) surface in this repo name a specific provider/vendor directly, distinct from the caller's own class-only contract"
     },
     {
-      "what": "This repo's own current-state facts record a measured incident in the routing configuration path itself: \"A `LiteLLM_Config` row in Postgres overlays and replaces `router_settings` on every gateway load. Values written to YAML validated, reviewed correctly, and had no runtime effect.\"",
+      "what": "This repo's own current-state facts record a measured incident in the routing configuration path itself: \"A LiteLLM_Config row in Postgres overlays and replaces router_settings on every gateway load. Values written to YAML validated, reviewed correctly, and had no runtime effect.\"",
       "why_it_matters": "A silent override between the documented configuration surface and the config a caller's routing decisions actually run against is exactly the kind of drift that would make this card's own class-to-endpoint mapping untrustworthy without anyone noticing, independent of whether the mapping itself is well-designed.",
       "research_query": "has the LiteLLM_Config Postgres override (F-a7-04) been fixed, or does it still silently win over router_settings.yaml"
     },
@@ -106,9 +142,14 @@
       "research_query": "does any harness or example record the resolved member-model version alongside the routing-class name it satisfied, for even one call"
     },
     {
-      "what": "Fallback (this card's own subtitle) and budget-exceeded handling (rail.4 Cost Management's own subtitle) are the same trigger in the sourced industry pattern: \"When budget is exceeded or models are unavailable, systems can automatically retry with a fallback chain of alternative models.\" Neither card's own definition states which one owns deciding the fallback chain.",
-      "why_it_matters": "Two rail cards each plausibly own the same fallback-on-budget-exhaustion behaviour with no stated boundary, mirroring the Policy/Cost-Management overlap already found -- a caller could implement fallback logic twice, once per card.",
-      "research_query": "does cap-model-access's own routing operation or concern-budget's own contract state which one triggers a fallback chain when a ceiling is hit"
+      "what": "Fallback (this card's own subtitle) and budget-exceeded handling (rail.4 Cost Management's own subtitle) are named as the same trigger by this card's earlier draft, but the only record found for that framing was an open, unimplemented GitHub feature request whose own Problem section says current behavior is hard failure on rate limit/budget cap, not fallback. The one genuinely shipped fallback mechanism found in this pass (LiteLLM's model-group fallback, X-refmodel-rail-6-model-mgmt-001) fires on call failure or rate-limiting -- nothing gathered here confirms it, or any other shipped tool, actually fires a fallback chain specifically when a budget ceiling is hit. Whether budget-exceeded and model-unavailable share one fallback mechanism is therefore this repo's own open question, not an established industry pattern.",
+      "why_it_matters": "If budget-exceeded and rate-limit/failure turn out to need different handling (a budget ceiling is a policy decision to stop, not an outage to route around), then rail.4 Cost Management and this card may not even share a mechanism to collide over -- the overlap this gap originally flagged could be a false one, and no evidence gathered here settles it either way.",
+      "research_query": "does any shipped tool (LiteLLM or otherwise) fire the same fallback-chain mechanism for a budget-ceiling breach as it does for a rate-limited or unavailable model, or are these two different code paths everywhere they're implemented"
+    },
+    {
+      "what": "The vLLM Semantic Router tool entry previously cited an arXiv 'vision paper' (arxiv.org/pdf/2603.21354); this repo's own capture tool routes every arxiv.org/{abs,pdf,html} URL to the Atom abstract API and never reaches the paper body (the same limitation as STATUS rows 14/45), and the abstract does not contain the wording that was quoted. The entry now cites the project's own GitHub README instead -- a directly and fully capturable primary source -- but that means the claim rests on the project's self-description, not on independent third-party analysis.",
+      "why_it_matters": "A vendor's own README describing its product as composing routing, policy and signals into one layer is a weaker evidentiary grade than an independent paper would be; the earlier arXiv citation was not confirmed wrong, only unverifiable through the tooling available here, so a stronger source may still exist.",
+      "research_query": "can arxiv.org/pdf/2603.21354's full body be retrieved by a mechanism other than capture.py's Atom-API route, to independently check the 'unified inference layer' framing against the vLLM Semantic Router project's own description"
     }
   ]
 }

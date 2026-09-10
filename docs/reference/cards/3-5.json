@@ -4,7 +4,7 @@
   "area": "Core Agent",
   "status": "built",
   "definition": {
-    "text": "Tool Interface is the boundary through which one unit of agent work reaches tools, resources and prompts published by anyone, rather than code linked directly into the agent. This repo's own target/capability table names the governing standard against a self-run adapter directly: \"**Tool access** | Model Context Protocol | MCP endpoint | any MCP server\". The protocol itself keeps three distinct building blocks behind that one catalogue: \"Tools are software functions that an LLM can directly call to gain access to external resource data, Resources are passive data sources that can provide read only access to data for context, and Prompts are pre-built instruction templates that tell the model how to work with specific tools and resources.\"",
+    "text": "Tool Interface is the boundary through which one unit of agent work reaches tools, resources and prompts published by anyone, rather than code linked directly into the agent. This repo's own target/capability table names the governing standard against a self-run adapter directly: \"Tool access | Model Context Protocol | MCP endpoint | any MCP server\". The current specification's own Features section keeps three distinct building blocks behind that one catalogue: \"Servers offer any of the following features to clients: Resources: Context and data, for the user or the AI model to use Prompts: Templated messages and workflows for users Tools: Functions for the AI model to execute\"",
     "origin": "sourced",
     "evidence": [
       {
@@ -12,8 +12,8 @@
         "quote": "**Tool access** | Model Context Protocol | MCP endpoint | any MCP server"
       },
       {
-        "id": "X-cap-tool-access-001",
-        "quote": "Tools are software functions that an LLM can directly call to gain access to external resource data, Resources are passive data sources that can provide read only access to data for context, and Prompts are pre-built instruction templates that tell the model how to work with specific tools and resources."
+        "id": "X-refmodel-3-5-tool-interface-001",
+        "quote": "Servers offer any of the following features to clients: Resources: Context and data, for the user or the AI model to use Prompts: Templated messages and workflows for users Tools: Functions for the AI model to execute"
       }
     ]
   },
@@ -23,39 +23,47 @@
       "role": "Governs how a unit of work discovers what it may call and what is safe to call before dispatch: the catalogue a server publishes, the three distinct building blocks behind it (tools that are called, resources that are read, prompts that are templates), and its own transport track, which has moved away from a stateful stream. Authorization for a remote server is pinned to a separate standard on file here (oauth-2-1) rather than invented by MCP itself.",
       "covers": "Does not govern model access itself -- the protocol is explicitly provider-agnostic rather than a way to reach a model, which is this repo's own cap-model-access's job -- and it does not decide who inside this platform is authorized to call a tool it has declared, or what happens to a call once it fails after dispatch; both stay this repo's own policy and typed-error concerns layered around the adapter. It also does not itself define the credential-exchange mechanism -- see the oauth-2-1 entry below for that.",
       "evidence": {
-        "text": "MCP publishes three distinct building blocks behind one catalogue: \"Tools are software functions that an LLM can directly call to gain access to external resource data, Resources are passive data sources that can provide read only access to data for context, and Prompts are pre-built instruction templates that tell the model how to work with specific tools and resources.\" It is explicitly provider-agnostic: MCP \"avoids provider lock-in by being provider-agnostic, defining a universal protocol for exposing and accessing tools independent of which LLM you use, so the same MCP server can work seamlessly with both OpenAI and Anthropic models without code changes.\" Its transport track has moved rather than stayed still: \"SSE (Server-Sent Events) was deprecated in the 2025-06-18 specification and was replaced by Streamable HTTP.\"",
+        "text": "MCP publishes three distinct building blocks behind one catalogue, per the current specification's own Features section: \"Servers offer any of the following features to clients: Resources: Context and data, for the user or the AI model to use Prompts: Templated messages and workflows for users Tools: Functions for the AI model to execute\". It is explicitly provider-agnostic: \"MCP avoids this problem by being provider-agnostic. It defines a universal protocol for exposing and accessing tools, independent of which LLM you use. The same MCP server can work seamlessly with both OpenAI and Anthropic models, no code changes required.\" Its transport track has moved, but not on the date a since-corrected record claimed: the specification's own changelog for the current revision states the HTTP+SSE transport was \"deprecated since protocol version 2025-03-26\", and its own authorization page states plainly that \"Authorization is OPTIONAL for MCP implementations\" rather than mandatory -- a prior record here asserted the opposite (\"OAuth 2.1 with PKCE is now mandatory for all remote MCP servers, not optional\"), which the specification itself does not support.",
         "origin": "sourced",
         "evidence": [
           {
-            "id": "X-cap-tool-access-001",
-            "quote": "Tools are software functions that an LLM can directly call to gain access to external resource data, Resources are passive data sources that can provide read only access to data for context, and Prompts are pre-built instruction templates that tell the model how to work with specific tools and resources."
+            "id": "X-refmodel-3-5-tool-interface-001",
+            "quote": "Servers offer any of the following features to clients: Resources: Context and data, for the user or the AI model to use Prompts: Templated messages and workflows for users Tools: Functions for the AI model to execute"
           },
           {
-            "id": "X-cap-tool-access-003",
-            "quote": "MCP avoids provider lock-in by being provider-agnostic, defining a universal protocol for exposing and accessing tools independent of which LLM you use, so the same MCP server can work seamlessly with both OpenAI and Anthropic models without code changes."
+            "id": "X-refmodel-3-5-tool-interface-002",
+            "quote": "MCP avoids this problem by being provider-agnostic. It defines a universal protocol for exposing and accessing tools, independent of which LLM you use. The same MCP server can work seamlessly with both OpenAI and Anthropic models, no code changes required."
           },
           {
-            "id": "X-litmus-a-023",
-            "quote": "SSE (Server-Sent Events) was deprecated in the 2025-06-18 specification and was replaced by Streamable HTTP. OAuth 2.1 with PKCE is now mandatory for all remote MCP servers, not optional - and RFC 8707 Resource Indicators are required to prevent token replay attacks."
+            "id": "X-refmodel-3-5-tool-interface-006",
+            "quote": "Reclassify the HTTP+SSE transport (deprecated since protocol version 2025-03-26) as Deprecated under the feature lifecycle policy"
+          },
+          {
+            "id": "X-refmodel-3-5-tool-interface-007",
+            "quote": "Authorization is OPTIONAL for MCP implementations. When supported:"
           }
         ]
       }
     },
     {
       "id": "oauth-2-1",
-      "role": "The authorization flow this repo's own standards catalogue ties to the Model Context Protocol for tool servers. A record drawn from the specification's authorization page states that a remote tool server must act as an OAuth 2.1 resource server and check the token's intended audience before serving a call: \"MCP servers, acting in their role as an OAuth 2.1 resource server, MUST validate access tokens as described in OAuth 2.1 Section 5.2 and MUST validate that access tokens were issued specifically for them as the intended audience, according to RFC 8707 Section 2.\" A second such record adds that the server must publish where to authenticate: \"MCP servers are now formally OAuth 2.1 resource servers that MUST implement OAuth 2.0 Protected Resource Metadata (RFC 9728) so clients can discover the correct authorization server automatically.\"",
-      "covers": "Does not cover the catalogue, a tool's input schema, or what a call returns -- that is model-context-protocol's own role above. OAuth 2.1 is a general-purpose authorization flow, not something authored for tool access specifically; it appears as a second badge on this card because MCP's own specification pins it for remote servers, not because this element defines it.",
+      "role": "The authorization flow this repo's own standards catalogue ties to the Model Context Protocol for tool servers, when a server chooses to support authorization at all. A record drawn from the current specification's own authorization page states, in two adjacent MUST sentences, that a remote tool server acting as an OAuth 2.1 resource server must validate tokens and their intended audience: \"MCP servers, acting in their role as an OAuth 2.1 resource server, MUST validate access tokens as described in OAuth 2.1 Section 5.2. MCP servers MUST validate that access tokens were issued specifically for them as the intended audience, according to RFC 8707 Section 2.\" A second record adds that servers must publish where to authenticate: \"MCP servers MUST implement OAuth 2.0 Protected Resource Metadata (RFC 9728) so clients can discover the correct authorization server automatically.\"",
+      "covers": "Does not cover the catalogue, a tool's input schema, or what a call returns -- that is model-context-protocol's own role above. OAuth 2.1 is a general-purpose authorization flow, not something authored for tool access specifically; it appears as a second badge on this card because MCP's own specification pins these requirements for a remote server *when that server supports authorization* -- the specification's own authorization page states \"Authorization is OPTIONAL for MCP implementations\" -- not because this element defines the flow itself.",
       "evidence": {
-        "text": "A record drawn from the specification's own authorization page states the resource-server requirement directly: \"MCP servers, acting in their role as an OAuth 2.1 resource server, MUST validate access tokens as described in OAuth 2.1 Section 5.2 and MUST validate that access tokens were issued specifically for them as the intended audience, according to RFC 8707 Section 2.\" A second record adds the discovery half: \"MCP servers are now formally OAuth 2.1 resource servers that MUST implement OAuth 2.0 Protected Resource Metadata (RFC 9728) so clients can discover the correct authorization server automatically.\"",
+        "text": "A record drawn from the current (2026-07-28) specification's own authorization page states the resource-server requirement in two adjacent MUST sentences, and a second record fetched from the same page confirms the identical text also stood in the prior (2025-11-25) revision: \"MCP servers, acting in their role as an OAuth 2.1 resource server, MUST validate access tokens as described in OAuth 2.1 Section 5.2. MCP servers MUST validate that access tokens were issued specifically for them as the intended audience, according to RFC 8707 Section 2.\" A third record adds the discovery half, and is explicit that the requirement predates the current revision rather than being newly introduced by it: \"This was introduced in the 2025-11-25 spec but 2026-07-28 tightens it considerably. MCP servers MUST implement OAuth 2.0 Protected Resource Metadata (RFC 9728) so clients can discover the correct authorization server automatically.\"",
         "origin": "sourced",
         "evidence": [
           {
-            "id": "X-end-to-end-028",
-            "quote": "MCP servers, acting in their role as an OAuth 2.1 resource server, MUST validate access tokens as described in OAuth 2.1 Section 5.2 and MUST validate that access tokens were issued specifically for them as the intended audience, according to RFC 8707 Section 2."
+            "id": "X-refmodel-3-5-tool-interface-009",
+            "quote": "MCP servers, acting in their role as an OAuth 2.1 resource server, MUST validate access tokens as described in OAuth 2.1 Section 5.2. MCP servers MUST validate that access tokens were issued specifically for them as the intended audience, according to RFC 8707 Section 2."
           },
           {
-            "id": "X-litmus-c-004",
-            "quote": "MCP servers are now formally OAuth 2.1 resource servers that MUST implement OAuth 2.0 Protected Resource Metadata (RFC 9728) so clients can discover the correct authorization server automatically."
+            "id": "X-refmodel-3-5-tool-interface-003",
+            "quote": "MCP servers, acting in their role as an OAuth 2.1 resource server, MUST validate access tokens as described in OAuth 2.1 Section 5.2. MCP servers MUST validate that access tokens were issued specifically for them as the intended audience, according to RFC 8707 Section 2."
+          },
+          {
+            "id": "X-refmodel-3-5-tool-interface-004",
+            "quote": "This was introduced in the 2025-11-25 spec but 2026-07-28 tightens it considerably. MCP servers MUST implement OAuth 2.0 Protected Resource Metadata (RFC 9728) so clients can discover the correct authorization server automatically."
           }
         ]
       }
@@ -68,7 +76,7 @@
       "note": "This repo's own today adapter, named as the capability table's adapter column against this standard; separately, this repo's own inventory of what is defined but not running records that same endpoint as reachable and authenticated yet empty.",
       "in_use_here": true,
       "evidence": {
-        "text": "This repo's own capability table names the standard directly against a self-run endpoint: \"Model Context Protocol | MCP endpoint | any MCP server\". The same repo's own inventory of what's defined but not running records that endpoint's actual state: \"MCP endpoint | Live and authenticated, **zero tools registered**\".",
+        "text": "This repo's own capability table names the standard directly against a self-run endpoint: \"Model Context Protocol | MCP endpoint | any MCP server\". The same repo's own inventory of what's defined but not running records that endpoint's actual state: \"MCP endpoint | Live and authenticated, zero tools registered\".",
         "origin": "sourced",
         "evidence": [
           {
@@ -85,15 +93,15 @@
     {
       "name": "Claude Code (MCP client)",
       "kind": "unknown",
-      "note": "An AI application named in Anthropic's own docs as an example of something that reaches external tools, data sources and workflows through MCP; a client of the protocol, not this repo's own adapter.",
+      "note": "An AI application named in Anthropic's own docs as one that connects to MCP servers; a client of the protocol, not this repo's own adapter.",
       "in_use_here": false,
       "evidence": {
-        "text": "Anthropic's own docs name a real application that reaches tools this way: \"MCP is an open-source standard developed by Anthropic to connect AI applications, such as Claude Code, to external tools, data sources, and workflows—a universal adapter that lets AI plug in to various systems without custom-built integrations.\"",
+        "text": "Anthropic's own MCP docs page names Claude Code as a real application that connects to MCP servers: \"Connect MCP servers to Claude Code from the command line.\" (A prior record here quoted a sentence -- naming Claude Code as a 'universal adapter' -- that does not appear on the narrow Messages-API MCP-connector page it was attributed to; that citation has been dropped rather than repeated.)",
         "origin": "sourced",
         "evidence": [
           {
-            "id": "X-cap-tool-access-005",
-            "quote": "MCP is an open-source standard developed by Anthropic to connect AI applications, such as Claude Code, to external tools, data sources, and workflows—a universal adapter that lets AI plug in to various systems without custom-built integrations."
+            "id": "X-refmodel-3-5-tool-interface-008",
+            "quote": "Connect MCP servers to Claude Code from the command line."
           }
         ]
       }
@@ -104,28 +112,32 @@
       "note": "The official metaregistry for discovering published MCP servers -- server metadata and namespace verification, not itself a tool-serving endpoint; still in preview, and not used by this repo's own adapter.",
       "in_use_here": false,
       "evidence": {
-        "text": "The protocol's own registry publishes itself as the metaregistry for discovering published servers: \"The MCP Registry launched in preview on September 8, 2025. The Registry API has entered an API freeze (v0.1), and for the next month or more, the API will remain stable with no breaking changes. As of July 20, 2026, it remains in preview and already provides standardized server metadata, namespace verification, package references, remote endpoint definitions, version records, and an API for clients and downstream registries.\"",
+        "text": "The protocol's own registry publishes itself as the metaregistry for discovering published servers, and states its own status plainly rather than with the invented launch date and version-freeze string a prior record attributed to it: \"The MCP Registry is currently in preview. Breaking changes or data resets may occur before general availability.\"",
         "origin": "sourced",
         "evidence": [
           {
-            "id": "X-cap-capability-registry-001",
-            "quote": "The MCP Registry launched in preview on September 8, 2025. The Registry API has entered an API freeze (v0.1), and for the next month or more, the API will remain stable with no breaking changes. As of July 20, 2026, it remains in preview and already provides standardized server metadata, namespace verification, package references, remote endpoint definitions, version records, and an API for clients and downstream registries."
+            "id": "X-refmodel-3-5-tool-interface-005",
+            "quote": "The MCP Registry is currently in preview. Breaking changes or data resets may occur before general availability."
           }
         ]
       }
     }
   ],
   "landscape": {
-    "text": "The real fork in this space is standard-level rather than feature-level: a vendor's own function-calling schema versus a protocol any vendor can speak against the same server. MCP's own case against a provider's tool-calling API is that it \"avoids provider lock-in by being provider-agnostic, defining a universal protocol for exposing and accessing tools independent of which LLM you use, so the same MCP server can work seamlessly with both OpenAI and Anthropic models without code changes.\" The standard itself has not stood still on transport or authorization: \"SSE (Server-Sent Events) was deprecated in the 2025-06-18 specification and was replaced by Streamable HTTP. OAuth 2.1 with PKCE is now mandatory for all remote MCP servers, not optional - and RFC 8707 Resource Indicators are required to prevent token replay attacks.\"",
+    "text": "The real fork in this space is standard-level rather than feature-level: a vendor's own function-calling schema versus a protocol any vendor can speak against the same server. MCP's own case against a provider's tool-calling API is that it \"MCP avoids this problem by being provider-agnostic. It defines a universal protocol for exposing and accessing tools, independent of which LLM you use. The same MCP server can work seamlessly with both OpenAI and Anthropic models, no code changes required.\" The standard itself has not stood still on transport, though a prior version of this claim misdated the change and overstated authorization as mandatory: the current specification's own changelog states the HTTP+SSE transport was \"deprecated since protocol version 2025-03-26\", and its own authorization page states \"Authorization is OPTIONAL for MCP implementations\" -- universal in practice among public remote servers, per this card's own oauth-2-1 standard entry, but not a spec-level mandate.",
     "origin": "sourced",
     "evidence": [
       {
-        "id": "X-cap-tool-access-003",
-        "quote": "MCP avoids provider lock-in by being provider-agnostic, defining a universal protocol for exposing and accessing tools independent of which LLM you use, so the same MCP server can work seamlessly with both OpenAI and Anthropic models without code changes."
+        "id": "X-refmodel-3-5-tool-interface-002",
+        "quote": "MCP avoids this problem by being provider-agnostic. It defines a universal protocol for exposing and accessing tools, independent of which LLM you use. The same MCP server can work seamlessly with both OpenAI and Anthropic models, no code changes required."
       },
       {
-        "id": "X-litmus-a-023",
-        "quote": "SSE (Server-Sent Events) was deprecated in the 2025-06-18 specification and was replaced by Streamable HTTP. OAuth 2.1 with PKCE is now mandatory for all remote MCP servers, not optional - and RFC 8707 Resource Indicators are required to prevent token replay attacks."
+        "id": "X-refmodel-3-5-tool-interface-006",
+        "quote": "Reclassify the HTTP+SSE transport (deprecated since protocol version 2025-03-26) as Deprecated under the feature lifecycle policy"
+      },
+      {
+        "id": "X-refmodel-3-5-tool-interface-007",
+        "quote": "Authorization is OPTIONAL for MCP implementations. When supported:"
       }
     ]
   },
@@ -145,12 +157,12 @@
   },
   "gaps": [
     {
-      "what": "No fetched record of the Model Context Protocol specification exists in this corpus -- every record on file for the standard's own text is search-only -- and different records name different specification revision strings for the standard without any single one confirming, from a primary source, which is the current ratified revision.",
-      "why_it_matters": "Every specific mechanism this card cites (the three building blocks, the OAuth 2.1 authorization requirement, the Streamable HTTP transport) is tied to whichever revision each search result happened to describe; this repo's own cap-tool-access skill already records the revision it carries as claimed rather than fact, and this card inherits that same unverified status rather than resolving it.",
-      "research_query": "fetch the ratified Model Context Protocol specification text (not a blog announcement or release-candidate post) and record it as a fetched, not search-only, record naming its revision"
+      "what": "A 2026-09-10 repair pass fetched the Model Context Protocol specification directly (modelcontextprotocol.io/specification/2026-07-28, its /changelog, and its /basic/authorization page, all status=fetched, fetch_tool=markdown, in kb/research/refmodel-3-5-tool-interface.jsonl) and confirmed 2026-07-28 is the current revision (a sibling pass found /specification/latest byte-identical to /specification/2026-07-28). This closes the prior 'no fetched record exists' and 'which revision is current' gap for four of the five mechanisms this card cites against the standard (the Features building blocks, the SSE-deprecation date, OAuth being optional at the spec level, and the OAuth 2.1 resource-server Token Handling MUST sentences, the last confirmed byte-identical on both the 2025-11-25 and 2026-07-28 authorization pages). It does not close the gap for the MCP Registry, whose only fetched record (registry/about) carries no revision or date at all -- there is nothing to pin it to.",
+      "why_it_matters": "The same repair also found that two of the records this card previously cited for the SSE-deprecation date and the OAuth-mandatory claim were flatly contradicted by their own cited page (wrong date, and 'mandatory' where the source says 'OPTIONAL'), and a third fabricated a launch date, a version-freeze string and a status-as-of date for the MCP Registry that appear nowhere on its page -- a caller who trusted the old citations without checking the source would have shipped all three errors. The fix closes those specific instances, but nothing here guarantees every remaining citation on this or other cards is verbatim; that is what tools/verify_snippets.py exists to keep checking.",
+      "research_query": "the MCP Registry's own about page carries no version string or effective date to verify against; if the registry ever publishes one (e.g. leaving preview for general availability), re-fetch and re-cite against that milestone"
     },
     {
-      "what": "This repo's own inventory of what is defined but not running records the actual MCP endpoint on this host as \"MCP endpoint | Live and authenticated, **zero tools registered**\" -- reachable and authenticated, but with nothing registered into it. The 'built' status on this card rests on the interface being proven (the harness below), not on that real endpoint having ever served a real tool.",
+      "what": "This repo's own inventory of what is defined but not running records the actual MCP endpoint on this host as \"MCP endpoint | Live and authenticated, zero tools registered\" -- reachable and authenticated, but with nothing registered into it. The 'built' status on this card rests on the interface being proven (the harness below), not on that real endpoint having ever served a real tool.",
       "why_it_matters": "A caller reading only 'status: built' would assume this platform can actually reach some published tool today; the substrate this repo itself records says otherwise, and that gap is exactly why a 'built' card deserves suspicion rather than trust by default.",
       "research_query": "has any tool been registered into the live MCP endpoint this host runs since F-a6-03 was recorded, and by what count"
     },

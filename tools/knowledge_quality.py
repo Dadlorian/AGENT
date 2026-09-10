@@ -43,14 +43,37 @@ RESEARCH = ROOT / "kb" / "research.jsonl"
 SNIPPETS = ROOT / "docs" / "reference" / "snippet-verification.json"
 OUT = ROOT / "docs" / "reference" / "knowledge-quality.md"
 
-# Records this repo has already verified as misrepresenting their own page.
-# Source: bridge.md section 2, "What was found, and why it matters".
-KNOWN_BAD = {
+VERIFICATION = ROOT / "docs" / "reference" / "citation-verification.json"
+
+# Seed list from bridge.md, used only if no verification pass has been run yet. The real list is
+# measured: docs/reference/citation-verification.json records, per cited record, whether its page
+# was actually captured and whether the quotes profiles draw from it are on that page.
+SEED_BAD = {
     "X-litmus-c-016": "fabricated comparison and metric attributed to a real Microsoft URL",
     "X-xc-budget-004": "source states the opposite of its claim (an unimplemented feature request)",
     "X-end-to-end-058": "snippet carries verbatim text from a different record's page",
     "X-cap-evaluation-003": "snippet carries verbatim text from a different record's page",
 }
+
+
+def load_known_bad() -> dict:
+    """Records a capture pass proved do not support what is cited from them.
+
+    Only `C_contradicted` counts. `D_unreachable` deliberately does NOT: a page that could not be
+    retrieved proves nothing, and treating "I could not check it" as "it is wrong" would be the
+    same overreach this repo keeps catching elsewhere.
+    """
+    if not VERIFICATION.is_file():
+        return dict(SEED_BAD)
+    doc = json.loads(VERIFICATION.read_text())
+    out = {}
+    for r in doc.get("records", []):
+        if r.get("outcome") == "C_contradicted":
+            verdict = r.get("claim_verdict") or "unsupported"
+            out[r["id"]] = f"page captured; claim {verdict} ({r.get('notes','') or 'no page support'})"[:160]
+    for k, v in SEED_BAD.items():
+        out.setdefault(k, v)
+    return out
 
 
 def load_research() -> dict:
@@ -114,6 +137,7 @@ def cited_ids(profile: dict):
 
 def main() -> int:
     research, verdicts, internal = load_research(), load_verdicts(), load_internal_ids()
+    known_bad = load_known_bad()
     paths = sorted(CARDS.glob("*.json"))
     if not paths:
         print("no card profiles found")
@@ -132,8 +156,8 @@ def main() -> int:
             totals[kind] += 1
             if kind == "unread":
                 unread_records[rid].add(prof["address"])
-            if rid in KNOWN_BAD:
-                violations.append((prof["address"], p.name, rid, KNOWN_BAD[rid]))
+            if rid in known_bad:
+                violations.append((prof["address"], p.name, rid, known_bad[rid]))
         n = sum(counts.values())
         if n:
             rows.append({"address": prof["address"], "card": prof["card"], "total": n,
@@ -198,7 +222,7 @@ def main() -> int:
     add("|---|---|---|")
     for rid, cards in sorted(unread_records.items(), key=lambda kv: (-len(kv[1]), kv[0])):
         host = urlparse(research[rid]["url"]).hostname if rid in research else "?"
-        flag = " **(known bad)**" if rid in KNOWN_BAD else ""
+        flag = " **(page checked: unsupported)**" if rid in known_bad else ""
         add(f"| `{rid}`{flag} | {', '.join(sorted(cards))} | {host} |")
     add("")
     add("## By card, weakest first")

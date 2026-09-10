@@ -47,7 +47,7 @@ GATES = [
     ("standards",      ["python3", "tools/standards.py", "check"], False),
 ]
 KNOWN_RED = {
-    "snippets": "47 read-field drifts, 0 snippet-field; measured by tools/knowledge_quality.py",
+    "snippets": "47 read-field drifts, 0 snippet-field; measured by tools/knowledge_pool.py",
     "standards": "row 77: JOURNEY.md names archived example paths",
 }
 

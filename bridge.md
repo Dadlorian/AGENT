@@ -17,7 +17,7 @@ expensive mistakes of the last two sessions were confident restatements of numbe
 | Research corpus | **977 records — 204 fetched, 766 search-only, 7 blocked** (2026-09-10) |
 | Reference model | 40 cards, 19 built / 21 planned, **15 recorded corrections** |
 | Card profiles | **32 of 40** at 0 errors, 451 citations, 8 cards unprofiled |
-| Citation quality | **292 read · 16 unread · 143 internal · 0 broken** — `tools/knowledge_quality.py` |
+| Citation quality | **292 read · 16 unread · 143 internal · 0 broken** — `tools/knowledge_pool.py` |
 | Citations verified at the gate | **191 records stamped, 23 recorded as debt** — `tools/stamp_verification.py` |
 | Verified against source | 46 profile-cited records captured: **1 clean, 18 contradicted, 18 snippet-off, 9 unreachable** |
 | Examples | `archived/` (the old seven), `reference/` (empty, structure defined), `end-to-end/` |
@@ -33,7 +33,7 @@ python3 tools/validate_card_profiles.py     32 profiles, 0 errors, 2469 citable 
 python3 tools/card_profile_test.py          10/10 (9 planted defects caught)
 python3 tools/reconcile_egress.py           RECONCILED, 977 decisions
 python3 tools/status_check.py --freshness   13 rows, 0 stale
-python3 tools/knowledge_quality.py          451 citations: 292 read, 16 unread, 143 internal; exit 0
+python3 tools/knowledge_pool.py          451 citations: 292 read, 16 unread, 143 internal; exit 0
 python3 tools/standards.py check            10 errors  <- row 77, journey names archived paths
 python3 tools/verify_snippets.py --check    204 records, drift 47  <- ALL `read`-field, 0 snippet-field
 ```
@@ -65,7 +65,7 @@ be retrieved. Three fabrication patterns recur: invented specifics (a Firecracke
 figure absent from its page; an "Agentic AI Foundation" with six named co-founders, 0 occurrences),
 cross-record contamination (a snippet verbatim on a *sibling record's* page, found in 3 records, not
 the 2 named above), and wrong-page attribution (a DBOS claim citing a page where "DBOS" appears 0
-times). All 49 affected citations were repaired or downgraded; `tools/knowledge_quality.py` exits
+times). All 49 affected citations were repaired or downgraded; `tools/knowledge_pool.py` exits
 non-zero if any profile cites a record a capture pass proved unsupported.
 
 **Citations were unverifiable by construction.**

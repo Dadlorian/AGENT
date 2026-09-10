@@ -193,55 +193,70 @@ each other. Step 7 is gated on all of them.
 
 ## 7. Starter prompt
 
-Copy this whole block into a fresh context.
+Copy this whole block into a fresh context. It is written to stand alone: it orients, gives the
+first command, states the job and the stopping condition, and carries only the traps that have
+actually bitten. Everything else lives in this file, which it tells you to read.
 
 ```
-Read bridge.md end to end, then docs/reference/knowledge-pool.md (what stands behind each of the 40
-cards) and docs/reference/cards/BRIEF.md (the authoring rule).
+This repo is a design-and-evidence repo for a target agentic platform. Its centre is a 40-card
+reference model (docs/reference/reference-model.json); 32 cards have a sourced profile under
+docs/reference/cards/. Nothing here runs as an application. examples/reference/ is empty on
+purpose, and the previous attempt at examples was archived for being built on an unproven
+structure. Your job is to make it ready to build -- not to build it.
 
-Re-run every number before repeating it. This repo's most repeated and most expensive mistake is
-confident restatement of figures that had moved -- last session a model reported a corpus-wide
-crisis that measurement did not support and had to walk it back twice in one conversation. Your
-scoreboards:
-  python3 tools/ready_to_build.py    8 ready conditions, exits 1 until all hold. 0 of 8 today.
-  python3 tools/knowledge_pool.py    what stands behind every card
-  python3 tools/phase.py gates       11 gates; two known-red and recorded
+FIRST, RUN THIS:
+  python3 tools/ready_to_build.py
 
-YOUR JOB
-Work bridge.md section 6, steps 1-6, in that order. Then STOP.
-Do not build nine example areas. Building on an unproven structure is exactly how the previous
-seven ended up in examples/archived/, and five artifacts in this repo still describe those seven --
-including a passing gate. See bridge.md section 4.
+It prints 8 conditions and exits 1 until all hold. It reads 0 of 8 today. That output is your
+task list and your progress report for the whole session -- report it verbatim, never as prose.
 
-STEP 1 IS A QUESTION FOR THE OWNER, NOT RESEARCH. Ask it early, in one message, with the
-consequence stated: is the reference model an industry-aligned description, or a description of
-this platform? 31.7% of its citations are this repo citing its own documents, so today it is both,
-and cards like 1.2 Scheduled (12 of 13 citations internal) would demonstrate our own design rather
-than an industry pattern. Also ask which example-area set is real: the nine region-based areas in
-examples/reference/README.md, the seven journey areas the rest of the repo still names, or neither.
-Record both answers in docs/reference/build-principles.json.
+Then read, in order: bridge.md (all of it), docs/reference/knowledge-pool.md, and
+docs/reference/cards/BRIEF.md.
 
-STEP 2 IS THE ONE THAT TEACHES YOU SOMETHING. "The card profile is the spec" has never been tested
--- it may well hold, nobody has pulled the data. Pick one card, build one area from its profile
-alone, and write down every question the profile could not answer into
-docs/reference/profile-sufficiency.md. Do not change the profile schema before you have that list.
+THE JOB
+Work bridge.md section 6, steps 1 through 6. Stop when ready_to_build.py exits 0, or when you are
+blocked on the owner -- whichever comes first -- and report. Do NOT start step 7 (building the
+areas). Building nine areas on an unproven structure is exactly how the previous seven ended up in
+examples/archived/, and five artifacts in this repo still describe those seven, two of them inside
+passing gates. bridge.md section 4 lists them.
 
-NON-NEGOTIABLE -- each was learned expensively; bridge.md section 3 carries the incidents
-- A claim carries a verbatim quote from a stamped record, or is marked proposed. Both are good.
-- Citable means checked: run tools/stamp_verification.py --fetch before validating.
-- Verdicts are typed, never boolean. `partial` means a person must read it, not that it failed.
-- Capture with tools/capture.py, never WebFetch -- and build snippets from the GATE's fetch path,
-  which does not return the same text capture.py does.
+STEP 1 IS TWO QUESTIONS FOR THE OWNER. Ask them in one message, early, with the consequences
+stated. They are not research and you cannot infer them:
+  a. Is the reference model an industry-aligned description, or a description of this platform?
+     31.7% of its citations are this repo citing its own documents, so today it is both. Card 1.2
+     Scheduled is 12 of 13 internal -- an example built from it would demonstrate our design, not
+     an industry pattern.
+  b. Which example-area set is real: the nine region-based areas in examples/reference/README.md,
+     the seven journey areas the rest of the repo still names, or neither?
+Record both answers in docs/reference/build-principles.json. Steps 4 and 7 depend on (b).
+
+STEP 2 IS THE ONE THAT TEACHES YOU SOMETHING, so start it as soon as (b) is answered. "The card
+profile is the spec" has never been tested. It may well hold -- nobody has pulled the data. Build
+ONE area from ONE profile, using only that profile, and write every question it could not answer
+into docs/reference/profile-sufficiency.md. If the list is empty, the profile IS the spec and that
+is a real result. Do not change the profile schema before you have the list.
+
+TRAPS -- every one of these cost a session to find; bridge.md section 3 has the incidents
+- Re-run any number before you repeat it. Stale figures are this repo's most expensive habit.
+- Citable means checked. Run tools/stamp_verification.py --fetch before validating a citation.
+- Quote verdicts are typed, never true/false. `partial` means a person must read it, not that it
+  failed. A boolean is how a flattened bullet list and an invented statistic got reported alike.
+- Capture with tools/capture.py, never WebFetch. Build snippets from the GATE's fetch path --
+  verify_snippets.py does a plain GET and strips HTML, which is not what capture.py returns.
 - Never patch a contradicted record to fit its claim. The contradiction is the finding.
-- A subagent's report is not evidence. Check the artifact; three subagent summaries miscounted
-  their own output last session.
-- Mint egress ids centrally after a batch, and re-derive every egress_ref after any rebuild.
+- A subagent's report is not evidence. Open the artifact. Three subagent summaries miscounted
+  their own output last session; the artifacts were right every time.
+- Mint egress ids centrally after a batch, then re-derive every egress_ref after any rebuild.
 - Nothing writes to citation-debt.json automatically. It is debt, not permission.
 
-WHEN YOU FINISH A STEP
-python3 tools/phase.py open <name> ... close <name>. Green closes; two reds stop the phase and it
-refuses to reopen -- when that happens, stop and leave the evidence. Then review, improve, ledger,
-checkpoint, in that order. checkpoint.sh commits AND pushes to origin.
+CLOSING A STEP
+python3 tools/phase.py open <name>  ...  python3 tools/phase.py close <name>
+Green closes it. Two reds stop the phase and it refuses to reopen -- when that happens, stop and
+leave the evidence rather than forcing a third attempt. Then: review, improve, ledger record,
+checkpoint. tools/checkpoint.sh commits AND pushes to origin, so only run it when you mean to.
 
-REPORT PROGRESS AS `python3 tools/ready_to_build.py` OUTPUT, NOT AS PROSE.
+ENDING THE SESSION
+Print python3 tools/ready_to_build.py, say which conditions you closed and which you did not, name
+anything still waiting on the owner, and update bridge.md so the next context starts where you
+stopped.
 ```

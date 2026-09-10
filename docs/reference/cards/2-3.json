@@ -1,0 +1,168 @@
+{
+  "address": "2.3",
+  "card": "Planning",
+  "area": "Orchestration & Control Plane",
+  "status": "built",
+  "definition": {
+    "text": "Planning is the step that turns one request into an executable shape before any of it runs: decomposing the request into subtasks, selecting a coordination pattern for how those subtasks run, and allocating effort (agents, tool calls, budget) across them. The canonical description of the decompose half is the orchestrator-workers pattern, in which 'a central LLM dynamically breaks down tasks, delegates them to worker LLMs, and synthesizes their results' -- a pattern with a real production instantiation in Anthropic's own multi-agent research system, where 'the lead agent analyzes it, develops a strategy, and spawns subagents to explore different aspects simultaneously.' This repo's own target architecture names a single Planner component for the pricing half of Planning specifically: 'pure function `document → plan + cost`' -- an owner declaration of intent for a greenfield target, not evidence that this pricing exists anywhere today; see gaps.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-2-3-planning-004",
+        "quote": "a central LLM dynamically breaks down tasks, delegates them to worker LLMs, and synthesizes their results"
+      },
+      {
+        "id": "X-refmodel-2-3-planning-001",
+        "quote": "the lead agent analyzes it, develops a strategy, and spawns subagents to explore different aspects simultaneously"
+      },
+      {
+        "id": "F-b2-03",
+        "quote": "pure function `document → plan + cost`"
+      }
+    ]
+  },
+  "standards": [],
+  "tools": [
+    {
+      "name": "Claude multi-agent research system (lead agent + subagents)",
+      "kind": "hosted",
+      "note": "Anthropic's own production decompose-and-allocate mechanism: a lead agent spawns subagents in parallel, and effort (agent count, tool-call budget) is scaled by a query-complexity tier written into the prompt -- 1 agent for simple fact-finding, 2-4 subagents for comparisons, 10+ for complex research -- rather than computed.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Effort allocation is a prompted heuristic, not a computed cost estimate: 'Simple fact-finding requires just 1 agent with 3-10 tool calls, direct comparisons might need 2-4 subagents with 10-15 calls each, and complex research might use more than 10 subagents.'",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-2-3-planning-001",
+            "quote": "Simple fact-finding requires just 1 agent with 3-10 tool calls, direct comparisons might need 2-4 subagents with 10-15 calls each, and complex research might use more than 10 subagents."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Amazon Bedrock multi-agent collaboration (supervisor agent)",
+      "kind": "hosted",
+      "note": "AWS's managed supervisor pattern for the select-pattern and allocate steps: a supervisor agent either coordinates and synthesizes responses from up to 10 collaborator agents, or is configured to route directly to one collaborator to reduce latency.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Amazon Bedrock caps supervisor fan-out at a stated bound: 'You can associate a maximum of 10 collaborator agents with a supervisor agent at this time.'",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-2-3-planning-002",
+            "quote": "You can associate a maximum of 10 collaborator agents with a supervisor agent at this time."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Microsoft Agent Framework -- Magentic orchestration",
+      "kind": "open-source",
+      "note": "A named execution pattern selectable alongside Group Chat orchestration; its manager keeps a Task Ledger and Progress Ledger and is bounded, before a run completes, by builder-declared round/stall/reset limits plus an optional human plan-signoff gate.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "The manager dynamically decomposes and delegates: 'a dedicated Magentic manager coordinates a team of specialized agents, selecting which agent should act next based on the evolving context, task progress, and agent capabilities.'",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-2-3-planning-003",
+            "quote": "a dedicated Magentic manager coordinates a team of specialized agents, selecting which agent should act next based on the evolving context, task progress, and agent capabilities."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Microsoft Copilot Council (debate/council pattern)",
+      "kind": "hosted",
+      "note": "Named as a production instantiation of the debate/council select-pattern option: two models answer the same prompt independently, and a separate judge model reconciles them rather than either model critiquing the other directly.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "'The Microsoft Copilot Council is the canonical 2026 production instantiation -- it runs GPT-5.4 and Claude Sonnet 4.6 in parallel, then uses a judge model to summarize agreements, highlight divergences, and surface unique insights from each perspective.'",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-2-3-planning-006",
+            "quote": "The Microsoft Copilot Council is the canonical 2026 production instantiation — it runs GPT-5.4 and Claude Sonnet 4.6 in parallel, then uses a judge model to summarize agreements, highlight divergences, and surface unique insights from each perspective."
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "How to select an execution pattern and how to price it are two different open problems, and neither has a single converged answer. On pattern-naming, independently published sources give overlapping but differently-labelled taxonomies: Anthropic's original set defines 'Prompt chaining decomposes a task into a sequence of steps, where each LLM call processes the output of the previous one. Routing classifies an input and directs it to a specialized followup task,' alongside parallelization, orchestrator-workers and evaluator-optimizer; a later, independently published 2026 guide instead names ReAct as 'thought → action → observation, repeat' among a different label set covering largely the same ground. The real, quoted tradeoff among patterns is cost and latency, not just topology: a debate-style pattern runs at '~2.5× single-model cost' because multiple independent answers are produced before a judge reconciles them, whereas Amazon Bedrock's supervisor implementation trades that synthesis cost for speed by letting a caller configure direct routing instead, because 'Assigning the supervisor agent the task of routing information reduces the latency.' On pricing, the two options found in this pass are asking the model to estimate itself, and hard structural bounds -- and self-estimation is the weaker of the two: one study running frontier models on agentic coding tasks finds they 'fail to accurately predict their own token usage (with weak-to-moderate correlations, up to 0.39) and systematically underestimate real token costs.' Demand for a better alternative is live and unresolved: an open feature request against a real coding-agent product states that 'there is currently no way to know — before approving — how many tokens the plan execution will consume,' and its own proposed fixes are estimates, not guarantees.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-2-3-planning-004",
+        "quote": "Prompt chaining decomposes a task into a sequence of steps, where each LLM call processes the output of the previous one. Routing classifies an input and directs it to a specialized followup task."
+      },
+      {
+        "id": "X-refmodel-2-3-planning-005",
+        "quote": "thought → action → observation, repeat"
+      },
+      {
+        "id": "X-refmodel-2-3-planning-006",
+        "quote": "Debate: multi-perspective critique, ~2.5× single-model cost."
+      },
+      {
+        "id": "X-refmodel-2-3-planning-002",
+        "quote": "Assigning the supervisor agent the task of routing information reduces the latency."
+      },
+      {
+        "id": "X-refmodel-2-3-planning-007",
+        "quote": "frontier models fail to accurately predict their own token usage (with weak-to-moderate correlations, up to 0.39) and systematically underestimate real token costs."
+      },
+      {
+        "id": "X-refmodel-2-3-planning-008",
+        "quote": "there is currently no way to know — before approving — how many tokens the plan execution will consume."
+      }
+    ]
+  },
+  "usage": {
+    "text": "A caller doesn't get a price by asking a model to estimate itself; every credible mechanism found in this pass bounds a plan structurally instead, before it runs. Microsoft's Magentic orchestration exposes builder parameters for that bound (round, stall and reset limits) plus an optional gate where, before a run proceeds, 'humans can review and approve/modify the plan.' This repo's own worked example (docs/reference/composable-plan.md -- our own design material, not evidence of external industry practice) specifies the equivalent allocate-time controls as configuration on a step's fan-out: 'per-unit budget | the step | one unit exceeds its share | throws, hard ceiling' and '`tolerate: {failed: N}` | the fan-out | more than N units fail | the whole fan-out fails', plus a reconciliation test for nested cost -- 'ask for the cost of a three-level plan, then ask each child independently and add them up. If the numbers differ, the planner is guessing at the top.' That worked example is itself a design document, not a working caller path: this repo's own text about the mechanism that would prove costs sum upward says 'The source marks this specified and **not built**.'",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-2-3-planning-003",
+        "quote": "humans can review and approve/modify the plan"
+      },
+      {
+        "id": "REF-5-3-01",
+        "quote": "per-unit budget | the step | one unit exceeds its share | throws, hard ceiling"
+      },
+      {
+        "id": "REF-5-3-02",
+        "quote": "`tolerate: {failed: N}` | the fan-out | more than N units fail | the whole fan-out fails"
+      },
+      {
+        "id": "REF-5-2-14",
+        "quote": "ask for the cost of a three-level plan, then ask each child independently and add them up. If the numbers differ, the planner is guessing at the top."
+      },
+      {
+        "id": "REF-5-2-12",
+        "quote": "The source marks this specified and **not built**."
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "This card is marked 'built', but the Planner this repo names for Planning appears only in PASS.md's Part B (the target architecture, explicitly greenfield -- no code carries over). Part A, the current-state inventory of what actually runs, names no Planner, no decomposition mechanism, no pattern-selection mechanism and no allocation mechanism. No harness under harness/plan.json is a core-planner harness the way core-graph and dispatch each have one.",
+      "why_it_matters": "A 'built' badge on an element whose own source document places it only in the target/greenfield section, with no harness proving an implementation exists or swaps, overstates how mature Planning is in this repo today.",
+      "research_query": "has a core-planner harness (dryrun/live/second adapters) been added to harness/plan.json, and does PASS.md Part A now name a running Planner"
+    },
+    {
+      "what": "This repo's own worked example for the Planner (docs/reference/composable-plan.md) specifies the exact mechanism that would make nested cost trustworthy -- that a parent plan's cost must equal the sum of its children's costs, not a separate guess -- and its own text calls that mechanism 'specified and not built.'",
+      "why_it_matters": "The one place in this repo that describes how the Planner's pricing would actually be checked says, in its own words, that the check does not exist yet -- so the 'document → plan + cost' pricing this card's definition claims has no working self-verification even in the repo's own design materials, separate from whether any of it runs at all."
+    },
+    {
+      "what": "No open, governance-backed standard covers a task-decomposition or execution-plan document, which is why `standards` on this card is empty. The one agent-to-agent protocol with a standards/ directory in this repo, A2A, has a Task object with exactly six fields (id, contextId, status, artifacts, history, metadata) -- none a decomposition field -- and states its own design principle as agents collaborating 'without needing to share their internal thoughts, plans, or tool implementations.'",
+      "why_it_matters": "Without a shared wire format, a plan/decomposition document is necessarily a private convention per system; nothing about Planning here can be checked against an external spec the way isolation is checked against the OCI Runtime Spec.",
+      "research_query": "has any standards body published a plan/task-decomposition schema since this pass"
+    },
+    {
+      "what": "This repo's own design rule states that cost is 'knowable before commitment' and that planning is a pure function, but the best production and research evidence found in this pass points the other way: effort allocation in Anthropic's own multi-agent system is a prompted heuristic rather than a computed estimate, a dedicated study finds frontier models cannot reliably self-predict their own token usage before running, and a still-open feature request against a real coding-agent product for exactly this capability proposes only estimates -- never a guarantee -- as candidate fixes.",
+      "why_it_matters": "If no production system found in this pass can compute a plan's cost as a pure function before execution, the target Planner's central premise is unproven by every source this pass could find, not merely unbuilt in this repo specifically.",
+      "research_query": "has any system shipped a computed, non-prompted, non-self-estimated pre-execution cost model for an agentic plan"
+    }
+  ]
+}

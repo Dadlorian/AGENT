@@ -1,0 +1,183 @@
+{
+  "address": "3.2",
+  "card": "Model Interface",
+  "area": "Core Agent",
+  "status": "built",
+  "definition": {
+    "text": "Model Interface is this repo's name for the model-access capability: the single gateway boundary every call to a language model passes through, so a caller can only name a routing class, never a vendor. This repo's own target architecture states the intent directly: \"Multiple models are used through one gateway, and a fleet of GPUs serves local models; callers request a model class, not a vendor.\" Its current-state inventory states the same rule for what actually runs today -- \"Callers request a class, never a vendor. Prefix carries the contract\" -- and names LiteLLM as this element's adapter, checked against \"OpenAI-compatible completions | LiteLLM | OpenRouter · direct provider SDKs · vLLM/SGLang native.\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "T-t6-04",
+        "quote": "Multiple models are used through one gateway, and a fleet of GPUs serves local models; callers request a model class, not a vendor."
+      },
+      {
+        "id": "F-a4-01",
+        "quote": "Callers request a class, never a vendor. Prefix carries the contract."
+      },
+      {
+        "id": "F-b3-03",
+        "quote": "OpenAI-compatible completions | LiteLLM | OpenRouter · direct provider SDKs · vLLM/SGLang native"
+      }
+    ]
+  },
+  "standards": [
+    {
+      "id": "openai-compatible-completions",
+      "role": "governs the wire shape (request/response fields) that this repo's gateway adapter and every named swap candidate speak in common, so a completion call is portable across LiteLLM, OpenRouter, direct provider SDKs and vLLM/SGLang native without the caller's request shape changing.",
+      "covers": "not a specification with a governing body or a published version; this repo's own standards entity records its version as unverified. The convention itself does not decide routing, budget, or which class an adapter serves, and it does not cover a second, competing wire shape (an items-and-response format) that the same vendor whose message-shaped API this repo adopted has also published and separately committed to keep supporting.",
+      "evidence": {
+        "text": "The completions wire shape has no standards body behind it: \"there is currently (Dec. 2025) no formally specified standard like HTTP or SQL that is standardized by a governing body. Instead, a de facto standard has emerged that is supported by most providers.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-maturity-b-012",
+            "quote": "there is currently (Dec. 2025) no formally specified standard like HTTP or SQL that is standardized by a governing body. Instead, a de facto standard has emerged that is supported by most providers"
+          }
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "LiteLLM",
+      "kind": "open-source",
+      "note": "this repo's current gateway adapter -- self-hosted, one OpenAI-compatible API over every provider, bound to loopback. This repo's own harness (harness/gateway/adapters/live.py) is written to call it directly, but see gaps: that path has never been exercised against a real host from a session.",
+      "in_use_here": true,
+      "evidence": {
+        "text": "This repo's own host inventory names the running container directly: \"`ghcr.io/berriai/litellm-database:v1.97.0` | `127.0.0.1:4000` | Model gateway — one OpenAI-compatible API over every provider\", and the target table names it as this capability's adapter today, checked against \"OpenAI-compatible completions | LiteLLM | OpenRouter · direct provider SDKs · vLLM/SGLang native.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-a1-02",
+            "quote": "`ghcr.io/berriai/litellm-database:v1.97.0` | `127.0.0.1:4000` | Model gateway — one OpenAI-compatible API over every provider"
+          },
+          {
+            "id": "F-b3-03",
+            "quote": "OpenAI-compatible completions | LiteLLM | OpenRouter · direct provider SDKs · vLLM/SGLang native"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OpenRouter",
+      "kind": "hosted",
+      "note": "named swap candidate for LiteLLM in this repo's own target table; a hosted OpenAI-compatible gateway rather than a self-run one. Not run here.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "This repo's own target table names OpenRouter as a swap candidate for the current adapter. Independent coverage (a search result, not a fetched page) describes the tradeoff it represents: \"OpenRouter provides hosted access to hundreds of models across dozens of providers through a single OpenAI-compatible API\", against a self-hosted LiteLLM install.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-b3-03",
+            "quote": "OpenAI-compatible completions | LiteLLM | OpenRouter · direct provider SDKs · vLLM/SGLang native"
+          },
+          {
+            "id": "X-cap-model-access-005",
+            "quote": "OpenRouter provides hosted access to hundreds of models across dozens of providers through a single OpenAI-compatible API"
+          }
+        ]
+      }
+    },
+    {
+      "name": "direct provider SDKs",
+      "kind": "unknown",
+      "note": "named swap candidate in this repo's own target table; bypasses the OpenAI-compatible wire shape entirely rather than sharing it. Not one product but a category, and not run here.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "This repo's own target table names direct provider SDKs as a swap candidate alongside OpenRouter and vLLM/SGLang native.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-b3-03",
+            "quote": "OpenAI-compatible completions | LiteLLM | OpenRouter · direct provider SDKs · vLLM/SGLang native"
+          }
+        ]
+      }
+    },
+    {
+      "name": "vLLM / SGLang (native OpenAI-compatible serving)",
+      "kind": "open-source",
+      "note": "named swap candidate for the gateway/interface layer itself in this repo's own target table -- i.e. serving models directly rather than through a gateway in front of them. Not run in that role here; see gaps for a related but distinct fact about SGLang already serving one local routing group.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "This repo's own target table names vLLM/SGLang native serving as a swap candidate for the current LiteLLM gateway adapter.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "F-b3-03",
+            "quote": "OpenAI-compatible completions | LiteLLM | OpenRouter · direct provider SDKs · vLLM/SGLang native"
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "LiteLLM and OpenRouter trade control for breadth: reviewed head-to-head, \"LiteLLM supports 100+ providers behind a single OpenAI-compatible API, handles fallbacks and budget controls, and runs free on any VPS\" as something you operate yourself, against \"OpenRouter provides hosted access to hundreds of models across dozens of providers through a single OpenAI-compatible API\" with the operational burden on the vendor instead (both search results, not fetched pages). The wire shape both speak sits on no governing body: \"there is currently (Dec. 2025) no formally specified standard like HTTP or SQL that is standardized by a governing body. Instead, a de facto standard has emerged that is supported by most providers.\" Even inside that convention two shapes are live at once -- the same vendor has also published a newer, items-and-response shaped API, yet \"OpenAI has stated that the Chat Completions API will remain supported indefinitely as an industry standard,\" which is the shape this repo's own target row names.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-cap-model-access-003",
+        "quote": "LiteLLM supports 100+ providers behind a single OpenAI-compatible API, handles fallbacks and budget controls, and runs free on any VPS."
+      },
+      {
+        "id": "X-cap-model-access-005",
+        "quote": "OpenRouter provides hosted access to hundreds of models across dozens of providers through a single OpenAI-compatible API"
+      },
+      {
+        "id": "X-maturity-b-012",
+        "quote": "there is currently (Dec. 2025) no formally specified standard like HTTP or SQL that is standardized by a governing body. Instead, a de facto standard has emerged that is supported by most providers"
+      },
+      {
+        "id": "X-litmus-a-006",
+        "quote": "OpenAI has stated that the Chat Completions API will remain supported indefinitely as an industry standard."
+      }
+    ]
+  },
+  "usage": {
+    "text": "A caller reaches this element the same way it reaches every other capability on this platform: write an intent and take the defaults. This repo's own reference example states plainly what that spares the caller from deciding -- smart defaults \"decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger\" -- so in practice a caller sends a class prefix and its messages, never a vendor, member model or endpoint: this repo's own current-state rule is that \"Callers request a class, never a vendor. Prefix carries the contract.\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "REF-3-02",
+        "quote": "decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger"
+      },
+      {
+        "id": "F-a4-01",
+        "quote": "Callers request a class, never a vendor. Prefix carries the contract."
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "This card's 'built' status rests on a host inventory and a harness written to target LiteLLM, not on a verified live call made from within this repository. harness/gateway/adapters/live.py is written to POST directly to a LiteLLM-shaped completions endpoint over a scoped bearer key, but the harness's own provenance record lists reaching a real gateway from a session as unexercised, and this platform's own project instructions record the same limit as true of every harness's live adapter, not only this one.",
+      "why_it_matters": "A capability card marked 'built' whose live path has never actually run is a different kind of claim than one that has been measured end to end; treating the two the same overstates confidence in this element specifically, and in every other 'built' card that shares the same unmeasured-live-adapter limit.",
+      "research_query": "has harness/gateway's live adapter ever completed one full request against a running gateway and recorded a measured_run entry the way its dryrun and swap runs already have"
+    },
+    {
+      "what": "The standard this card names, OpenAI-compatible completions, has no governing body and no published specification, and this repo's own standards entity records its version as unverified. The wire family is also not settled: the same vendor whose message-shaped Chat Completions API this repo adopted has separately published a newer items-and-response shaped API, and this repo's own contract has not recorded a position on whether or when to track it.",
+      "why_it_matters": "Adopting a de facto convention 'whole rather than modelling our own shape' is a different commitment when the convention itself is contested and dual-tracked than when it is a single settled spec; a silent assumption that the older shape is permanent is itself a claim this card should carry openly rather than leave implicit.",
+      "research_query": "has the vendor set an end-of-support date for the message-shaped Chat Completions API, and does any gateway this repo could adopt speak the items-and-response shape instead"
+    },
+    {
+      "what": "cap-model-access's own contract records routing as a pure function evaluated in front of the adapter as a proposed design, not a built one; today routing lives inside the gateway's own group and fallback configuration instead. This repo's own measured findings about that same gateway show configuration written in the documented place can silently fail to take effect there -- a stored database row was found to overlay and replace router settings written to YAML, with no runtime effect from the documented file.",
+      "why_it_matters": "Routing sits inside exactly the mechanism this repo has already measured as capable of silently discarding configuration; until routing is a testable function in front of the adapter rather than a setting inside it, the same failure mode this repo already found once could recur invisibly.",
+      "research_query": "does any test in harness/gateway assert which endpoint actually answered a routed call, rather than trusting the binding or the YAML that selected it"
+    },
+    {
+      "what": "Whether model routing deserves to be its own decision layer, separate from a gateway's fallback configuration, has no citable support in this platform's corpus that survives verification. The only record on file that argued for that framing, X-end-to-end-058, cites an arXiv paper whose retrievable page (captured directly, not via WebFetch) is a title-and-abstract page that does not contain the record's snippet, its 'Mixture of Models' phrasing, or the 'vLLM announced' framing the snippet opens with; bridge.md independently names this same record as carrying text not found on its cited page. That record is left as-is and not cited here or anywhere else in this card; the routing-as-its-own-layer point is correspondingly left unsourced rather than resting on it.",
+      "why_it_matters": "The preceding gap already leaves 'routing as a pure function in front of the adapter' a proposed, unbuilt design in cap-model-access; without independently verifiable outside support for treating routing as its own layer at all, that design choice rests entirely on this repo's own reasoning and should be tracked as such, not dressed up with a citation that does not check out.",
+      "research_query": "find and capture (with tools/capture.py, not WebFetch) a primary source that actually contains language supporting model routing as a decision layer distinct from gateway configuration, verified against its own page text before citing"
+    },
+    {
+      "what": "This card's own current-state source table has two internal inconsistencies in the routing groups it lists for this element. The interactive group's stated member count does not match the number of members listed under it, and the section heading's total group count only reconciles if the listed members are counted rather than the stated count. Separately, one member listed under the coding-CLI group's prefix does not itself carry that prefix, in tension with this same section's own rule that the prefix carries the entire contract.",
+      "why_it_matters": "A card that inherits an inventory table without checking it for internal consistency can repeat an error the source document has not caught itself; if the routing table disagrees with its own counts and its own prefix rule, other assertions drawn from the same table deserve the same scrutiny before they are repeated elsewhere.",
+      "research_query": "recount PASS.md A4's member lists against its stated counts and confirm whether every member under a given prefix group actually carries that prefix"
+    },
+    {
+      "what": "This card's own target-architecture source names vLLM/SGLang native serving as a swap candidate for the gateway/interface layer itself, while this card's own current-state source separately records SGLang already serving a model directly on this host as one member of the free local-GPU routing group. The same name is doing two different jobs across two of this repo's own sources -- swap candidate for the interface versus backend already running behind it -- and this card does not disentangle them from whatever card covers compute or local inference.",
+      "why_it_matters": "If the boundary between 'the gateway in front of models' and 'a model server behind the gateway' is this repo's own bucketing rather than a real seam, a reader comparing this card to a compute or local-inference card could reasonably expect SGLang to appear as in-use on one and as a swap candidate on the other, without either card explaining why both are true.",
+      "research_query": "does a compute or local-inference card in this reference model already cover SGLang as an in-use serving backend, and if so does it cross-reference this card's swap-candidate framing of the same name"
+    }
+  ]
+}

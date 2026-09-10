@@ -1,0 +1,184 @@
+{
+  "address": "3.4",
+  "card": "Workspace",
+  "area": "Core Agent",
+  "status": "built",
+  "definition": {
+    "text": "Workspace (card 3.4, area Core Agent) is this repo's own reference-model bucket for three things a unit of agent work reads and writes while it runs -- files, memory, and shared state -- sitting between the isolation boundary that contains a run (3.3 Runtime/Sandbox) and the tools a run can call (3.5 Tool Interface). This is a proposed definition, not a sourced one: unlike 3.3 Runtime/Sandbox, whose 'a unit of work runs isolated' requirement is stated directly in this repo's own PASS.md (F-b3-18), PASS.md contains zero occurrences of the word 'memory' anywhere and has no dedicated workspace section (checked directly against the file), so nothing in this repo's own current-state baseline defines 'Workspace' as one thing the way it defines Runtime/Sandbox. The three parts this card bundles are each independently named in the sources found below (a static, human-authored context file; a runtime-written memory record; a durable per-run state snapshot), but no source treats the three as a single governed element the way this card's name implies.",
+    "origin": "proposed"
+  },
+  "standards": [
+    {
+      "id": "agents-md",
+      "role": "Names the static, human-authored half of Workspace: a single Markdown file (or one nested per subproject, closest wins) placed at the project root that a coding agent reads at the start of a session for build/test/style/context instructions it would otherwise have to re-derive or be told over chat.",
+      "covers": "Never uses the words 'memory' or 'state' anywhere across the full page text of its own specification site (checked directly by fetching https://agents.md/ in full on 2026-09-10: zero occurrences of either word). Its own FAQ treats the file as documentation a person edits between sessions ('Treat AGENTS.md as living documentation'), not as a store an agent writes to at runtime or a place multiple agents share live state through. So this badge reaches roughly one of the card's three named parts (files) and not the other two (memory, shared state).",
+      "evidence": {
+        "text": "AGENTS.md's own site frames the file as extra, human-supplied context for build/test/conventions that an agent reads -- the same framing an earlier research pass for a different card (3.3 Runtime/Sandbox) reached independently when ruling AGENTS.md out as an environment-declaration standard: it 'provides a dedicated, predictable location for the minimal, human-authored context that LLM coding assistants' need.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-3-4-workspace-001",
+            "quote": "AGENTS.md complements this by containing the extra, sometimes detailed context coding agents need: build steps, tests, and conventions"
+          },
+          {
+            "id": "X-refmodel-3-3-environment-010",
+            "quote": "provides a dedicated, predictable location for the minimal, human-authored context that LLM coding assistants"
+          }
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "AGENTS.md",
+      "kind": "standard-implementation",
+      "note": "The spec's own reference convention: one Markdown file at repo root (or nested per subproject, closest wins) that a person edits and an agent reads at session start. This repo has no file named AGENTS.md anywhere in its tree (checked directly on 2026-09-10, whole-repo search) despite this card naming it as the standard badge.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "AGENTS.md's own onboarding step is exactly this: create the file at the repo root, and agents pick up nested copies automatically as they walk the directory tree.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-3-4-workspace-001",
+            "quote": "Create an AGENTS.md file at the root of the repository."
+          }
+        ]
+      }
+    },
+    {
+      "name": "CLAUDE.md files (Claude Code)",
+      "kind": "commercial",
+      "note": "This repo's actual root-level persistent-instructions file (checked directly: CLAUDE.md at the repo root, and a second copy under ref_arch/) -- the same genre of file AGENTS.md standardizes, but under Anthropic's own vendor-specific filename rather than the cross-vendor name this card's standard badge names.",
+      "in_use_here": true,
+      "evidence": {
+        "text": "Claude Code's own docs describe CLAUDE.md files as the human-written half of its two-part memory system.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-3-4-workspace-002",
+            "quote": "CLAUDE.md files are markdown files that give Claude persistent instructions for a project, your personal workflow, or your entire organization."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Claude Code auto memory",
+      "kind": "commercial",
+      "note": "The agent-written half of the same system: notes Claude saves itself between sessions, stored outside this git repository in the operator's own Claude Code config directory -- not something this repo's own build checks in or claims as part of its target architecture.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Claude Code's docs describe auto memory as knowledge the agent accumulates for itself, without the user writing anything.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-3-4-workspace-002",
+            "quote": "Auto memory lets Claude accumulate knowledge across sessions without you writing anything."
+          }
+        ]
+      }
+    },
+    {
+      "name": "LangGraph checkpointer",
+      "kind": "open-source",
+      "note": "Snapshots full run state to a pluggable store keyed by a thread id so a run can pause, resume, rewind or branch -- a durable-execution/state-recovery mechanism (this repo's own 4.3 State & Recovery / cap-state-persistence territory) rather than a workspace-context mechanism, even though it is the closest real, named tool found to this card's 'shared state' wording. Not used here.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "LangGraph's checkpointer is named prior art for durable, resumable run state, snapshotted after every step and keyed by thread.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-cross-structure-046",
+            "quote": "LangGraph checkpoints turn a graph into a durable program: after every super-step the full state is snapshotted to a Checkpointer (in-memory, SQLite, or Postgres), keyed by thread_id"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Portable Agent Memory (protocol proposal)",
+      "kind": "unknown",
+      "note": "An academic proposal (arXiv) for provenance-verified memory transfer across agents built by different vendors -- the nearest thing found to a standard for this card's 'shared state' component, and explicitly not a ratified one. Not used here.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "The paper itself frames the gap it is trying to fill: tool access and task delegation both have ratified cross-vendor standards; memory portability does not.",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-end-to-end-003",
+            "quote": "Portable Agent Memory addresses a critical gap in the emerging agent interoperability stack: while MCP standardizes tool access and A2A standardizes task delegation, no prior protocol provides verified memory portability."
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "Tooling splits along the card's own three-part name rather than converging on one thing. For files/context, the pattern that has actually converged across vendors is a single, human-edited Markdown file loaded automatically at session start: AGENTS.md's site walks through exactly that step, 'Create an AGENTS.md file at the root of the repository,' and Claude Code implements the same idea under its own vendor-specific name (CLAUDE.md). For memory, the industry treats it as a separate, runtime-written layer built on embedding retrieval rather than a static file: 'Agent memory systems typically embed queries and stored memories, rank candidate memories by cosine similarity, and place the top-ranked memories into the model context.' Distinct again from either file is the more basic question of what sits inside a running context window at all -- Anthropic's own engineering guidance names this its own technique, compaction, defined as 'taking a conversation nearing the context window limit, summarizing its contents, and reinitiating a new context window with the summary.' For shared state specifically, the closest real, named tooling found says plainly that it does not do that across machines: Claude Code's own memory docs state 'Auto memory is machine-local. All worktrees and subdirectories within the same git repository share one auto memory directory. Files are not shared across machines or cloud environments,' and the closest durable-state mechanism found, LangGraph's checkpointer, snapshots full run state to a store rather than exposing a live workspace multiple agents write into concurrently: 'LangGraph checkpoints turn a graph into a durable program: after every super-step the full state is snapshotted to a Checkpointer (in-memory, SQLite, or Postgres), keyed by thread_id.' And no ratified standard governs sharing memory across agents from different vendors at all: 'Portable Agent Memory addresses a critical gap in the emerging agent interoperability stack: while MCP standardizes tool access and A2A standardizes task delegation, no prior protocol provides verified memory portability.'",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-3-4-workspace-001",
+        "quote": "Create an AGENTS.md file at the root of the repository."
+      },
+      {
+        "id": "X-cap-memory-001",
+        "quote": "Agent memory systems typically embed queries and stored memories, rank candidate memories by cosine similarity, and place the top-ranked memories into the model context."
+      },
+      {
+        "id": "X-end-to-end-004",
+        "quote": "Compaction is the practice of taking a conversation nearing the context window limit, summarizing its contents, and reinitiating a new context window with the summary."
+      },
+      {
+        "id": "X-refmodel-3-4-workspace-002",
+        "quote": "Auto memory is machine-local. All worktrees and subdirectories within the same git repository share one auto memory directory. Files are not shared across machines or cloud environments."
+      },
+      {
+        "id": "X-cross-structure-046",
+        "quote": "LangGraph checkpoints turn a graph into a durable program: after every super-step the full state is snapshotted to a Checkpointer (in-memory, SQLite, or Postgres), keyed by thread_id"
+      },
+      {
+        "id": "X-end-to-end-003",
+        "quote": "Portable Agent Memory addresses a critical gap in the emerging agent interoperability stack: while MCP standardizes tool access and A2A standardizes task delegation, no prior protocol provides verified memory portability."
+      }
+    ]
+  },
+  "usage": {
+    "text": "No source found describes a caller invoking Workspace through an explicit API call the way this repo's other capabilities are called; the two real, named implementations closest to it both load automatically rather than being called. AGENTS.md is picked up walking the directory tree: 'Agents automatically read the nearest file in the directory tree, so the closest one takes precedence.' Claude Code's two mechanisms load the same way, without a caller choosing to invoke either one per turn: 'Claude Code has two complementary memory systems. Both are loaded at the start of every conversation.'",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-3-4-workspace-001",
+        "quote": "Agents automatically read the nearest file in the directory tree, so the closest one takes precedence"
+      },
+      {
+        "id": "X-refmodel-3-4-workspace-002",
+        "quote": "Claude Code has two complementary memory systems. Both are loaded at the start of every conversation."
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "This card's standard badge names AGENTS.md, but this repo has no file named AGENTS.md anywhere in its tree (checked directly across the whole repository on 2026-09-10: zero matches). It has two files named CLAUDE.md instead (the repo root and ref_arch/), a different, vendor-specific convention for the same genre of static, human-authored context.",
+      "why_it_matters": "A 'built' status next to a standard badge this repo's own files don't actually carry overstates how governed this element is -- and even where the badge does apply, per this card's own standards.covers, it reaches only one of the three parts ('files') the card's own name promises ('files, memory, shared state').",
+      "research_query": "does this repo intend to add or symlink an AGENTS.md file, and should the standard badge on 3.4 change if it does not"
+    },
+    {
+      "what": "This repo's own card/example gap analysis (docs/reference/card-example-gaps.md) states directly that no example area exercises a mutable shared workspace, and that mounts in this repo are read-only with sealed, write-once output. The same document separately notes that 8 of this repo's 40 reference-model cards have no proof in any of the seven example areas, and that Workspace is one of only 3 of those 8 marked 'built' rather than 'planned' -- so, unlike most of the unproven cards, its silence in the examples is not explained by build status.",
+      "why_it_matters": "'Built' should mean the element is demonstrated somewhere in this repo, not only named in the reference model; by this repo's own analysis, Workspace currently has neither a working mutable-shared-state mechanism nor an example that reaches it.",
+      "research_query": "does any harness or example in this repo implement a writable, multi-run-shared filesystem, memory area, or workspace"
+    },
+    {
+      "what": "Memory, one third of this card's own definition, is absent from PASS.md (this repo's current-state document contains zero occurrences of the word 'memory') and exists in this repo only as a proposed target contract: cap-state-persistence's cap-memory sub-skill states its own purpose exists 'because TARGET requires the gaps in that baseline to be made up,' and this repo's own TARGET.md states plainly that PASS.md's list is a limited baseline whose gaps still need to be made up and solved (T-t4-03).",
+      "why_it_matters": "Marking 3.4 'built' implies its memory component works today; this repo's own documents instead describe memory as an acknowledged target-state gap with a proposed schema, not a measured capability.",
+      "research_query": "has cap-state-persistence's memory-item contract (remember/recall/expire) been implemented and exercised by any harness, or does it remain schema-only"
+    },
+    {
+      "what": "The 'files' part of this card's own definition (a read-only context mount) is the same seam 3.3 Runtime/Sandbox already owns -- external prior art found treats mounting a skill/context directory read-only as a sandbox/isolation concern enforced by the kernel, not a separate workspace mechanism. And the closest real, named tool found to this card's 'shared state' wording, LangGraph's checkpointer, snapshots full run state keyed by a thread id -- a durable-execution/state-recovery mechanism, which is 4.3 State & Recovery's and cap-state-persistence's territory, not a live mutable workspace multiple agents write into.",
+      "why_it_matters": "If Workspace bundles two other cards' actual seams rather than naming a distinct capability, treating it as a fourth thing risks double-counting effort, or leaving a real component with no clear owner.",
+      "research_query": "does cap-isolation (3.3) or cap-state-persistence (4.3 / base.4) already claim ownership of the context-mount and memory-item pieces this card also names"
+    },
+    {
+      "what": "No source found names a ratified, cross-vendor standard for sharing or moving agent memory or workspace state across agents built by different vendors, unlike this repo's other Core Agent cards, which each name one (AGENTS.md here; MCP for 3.5 Tool Interface). The closest found is an unratified academic protocol proposal, Portable Agent Memory.",
+      "why_it_matters": "Even a correctly-scoped Workspace standard badge would only ever cover the files third of the definition until (if ever) a memory/shared-state standard emerges industry-wide; the remaining gap is not just this repo's citation work.",
+      "research_query": "has Portable Agent Memory or a similar proposal been adopted by any production agent framework since 2026-09"
+    }
+  ]
+}

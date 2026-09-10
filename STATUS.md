@@ -11,5 +11,6 @@
 | 77 | Standards and journey | python3 tools/standards.py check exits zero and both pages render | Open | 10 errors: journey names archived example paths |
 | 78 | Citation shape in skills | Every F/T/X/REF citation carries its own verbatim quote | Open | 1079 unquoted, 171 entity ids to move |
 | 79 | Reference examples | examples/reference has one area per model area with checks green | Not started | Structure defined, seams undecided |
-| 80 | Card profiles | Every reference model card has a profile at zero errors | Open | 27 of 40 profiled, 13 remain |
+| 80 | Card profiles | Every reference model card has a profile at zero errors | Open | 32 of 40 profiled, 8 remain |
 | 81 | Reference model corrections | Recorded model gaps applied or declined | Open | 31 model changes recorded, none applied |
+| 82 | Egress log integrity | reconcile_egress.py checks egress_ref matches its own log entry | Open | 5 refs went stale on rebuild, repaired |

@@ -124,6 +124,26 @@ Research agents must **never** set `egress_ref` or append to `kb/egress-log.json
 appending concurrently mint the same `G-` id. The coordinator mints after the batch, then runs
 `merge-research` and `reconcile_egress.py`.
 
+**`G-` ids are positional, and `build_egress_log.py` renumbers from scratch.** It assigns
+`G-00001..N` by walking `kb/research.jsonl` in sorted-id order, so inserting any record renumbers
+every later decision. The `egress_ref` field on a research record is a back-reference *into* that
+numbering, and **nothing checks it** — `reconcile_egress.py` matches on `research_id`, not on
+`egress_ref`, and no tool verifies the egress log's hash chain at all. So a rebuild silently
+invalidates every `egress_ref` for a record that sorts after the insertion point. This bit on
+2026-09-10: a rebuild moved 5 of the 6 `egress_ref` values off their decisions, all green.
+`build_egress_log.py` is a bootstrap tool, not an incremental one. STATUS row 82 tracks the fix.
+
+The post-batch sequence is therefore fixed, and step 3 is not optional:
+
+```
+1. python3 tools/kb.py merge-research
+2. python3 tools/build_egress_log.py
+3. re-derive every egress_ref from the NEW log and rewrite the stale ones in kb/research/*.jsonl,
+   then merge + rebuild again    <- skip this and the back-references rot silently
+4. python3 tools/reconcile_egress.py
+5. python3 tools/kb.py verify
+```
+
 ---
 
 ## 4. The cycle that needs completing

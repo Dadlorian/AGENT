@@ -57,3 +57,31 @@ Rows 14 and 45 (fetch access for standards), 37 (live host access so the cells s
 - Eight standards sit at position adopt without a contract (see `STANDARDS.md`, Gaps). Six have research records and need naming in the owning skill's contract: JSON-RPC 2.0 (cap-agent-runtime), W3C Trace Context (cap-telemetry), OAuth 2.1 (cap-tool-access), Sigstore (cap-provenance), OWASP LLM and Agentic (cap-policy). Three have no record and need research first: AGENTS.md, RFC 9396, CycloneDX ML-BOM.
 - Step G Grow has no litmus section; the improvement loop is measured by `tools/improvement_loop.py` only. Decide whether a 24th section is wanted or the loop's plan check is the measure.
 - Every step's litmus median is 1.0 except B Bound at 1.8. The journey's gaps column is the target list for the next boundary pass.
+
+## G. Carried out of phase 1 `B-core-agent` (2026-09-10)
+
+Five cards profiled (3.1, 3.2, 3.4, 3.5, 2.3); `validate_card_profiles.py` 32 of 40 at 0 errors.
+Two findings are cross-cutting and should not be re-discovered one card at a time.
+
+- **The standard badge is wrong across a whole region, and the corrections file cannot express it.**
+  `reference-model.json` badges 3.1, 3.2 and 3.3 `null`, while this repo's own Part B substrate table
+  names a standard for those rows — `F-b3-05` reads
+  "| **Agent runtime** | Agent Client Protocol | goose | Claude Code · Cursor · any ACP-speaking agent |".
+  The worked example `3-3.json` already carries two standards on a `null` badge, so the badge field is
+  not the constraint on a profile; it is just unpopulated. This cannot go in
+  `docs/reference/status-corrections.json` as it stands: `tools/extract_reference_model.py:167` applies
+  only the `status` and `sub` overrides, so a `standard` correction would be read and silently ignored.
+  Closing it needs the extractor to accept a `standard` field first — and `extract_reference_model.py
+  --check` is a blocking gate, so that change belongs in phase 5 `C-triage`, not in a profiling batch.
+
+- **Two records already known to misrepresent their pages are still cited in four live places.**
+  `bridge.md` names `X-end-to-end-058` and `X-cap-evaluation-003` as carrying text from a different
+  record's page. A third citation of 058 was added and removed during this phase; these four remain:
+  `.claude/skills/cap-model-access/skill.json`, `docs/reference/cards/rail-6.json` (058), and
+  `.claude/skills/cap-evaluation/skill.json`, `docs/reference/cards/6-2.json` (cap-evaluation-003).
+  For 058 the page was re-captured this session: `tools/capture.py https://arxiv.org/pdf/2603.21354`
+  (rung `api`, HTTP 200) returns arXiv's title+abstract, and "composes routing, policies, reasoning
+  budgets and workflow signals into a unified inference layer", "Mixture of Models" and "vLLM announced"
+  are all absent from it. Note the limit honestly: that is absence from the **abstract**: the `api` rung
+  returns ~3.7KB and the PDF body was not retrievable, so the phrase is unverified, not disproven.
+  These are phase 3 `A-cited`'s highest-priority targets — records a skill or profile already leans on.

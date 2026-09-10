@@ -102,7 +102,42 @@ being debt and becomes permission. STATUS row 84 burns it down.
 
 ---
 
-## 4. Definition of ready to build
+## 4. What we have — the tooling
+
+51 tools, 10 of them wired as gates in `tools/phase.py`. They fall into one healthy group and one
+that has rotted, and the difference decides what the next session touches first.
+
+**The anti-fabrication chain is the strong part, and it is new.** `capture.py` fetches ·
+`stamp_verification.py` types each quote against the page · `validate_card_profiles.py` refuses a
+citation whose quote is not stamped · `verify_snippets.py` re-checks records · `knowledge_pool.py`
+reports · `kb.py` + `build_egress_log.py` + `reconcile_egress.py` keep the chain honest. Every link
+is proven by a deliberate breakage. Trust this group; extend it rather than replacing it.
+
+**The examples layer points at work that was deleted.** `examples/archived/` holds the old seven
+(run · ask · watch · steer · progress · done · improve). Still describing them:
+
+| artifact | what it says | gate? |
+|---|---|---|
+| `docs/reference/card-example-map.json` | maps all 40 cards to the archived seven, `origin: proposed` | **yes** — `check_card_example_map.py` passes on it |
+| `JOURNEY.md` | names archived example paths | **yes** — `standards.py check`, 10 errors, STATUS row 77 |
+| `tools/examples_index.py` | hardcodes the seven, writes `docs/examples/index.md` | no |
+| `docs/examples/index.md` | the seven by four doors | no |
+| `.claude/skills/build-example/SKILL.md` | says "seven" six times, "nine" once | authoring guidance |
+
+Meanwhile `examples/reference/README.md` proposes **nine** region-based areas and contains nothing
+else. So five artifacts describe one structure, one document proposes another, and a gate passes on
+the dead one. **Re-point or retire these before building** — otherwise the next session builds nine
+areas while the repo's own map, index, journey and authoring skill all describe seven different ones.
+
+**Probably dead:** `migrate_standards.py` (self-described one-off, already run).
+**Possibly superseded:** `resolve_reference_model.py` scores cards against evidence, but a score is a
+shortlist and never a citation — the profiles now do this properly. Check before reusing.
+**Confusingly paired:** `check_ceremony.py` (validates one record pair) and `ceremony_check.py`
+(trend across ceremonies) are different tools with near-identical names.
+
+---
+
+## 5. Definition of ready to build
 
 **Ready is a command, not an opinion.** `python3 tools/ready_to_build.py` prints these eight and
 exits non-zero until all hold. Opinion is how the previous seven example areas got built on an
@@ -136,57 +171,77 @@ R7 is the only condition whose failure is informative, so attempt it early even 
 
 ---
 
-## 5. Starter prompt
+## 6. The plan
+
+Ordered so that each step protects the ones after it. `python3 tools/ready_to_build.py` is the
+scoreboard; the R-numbers below are its conditions.
+
+| # | Step | Why this order | Closes |
+|---|---|---|---|
+| 1 | **Owner decides the model's purpose and the area set** | Everything downstream depends on it, and neither is a research question. Industry description or platform description? Nine region areas or seven journey areas or something else? | R6 |
+| 2 | **Attempt ONE example from ONE profile** | The only step whose failure is informative. Write every question the profile could not answer into `profile-sufficiency.md`. If it answers everything, the profile IS the spec — a real finding, and R7 closes cheaply. | R7 |
+| 3 | **Build the prose gate** | The largest open hole: nothing reads `text`/`role`/`covers`/`note`, which is how two invented statistics passed every gate. Close it before mass-authoring, or every new area inherits the class. | R4 |
+| 4 | **Re-point or retire the five archived-facing artifacts** | A passing gate on a dead mapping will silently validate the wrong thing. | R5 |
+| 5 | **Profile the 8 remaining cards, capture-first** | All eight are marked `built`; every `built` card profiled so far produced a contradiction. | R1 |
+| 6 | **Clear the residue** | 4 quotes needing a reader, 23 undecided debt entries, internal-share policy. | R2 · R3 · R8 |
+| 7 | **Build the remaining areas** | Only once `ready_to_build.py` exits 0. A workflow can fan this out; nothing before step 7 should be fanned out. | — |
+
+Steps 1 and 2 can run together — 2 needs only the area shape from 1. Steps 3–6 are independent of
+each other. Step 7 is gated on all of them.
+
+---
+
+## 7. Starter prompt
 
 Copy this whole block into a fresh context.
 
 ```
 Read bridge.md end to end, then docs/reference/knowledge-pool.md (what stands behind each of the 40
-cards), docs/reference/cards/BRIEF.md (the authoring rule), and examples/reference/README.md (nine
-proposed areas, unproven).
+cards) and docs/reference/cards/BRIEF.md (the authoring rule).
 
 Re-run every number before repeating it. This repo's most repeated and most expensive mistake is
 confident restatement of figures that had moved -- last session a model reported a corpus-wide
-crisis that measurement did not support, and had to walk it back twice in one conversation. The
-scoreboards are:
-  python3 tools/ready_to_build.py     the definition of ready, 8 conditions, exits 1 until all hold
-  python3 tools/knowledge_pool.py     what stands behind every card
-  python3 tools/phase.py gates        11 gates; two are known-red and recorded
+crisis that measurement did not support and had to walk it back twice in one conversation. Your
+scoreboards:
+  python3 tools/ready_to_build.py    8 ready conditions, exits 1 until all hold. 0 of 8 today.
+  python3 tools/knowledge_pool.py    what stands behind every card
+  python3 tools/phase.py gates       11 gates; two known-red and recorded
 
 YOUR JOB
-Get from 0 of 8 ready conditions to 8 of 8, then build ONE example area and stop.
-Do not build nine areas. That is exactly how the previous seven ended up in examples/archived/.
+Work bridge.md section 6, steps 1-6, in that order. Then STOP.
+Do not build nine example areas. Building on an unproven structure is exactly how the previous
+seven ended up in examples/archived/, and five artifacts in this repo still describe those seven --
+including a passing gate. See bridge.md section 4.
 
-START HERE, IN THIS ORDER
-1. R6 is the owner's to answer, and it gates the rest: is the reference model an industry-aligned
-   description, or a description of this platform? Ask them directly, in one question, with the
-   consequence stated -- 31.7% of citations are this repo citing itself, and cards like 1.2
-   Scheduled (12 of 13 internal) would demonstrate our own design rather than an industry pattern.
-   Record the answer in docs/reference/build-principles.json.
-2. R7 next, because its failure is the only informative one. Pick one card, attempt one example area
-   from its profile alone, and write down every question the profile could not answer into
-   docs/reference/profile-sufficiency.md. If it answers everything, the profile IS the spec and that
-   is a real finding. Do not fix the profile schema before you have this list.
-3. Then R4 (the prose gate -- the largest open hole: nothing reads text/role/covers/note, which is
-   how two invented statistics survived every gate), R1 (the 8 unprofiled cards, capture-first),
-   R2, R3, R5, R8.
+STEP 1 IS A QUESTION FOR THE OWNER, NOT RESEARCH. Ask it early, in one message, with the
+consequence stated: is the reference model an industry-aligned description, or a description of
+this platform? 31.7% of its citations are this repo citing its own documents, so today it is both,
+and cards like 1.2 Scheduled (12 of 13 citations internal) would demonstrate our own design rather
+than an industry pattern. Also ask which example-area set is real: the nine region-based areas in
+examples/reference/README.md, the seven journey areas the rest of the repo still names, or neither.
+Record both answers in docs/reference/build-principles.json.
 
-NON-NEGOTIABLE -- every one of these was learned expensively; bridge.md section 3 has the incidents
+STEP 2 IS THE ONE THAT TEACHES YOU SOMETHING. "The card profile is the spec" has never been tested
+-- it may well hold, nobody has pulled the data. Pick one card, build one area from its profile
+alone, and write down every question the profile could not answer into
+docs/reference/profile-sufficiency.md. Do not change the profile schema before you have that list.
+
+NON-NEGOTIABLE -- each was learned expensively; bridge.md section 3 carries the incidents
 - A claim carries a verbatim quote from a stamped record, or is marked proposed. Both are good.
 - Citable means checked: run tools/stamp_verification.py --fetch before validating.
 - Verdicts are typed, never boolean. `partial` means a person must read it, not that it failed.
 - Capture with tools/capture.py, never WebFetch -- and build snippets from the GATE's fetch path,
-  which is not the same text capture.py returns.
+  which does not return the same text capture.py does.
 - Never patch a contradicted record to fit its claim. The contradiction is the finding.
-- A subagent's report is not evidence. Check the artifact it produced; three subagent summaries
-  miscounted their own output last session.
+- A subagent's report is not evidence. Check the artifact; three subagent summaries miscounted
+  their own output last session.
 - Mint egress ids centrally after a batch, and re-derive every egress_ref after any rebuild.
 - Nothing writes to citation-debt.json automatically. It is debt, not permission.
 
-WHEN YOU FINISH A PIECE
+WHEN YOU FINISH A STEP
 python3 tools/phase.py open <name> ... close <name>. Green closes; two reds stop the phase and it
 refuses to reopen -- when that happens, stop and leave the evidence. Then review, improve, ledger,
-checkpoint, in that order. checkpoint.sh pushes to origin.
+checkpoint, in that order. checkpoint.sh commits AND pushes to origin.
 
 REPORT PROGRESS AS `python3 tools/ready_to_build.py` OUTPUT, NOT AS PROSE.
 ```

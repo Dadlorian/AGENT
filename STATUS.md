@@ -17,3 +17,4 @@
 | 83 | Citation repair | Every card citation quotes text present on its source page | Open | 23 recorded in citation-debt.json |
 | 84 | Citable means checked | citation-debt.json is empty and the gate needs no exemptions | Open | 23 entries, 16 need re-sourcing |
 | 85 | Ready to build | python3 tools/ready_to_build.py exits zero | Open | 0 of 8 conditions met |
+| 86 | Examples layer points at archived | No tool or doc names the archived seven areas | Open | 5 artifacts name them, 2 are gates |

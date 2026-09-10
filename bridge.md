@@ -102,6 +102,49 @@ being debt and becomes permission. STATUS row 84 burns it down.
 
 ---
 
+## 3b. Reading the pool without fooling yourself
+
+Section 3 is how the pool is *built*. This is how it is *read* — and reading is where the damage
+came from on 2026-09-10. Every figure below is a real mistake made that day, by the model, to the
+owner, and then walked back.
+
+**Report the number that needs a person, not a percentage.** `knowledge-pool.md` leads with
+*"4 of 234 quotes need a human decision."* The share above it — 92.7% `exact` — is true and useless
+for deciding anything. Every time a share was reported first, it was read as "we have evidence",
+and every time it had to be qualified afterwards.
+
+**Never narrate a boolean.** One failed check meant all of these on the same day: a trailing period;
+a flattened bullet list; stripped line numbers in a code listing; `It` expanded to `MIG
+(Multi-Instance GPU)`; a quote spanning a PDF body no tool here can read; and one genuine case of
+this repo's own prose wearing a source's byline. Reported as a count it read as 23 defects. Graded
+by kind it was **one**. If a check returns pass/fail, it cannot tell you what kind of problem you
+have — so do not describe the problem from it.
+
+**Give the denominator and the distribution. Never the worst case alone.** The 7.2 example in this
+document is the worst of eight, and it was first presented without saying so; the owner had to ask
+whether it was cherry-picked. The honest shape is: *308 external citations, 280 byte-identical on
+their page, and here is the full breakdown of the other 28.*
+
+**Check a heuristic against ground truth before reporting its output.** A quote-mark test for
+"summary written into `read`" returned 19 hits and was one step from being reported as 19 laundered
+citations. A fetch showed most were genuine excerpts whose *page* happened to use quotation marks.
+A heuristic proposes; only a fetch decides — the same rule as *matching proposes, evidence decides*,
+applied to our own tooling.
+
+**`read` is structurally a second `claim` field.** `validate_card_profiles.py` forbids quoting
+`claim` — there is an explicit guard and a comment recording 18 of 946 citations that exploited it.
+But `read` can hold exactly the same repo prose, and `read` *is* an approved quote source. Worked
+example: `X-refmodel-7-2-experiment-008`, whose `read` is a summary paragraph with page quotes
+embedded in it; card 7.2 quotes the connective prose *between* those quotes, so a reader is told
+agentforgehub.com said something it never said. Every gate was green. Treat `read` with the same
+suspicion as `claim`: contiguous page text or nothing.
+
+**When a number moves, say which measurement moved.** The counts in this document changed repeatedly
+in one day — not because the corpus changed, but because what was being counted changed (record-level
+→ quote-level, boolean → typed). A number without its measurement is not a fact.
+
+---
+
 ## 4. What we have — the tooling
 
 51 tools, 10 of them wired as gates in `tools/phase.py`. They fall into one healthy group and one

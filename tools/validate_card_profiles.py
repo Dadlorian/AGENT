@@ -63,6 +63,7 @@ def load_verification() -> dict:
             continue
         out[r["id"]] = {
             "quotes": set(v.get("verified_quotes") or ()),
+            "verdicts": dict(v.get("quote_verdicts") or {}),
             "unreachable": bool(v.get("unreachable")),
             "reason": v.get("reason"),
         }
@@ -136,6 +137,26 @@ def check_quote_is_verified(rid, quote, at, fields, stamps, errs, exempt):
         exempt.append((at, rid, stamp.get("reason") or "unreachable"))
         return
     qh = hashlib.sha256(quote.encode()).hexdigest()
+    verdict = stamp["verdicts"].get(qh)
+    # Act on WHAT KIND of difference this is. A bare true/false is what let a flattened bullet list
+    # and an invented statistic be reported with the same word.
+    if verdict in ("exact", "formatting"):
+        return
+    if verdict == "unretrievable":
+        exempt.append((at, rid, "page could not be read; nothing proven either way"))
+        return
+    if verdict in ("stitched", "partial", "absent"):
+        key = (tag_of(at), path_of(at), qh)
+        if key in DEBT_INDEX:
+            exempt.append((at, rid, f"{verdict}, recorded: " + DEBT_INDEX[key]))
+            return
+        why = {"stitched": "this quote is two non-adjacent passages joined into one sentence - the "
+                           "page never says it as a single statement",
+               "partial": "part of this quote is on the page and part is not - a person has to read "
+                          "it and decide; no check can tell a faithful paraphrase from an invented one",
+               "absent": "the page does not contain this quote, or anything close to it"}[verdict]
+        errs.append(f"{at}: {rid} quote verdict `{verdict}` - {why}")
+        return
     if qh not in stamp["quotes"]:
         key = (tag_of(at), path_of(at), qh)
         if key in DEBT_INDEX:

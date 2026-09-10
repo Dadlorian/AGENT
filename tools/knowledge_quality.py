@@ -178,6 +178,38 @@ def main() -> int:
         "worth trusting, which is a different question and the one that decides whether examples "
         "can safely be built on it.")
     add("")
+    # --- what the SYSTEM decided about each quote, so a reader is not left interpreting a boolean
+    verdicts = collections.Counter()
+    for rec in research.values():
+        verdicts.update(((rec.get("verification") or {}).get("quote_verdicts") or {}).values())
+    if verdicts:
+        vt = sum(verdicts.values())
+        add("## Every quote, typed")
+        add("")
+        add("Not whether a citation passed, but **what kind of difference** there is between the "
+            "sentence a card asserts and the page it names. A bare true/false is what made this "
+            "repo's own reporting wrong: it scored a flattened bullet list and an invented statistic "
+            "identically, and the difference got supplied from imagination.")
+        add("")
+        add("| Verdict | Meaning | Quotes | Share | Gate |")
+        add("|---|---|---:|---:|---|")
+        MEAN = {
+          "exact": ("the quote is byte-identical on the page", "passes"),
+          "formatting": ("same words; markdown, a flattened list, line numbers or a pronoun differ", "passes"),
+          "unretrievable": ("the page could not be read - proves nothing either way", "recorded"),
+          "partial": ("part is on the page, part is not - **a person must read this one**", "blocks until reviewed"),
+          "stitched": ("two non-adjacent passages joined into one sentence", "blocks"),
+          "absent": ("the page does not contain this, or anything close", "blocks"),
+        }
+        for k in ("exact", "formatting", "unretrievable", "partial", "stitched", "absent"):
+            if verdicts.get(k):
+                m, g = MEAN[k]
+                add(f"| `{k}` | {m} | {verdicts[k]} | {100*verdicts[k]/vt:.1f}% | {g} |")
+        add("")
+        need = verdicts.get("partial", 0) + verdicts.get("stitched", 0) + verdicts.get("absent", 0)
+        add(f"**{need} of {vt} quotes need a human decision.** Everything else the system settled on "
+            f"its own. That number, not the percentage above, is the one to act on.")
+        add("")
     add("| Class | What it means | Citations | Share |")
     add("|---|---|---:|---:|")
     add(f"| **read** | External page fetched, and the quoted snippet re-verified against the live page | {totals['read']} | {100*totals['read']/n:.1f}% |")

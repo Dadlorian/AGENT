@@ -35,6 +35,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
@@ -149,6 +150,77 @@ def stamps_from_capture_pass() -> dict:
     return out
 
 
+STOP = set("the a an and or of to in for with that this is are was were be been it its as on at "
+           "by from not you your we our their they".split())
+# Hosts that answer 200 with only part of the document. An absent quote here means "the part we
+# can reach does not contain it", never "the source does not say it" -- arXiv's API returns the
+# abstract, and paywalled hosts return a stub. Calling those `absent` would be the same overreach
+# this repo keeps catching: treating "I could not check it" as "it is wrong".
+PARTIAL_PAGE_HOSTS = ("arxiv.org", "medium.com", "doi.org", "mdpi.com")
+
+
+def loose(s: str) -> str:
+    """Strip everything that is presentation rather than content, so a flattened bullet list or a
+    stripped line number stops looking like a different sentence."""
+    s = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", s)
+    s = s.replace("**", "").replace("`", "").replace("*", "")
+    s = re.sub(r"^\s*\d+\s+", "", s, flags=re.M)          # leading line numbers in code listings
+    s = re.sub(r"[\u2010-\u2015\-]", " ", s)                # dashes and bullet markers
+    s = re.sub(r"[^\w\s]", " ", s)
+    return re.sub(r"\s+", " ", s).lower().strip()
+
+
+def _runs(q: str, page: str, minlen: int = 25):
+    out, i = [], 0
+    while i < len(q):
+        best = None
+        for j in range(len(q), i + minlen - 1, -1):
+            pos = page.find(q[i:j])
+            if pos != -1:
+                best = (q[i:j], pos)
+                break
+        if best:
+            out.append(best)
+            i += len(best[0])
+        else:
+            i += 1
+    return out
+
+
+def classify_quote(quote: str, page: str, host: str = "", http_ok: bool = True):
+    """Say WHAT KIND of difference this is, never just true/false.
+
+    A boolean is what made this session's reporting wrong: `verified: false` meant both "the author
+    flattened a bullet list" and "the author invented a statistic", and a reader (including me)
+    supplied the difference from imagination. The verdicts below are ordered by how much they
+    should worry someone, and only two of them should ever block.
+    """
+    q, P = norm(quote), norm(page)
+    partial_host = any(h in (host or "") for h in PARTIAL_PAGE_HOSTS)
+    if not http_ok or len(P) < 200:
+        return "unretrievable", {"page_chars": len(P)}
+    if q in P:
+        return "exact", {}
+    ql, Pl = loose(q), loose(P)
+    if ql and ql in Pl:
+        return "formatting", {}
+    parts = _runs(q, P)
+    covered = sum(len(seg) for seg, _ in parts) / max(1, len(q))
+    if len(parts) >= 2 and covered >= 0.75:
+        pos = [p for _, p in parts]
+        if max(pos) - min(pos) > 200:
+            return "stitched", {"parts": len(parts), "spread": max(pos) - min(pos)}
+        return "formatting", {"parts": len(parts)}
+    toks = {t for t in re.findall(r"\w+", ql) if len(t) > 4 and t not in STOP}
+    overlap = (sum(1 for t in toks if t in Pl) / len(toks)) if toks else 0.0
+    if partial_host:
+        return "unretrievable", {"reason": "host serves only part of the document",
+                                 "content_overlap": round(overlap, 2)}
+    if overlap < 0.55:
+        return "absent", {"content_overlap": round(overlap, 2)}
+    return "partial", {"content_overlap": round(overlap, 2), "covered": round(covered, 2)}
+
+
 def qhash(q: str) -> str:
     return hashlib.sha256(norm(q).encode()).hexdigest()
 
@@ -162,15 +234,19 @@ def fetch_stamp(rec: dict, quotes=None) -> dict:
         return {"checked_at": TODAY, "method": METHOD, "http_status": status,
                 "page_sha256": None, "snippet_verbatim": False, "read_verbatim": None,
                 "unreachable": True, "reason": str(err or f"HTTP {status}")[:200],
-                "verified_quotes": []}
+                "verified_quotes": [], "quote_verdicts": {}}
     page = norm(V.html_to_text(html))
+    host = urlparse(rec["url"]).hostname or ""
     return {
         "checked_at": TODAY, "method": METHOD, "http_status": status,
         "page_sha256": hashlib.sha256(page.encode()).hexdigest(),
         "snippet_verbatim": norm(rec.get("snippet")) in page,
         "read_verbatim": (norm(rec["read"]) in page) if rec.get("read") else None,
         "unreachable": False, "reason": None,
-        "verified_quotes": sorted(qhash(q) for q in (quotes or set()) if q in page),
+        "verified_quotes": sorted(qhash(q) for q in (quotes or set())
+                                  if classify_quote(q, page, host, True)[0] in ("exact", "formatting")),
+        "quote_verdicts": {qhash(q): classify_quote(q, page, host, True)[0]
+                           for q in sorted(quotes or set())},
     }
 
 

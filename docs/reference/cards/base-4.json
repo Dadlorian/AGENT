@@ -1,0 +1,197 @@
+{
+  "address": "base.4",
+  "card": "Metadata & State",
+  "area": "Shared Platform Services",
+  "status": "built",
+  "schema_note": "Seventh profile authored with the five fields from docs/reference/profile-sufficiency.md, and the thinnest source pool of the seven - two core rows, both OpenLineage, which is already card 6.3's standard. Everything here is sourced from one implementation's documented data model. That is a weaker evidence base than the other six cards and it is labelled as such rather than dressed up: `standards` is empty because there is no standard, and the whole card rests on one primary source.",
+  "definition": {
+    "text": "Metadata & State at this card is the store that answers questions about runs after they happen: what was produced, by which step, under which parameters, as part of which experiment. One implementation documents both the scope and the shape, which is why it is the source here -- \"MLMD registers the following types of metadata in a database called the\nMetadata Store.\" -- and the scope is three kinds: \"Metadata about the artifacts generated through the components/steps of your\nML pipelines\n\nMetadata about the executions of these components/steps\n\nMetadata about pipelines and associated lineage information\" The third of those is where this card meets card 6.3 Lineage, and the overlap is recorded in gaps rather than resolved here.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-4-metadata-state-001",
+        "quote": "MLMD registers the following types of metadata in a database called the\nMetadata Store."
+      },
+      {
+        "id": "X-refmodel-base-4-metadata-state-002",
+        "quote": "Metadata about the artifacts generated through the components/steps of your\nML pipelines\n\nMetadata about the executions of these components/steps\n\nMetadata about pipelines and associated lineage information"
+      }
+    ]
+  },
+  "operations": {
+    "text": "Two operations, stated plainly, and that is the whole surface -- \"The Metadata Store provides APIs to record and retrieve metadata to and from the\nstorage backend. The storage backend is pluggable and can be extended. MLMD\nprovides reference implementations for SQLite (which supports in-memory and\ndisk) and MySQL out of the box.\" Record and retrieve. There is no update and no delete in what is documented here, which is a property worth stating rather than assuming: a metadata store under a run history is append-mostly by construction, and the absence of a mutation verb is the same absence card 6.3's event stream has. The ordering constraint that matters is between kinds rather than between calls: a type must be declared before an instance of it can be recorded -- \"ArtifactType describes an artifact's type and its properties that are\nstored in the metadata store. You can register these types on-the-fly with\nthe metadata store in code, or you can load them in the store from a\nserialized format. Once you register a type, its definition is available\nthroughout the lifetime of the store.\" -- and an Event can only relate an artifact and an execution that both already exist, so the order is type, then instance, then relationship. Nothing sourced here states a required call order beyond that dependency, and a conformance check should assert the dependency rather than a sequence.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-4-metadata-state-003",
+        "quote": "The Metadata Store provides APIs to record and retrieve metadata to and from the\nstorage backend. The storage backend is pluggable and can be extended. MLMD\nprovides reference implementations for SQLite (which supports in-memory and\ndisk) and MySQL out of the box."
+      },
+      {
+        "id": "X-refmodel-base-4-metadata-state-004",
+        "quote": "ArtifactType describes an artifact's type and its properties that are\nstored in the metadata store. You can register these types on-the-fly with\nthe metadata store in code, or you can load them in the store from a\nserialized format. Once you register a type, its definition is available\nthroughout the lifetime of the store."
+      }
+    ]
+  },
+  "domain": {
+    "text": "The value domain here is a set of entity kinds rather than a list of legal strings, and it is complete in the source. Three declared kinds and three instance kinds: \"ArtifactType describes an artifact's type and its properties that are\nstored in the metadata store. You can register these types on-the-fly with\nthe metadata store in code, or you can load them in the store from a\nserialized format. Once you register a type, its definition is available\nthroughout the lifetime of the store.\" with \"An Artifact describes a specific instance of an ArtifactType, and its\nproperties that are written to the metadata store.\"; \"An ExecutionType describes a type of component or step in a workflow, and\nits runtime parameters.\" with \"An Execution is a record of a component run or a step in an ML workflow\nand the runtime parameters. An execution can be thought of as an instance of\nan ExecutionType. Executions are recorded when you run an ML pipeline or\nstep.\"; and \"A ContextType describes a type of conceptual group of artifacts and\nexecutions in a workflow, and its structural properties. For example:\nprojects, pipeline runs, experiments, owners etc.\" with \"A Context is an instance of a ContextType. It captures the shared\ninformation within the group. For example: project name, changelist commit\nid, experiment annotations etc. It has a user-defined unique name within its\nContextType.\" Then three relationship kinds, and these are the ones that make the store a graph rather than three tables. The one that carries lineage states its own traversal: \"An Event is a record of the relationship between artifacts and executions.\nWhen an execution happens, events record every artifact that was used by the\nexecution, and every artifact that was produced. These records allow for\nlineage tracking throughout a workflow. By looking at all events, MLMD knows\nwhat executions happened and what artifacts were created as a result. MLMD\ncan then recurse back from any artifact to all of its upstream inputs.\" The other two attach things to groupings: \"An Attribution is a record of the relationship between artifacts and\ncontexts.\" and \"An Association is a record of the relationship between executions and\ncontexts.\" Two things follow that a builder would otherwise have to decide. Identity: the only caller-chosen name in the whole model is a context's, and it is unique within its type -- everything else is identified by the store. And permanence: a type definition cannot be withdrawn, because it is available for the lifetime of the store.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-4-metadata-state-004",
+        "quote": "ArtifactType describes an artifact's type and its properties that are\nstored in the metadata store. You can register these types on-the-fly with\nthe metadata store in code, or you can load them in the store from a\nserialized format. Once you register a type, its definition is available\nthroughout the lifetime of the store."
+      },
+      {
+        "id": "X-refmodel-base-4-metadata-state-005",
+        "quote": "An Artifact describes a specific instance of an ArtifactType, and its\nproperties that are written to the metadata store."
+      },
+      {
+        "id": "X-refmodel-base-4-metadata-state-006",
+        "quote": "An ExecutionType describes a type of component or step in a workflow, and\nits runtime parameters."
+      },
+      {
+        "id": "X-refmodel-base-4-metadata-state-007",
+        "quote": "An Execution is a record of a component run or a step in an ML workflow\nand the runtime parameters. An execution can be thought of as an instance of\nan ExecutionType. Executions are recorded when you run an ML pipeline or\nstep."
+      },
+      {
+        "id": "X-refmodel-base-4-metadata-state-009",
+        "quote": "A ContextType describes a type of conceptual group of artifacts and\nexecutions in a workflow, and its structural properties. For example:\nprojects, pipeline runs, experiments, owners etc."
+      },
+      {
+        "id": "X-refmodel-base-4-metadata-state-010",
+        "quote": "A Context is an instance of a ContextType. It captures the shared\ninformation within the group. For example: project name, changelist commit\nid, experiment annotations etc. It has a user-defined unique name within its\nContextType."
+      },
+      {
+        "id": "X-refmodel-base-4-metadata-state-008",
+        "quote": "An Event is a record of the relationship between artifacts and executions.\nWhen an execution happens, events record every artifact that was used by the\nexecution, and every artifact that was produced. These records allow for\nlineage tracking throughout a workflow. By looking at all events, MLMD knows\nwhat executions happened and what artifacts were created as a result. MLMD\ncan then recurse back from any artifact to all of its upstream inputs."
+      },
+      {
+        "id": "X-refmodel-base-4-metadata-state-011",
+        "quote": "An Attribution is a record of the relationship between artifacts and\ncontexts."
+      },
+      {
+        "id": "X-refmodel-base-4-metadata-state-012",
+        "quote": "An Association is a record of the relationship between executions and\ncontexts."
+      }
+    ]
+  },
+  "failures": {
+    "text": "Nothing sourced here describes a failure. Not what recording an instance of an undeclared type does, not what an Event naming an artifact that does not exist does, not what a duplicate context name within one ContextType does -- even though the source states that name is unique, which implies a collision is possible and says nothing about what happens. This is the same silence card 3.3 had, and it is the reason docs/reference/profile-sufficiency.md added this field. It is recorded as a silence rather than filled with an invented taxonomy, which is what examples/reference/README.md refuses. The one failure mode that is derivable rather than stated: because a type definition is permanent -- \"ArtifactType describes an artifact's type and its properties that are\nstored in the metadata store. You can register these types on-the-fly with\nthe metadata store in code, or you can load them in the store from a\nserialized format. Once you register a type, its definition is available\nthroughout the lifetime of the store.\" -- a wrong type declaration cannot be corrected, only superseded, so the failure is unrecoverable by construction rather than by omission. Proposed, and for the same reason as the other six cards: this repo has built no adapter at this card, so what a path that has never run must return is unanswerable from evidence.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-4-metadata-state-004",
+        "quote": "ArtifactType describes an artifact's type and its properties that are\nstored in the metadata store. You can register these types on-the-fly with\nthe metadata store in code, or you can load them in the store from a\nserialized format. Once you register a type, its definition is available\nthroughout the lifetime of the store."
+      }
+    ]
+  },
+  "vocabulary": {
+    "text": "One configurable word, and one that looks configurable and is not. The real one is the context name, and its step is grouping rather than recording: \"A Context is an instance of a ContextType. It captures the shared\ninformation within the group. For example: project name, changelist commit\nid, experiment annotations etc. It has a user-defined unique name within its\nContextType.\" A caller choosing that name decides how a later reader finds this run -- by experiment, by project, by owner -- and the source names those three as examples: \"A ContextType describes a type of conceptual group of artifacts and\nexecutions in a workflow, and its structural properties. For example:\nprojects, pipeline runs, experiments, owners etc.\" The one that is not the caller's is the type: a type may be declared on the fly or loaded from a serialized format, but either way \"ArtifactType describes an artifact's type and its properties that are\nstored in the metadata store. You can register these types on-the-fly with\nthe metadata store in code, or you can load them in the store from a\nserialized format. Once you register a type, its definition is available\nthroughout the lifetime of the store.\" -- so it is a platform-level decision made once, not a per-run knob, and a caller who could pass a new type would be permanently extending the store's schema. Proposed: this repo has built no adapter at this card, so no mapping from its own `intent:` / `profile:` vocabulary onto a context name has been chosen. Seventh card with that half proposed, and the last of the batch.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-4-metadata-state-010",
+        "quote": "A Context is an instance of a ContextType. It captures the shared\ninformation within the group. For example: project name, changelist commit\nid, experiment annotations etc. It has a user-defined unique name within its\nContextType."
+      },
+      {
+        "id": "X-refmodel-base-4-metadata-state-009",
+        "quote": "A ContextType describes a type of conceptual group of artifacts and\nexecutions in a workflow, and its structural properties. For example:\nprojects, pipeline runs, experiments, owners etc."
+      },
+      {
+        "id": "X-refmodel-base-4-metadata-state-004",
+        "quote": "ArtifactType describes an artifact's type and its properties that are\nstored in the metadata store. You can register these types on-the-fly with\nthe metadata store in code, or you can load them in the store from a\nserialized format. Once you register a type, its definition is available\nthroughout the lifetime of the store."
+      }
+    ]
+  },
+  "swap_axis": {
+    "text": "What a second implementation must differ on, and the scope instrument gives the decoy first again, as it did on card 6.3. The source declares the backend interchangeable -- \"The Metadata Store provides APIs to record and retrieve metadata to and from the\nstorage backend. The storage backend is pluggable and can be extended. MLMD\nprovides reference implementations for SQLite (which supports in-memory and\ndisk) and MySQL out of the box.\" -- so SQLite against MySQL is the intended, cheap substitution and therefore exactly what a swap test must not be satisfied by: same data model, same calls, a connection string apart. The real axis is in the same sentence as the type rule: \"ArtifactType describes an artifact's type and its properties that are\nstored in the metadata store. You can register these types on-the-fly with\nthe metadata store in code, or you can load them in the store from a\nserialized format. Once you register a type, its definition is available\nthroughout the lifetime of the store.\" Types may be registered on the fly, or loaded from a serialized format. Those are two genuinely different execution models, and the difference is caller-readable: under the serialized-schema model, recording an instance of a type nobody declared must fail, because the schema is closed at load time; under the on-the-fly model, the same call succeeds and silently extends the store's schema for its whole lifetime. A conformance check can read that off directly -- record an artifact of an undeclared type and see whether the store refuses or grows -- and the consequence differs too, because a type accepted on the fly is permanent. That is the same shape as card 3.3's warm-pool pair and card base.1's linked-worktree pair: a lifecycle difference the caller observes, not a label.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-4-metadata-state-003",
+        "quote": "The Metadata Store provides APIs to record and retrieve metadata to and from the\nstorage backend. The storage backend is pluggable and can be extended. MLMD\nprovides reference implementations for SQLite (which supports in-memory and\ndisk) and MySQL out of the box."
+      },
+      {
+        "id": "X-refmodel-base-4-metadata-state-004",
+        "quote": "ArtifactType describes an artifact's type and its properties that are\nstored in the metadata store. You can register these types on-the-fly with\nthe metadata store in code, or you can load them in the store from a\nserialized format. Once you register a type, its definition is available\nthroughout the lifetime of the store."
+      }
+    ]
+  },
+  "standards": [],
+  "tools": [
+    {
+      "name": "ML Metadata (MLMD)",
+      "kind": "open-source",
+      "note": "the implementation whose documented data model is this entire card's evidence base. Cited because it documents its model rather than only its API, which is what made the card profilable at all. Not in use here: this repo is stdlib-only and has built no adapter at this card.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "It states what it stores and where: \"MLMD registers the following types of metadata in a database called the\nMetadata Store.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-base-4-metadata-state-001",
+            "quote": "MLMD registers the following types of metadata in a database called the\nMetadata Store."
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The honest landscape for this card is that it was not surveyed, and saying so is more useful than a synthesis built from one source. What can be said from the evidence is the shape every option in this space shares and the axis they differ on. The shape: a typed entity model with artifacts, runs and groupings, plus relationship records that make the whole thing traversable -- \"An Event is a record of the relationship between artifacts and executions.\nWhen an execution happens, events record every artifact that was used by the\nexecution, and every artifact that was produced. These records allow for\nlineage tracking throughout a workflow. By looking at all events, MLMD knows\nwhat executions happened and what artifacts were created as a result. MLMD\ncan then recurse back from any artifact to all of its upstream inputs.\" That traversal is the feature; a store that records the same rows without it answers none of the questions this card exists for. The axis is not the backend, which is declared interchangeable -- \"The Metadata Store provides APIs to record and retrieve metadata to and from the\nstorage backend. The storage backend is pluggable and can be extended. MLMD\nprovides reference implementations for SQLite (which supports in-memory and\ndisk) and MySQL out of the box.\" -- but whether the schema is closed before writing or grown while writing: \"ArtifactType describes an artifact's type and its properties that are\nstored in the metadata store. You can register these types on-the-fly with\nthe metadata store in code, or you can load them in the store from a\nserialized format. Once you register a type, its definition is available\nthroughout the lifetime of the store.\" A platform that lets runs declare their own types gets extensibility and an unremovable schema; one that loads types up front gets refusals it can act on. That is a real tradeoff and it is the one `swap_axis` above rests on. Everything else -- which catalog, which vendor -- is uncited here; see gaps.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-4-metadata-state-008",
+        "quote": "An Event is a record of the relationship between artifacts and executions.\nWhen an execution happens, events record every artifact that was used by the\nexecution, and every artifact that was produced. These records allow for\nlineage tracking throughout a workflow. By looking at all events, MLMD knows\nwhat executions happened and what artifacts were created as a result. MLMD\ncan then recurse back from any artifact to all of its upstream inputs."
+      },
+      {
+        "id": "X-refmodel-base-4-metadata-state-003",
+        "quote": "The Metadata Store provides APIs to record and retrieve metadata to and from the\nstorage backend. The storage backend is pluggable and can be extended. MLMD\nprovides reference implementations for SQLite (which supports in-memory and\ndisk) and MySQL out of the box."
+      },
+      {
+        "id": "X-refmodel-base-4-metadata-state-004",
+        "quote": "ArtifactType describes an artifact's type and its properties that are\nstored in the metadata store. You can register these types on-the-fly with\nthe metadata store in code, or you can load them in the store from a\nserialized format. Once you register a type, its definition is available\nthroughout the lifetime of the store."
+      }
+    ]
+  },
+  "usage": {
+    "text": "A caller at this card records nothing and queries nothing. It declares work; the platform writes what happened, because the ledger is on the explicit list of things this repo's planning layer decides so the caller does not -- a caller writes an intent and at most one word of profile rather than deciding \"decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger\". The shape worth asserting in an example built from this card is the traversal rather than the write: that from a stored output alone, the run that produced it, the parameters it ran under, and the grouping it belonged to are all recoverable afterwards -- which is the property \"An Event is a record of the relationship between artifacts and executions.\nWhen an execution happens, events record every artifact that was used by the\nexecution, and every artifact that was produced. These records allow for\nlineage tracking throughout a workflow. By looking at all events, MLMD knows\nwhat executions happened and what artifacts were created as a result. MLMD\ncan then recurse back from any artifact to all of its upstream inputs.\" describes and the only one that distinguishes this card from a log file.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "REF-3-02",
+        "quote": "decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger"
+      },
+      {
+        "id": "X-refmodel-base-4-metadata-state-008",
+        "quote": "An Event is a record of the relationship between artifacts and executions.\nWhen an execution happens, events record every artifact that was used by the\nexecution, and every artifact that was produced. These records allow for\nlineage tracking throughout a workflow. By looking at all events, MLMD knows\nwhat executions happened and what artifacts were created as a result. MLMD\ncan then recurse back from any artifact to all of its upstream inputs."
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "This is the thinnest evidence base of the seven cards profiled in this batch, and the thinness is in the pool rather than in the effort. `python3 tools/index_sources.py base.4` returns two `core` rows and both are OpenLineage pages - the standard card 6.3 already cites - while the `primary` rows are vendor ML-metadata and data-catalog products. So the whole card is sourced from one implementation's documentation, and `standards` is empty because no standard governs this space.",
+      "why_it_matters": "Every behavioural claim here is a claim about one product's current documented model. It is the same risk base.1 carries, without base.1's mitigation that the product in question is a de facto monoculture. A reader should treat this card as one worked example of the shape rather than as the shape.",
+      "research_query": "survey at least two more metadata stores - OpenMetadata and DataHub are both in this card's pool - and establish whether the typed artifact/execution/context model is common or particular to MLMD"
+    },
+    {
+      "what": "The 'catalog' half of the card's own subtitle is uncited. Nothing here says what a catalog is, how a thing is registered in one, how it is discovered, or whether the catalog is the same store as the run history or a different one. The pool's catalog rows - OpenMetadata, DataHub, Dataplex, Denodo - were not captured.",
+      "why_it_matters": "Discovery is a different problem from recording, and a card that covers only recording will produce an example that writes correct metadata nobody can find. The context grouping quoted in `vocabulary` is the nearest thing to discovery in this evidence, and it is a grouping rather than a search.",
+      "research_query": "capture OpenMetadata or DataHub documentation for how an artifact is registered in and discovered through a catalog, and decide whether catalog belongs on base.4 or is its own card"
+    },
+    {
+      "what": "`failures` is a genuine silence, not a partial one. Nothing sourced states what happens on an undeclared type, a dangling relationship, or a context name collision - and the source itself establishes that the last of those is possible by stating the name is unique within its type.",
+      "why_it_matters": "This card sits under the graph and the ledger, so its failure behaviour is what a platform's durability story rests on. An example built from this profile would have to invent the error taxonomy, which is the licence examples/reference/README.md refuses - so the example would stop at the happy path and the card would not catch that.",
+      "research_query": "source the MLMD API reference or proto definitions for error returns on put_artifacts with an unregistered type and on a duplicate context name"
+    },
+    {
+      "what": "This card overlaps card 6.3 Lineage and this repo's own State seam, and the boundaries are the model's rather than the evidence's. The source's own scope includes lineage; card 6.3 is lineage. Meanwhile the platform-internal answer to 'where does state live' is seam-state's append-only log with graph and ledger as two projections, which is this repo's design and is not cited here because it is not what this card was asked to survey.",
+      "why_it_matters": "Third card in this batch whose boundary is bucketing rather than a seam - after rail.1 and base.1. For this one the consequence is concrete: an example built from base.4 and one built from 6.3 would both implement the artifact-run-relationship graph, and nothing in either profile says which owns it.",
+      "research_query": "none - a reference-model decision for the owner: what distinguishes base.4 Metadata & State from 6.3 Lineage, and how either relates to seam-state"
+    },
+    {
+      "what": "No adapter has been built at this card, so `vocabulary`'s platform-mapping half and `failures`' never-run half are proposed.",
+      "why_it_matters": "Seventh and final card of the batch with the same two proposed halves, across four different kinds of card - boundary, protocol entry point, practice-shaped rail, and shared service. The pattern is complete: neither half is closable by profiling.",
+      "research_query": "does any harness or example in this repo record a run's parameters and outputs as queryable state, or is seam-state the nearest built thing"
+    }
+  ]
+}

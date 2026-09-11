@@ -1,0 +1,127 @@
+{
+  "ceremony": 12,
+  "section": "79-reference-example",
+  "reviewer": "opus-5 (author self-review of STATUS row 79), carrying independent findings from the isolated reviewer who wrote docs/night/hidden/3-core-agent.sh and never saw the visible gate, the README, cards.json or the sufficiency note",
+  "date": "2026-09-11",
+  "numbering_note": "python3 tools/ceremony_next.py read 12 off disk before this record was written. Paired with kb/ceremonies/ceremony-12-improve-79-reference-example.json.",
+  "scope": "examples/reference/3-core-agent/ built from docs/reference/cards/3-3.json alone, and docs/reference/profile-sufficiency.md, the R7 deliverable. Row 79, condition R7, bridge.md section 6 step 2.",
+  "independence_note": "Five of the twelve sufficiency findings and one of the two code defects below came from the isolated reviewer, not from the author. The author's own eighteen visible checks passed over C12-001 entirely.",
+  "findings": [
+    {
+      "id": "C12-001",
+      "location": "examples/reference/3-core-agent/interface.py RuntimeSandbox.unpack; Unit.profile",
+      "severity": "fix",
+      "category": "correctness",
+      "finding": "The caller's one configurable word could never reach the step it configures. `unpack` took only an image, and `profile` lived on `Unit`, which reaches `run` -- but the bundle is chosen in `unpack`. So `Unit.profile` was declared, documented and structurally dead.",
+      "evidence": "docs/night/hidden/3-core-agent.sh h-10, first run: `hidden passed 9, failed 1`. Card 3.3's usage section grants the caller one word of `profile:` for when the default bundle picked for it is wrong (REF-3-02).",
+      "found_by": "isolated hidden-check reviewer",
+      "suggested_change": "Give `profile` a path to bundle selection, or delete the field. Do not weaken the assertion."
+    },
+    {
+      "id": "C12-002",
+      "location": "examples/reference/3-core-agent/adapters/second.py",
+      "severity": "fix",
+      "category": "citation",
+      "finding": "The adapter's code contradicted the sentence it cites. Its README and cards.json claim a template prepared once and claimed per unit, citing X-refmodel-3-3-environment-006; the pool was in fact populated inside `run()`, so nothing was ready before the first unit asked.",
+      "evidence": "X-refmodel-3-3-environment-006: \"The SandboxTemplate describes the pod the warm pool keeps ready\". The original `run()` carried `self._pool.add(bundle.digest)`.",
+      "found_by": "author, prompted by advisor review",
+      "suggested_change": "Move the pool insert into `unpack`, or reword the claim. The citation is right; the code was wrong."
+    },
+    {
+      "id": "C12-003",
+      "location": "examples/reference/3-core-agent/adapters/dryrun.py, interface.py Inspection",
+      "severity": "fix",
+      "category": "completeness",
+      "finding": "The lifecycle was written as dead stores: `creating` and `created` were assigned and overwritten before anything could observe them, so two of the four status values were unreachable through `inspect` and the conformance check only ever saw `running` and `stopped`. Half the status domain was decoration.",
+      "evidence": "Original `run()`: three successive assignments to `self._state[handle]`, only the last observable.",
+      "found_by": "author, prompted by advisor review",
+      "suggested_change": "Make the lifecycle observable or drop the intermediate states. A status domain no adapter can reach is not a domain."
+    },
+    {
+      "id": "C12-004",
+      "location": "docs/reference/profile-sufficiency.md",
+      "severity": "fix",
+      "category": "correctness",
+      "finding": "The deliverable's own structure silently corrupted itself. Findings 3 to 7 were appended under `## Not the profile's job` rather than `## Findings`, and three entries intended for that section were dropped entirely by a string replacement that matched nothing and reported success.",
+      "evidence": "Caught by reading the file back, not by any check. The note is written incrementally during the build by design, which is exactly what made it vulnerable.",
+      "found_by": "author, on read-back",
+      "suggested_change": "Restore the structure and the dropped entries, and record the incident in the note itself -- a note written incrementally needs the same read-back as the build."
+    },
+    {
+      "id": "C12-005",
+      "location": "examples/reference/3-core-agent/cards.json",
+      "severity": "fix",
+      "category": "evidence",
+      "finding": "A green gate that checked nothing. The first run of `prose_gate.py --corpus examples/reference/3-core-agent` reported `0 of 0 prose spans` and exited zero: the claims embedded their source sentences as running prose with no quotation marks, so the gate's quote pattern matched nothing at all.",
+      "evidence": "First run: `0 of 0 prose spans need a human`. After quotation marks were added: `quote spans in prose: 6 - 6 exact`.",
+      "found_by": "author",
+      "suggested_change": "Mark quoted spans as quotes so the gate can check them, and treat a zero-span green from this tool as unverified rather than clean."
+    },
+    {
+      "id": "C12-006",
+      "location": "tools/prose_gate.py report()",
+      "severity": "nit",
+      "category": "correctness",
+      "finding": "`prose_gate.py --corpus <dir>` checks the directory it was given and then prints `corpus: docs/reference/cards only`. The check is right and the line under it is false -- the exact shape of defect this gate exists to catch, in the gate itself.",
+      "evidence": "Run against examples/reference/3-core-agent: six spans checked, footer names a corpus it did not read.",
+      "found_by": "author",
+      "suggested_change": "Print the corpus actually checked. Belongs to the prose gate's own row, not to row 79."
+    },
+    {
+      "id": "C12-007",
+      "location": "tools/stamp_verification.py cited_quotes()",
+      "severity": "fix",
+      "category": "evidence",
+      "finding": "The anti-fabrication chain terminates at the card corpus. `cited_quotes()` walks `docs/reference/cards/` only, so a quote an example needs but no card profile cites can never be stamped. Measured on this build: of eleven quotes needed, seven were stamped and four -- verbatim in the same records -- were not.",
+      "evidence": "cited_quotes() docstring: \"id -> the set of quotes card profiles actually draw from that record.\"",
+      "found_by": "author",
+      "suggested_change": "Let cited_quotes() take a second corpus, so an example's citations are stamped by the same pass. Until then 'write the example from the profile' is also a limit on what an example may say."
+    },
+    {
+      "id": "C12-008",
+      "location": "docs/reference/cards/3-3.json",
+      "severity": "fix",
+      "category": "completeness",
+      "finding": "Ten of twelve questions needed to build an example from this profile could not be answered from it, and an eleventh only from prose no gate checks. The silences are of one kind: the card says what a boundary IS and cites a standard for it, and never what it DOES -- verbs, their order, value domains, failures, and where the caller's one knob applies.",
+      "evidence": "docs/reference/profile-sufficiency.md, twelve typed findings: 1 answered, 1 derivable, 9 silent, 1 contradicts.",
+      "found_by": "author and isolated reviewer independently",
+      "suggested_change": "Add `operations`, `domain`, `failures`, `swap_axis` and `vocabulary` to the card schema before the eight unprofiled cards are authored. One card of forty is the denominator; two of the five may be specific to a card that wraps a standard."
+    },
+    {
+      "id": "C12-009",
+      "location": "examples/reference/3-core-agent/adapters/live.py",
+      "severity": "nit",
+      "category": "consistency",
+      "finding": "`load(\"live\").isolation` is readable as a plain class attribute without triggering a refusal, though every method raises and the contract otherwise routes isolation through `Inspection`.",
+      "evidence": "Reported by the isolated reviewer as deliberately un-failed: minor, and not worth a failing assertion.",
+      "found_by": "isolated hidden-check reviewer",
+      "suggested_change": "Leave it, or make the attribute unreachable. Decide explicitly rather than by omission."
+    },
+    {
+      "id": "C12-010",
+      "location": "examples/reference/3-core-agent/call.py, adapters/second.py",
+      "severity": "nit",
+      "category": "design",
+      "finding": "Priming the warm pool in `unpack` conflates preparing a bundle with pre-warming a running instance, and erases the 'first claim pays the create, later claims reuse' moment. The caller's repeated units now return identically warm, so repetition demonstrates nothing within one adapter.",
+      "evidence": "Isolated reviewer's design commentary. Both readings fit the one cited SandboxTemplate sentence; the card does not decide between them.",
+      "found_by": "isolated hidden-check reviewer",
+      "suggested_change": "Either restore the lazy warm-up or record that the card does not decide it. Do not present one reading as sourced."
+    }
+  ],
+  "metrics": {
+    "area_built": 1,
+    "cards_demonstrated": 1,
+    "cards_recorded_as_gaps": 4,
+    "visible_checks": 18,
+    "hidden_checks": 10,
+    "visible_green": "passed 18, failed 0",
+    "hidden_green": "hidden passed 10, failed 0",
+    "deliberate_breakage_visible": "passed 16, failed 2",
+    "deliberate_breakage_hidden": "hidden passed 9, failed 1",
+    "sufficiency_findings": 12,
+    "sufficiency_findings_from_isolated_reviewer": 5,
+    "code_defects_missed_by_author_gate": 1,
+    "prose_spans_checked": 6,
+    "prose_spans_needing_a_human": 0
+  }
+}

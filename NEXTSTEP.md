@@ -17,8 +17,8 @@ real time. **Step 6 happens only once `ready_to_build.py` exits 0.** Building be
 | step | what | closes | state |
 |---|---|---|---|
 | 1 | Build the prose gate | R4 | **DONE** 2026-09-10, `tools/prose_gate.py`, row 87 |
-| 2 | Attempt ONE example from ONE profile | R7 | **NEXT** |
-| 3 | Profile the 8 unprofiled cards | R1 | open |
+| 2 | Attempt ONE example from ONE profile | R7 | **DONE** 2026-09-10, `examples/reference/3-core-agent/`, row 79 |
+| 3 | Profile the 8 unprofiled cards | R1 | **NEXT** |
 | 4 | Re-point or retire the archived-facing artifacts | R5 | open |
 | 5 | Clear the residue | R2 · R3 | open |
 | 6 | Build the remaining areas | — | blocked until the eight hold |
@@ -26,7 +26,7 @@ real time. **Step 6 happens only once `ready_to_build.py` exits 0.** Building be
 Steps 1 and 2 were independent and could run together. Step 3 is the one worth agents; 4 and 5
 are small. Nothing before step 6 is fanned out to nine areas.
 
-## Definition of ready — 3 of 8 met
+## Definition of ready — 4 of 8 met
 
 | # | state | condition | measured now |
 |---|---|---|---|
@@ -36,18 +36,19 @@ are small. Nothing before step 6 is fanned out to nine areas.
 | R4 | MET | prose carries no unsourced quote or figure | gate exit 0 |
 | R5 | open | card->example map points at the areas we will build | map names ['ask', 'done', 'improve', 'progress']...; planned ['1-invocation', '2-orchestration', '3-core-agent', '4-execution'] |
 | R6 | MET | the model's purpose is decided (owner) | An industry-aligned reference architecture for an agentic pl |
-| R7 | open | one example built from a profile, gaps written down | 0 area(s) built; sufficiency note missing |
+| R7 | MET | one example built from a profile, gaps written down | 1 area(s) built; sufficiency note present |
 | R8 | MET | internal-heavy cards labelled | A card whose citations are majority internal (F/T/REF/A) is  |
 
-## Step 2, the one in flight
+## Step 2, the result
 
-Build one area under `examples/reference/` from a card profile, and write **every question the
-profile could not answer** into `docs/reference/profile-sufficiency.md`. If it answers
-everything, "the card profile is the spec" holds and R7 closes — a real finding either way.
-Do it before step 3, or eight more profiles get authored against a spec nobody has tested.
+Done. `examples/reference/3-core-agent/` was built from `docs/reference/cards/3-3.json` alone —
+one card of the area's five, because the experiment asks whether *a* profile is a sufficient spec
+and four more of the same would not have changed the answer. `bash examples/reference/3-core-agent/test.sh`
+→ `passed 15, failed 0`; run red first with a deliberate breakage → `passed 13, failed 2`.
 
-Order note: bridge.md puts step 2 before step 4 on purpose — R7 is the only condition whose
-failure is informative, so it is attempted early *even while the others are open*.
+**The finding is `docs/reference/profile-sufficiency.md`, and the answer is no.** The profile is
+not the whole spec. Read it before step 3 — it names what the eight new profiles should carry that
+the existing thirty-two do not, which is the entire reason step 2 was ordered first.
 
 ## What each later step already has
 

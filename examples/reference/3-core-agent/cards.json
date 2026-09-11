@@ -1,0 +1,109 @@
+{
+  "address": "3.3",
+  "area": "3-core-agent",
+  "title": "Core Agent",
+  "note": "What this area claims, and what it does not. Read with docs/reference/cards/3-3.json, which is the specification this was built from, and docs/reference/profile-sufficiency.md, which records where that specification ran out.",
+  "demonstrates": [
+    "3.3"
+  ],
+  "not_demonstrated": [
+    {
+      "address": "3.1",
+      "card": "Harness",
+      "why": "no example here; this area was built as the single-profile experiment for row 79, from 3-3.json alone. A profile exists and is unused."
+    },
+    {
+      "address": "3.2",
+      "card": "Model Interface",
+      "why": "no example here; same reason. cap-model-access and its harness already cover the contract."
+    },
+    {
+      "address": "3.4",
+      "card": "Workspace",
+      "why": "no example here; same reason."
+    },
+    {
+      "address": "3.5",
+      "card": "Tool Interface",
+      "why": "no example here; same reason. cap-tool-access and its harness already cover the contract."
+    }
+  ],
+  "claims": [
+    {
+      "what": "why the card exists",
+      "text": "The boundary this card names is a requirement of the target architecture, and it is checked against a named standard rather than asserted: \"a unit of work runs isolated, per the OCI Runtime Spec\".",
+      "origin": "sourced",
+      "evidence": [
+        {
+          "id": "F-b3-18",
+          "quote": "a unit of work runs isolated, per the OCI Runtime Spec"
+        }
+      ]
+    },
+    {
+      "what": "the lifecycle the interface implements",
+      "text": "interface.py takes its shape from the lifecycle the standard describes, image to bundle to run, rather than from an invented one: \"At a high-level an OCI implementation would download an OCI Image then unpack that image into an OCI Runtime filesystem bundle. At this point the OCI Runtime Bundle would be run by an OCI Runtime.\"",
+      "origin": "sourced",
+      "evidence": [
+        {
+          "id": "X-refmodel-3-3-environment-011",
+          "quote": "At a high-level an OCI implementation would download an OCI Image then unpack that image into an OCI Runtime filesystem bundle. At this point the OCI Runtime Bundle would be run by an OCI Runtime."
+        }
+      ]
+    },
+    {
+      "what": "why inspect returns a status at all",
+      "text": "The one thing a caller may ask of a running sandbox is its state, and the standard makes that field mandatory: \"status (string, REQUIRED) is the runtime state of the container.\"",
+      "origin": "sourced",
+      "evidence": [
+        {
+          "id": "X-maturity-c-010",
+          "quote": "status (string, REQUIRED) is the runtime state of the container."
+        }
+      ]
+    },
+    {
+      "what": "the values STATUS_VALUES holds",
+      "text": "The four values the interface accepts are \"creating\", \"created\", \"running\" and \"stopped\". They are verbatim in the same record the claim above cites, and they carry no verification stamp, because stamp_verification.py stamps the quotes card profiles cite and no card cites the enumeration. Marked proposed for that reason alone, not because the source is in doubt. See finding one in docs/reference/profile-sufficiency.md. All four are reachable: the interface carries the trace of every state a handle has held, because a status field alone cannot show that a cold create passed through a state a warm claim skipped.",
+      "origin": "proposed"
+    },
+    {
+      "what": "why no method takes an isolation setting",
+      "text": "The caller does not configure the boundary. This repo's own planning layer exists to remove exactly that decision from the caller, listing it among the things smart-defaulted for them: \"decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger\". What the caller does keep is that one word: `unpack` takes a `profile`, so the bundle chosen for a unit can differ when the platform's default is wrong for it.",
+      "origin": "sourced",
+      "evidence": [
+        {
+          "id": "REF-3-02",
+          "quote": "decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger"
+        }
+      ]
+    },
+    {
+      "what": "what the live adapter would be",
+      "text": "The live adapter names the mechanism this repo uses today, which is not a container: \"Firecracker microVM — hardware virtualisation, not a container\".",
+      "origin": "sourced",
+      "evidence": [
+        {
+          "id": "F-a3-01",
+          "quote": "Firecracker microVM — hardware virtualisation, not a container"
+        }
+      ]
+    },
+    {
+      "what": "why the second adapter is a warm pool",
+      "text": "The second adapter is a different execution model rather than a second implementation of the same one, and it is not invented here: a live project already separates a template kept ready from the per-run claim against it, which is why `unpack` here prepares the template and `run` only claims against it: \"The SandboxTemplate describes the pod the warm pool keeps ready\".",
+      "origin": "sourced",
+      "evidence": [
+        {
+          "id": "X-refmodel-3-3-environment-006",
+          "quote": "The SandboxTemplate describes the pod the warm pool keeps ready"
+        }
+      ]
+    },
+    {
+      "what": "why the live adapter raises instead of returning",
+      "text": "Every method of the live adapter refuses, because no harness in this repo has run its live adapter against a real host from a session. A stub returning a plausible stopped would make a claimed path indistinguishable from a measured one, which is the distinction the whole evidence chain here exists to keep. Proposed: the refusal is this area's design choice, not something the card states.",
+      "origin": "proposed"
+    }
+  ]
+}

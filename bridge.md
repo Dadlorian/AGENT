@@ -259,7 +259,7 @@ unproven structure and then archived.
 | R4 | Prose carries no unsourced quote or figure | `tools/prose_gate.py` exits 0 | tool does not exist |
 | R5 | Card→example map names the areas we will build | map vs `build-principles.json` | map names the archived seven |
 | R6 | The model's purpose is decided | `build-principles.json.model_purpose` | **met** |
-| R7 | One example built from a profile, gaps written down | an area under `examples/reference/` + `profile-sufficiency.md` | none |
+| R7 | One example built from a profile, gaps written down | an area under `examples/reference/` + `profile-sufficiency.md` | **met** 2026-09-10 |
 | R8 | Internal-heavy cards labelled | `build-principles.json.internal_share_policy` | **met** |
 
 **2 of 8 met** as of 2026-09-10 evening (R6 and R8 closed by `build-principles.json`). Re-run the command; do not trust this line.
@@ -270,7 +270,10 @@ Two of the eight are deliberately not machine-decidable:
   of *this platform*? 31.7% of citations are this repo citing its own documents, so today it is both,
   and the answer changes which cards can carry an example at all. Ask; do not infer.
 - **R7 is empirical, and it is the one that matters.** "The card profile is the spec" has never been
-  tested. It may well hold — nobody has pulled the data to find out. The test is to build exactly one
+  tested. *Closed 2026-09-10: it was tested, and it does not hold as written. The profile is a sound
+  evidence base and an incomplete specification — four of seven questions building
+  `examples/reference/3-core-agent/` from `3-3.json` needed a decision it could not supply. See
+  `docs/reference/profile-sufficiency.md`, which names what the eight new profiles should carry.* It may well hold — nobody has pulled the data to find out. The test is to build exactly one
   area from a profile and write down what the profile failed to tell you. If the answer is "nothing",
   R7 closes and the spec holds. If not, the missing pieces are named rather than guessed at.
 
@@ -288,7 +291,7 @@ decisions are recorded in `build-principles.json` and must not be reopened.
 | # | Step | Why this order | Closes |
 |---|---|---|---|
 | 1 | **Build the prose gate** | The last hole. Nothing reads `text`/`role`/`covers`/`note`/`gaps`, so a fabricated figure with no quote attached passes every check — that is how "$47,000 / 264-hour", "28.7x-35.2x" and a Firecracker "5-30ms" survived, each caught by hand. Close it BEFORE mass-authoring or all 8 new cards inherit the class. | R4 |
-| 2 | **Attempt ONE example from ONE profile** | The only step whose failure is informative. Write every question the profile could not answer into `docs/reference/profile-sufficiency.md`. If it answers everything, the profile IS the spec — a real finding. Can run alongside step 1. | R7 |
+| 2 | **Attempt ONE example from ONE profile** | The only step whose failure is informative. Write every question the profile could not answer into `docs/reference/profile-sufficiency.md`. If it answers everything, the profile IS the spec — a real finding. Can run alongside step 1. | R7 **DONE** — it does not answer everything; see `docs/reference/profile-sufficiency.md` |
 | 3 | **Profile the 8 unprofiled cards from the source pool** | Now unblocked: `python3 tools/index_sources.py <card>` gives ordered `core`/`primary` candidates per card. All 8 are marked `built` and every `built` card profiled so far produced a contradiction — expect the same. Capture-first: no citation to a record that was never fetched. | R1 |
 | 4 | **Re-point or retire the five archived-facing artifacts** | `card-example-map.json` maps all 40 cards to the ARCHIVED seven while `build-principles.json` names nine, and `check_card_example_map.py` passes on the dead one. A build session following that map builds toward deleted work. | R5 |
 | 5 | **Clear the residue** | 4 quotes needing a reader; 23 debt entries with no `owner_decision` — most can be re-sourced from the pool rather than decided, since 16 are blog-tier "quote not found" and the same question usually has a `core` candidate. | R2 · R3 |

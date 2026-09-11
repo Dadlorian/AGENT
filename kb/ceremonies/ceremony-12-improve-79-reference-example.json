@@ -1,0 +1,90 @@
+{
+  "ceremony": 12,
+  "section": "79-reference-example",
+  "improver": "opus-5",
+  "date": "2026-09-11",
+  "numbering_note": "Paired with kb/ceremonies/ceremony-12-review-79-reference-example.json. Every finding in that record appears exactly once below.",
+  "applied": [
+    {
+      "finding": "C12-001",
+      "change": "`unpack` now takes `profile` and `Bundle` carries the profile it was resolved for, so the caller's one configurable word reaches the step that selects a bundle. `call.py` resolves one bundle per profile and runs a third unit under a non-default one. `conformance.py` gained an assertion that two profiles must not return the same bundle -- so the defect cannot come back silently. The interface was changed rather than the assertion weakened: the hidden check was right.",
+      "files": [
+        "examples/reference/3-core-agent/interface.py",
+        "examples/reference/3-core-agent/adapters/dryrun.py",
+        "examples/reference/3-core-agent/adapters/second.py",
+        "examples/reference/3-core-agent/adapters/live.py",
+        "examples/reference/3-core-agent/call.py",
+        "examples/reference/3-core-agent/conformance.py"
+      ]
+    },
+    {
+      "finding": "C12-002",
+      "change": "Moved the warm-pool insert from `run()` into `unpack()`, so the template really is prepared before any unit claims against it and the code matches the sentence it cites. The observable consequence is now the swap itself: a claim against a ready pool never passes through `creating`, a cold create always does.",
+      "files": [
+        "examples/reference/3-core-agent/adapters/second.py",
+        "examples/reference/3-core-agent/cards.json",
+        "examples/reference/3-core-agent/README.md"
+      ]
+    },
+    {
+      "finding": "C12-003",
+      "change": "Added `Inspection.trace`: every status a handle has held, in order. `status` is now always the end of the trace. All four values in the domain are reachable, the conformance check asserts the trace is in lifecycle order, and the visible gate asserts a warm claim skips `creating` while a cold create does not -- which turned the adapter pair from two labels into two observable lifecycles.",
+      "files": [
+        "examples/reference/3-core-agent/interface.py",
+        "examples/reference/3-core-agent/adapters/dryrun.py",
+        "examples/reference/3-core-agent/adapters/second.py",
+        "examples/reference/3-core-agent/adapters/_broken_on_purpose.py",
+        "examples/reference/3-core-agent/conformance.py",
+        "examples/reference/3-core-agent/test.sh"
+      ]
+    },
+    {
+      "finding": "C12-004",
+      "change": "Restored the note's structure -- findings 3 to 7 moved back under `## Findings` -- and restored the three dropped entries under `## Not the profile's job`. The incident itself is now the fourth entry in that section, because a note written incrementally during a build is exactly the artifact that needs reading back.",
+      "files": ["docs/reference/profile-sufficiency.md"]
+    },
+    {
+      "finding": "C12-005",
+      "change": "Marked the quoted source sentences in cards.json as quotes. The same gate run then reported `quote spans in prose: 6 - 6 exact` instead of `0 of 0`. Recorded in the note as a standing warning: a green from this tool can mean it read nothing.",
+      "files": [
+        "examples/reference/3-core-agent/cards.json",
+        "docs/reference/profile-sufficiency.md"
+      ]
+    },
+    {
+      "finding": "C12-008",
+      "change": "This is the row's deliverable, not a code change. Twelve typed findings written to docs/reference/profile-sufficiency.md as they were hit, with the verdict, the denominator (one card of forty, two readers, a boundary card) and five named schema additions -- `operations`, `domain`, `failures`, `swap_axis`, `vocabulary` -- as step 3 input. R7 now measures met; NEXTSTEP.md, bridge.md and STATUS.md row 79 record it in the same commit.",
+      "files": [
+        "docs/reference/profile-sufficiency.md",
+        "NEXTSTEP.md",
+        "bridge.md",
+        "STATUS.md"
+      ]
+    },
+    {
+      "finding": "C12-010",
+      "change": "Not resolved by changing the code, but by refusing to present one reading as sourced. Recorded as finding 11 in the note: both eager and lazy warming fit the single SandboxTemplate sentence, this area chose ready-ahead-of-demand because that is what the sentence says most plainly, and a different author would have built the other one and cited the same source. The reviewer's `warm` semantics observation is carried verbatim into the finding.",
+      "files": ["docs/reference/profile-sufficiency.md"]
+    }
+  ],
+  "declined": [
+    {
+      "finding": "C12-006",
+      "why": "Belongs to the prose gate's own row, not to row 79. Fixing another tool's reporting inside an example-building phase is how a phase stops being reviewable. Recorded in the note under `Not the profile's job` so the next session finds it with its evidence attached rather than rediscovering it.",
+      "files": ["docs/reference/profile-sufficiency.md"]
+    },
+    {
+      "finding": "C12-007",
+      "why": "A change to tools/stamp_verification.py is beyond this row and would alter the verification chain every card depends on -- not something to do inside a phase whose subject is one example. Recorded as finding 2 and named in the step 3 input with the specific change: let cited_quotes() take a second corpus. Until then the limit is stated in the area's own README rather than worked around.",
+      "files": [
+        "docs/reference/profile-sufficiency.md",
+        "examples/reference/3-core-agent/README.md"
+      ]
+    },
+    {
+      "finding": "C12-009",
+      "why": "Declined deliberately rather than by omission, which is what the reviewer asked for. `live.isolation` is a class attribute naming what the adapter would assert; reading it returns a description, never a result, and every method that could produce a result refuses. Making the attribute itself raise would buy nothing and would break the signature parity check that proves the three adapters are callable identically.",
+      "files": []
+    }
+  ]
+}

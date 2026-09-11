@@ -1,7 +1,7 @@
 # Reference examples
 
-Empty by design. This is the clean break from `examples/archived/`, and the structure below is
-derived rather than invented: it is `docs/reference/reference-model.json`, which is itself derived
+One area built, eight to go. This is the clean break from `examples/archived/`, and the structure
+below is derived rather than invented: it is `docs/reference/reference-model.json`, which is itself derived
 from the owner's design in `ref_arch/Reference Model.dc.html`.
 
 An example's boundary matches a seam in the architecture, not a stage in a story. That is the whole
@@ -33,20 +33,31 @@ them.
 
 ## What an area must contain
 
-Each area demonstrates the cards it holds. The specification already exists: the card profile under
+Each area demonstrates the cards it holds. The card profile under
 `docs/reference/cards/<address>.json` carries that card's definition, its standards, the real tools
-that fill it, how a caller uses it, and the gaps it cannot yet demonstrate. **Write the example from
-the profile.** 27 of 40 cards have one; the remaining 13 need profiling first.
+that fill it, how a caller uses it, and the gaps it cannot yet demonstrate. **Write the example
+from the profile** — and know, before you start, how far that will actually get you.
+
+> **Tested once, on 2026-09-11.** `3-core-agent/` was built from `3-3.json` alone to find out.
+> Twelve questions came up; **ten could not be answered from the profile**, and an eleventh only
+> from prose no gate checks. The profile is a sound evidence base and an incomplete specification:
+> it says what a boundary *is* and cites a standard for it, and not what the boundary *does* — its
+> verbs, their order, its value domains, its failures, or where the caller's one knob applies.
+> `docs/reference/profile-sufficiency.md` has all twelve and the five fields that would close them.
 
 Do not invent what a card means here. If the profile does not say it, either the profile is
-incomplete or the claim is not sourced — both are answers, neither is licence to write prose.
+incomplete or the claim is not sourced — both are answers, neither is licence to write prose. Write
+the gap down instead: that file is where it goes, and it is how the profile schema gets fixed
+rather than worked around.
 
 ## Rules carried over
 
 These are not new, and the archived areas got them right:
 
 - A **visible check** the author can run (`test.sh`), and a **hidden check** written by someone who
-  never saw the example. A gate the author can tune is not the same evidence as one they cannot.
+  never saw the example. A gate the author can tune is not the same evidence as one they cannot —
+  and on the first area this was not a formality: eighteen author-written checks passed over a
+  defect that the hidden check caught on its first run. Budget for the second reviewer.
 - Dependency-free Python 3 and bash. No network.
 - Dry-run adapters whose **call shape is identical to live**.
 

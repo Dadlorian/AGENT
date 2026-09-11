@@ -16,6 +16,7 @@ tools/phase.py's GATES -- so "we learned something" cannot be marked done by ass
 Usage:
   python3 tools/improvement_loop.py plan [N]       rank every skill by tools/skill_health.py and write state/improvement-plan.json with the top N (default 5)
   python3 tools/improvement_loop.py check          exit 1 unless every item in the plan moved toward its target (re-answered litmus score, warnings, open findings)
+  python3 tools/improvement_loop.py --selftest    plant an unmoved item, prove the check refuses it
 
 An item is one skill with one target drawn from the record that says what the future state looks like:
   the litmus question it scored misaligned or absent on (docs/litmus/questionnaire.json: aligned_looks_like is the target text),
@@ -52,6 +53,29 @@ def wired_gates() -> set:
     return {m for m in re.findall(r"tools/([a-z_]+)\.py", PHASE.read_text())}
 
 
+def self_tested_gates() -> set:
+    """Which of those gates also have a PROVEN FAILURE MODE wired beside them.
+
+    Found by testing this loop rather than by reasoning about it: a tool that prints a message and
+    exits 0 satisfied `exists and is wired` and closed a capability item. A gate that cannot fail is
+    not a gate -- the repo has known this since ceremony 75 and it reappeared inside the mechanism
+    built to stop it reappearing. So the stop condition also requires a self-test gate for the same
+    tool: an argv that names the tool AND carries a --selftest (or a *_test.py gate for it), which
+    by this repo's convention plants a defect and requires it caught.
+    """
+    text = PHASE.read_text()
+    out = set()
+    for argv in re.findall(r"\[([^\]]*?)\]", text):
+        if "--selftest" not in argv:
+            continue
+        out |= {m for m in re.findall(r"tools/([a-z_]+)\.py", argv)}
+    # `tools/<x>_test.py` is this repo's other spelling of the same thing (card_profile_test.py).
+    for m in re.findall(r"tools/([a-z_]+)_test\.py", text):
+        out.add(m)
+        out.add(m + "_gate")
+    return out
+
+
 def capability_candidates() -> list:
     """Lessons that are written down and do not run, oldest first -- age is the rank, because an
     old lesson still in prose is one that has had the most chances to recur."""
@@ -64,13 +88,17 @@ def capability_candidates() -> list:
         if not sc:
             continue
         named = tools_named(sc)
-        if named and set(named) & wired_gates():
-            continue          # it runs, and a gate runs it
+        runs = set(named) & wired_gates()
+        proven = set(named) & self_tested_gates()
+        if runs and proven:
+            continue          # it runs, a gate runs it, and that gate is proven able to fail
         out.append({"ceremony": r.get("ceremony"), "date": r.get("date"), "section": r.get("section"),
                     "sharper_check": sc, "tools_named": named,
                     "recurred_at": r.get("recurred_at") or [],
                     "why": "names no tool that exists" if not named
-                           else f"names {named} but tools/phase.py runs none of them"})
+                           else (f"names {named} but tools/phase.py runs none of them" if not runs
+                                 else f"tools/phase.py runs {sorted(runs)} but no self-test gate "
+                                      f"proves it can fail -- a gate that cannot fail is not a gate")})
     # Rank: a lesson with NO tool at all outranks one whose tool merely is not wired, because the
     # first has no implementation and the second has half of one. Then oldest first -- an old
     # lesson still in prose has had the most chances to recur, and three of these did.
@@ -127,9 +155,11 @@ def cmd_plan(n: int) -> int:
                       "recurred_at": c["recurred_at"],
                       "target": {"kind": "capability",
                                  "sharper_check": c["sharper_check"][:400],
-                                 "target": "the sharper_check names a tool under tools/ that exists "
-                                           "and tools/phase.py runs it",
-                                 "stop": "named tool exists and is wired into phase.py GATES"}})
+                                 "target": "the sharper_check names a tool under tools/ that exists, "
+                                           "that tools/phase.py runs, and that has a self-test gate "
+                                           "beside it proving it can fail",
+                                 "stop": "named tool is wired into phase.py GATES and has a "
+                                         "self-test gate proving it can fail"}})
     for r in rows:
         if not r["candidate"]:
             continue
@@ -156,33 +186,59 @@ def cmd_plan(n: int) -> int:
     return 0
 
 
-def cmd_check() -> int:
-    plan = json.loads(PLAN.read_text())
+def check_items(items: list) -> list:
+    """Verdict per plan item. Pure: reads the repo's state, writes nothing."""
     rows = {r["skill"]: r for r in health()}
     questions, answers = litmus()
     bad = []
-    for it in plan["items"]:
+    for it in items:
         t = it["target"]
         if it.get("kind") == "capability":
-            # Re-read the lesson: the improver's job was to make it run, and the record says so by
-            # naming the tool. Asserting it in the improve record is not evidence.
             still = {f"lesson:{c['ceremony']}" for c in capability_candidates()}
             if it["unit"] in still:
                 bad.append(f"{it['unit']}: {t['stop']} -- still prose")
             continue
         r = rows.get(it.get("skill", it.get("unit")))
         if not r:
-            continue   # folded away is a legitimate outcome
+            continue
         if t["kind"] == "litmus":
             a = answers.get(t["question_id"], {})
             if (a.get("score") or 0) < 2:
-                bad.append(f"{it['skill']}: {t['question_id']} still {a.get('label', 'unanswered')}")
+                bad.append(f"{it['unit']}: {t['question_id']} still {a.get('label', 'unanswered')}")
         elif t["kind"] == "findings" and r["open"]:
-            bad.append(f"{it['skill']}: {r['open']} findings still open")
+            bad.append(f"{it['unit']}: {r['open']} findings still open")
         elif t["kind"] == "usage" and r["used"] == 0:
-            bad.append(f"{it['skill']}: still never used")
+            bad.append(f"{it['unit']}: still never used")
         if r["warnings"]:
-            bad.append(f"{it['skill']}: {r['warnings']} validator warnings")
+            bad.append(f"{it['unit']}: {r['warnings']} validator warnings")
+    return bad
+
+
+def cmd_selftest() -> int:
+    """Plant an item that has NOT moved and require refusal. Found necessary by testing:
+    a tool printing a message and exiting 0 satisfied the old stop condition and closed a real
+    item, so this check was itself a check that could not fail."""
+    candidates = capability_candidates()
+    if not candidates:
+        print("FAIL - no capability debt on disk to plant with")
+        return 1
+    planted = [{"unit": f"lesson:{candidates[0]['ceremony']}", "kind": "capability",
+                "target": {"kind": "capability", "stop": "named tool is wired and self-tested"}}]
+    control = [{"unit": "lesson:75-run-boundary", "kind": "capability",
+                "target": {"kind": "capability", "stop": "named tool is wired and self-tested"}}]
+    bad_planted, bad_control = check_items(planted), check_items(control)
+    print("self-test - plant a capability item that has not moved, and a control that has")
+    print(f"  planted {planted[0]['unit']}: {len(bad_planted)} refusal(s)")
+    print(f"  control lesson:75-run-boundary: {len(bad_control)} refusal(s)")
+    ok = len(bad_planted) == 1 and len(bad_control) == 0
+    print("PASS - the check refuses an unmoved item and passes a moved one" if ok
+          else "FAIL - the check does not distinguish moved from unmoved")
+    return 0 if ok else 1
+
+
+def cmd_check() -> int:
+    plan = json.loads(PLAN.read_text())
+    bad = check_items(plan["items"])
     for b in bad:
         print("NOT MOVED", b)
     moved = len(plan["items"]) - len({b.split(":")[0] + ":" + b.split(":")[1] if b.startswith("lesson:") else b.split(":")[0] for b in bad})
@@ -195,6 +251,8 @@ def main(argv: list[str]) -> int:
         return cmd_plan(int(argv[1]) if len(argv) > 1 else 5)
     if argv[:1] == ["check"]:
         return cmd_check()
+    if argv[:1] == ["--selftest"] or argv[:1] == ["selftest"]:
+        return cmd_selftest()
     print(__doc__); return 2
 
 

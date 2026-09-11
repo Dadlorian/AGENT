@@ -50,6 +50,7 @@ GATES = [
     # a non-blocking improvement gate is the exact failure mode -- a lesson that runs and
     # decides nothing. Fire a plan you intend to finish.
     ("improvement",    ["python3", "tools/improvement_loop.py", "check"], True),
+    ("improvement self-test", ["python3", "tools/improvement_loop.py", "--selftest"], True),
     ("ceremony nums",  ["python3", "tools/ceremony_next.py", "--check"], False),
     ("token patterns", ["python3", "tools/token_review.py"], False),
     ("card map",       ["python3", "tools/check_card_example_map.py"], True),

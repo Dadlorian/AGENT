@@ -73,3 +73,4 @@
 | 73 | Phase 9: maturity research | Every item below the future state has a researched mechanism on record | Done | 60 items, 52 sourced, 122 records | 2026-09-04 b3d173b |
 | 45 | Fetch allowlist | One standards page fetched with status fetched | Done | 101 fetched, spec pages included | 2026-09-09 a4a31ce |
 | 87 | Prose gate | python3 tools/prose_gate.py exits zero and --selftest passes | Done | 1 new defect, 2 restated fabrications | 2026-09-10 26a1cd6 |
+| 88 | ref_arch glossary indexed by card | python3 tools/index_glossary.py --coverage runs clean | Done | 28 of 40 cards reached, 12 not | 2026-09-10 33fc103 |

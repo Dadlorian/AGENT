@@ -49,11 +49,14 @@ it was not true this morning.
    for "what runs here today" and for owner intent — but it is *not* evidence of industry practice.
    An example built from a mostly-internal card demonstrates our own design. 1.2 Scheduled is 12 of
    13 internal; 1.1, 3.2, rail.6, 1.3 are the next heaviest.
-3. **Prose is gated as of STATUS row 87** (`tools/prose_gate.py`). This was the largest hole: Every checker reads `evidence` arrays. Nothing reads `text`, `role`,
-   `covers`, `note` or `gaps`. A fabricated figure sitting in prose with no quote attached passes
-   everything — that is how "$47,000 / 264-hour" and "28.7x-35.2x" survived, and they were caught by
-   hand, three times, in one session. **This is the largest remaining hole and it should close before
-   anything is built at scale**, or every example inherits the same class of defect.
+3. **Prose was ungated; it is gated now** — `tools/prose_gate.py`, STATUS row 87. Every other
+   checker reads `evidence` arrays only, so a fabricated figure sitting in `text`, `role`,
+   `covers`, `note` or `gaps` with no quote attached used to pass everything. That is how
+   "$47,000 / 264-hour" and "28.7x-35.2x" survived, each caught by hand. The gate types every
+   quoted span and figure in a sourced claim against the records that claim cites, using the
+   same six verdicts as `stamp_verification.py`, and it found three live defects when first
+   run. It covers `docs/reference/cards/` only — `.claude/skills/`, `docs/maturity/` and
+   `docs/consumption/` carry the same class and are still unchecked.
 4. **Nobody has ever built anything from a card profile.** "The profile is the spec" is an
    assertion, not a measured fact. A profile carries `definition`, `standards`, `tools`, `landscape`,
    `usage`, `gaps`; whether that is sufficient to write a runnable example is untested.

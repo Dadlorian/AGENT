@@ -80,3 +80,4 @@
 | 82 | Egress log integrity | reconcile_egress.py checks egress_ref matches its own log entry | Done | reconcile_egress exits zero, chain reconciled | 2026-09-10 172f84a |
 | 90 | Agent run cost model | state/briefs/one-three-one.md carries the measured cost model | Done | cache read re-billed 46 times per token | 2026-09-10 15a9acc |
 | 91 | Loop gates its own output | phase.py runs an examples gate and a ceremony counter | Done | 13 gates to 15, examples now judged | 2026-09-10 88987ba |
+| 92 | Token pattern awareness | python3 tools/token_review.py runs before a workload | Done | 88 findings, 16 whole-file reads flagged | 2026-09-10 2b9ee0e |

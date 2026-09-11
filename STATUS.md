@@ -18,3 +18,4 @@
 | 84 | Citable means checked | citation-debt.json is empty and the gate needs no exemptions | Open | 23 entries, 16 need re-sourcing |
 | 85 | Ready to build | python3 tools/ready_to_build.py exits zero | Open | 3 of 8 conditions met |
 | 86 | Examples layer points at archived | No tool or doc names the archived seven areas | Open | 5 artifacts name them, 2 are gates |
+| 89 | Vocabulary review on the record | python3 tools/import_glossary_review.py --check exits zero | Done | 273 reviews recorded, 2 flags checked, 2 uncovered |

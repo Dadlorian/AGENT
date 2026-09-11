@@ -1,0 +1,31 @@
+{
+  "ceremony": 15,
+  "section": "89-reference-stack",
+  "improver": "opus-5",
+  "date": "2026-09-11",
+  "numbering_note": "Paired with kb/ceremonies/ceremony-15-review-89-reference-stack.json.",
+  "applied": [
+    {
+      "finding": "C15-001",
+      "change": "Compared every file in ref_arch/new/ by sha256 before touching anything: 14 byte-identical, 1 differing, 1 new. Copied the two up, re-verified each by hash after the copy, deleted the fourteen identical copies only after asserting equality a second time, and removed the empty directory. Reference Model.dc.html's diff was cosmetic -- reformatting plus a nav link to the stack -- and extract_reference_model.py --check still holds 14 of 14 with 40 cards, so nothing downstream moved.",
+      "files": ["ref_arch/cellplane-stack.js", "ref_arch/Reference Model.dc.html", "ref_arch/Reference Stack.dc.html"]
+    },
+    {
+      "finding": "C15-002",
+      "change": "Recorded rather than resolved, because the missing document is the owner's to supply. The derived JSON carries the claim verbatim in a `source_claimed` field so the dangling reference is visible in the artifact itself rather than only in a comment, and STATUS row 89 states the condition: every stack claim cites a fetched record or is marked proposed. Nothing in the repo cites the stack as sourced evidence yet.",
+      "files": ["docs/reference/reference-stack.json", "STATUS.md"]
+    },
+    {
+      "finding": "C15-003",
+      "change": "Declared KEY_ALIAS = {'cross': 'concerns'} in the extractor with the reason in a comment, echoed it into the derived JSON as `key_aliases`, and added a check that prints which aliases are actually in use on every run. The join check resolves through the alias, so a future key that does NOT resolve still fails.",
+      "files": ["tools/extract_reference_stack.py", "docs/reference/reference-stack.json"]
+    },
+    {
+      "finding": "C15-004",
+      "change": "Wrote a small recursive-descent reader for the JS literal subset the source uses -- objects, arrays, single-quoted strings with backslash escapes, booleans, null, integers, bare keys, and the file's own T() helper mapped onto its seven positional fields -- instead of reusing split_args(). The reason is in the module docstring so the next author does not 'simplify' it back. Its first run caught a real bug in my own key handling: obj() tested whether a key was quoted AFTER consuming it, so self.i had already moved and it double-advanced past the colon.",
+      "files": ["tools/extract_reference_stack.py"]
+    }
+  ],
+  "declined": [],
+  "verification": "11 of 11 extractor checks hold; output is idempotent (--check green immediately after a write). Proven able to fail in both directions before being wired: a hand-edited licence in the JSON gives real exit 1 with 'differs from what the source renders'; a source that names a tool not in the catalogue gives 'FAIL every tool a port names exists in tools: [NoSuchTool]'. Restored, real exit 0. Wired into tools/phase.py as the blocking `ref stack` gate, 23 gates to 24."
+}

@@ -1,0 +1,65 @@
+{
+  "ceremony": 15,
+  "section": "89-reference-stack",
+  "reviewer": "opus-5, review of folding ref_arch/new/ up and deriving the reference stack",
+  "date": "2026-09-11",
+  "numbering_note": "tools/ceremony_next.py read 15 off disk. Paired with kb/ceremonies/ceremony-15-improve-89-reference-stack.json.",
+  "scope": "ref_arch/ (the new/ fold), tools/extract_reference_stack.py, docs/reference/reference-stack.json, tools/phase.py, STATUS row 89.",
+  "findings": [
+    {
+      "id": "C15-001",
+      "location": "ref_arch/Reference Stack.dc.html",
+      "severity": "block",
+      "category": "completeness",
+      "finding": "The page could not render at all. Its component does `import('./cellplane-stack.js')` and that module was not in ref_arch/ -- it sat in an untracked ref_arch/new/ alongside fifteen other files, fourteen of which were byte-identical copies of what was already committed.",
+      "evidence": "sha256 comparison of ref_arch/new/ against ref_arch/: 14 identical, 1 differing (Reference Model.dc.html), 1 present only in new/ (cellplane-stack.js, 26420 bytes).",
+      "found_by": "owner pointed at the file; the missing import surfaced on reading it",
+      "suggested_change": "Move the two that differ up, delete the fourteen identical copies, remove new/."
+    },
+    {
+      "id": "C15-002",
+      "location": "ref_arch/cellplane-stack.js header comment",
+      "severity": "fix",
+      "category": "evidence",
+      "finding": "The stack cites its own source -- \"MVP-SCALE Open Standards & Open-Source Stack Alignment v3 (uploads/mvp-scale-open-stack-alignment-v3.md), 2026-09-11\" -- and that file is not in the repository. So the artifact carries a dangling provenance claim, and under this repo's rule nothing may cite the stack as sourced evidence until it resolves.",
+      "evidence": "os.path.exists('ref_arch/uploads/mvp-scale-open-stack-alignment-v3.md') is False; ref_arch/uploads/ holds only the three glossary files.",
+      "found_by": "author, checking the cited source rather than believing it",
+      "suggested_change": "Either add the source document or mark every stack-derived claim proposed. This is the owner's to resolve; STATUS row 89 carries it."
+    },
+    {
+      "id": "C15-003",
+      "location": "docs/reference/reference-model.json vs ref_arch/cellplane-stack.js",
+      "severity": "fix",
+      "category": "consistency",
+      "finding": "The two owner artifacts disagree on one layer key. The model calls the ninth area `concerns`; the stack calls it `cross`. Eight of nine keys match exactly, the titles are identical and the positions are the same, so the join is unambiguous -- but an undeclared mapping is one nobody can dispute later.",
+      "evidence": "Side-by-side of the nine keys: entry, intake, agent, execute, assure, observe, improve, shared all match; cross vs concerns differ.",
+      "found_by": "the extractor's own join check, on first run",
+      "suggested_change": "Declare the alias in the extractor and echo it into the derived JSON, rather than normalising it away."
+    },
+    {
+      "id": "C15-004",
+      "location": "tools/extract_reference_model.py split_args()",
+      "severity": "nit",
+      "category": "correctness",
+      "finding": "The existing helper closes a string on the first quote character it meets, so a single-quoted JS string containing an escaped apostrophe -- `the customer\\'s OIDC provider`, which the stack data has -- would be cut in half. It has not bitten because the model source contains no escapes.",
+      "evidence": "split_args(): `if ch == quote: quote = None`, with no backslash handling.",
+      "found_by": "author, deciding whether to reuse it",
+      "suggested_change": "Do not reuse it here. A separate parser that handles escapes, with the reason recorded, rather than a silent second copy of a subtly wrong one."
+    }
+  ],
+  "metrics": {
+    "files_identical_deleted": 14,
+    "files_replaced": 1,
+    "files_new": 1,
+    "layers": 9,
+    "ports": 37,
+    "tools": 103,
+    "standards": 10,
+    "ports_requiring_build": 7,
+    "tools_excluded_on_licence_or_pricing": 12,
+    "licences_verified_in_source": 40,
+    "extractor_checks": 11,
+    "gates_before": 23,
+    "gates_after": 24
+  }
+}

@@ -68,7 +68,7 @@ Each harness has `interface.py`, three adapters (`dryrun`, `live`, `second`), `c
 bash harness/<name>/test.sh                     # (read-only) passed N, failed 0
 ADAPTER=second python3 harness/<name>/call.py   # (read-only) same caller against the other execution model
 python3 tools/harness_accept.py <name>          # (writes, no commit) run the gate, merge plan-entry.json into harness/plan.json, release scope claim, regen acceptance+guides
-python3 tools/final_acceptance.py               # (read-only) run every harness gate. Re-measured 2026-09-11: 11 of 15 hold, not the 14 of 15 verified at 917deaf on 2026-09-08. Red: T-t9-06 (work-intake, dispatch, compose-operators harnesses), T-t9-02 (31 percent proposed), T-t10-04 (13 of 16 elements), T-t10-08 (blueprint, 15 quote errors). The last three drifted before this session and none is a phase.py gate. STATUS row 94
+python3 tools/final_acceptance.py               # (read-only) run every harness gate. Run it rather than quoting a figure: it read 11 of 15 on 2026-09-11, against 14 of 15 at 917deaf on 2026-09-08. Red then: T-t9-06 (work-intake, dispatch, compose-operators harnesses), T-t9-02, T-t10-04, T-t10-08 (blueprint). The last three drifted while nothing ran them - none is a phase.py gate. STATUS row 94
 python3 tools/final_acceptance.py --write       # (writes) store docs/acceptance/final.json
 ```
 

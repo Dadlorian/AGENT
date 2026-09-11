@@ -14,5 +14,5 @@
 | 85 | Ready to build | python3 tools/ready_to_build.py exits zero | Open | 6 of 8 conditions met |
 | 88 | Lessons that run | Every lessons.jsonl sharper_check is a phase.py gate, not prose | Open | 2 of 10 wired, loop ranks the rest |
 | 89 | Reference stack | Every stack claim cites a fetched record or is marked proposed | Open | Source present and gated, not yet kb |
-| 93 | Stamp scope | An uncited quote's typed verdict survives a --fetch | Open | 3 verdicts dropped, R2 read 5 to 2 |
+| 93 | Stamp scope | A verdict dropped by --fetch is reported, not silently lost | Open | 3 dropped, R2 read 5 to 2 |
 | 94 | Ungated checks | Every full-DoD check is a phase.py gate, not a manual step | Open | 3 drifted red before 2026-09-11 |

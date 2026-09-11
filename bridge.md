@@ -204,7 +204,7 @@ not changed:
 None was ever cited by a card profile — checked against the card files at `950a3b1`, not inferred —
 so none of the three was a card's evidence, and no card got worse. What got worse is the record:
 a quote known to be stitched or partial is now flagged nowhere, and the scoreboard reads better for
-it. STATUS row 93. **Read R2 as 2 card-cited quotes needing a reader, not as three having been
+it. STATUS row 93, whose definition of done names the *silence* rather than asking for a looser stamp: `cited_quotes()` narrowing to what cards depend on is the anti-fabrication chain working, so the fix is that a dropped verdict is reported, not that it persists. **Read R2 as 2 card-cited quotes needing a reader, not as three having been
 resolved**, and if the number moves again check which measurement moved before reporting it
 (section 3b).
 

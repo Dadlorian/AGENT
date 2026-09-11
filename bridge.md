@@ -313,65 +313,45 @@ re-derive every `egress_ref` → merge+rebuild → reconcile → kb verify → `
 
 ## 7. Starter prompt
 
-Copy from here. It is deliberately short: **you are the shared prefix every fork inherits, so what
-you read costs what it costs times every agent times every turn.** Measured on run
-`wf_8d4230e8-999`: cache_read was 97.8% of 1,110,376,052 tokens and the average token was re-billed
-**46 times**. Read the five files below and nothing else until you need it.
+One prompt. It points rather than restates — every rule it would repeat is already in the five
+files it names, and duplication is the thing this repo is optimising against.
 
 ```
 Design-and-evidence repo for a target agentic platform. Nothing runs as an app.
 
-READ EXACTLY THESE FIVE, ~13k tokens total. You are the prefix every fork inherits.
-    NEXTSTEP.md                          the plan and which step is next
-    bridge.md sections 3, 3b, 4b         the traps that cost real time
-    state/briefs/one-three-one.md        the cost model and what fork/rewind actually do
-    docs/reference/cards/3-3.json        the profile you are building from
-    examples/reference/README.md         the nine areas and what an area is
+You are the shared prefix every fork inherits: what you read costs that much, times every
+agent, times every turn. Read these five and stop.
 
-Then, and only then:
-    python3 tools/ready_to_build.py      8 conditions, exits 1 until all hold
-    python3 tools/token_review.py        unoptimized patterns, before you fire anything
+    NEXTSTEP.md                      the plan, and which step is next
+    bridge.md sections 3, 3b, 4b     the traps that cost real time
+    state/briefs/one-three-one.md    the token cost model, measured
+    docs/reference/cards/3-3.json    the profile you build from
+    examples/reference/README.md     what an area is
 
-JOB: STATUS row 79 = R7 = bridge.md section 6 step 2. Build ONE area under
+Then: python3 tools/ready_to_build.py
+
+JOB - STATUS row 79, which is R7, which is bridge.md section 6 step 2. Build ONE area under
 examples/reference/ from a card profile, and write every question the profile could NOT
-answer into docs/reference/profile-sufficiency.md. That file is the deliverable; the
-example is the instrument. Do NOT fan out to nine areas.
+answer into docs/reference/profile-sufficiency.md. That file is the deliverable; the example
+is only the instrument. Do not fan out to nine areas.
 
-RUN IT AS A LOOP, NOT A TO-DO LIST:
-    python3 tools/ceremony_next.py                    the number, read off disk
+Run it as a loop, not a checklist:
+
+    python3 tools/ceremony_next.py                     the number, read off disk
     python3 tools/phase.py open 79-reference-example
         build the area
-    python3 tools/phase.py close 79-reference-example 16 gates decide; two reds STOP it
-        ceremony review + improve records under kb/ceremonies/
-        python3 tools/check_ceremony.py <the pair>
-        ledger record, then bash tools/checkpoint.sh
+    python3 tools/phase.py close 79-reference-example  16 gates decide, two reds stop it
+    ceremony pair -> check_ceremony.py -> ledger -> bash tools/checkpoint.sh
 
-TOKEN DISCIPLINE, MEASURED NOT ASSUMED
-- cost = agents x turns x prefix. cache_read is re-billed EVERY turn at full prefix size.
-- Fork saves rediscovery, NOT carriage. Three forks off a big captain cost 3x that prefix.
-  Fork only after recon, only from a small captain.
-- Put iterate-until-green work behind a subagent firebreak: it burns its own context and
-  returns a short answer. Then verify the ARTIFACT yourself - a report is not evidence.
-- Write findings to disk continuously. /rewind is interactive-only, owner-invoked, and
-  discards anything living only in the transcript.
-- Never pay a model to apply a category someone already discovered. Numbering, committing,
-  validating, rendering are script work: ceremony_next.py, checkpoint.sh, phase.py.
-
-THE RULES THAT ARE NOT NEGOTIABLE
-- Citable means checked. A quote is valid only if the stamp found it on the page.
-- Verdicts are typed, never boolean: exact / formatting / unretrievable / partial /
-  stitched / absent. Report "N need a human", never a percentage.
-- Source text is a record's snippet or read - never its claim.
-- A contradicted record is left as it is and reported. Patching it destroys the finding.
+Four things that will bite you and are not obvious from the files:
 - A subagent's report is not evidence. Check the artifact it produced.
-- Undated is not old. Never filter a source out for having no date.
-- Name every claim by its STATUS row id.
+- Every claim is cited to a kb record with a verbatim quote, or marked proposed. Verdicts
+  are typed, never boolean; report "N need a human", never a percentage.
+- Put iterate-until-green work behind a subagent so its failures never reach your context,
+  and write findings to disk as you find them, not at the end.
+- New evidence comes from tools/index_sources.py and tools/index_glossary.py, never search.
+  Nothing in either is evidence until capture -> record -> stamp_verification.py --fetch.
 
-New evidence comes from the pool, never from search:
-    python3 tools/index_sources.py <card>     ordered core/primary candidates
-    python3 tools/index_glossary.py <card>    standards and API fields, areas 1-7 only
-Nothing in either is evidence: capture -> record -> stamp_verification.py --fetch -> cite.
-
-Decisions already made: docs/reference/build-principles.json - do not reopen them.
-checkpoint.sh commits and pushes; set CLAUDE_SESSION_URL first.
+Name every claim by its STATUS row id. Do not reopen docs/reference/build-principles.json.
+checkpoint.sh commits and pushes - set CLAUDE_SESSION_URL first.
 ```

@@ -22,10 +22,10 @@ figure for genuine defects was closer to 1 in 300. Re-run first, then speak.
 | **Needing a human decision** | **4** | same |
 | Cards | 31 documented · 1 unread · **8 undocumented** | same |
 | Citation debt | 23 recorded, 16 of them "page retrieved, quote not found" | `docs/reference/citation-debt.json` |
-| Gates | 9 of 11 green; two known-red and recorded | `python3 tools/phase.py gates` |
-| STATUS | 14 open rows | `python3 tools/status_check.py --freshness` |
+| Gates | 13/16 gates green; known-red recorded | `python3 tools/phase.py gates` |
+| STATUS | 13 live rows | `python3 tools/status_check.py --freshness` |
 | **Candidate source pool** | **3,537 usable URLs, addressed by card** | `python3 tools/index_sources.py --coverage` |
-| Ready to build | **2 of 8** conditions | `python3 tools/ready_to_build.py` |
+| Ready to build | **3 of 8** conditions | `python3 tools/ready_to_build.py` |
 
 Phases `B-core-agent`, `A-cited`, `A-repair` are closed green. `python3 tools/phase.py status` is
 the authority.
@@ -49,7 +49,7 @@ it was not true this morning.
    for "what runs here today" and for owner intent — but it is *not* evidence of industry practice.
    An example built from a mostly-internal card demonstrates our own design. 1.2 Scheduled is 12 of
    13 internal; 1.1, 3.2, rail.6, 1.3 are the next heaviest.
-3. **Prose is still ungated.** Every checker reads `evidence` arrays. Nothing reads `text`, `role`,
+3. **Prose is gated as of STATUS row 87** (`tools/prose_gate.py`). This was the largest hole: Every checker reads `evidence` arrays. Nothing reads `text`, `role`,
    `covers`, `note` or `gaps`. A fabricated figure sitting in prose with no quote attached passes
    everything — that is how "$47,000 / 264-hour" and "28.7x-35.2x" survived, and they were caught by
    hand, three times, in one session. **This is the largest remaining hole and it should close before

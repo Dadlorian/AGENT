@@ -113,16 +113,12 @@
     }
   ],
   "landscape": {
-    "text": "The real tradeoff is what layer 'checkpoint' operates at, not whether to checkpoint at all. At the application/workflow layer, current disaster-recovery practice names the tool call, not the session or run, as the durability unit, and prescribes a structured step log written before every externally-visible action: \"Right before the agent invokes a tool, the orchestrator persists: the current plan, the prompt prefix, the tool name, the arguments, the idempotency key, and the step ordinal.\" At the infrastructure layer, process/VM-level snapshotting captures a coarser unit instead -- Firecracker's own documentation describes snapshot-restore as saving the full state of guest memory and emulated hardware and resuming the guest workload in a new process, without stating a specific resume-time figure (a previously-cited resume-time figure was fabricated and has been removed; see gaps): \"In order to make restoring possible, Firecracker snapshots save the full state of the following resources: - the guest memory, - the emulated HW state (both KVM and Firecracker emulated HW).\" A dedicated Checkpoint/Restore Working Group (CRIU, formed January 2026) is standardizing that layer, not the application step log. A correct resume must also carry non-positional state, not just position: a production durable-execution runtime is measured preserving accumulated token spend across a checkpoint/restart, not only workflow position -- it \"checkpoints every state transition (LLM responses, tool call results, control flow decisions) to durable storage. Resume from last checkpoint — When a failure occurs, execution resumes automatically on a healthy VM. Completed LLM calls aren't repeated, preserving both token spend and wall-clock time.\"",
+    "text": "The real tradeoff is what layer 'checkpoint' operates at, not whether to checkpoint at all. At the application/workflow layer, current disaster-recovery practice names the tool call, not the session or run, as the durability unit, and prescribes a structured step log written before every externally-visible action: \"Right before the agent invokes a tool, the orchestrator persists: the current plan, the prompt prefix, the tool name, the arguments, the idempotency key, and the step ordinal.\" At the infrastructure layer, process/VM-level snapshotting captures a coarser unit instead -- Firecracker's own documentation describes snapshot-restore as saving the full state of guest memory and emulated hardware and resuming the guest workload in a new process, without stating a specific resume-time figure (a previously-cited resume-time figure was fabricated and has been removed; see gaps) A dedicated Checkpoint/Restore Working Group (CRIU, formed January 2026) is standardizing that layer, not the application step log. A correct resume must also carry non-positional state, not just position: a production durable-execution runtime is measured preserving accumulated token spend across a checkpoint/restart, not only workflow position -- it \"checkpoints every state transition (LLM responses, tool call results, control flow decisions) to durable storage. Resume from last checkpoint — When a failure occurs, execution resumes automatically on a healthy VM. Completed LLM calls aren't repeated, preserving both token spend and wall-clock time.\".",
     "origin": "sourced",
     "evidence": [
       {
         "id": "X-refmodel-rail-7-operations-007",
         "quote": "Right before the agent invokes a tool, the orchestrator persists: the current plan, the prompt prefix, the tool name, the arguments, the idempotency key, and the step ordinal."
-      },
-      {
-        "id": "X-refmodel-4-3-state-recovery-001",
-        "quote": "In order to make restoring possible, Firecracker snapshots save the full state\nof the following resources:\n\n- the guest memory,\n- the emulated HW state (both KVM and Firecracker emulated HW)."
       },
       {
         "id": "X-maturity-c-009",
@@ -178,6 +174,11 @@
       "what": "A '5-30ms' Firecracker resume-time figure previously cited twice on this card (tools and landscape) was found, on re-verification, to be a fabrication: the string '5-30' does not appear anywhere in its 67KB cited source page, which instead explicitly warns that provider startup figures 'do not form a speed ranking.' Firecracker's own official documentation (github.com/firecracker-microvm/firecracker) was captured directly for this repair and states no specific resume-time figure at all -- only that restoring saves and reloads guest memory and emulated hardware state, with 'very fast snapshot loading' left unquantified.",
       "why_it_matters": "No source found in this repair -- including Firecracker's own docs -- supports any specific millisecond figure for snapshot-restore latency; this card previously stated one as settled fact. Any future re-addition of a timing number for this card should be sourced to a real, fetched benchmark, not a search-result paraphrase.",
       "research_query": "does any Firecracker benchmark (AWS's own engineering blog, a CNCF talk, or a reproducible third-party benchmark) report a real, methodology-stated resume-time figure"
+    },
+    {
+      "what": "1 citation(s) on this card quoted text that is not on the cited page through the gate's own fetch path, checked 2026-09-11. The citation(s) were removed and the quoted span taken out of the claim text; where nothing else backed the claim it is now marked proposed.",
+      "why_it_matters": "A claim that reads as sourced while its quotation is not on the page is the defect this repo's whole evidence chain exists to prevent, and it survived because the debt list exempted it rather than resolving it.",
+      "research_query": "re-source the removed claim(s) on card 4.3 from docs/reference/REF-ARCH-INDEX.md candidates for that card"
     }
   ]
 }

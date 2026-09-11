@@ -72,4 +72,4 @@
 | 64 | Skill structure review | An independent review against the Agent Skills guidance proposes the organisation | Done | Owner chose the fold, row 71 | 2026-09-04 b06346f |
 | 73 | Phase 9: maturity research | Every item below the future state has a researched mechanism on record | Done | 60 items, 52 sourced, 122 records | 2026-09-04 b3d173b |
 | 45 | Fetch allowlist | One standards page fetched with status fetched | Done | 101 fetched, spec pages included | 2026-09-09 a4a31ce |
-| 87 | Prose gate | python3 tools/prose_gate.py exits zero and --selftest passes | Done | 274 prose spans typed, 0 need a human | 2026-09-10 26a1cd6 |
+| 87 | Prose gate | python3 tools/prose_gate.py exits zero and --selftest passes | Done | 1 new defect, 2 restated fabrications | 2026-09-10 26a1cd6 |

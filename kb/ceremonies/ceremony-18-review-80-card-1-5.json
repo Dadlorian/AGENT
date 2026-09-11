@@ -1,0 +1,65 @@
+{
+  "ceremony": 18,
+  "section": "80-card-1-5",
+  "reviewer": "opus-5, review of the first card profiled with the schema the sufficiency note proposed",
+  "date": "2026-09-11",
+  "numbering_note": "tools/ceremony_next.py read 18 off disk. Paired with kb/ceremonies/ceremony-18-improve-80-card-1-5.json.",
+  "scope": "docs/reference/cards/1-5.json, kb/research/refmodel-1-5-a2a.jsonl, tools/validate_card_profiles.py. STATUS rows 80 and 85.",
+  "findings": [
+    {
+      "id": "C18-001",
+      "location": "tools/validate_card_profiles.py check_profile()",
+      "severity": "block",
+      "category": "evidence",
+      "finding": "The validator calls check_claim on exactly three fields -- definition, landscape, usage -- plus standards[] and tools[] evidence. The five fields the sufficiency note proposed would therefore have carried citations that NOTHING checked: no stamp requirement, no verbatim test. Adding the fields without extending the validator would have recreated, inside the fix, the precise hole the note was written to report.",
+      "evidence": "First run of validate_card_profiles.py against 1-5.json reported errors on definition, landscape and standards[0] only; operations, domain and failures each cite a record and were silent.",
+      "found_by": "author, reading which errors the gate did and did not raise",
+      "suggested_change": "Check the five optional fields exactly as the three required ones, and prove it by planting a fabricated quote in one of them."
+    },
+    {
+      "id": "C18-002",
+      "location": "docs/reference/profile-sufficiency.md, the denominator section",
+      "severity": "fix",
+      "category": "measurement",
+      "finding": "The note hedged that `operations` and `domain` might be artifacts of a boundary card and should be required only where a card names a standard's field or verb. Card 1.5 is a protocol entry point rather than a boundary, and its source filled operations, domain AND failures outright -- the three fields 3.3 was silent on. The hedge was too cautious and can now be narrowed on evidence rather than argument.",
+      "evidence": "1-5.json: 11 operations named and binding-independent; terminal and interrupted task states quoted; nine typed errors tabled. All three sourced, none proposed.",
+      "found_by": "the second data point the note itself asked for",
+      "suggested_change": "Record the second card kind in the note's denominator section and narrow the hedge to what is still unknown."
+    },
+    {
+      "id": "C18-003",
+      "location": "kb/research/*.jsonl and kb/research.jsonl",
+      "severity": "nit",
+      "category": "process",
+      "finding": "stamp_verification.py writes stamps back into the per-lens shards under kb/research/, not into the merged kb/research.jsonl. Checking the merged file immediately after stamping shows every new record unstamped, which reads as a failed fetch when the fetch in fact succeeded. The author lost a cycle to this.",
+      "evidence": "Merged file after --fetch: http None, verdicts []. Shard after the same run: http 200, verdicts exact/exact/formatting/formatting.",
+      "found_by": "author, checking the wrong file",
+      "suggested_change": "None to the tool -- bridge.md's post-batch sequence already says merge+rebuild after stamping. Worth a lesson, not a code change."
+    },
+    {
+      "id": "C18-004",
+      "location": "docs/reference/cards/1-5.json swap_axis and tools[0]",
+      "severity": "fix",
+      "category": "evidence",
+      "finding": "swap_axis is the field the sufficiency note said could finally be sourced rather than invented, and on this card it is still proposed. The reference stack names the pick at this port and marks it hard, but docs/reference/reference-stack.json is not yet knowledge-base records, so it cannot be cited. The reason is administrative, not evidential.",
+      "evidence": "STATUS row 89: source present and gated, not yet kb.",
+      "found_by": "author, writing the field",
+      "suggested_change": "Record it as a gap on the card with the research query naming row 89, and re-source both entries when that row closes."
+    }
+  ],
+  "metrics": {
+    "profiles_before": 32,
+    "profiles_after": 33,
+    "records_added": 4,
+    "quote_verdicts": {"exact": 2, "formatting": 2, "drifted": 0, "absent": 0},
+    "capture_bytes": 156792,
+    "capture_rung": "api",
+    "egress_refs_before": 6,
+    "egress_refs_after": 6,
+    "egress_refs_rotted": 0,
+    "new_schema_fields_sourced_on_this_card": ["operations", "domain", "failures"],
+    "new_schema_fields_proposed_on_this_card": ["vocabulary", "swap_axis"],
+    "validator_errors": 0,
+    "gates_green": "25 of 28"
+  }
+}

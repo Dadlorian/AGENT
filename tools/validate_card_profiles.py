@@ -224,6 +224,14 @@ def check_profile(path: Path, src: dict, known: set, fields=None, stamps=None, e
             check_claim(p[field], f"{tag}.{field}", src, errs, fields, stamps, exempt)
         else:
             errs.append(f"{tag}: missing {field}")
+    # The five fields docs/reference/profile-sufficiency.md proposed after building
+    # examples/reference/3-core-agent from 3-3.json. Optional, because 32 profiles predate them --
+    # but checked exactly like the three above wherever they appear, so a citation in a new field
+    # gets the same stamp guarantee rather than sitting in prose nothing reads. That gap is the one
+    # the sufficiency note found, and adding the fields without this line would recreate it.
+    for field in ("operations", "domain", "failures", "vocabulary", "swap_axis"):
+        if field in p:
+            check_claim(p[field], f"{tag}.{field}", src, errs, fields, stamps, exempt)
     for i, s in enumerate(p.get("standards", [])):
         sid = s.get("id")
         if sid and not (ROOT / "standards" / sid / "standard.json").is_file():

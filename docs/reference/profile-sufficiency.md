@@ -177,6 +177,16 @@ which of the recommendations below travel, and which may be an artifact of this 
   them. Treat those two as *required where the card names a standard's field or verb*, not as
   required everywhere.
 
+> **Narrowed on evidence, 2026-09-11.** Card 1.5 Agent-to-Agent was profiled with all five fields.
+> It is a protocol entry point, not a boundary card — the second kind the hedge above asked for —
+> and its source filled `operations` (eleven, named and binding-independent), `domain` (terminal and
+> interrupted task states, quoted) and `failures` (nine typed errors, each with its condition)
+> outright. Those are exactly the three 3.3 was silent on. So they are **not** artifacts of a
+> boundary card, and the hedge now applies only to the remaining case: a card describing a practice
+> rather than an interface. `swap_axis` and `vocabulary` stayed `proposed` on 1.5 — `swap_axis` for
+> an administrative reason rather than an evidential one, since the reference stack names the pick
+> at that port and cannot be cited until STATUS row 89 closes.
+
 A second area, built from a profile of a different kind, would settle it. That is one area of work,
 not nine, and it is worth doing before eight profiles are authored against a schema this note
 proposes on the strength of one.

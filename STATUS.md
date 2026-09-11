@@ -8,11 +8,11 @@
 | 77 | Standards and journey | python3 tools/standards.py check exits zero and both pages render | Open | 10 errors: journey names archived example paths |
 | 78 | Citation shape in skills | Every F/T/X/REF citation carries its own verbatim quote | Open | 1079 unquoted, 171 entity ids to move |
 | 79 | Reference examples | examples/reference has one area per model area with checks green | Open | 1 of 9 built: 3-core-agent, gates green |
-| 80 | Card profiles | Every reference model card has a profile at zero errors | Open | 32 of 40 profiled, 8 remain |
+| 80 | Card profiles | Every reference model card has a profile at zero errors | Open | 33 of 40 profiled, 7 remain |
 | 81 | Reference model corrections | Recorded model gaps applied or declined | Open | 31 model changes recorded, none applied |
 | 83 | Citation repair | Every card citation quotes text present on its source page | Open | 23 recorded in citation-debt.json |
 | 84 | Citable means checked | citation-debt.json is empty and the gate needs no exemptions | Open | 23 entries, 16 need re-sourcing |
-| 85 | Ready to build | python3 tools/ready_to_build.py exits zero | Open | 3 of 8 conditions met |
+| 85 | Ready to build | python3 tools/ready_to_build.py exits zero | Open | 4 of 8 conditions met |
 | 86 | Examples layer points at archived | No tool or doc names the archived seven areas | Open | 7 artifacts name them, 2 are gates |
 | 88 | Lessons that run | Every lessons.jsonl sharper_check is a phase.py gate, not prose | Open | 2 of 10 wired, loop ranks the rest |
 | 89 | Reference stack | Every stack claim cites a fetched record or is marked proposed | Open | Source present and gated, not yet kb |

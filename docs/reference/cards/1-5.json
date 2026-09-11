@@ -1,0 +1,121 @@
+{
+  "address": "1.5",
+  "card": "Agent-to-Agent",
+  "area": "Invocation / Entry Points",
+  "status": "built",
+  "schema_note": "First profile authored with the five fields docs/reference/profile-sufficiency.md proposed after building examples/reference/3-core-agent from 3-3.json: operations, domain, failures, swap_axis, vocabulary. They are additive; no existing profile changes. Whether they generalise beyond a boundary card was the open question, and this card is a protocol entry point rather than a boundary, which is why it was chosen.",
+  "definition": {
+    "text": "Agent-to-Agent is the door another agent comes through: one agent asks a second to do work, and neither has to open its internals to the other. The standard states its own purpose directly -- \"The Agent2Agent (A2A) Protocol is an open standard designed to facilitate communication and interoperability between independent, potentially opaque AI agent systems.\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-1-5-a2a-001",
+        "quote": "The Agent2Agent (A2A) Protocol is an open standard designed to facilitate communication and interoperability between independent, potentially opaque AI agent systems."
+      }
+    ]
+  },
+  "operations": {
+    "text": "Eleven operations, named by the standard and binding-independent: Send Message, Send Streaming Message, Get Task, List Tasks, Cancel Task, Subscribe to Task, Create / Get / List / Delete Push Notification Config, and Get Extended Agent Card. The specification is explicit that this set is the contract rather than a transport detail -- \"The following operations define the fundamental capabilities that all A2A implementations must support, independent of the specific protocol binding used.\" Each is specified with its Inputs, Outputs and Errors, so an example can be written against the verb set without choosing a binding first.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-1-5-a2a-002",
+        "quote": "The following operations define the fundamental capabilities that all A2A implementations must support, independent of the specific protocol binding used."
+      }
+    ]
+  },
+  "domain": {
+    "text": "The task state a caller branches on is enumerated by the standard and split by kind, which is the part a caller needs: terminal states end the work, interrupted states hand it back. \"The operation MUST wait until the task reaches a terminal state (`TASK_STATE_COMPLETED`, `TASK_STATE_FAILED`, `TASK_STATE_CANCELED`, `TASK_STATE_REJECTED`) or an interrupted state (`TASK_STATE_INPUT_REQUIRED`, `TASK_STATE_AUTH_REQUIRED`) before returning.\" Two further states appear in the specification's own prose -- TASK_STATE_SUBMITTED and TASK_STATE_WORKING -- and are marked proposed here rather than sourced, because the enumeration itself is rendered from a macro the captured page does not expand.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-1-5-a2a-003",
+        "quote": "The operation MUST wait until the task reaches a terminal state (`TASK_STATE_COMPLETED`, `TASK_STATE_FAILED`, `TASK_STATE_CANCELED`, `TASK_STATE_REJECTED`) or an interrupted state (`TASK_STATE_INPUT_REQUIRED`, `TASK_STATE_AUTH_REQUIRED`) before returning."
+      }
+    ]
+  },
+  "failures": {
+    "text": "The standard names its own typed failures instead of leaving them to the binding: nine A2A-specific errors, each tabled with the condition that raises it, among them \"`TaskNotCancelableError`              | An attempt was made to cancel a task that is not in a cancelable state\". The others are TaskNotFoundError, PushNotificationNotSupportedError, UnsupportedOperationError, ContentTypeNotSupportedError, InvalidAgentResponseError, ExtendedAgentCardNotConfiguredError, ExtensionSupportRequiredError and VersionNotSupportedError. This is the field card 3.3 could not fill at all, and here the source fills it outright.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-1-5-a2a-004",
+        "quote": "`TaskNotCancelableError`              | An attempt was made to cancel a task that is not in a cancelable state"
+      }
+    ]
+  },
+  "vocabulary": {
+    "text": "The configurable words a caller gets at this door, and the step each applies at. `return_immediately` selects blocking or non-blocking on Send Message and decides whether the call waits for a terminal or interrupted state. The A2A-Version service parameter selects protocol version and is the subject of VersionNotSupportedError. Both are named in the specification; neither is a knob this platform adds. Proposed: this repo has not built an adapter at this card, so no mapping from its own `intent:` / `profile:` vocabulary onto these has been chosen.",
+    "origin": "proposed"
+  },
+  "swap_axis": {
+    "text": "What a second implementation must differ on, for a swap at this card to be real rather than a relabelling. The axis is the protocol binding, not the library: the same eleven operations are specified over JSON-RPC, gRPC and HTTP+JSON/REST, so two adapters differ genuinely when they carry the same operation over different bindings, and only cosmetically when they are two SDKs over the same one. Proposed: the reference stack names `A2A SDK` as the only pick at this port with no alternates and marks it hard, but docs/reference/reference-stack.json cannot be cited as sourced evidence until STATUS row 89 closes.",
+    "origin": "proposed"
+  },
+  "standards": [
+    {
+      "id": "a2a-messaging",
+      "role": "governs the door itself: how one agent asks another for work, what operations exist, what states a task may hold, and what typed failures the boundary returns.",
+      "covers": "does not say what the receiving agent does with the work, how it is isolated, or what it costs -- those are cards 3.3, 4.x and the cross-cutting rail.",
+      "evidence": {
+        "text": "The specification states its own scope as communication between opaque systems: \"The Agent2Agent (A2A) Protocol is an open standard designed to facilitate communication and interoperability between independent, potentially opaque AI agent systems.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-1-5-a2a-001",
+            "quote": "The Agent2Agent (A2A) Protocol is an open standard designed to facilitate communication and interoperability between independent, potentially opaque AI agent systems."
+          }
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "A2A SDK",
+      "kind": "open-source",
+      "note": "the reference stack's only pick at this port, marked hard, with no alternates listed. Not in use in this repo: no adapter has been built at this card.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Proposed. docs/reference/reference-stack.json names this pick, and that artifact is not yet citable as sourced evidence -- its source document is present and gated but is not yet knowledge-base records. STATUS row 89.",
+        "origin": "proposed"
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The operation set is specified once and bound three ways -- JSON-RPC, gRPC and HTTP+JSON/REST -- which is what makes the binding, rather than the library, the axis a second implementation has to differ on. The specification says the operations hold \"independent of the specific protocol binding used\", and carries a separate binding section for each.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-1-5-a2a-002",
+        "quote": "The following operations define the fundamental capabilities that all A2A implementations must support, independent of the specific protocol binding used."
+      }
+    ]
+  },
+  "usage": {
+    "text": "A caller at this card does not choose a binding, a version or a task-state machine; it asks another agent for work and reads back a typed state. This repo's planning layer treats that as one of the concerns it decides for the caller, who writes an intent and at most one word of profile rather than deciding \"routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger\".",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "REF-3-02",
+        "quote": "decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger"
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "The TaskState enumeration is rendered from a macro (`proto_enum_to_table(\"TaskState\")`) that the captured page does not expand, so the complete state list is not quotable from this source. Six of the states are quotable because the blocking-behaviour sentence names them; TASK_STATE_SUBMITTED and TASK_STATE_WORKING appear only in prose and examples.",
+      "why_it_matters": "A caller branches on state. A domain that is six-of-eight sourced and two-of-eight proposed is a different risk than one that is complete, and the gap is in the machine-readable half.",
+      "research_query": "capture the A2A a2a.proto or the rendered specification page where the TaskState enum is expanded, and re-source the full enumeration"
+    },
+    {
+      "what": "No adapter has been built at this card in this repo, so `vocabulary` records what the standard offers a caller and not what this platform maps onto it.",
+      "why_it_matters": "The mapping is where the platform's own vocabulary meets the standard's, and it is exactly the join that card 3.3's profile could not supply for its own knobs either. Two cards now, same shape of gap.",
+      "research_query": "does any harness or example in this repo call an A2A operation, or is cap-work-intake the nearest built thing"
+    },
+    {
+      "what": "The reference stack's pick at this port cannot be cited as sourced evidence, so `swap_axis` and the tools entry are both proposed even though the stack is derived and gated.",
+      "why_it_matters": "The swap axis is the field the sufficiency note said could finally be sourced rather than invented; it is still invented here, for a reason that is administrative rather than evidential.",
+      "research_query": "close STATUS row 89 by deriving the stack source into kb records, then re-source swap_axis and the tools entry on this card"
+    }
+  ]
+}

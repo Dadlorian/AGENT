@@ -40,6 +40,8 @@ GATES = [
     ("egress",         ["python3", "tools/reconcile_egress.py"], True),
     ("card profiles",  ["python3", "tools/validate_card_profiles.py"], True),
     ("gate self-test", ["python3", "tools/card_profile_test.py"], True),
+    ("prose",          ["python3", "tools/prose_gate.py"], True),
+    ("prose self-test", ["python3", "tools/prose_gate.py", "--selftest"], True),
     ("card map",       ["python3", "tools/check_card_example_map.py"], True),
     ("ref model",      ["python3", "tools/extract_reference_model.py", "--check"], True),
     ("status",         ["python3", "tools/status_check.py", "--freshness"], True),

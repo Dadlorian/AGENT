@@ -74,3 +74,4 @@
 | 45 | Fetch allowlist | One standards page fetched with status fetched | Done | 101 fetched, spec pages included | 2026-09-09 a4a31ce |
 | 87 | Prose gate | python3 tools/prose_gate.py exits zero and --selftest passes | Done | 1 new defect, 2 restated fabrications | 2026-09-10 26a1cd6 |
 | 88 | ref_arch glossary indexed by card | python3 tools/index_glossary.py --coverage runs clean | Done | 28 of 40 cards reached, 12 not | 2026-09-10 33fc103 |
+| 89 | Vocabulary review on the record | python3 tools/import_glossary_review.py --check exits zero | Done | 273 reviews recorded, 2 flags checked, 2 uncovered | 2026-09-10 f420d25 |

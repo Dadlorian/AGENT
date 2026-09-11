@@ -1,0 +1,243 @@
+{
+  "address": "rail.1",
+  "card": "Security",
+  "area": "Cross-Cutting Concerns",
+  "status": "built",
+  "schema_note": "Fourth profile authored with the five fields from docs/reference/profile-sufficiency.md, and the first on a card that is not one seam. The reference model's own subtitle bundles four concerns - identity, authN/Z, secrets, isolation - and the standards that govern them hold them apart. That is the card's principal finding, and it is sourced rather than argued: the identity standard states that isolation is beyond its scope while assuming it. Every field below is therefore answered per concern, and where the concerns give different answers that is recorded instead of averaged.",
+  "definition": {
+    "text": "Security at this card is not one mechanism. Two of its four named concerns have standards that state their own subject. Identity: \"The SPIFFE standard provides a specification for a framework capable of bootstrapping and issuing identity to services across heterogeneous environments and organizational boundaries.\" Authorization: the boundary is expressed in borrowed roles rather than a model of its own -- \"A protected MCP server acts as an OAuth 2.1 resource server,\ncapable of accepting and responding to protected resource requests using access tokens.\nAn MCP client acts as an OAuth 2.1 client,\nmaking protected resource requests on behalf of a resource owner.\nThe authorization server is responsible for interacting with the user (if necessary) and issuing access tokens for use at the MCP server.\" The other two concerns named on the card, secrets and isolation, are not separate mechanisms here: secrets is answered by removal (see `vocabulary` and gaps), and isolation is explicitly outside the identity standard's scope and belongs to cards 3.3 and 4.1.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-rail-1-security-001",
+        "quote": "The SPIFFE standard provides a specification for a framework capable of bootstrapping and issuing identity to services across heterogeneous environments and organizational boundaries."
+      },
+      {
+        "id": "X-refmodel-rail-1-security-010",
+        "quote": "A protected MCP server acts as an OAuth 2.1 resource server,\ncapable of accepting and responding to protected resource requests using access tokens.\nAn MCP client acts as an OAuth 2.1 client,\nmaking protected resource requests on behalf of a resource owner.\nThe authorization server is responsible for interacting with the user (if necessary) and issuing access tokens for use at the MCP server."
+      }
+    ]
+  },
+  "operations": {
+    "text": "There is no single operation set at this card, and that is the finding rather than a silence. The identity concern has one: a workload obtains its own credential from a local API, and the API is deliberately unauthenticated -- \"The SPIFFE Workload API is the method through which workloads, or compute processes, obtain their SVID(s). It is typically exposed locally (eg. via a Unix domain socket), and explicitly does not include an authentication handshake or authenticating token from the workload. Implementors can verify the authenticity of the caller to the Workload API via an out-of-band method, such as inspecting the properties of the process calling the Unix domain socket that are provided by the operating system.\" The authorization concern has a different one: a resource server validates a presented token and answers with a status code -- \"MCP servers MUST validate that access tokens were issued specifically for them as the intended audience,\naccording to RFC 8707 Section 2.\" and, on failure, \"Servers MUST return appropriate HTTP status codes for authorization errors:\n\nStatus Code\n\nDescription\n\nUsage\n\n401\n\nUnauthorized\n\nAuthorization required or token invalid\n\n403\n\nForbidden\n\nInvalid scopes or insufficient permissions\n\n400\" The two do not compose into one verb set. They are not even in the same position in a run: identity is obtained once per workload and refreshed on a timer, while token validation happens on every request. A conformance check at this card has to be two checks, and an example built from it would have two interfaces. Ordering, which docs/reference/profile-sufficiency.md asks for, exists only within each concern: an SVID must be obtained before it can be presented, and a token must be validated before the request it authorises is served.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-rail-1-security-008",
+        "quote": "The SPIFFE Workload API is the method through which workloads, or compute processes, obtain their SVID(s). It is typically exposed locally (eg. via a Unix domain socket), and explicitly does not include an authentication handshake or authenticating token from the workload. Implementors can verify the authenticity of the caller to the Workload API via an out-of-band method, such as inspecting the properties of the process calling the Unix domain socket that are provided by the operating system."
+      },
+      {
+        "id": "X-refmodel-rail-1-security-012",
+        "quote": "MCP servers MUST validate that access tokens were issued specifically for them as the intended audience,\naccording to RFC 8707 Section 2."
+      },
+      {
+        "id": "X-refmodel-rail-1-security-014",
+        "quote": "Servers MUST return appropriate HTTP status codes for authorization errors:\n\nStatus Code\n\nDescription\n\nUsage\n\n401\n\nUnauthorized\n\nAuthorization required or token invalid\n\n403\n\nForbidden\n\nInvalid scopes or insufficient permissions\n\n400"
+      }
+    ]
+  },
+  "domain": {
+    "text": "Per concern, and the two concerns differ in kind -- one gives a shape, the other a closed list, and a third field is deliberately left empty. The identity is a URI with a stated format: \"SPIFFE IDs are a Uniform Resource Identifier (URI) which takes the following format: spiffe://trust domain/workload identifier\" Its proof is signed within a named namespace: \"An SVID is the document with which a workload proves its identity to a resource or caller. An SVID is considered valid if it has been signed by an authority within the SPIFFE ID’s trust domain.\" The authorization failure domain is a closed list of three: \"Servers MUST return appropriate HTTP status codes for authorization errors:\n\nStatus Code\n\nDescription\n\nUsage\n\n401\n\nUnauthorized\n\nAuthorization required or token invalid\n\n403\n\nForbidden\n\nInvalid scopes or insufficient permissions\n\n400\" And the permission vocabulary has no standard values at all, on purpose: \"OAuth does not define any scope values, instead scopes are defined by\nthe authorization server or by extensions or profiles of OAuth. One\" That last one is worth reading carefully. It is the opposite of card 6.1's compression set, which is closed with a MUST, and it is closer to card 6.3's custom facets: a mechanism whose values are somebody else's to define. A profile that reported 'scope is a required field' without this sentence would tell a builder nothing about what to put in it.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-rail-1-security-003",
+        "quote": "SPIFFE IDs are a Uniform Resource Identifier (URI) which takes the following format: spiffe://trust domain/workload identifier"
+      },
+      {
+        "id": "X-refmodel-rail-1-security-005",
+        "quote": "An SVID is the document with which a workload proves its identity to a resource or caller. An SVID is considered valid if it has been signed by an authority within the SPIFFE ID’s trust domain."
+      },
+      {
+        "id": "X-refmodel-rail-1-security-014",
+        "quote": "Servers MUST return appropriate HTTP status codes for authorization errors:\n\nStatus Code\n\nDescription\n\nUsage\n\n401\n\nUnauthorized\n\nAuthorization required or token invalid\n\n403\n\nForbidden\n\nInvalid scopes or insufficient permissions\n\n400"
+      },
+      {
+        "id": "X-refmodel-rail-1-security-016",
+        "quote": "OAuth does not define any scope values, instead scopes are defined by\nthe authorization server or by extensions or profiles of OAuth. One"
+      }
+    ]
+  },
+  "failures": {
+    "text": "The authorization concern types its failures and states the obligation, not just the code: \"Servers MUST return appropriate HTTP status codes for authorization errors:\n\nStatus Code\n\nDescription\n\nUsage\n\n401\n\nUnauthorized\n\nAuthorization required or token invalid\n\n403\n\nForbidden\n\nInvalid scopes or insufficient permissions\n\n400\" The rule that produces most of them is audience binding -- \"MCP servers MUST only accept tokens specifically intended for themselves and MUST reject tokens that do not include them in the audience claim or otherwise verify that they are the intended recipient of the token. See the Security Best Practices Token Passthrough section for details.\" -- with an outright prohibition on the passthrough case: \"MCP servers MUST NOT accept or transit any other tokens.\" The identity concern, by contrast, has no typed failures in what was sourced here: nothing states what the Workload API returns when attestation fails, when no registration entry matches a caller, or when a trust bundle cannot be fetched. That asymmetry is real and is recorded in gaps rather than filled in. Proposed, and why: what a path that has never run must return cannot be answered here either, because this repo has built no adapter at this card. Fifth card, same answer.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-rail-1-security-014",
+        "quote": "Servers MUST return appropriate HTTP status codes for authorization errors:\n\nStatus Code\n\nDescription\n\nUsage\n\n401\n\nUnauthorized\n\nAuthorization required or token invalid\n\n403\n\nForbidden\n\nInvalid scopes or insufficient permissions\n\n400"
+      },
+      {
+        "id": "X-refmodel-rail-1-security-015",
+        "quote": "MCP servers MUST only accept tokens specifically intended for themselves and MUST reject tokens that do not include them in the audience claim or otherwise verify that they are the intended recipient of the token. See the Security Best Practices Token Passthrough section for details."
+      },
+      {
+        "id": "X-refmodel-rail-1-security-013",
+        "quote": "MCP servers MUST NOT accept or transit any other tokens."
+      }
+    ]
+  },
+  "vocabulary": {
+    "text": "Two configurable words, each with the step it applies at, and one non-word that matters more than either. The trust domain is chosen at issuance and is what a verifier checks a credential against: \"The trust domain corresponds to the trust root of a system. A trust domain could represent an individual, organization, environment or department running their own independent SPIFFE infrastructure. All workloads identified in the same trust domain are issued identity documents that can be verified against the root keys of the trust domain.\" The scope is chosen when a token is issued and applies at every request that token authorises -- and its legal values are not the standard's to give: \"OAuth does not define any scope values, instead scopes are defined by\nthe authorization server or by extensions or profiles of OAuth. One\" The non-word is the secret, and the point is that there is not one: \"In similar fashion to the AWS EC2 Instance Metadata API, and the Google GCE Instance Metadata API, the Workload API does not require that a calling workload have any knowledge of its own identity, or possess any authentication token when calling the API. This means your application need not co-deploy any authentication secrets with the workload.\" With the lifetime discipline that replaces it: \"In order to minimize exposure from a key being leaked or compromised, all private keys (and corresponding certificates) are short lived, rotated frequently and automatically. Workloads can request new keys and trust bundles from the Workload API before the corresponding key(s) expire.\" So of the four concerns the card names, `secrets` is the one where the right answer is that a correctly built platform has no vocabulary at all -- nothing for a caller to configure, because nothing is stored. Proposed: this repo has built no adapter at this card, so no mapping from its own `intent:` / `profile:` vocabulary onto a trust domain or a scope has been chosen.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-rail-1-security-004",
+        "quote": "The trust domain corresponds to the trust root of a system. A trust domain could represent an individual, organization, environment or department running their own independent SPIFFE infrastructure. All workloads identified in the same trust domain are issued identity documents that can be verified against the root keys of the trust domain."
+      },
+      {
+        "id": "X-refmodel-rail-1-security-016",
+        "quote": "OAuth does not define any scope values, instead scopes are defined by\nthe authorization server or by extensions or profiles of OAuth. One"
+      },
+      {
+        "id": "X-refmodel-rail-1-security-006",
+        "quote": "In similar fashion to the AWS EC2 Instance Metadata API, and the Google GCE Instance Metadata API, the Workload API does not require that a calling workload have any knowledge of its own identity, or possess any authentication token when calling the API. This means your application need not co-deploy any authentication secrets with the workload."
+      },
+      {
+        "id": "X-refmodel-rail-1-security-007",
+        "quote": "In order to minimize exposure from a key being leaked or compromised, all private keys (and corresponding certificates) are short lived, rotated frequently and automatically. Workloads can request new keys and trust bundles from the Workload API before the corresponding key(s) expire."
+      }
+    ]
+  },
+  "swap_axis": {
+    "text": "The scope-statement instrument gives a different axis per concern here, and one refusal. At the authorization concern the standard names its own variation point: \"The implementation details of the authorization server are beyond the scope of this specification. It may be hosted with the\nresource server or a separate entity.\" So a genuine pair is a co-located authorization server against a separate one, and the difference is readable by the caller rather than internal -- discovery and the 401 that points at it change, while the token validation contract does not. Transport is ruled out at this concern by the framework itself: \"This specification is designed for use with HTTP [RFC9110]. The use\nof OAuth over any protocol other than HTTP is out of scope.\" At the identity concern the axis is the implementation of the specification, and the docs assert the substitution directly: \"SPIRE is just one implementation of the SPIFFE specification. For a list of current implementations, see the spiffe.io homepage.\" -- against \"SPIRE is a production-ready implementation of the SPIFFE APIs that performs node and workload attestation in order to securely issue SVIDs to workloads, and verify the SVIDs of other workloads, based on a predefined set of conditions.\", so a second implementation differs in how a workload is attested, not in what it receives. The refusal: isolation cannot be a swap axis at this card at all, because the identity standard assumes it rather than providing it -- \"While the granularity of what’s considered a workload will vary depending on context, for SPIFFE’s purposes it is assumed that a workload is sufficiently well isolated from other workloads such that a malicious workload could not steal the credentials of another after they have been issued. The robustness of this isolation and the mechanism by which it is implemented is beyond the scope of SPIFFE.\" Two implementations of rail.1 that differ on isolation are differing on card 3.3, and a swap test written here would be testing another card's seam.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-rail-1-security-011",
+        "quote": "The implementation details of the authorization server are beyond the scope of this specification. It may be hosted with the\nresource server or a separate entity."
+      },
+      {
+        "id": "X-refmodel-rail-1-security-017",
+        "quote": "This specification is designed for use with HTTP [RFC9110]. The use\nof OAuth over any protocol other than HTTP is out of scope."
+      },
+      {
+        "id": "X-refmodel-rail-1-security-019",
+        "quote": "SPIRE is just one implementation of the SPIFFE specification. For a list of current implementations, see the spiffe.io homepage."
+      },
+      {
+        "id": "X-refmodel-rail-1-security-018",
+        "quote": "SPIRE is a production-ready implementation of the SPIFFE APIs that performs node and workload attestation in order to securely issue SVIDs to workloads, and verify the SVIDs of other workloads, based on a predefined set of conditions."
+      },
+      {
+        "id": "X-refmodel-rail-1-security-009",
+        "quote": "While the granularity of what’s considered a workload will vary depending on context, for SPIFFE’s purposes it is assumed that a workload is sufficiently well isolated from other workloads such that a malicious workload could not steal the credentials of another after they have been issued. The robustness of this isolation and the mechanism by which it is implemented is beyond the scope of SPIFFE."
+      }
+    ]
+  },
+  "standards": [
+    {
+      "id": "workload-identity",
+      "role": "governs the identity concern: what an actor's name is, its legal shape, the namespace it is issued in, the document that proves it, and how a workload obtains one without holding a secret first.",
+      "covers": "explicitly does not cover the isolation that keeps one workload from stealing another's issued credential - it assumes it and says so - and says nothing about what a workload may then do, which is the authorization concern below.",
+      "evidence": {
+        "text": "It states its own subject as bootstrapping and issuing identity across environments: \"The SPIFFE standard provides a specification for a framework capable of bootstrapping and issuing identity to services across heterogeneous environments and organizational boundaries.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-rail-1-security-001",
+            "quote": "The SPIFFE standard provides a specification for a framework capable of bootstrapping and issuing identity to services across heterogeneous environments and organizational boundaries."
+          }
+        ]
+      }
+    },
+    {
+      "id": "oauth-2-1",
+      "role": "governs the authorization concern's mechanism: the roles, the token, the scope as a mechanism, and the validation the resource server owes.",
+      "covers": "deliberately defines no scope values, so the permission vocabulary itself is out of scope; and it is bound to HTTP, so it governs nothing about authorization over another transport.",
+      "evidence": {
+        "text": "The framework leaves the permission vocabulary to others: \"OAuth does not define any scope values, instead scopes are defined by\nthe authorization server or by extensions or profiles of OAuth. One\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-rail-1-security-016",
+            "quote": "OAuth does not define any scope values, instead scopes are defined by\nthe authorization server or by extensions or profiles of OAuth. One"
+          }
+        ]
+      }
+    },
+    {
+      "id": "model-context-protocol",
+      "role": "binds the authorization concern to this platform's tool boundary: it fixes which OAuth roles the parties take, makes audience validation an obligation, forbids token passthrough, and closes the failure domain to three status codes.",
+      "covers": "leaves the authorization server's own implementation and location out of scope, which is what makes that the declared variation point rather than a hidden one.",
+      "evidence": {
+        "text": "It assigns the roles rather than inventing a model: \"A protected MCP server acts as an OAuth 2.1 resource server,\ncapable of accepting and responding to protected resource requests using access tokens.\nAn MCP client acts as an OAuth 2.1 client,\nmaking protected resource requests on behalf of a resource owner.\nThe authorization server is responsible for interacting with the user (if necessary) and issuing access tokens for use at the MCP server.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-rail-1-security-010",
+            "quote": "A protected MCP server acts as an OAuth 2.1 resource server,\ncapable of accepting and responding to protected resource requests using access tokens.\nAn MCP client acts as an OAuth 2.1 client,\nmaking protected resource requests on behalf of a resource owner.\nThe authorization server is responsible for interacting with the user (if necessary) and issuing access tokens for use at the MCP server."
+          }
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "SPIRE",
+      "kind": "open-source",
+      "note": "the named implementation of the identity specification, and the place node and workload attestation actually happens. Not in use here: this repo is stdlib-only and has built no adapter at this card.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "It is described as a production-ready implementation performing attestation to issue SVIDs: \"SPIRE is a production-ready implementation of the SPIFFE APIs that performs node and workload attestation in order to securely issue SVIDs to workloads, and verify the SVIDs of other workloads, based on a predefined set of conditions.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-rail-1-security-018",
+            "quote": "SPIRE is a production-ready implementation of the SPIFFE APIs that performs node and workload attestation in order to securely issue SVIDs to workloads, and verify the SVIDs of other workloads, based on a predefined set of conditions."
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The genuine difference between options at this card is not which product, it is where the trust is anchored, and the two concerns anchor it in different places. Identity anchors it in a namespace with root keys and short-lived documents -- \"The trust domain corresponds to the trust root of a system. A trust domain could represent an individual, organization, environment or department running their own independent SPIFFE infrastructure. All workloads identified in the same trust domain are issued identity documents that can be verified against the root keys of the trust domain.\" -- which moves the question from 'who holds which secret' to 'which trust domain signed this, and is it still valid'. Authorization anchors it in a token whose audience names exactly one recipient -- \"MCP servers MUST only accept tokens specifically intended for themselves and MUST reject tokens that do not include them in the audience claim or otherwise verify that they are the intended recipient of the token. See the Security Best Practices Token Passthrough section for details.\" -- which moves the question from 'is this caller allowed' to 'was this credential minted for me'. The real tradeoff is between them: an identity system that issues freely and an authorization system that validates narrowly can be composed, but only if the platform decides both, because a caller handed either one to configure will get the boundary wrong. That is why this rail exists as a rail and not as a step.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-rail-1-security-004",
+        "quote": "The trust domain corresponds to the trust root of a system. A trust domain could represent an individual, organization, environment or department running their own independent SPIFFE infrastructure. All workloads identified in the same trust domain are issued identity documents that can be verified against the root keys of the trust domain."
+      },
+      {
+        "id": "X-refmodel-rail-1-security-015",
+        "quote": "MCP servers MUST only accept tokens specifically intended for themselves and MUST reject tokens that do not include them in the audience claim or otherwise verify that they are the intended recipient of the token. See the Security Best Practices Token Passthrough section for details."
+      }
+    ]
+  },
+  "usage": {
+    "text": "A caller at this card configures nothing. It does not choose a trust domain, mint a token, pick a scope, or hold a credential; isolation is on the explicit list of things this repo's planning layer decides so the caller does not -- a caller writes an intent and at most one word of profile rather than deciding \"decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger\". The shape of the call is therefore an absence, and that is what an example built from this card would have to assert: that no method on the interface accepts a credential, a scope, a trust domain or a token, and that the identity of the actor is readable from the run afterwards rather than supplied to it.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "REF-3-02",
+        "quote": "decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger"
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "This card is a bucket, not a seam, and the evidence says so rather than the profile asserting it. X-refmodel-rail-1-security-009 records the identity standard stating that the isolation which keeps one workload from stealing another's credential is beyond its scope - while assuming it holds. So the card's four named concerns stand in three different relations: identity and authorization are separate seams with separate standards and separate operation sets; secrets is not a seam at all but the absence produced by doing identity correctly; and isolation is a precondition of identity that another card (3.3, and 4.1) owns.",
+      "why_it_matters": "Every field in this profile had to be answered per concern, and an example built from it would need two interfaces, not one. If the model keeps this card as a single card, the profile is the right shape and the card is misleading; if it splits, three of these four concerns already have their evidence written here. Either way the decision is the owner's, and it is a model change rather than a profiling one.",
+      "research_query": "none - this is a reference-model decision for the owner: does rail.1 split into identity / authorization, with secrets folded into identity and isolation deferred to 3.3 and 4.1"
+    },
+    {
+      "what": "The identity concern has no sourced failure behaviour. Nothing captured states what the Workload API returns when node or workload attestation fails, when no registration entry matches the caller, or when a trust bundle cannot be refreshed before the current credential expires. The authorization concern's failures are fully typed by contrast, which makes the asymmetry look like a property of the card when it is a property of what was fetched.",
+      "why_it_matters": "The expiry case is the one that matters most: a short-lived credential that cannot be renewed is a run that stops working correctly at a time nobody chose, and it is exactly the failure a platform deciding identity for the caller must handle on their behalf.",
+      "research_query": "capture the SPIFFE Workload API specification (spiffe-specs/WORKLOAD_API) and the SPIRE agent docs for attestation failure and SVID renewal failure behaviour"
+    },
+    {
+      "what": "The threat half of a security card is absent. standards/ carries owasp-llm-agentic and mitre-atlas directories and this card cites neither, so nothing here says what the platform is being secured against. The card's sources also include OWASP GenAI material that was not captured.",
+      "why_it_matters": "Identity plus authorization is the mechanism half. A security rail with no threat model cannot say whether the mechanisms chosen are the right ones, and an example built from this profile would demonstrate correct plumbing against no stated adversary.",
+      "research_query": "source OWASP Top 10 for LLM Applications and MITRE ATLAS for the agentic threats rail.1 is meant to answer, and decide whether the threat model belongs on this card or on rail.2 Governance"
+    },
+    {
+      "what": "Secrets management as a capability is uncovered, and only half-answered by removal. SPIFFE removes the need to co-deploy an authentication secret to obtain an identity; it says nothing about the secrets a workload still needs for third-party systems that do not speak SPIFFE - an API key for an external service, a database password. The card names secrets, and that half has no standard cited here.",
+      "why_it_matters": "It is the common case in practice, and the one where a platform either brokers a short-lived credential or hands a long-lived secret to a sandbox. Which of those it does is a security property the card should decide and currently does not.",
+      "research_query": "source OAuth 2.0 Token Exchange (standards/oauth-2-0-token-exchange exists) for brokered third-party credentials, and decide whether secrets belongs on rail.1 or on cap-identity"
+    },
+    {
+      "what": "No adapter has been built at this card, so `vocabulary`'s platform-mapping half and `failures`' never-run half are proposed, and the whole profile is evidence about standards rather than about anything running here.",
+      "why_it_matters": "Fifth card with the same two proposed halves - 3.3, 1.5, 6.1, 6.3 and rail.1. That is now a settled property of the schema rather than a per-card observation.",
+      "research_query": "does any harness or example in this repo name an actor or validate a credential, or is cap-identity the nearest built thing"
+    }
+  ]
+}

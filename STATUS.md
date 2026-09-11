@@ -15,4 +15,3 @@
 | 84 | Citable means checked | citation-debt.json is empty and the gate needs no exemptions | Open | 23 entries, 16 need re-sourcing |
 | 85 | Ready to build | python3 tools/ready_to_build.py exits zero | Open | 3 of 8 conditions met |
 | 86 | Examples layer points at archived | No tool or doc names the archived seven areas | Open | 7 artifacts name them, 2 are gates |
-| 91 | Loop gates its own output | phase.py runs an examples gate and a ceremony counter | Done | 13 gates to 15, examples now judged |

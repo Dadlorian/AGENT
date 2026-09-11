@@ -16,8 +16,13 @@ to a record id, or print a command beside the last line it promises, and nothing
 TWO OF THE LESSON'S FOUR ARMS
 -----------------------------
   (a) quote attributed to a record id   the quote must be verbatim in that record's source text
-  (c) printed command and its promise   the command is run as written, and the promised text must
-                                        appear in its real output
+  (c) printed command and its promise   the command is run as written, TWICE, and the promised text
+                                        must appear in both runs with the same last line. Twice
+                                        because the lesson says so: "run every command exactly as
+                                        printed, twice where it writes into a persistent state
+                                        directory, and assert the two runs give the same RESULT
+                                        line". A command whose second run differs is a printed
+                                        promise that is true once.
 
 Arms (b) -- break the claim and require the NAMED section, not the suite, to fail -- and (d) -- a
 scan check's scope asserted equal to the sentence it backs -- are not here. They are carried as
@@ -29,6 +34,7 @@ VERDICTS ARE TYPED
   drifted     a long prefix matches and the tail does not -- a person has to read it   BLOCKS
   absent      not in the cited record at all                                           BLOCKS
   stale       the command ran and its output does not carry the promised line          BLOCKS
+  unstable    the promise held, but the two runs printed different last lines          BLOCKS
   unrunnable  the command could not be executed as printed                             BLOCKS
 """
 from __future__ import annotations
@@ -43,7 +49,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 KB = ROOT / "kb"
 SOURCE_FIELDS = ("snippet", "read")
-BLOCKING = ("drifted", "absent", "stale", "unrunnable")
+BLOCKING = ("drifted", "absent", "stale", "unstable", "unrunnable")
 PROSE_FILES = ("README.md", "provenance.json")
 ID = r"[FTREADLX]-[a-z0-9-]+|REF-[a-z0-9-]+"
 MIN_WORDS = 5
@@ -119,18 +125,31 @@ def arm_c(area: Path) -> list:
             cmd, promise = m.group(1).strip(), m.group(2).strip()
             if not re.search(r"\d", promise):
                 continue     # only promises with a number in them are checkable this way
-            try:
-                r = subprocess.run(cmd, shell=True, cwd=area, capture_output=True,
-                                   text=True, timeout=600)
-                out = r.stdout + r.stderr
-            except Exception as e:
+            outs, failed = [], None
+            for _ in range(2):
+                try:
+                    r = subprocess.run(cmd, shell=True, cwd=area, capture_output=True,
+                                       text=True, timeout=600)
+                    outs.append(r.stdout + r.stderr)
+                except Exception as e:
+                    failed = e
+                    break
+            if failed is not None:
                 findings.append({"where": "README.md", "kind": "command", "verdict": "unrunnable",
-                                 "cites": [cmd], "what": f"{promise[:50]} ({e})"})
+                                 "cites": [cmd], "what": f"{promise[:50]} ({failed})"})
                 continue
             core = re.sub(r"^the [a-z ]+ gate:\s*", "", promise, flags=re.I)
-            findings.append({"where": "README.md", "kind": "command",
-                             "verdict": "exact" if norm(core) in norm(out) else "stale",
-                             "cites": [cmd], "what": f"{cmd} -> promised {core[:44]!r}"})
+            def last(o):
+                lines = [l for l in o.strip().splitlines() if l.strip()]
+                return norm(lines[-1]) if lines else ""
+            if not all(norm(core) in norm(o) for o in outs):
+                v, extra = "stale", ""
+            elif last(outs[0]) != last(outs[1]):
+                v, extra = "unstable", f" | run1 {last(outs[0])[:28]!r} run2 {last(outs[1])[:28]!r}"
+            else:
+                v, extra = "exact", ""
+            findings.append({"where": "README.md", "kind": "command", "verdict": v,
+                             "cites": [cmd], "what": f"{cmd} -> promised {core[:40]!r}{extra}"})
     return findings
 
 
@@ -169,14 +188,23 @@ def selftest() -> int:
               ' an OCI Image then unpack that image into a filesystem bundle of our own devising."'
               ' (`X-refmodel-3-3-environment-011`)\n\n```\nbash test.sh    the visible gate:'
               ' passed 999, failed 0\n```\n')
+        # A command that answers differently the second time: its promise holds, its result does
+        # not. Appended to `t` -- not written straight to the file -- because the write below is
+        # what lands, and an earlier draft of this self-test wrote the plant and then overwrote it.
+        (fake / "flaky.sh").write_text(
+            '#!/usr/bin/env bash\nf="$(dirname "$0")/.flaky-marker"\n'
+            'echo "promise 1 holds"\n'
+            'if [ -f "$f" ]; then echo "second run differs"; else touch "$f"; echo "first run"; fi\n')
+        t += '\n```\nbash flaky.sh    promise 1 holds\n```\n' 
         (fake / "README.md").write_text(t)
         dirty = [f for f in check(fake, src) if f["verdict"] in BLOCKING]
     kinds = {f["verdict"] for f in dirty}
     print("self-test - plant a drifted attributed quote and a stale printed promise")
     print(f"  before planting: {len(clean)} blocking finding(s)")
     print(f"  after planting:  {len(dirty)} blocking finding(s) {sorted(kinds)}")
-    ok = not clean and {"drifted", "stale"} <= kinds
-    print("PASS - both arms fail on a planted defect and are green without one" if ok
+    ok = not clean and {"drifted", "stale", "unstable"} <= kinds
+    print("PASS - a drifted quote, a stale promise and an unstable command all fail, "
+          "and none fires without the plant" if ok
           else "FAIL - a planted defect was not caught")
     return 0 if ok else 1
 

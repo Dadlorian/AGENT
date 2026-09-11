@@ -1,0 +1,51 @@
+{
+  "ceremony": 16,
+  "section": "88-next-plan",
+  "reviewer": "opus-5, review of the second phase the improvement loop selected",
+  "date": "2026-09-11",
+  "numbering_note": "tools/ceremony_next.py read 16 off disk. Paired with kb/ceremonies/ceremony-16-improve-88-next-plan.json. Item chosen by `improvement_loop.py plan 1`.",
+  "scope": "tools/named_proof.py arm (c), state/lessons.jsonl. STATUS row 88.",
+  "findings": [
+    {
+      "id": "C16-001",
+      "location": "tools/named_proof.py arm_c()",
+      "severity": "fix",
+      "category": "completeness",
+      "finding": "Arm (c) ran each printed command once. The lesson it implements is explicit that once is not enough -- \"run every command exactly as printed, twice where it writes into a persistent state directory, and assert the two runs give the same RESULT line\". A command that answers differently the second time is a printed promise that is true once, and a single run cannot tell the difference.",
+      "evidence": "The rule's pass (2), carried in state/lessons.jsonl since 2026-09-04 and recurred at ceremony 12.",
+      "found_by": "the improvement loop, which ranked the lesson; the gap surfaced on reading its full text against what the tool did",
+      "suggested_change": "Run twice, compare the promise against both runs and the last line against itself, and add a typed `unstable` verdict distinct from `stale`."
+    },
+    {
+      "id": "C16-002",
+      "location": "tools/named_proof.py selftest()",
+      "severity": "block",
+      "category": "evidence",
+      "finding": "The first cut of the new plant did not fire. It wrote the flaky command into the temp README and the pre-existing `write_text(t)` below it immediately overwrote the file, so the self-test reported PASS-shaped output with only two of the three verdicts and the tool would have shipped with an arm proven by nothing.",
+      "evidence": "Self-test run: `after planting: 3 blocking finding(s) ['drifted', 'stale']` -- `unstable` absent, and the assertion required it, so it correctly printed FAIL.",
+      "found_by": "the self-test's own assertion, immediately",
+      "suggested_change": "Append the plant to the same buffer that is written, and record why in a comment so the next edit does not reintroduce the ordering."
+    },
+    {
+      "id": "C16-003",
+      "location": "state/lessons.jsonl 75-boundary-progress-improve-done",
+      "severity": "fix",
+      "category": "honesty",
+      "finding": "The rule has four passes and the two tools now cover parts of two of them. Closing it whole would retire pass (3) paths and pass (4) scope entirely, plus the remainder of (1) and (2), by implication.",
+      "evidence": "The original text, preserved under sharper_check_original, enumerates four passes with several clauses each.",
+      "found_by": "author, applying the rule established at C13-006 and reapplied at C14-004",
+      "suggested_change": "Close on the covered slice with the uncovered clauses named explicitly, and split the remainder into its own ranked lesson with a recommendation on which to build first."
+    }
+  ],
+  "metrics": {
+    "item_selected_by": "tools/improvement_loop.py plan 1",
+    "verdicts_before": 6,
+    "verdicts_after": 7,
+    "commands_run_per_check": 2,
+    "named_proofs_in_live_area": 6,
+    "blocking_in_live_area": 0,
+    "capability_debt_before": 7,
+    "capability_debt_after": 7,
+    "ceremony_75_lessons_closed_on_covered_slice": 3
+  }
+}

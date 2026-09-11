@@ -1,0 +1,63 @@
+{
+  "ceremony": 19,
+  "section": "86-card-example-map",
+  "reviewer": "opus-5, review of re-pointing the card-example map at the areas that exist",
+  "date": "2026-09-11",
+  "numbering_note": "tools/ceremony_next.py read 19 off disk. Paired with kb/ceremonies/ceremony-19-improve-86-card-example-map.json.",
+  "scope": "docs/reference/card-example-map.json, tools/build_card_example_map.py, tools/check_card_example_map.py, tools/phase.py. STATUS rows 85, 86 and condition R5.",
+  "findings": [
+    {
+      "id": "C19-001",
+      "location": "tools/check_card_example_map.py EXAMPLES_DIR",
+      "severity": "block",
+      "category": "correctness",
+      "finding": "A blocking gate was validating the map against examples/archived/ -- the seven areas deleted on 2026-09-09. It passed on every run because the deleted areas still exist as an archive directory, so the check was structurally satisfiable by work nobody intends to build. Forty cards were assigned to areas that are gone.",
+      "evidence": "The tool's own comment said so: 'The seven areas this map describes were archived on 2026-09-09 ... so it is checked against where they now live, not against the empty new structure.'",
+      "found_by": "bridge.md section 4 recorded it; acted on here",
+      "suggested_change": "Point it at the planned areas in build-principles.json, and at the built ones under examples/reference/."
+    },
+    {
+      "id": "C19-002",
+      "location": "docs/reference/card-example-map.json",
+      "severity": "fix",
+      "category": "design",
+      "finding": "The map was a hand judgement that no longer had a judgement to make. Under the replacement structure the example areas ARE the reference model's nine, so a card belongs to exactly one area by construction -- 40 rows of reasoning where a derivation would do, and 40 rows that drift silently when the model changes.",
+      "evidence": "Every card's area is determined by its address: card 3.3 is in model area 3, whose example area is 3-core-agent.",
+      "found_by": "author, on reading what the map still decided",
+      "suggested_change": "Derive placement and gate the derivation. Move the judgement to where it can be checked against a built artifact."
+    },
+    {
+      "id": "C19-003",
+      "location": "the join between the map and examples/reference/<area>/cards.json",
+      "severity": "fix",
+      "category": "completeness",
+      "finding": "Nothing connected the map to the areas it maps onto. An area could exist, declare in its cards.json that it demonstrates two cards, and the map could point six cards at it with no check noticing the other four were neither demonstrated nor recorded as gaps.",
+      "evidence": "Before this change the gate read only examples/archived/ directory names; it never opened an area's cards.json.",
+      "found_by": "author, designing the replacement check",
+      "suggested_change": "For any area that exists, require its cards.json to account for every card mapped to it, as demonstrated or as a recorded gap."
+    },
+    {
+      "id": "C19-004",
+      "location": "tools/build_card_example_map.py, litmus carry-across",
+      "severity": "nit",
+      "category": "evidence",
+      "finding": "Regenerating the map carries `litmus` across by address from the previous hand map. The rebuild reported 24 of 40 carried, which reads like 16 were dropped.",
+      "evidence": "The previous map, read from git HEAD, had litmus on exactly 24 entries and empty lists on the other 16 -- the same addresses.",
+      "found_by": "author, checking rather than assuming the number was fine",
+      "suggested_change": "None; the carry-across is complete. Recorded because a plausible number that happens to be right is indistinguishable from one that is wrong until it is checked."
+    }
+  ],
+  "metrics": {
+    "cards_mapped": 40,
+    "areas_named": 9,
+    "areas_built": 1,
+    "litmus_mappings_before": 24,
+    "litmus_mappings_after": 24,
+    "condition_closed": "R5",
+    "ready_to_build_before": "4 of 8",
+    "ready_to_build_after": "5 of 8",
+    "gates_before": 28,
+    "gates_after": 29,
+    "live_artifacts_still_naming_archived_seven": 4
+  }
+}

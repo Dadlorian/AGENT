@@ -1,20 +1,22 @@
-#!/usr/bin/env python3
-"""Gate for docs/reference/card-example-map.json: the hand mapping between the
-40 reference-model cards and the seven example areas, now under examples/archived/.
+"""Gate for docs/reference/card-example-map.json: the join between the 40 reference-model cards
+and the nine example areas under examples/reference/.
 
-This is a judgment mapping between two vocabularies that were never joined
-(reference-model cards vs. litmus sections / example areas), not a sourced
-fact, so it carries no citation check the way validate_card_profiles.py does.
-What this gate enforces instead is structural honesty:
+Placement is no longer a judgement. A card belongs to exactly one area by construction, because the
+areas ARE the model's own nine, so the map is derived by tools/build_card_example_map.py and this
+gate checks the derivation held. The judgement moved to where it can be checked against a built
+artifact: whether an area actually demonstrates a card is recorded in
+examples/reference/<area>/cards.json.
+
+What this enforces:
 
   - every card address in reference-model.json appears exactly once in the map
     (no silent omissions, no duplicates)
-  - every area named in a card's `areas` list is a real directory under examples/archived/
-  - every litmus id named in a card's `litmus` list is a real section id in
-    docs/litmus/questionnaire.json
-  - every entry has a non-empty `why`
-  - `origin` is `proposed` on every entry, because this mapping proposes and
-    does not claim sourced evidence
+  - every area a card names is one of the planned areas in build-principles.json --
+    an area need not exist yet to be named
+  - for an area that DOES exist, its cards.json accounts for every card mapped to it,
+    as `demonstrates` or as a recorded gap in `not_demonstrated`
+  - every litmus id named is a real section in docs/litmus/questionnaire.json
+  - every entry has a non-empty `why`, and `origin` is `proposed` on every entry
 
   python3 tools/check_card_example_map.py           check the map
 """
@@ -26,10 +28,13 @@ ROOT = Path(__file__).resolve().parent.parent
 MAP_PATH = ROOT / "docs" / "reference" / "card-example-map.json"
 MODEL_PATH = ROOT / "docs" / "reference" / "reference-model.json"
 QUESTIONNAIRE_PATH = ROOT / "docs" / "litmus" / "questionnaire.json"
-# The seven areas this map describes were archived on 2026-09-09 (see
-# examples/archived/README.md). The map is the measurement that justified archiving them,
-# so it is checked against where they now live, not against the empty new structure.
-EXAMPLES_DIR = ROOT / "examples" / "archived"
+# Until 2026-09-11 this pointed at examples/archived/, so the gate passed on seven areas that had
+# been deleted -- a green check over dead work. The map is now derived by
+# tools/build_card_example_map.py onto the nine planned areas, so what must hold is: every named
+# area is one we plan to build, and for any area that EXISTS, every card mapped to it is accounted
+# for in that area's own cards.json, as demonstrated or as a recorded gap.
+PRINCIPLES = ROOT / "docs" / "reference" / "build-principles.json"
+EXAMPLES_DIR = ROOT / "examples" / "reference"
 
 
 def model_addresses() -> set:
@@ -45,10 +50,21 @@ def litmus_ids() -> set:
     return {s["id"] for s in q["sections"]}
 
 
-def example_areas() -> set:
+def planned_areas() -> set:
+    """The areas the owner decided to build. An area need not exist yet to be named."""
+    return set(json.loads(PRINCIPLES.read_text()).get("example_areas", []))
+
+
+def built_areas() -> dict:
+    """name -> cards.json, for areas that exist and declare what they cover."""
+    out = {}
     if not EXAMPLES_DIR.is_dir():
-        return set()
-    return {p.name for p in EXAMPLES_DIR.iterdir() if p.is_dir()}
+        return out
+    for p in sorted(EXAMPLES_DIR.iterdir()):
+        cj = p / "cards.json"
+        if p.is_dir() and cj.is_file():
+            out[p.name] = json.loads(cj.read_text())
+    return out
 
 
 def main() -> int:
@@ -69,7 +85,8 @@ def main() -> int:
 
     known_addresses = model_addresses()
     known_litmus = litmus_ids()
-    known_areas = example_areas()
+    known_areas = planned_areas()
+    built = built_areas()
 
     seen_addresses = {}
     for i, c in enumerate(cards):
@@ -93,7 +110,14 @@ def main() -> int:
         else:
             for a in areas:
                 if a not in known_areas:
-                    errs.append(f"{tag}: area {a!r} is not a real directory under examples/")
+                    errs.append(f"{tag}: area {a!r} is not one of the planned example areas in "
+                                f"build-principles.json")
+                elif a in built:
+                    covered = set(built[a].get("demonstrates") or []) | {
+                        g.get("address") for g in (built[a].get("not_demonstrated") or [])}
+                    if addr not in covered:
+                        errs.append(f"{tag}: area {a!r} exists and its cards.json accounts for "
+                                    f"neither demonstrating nor gapping card {addr!r}")
 
         litmus = c.get("litmus")
         if not isinstance(litmus, list):
@@ -123,8 +147,8 @@ def main() -> int:
     for e in errs:
         print(f"error:  {e}")
     print(f"{len(cards)} entries checked, {len(known_addresses)} cards in the model, "
-          f"{len(known_areas)} example areas, {len(known_litmus)} litmus sections, "
-          f"{len(errs)} errors")
+          f"{len(known_areas)} planned areas of which {len(built)} built, "
+          f"{len(known_litmus)} litmus sections, {len(errs)} errors")
     return 1 if errs else 0
 
 

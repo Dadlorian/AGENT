@@ -58,6 +58,8 @@ GATES = [
     ("ceremony nums",  ["python3", "tools/ceremony_next.py", "--check"], False),
     ("token patterns", ["python3", "tools/token_review.py"], False),
     ("card map",       ["python3", "tools/check_card_example_map.py"], True),
+    # The map is derived now; this refuses a hand edit that drifts from its sources.
+    ("card map derived", ["python3", "tools/build_card_example_map.py", "--check"], True),
     ("ref model",      ["python3", "tools/extract_reference_model.py", "--check"], True),
     ("ref stack",      ["python3", "tools/extract_reference_stack.py", "--check"], True),
     ("ref imports",    ["python3", "tools/ref_arch_imports.py"], True),

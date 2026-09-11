@@ -1,0 +1,32 @@
+{
+  "ceremony": 19,
+  "section": "86-card-example-map",
+  "improver": "opus-5",
+  "date": "2026-09-11",
+  "numbering_note": "Paired with kb/ceremonies/ceremony-19-review-86-card-example-map.json.",
+  "applied": [
+    {
+      "finding": "C19-001",
+      "change": "Re-pointed the gate: an area a card names must be one of the planned areas in build-principles.json, and need not exist yet. The docstring was rewritten too -- it still described the hand mapping onto seven archived areas, which is how the stale check kept looking reasonable to anyone who read it.",
+      "files": ["tools/check_card_example_map.py"]
+    },
+    {
+      "finding": "C19-002",
+      "change": "Wrote tools/build_card_example_map.py, which derives the map from reference-model.json and build-principles.json: areas pair by order, and the pairing is verified by requiring the model area's title and the directory name to share a word, so an off-by-one cannot pass silently. Wired --check into tools/phase.py as the `card map derived` gate, so a hand edit that drifts from the sources is refused.",
+      "files": ["tools/build_card_example_map.py", "docs/reference/card-example-map.json", "tools/phase.py"]
+    },
+    {
+      "finding": "C19-003",
+      "change": "The gate now opens each built area's cards.json and requires it to account for every card mapped to that area, as `demonstrates` or as a recorded gap in `not_demonstrated`. Proven by removing card 3.1 from 3-core-agent's gap list and requiring the gate to name that card and that area; restored, 0 errors.",
+      "files": ["tools/check_card_example_map.py", "examples/reference/3-core-agent/cards.json"]
+    },
+    {
+      "finding": "C19-004",
+      "change": "Verified against git HEAD rather than reasoned about: the previous map carried litmus on exactly 24 entries and empty lists on 16, the same addresses. Nothing was dropped. Recorded in the review so the number is not re-investigated later.",
+      "files": ["docs/reference/card-example-map.json"]
+    }
+  ],
+  "declined": [],
+  "verification": "R5 closed: ready_to_build 4 of 8 to 5 of 8. check_card_example_map 40 entries, 9 planned areas of which 1 built, 0 errors. Both new checks proven able to fail -- a card pointed at an unplanned area is named, and a built area that stops accounting for a card mapped to it is named with both the card and the area. build_card_example_map --check confirms the map matches its sources. 26 of 29 gates green, the 3 reds known and pre-existing.",
+  "note": "Row 86 re-measured rather than assumed closed: 4 live artifacts still name the archived seven -- tools/examples_index.py, .claude/skills/build-example/SKILL.md, JOURNEY.md and examples/README.md -- and one of the two gates that passed on dead work is now fixed. The other is standards.py, red on JOURNEY.md under row 77, so that file is where the two rows meet."
+}

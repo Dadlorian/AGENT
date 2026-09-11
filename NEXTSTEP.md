@@ -1,87 +1,54 @@
-# Next step: clean up after the night run (rows 74, 75, 76)
+# Next step
 
-Updated 2026-09-04 after the cleanup batch. Items marked DONE landed in the cleanup; everything else is what to try later, in this order. Nothing below the DONE marks has been done.
+**The scoreboard is a command, not this file.** Run it first; it is measured and this page is not:
 
-## What the cleanup batch already did (DONE)
+```
+python3 tools/ready_to_build.py      3 of 8 conditions, exits 1 until all hold
+python3 tools/phase.py gates         every gate, red ones named
+python3 tools/status_check.py        STATUS.md is the row-level view
+```
 
-- Item 1 (re-run reds): steer was a real defect (a mid-run typed refusal printed no problem banner), fixed; progress's "Killed" was the crash case killing itself as designed, the real defect was the test racing itself over a shared ledger path, now serialized with a lock (`examples/*/.test.lock`, git-ignored).
-- Item 2, half: improve closed (88 visible, 13 hidden, 9 applied, 2 declined). The phase-3 boundary ran: one lessons row, briefs and `build-example` improved.
-- Item 3: the six drifted answer files refreshed with scores held honestly (all six at 0 errors at the time).
-- Item 4, half: the six remaining sections re-answered (durable-execution 5 aligned 1 leading; scheduling 4 aligned 3 exists; concern-budget 7 aligned; provenance 3 aligned 3 exists; state-persistence 5 aligned 2 exists; concern-provenance 5 aligned 1 misaligned: the bundle publishes its own signing key, so a forged statement verifies).
-- Item 5: the two new areas are in the blueprint as gaps (318 entries, 0 errors), imported into the knowledge base.
-- Item 6: README and HUMAN-REVIEW refreshed for 29 skills and the examples; guides, graph and matrix regenerated (16 of 16 accepted).
-- Item 7: tokens summed from the transcripts (`docs/night/cost.json`): 129 agents, 0.78M output, 23.6M cache-creation, 1,086M cache-read; posted against the estimate in `state/night.json` with the lesson to estimate in the four usage classes.
+## What we are following
 
-## A. The done example: two hidden assertions after three improve rounds (row 75)
+`bridge.md` section 6 is the plan — steps 1 to 6, ordered so each protects the ones after it.
+Sections 3, 3b and 4b are the traps that cost real time. Read those before the first edit.
 
-State: 14 of 14 review findings applied; `bash examples/done/test.sh` prints `passed 81, failed 0`; `bash docs/night/hidden/done.sh` prints `hidden passed 11, failed 2`. Rounds two and three each targeted exactly these two and did not move them, so a fourth round is the wrong move.
+Steps 1 to 5 close the eight conditions below. **Step 6 (build the example areas) happens only
+once `ready_to_build.py` exits 0** — building before that is how `examples/archived/` happened.
 
-| Assertion | What the hidden script says | What the improver did | Try |
+## Definition of ready — 3 of 8 met
+
+| # | state | condition | check |
 |---|---|---|---|
-| h-06 "a statement names neither the code version nor the run" | 17 of 21 statements carry no `git_commit`, `interface_version`, `scripts_sha256` or run id, "and no gap row says so" | rewrote README gap G15 to name the 17, the stores, the fields and why (`emit.py`'s signature) | read `docs/night/hidden/done.sh` h-06 and see what form of gap row it parses (a row id, a count, a store name); either make G15 match that form, or, better, make every statement carry the code version and run id, which is what the future state asks and the `xc-provenance-chain` reference already specifies |
-| h-07 "a declared gate rule is decoration" | with `subject-digest-must-match` dropped from the declaration, the gate still refuses on subject mismatch | built one `trust_policy()` from `promotion.gate_rules` used by both `gate()` and `write_bundle()`, and a test arm proving the declared/undeclared difference | run the hidden script's own harness (it invokes the example with the rule removed and reads the refusal); the standalone verifier the bundle ships may still carry `expected_subjects` from an earlier build under `out/`: run with a clean `out/` first; if it still refuses, the verifier reads the rule from a place the declaration does not reach, so make the bundle's verifier policy derive from the declaration only |
+| R1 | open | every card profiled, gate green | `python3 tools/validate_card_profiles.py` |
+| R2 | open | no quote still needs a reader | `python3 tools/knowledge_pool.py` |
+| R3 | open | no undecided citation debt | `docs/reference/citation-debt.json` |
+| R4 | met | prose carries no unsourced quote or figure | `python3 tools/prose_gate.py` |
+| R5 | open | card->example map points at the areas we will build | `docs/reference/card-example-map.json vs build-principles.json` |
+| R6 | met | the model's purpose is decided (owner) | `docs/reference/build-principles.json` |
+| R7 | open | one example built from a profile, gaps written down | `examples/reference/<area>/ + docs/reference/profile-sufficiency.md` |
+| R8 | met | internal-heavy cards labelled | `docs/reference/build-principles.json` |
 
-Rule to settle it: an isolated reviewer (Opus) reads both the example and the hidden script and rules which side is wrong, records the ruling in `kb/ceremonies/75-done-ruling.json`, and only then one improve round. Then close: `python3 tools/check_ceremony.py kb/ceremonies/75-done-review.json kb/ceremonies/75-done-improve.json`, ledger `75-done-close`, `bash tools/checkpoint.sh "75-done: example closed" examples/done kb/ceremonies docs/night`, remove the entry from `docs/night/parked.json`.
+## Order to take them
 
-## B. The v2 scorecard: 7 drifted rows (row 76)
+1. **R7 — one example from one profile.** The only condition whose failure is informative.
+   "The card profile is the spec" has never been tested. Build one area under
+   `examples/reference/` from a profile and write every question the profile could not answer
+   into `docs/reference/profile-sufficiency.md`. Do this before step 3, or eight more profiles
+   get authored against a spec nobody has proven sufficient.
+2. **R5 — re-point the archived-facing artifacts.** `card-example-map.json` maps all 40 cards to
+   the archived seven and `check_card_example_map.py` passes on it, so a gate is green on dead
+   work. STATUS row 86.
+3. **R1 — the 8 unprofiled cards.** The step worth agents. `tools/index_sources.py <card>` gives
+   ordered core/primary candidates; `tools/index_glossary.py <card>` gives standards and API
+   field names for areas 1 to 7 — but **not** for base or rail, so base.1, base.2, base.4 and
+   rail.1 get nothing from it.
+4. **R2 and R3 — the residue.** 4 quotes needing a reader, 23 citation-debt entries with no
+   owner decision. Most can be re-sourced from the pool rather than decided.
 
-`LITMUS_ANSWERS_DIR=answers-v2 python3 tools/litmus_answers.py check` prints `144 answers, 7 errors`, so `LITMUS_ANSWERS_DIR=answers-v2 LITMUS_SCORECARD=scorecard-v2.json python3 tools/litmus_answers.py scorecard` refuses to write. The seven are the same class as before: recorded command outputs that count things in the tree (statements, bodies, example areas, ledger length) moved while the last assessors and the done rounds ran together.
+## Where nothing is tracked
 
-Try, in order:
-1. The design fix first, so this is the last time: in `tools/litmus_answers.py`, record `measured_at` (short commit) on every answer's evidence when written, and in `check`, when a command's output differs, re-run it in a temporary worktree at `measured_at` (`git worktree add /tmp/lit-<commit> <commit>`) before calling it an error; a match at the recorded commit passes; only a mismatch at the recorded commit is a defect. The reanswer brief then tells assessors to run `git rev-parse --short HEAD` into each evidence row.
-2. Then either backfill `measured_at` from each file's checkpoint commit (`git log --format=%h -1 -- docs/litmus/answers-v2/<section>.jsonl`) and re-check, or refresh the seven by hand the way item 3 was done (re-run, replace the last line, keep the score only if the finding still holds).
-3. Build the scorecard, then the spot-check: `python3 tools/spot_check.py sample litmus 10`, a verifier answers the ten per `state/briefs/spot-check.md` into `docs/litmus/spot-check-v2.jsonl` without reading answers-v2, then `LITMUS_ANSWERS_DIR=answers-v2 python3 tools/spot_check.py compare litmus docs/litmus/spot-check-v2.jsonl`.
-4. One lessons row for status_row 76.
-
-What the re-answers already say, so the scorecard will not surprise you: still below aligned after the examples are scheduling q2, q5, q7; provenance q3, q5, q6; state-persistence q5, q7; telemetry q4; concern-provenance q6 misaligned (published signing key); and whatever the seven refreshed rows settle to. Those become the next improvement plan.
-
-## C. Regenerate and close (rows 74, 75, 76)
-
-After A and B: `python3 tools/examples_index.py`, `python3 tools/night_report.py`, `python3 tools/improvement_loop.py plan 7`, `python3 tools/final_acceptance.py --write` (runs every harness; expect 15 of 15), then in STATUS.md mark 74, 75 and 76 Done with a measured result each (at most eight words), `python3 tools/status_archive.py`, one ledger record per row, `bash tools/checkpoint.sh "rows 74-76 closed" STATUS.md STATUS-ARCHIVE.md docs state`.
-
-## D. Structural fixes worth doing before the next run
-
-- **Examples must not share files.** Every `test.sh` and `run.py` under `examples/` writes under `out/<run-id>/` per invocation (progress is serialized with a lock as a stopgap; done's suite does `rm -rf out`, which is what made concurrent runs report spurious failures).
-- **Hidden checks that count things in the tree are fragile** for the same reason; a hidden check reads only its own example's outputs from its own run directory.
-- **The workflow engine caps at CPUs minus two (2 here).** Run lanes as direct agents with `tools/checkpoint.sh`, or as several workflows, not one.
-- **Estimate cost in the four usage classes** (uncached input, cache creation, cache read, output) per model class, and post actuals from `docs/night/cost.json`'s method; the ledger token line (row 72) is still not wired.
-- **Concurrency and the checker**: the `measured_at` change in B.1 is the durable fix; until then never run assessors while examples are being edited.
-
-## E. Still yours
-
-Rows 14 and 45 (fetch access for standards), 37 (live host access so the cells stop being simulated), and the unit design's escalation default and seed choice if you want them changed before the run example is taken as the pattern. Row 21 (the continuous loop) starts against the plan from C.
-
-## F. Standards registry and journey (row 77, 2026-09-08)
-
-- `tools/standards.py check` warns that four E-standard entities named by skill contracts (ag-ui, openapi-asyncapi, rfc-8785-json-canonicalization, rfc-9162-certificate-transparency) are not in `kb/entities.jsonl`, because entities are built from PASS.md and those standards entered through research. Fix: let `tools/kb.py build` also emit entities for every `contract.standards` entry, or add the four to PASS.md's standards table.
-- Eight standards sit at position adopt without a contract (see `STANDARDS.md`, Gaps). Six have research records and need naming in the owning skill's contract: JSON-RPC 2.0 (cap-agent-runtime), W3C Trace Context (cap-telemetry), OAuth 2.1 (cap-tool-access), Sigstore (cap-provenance), OWASP LLM and Agentic (cap-policy). Three have no record and need research first: AGENTS.md, RFC 9396, CycloneDX ML-BOM.
-- Step G Grow has no litmus section; the improvement loop is measured by `tools/improvement_loop.py` only. Decide whether a 24th section is wanted or the loop's plan check is the measure.
-- Every step's litmus median is 1.0 except B Bound at 1.8. The journey's gaps column is the target list for the next boundary pass.
-
-## G. Carried out of phase 1 `B-core-agent` (2026-09-10)
-
-Five cards profiled (3.1, 3.2, 3.4, 3.5, 2.3); `validate_card_profiles.py` 32 of 40 at 0 errors.
-Two findings are cross-cutting and should not be re-discovered one card at a time.
-
-- **The standard badge is wrong across a whole region, and the corrections file cannot express it.**
-  `reference-model.json` badges 3.1, 3.2 and 3.3 `null`, while this repo's own Part B substrate table
-  names a standard for those rows — `F-b3-05` reads
-  "| **Agent runtime** | Agent Client Protocol | goose | Claude Code · Cursor · any ACP-speaking agent |".
-  The worked example `3-3.json` already carries two standards on a `null` badge, so the badge field is
-  not the constraint on a profile; it is just unpopulated. This cannot go in
-  `docs/reference/status-corrections.json` as it stands: `tools/extract_reference_model.py:167` applies
-  only the `status` and `sub` overrides, so a `standard` correction would be read and silently ignored.
-  Closing it needs the extractor to accept a `standard` field first — and `extract_reference_model.py
-  --check` is a blocking gate, so that change belongs in phase 5 `C-triage`, not in a profiling batch.
-
-- **Two records already known to misrepresent their pages are still cited in four live places.**
-  `bridge.md` names `X-end-to-end-058` and `X-cap-evaluation-003` as carrying text from a different
-  record's page. A third citation of 058 was added and removed during this phase; these four remain:
-  `.claude/skills/cap-model-access/skill.json`, `docs/reference/cards/rail-6.json` (058), and
-  `.claude/skills/cap-evaluation/skill.json`, `docs/reference/cards/6-2.json` (cap-evaluation-003).
-  For 058 the page was re-captured this session: `tools/capture.py https://arxiv.org/pdf/2603.21354`
-  (rung `api`, HTTP 200) returns arXiv's title+abstract, and "composes routing, policies, reasoning
-  budgets and workflow signals into a unified inference layer", "Mixture of Models" and "vLLM announced"
-  are all absent from it. Note the limit honestly: that is absence from the **abstract**: the `api` rung
-  returns ~3.7KB and the PDF body was not retrievable, so the phrase is unverified, not disproven.
-  These are phase 3 `A-cited`'s highest-priority targets — records a skill or profile already leans on.
+`NEXTSTEP.md` was stale from 2026-09-04 until 2026-09-10: its whole punch list targeted the
+seven example areas that moved under `examples/archived/` on 2026-09-09. It is kept short on purpose now — the measured state lives in the commands at the
+top, and a hand-written list of what to do next drifts the moment the work moves. The superseded
+version is in git history at `bf57082`.

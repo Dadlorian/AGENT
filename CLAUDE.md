@@ -24,8 +24,9 @@ source documents everything else derives from.
 - **`STATUS.md`** — the single view of open work, one row per item with its definition of done as a
   runnable command/file. Closed rows move to `STATUS-ARCHIVE.md` via `tools/status_archive.py`. Do not
   let STATUS.md drift from the state of the repo.
-- **`NEXTSTEP.md`** — the current in-flight punch list (what's DONE from the last cleanup batch vs. what
-  to try next, in order). Check this before assuming what to work on next.
+- **`NEXTSTEP.md`** — points at the live scoreboard (`python3 tools/ready_to_build.py`) and the order to
+  take the open conditions in. Deliberately short: it went stale for six days once by trying to be a
+  hand-written punch list, so the measured state lives in the commands it names, not in its prose.
 - Nothing is asserted from memory: a claim in a skill or doc is either cited to a `kb/*.jsonl` record with
   a verbatim quote, or explicitly marked `proposed`.
 - Naming convention: agents, scope claims, and ceremony records are named by their STATUS row id, e.g.

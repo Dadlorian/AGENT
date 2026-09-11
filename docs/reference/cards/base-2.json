@@ -1,0 +1,228 @@
+{
+  "address": "base.2",
+  "card": "Artifact Storage",
+  "area": "Shared Platform Services",
+  "status": "built",
+  "schema_note": "Sixth profile authored with the five fields from docs/reference/profile-sufficiency.md. This card has the fullest `failures` of any profiled so far - fourteen typed codes closed with a MUST - and its `swap_axis` comes from a third reading of the scope instrument: not a scope limit and not a configurable declaration, but a *conformance floor*. Only one of four capability categories is mandatory, so two conformant registries can genuinely differ in what they can do, and a caller can discover which.",
+  "definition": {
+    "text": "Artifact Storage at this card is the durable, content-addressed store for everything a run produces or consumes that is not source code -- model artifacts, datasets, logs, traces, evaluation results. The API that does the storing states its own subject -- \"The **Open Container Initiative Distribution Specification** (a.k.a. \"OCI Distribution Spec\") defines an API protocol to facilitate and standardize the distribution of content.\" -- and the sentence that makes a container registry the right answer for datasets and traces rather than only for images is this one: \"The specification is designed to be agnostic of content types.\" The thing implementing it is defined by what it must implement: \"- **Registry**: a service that handles the required APIs defined in this specification\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-2-artifact-storage-001",
+        "quote": "The **Open Container Initiative Distribution Specification** (a.k.a. \"OCI Distribution Spec\") defines an API protocol to facilitate and standardize the distribution of content."
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-002",
+        "quote": "The specification is designed to be agnostic of content types."
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-003",
+        "quote": "- **Registry**: a service that handles the required APIs defined in this specification"
+      }
+    ]
+  },
+  "operations": {
+    "text": "The operation set is given as four named capability groups rather than as a verb list, which is unusual and is the right granularity for this card because capability is declared per group -- \"1. **Pull** - Clients are able to pull from the registry\n2. **Push** - Clients are able to push to the registry\n3. **Content Discovery** - Clients are able to list or otherwise query the content stored in the registry\n4. **Content Management** - Clients are able to control the full life-cycle of the content stored in the registry\" The ordering constraints: Push precedes Pull for any given digest, Content Discovery reads what Push wrote, and Content Management is the only group that removes anything -- so a run that stores a result and a later run that reads it are using two different groups, and a registry may support the first without the second. That is not a hypothetical: \"All registries conforming to this specification MUST support, at a minimum, all APIs in the **Pull** category.\" So the minimum conformant registry is read-only, and everything this card exists to do -- storing what a run produced -- is in a category a conformant implementation may lack.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-2-artifact-storage-005",
+        "quote": "1. **Pull** - Clients are able to pull from the registry\n2. **Push** - Clients are able to push to the registry\n3. **Content Discovery** - Clients are able to list or otherwise query the content stored in the registry\n4. **Content Management** - Clients are able to control the full life-cycle of the content stored in the registry"
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-006",
+        "quote": "All registries conforming to this specification MUST support, at a minimum, all APIs in the **Pull** category."
+      }
+    ]
+  },
+  "domain": {
+    "text": "The identifier's domain is the strongest fact on this card: content is named by its own hash, so the name and the bytes cannot disagree -- \"- **Blob**: the binary form of content that is stored by a registry, addressable by a digest\" That is where immutability comes from here, and it is worth contrasting with the other storage model this card could be built on, where immutability is a configured mode with an expiry date rather than a property of the name: \"Object Lock uses a\nwrite-once-read-many (WORM) model to store objects.\" and \"Each retention period has a retain-until-date that indicates\nwhen the protection expires. After the retention period expires, the object version can\nbe overwritten or deleted.\" The error code domain is closed and constrained in shape: \"The `code` field MUST be a unique identifier, containing only uppercase alphabetic characters and underscores.\" with the values enumerated in `failures` below. The stored object's own format domain belongs to a second specification: \"This specification defines an OCI Image, consisting of an [image manifest](manifest.md), an [image index](image-index.md) (optional), a set of [filesystem layers](layer.md), and a [configuration](config.md).\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-2-artifact-storage-004",
+        "quote": "- **Blob**: the binary form of content that is stored by a registry, addressable by a digest"
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-013",
+        "quote": "Object Lock uses a\nwrite-once-read-many (WORM) model to store objects."
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-015",
+        "quote": "Each retention period has a retain-until-date that indicates\nwhen the protection expires. After the retention period expires, the object version can\nbe overwritten or deleted."
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-008",
+        "quote": "The `code` field MUST be a unique identifier, containing only uppercase alphabetic characters and underscores."
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-010",
+        "quote": "This specification defines an OCI Image, consisting of an [image manifest](manifest.md), an [image index](image-index.md) (optional), a set of [filesystem layers](layer.md), and a [configuration](config.md)."
+      }
+    ]
+  },
+  "failures": {
+    "text": "Fourteen typed failures, closed with a MUST, each carrying the condition that raises it -- the fullest failure set of any card profiled here. The shape rule first: \"The `code` field MUST be a unique identifier, containing only uppercase alphabetic characters and underscores.\" Then the values, quoted as the specification's own table rows in page order: \"| code-1 | `BLOB_UNKNOWN` | blob unknown to registry |\n| code-2 | `BLOB_UPLOAD_INVALID` | blob upload invalid |\n| code-3 | `BLOB_UPLOAD_UNKNOWN` | blob upload unknown to registry |\n| code-4 | `DIGEST_INVALID` | provided digest did not match uploaded content |\n| code-5 | `MANIFEST_BLOB_UNKNOWN` | manifest references a manifest or blob unknown to registry |\n| code-6 | `MANIFEST_INVALID` | manifest invalid |\n| code-7 | `MANIFEST_UNKNOWN` | manifest unknown to registry |\n| code-8 | `NAME_INVALID` | invalid repository name |\n| code-9 | `NAME_UNKNOWN` | repository name not known to registry |\n| code-10 | `SIZE_INVALID` | provided length did not match content length |\n| code-11 | `UNAUTHORIZED` | authentication required |\n| code-12 | `DENIED` | requested access to the resource is denied |\n| code-13 | `UNSUPPORTED` | the operation is unsupported |\n| code-14 | `TOOMANYREQUESTS` | too many requests |\" Three of these are worth naming for a builder because they are the ones a platform storing run outputs will actually hit: DIGEST_INVALID, which is the integrity check failing -- the uploaded bytes did not hash to the name they were stored under; TOOMANYREQUESTS, which is the only one of the fourteen with retry guidance attached in the specification; and DENIED, which is authorization failing after the upload has already been transmitted. The gate normalises whitespace, so the table's column structure does not survive into the quote; the run of text is contiguous on the page and is not stitched. Proposed: what a path that has never run must return is unanswered here too - this repo has built no adapter at this card. Seventh card, same answer.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-2-artifact-storage-008",
+        "quote": "The `code` field MUST be a unique identifier, containing only uppercase alphabetic characters and underscores."
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-009",
+        "quote": "| code-1 | `BLOB_UNKNOWN` | blob unknown to registry |\n| code-2 | `BLOB_UPLOAD_INVALID` | blob upload invalid |\n| code-3 | `BLOB_UPLOAD_UNKNOWN` | blob upload unknown to registry |\n| code-4 | `DIGEST_INVALID` | provided digest did not match uploaded content |\n| code-5 | `MANIFEST_BLOB_UNKNOWN` | manifest references a manifest or blob unknown to registry |\n| code-6 | `MANIFEST_INVALID` | manifest invalid |\n| code-7 | `MANIFEST_UNKNOWN` | manifest unknown to registry |\n| code-8 | `NAME_INVALID` | invalid repository name |\n| code-9 | `NAME_UNKNOWN` | repository name not known to registry |\n| code-10 | `SIZE_INVALID` | provided length did not match content length |\n| code-11 | `UNAUTHORIZED` | authentication required |\n| code-12 | `DENIED` | requested access to the resource is denied |\n| code-13 | `UNSUPPORTED` | the operation is unsupported |\n| code-14 | `TOOMANYREQUESTS` | too many requests |"
+      }
+    ]
+  },
+  "vocabulary": {
+    "text": "This card grants the caller almost no configurable words, and that is the honest answer rather than a thin one -- because the identifier is computed rather than chosen. A caller does not name an artifact; the digest does: \"- **Blob**: the binary form of content that is stored by a registry, addressable by a digest\" The one genuine choice is what an artifact is *attached to*, and it applies at storage time rather than at read time: \"The OCI distribution specification allows us to \"link\" OCI artifacts\nthrough the use of the concept of reference types.\nArtifacts can be tied to one another by defining one as a subject of another.\" with the direction stated so it cannot be read backwards: \"In this context, \"subject\" refers to the target of a reference.\" That is the word this card actually grants: a run's trace or evaluation result is stored either as a free-standing artifact or as the subject-reference of the artifact it concerns, and only the second lets a later reader find it from the thing it describes. On the object-store model the vocabulary is different in kind -- a retention mode and a date, chosen per object version: \"Object Lock provides two ways to manage object retention: retention periods and legal holds. An\nobject version can have a retention period, a legal hold, or both.\" Proposed: this repo has built no adapter at this card, so no mapping from its own `intent:` / `profile:` vocabulary onto a reference type or a retention mode has been chosen. Seventh card with that half proposed.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-2-artifact-storage-004",
+        "quote": "- **Blob**: the binary form of content that is stored by a registry, addressable by a digest"
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-011",
+        "quote": "The OCI distribution specification allows us to \"link\" OCI artifacts\nthrough the use of the concept of reference types.\nArtifacts can be tied to one another by defining one as a subject of another."
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-012",
+        "quote": "In this context, \"subject\" refers to the target of a reference."
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-014",
+        "quote": "Object Lock provides two ways to manage object retention: retention periods and legal holds. An\nobject version can have a retention period, a legal hold, or both."
+      }
+    ]
+  },
+  "swap_axis": {
+    "text": "What a second implementation must differ on for a swap at this card to be real, and here the scope instrument gives a third kind of answer -- a *conformance floor* rather than a scope limit or a configurable declaration. The specification makes one of its four capability groups mandatory and the rest optional, then makes each claimed group all-or-nothing: \"All registries conforming to this specification MUST support, at a minimum, all APIs in the **Pull** category.\" and \"Registries SHOULD also support the **Push**, **Content Discovery**, and **Content Management** categories.\nA registry claiming conformance with one of these specification categories MUST implement all APIs in the claimed category.\" So two conformant registries can differ in what they can do at all, at category granularity, and a caller discovers the difference by being refused rather than by reading configuration. That is the axis: a Pull-only registry against one supporting Content Management, where the observable difference is whether a run's output can be stored and later deleted at all. The deeper axis, if a platform is choosing the storage model rather than the registry, is content-addressed against location-addressed: a digest-named blob cannot be overwritten because the name is the hash -- \"- **Blob**: the binary form of content that is stored by a registry, addressable by a digest\" -- while an object store is mutable by default and immutability is a mode that expires: \"Each retention period has a retain-until-date that indicates\nwhen the protection expires. After the retention period expires, the object version can\nbe overwritten or deleted.\" Those two are not the same execution model, and a conformance check can read the difference: attempt to replace stored bytes under the same name and see whether it is refused, accepted, or accepted-until-a-date.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-2-artifact-storage-006",
+        "quote": "All registries conforming to this specification MUST support, at a minimum, all APIs in the **Pull** category."
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-007",
+        "quote": "Registries SHOULD also support the **Push**, **Content Discovery**, and **Content Management** categories.\nA registry claiming conformance with one of these specification categories MUST implement all APIs in the claimed category."
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-004",
+        "quote": "- **Blob**: the binary form of content that is stored by a registry, addressable by a digest"
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-015",
+        "quote": "Each retention period has a retain-until-date that indicates\nwhen the protection expires. After the retention period expires, the object version can\nbe overwritten or deleted."
+      }
+    ]
+  },
+  "standards": [
+    {
+      "id": "oci-image-spec",
+      "role": "governs the format of what is stored: the manifest, the optional index, the layers and the configuration that together make one artifact.",
+      "covers": "does not define the API that stores or retrieves it. That is the OCI Distribution Specification, which this card's operations, domain and failures all rest on and which has no directory under standards/ - see gaps.",
+      "evidence": {
+        "text": "It states its own subject as the image's parts rather than its transport: \"This specification defines an OCI Image, consisting of an [image manifest](manifest.md), an [image index](image-index.md) (optional), a set of [filesystem layers](layer.md), and a [configuration](config.md).\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-base-2-artifact-storage-010",
+            "quote": "This specification defines an OCI Image, consisting of an [image manifest](manifest.md), an [image index](image-index.md) (optional), a set of [filesystem layers](layer.md), and a [configuration](config.md)."
+          }
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "ORAS",
+      "kind": "open-source",
+      "note": "the tooling that uses a container registry as general artifact storage, and the source for how a result attaches to the artifact it describes. Not in use here: this repo is stdlib-only and has built no adapter at this card.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "It documents the attachment mechanism this card's vocabulary rests on: \"The OCI distribution specification allows us to \"link\" OCI artifacts\nthrough the use of the concept of reference types.\nArtifacts can be tied to one another by defining one as a subject of another.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-base-2-artifact-storage-011",
+            "quote": "The OCI distribution specification allows us to \"link\" OCI artifacts\nthrough the use of the concept of reference types.\nArtifacts can be tied to one another by defining one as a subject of another."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Amazon S3 with Object Lock",
+      "kind": "hosted",
+      "note": "the other storage model, cited for contrast rather than as a pick: immutability as a configured, expiring mode instead of a property of the identifier. Not in use here.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Its immutability is a declared model with an expiry: \"Object Lock uses a\nwrite-once-read-many (WORM) model to store objects.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-base-2-artifact-storage-013",
+            "quote": "Object Lock uses a\nwrite-once-read-many (WORM) model to store objects."
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "Two genuinely different models, and the difference is where immutability lives. A content-addressed registry gets it from the identifier -- \"- **Blob**: the binary form of content that is stored by a registry, addressable by a digest\" -- so there is nothing to configure and nothing that expires: the same name always denotes the same bytes, and a second upload of different bytes under that name is a contradiction the store can detect. An object store gets it from policy -- \"Object Lock uses a\nwrite-once-read-many (WORM) model to store objects.\" -- with two mechanisms and a date: \"Object Lock provides two ways to manage object retention: retention periods and legal holds. An\nobject version can have a retention period, a legal hold, or both.\" and \"Each retention period has a retain-until-date that indicates\nwhen the protection expires. After the retention period expires, the object version can\nbe overwritten or deleted.\" The real tradeoff is not durability or price, it is what a later reader can assume. Against a registry, a run's recorded output digest is sufficient evidence that the bytes read now are the bytes written then. Against an object store, the same assumption holds only while a retention period that someone chose has not expired -- which makes the storage choice a provenance question, and ties this card to 6.3 Lineage and to rail.1 rather than leaving it a procurement detail.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-2-artifact-storage-004",
+        "quote": "- **Blob**: the binary form of content that is stored by a registry, addressable by a digest"
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-013",
+        "quote": "Object Lock uses a\nwrite-once-read-many (WORM) model to store objects."
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-014",
+        "quote": "Object Lock provides two ways to manage object retention: retention periods and legal holds. An\nobject version can have a retention period, a legal hold, or both."
+      },
+      {
+        "id": "X-refmodel-base-2-artifact-storage-015",
+        "quote": "Each retention period has a retain-until-date that indicates\nwhen the protection expires. After the retention period expires, the object version can\nbe overwritten or deleted."
+      }
+    ]
+  },
+  "usage": {
+    "text": "A caller at this card does not choose a bucket, a registry, a digest algorithm, a retention mode or a reference type. It declares work; the platform stores what the run produced and records where, because provenance and the ledger are among the things this repo's planning layer decides so the caller does not -- a caller writes an intent and at most one word of profile rather than deciding \"decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger\". What an example built from this card should assert is the integrity property rather than the storage call: that bytes read back under a recorded digest are the bytes written, and that an attempt to store different bytes under that digest is refused rather than silently accepted.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "REF-3-02",
+        "quote": "decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger"
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "The specification this card actually rests on has no directory. `operations`, `domain`, `failures` and `swap_axis` are all sourced from the OCI Distribution Specification, and standards/ has oci-image-spec and oci-runtime-spec but no oci-distribution-spec. So the `standards` entry names the format standard while every behavioural claim comes from the API standard - the citation and the evidence point at different specifications.",
+      "why_it_matters": "This is the same shape as card 6.3, where OpenLineage had no directory, but worse in one respect: here a plausible-looking standards entry exists, so the mismatch does not show up as an empty array. A reader checking that this card cites a standard would find one and would be looking at the wrong one.",
+      "research_query": "create standards/oci-distribution-spec/standard.json from the records already written for this card, then correct the standards entry"
+    },
+    {
+      "what": "The 'Logs, traces, results' half of the card's own subtitle is answered only by a mechanism, not by a convention. Reference types say how a result can be attached to the artifact it concerns; nothing sourced here says what a run's log or evaluation result should be stored *as* - which media type, which manifest shape, what a reader is entitled to expect inside.",
+      "why_it_matters": "Two runs could both store their traces correctly by this profile and produce artifacts no common reader can interpret. It is the same class of gap as card 6.1's: the transport is settled and the meaning is not.",
+      "research_query": "source the OCI artifact media type conventions and whether any standard covers storing an evaluation result or trace as an OCI artifact"
+    },
+    {
+      "what": "Deletion and retention are unresolved between the two models, and this card would have to decide. Content Management is the only category that removes anything and it is optional; on the object-store side retention expires by design. Nothing here says what the platform's answer is: whether a run's outputs are kept forever, whether deletion is possible, or what happens to a lineage record that names a deleted artifact.",
+      "why_it_matters": "cap-state-persistence has to reconcile retention with integrity, and that reconciliation needs this card to have an answer. A lineage chain pointing at bytes that were legally deleted is a different kind of broken from one pointing at bytes that were never stored.",
+      "research_query": "decide with cap-state-persistence and 6.3 Lineage what deletion means for a stored artifact that a ledger entry names"
+    },
+    {
+      "what": "No adapter has been built at this card, so `vocabulary`'s platform-mapping half and `failures`' never-run half are proposed, and the integrity property this profile recommends asserting has never been asserted here.",
+      "why_it_matters": "Seventh card with the same two proposed halves. It is no longer a finding about cards; it is the measured cost of having no adapter anywhere.",
+      "research_query": "does any harness or example in this repo store a run output by digest, or is cap-state-persistence the nearest built thing"
+    }
+  ]
+}

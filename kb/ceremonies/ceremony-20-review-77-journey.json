@@ -1,0 +1,81 @@
+{
+  "ceremony": 20,
+  "section": "77-journey",
+  "reviewer": "opus-5, review of re-pointing the journey and the examples layer off the archived seven",
+  "date": "2026-09-11",
+  "numbering_note": "Paired with kb/ceremonies/ceremony-20-improve-77-journey.json.",
+  "scope": "standards/journey.json, tools/standards.py, tools/examples_index.py, examples/README.md, .claude/skills/build-example/skill.json, tools/phase.py. STATUS rows 77 and 86.",
+  "findings": [
+    {
+      "id": "C20-001",
+      "location": "tools/standards.py load()",
+      "severity": "block",
+      "category": "correctness",
+      "finding": "Example discovery globbed examples/*/README.md only. That made the nine areas under examples/reference/ invisible to the journey entirely, and counted two CONTAINER directories -- archived and reference -- as examples. Both halves of the ten errors under row 77 trace to this one line: every step named an archived area because an archived area was the only kind the tool could see, and the standing warning 'example reference appears in no journey step' was about a directory that is not an example.",
+      "evidence": "standards.py check before: errors 10, warnings 6. After: errors 0, warnings 4 -- the four pre-existing E-standard-entity warnings CLAUDE.md records.",
+      "found_by": "author, tracing where the ten errors came from rather than editing JOURNEY.md",
+      "suggested_change": "Include examples/reference/<area>/, exclude containers, and let a step name a planned-but-unbuilt area without erroring -- the journey describes the target state."
+    },
+    {
+      "id": "C20-002",
+      "location": "tools/standards.py examples_table()",
+      "severity": "fix",
+      "category": "correctness",
+      "finding": "The row regex was `\\| `([a-z-]+)/` \\|`, which excludes digits. Every numbered area -- 1-invocation through 7-self-improvement -- failed to match, so a built area rendered with no test line and looked exactly like one nobody had built. 3-core-agent has 19 passing checks and showed as blank.",
+      "evidence": "Before the fix the rendered table read `3-core-agent` with no last line; after, `3-core-agent passed 19, failed 0`.",
+      "found_by": "author, on reading the rendered output instead of trusting the render succeeded",
+      "suggested_change": "Allow digits. The pattern predates the numbered areas and silently narrowed the corpus."
+    },
+    {
+      "id": "C20-003",
+      "location": "tools/standards.py render_journey()",
+      "severity": "block",
+      "category": "correctness",
+      "finding": "The renderer resolved each example by splitting examples/README.md on a literal `\\u0060<name>/\\u0060` marker and indexing [1]. For an area not in that table -- any planned area nobody has built -- the split returns one element and the whole render died with IndexError. A page that cannot render is a page that silently stops being updated.",
+      "evidence": "First render after re-pointing journey.json: IndexError at render_journey line 405.",
+      "found_by": "the render, immediately",
+      "suggested_change": "Treat absence as 'nothing parked' rather than indexing blindly."
+    },
+    {
+      "id": "C20-004",
+      "location": "tools/examples_index.py",
+      "severity": "fix",
+      "category": "completeness",
+      "finding": "The generator hardcoded AREAS = the seven, so after they were archived it kept writing docs/examples/index.md as an index of work that no longer existed. Same defect class as tools/examples_gate.py had already solved by globbing; the fix existed in the repo and had not been applied here.",
+      "evidence": "Line 6 of the previous file. STATUS row 86 counted it as one of seven artifacts naming the archived seven.",
+      "found_by": "author, sweeping row 86",
+      "suggested_change": "Discover from build-principles.json plus disk, and render a planned-but-unbuilt area as planned rather than omitting it."
+    },
+    {
+      "id": "C20-005",
+      "location": ".claude/skills/build-example/skill.json",
+      "severity": "fix",
+      "category": "correctness",
+      "finding": "Not stale -- wrong. The skill's rationale argued that the areas exist 'because a consumer arrives with an activity, not with an interface name', which is the case for the ACTIVITY grouping the repo deliberately replaced. examples/reference/README.md states the opposite: an example's boundary matches a seam in the architecture, not a stage in a story. Its trigger description also described the old structure -- seven areas, four doors, a six-part README -- none of which the replacement requires.",
+      "evidence": "docs/reference/card-example-gaps.md is the measurement that justified the replacement: eight cards had no example under the activity grouping and nothing said so.",
+      "found_by": "author, reading the four 'seven' occurrences instead of substituting the number",
+      "suggested_change": "Rewrite the rationale to the seam grouping with its citation, keep the activity grouping as recorded history, and say what is still unknown rather than asserting the new grouping is better."
+    },
+    {
+      "id": "C20-006",
+      "location": "examples/reference/3-core-agent/, and docs/examples/index.md",
+      "severity": "nit",
+      "category": "consistency",
+      "finding": "The regenerated index measures each area against the four doors and 3-core-agent answers 'no' to all four. The new structure does not require doors -- examples/reference/README.md's carried-over rules are a visible check, a hidden check, stdlib-only and dry-run adapters -- so either the index is measuring a rule that no longer applies, or the area is missing something the index is right to ask for.",
+      "evidence": "docs/examples/index.md after regeneration: 3-core-agent, human no, event no, schedule no, external no.",
+      "found_by": "the regenerated index, on its first run",
+      "suggested_change": "Decide it rather than leave it: either drop the door columns for reference areas or add entries/ to the area. Recorded, not resolved."
+    }
+  ],
+  "metrics": {
+    "standards_errors_before": 10,
+    "standards_errors_after": 0,
+    "standards_warnings_before": 6,
+    "standards_warnings_after": 4,
+    "live_artifacts_naming_archived_before": 4,
+    "live_artifacts_naming_archived_after": 0,
+    "gates_excused_before": 3,
+    "gates_excused_after": 2,
+    "rows_closed": ["77", "86"]
+  }
+}

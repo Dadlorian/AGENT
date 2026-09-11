@@ -24,6 +24,19 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+# Directories under examples/ that hold examples rather than being one.
+CONTAINERS = {"archived", "reference"}
+# base and rail span the journey rather than sitting at a point in it, so they are expected to
+# appear in no step -- examples/reference/README.md: base is "used by every layer" and rail
+# "spans every layer".
+SPANNING = {"base-shared-services", "rail-cross-cutting"}
+
+
+def planned_areas() -> set:
+    p = ROOT / "docs" / "reference" / "build-principles.json"
+    if not p.is_file():
+        return set()
+    return set(json.loads(p.read_text()).get("example_areas", []))
 STANDARDS_DIR = ROOT / "standards"
 REGISTRY = STANDARDS_DIR / "registry.json"
 JOUR = STANDARDS_DIR / "journey.json"
@@ -70,9 +83,21 @@ def load():
     for p in sorted(SKILLS.glob("*/skill.json")):
         s = json.loads(p.read_text())
         skills[s["name"]] = s
+    # Discovery used to take only top-level examples/*/README.md, which meant the nine areas under
+    # examples/reference/ were invisible and the three CONTAINER directories (archived, reference)
+    # counted as examples. That is why every journey step named an archived area and why
+    # "example reference appears in no journey step" warned on a directory that is not an example.
     readmes = {}
     for p in sorted((ROOT / "examples").glob("*/README.md")):
+        if p.parent.name in CONTAINERS:
+            continue
         readmes[p.parent.name] = p.read_text()
+    for p in sorted((ROOT / "examples" / "reference").glob("*/README.md")):
+        readmes[p.parent.name] = p.read_text()
+    # A step may name an area the owner has decided to build but nobody has built yet. That is the
+    # journey describing the target state, not an error; it renders as "not built yet".
+    for name in planned_areas():
+        readmes.setdefault(name, None)
     return reg, jour, entities, research, skills, readmes
 
 
@@ -106,7 +131,10 @@ def examples_table():
         if line.startswith("## "):
             section = line
             continue
-        m = re.match(r"\| `([a-z-]+)/` \|(.*)\|$", line)
+        # `[a-z-]+` predated the numbered areas and silently skipped every one of them:
+        # `3-core-agent/` has a digit, so the row matched nothing and the area rendered with no
+        # test line, looking exactly like an area nobody had built.
+        m = re.match(r"\| `([a-z0-9-]+)/` \|(.*)\|$", line)
         if not m:
             continue
         cells = [c.strip() for c in m.group(2).split("|")]
@@ -137,7 +165,10 @@ def compute(reg, jour, entities, research, skills, readmes):
             continue
         hits = [r for r in research if rx.search(" ".join(str(r.get(k) or "") for k in ("url", "title", "claim", "query")))]
         cites = by_entity_skill.get(eid, [])
-        exs = [f for f, t in readmes.items() if rx.search(t) or s["name"].lower() in t.lower()]
+        # `t` is None for a planned area nobody has built yet: it mentions no standard because it
+        # has no README to mention one in, which is different from mentioning none.
+        exs = [f for f, t in readmes.items()
+               if t is not None and (rx.search(t) or s["name"].lower() in t.lower())]
         versions = sorted({v for _, v, _ in cites if v and v != "unverified"})
         status = "contract" if cites else ("researched" if hits else "known")
         fetched = sum(1 for r in hits if r.get("status") == "fetched")
@@ -211,7 +242,7 @@ def compute(reg, jour, entities, research, skills, readmes):
         if sk not in used_skill:
             warnings.append(f"skill {sk} appears in no journey step")
     for ex in readmes:
-        if ex not in used_ex:
+        if ex not in used_ex and ex not in SPANNING:
             warnings.append(f"example {ex} appears in no journey step")
     return rows, steps, sc, ex_tab, errors, warnings
 
@@ -374,7 +405,13 @@ def render_journey(jour, rows, steps, sc, ex_tab, skills, h):
             r = litmus_row(sc, sec)
             if r:
                 lit += [x for x in (r["misaligned"], r["absent"]) if x != "-"]
-        parked = [e for e in st["examples"] if "Parked" in (ROOT / "examples/README.md").read_text().split(f"`{e}/`")[1].split("\n")[0]] if st["examples"] else []
+        # An example a step names may not be in examples/README.md's table yet -- a planned area
+        # that nobody has built. Splitting on a marker that is not there used to raise IndexError
+        # and take the whole render down; absence is now just "nothing parked".
+        _ex_readme = (ROOT / "examples/README.md").read_text()
+        parked = [e for e in st.get("examples") or []
+                  if f"`{e}/`" in _ex_readme
+                  and "Parked" in _ex_readme.split(f"`{e}/`")[1].split("\n")[0]]
         L.append(f"| {st['letter']} {st['name']} | {', '.join(adopt) or '-'} | {', '.join(lit) or '-'} | {', '.join(parked) or '-'} |")
     L.append("\n## How to use it\n\n- Say where you are by letter. A pre-flight card, a STATUS row or a ceremony names the step it moves.\n- A new standard enters the registry first, with a position and a reason, then the step that exposes it, then the owning skill's contract. A standard in no step is an error.\n- At a phase boundary the improvement loop reads this page: the gaps column is the target, the litmus column is the measure.\n")
     return "\n".join(L)

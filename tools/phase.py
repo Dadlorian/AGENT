@@ -76,7 +76,6 @@ KNOWN_RED = {
     "ceremony nums": "ceremony 11 carries three suffixed variants from the 2026-09-03 collisions; "
                      "historical, and tools/ceremony_next.py now prevents new ones",
     "snippets": "47 read-field drifts, 0 snippet-field; measured by tools/knowledge_pool.py",
-    "standards": "row 77: JOURNEY.md names archived example paths",
 }
 
 

@@ -82,3 +82,5 @@
 | 91 | Loop gates its own output | phase.py runs an examples gate and a ceremony counter | Done | 13 gates to 15, examples now judged | 2026-09-10 88987ba |
 | 92 | Token pattern awareness | python3 tools/token_review.py runs before a workload | Done | 88 findings, 16 whole-file reads flagged | 2026-09-10 2b9ee0e |
 | 21 | Continuous improvement loop | tools/improvement_loop.py check passes for one fired plan | Done | Plan of one fired and moved, gate wired | 2026-09-11 662cf85 |
+| 77 | Standards and journey | python3 tools/standards.py check exits zero and both pages render | Done | 0 errors, both pages rendered | 2026-09-11 305fa08 |
+| 86 | Examples layer points at archived | No tool or doc names the archived seven areas | Done | 0 live artifacts, both gates green | 2026-09-11 305fa08 |

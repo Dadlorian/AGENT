@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./cellplane-tokens.css">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;-webkit-font-smoothing:antialiased;background:var(--bg);color:var(--text);font-family:var(--font-ui)}
+a{color:var(--text);text-decoration:underline;text-decoration-color:var(--faint);text-underline-offset:3px}a:hover{text-decoration-color:var(--accent)}
+button,input{font:inherit;color:inherit}button{cursor:pointer}input::placeholder{color:var(--faint)}
+h1,h2{font-weight:700;letter-spacing:-.01em;margin:0}
+p{margin:0;font-size:14px;line-height:1.6}
+.k{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.m{font-family:var(--font-mono);font-size:11.5px}
+.row{display:grid;grid-template-columns:minmax(150px,1fr) minmax(260px,2.4fr) minmax(170px,1.3fr) minmax(170px,1.3fr) 84px;gap:14px;padding:11px 14px;border-bottom:1px solid var(--border);font-size:13px;line-height:1.5;align-items:start}
+.row:last-child{border-bottom:0}
+.hd{font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border2);background:var(--surface2)}
+.pill{font-family:var(--font-mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:3px;border:1px solid;white-space:nowrap;display:inline-block}
+@media (max-width:1000px){.row.hd{display:none}.row{grid-template-columns:minmax(0,1fr) auto;gap:6px 12px}.row > :nth-child(1){grid-column:1;grid-row:1}.row > :nth-child(5){grid-column:2;grid-row:1}.row > :nth-child(2){grid-column:1/-1;grid-row:2}.row > :nth-child(3){grid-column:1/-1;grid-row:3;font-size:12.5px}.row > :nth-child(4){grid-column:1/-1;grid-row:4}}
+</style>
+</helmet>
+<div data-screen-label="Vocabulary" style="min-height:100vh;display:flex;flex-direction:column">
+  <header style="position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--border)">
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 16px;overflow-x:auto;scrollbar-width:none">
+      <div style="display:flex;align-items:center;gap:8px;flex:none"><div style="width:10px;height:10px;border-radius:2px;background:var(--accent)"></div><div style="font-weight:700;font-size:14px;letter-spacing:.06em;white-space:nowrap">CELL-PLANE</div></div>
+      <div style="flex:none;display:flex;align-items:center;gap:2px;padding:3px 3px 3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface)"><span class="k" style="color:var(--faint);padding-right:8px">Docs</span><a href="Reference Model.dc.html" style="height:32px;padding:0 10px;border-radius:4px;font-weight:600;font-size:13px;color:var(--muted);text-decoration:none;display:grid;place-items:center;white-space:nowrap">Reference model</a><span style="height:32px;padding:0 10px;border-radius:4px;background:var(--surface3);font-weight:600;font-size:13px;display:grid;place-items:center;white-space:nowrap">Vocabulary</span><a href="API Reference.dc.html" style="height:32px;padding:0 10px;border-radius:4px;font-weight:600;font-size:13px;color:var(--muted);text-decoration:none;display:grid;place-items:center;white-space:nowrap">API reference</a><a href="Control Plane API Guide.dc.html" style="height:32px;padding:0 10px;border-radius:4px;font-weight:600;font-size:13px;color:var(--muted);text-decoration:none;display:grid;place-items:center;white-space:nowrap">Guide</a></div>
+      <div style="flex:1 1 160px;display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);min-width:160px;max-width:400px"><span style="color:var(--faint);font-size:13px">⌕</span><input value="{{ q }}" onChange="{{ onSearch }}" placeholder="Search term, standard, field" style="flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:13px"></div>
+      <div style="flex:1"></div>
+      <div style="flex:none;display:flex;gap:2px;padding:3px;border-radius:6px;background:var(--surface);border:1px solid var(--border)"><sc-for list="{{ vfilters }}" as="f" hint-placeholder-count="4"><button onClick="{{ f.onClick }}" style="height:28px;padding:0 10px;border-radius:4px;border:0;background:{{ f.bg }};color:{{ f.color }};font-size:12px;font-weight:600;white-space:nowrap">{{ f.label }} <span class="m" style="font-size:10px;color:var(--faint)">{{ f.count }}</span></button></sc-for></div>
+      <button onClick="{{ toggleTheme }}" aria-label="Toggle theme" style="flex:none;width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:var(--surface);display:grid;place-items:center;color:var(--muted);font-size:14px">{{ themeIcon }}</button>
+    </div>
+  </header>
+
+  <div style="max-width:1680px;width:100%;margin:0 auto;padding:32px 24px 96px;display:flex;flex-direction:column;gap:32px">
+    <section style="display:flex;flex-direction:column;gap:10px">
+      <span class="k" style="color:var(--accent)">Glossary · {{ total }} terms · source cellplane-glossary.js</span>
+      <h1 style="font-size:clamp(26px,3.5vw,34px);line-height:1.1;text-wrap:balance">One term per concept, the standard that governs it, and the field that carries it</h1>
+      <p style="color:var(--muted);max-width:72ch;text-wrap:pretty">Ordered by reference-model layer. <span class="pill" style="color:var(--run);border-color:var(--run)">standard</span> the term is the standard's own word · <span class="pill" style="color:var(--wait);border-color:var(--wait)">alias</span> ours, with the standard's word stated · <span class="pill" style="color:var(--muted);border-color:var(--muted)">ours</span> no standard defines it; this row is the definition. Deprecated words (cell, Judge, definition of done, landed, tenancy Workspace) appear only in the alias column so a search still finds them.</p>
+    </section>
+
+    <sc-for list="{{ groups }}" as="g" hint-placeholder-count="9">
+      <section id="{{ g.key }}" style="display:flex;flex-direction:column;gap:10px">
+        <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap"><h2 style="font-size:20px">{{ g.title }}</h2><span style="font-size:13px;color:var(--muted)">{{ g.sub }}</span><span style="flex:1"></span><span class="m" style="color:var(--faint)">{{ g.count }} terms</span></div>
+        <div style="border:1px solid var(--border);border-radius:6px;background:var(--surface);overflow:hidden">
+          <div class="row hd"><span>Term</span><span>Definition</span><span>Standard · their word</span><span>Field · used in</span><span></span></div>
+          <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="5">
+            <div class="row"><span style="font-weight:600">{{ r.term }}</span><span>{{ r.def }}</span><span><span style="display:block">{{ r.std }}</span><sc-if value="{{ r.hasMap }}" hint-placeholder-val="{{ false }}"><span style="display:block;color:var(--muted);font-size:12px;margin-top:2px">theirs: {{ r.map }}</span></sc-if></span><span><span class="m" style="display:block;color:var(--park)">{{ r.field }}</span><span class="m" style="display:block;color:var(--faint);font-size:10.5px;margin-top:2px">{{ r.used }}</span></span><span><span class="pill" style="color:{{ r.color }};border-color:{{ r.color }}">{{ r.verdict }}</span></span></div>
+          </sc-for>
+        </div>
+      </section>
+    </sc-for>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+let G = null;
+const C = { standard: 'var(--run)', alias: 'var(--wait)', ours: 'var(--muted)' };
+class Component extends DCLogic {
+  state = { theme: 'dark', q: '', v: 'all' };
+  async componentDidMount() { document.body.dataset.theme = this.state.theme; G = await import('./cellplane-glossary.js'); this.forceUpdate(); }
+  renderVals() {
+    const s = this.state, base = { q: s.q, onSearch: e => this.setState({ q: e.target.value }), themeIcon: s.theme === 'dark' ? '◐' : '◑', toggleTheme: () => { const theme = s.theme === 'dark' ? 'light' : 'dark'; document.body.dataset.theme = theme; this.setState({ theme }); } };
+    if (!G) return { ...base, groups: [], vfilters: [], total: '…' };
+    const q = s.q.trim().toLowerCase(), all = G.TERMS.map(t => ({ ...t, verdict: G.verdict(t) }));
+    const match = t => (s.v === 'all' || t.verdict === s.v) && (!q || [t.term, t.def, t.std, t.map, t.field, t.used].join(' ').toLowerCase().includes(q));
+    const groups = G.LAYERS.map(([key, title, sub]) => { const rows = all.filter(t => t.layer === key && match(t)).map(t => ({ ...t, hasMap: !!t.map, color: C[t.verdict] })); return { key, title, sub, count: rows.length, rows }; }).filter(g => g.rows.length);
+    const count = v => all.filter(t => v === 'all' || t.verdict === v).length;
+    return { ...base, total: all.length, groups, vfilters: [['all', 'All'], ['standard', 'Standard'], ['alias', 'Alias'], ['ours', 'Ours']].map(([k, label]) => ({ label, count: count(k), bg: s.v === k ? 'var(--surface3)' : 'transparent', color: s.v === k ? 'var(--text)' : 'var(--muted)', onClick: () => this.setState({ v: k }) })) };
+  }
+}
+</script>
+</body>
+</html>

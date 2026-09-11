@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./cellplane-tokens.css">
+<style>
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:70px}
+html,body{margin:0;-webkit-font-smoothing:antialiased;background:var(--bg);color:var(--text);font-family:var(--font-ui)}
+a{color:var(--text);text-decoration:underline;text-decoration-color:var(--faint);text-underline-offset:3px}a:hover{text-decoration-color:var(--accent)}
+button{font:inherit;color:inherit;cursor:pointer}
+h1,h2,h3{font-weight:700;letter-spacing:-.01em;margin:0}
+h2{font-size:22px;line-height:1.2}
+h3{font-size:14px;margin-top:6px}
+p,li{font-size:14px;line-height:1.6;margin:0}
+p.lead{color:var(--muted);max-width:66ch;text-wrap:pretty}
+ol,ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px}
+tr:last-child td{border-bottom:0}
+.cp-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:12.5px;line-height:1.45}
+.cp-table th{text-align:left;font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border2)}
+.cp-table td{padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top;overflow-wrap:anywhere}
+.cp-table td .call{white-space:normal}
+.cp-table .call .p{overflow-wrap:anywhere}
+code{font-family:var(--font-mono);font-size:12px;background:var(--surface2);padding:1px 5px;border-radius:3px;overflow-wrap:anywhere}
+pre{font-family:var(--font-mono);font-size:11.5px;line-height:1.6;background:var(--surface);color:var(--text);padding:16px 18px;border-radius:6px;margin:0;border:1px solid var(--border);border-top:2px solid var(--accent);white-space:pre-wrap;overflow-wrap:anywhere}
+pre code{background:transparent;padding:0;color:inherit;font-size:inherit}
+.kicker{font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
+figcaption{font-family:var(--font-mono);font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.5}
+figure{margin:0}
+.sec{display:flex;flex-direction:column;gap:18px;padding:8px 0 48px;margin-bottom:8px}
+.sec h2{font-size:26px;max-width:28ch;text-wrap:balance}
+.summary{padding:12px 14px;border-radius:6px;border:1px solid var(--border);border-left:2px solid var(--accent);background:var(--surface);font-size:14px;line-height:1.55;max-width:70ch}
+.sec > table,.sec > figure,.sec > .grid2,.sec > .grid3{margin-top:4px}
+.call{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12px;white-space:nowrap}
+.call .m{font-size:10px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:3px;border:1px solid currentColor}
+.call .m.GET{color:var(--run)}.call .m.POST{color:var(--park)}.call .m.PUT{color:var(--wait)}.call .m.DELETE{color:var(--stuck)}.call .m.PATCH{color:var(--muted)}
+.call .p{color:var(--text)}.call .p i{font-style:normal;color:var(--accent)}
+.cp-table .call,.cp-table code.call{white-space:normal;display:inline;overflow-wrap:anywhere;background:transparent;padding:0}
+.cp-table .call .m{white-space:nowrap;margin-right:6px}
+.callout{margin-top:6px}
+.steps{display:flex;flex-direction:column;gap:22px;margin-top:6px}
+.step{display:grid;grid-template-columns:32px minmax(0,1fr);gap:14px}
+.step .n{width:32px;height:32px;border-radius:4px;border:1px solid var(--accent);color:var(--accent);display:grid;place-items:center;font-family:var(--font-mono);font-size:13px;font-weight:700}
+.step b{display:block;font-size:15px;font-weight:600;margin-bottom:4px}
+.step p{color:var(--muted);font-size:13.5px;margin-bottom:10px;max-width:66ch}
+.tabs{display:inline-flex;gap:2px;padding:3px;border-radius:6px;background:var(--surface);border:1px solid var(--border);margin-bottom:8px}
+.step pre{border-top-color:var(--border2)}
+.step figcaption{margin-top:8px}
+.gain{margin-top:10px;font-size:12.5px;color:var(--run);font-weight:600}
+.tile{padding:12px 14px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}
+.tile b{display:block;font-weight:600;font-size:13px;margin-bottom:2px}
+.tile p{font-size:12.5px;color:var(--muted)}
+.call{display:inline-flex;align-items:center;gap:8px;font-family:var(--font-mono);font-size:12px;white-space:nowrap}
+.call .m{font-size:10px;font-weight:700;letter-spacing:.06em;padding:2px 6px;border-radius:3px;border:1px solid currentColor}
+.call .m.GET{color:var(--run)}.call .m.POST{color:var(--park)}.call .m.PUT{color:var(--wait)}.call .m.DELETE{color:var(--stuck)}.call .m.PATCH{color:var(--muted)}
+.call .p{color:var(--text)}.call .p i{font-style:normal;color:var(--accent)}
+.cp-table .call,.cp-table code.call{white-space:normal;display:inline;overflow-wrap:anywhere;background:transparent;padding:0}
+.cp-table .call .m{white-space:nowrap;margin-right:6px}
+.callout{padding:12px 14px;border-left:2px solid var(--park);background:var(--park-bg);border-radius:0 6px 6px 0}
+.callout p{font-size:13px}
+.warn{border-left-color:var(--accent);background:var(--accent-bg)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
+.nav a{display:block;padding:7px 10px;border-radius:4px;font-size:13px;color:var(--muted);text-decoration:none;border-left:2px solid transparent}
+.nav a:hover{color:var(--text);background:var(--surface2)}
+.nav a.on{color:var(--text);border-left-color:var(--accent);background:var(--surface2)}
+.rail a{display:block;padding:4px 0;font-size:12px;color:var(--muted);text-decoration:none}
+.rail a:hover{color:var(--text)}
+.page{display:grid;grid-template-columns:220px minmax(0,1fr) 200px;gap:32px}
+@media (max-width:1180px){.rail{display:none!important}.page{grid-template-columns:220px minmax(0,1fr)}}
+@media (max-width:860px){.nav{display:none!important}.mnav{display:flex!important}.page{grid-template-columns:minmax(0,1fr)}}
+.cp-scroll{scrollbar-width:thin;scrollbar-color:transparent transparent}
+.cp-scroll:hover{scrollbar-color:var(--border2) transparent}
+.cp-scroll::-webkit-scrollbar{width:6px;height:6px}
+.cp-scroll::-webkit-scrollbar-track{background:transparent}
+.cp-scroll::-webkit-scrollbar-thumb{background:transparent;border-radius:3px}
+.cp-scroll:hover::-webkit-scrollbar-thumb{background:var(--border2)}
+</style>
+</helmet>
+<div data-screen-label="Control Plane API Guide" style="min-height:100vh;display:flex;flex-direction:column">
+  <header style="position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--border)">
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 16px;overflow-x:auto;scrollbar-width:none">
+      <div style="display:flex;align-items:center;gap:8px;flex:none"><div style="width:10px;height:10px;border-radius:2px;background:var(--accent)"></div><div style="font-weight:700;font-size:14px;letter-spacing:.06em;white-space:nowrap">CELL-PLANE</div></div>
+      <div style="flex:none;display:flex;align-items:center;gap:2px;padding:3px 3px 3px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface)"><span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);padding-right:8px">Docs</span><span style="height:32px;padding:0 10px;border-radius:4px;background:var(--surface3);font-weight:600;font-size:13px;display:grid;place-items:center;white-space:nowrap">Guide</span><a href="API Reference.dc.html" style="height:32px;padding:0 10px;border-radius:4px;font-weight:600;font-size:13px;color:var(--muted);text-decoration:none;display:grid;place-items:center;white-space:nowrap">API reference</a><a href="Style Guide.dc.html" style="height:32px;padding:0 10px;border-radius:4px;font-weight:600;font-size:13px;color:var(--muted);text-decoration:none;display:grid;place-items:center;white-space:nowrap">Style guide</a><a href="Reference Model.dc.html" style="height:32px;padding:0 10px;border-radius:4px;font-weight:600;font-size:13px;color:var(--muted);text-decoration:none;display:grid;place-items:center;white-space:nowrap">Reference model</a></div>
+      <div style="flex:1"></div>
+      <a href="Control Plane v3.dc.html" style="flex:none;height:36px;padding:0 12px;border-radius:6px;border:1px solid var(--border);background:var(--surface);display:grid;place-items:center;color:var(--muted);font-size:12px;font-weight:600;text-decoration:none">Open app →</a>
+      <button onClick="{{ toggleTheme }}" aria-label="Toggle theme" style="flex:none;width:36px;height:36px;border-radius:6px;border:1px solid var(--border);background:var(--surface);display:grid;place-items:center;color:var(--muted);font-size:14px">{{ themeIcon }}</button>
+    </div>
+    <div class="mnav" style="display:none;gap:4px;padding:6px 16px;border-top:1px solid var(--border);overflow-x:auto;scrollbar-width:none"><sc-for list="{{ toc }}" as="n" hint-placeholder-count="13"><a href="#{{ n.id }}" onClick="{{ n.onClick }}" style="flex:none;height:32px;padding:0 10px;border-radius:5px;border:1px solid {{ n.border }};background:{{ n.bg }};color:{{ n.color }};font-size:12px;font-weight:600;text-decoration:none;display:grid;place-items:center;white-space:nowrap">{{ n.label }}</a></sc-for></div>
+  </header>
+
+  <div class="page {{ tableCls }}" style="max-width:1360px;width:100%;margin:0 auto;padding:36px 20px 96px">
+    <nav class="nav cp-scroll" style="position:sticky;top:76px;align-self:start;display:flex;flex-direction:column;gap:2px;max-height:calc(100vh - 100px);overflow-y:auto;padding-right:4px">
+      <sc-for list="{{ groups }}" as="g" hint-placeholder-count="3"><div style="display:flex;flex-direction:column;gap:2px;margin-bottom:14px"><span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);padding:0 10px 6px">{{ g.label }}</span><sc-for list="{{ g.items }}" as="n" hint-placeholder-count="4"><a href="#{{ n.id }}" onClick="{{ n.onClick }}" class="{{ n.cls }}">{{ n.label }}</a></sc-for></div></sc-for>
+    </nav>
+
+    <main style="min-width:0;display:flex;flex-direction:column">
+      <sc-if value="{{ show.quick }}" hint-placeholder-val="{{ true }}"><div style="display:flex;flex-direction:column;gap:14px;padding-bottom:32px;border-bottom:1px solid var(--border2);margin-bottom:40px">
+        <span class="kicker">Platform · Developer guide</span>
+        <h1 style="font-size:clamp(28px,4vw,38px);line-height:1.1;text-wrap:balance">Control Plane API: multi-tenant data model, lifecycle and operations</h1>
+        <p class="lead" style="font-size:15px;max-width:64ch">How a system calls the control plane, how an organisation is onboarded with its own identity, secrets, storage and model routers, and how the service is started, run and kept healthy for many tenants and many users. Every boundary names the standard it adopts, so a tenant component that speaks the standard plugs in without a bespoke adapter.</p>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;font-family:var(--font-mono);font-size:11px;color:var(--muted)"><span>Audience · platform engineers, tenant integrators, SRE</span><span>Router seams (commands, read models, events) are the Router pages in the nav</span></div>
+      </div></sc-if>
+  <sc-if value="{{ show.quick }}" hint-placeholder-val="{{ false }}"><section class="sec" id="quick"><span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Quickstart</span>
+    <h2>From an idea to fifteen agents in five minutes</h2>
+    <div class="summary">Sign in, create a sandbox with a budget, say what you want, and run it. You see the price before anything spends and the first landing within minutes.</div>
+    <p class="lead">One CLI, <code>cp</code>, wraps the API. It never speaks a private dialect: every command is one HTTP call you can see with <code>--dry-run</code>. Pick your surface per step below; the CLI is the default, Node uses the generated SDK, and HTTP is the raw call for integrators.</p>
+    <div class="grid3" style="margin-top:4px">
+      <div class="tile"><b>Composable by default</b><p>A template (<code>research</code>, <code>refactor</code>, <code>review</code>, <code>pipeline</code>, <code>triage</code>) carries best-practice steps, acceptance criteria, model class and ceiling. You supply the intent.</p></div>
+      <div class="tile"><b>Right model, low cost</b><p>The Planner assigns a class per step: free local for grunt work, batch for bulk, interactive for judgement, coding CLI for code. You can pin, but rarely need to.</p></div>
+      <div class="tile"><b>Budget before spend</b><p>Every plan is priced before dispatch. Ceilings sit at task, workflow, sandbox and org. Exceeding one stops that unit, nothing else.</p></div>
+    </div>
+    <div class="steps" style="margin-top:14px">
+      <div class="step"><span class="n">1</span><div style="min-width:0"><b>Sign in</b><p>Uses the identity provider your organisation bound at onboarding. A system uses an API key; the CLI exchanges it for a scoped token automatically.</p>
+        <div class="tabs"><sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="3"><button onClick="{{ tb.onClick }}" style="height:28px;padding:0 10px;border-radius:4px;border:0;background:{{ tb.bg }};color:{{ tb.color }};font-size:12px;font-weight:600">{{ tb.label }}</button></sc-for></div>
+        <sc-if value="{{ tabCli }}" hint-placeholder-val="{{ true }}"><pre><code>npm i -g @cellplane/cli
+# opens your IdP; stores a short-lived token
+cp login
+# for systems: RFC 8693 exchange, same token shape
+cp login --api-key $CP_API_KEY</code></pre></sc-if>
+        <sc-if value="{{ tabNode }}" hint-placeholder-val="{{ false }}"><pre><code>import { CellPlane } from "@cellplane/sdk";
+// or interactive
+const cp = await CellPlane.login({ apiKey: process.env.CP_API_KEY });</code></pre></sc-if>
+        <sc-if value="{{ tabHttp }}" hint-placeholder-val="{{ false }}"><pre><code>POST /v1/auth/exchange
+subject_token=&lt;api key&gt;&amp;audience=cellplane
+# returns { access_token, expires_in: 900 }</code></pre></sc-if>
+        <div class="gain">You have: a scoped token in your keychain.</div>
+        </div></div>
+      <div class="step"><span class="n">2</span><div style="min-width:0"><b>Create an environment</b><p>A sandbox is a project with its own budget, allowed tools and default class. It is where your tasks live and what the control plane shows you.</p>
+        <div class="tabs"><sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="3"><button onClick="{{ tb.onClick }}" style="height:28px;padding:0 10px;border-radius:4px;border:0;background:{{ tb.bg }};color:{{ tb.color }};font-size:12px;font-weight:600">{{ tb.label }}</button></sc-for></div>
+        <sc-if value="{{ tabCli }}" hint-placeholder-val="{{ true }}"><pre><code># writes cellplane.yaml in this folder
+cp init
+cp project create vendor-review --budget 40 --class i-
+cp budget set --project vendor-review --per-task 0.60 --alert 80%</code></pre></sc-if>
+        <sc-if value="{{ tabNode }}" hint-placeholder-val="{{ false }}"><pre><code>const prj = await cp.projects.create({ name: "vendor-review", budget: 40, defaultClass: "i-" });
+await prj.budget.set({ perCell: 0.60, alertAt: 0.8 });</code></pre></sc-if>
+        <sc-if value="{{ tabHttp }}" hint-placeholder-val="{{ false }}"><pre><code>POST /v1/projects  { "name": "vendor-review", "budget_ceiling": 40, "default_class": "i-" }
+PUT  /v1/projects/prj_a1/budget  { "per_task": 0.60, "alert_at": 0.8 }</code></pre></sc-if>
+        <figcaption>cellplane.yaml records the sandbox, template defaults and budget so teammates get the same environment from git.</figcaption></div></div>
+      <div class="step"><span class="n">3</span><div style="min-width:0"><b>Turn the idea into a plan</b><p>Say what you want. The template adds the steps and acceptance criteria; the Planner splits the work into units, assigns a class to each step and prices it. Nothing runs yet.</p>
+        <div class="tabs"><sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="3"><button onClick="{{ tb.onClick }}" style="height:28px;padding:0 10px;border-radius:4px;border:0;background:{{ tb.bg }};color:{{ tb.color }};font-size:12px;font-weight:600">{{ tb.label }}</button></sc-for></div>
+        <sc-if value="{{ tabCli }}" hint-placeholder-val="{{ true }}"><pre><code>cp spec "Summarise each vendor's public security docs into our posture template, cite every claim" \
+  --template research --inputs vendors.csv
+# plan_8f1 · 15 units · steps: fetch (f-) → extract (b-) → draft (b-) → evaluator (i-)
+# est $3.30 · ceiling $9.00 · fits budget ($40.00)
+# edit: cp spec edit plan_8f1</code></pre></sc-if>
+        <sc-if value="{{ tabNode }}" hint-placeholder-val="{{ false }}"><pre><code>const plan = await prj.plan({
+  intent: "Summarise each vendor's public security docs into our posture template, cite every claim",
+  template: "research", inputs: await csv("vendors.csv") });
+// 15, { estimate: 3.30, ceiling: 9.00 }
+console.log(plan.units, plan.cost);</code></pre></sc-if>
+        <sc-if value="{{ tabHttp }}" hint-placeholder-val="{{ false }}"><pre><code>POST /v1/task-specs  { "intent": "…", "template": "research", "inputs": [ … ] }
+# returns { "id": "spec_8f1", "rev": 1, "plan": { "units": 15, "steps": [ … ] }, "cost": { "estimate": 3.30, "ceiling": 9.00 } }</code></pre></sc-if>
+        <figcaption>A template is a Task specification template. Extend one with <code>cp template fork research my-research</code> and edit its steps or acceptance criteria; the Planner and Evaluator treat it the same.</figcaption></div></div>
+      <div class="step"><span class="n">4</span><div style="min-width:0"><b>Run it</b><p>Dispatch turns the plan into tasks: one agent per unit, each in its own microVM with its own ceiling. The run is idempotent; re-running the same plan returns the same tasks.</p>
+        <div class="tabs"><sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="3"><button onClick="{{ tb.onClick }}" style="height:28px;padding:0 10px;border-radius:4px;border:0;background:{{ tb.bg }};color:{{ tb.color }};font-size:12px;font-weight:600">{{ tb.label }}</button></sc-for></div>
+        <sc-if value="{{ tabCli }}" hint-placeholder-val="{{ true }}"><pre><code># → wf_9c · 15 tasks dispatched · first landing expected ≈ 40s
+cp run plan_8f1
+# start smaller, scale after the first landings
+cp run plan_8f1 --tasks 5
+
+# ~40s later
+# t-1001 completed · evaluator PASS · $0.19 · acme.posture.md → s3://…/vendor-review/</code></pre></sc-if>
+        <sc-if value="{{ tabNode }}" hint-placeholder-val="{{ false }}"><pre><code>// { workflow: "wf_9c", tasks: 15 }
+const run = await plan.run();</code></pre></sc-if>
+        <sc-if value="{{ tabHttp }}" hint-placeholder-val="{{ false }}"><pre><code>POST /v1/workflows  { "task_spec": "spec_8f1", "rev": 1, "intake": "cli" }
+POST /v1/workflows/wf_9c/dispatch  Idempotency-Key: plan_8f1  { "count": 15 }</code></pre></sc-if>
+        <div class="gain">You have: a sandbox with a hard budget and a config your team can commit.</div>
+        <div class="gain">You have: a priced, editable plan. Nothing has spent.</div>
+        <div class="gain">You have: fifteen agents running and the first result on disk.</div>
+        </div></div>
+      <div class="step"><span class="n">5</span><div style="min-width:0"><b>Watch, and step in only when asked</b><p>Ladders handle the first attempts on their own. When a task is parked or exhausted, the CLI tells you and one command clears it. Or open the control plane.</p>
+        <div class="tabs"><sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="3"><button onClick="{{ tb.onClick }}" style="height:28px;padding:0 10px;border-radius:4px;border:0;background:{{ tb.bg }};color:{{ tb.color }};font-size:12px;font-weight:600">{{ tb.label }}</button></sc-for></div>
+        <sc-if value="{{ tabCli }}" hint-placeholder-val="{{ true }}"><pre><code># live: 11 running · 2 waiting · 1 stuck (ladder: restart 1/1) · 1 completed
+cp watch wf_9c
+# applies to the Task specification, replans, resumes
+cp fix t-1009 --redefine "cite a URL that resolves"
+# opens this workflow in the control plane
+cp open wf_9c</code></pre></sc-if>
+        <sc-if value="{{ tabNode }}" hint-placeholder-val="{{ false }}"><pre><code>for await (const ev of run.watch()) if (ev.needsYou) await ev.task.redefine({ acceptance_criteria: [ … ] });</code></pre></sc-if>
+        <sc-if value="{{ tabHttp }}" hint-placeholder-val="{{ false }}"><pre><code>GET  /v1/event-stream?workflow=wf_9c  (SSE)
+POST /v1/tasks/t-1009/commands  { "verb": "redefine", "args": { "acceptance_criteria": [ … ] } }</code></pre></sc-if>
+        <div class="gain">You have: a fleet that mostly fixes itself, and one command for the rest.</div>
+        </div></div>
+      <div class="step"><span class="n">6</span><div style="min-width:0"><b>Land it, and let it learn</b><p>When tasks land, results go to your storage binding and the ledger. Recurring problems become recommendations with a proposed Task specification edit; apply one and the template improves for next time.</p>
+        <div class="tabs"><sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="3"><button onClick="{{ tb.onClick }}" style="height:28px;padding:0 10px;border-radius:4px;border:0;background:{{ tb.bg }};color:{{ tb.color }};font-size:12px;font-weight:600">{{ tb.label }}</button></sc-for></div>
+        <sc-if value="{{ tabCli }}" hint-placeholder-val="{{ true }}"><pre><code># 15 files, provenance attached
+cp results wf_9c --out ./posture/
+# "tool-timeout ×4 in research → raise fetch ceiling to 120s"  apply? y
+cp recommendations
+# share the improved template with your org
+cp template publish my-research</code></pre></sc-if>
+        <sc-if value="{{ tabNode }}" hint-placeholder-val="{{ false }}"><pre><code>await run.results().download("./posture/");
+const f = await prj.recommendations(); await f[0].apply();</code></pre></sc-if>
+        <sc-if value="{{ tabHttp }}" hint-placeholder-val="{{ false }}"><pre><code>GET  /v1/recommendations?window=7d
+POST /v1/recommendations/rec_1/apply
+# returns { "task_spec": "spec_8f1", "rev": 2 }</code></pre></sc-if>
+        <div class="gain">You have: results with provenance, and a template that is better than when you started.</div>
+        </div></div>
+    </div>
+    <h3 style="margin-top:18px">Every tier, its own standard, your existing client</h3>
+    <p class="lead">Once you hold a token the layers are reachable with tools you already have. The control plane adds scope and policy, not a dialect. <code>cp</code> is a convenience over these, never a requirement.</p>
+    <table class="cp-table"><thead><tr><th style="width:18%">Tier</th><th style="width:30%">Standard · client</th><th>One call</th></tr></thead><tbody>
+      <tr><td>Control plane</td><td>HTTP + JSON · any HTTP client</td><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/tasks?status=stuck</span></span></td></tr>
+      <tr><td>Agent runtime</td><td>Agent Client Protocol · any ACP client</td><td><code>cp attach t-1003</code> or any ACP client on <code>wss://…/acp/t-1003</code></td></tr>
+      <tr><td>Tools</td><td>Model Context Protocol · any MCP client</td><td><code>cp tools</code> or <code>mcp list-tools https://…/mcp</code></td></tr>
+      <tr><td>Models</td><td>OpenAI-compatible · openai SDK</td><td>Your class endpoints from onboarding; the platform resolves the key reference</td></tr>
+      <tr><td>Intake</td><td>CloudEvents 1.0 · any producer</td><td><code>POST /v1/intake/wf_9c</code> with a signed event; its <code>id</code> is the dispatch key</td></tr>
+      <tr><td>Telemetry</td><td>OTLP · your collector</td><td>Spans arrive at your bound collector with <code>org_id · project_id · task.id</code></td></tr>
+      <tr><td>Ledger</td><td>Hash-chained JSON · jq</td><td><code>cp ledger verify</code> or <code>GET /v1/ledger?from_seq=0</code> plus the published verifier</td></tr>
+    </tbody></table>
+    <div class="callout"><p><strong>Security note.</strong> The CLI stores tokens in the OS keychain, never in <code>cellplane.yaml</code>. Secrets are referenced by handle (<code>urn:secret:…</code>) and resolved by the platform at use. <code>--dry-run</code> on any command prints the exact HTTP request without sending it.</p></div>
+  </section></sc-if>
+
+  <sc-if value="{{ show.shape }}" hint-placeholder-val="{{ false }}"><section class="sec" id="shape"><span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Shape of the service</span>
+    <h2>One API, four tiers of scope, every call stamped with all four</h2>
+    <div class="summary">Four scope ids (org, project, principal, task) travel on every request, event and row. Scope lives in the token, never in the URL.</div>
+    <p class="lead">The control plane is a single HTTP+SSE service in front of the core (Task specification, Planner, Graph, Evaluator, Ledger) and the capability adapters. Tenancy is not a deployment mode; it is a set of scope ids that travel on every request, every event and every stored row.</p>
+    <table class="cp-table">
+      <thead><tr><th style="width:14%">Tier</th><th style="width:16%">Id</th><th style="width:34%">Owns</th><th>Isolation guarantee</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Organisation</strong></td><td><code>org_id</code></td><td>Identity provider binding, billing account, secrets namespace, object store bucket or prefix, model router endpoints, retention policy</td><td>Hard. Separate encryption keys, separate policy bundle, separate Ledger partition. No query crosses an org boundary.</td></tr>
+        <tr><td><strong>Project</strong></td><td><code>project_id</code></td><td>Task specifications, workflows, playbooks, saved groups, budgets, alert preferences</td><td>Soft. Same org keys; row-level scope on every table; policy may grant cross-project read to org admins.</td></tr>
+        <tr><td><strong>Principal</strong></td><td><code>sub</code> (OIDC)</td><td>A user or a delegated agent actor. Roles are per project.</td><td>Every command names the principal. Delegation chains (<code>act</code> claim) are recorded, never flattened.</td></tr>
+        <tr><td><strong>Task</strong></td><td><code>task_id</code></td><td>One agent run in one microVM under one Task specification revision</td><td>Runtime isolation per the OCI Runtime Spec. Budget budget ceiling terminates the task, not the platform.</td></tr>
+      </tbody>
+    </table>
+    <div class="grid2">
+      <div class="tile"><b>Scope is in the token, not the URL</b><p><code>org_id</code> and <code>project_id</code> are claims on the OIDC access token (or on the exchanged token for agents). Paths never carry tenant ids, so a leaked URL leaks nothing and a mis-scoped client cannot address another tenant by guessing.</p></div>
+      <div class="tile"><b>Every row, every event, every span</b><p>The four ids are mandatory columns in the Ledger, mandatory attributes on CloudEvents and OTLP spans, and mandatory inputs to every policy decision. A row without them is rejected at write time.</p></div>
+    </div>
+  </section></sc-if>
+
+  <sc-if value="{{ show.standards }}" hint-placeholder-val="{{ false }}"><section class="sec" id="standards"><span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Standards on every boundary</span>
+    <h2>Bring your own component if it speaks the standard</h2>
+    <div class="summary">Each boundary names the public standard it speaks. Bring your own adapter; it is enabled only after conformance passes.</div>
+    <p class="lead">The middle column is the contract. The platform ships the default adapter; a tenant may register their own at onboarding or later. The core never imports an implementation.</p>
+    <table class="cp-table">
+      <thead><tr><th style="width:18%">Boundary</th><th style="width:30%">Standard the tenant must speak</th><th style="width:22%">Default adapter</th><th>Tenant brings</th></tr></thead>
+      <tbody>
+        <tr><td>Identity</td><td>OIDC Discovery · OAuth 2.0 Token Exchange (RFC 8693) · SPIFFE for workflows</td><td>Platform IdP</td><td>Any OIDC issuer; SPIRE for agent identity</td></tr>
+        <tr><td>Secrets</td><td>KMS envelope encryption · Secrets as opaque handles (<code>urn:secret:…</code>), never values in the API</td><td>Platform vault</td><td>Vault, cloud KMS, SOPS-backed store with a resolve endpoint</td></tr>
+        <tr><td>Object storage</td><td>S3 API (SigV4) · CloudEvents on object-created</td><td>Platform S3-compatible store</td><td>Any S3-compatible bucket, tenant-owned, with a scoped role</td></tr>
+        <tr><td>Model access</td><td>OpenAI-compatible completions · per-class virtual keys with hard budget caps</td><td>LiteLLM gateway</td><td>Their own OpenAI-compatible router; the class registry maps class → endpoint + key reference</td></tr>
+        <tr><td>Agent runtime</td><td>Agent Client Protocol</td><td>goose</td><td>Any ACP-speaking agent, pinned by digest</td></tr>
+        <tr><td>Tools</td><td>Model Context Protocol</td><td>Platform MCP endpoint</td><td>Any MCP server, registered per project with allow-listed tools</td></tr>
+        <tr><td>Work intake</td><td>CloudEvents 1.0 · A2A messaging · RFC 5545 schedules</td><td>HTTP, git event, schedule, CLI</td><td>Any conformant producer with a signed webhook</td></tr>
+        <tr><td>Policy</td><td>Rego bundles with a decision API</td><td>OPA</td><td>Cedar or any engine exposing <code>POST /decide</code></td></tr>
+        <tr><td>Telemetry</td><td>OTLP · GenAI semantic conventions</td><td>Langfuse + OpenTelemetry</td><td>Any OTLP collector endpoint per org</td></tr>
+        <tr><td>Provenance</td><td>in-toto attestations · DSSE envelopes</td><td>Ledger evidence records</td><td>Sigstore / Rekor mirror per org</td></tr>
+        <tr><td>Errors</td><td>RFC 9457 problem details</td><td>—</td><td>—</td></tr>
+        <tr><td>Durable execution</td><td>No standard; the Dispatch contract (§7) is ours</td><td>Temporal</td><td>Restate, DBOS, Inngest behind the same Dispatch contract</td></tr>
+      </tbody>
+    </table>
+    <div class="callout"><p><strong>Rule.</strong> A tenant adapter is accepted only if the platform's conformance suite passes against it before it is enabled. Conformance is per boundary and re-runs on every adapter version change. This is design rule 3 (swappability is tested) applied to tenants.</p></div>
+  </section></sc-if>
+
+  <sc-if value="{{ show.data }}" hint-placeholder-val="{{ false }}"><section class="sec" id="data"><span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Data model</span>
+    <h2>Entities, their owners, and which store holds them</h2>
+    <div class="summary">Three stores: relational config, hash-chained Ledger, object storage. Fifteen entities; the Graph is derived, never edited.</div>
+    <p class="lead">Three stores, deliberately. Relational for configuration that is edited; append-only Ledger for everything that happened; object store for anything large. The Graph is derived from the Ledger and cached.</p>
+    <table class="cp-table">
+      <thead><tr><th style="width:22%">Entity</th><th style="width:10%">Scope</th><th style="width:14%">Store</th><th>Key fields</th></tr></thead>
+      <tbody>
+        <tr><td><code>Org</code></td><td>—</td><td>Config</td><td class="fields"><span style="display:flex;flex-wrap:wrap;gap:4px"><code style="font-size:11px;white-space:nowrap">id</code><code style="font-size:11px;white-space:nowrap">name</code><code style="font-size:11px;white-space:nowrap">idp_issuer</code><code style="font-size:11px;white-space:nowrap">kms_key_ref</code><code style="font-size:11px;white-space:nowrap">storage_binding</code><code style="font-size:11px;white-space:nowrap">retention_days</code><code style="font-size:11px;white-space:nowrap">status</code></span></td></tr>
+        <tr><td><code>Project</code></td><td>org</td><td>Config</td><td class="fields"><span style="display:flex;flex-wrap:wrap;gap:4px"><code style="font-size:11px;white-space:nowrap">id</code><code style="font-size:11px;white-space:nowrap">org_id</code><code style="font-size:11px;white-space:nowrap">name</code><code style="font-size:11px;white-space:nowrap">default_class</code><code style="font-size:11px;white-space:nowrap">budget_ceiling</code><code style="font-size:11px;white-space:nowrap">alert_prefs</code></span></td></tr>
+        <tr><td><code>Membership</code></td><td>ws</td><td>Config</td><td class="fields"><span style="display:flex;flex-wrap:wrap;gap:4px"><code style="font-size:11px;white-space:nowrap">sub</code><code style="font-size:11px;white-space:nowrap">project_id</code><code style="font-size:11px;white-space:nowrap">role ∈ {viewer, operator, approver, admin}</code><code style="font-size:11px;white-space:nowrap">granted_by</code><code style="font-size:11px;white-space:nowrap">expires_at</code></span></td></tr>
+        <tr><td><code>SecretRef</code></td><td>org</td><td>Config</td><td class="fields"><span style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px"><code style="font-size:11px;white-space:nowrap">urn</code><code style="font-size:11px;white-space:nowrap">provider</code><code style="font-size:11px;white-space:nowrap">path</code><code style="font-size:11px;white-space:nowrap">rotation_at</code><code style="font-size:11px;white-space:nowrap">last_resolved_at</code></span><span style="color:var(--muted);font-size:12px">never the value</span></td></tr>
+        <tr><td><code>StorageBinding</code></td><td>org</td><td>Config</td><td class="fields"><span style="display:flex;flex-wrap:wrap;gap:4px"><code style="font-size:11px;white-space:nowrap">endpoint</code><code style="font-size:11px;white-space:nowrap">bucket</code><code style="font-size:11px;white-space:nowrap">prefix</code><code style="font-size:11px;white-space:nowrap">role_arn_or_secret_ref</code><code style="font-size:11px;white-space:nowrap">region</code><code style="font-size:11px;white-space:nowrap">sse</code></span></td></tr>
+        <tr><td><code>RouterBinding</code></td><td>org</td><td>Config</td><td class="fields"><span style="display:flex;flex-wrap:wrap;gap:4px"><code style="font-size:11px;white-space:nowrap">class_prefix ∈ {f-, i-, b-, cli-}</code><code style="font-size:11px;white-space:nowrap">endpoint</code><code style="font-size:11px;white-space:nowrap">key_ref</code><code style="font-size:11px;white-space:nowrap">ceiling_per_task</code><code style="font-size:11px;white-space:nowrap">models[]</code></span></td></tr>
+        <tr><td><code>Task specification</code></td><td>ws</td><td>Ledger</td><td class="fields"><span style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px"><code style="font-size:11px;white-space:nowrap">id</code><code style="font-size:11px;white-space:nowrap">rev</code><code style="font-size:11px;white-space:nowrap">intent</code><code style="font-size:11px;white-space:nowrap">acceptance_criteria[]</code><code style="font-size:11px;white-space:nowrap">steps[]</code><code style="font-size:11px;white-space:nowrap">class</code><code style="font-size:11px;white-space:nowrap">schema_ok</code><code style="font-size:11px;white-space:nowrap">author</code><code style="font-size:11px;white-space:nowrap">parent_rev</code></span><span style="color:var(--muted);font-size:12px">immutable per revision</span></td></tr>
+        <tr><td><code>Workflow</code></td><td>ws</td><td>Config + Ledger</td><td class="fields"><span style="display:flex;flex-wrap:wrap;gap:4px"><code style="font-size:11px;white-space:nowrap">id</code><code style="font-size:11px;white-space:nowrap">spec_id</code><code style="font-size:11px;white-space:nowrap">intake</code><code style="font-size:11px;white-space:nowrap">paused</code><code style="font-size:11px;white-space:nowrap">rrule?</code><code style="font-size:11px;white-space:nowrap">cell_count</code></span></td></tr>
+        <tr><td><code>Task</code></td><td>ws</td><td>Ledger (current-state projection)</td><td class="fields"><span style="display:flex;flex-wrap:wrap;gap:4px"><code style="font-size:11px;white-space:nowrap">id</code><code style="font-size:11px;white-space:nowrap">workflow_id</code><code style="font-size:11px;white-space:nowrap">spec_rev</code><code style="font-size:11px;white-space:nowrap">status</code><code style="font-size:11px;white-space:nowrap">step_idx</code><code style="font-size:11px;white-space:nowrap">model</code><code style="font-size:11px;white-space:nowrap">spent</code><code style="font-size:11px;white-space:nowrap">ceiling</code><code style="font-size:11px;white-space:nowrap">vm</code><code style="font-size:11px;white-space:nowrap">dep?</code><code style="font-size:11px;white-space:nowrap">problem?</code></span></td></tr>
+        <tr><td><code>Command</code></td><td>ws</td><td>Ledger</td><td class="fields"><span style="display:flex;flex-wrap:wrap;gap:4px"><code style="font-size:11px;white-space:nowrap">id</code><code style="font-size:11px;white-space:nowrap">verb</code><code style="font-size:11px;white-space:nowrap">tasks[]</code><code style="font-size:11px;white-space:nowrap">actor</code><code style="font-size:11px;white-space:nowrap">act_chain[]</code><code style="font-size:11px;white-space:nowrap">idempotency_key</code><code style="font-size:11px;white-space:nowrap">policy_decision</code><code style="font-size:11px;white-space:nowrap">effects[]</code><code style="font-size:11px;white-space:nowrap">compensated_by?</code></span></td></tr>
+        <tr><td><code>Problem</code></td><td>ws</td><td>Ledger</td><td class="fields">RFC 9457: <code>type · title · detail · instance · suggested_action · opened_at · closed_at · closed_by</code></td></tr>
+        <tr><td><code>Playbook</code></td><td>ws</td><td>Config</td><td class="fields"><span style="display:flex;flex-wrap:wrap;gap:4px"><code style="font-size:11px;white-space:nowrap">problem_type</code><code style="font-size:11px;white-space:nowrap">rungs[{verb, max}]</code><code style="font-size:11px;white-space:nowrap">human_verb</code><code style="font-size:11px;white-space:nowrap">enabled_per_workload{}</code></span></td></tr>
+        <tr><td><code>FixOutcome</code></td><td>ws</td><td>Ledger</td><td class="fields"><span style="display:flex;flex-wrap:wrap;gap:4px"><code style="font-size:11px;white-space:nowrap">command_id</code><code style="font-size:11px;white-space:nowrap">task_id</code><code style="font-size:11px;white-space:nowrap">verb</code><code style="font-size:11px;white-space:nowrap">actor_kind ∈ {you, ladder}</code><code style="font-size:11px;white-space:nowrap">outcome ∈ {resolved, recurred}</code><code style="font-size:11px;white-space:nowrap">scored_at</code></span></td></tr>
+        <tr><td><code>Recommendation</code></td><td>ws</td><td>Derived</td><td class="fields"><span style="display:flex;flex-wrap:wrap;gap:4px"><code style="font-size:11px;white-space:nowrap">problem_type</code><code style="font-size:11px;white-space:nowrap">workflow_id</code><code style="font-size:11px;white-space:nowrap">count</code><code style="font-size:11px;white-space:nowrap">cost_lost</code><code style="font-size:11px;white-space:nowrap">proposal{target, text}</code><code style="font-size:11px;white-space:nowrap">applied_rev?</code><code style="font-size:11px;white-space:nowrap">before</code><code style="font-size:11px;white-space:nowrap">after</code></span></td></tr>
+        <tr><td><code>Evidence</code></td><td>org</td><td>Ledger + Object</td><td class="fields">in-toto statement: <code>subject[] · predicate · script_sha · tree_hash · dirty · signature</code></td></tr>
+        <tr><td><code>Artifact</code></td><td>ws</td><td>Object</td><td class="fields"><span style="display:flex;flex-wrap:wrap;gap:4px"><code style="font-size:11px;white-space:nowrap">s3://{binding}/{project_id}/{task_id}/{name}</code><code style="font-size:11px;white-space:nowrap">digest</code><code style="font-size:11px;white-space:nowrap">content_type</code><code style="font-size:11px;white-space:nowrap">produced_by</code></span></td></tr>
+      </tbody>
+    </table>
+    <figure>
+      <pre><code>// Ledger record envelope — every row, every store
+// hash chain per (org, ws) partition
+{ "seq": 184201, "prev_hash": "c4a1…", "hash": "9f0e…",
+  "org_id": "org_7f", "project_id": "prj_a1", "sub": "opr_maria", "act": ["agent:goose/1.46"],
+  "kind": "command", "at": "2026-09-10T14:02:11Z",
+  "body": { … entity fields … },
+  "trace": { "task.id": "t-0217", "spec.id": "spec_8f1" } }</code></pre>
+      <figcaption>Listing 1 · The chain is per partition so one tenant's write rate never blocks another's, and a partition can be exported, verified and deleted on its own (retention, right to erasure).</figcaption>
+    </figure>
+  </section></sc-if>
+
+  <sc-if value="{{ show.onboarding }}" hint-placeholder-val="{{ false }}"><section class="sec" id="onboarding"><span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Onboarding an organisation</span>
+    <h2>Eight calls, each reversible, each verified before the next</h2>
+    <div class="summary">Eight idempotent calls bind identity, keys, secrets handles, storage, routers and policy. Each has a machine-checked acceptance criteria.</div>
+    <p class="lead">Onboarding is a Task specification too: declared intent, a acceptance criteria per step, and a Evaluator check that must pass. A failed step leaves the org in <code>provisioning</code> with a typed problem, never half-configured.</p>
+    <table class="cp-table">
+      <thead><tr><th style="width:5%">#</th><th style="width:34%">Call</th><th style="width:33%">What it binds</th><th>Acceptance criteria (machine-checked)</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td><span class="call"><span class="m POST">POST</span><span class="p">/v1/orgs</span></span></td><td>Name, region, retention. Returns <code>org_id</code> in <code>provisioning</code>.</td><td>Row exists; Ledger partition created with genesis hash.</td></tr>
+        <tr><td>2</td><td><span class="call"><span class="m PUT">PUT</span><span class="p">/v1/orgs/<i>{id}</i>/identity</span></span></td><td>OIDC issuer URL, audience, role-claim mapping, optional SPIFFE trust domain.</td><td>Discovery doc fetched; JWKS cached; a test token from the issuer validates.</td></tr>
+        <tr><td>3</td><td><span class="call"><span class="m PUT">PUT</span><span class="p">/v1/orgs/<i>{id}</i>/keys</span></span></td><td>KMS key reference for envelope encryption of the org's secrets and Ledger-at-rest.</td><td>Encrypt/decrypt round-trip of a nonce succeeds with the tenant's key.</td></tr>
+        <tr><td>4</td><td><span class="call"><span class="m PUT">PUT</span><span class="p">/v1/orgs/<i>{id}</i>/secrets/<i>{urn}</i></span></span></td><td>Registers a secret <em>handle</em> pointing at the tenant's vault path. Values never transit this API.</td><td>Resolve returns a value of non-zero length; value is not logged (assert absent in trace).</td></tr>
+        <tr><td>5</td><td><span class="call"><span class="m PUT">PUT</span><span class="p">/v1/orgs/<i>{id}</i>/storage</span></span></td><td>S3 endpoint, bucket, prefix, scoped credential reference, SSE mode.</td><td>PUT + HEAD + GET + DELETE of a probe object succeed; ListBucket outside the prefix is denied.</td></tr>
+        <tr><td>6</td><td><span class="call"><span class="m PUT">PUT</span><span class="p">/v1/orgs/<i>{id}</i>/routers</span></span></td><td>One binding per model class: endpoint, key reference, per-task ceiling, model list.</td><td>A 1-token completion succeeds per class; a request over ceiling is refused by the gateway, not merely recorded.</td></tr>
+        <tr><td>7</td><td><span class="call"><span class="m PUT">PUT</span><span class="p">/v1/orgs/<i>{id}</i>/policy</span></span></td><td>Rego bundle URL or inline bundle; decision endpoint if bring-your-own.</td><td>Bundle compiles; the platform's canonical deny test (spend over ceiling) returns <code>deny</code>.</td></tr>
+        <tr><td>8</td><td><span class="call"><span class="m POST">POST</span><span class="p">/v1/orgs/<i>{id}</i>/activate</span></span></td><td>Runs the conformance suite across all bindings; flips to <code>active</code>.</td><td>All step checks green in one run; evidence record written with the run's tree hash.</td></tr>
+      </tbody>
+    </table>
+    <figure>
+      <pre><code>PUT /v1/orgs/org_7f/routers
+Authorization: Bearer &lt;org-admin token&gt;
+Idempotency-Key: 3b9d…
+
+{ "bindings": [
+  { "class": "i-",  "endpoint": "https://llm.tenant.example/v1", "key_ref": "urn:secret:tenant/litellm/i",
+    "ceiling_per_task": 4.00, "models": ["i-default","i-claude-sonnet","i-escalate"] },
+  { "class": "f-",  "endpoint": "https://gpu.tenant.internal/v1", "key_ref": "urn:secret:tenant/sglang",
+    "ceiling_per_task": 0.00, "models": ["f-grunt","f-5090-q30"] },
+  { "class": "b-",  "endpoint": "https://llm.tenant.example/v1", "key_ref": "urn:secret:tenant/litellm/b",
+    "ceiling_per_task": 0.60, "models": ["b-google-gemini","b-claude-sonnet"] } ] }
+
+# returns 202 Accepted  { "verification": "run_8812", "status": "running" }
+# returns event  org.routers.verified  { "class": "i-", "ceiling_enforced": true }
+# returns event  org.routers.failed  { "class": "f-",
+                                  "problem": { "type": "urn:cellplane:problem:router-unreachable" } }</code></pre>
+      <figcaption>Listing 2 · Binding calls are asynchronous and idempotent. The client subscribes to <code>/v1/orgs/{id}/stream</code> and watches the verification events rather than polling.</figcaption>
+    </figure>
+    <div class="callout warn"><p><strong>Two things the platform will not do for a tenant.</strong> It will not store a secret value (only a reference) and it will not proxy to a router that failed the over-ceiling refusal test. Both are measured recommendations from Part A (A4, A7-3): recording spend is not enforcing it, and configuration that validates but has no runtime effect is worse than none.</p></div>
+  </section></sc-if>
+
+  <sc-if value="{{ show.identity }}" hint-placeholder-val="{{ false }}"><section class="sec" id="identity"><span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Identity and authorisation</span>
+    <h2>Who is calling, on whose behalf, and what policy says</h2>
+    <div class="summary">Users, delegated agents and the platform all present one token shape. Authorisation is a policy decision over the full request.</div>
+    <p class="lead">Three principal kinds, one token shape. Authorisation is a policy decision with the full request as input, never a role check in code.</p>
+    <table class="cp-table">
+      <thead><tr><th style="width:16%">Principal</th><th style="width:36%">How it gets a token</th><th>What the token carries</th></tr></thead>
+      <tbody>
+        <tr><td>User (human)</td><td>Tenant OIDC login → access token with <code>org_id</code>, <code>project_ids[]</code>, <code>roles{}</code> claims mapped at onboarding step 2</td><td><span style="display:flex;flex-wrap:wrap;gap:4px"><code style="font-size:11px;white-space:nowrap">sub</code><code style="font-size:11px;white-space:nowrap">org_id</code><code style="font-size:11px;white-space:nowrap">ws</code><code style="font-size:11px;white-space:nowrap">roles</code><code style="font-size:11px;white-space:nowrap">exp ≤ 1h</code></span></td></tr>
+        <tr><td>Agent (delegated)</td><td>Task requests RFC 8693 token exchange: presents its SPIFFE SVID + the user's token → short-lived token with an <code>act</code> chain</td><td><span style="display:flex;flex-wrap:wrap;gap:4px"><code style="font-size:11px;white-space:nowrap">sub = spiffe://…/task/t-0217</code><code style="font-size:11px;white-space:nowrap">act: [operator]</code><code style="font-size:11px;white-space:nowrap">scope ⊆ operator's</code><code style="font-size:11px;white-space:nowrap">exp ≤ 15m</code></span></td></tr>
+        <tr><td>System (platform)</td><td>Workflow identity of the control-plane service; used only for Ledger writes and scheduled dispatch</td><td><span style="display:flex;flex-wrap:wrap;gap:4px"><code style="font-size:11px;white-space:nowrap">sub = spiffe://cellplane/svc/…</code><code style="font-size:11px;white-space:nowrap">no ws claim; policy grants by kind</code></span></td></tr>
+      </tbody>
+    </table>
+    <table class="cp-table">
+      <thead><tr><th style="width:16%">Role</th><th>May</th></tr></thead>
+      <tbody>
+        <tr><td><code>viewer</code></td><td>All read models and streams in the project. No commands.</td></tr>
+        <tr><td><code>operator</code></td><td>Task commands except <code>approve/reject/grant</code>; playbook toggles; save groups. Bulk destructive requires a second operator's confirmation when <code>tasks.length &gt; 10</code> (policy-configurable).</td></tr>
+        <tr><td><code>approver</code></td><td>Operator + gate verbs. Cannot approve a task whose Task specification they authored (separation of duties, enforced in Rego).</td></tr>
+        <tr><td><code>admin</code></td><td>Project config, memberships, Task specification authoring, Recommendation apply/revert. Org bindings require the org-admin role, granted at the IdP.</td></tr>
+      </tbody>
+    </table>
+    <figure>
+      <pre><code>// Policy input — identical for every command and every config write
+{ "principal": { "sub": "opr_maria", "act": [], "roles": ["operator"] },
+  "scope":  { "org_id": "org_7f", "project_id": "prj_a1" },
+  "action":  { "verb": "extend", "tasks": ["t-0217"], "args": { "pct": 50 } },
+  "resource":  { "task": { "status": "stuck", "spent": 3.10, "ceiling": 6.00, "spec_author": "opr_li" } },
+  "context":  { "time": "…", "ip": "…", "budget_remaining_ws": 412.00 } }
+// Decision — returned to the client verbatim in the command result
+{ "decision": "allow", "engine": "opa", "bundle": "org_7f/prj_a1@v12", "obligations": ["log.high_value"] }</code></pre>
+      <figcaption>Listing 3 · One input shape means a tenant can replace OPA with Cedar by translating this object, and can test their bundle offline against recorded inputs.</figcaption>
+    </figure>
+  </section></sc-if>
+
+  <sc-if value="{{ show.lifecycle }}" hint-placeholder-val="{{ false }}"><section class="sec" id="lifecycle"><span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Lifecycle API</span>
+    <h2>From a Task specification to a completed task, and back to a better Task specification</h2>
+    <div class="summary">Task specification → plan and price → workflow → dispatch → watch → commands → recommendations. Five calls cover the loop; no client library required.</div>
+    <p class="lead">This is the project-level surface a system integrates against. Every call below is fully specified, with parameters, schemas, errors and a Try-it panel, in the <a href="API Reference.dc.html">API reference</a>.</p>
+    <table class="cp-table">
+      <thead><tr><th style="width:40%">Call</th><th>Behaviour</th></tr></thead>
+      <tbody>
+        <tr><td><span class="call"><span class="m POST">POST</span><span class="p">/v1/task-specs</span></span></td><td>Validates against JSON Schema 2020-12; stores revision 1 in the Ledger; runs the Planner and returns <code>plan + cost</code> without dispatching. Cost is knowable before commitment.</td></tr>
+        <tr><td><span class="call"><span class="m POST">POST</span><span class="p">/v1/task-specs/<i>{id}</i>/revisions</span></span></td><td>New immutable revision with <code>parent_rev</code>. Running tasks keep their revision; Redefine moves a task to the new one.</td></tr>
+        <tr><td><span class="call"><span class="m POST">POST</span><span class="p">/v1/workflows</span></span></td><td>Binds a Task specification revision to an intake (<code>http · git · schedule(rrule) · a2a · cli</code>) and a class. Returns the webhook URL and signing secret reference for push intakes.</td></tr>
+        <tr><td><span class="call"><span class="m POST">POST</span><span class="p">/v1/workflows/<i>{id}</i>/dispatch</span></span></td><td>Creates <code>n</code> tasks, each with an idempotency key derived from <code>(workflow, intake_event_id, index)</code>. Replays return the same tasks.</td></tr>
+        <tr><td><span class="call"><span class="m POST">POST</span><span class="p">/v1/workflows/<i>{id}</i>/pause</span></span></td><td>Pauses or resumes dispatch. Running tasks finish their step. Pause is a Ledger command like any other.</td></tr><tr><td><span class="call"><span class="p" style="color:var(--muted)">· /resume</span></span></td><td>Pauses or resumes dispatch. Running tasks finish their step. Pause is a Ledger command like any other.</td></tr>
+        <tr><td><span class="call"><span class="m POST">POST</span><span class="p">/v1/workflows/<i>{id}</i>/clone</span></span></td><td>New workflow from the same Task specification revision with overrides. Used by "Clone" in the UI.</td></tr>
+        <tr><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/workflows?status=</span></span></td><td>Read models; see Router API guide §4. All are scoped by the token's <code>project_id</code>.</td></tr><tr><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/tasks?…</span></span></td><td>Read models; see Router API guide §4. All are scoped by the token's <code>project_id</code>.</td></tr>
+        <tr><td><span class="call"><span class="m POST">POST</span><span class="p">/v1/tasks/<i>{id}</i>/commands</span></span></td><td>Single and bulk operator intents (nudge, redefine, escalate, extend, restart, rollback, split, reassign, skip, cancel, approve, grant, answer, return, reject). Router API guide §5.</td></tr><tr><td><span class="call"><span class="m POST">POST</span><span class="p">/v1/commands</span></span></td><td>Single and bulk operator intents (nudge, redefine, escalate, extend, restart, rollback, split, reassign, skip, cancel, approve, grant, answer, return, reject). Router API guide §5.</td></tr>
+        <tr><td><span class="call"><span class="m POST">POST</span><span class="p">/v1/commands/<i>{id}</i>/compensate</span></span></td><td>Compensating command within the undo window; refused for destructive verbs. Records <code>compensated_by</code> on the original.</td></tr>
+        <tr><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/playbooks</span></span></td><td>Recovery ladders per problem type: ordered rungs with per-task limits, human verb, per-workflow enable. Rungs are executed by the platform under the <code>ladder:</code> actor.</td></tr><tr><td><span class="call"><span class="m PUT">PUT</span><span class="p">/v1/playbooks/<i>{type}</i></span></span></td><td>Recovery ladders per problem type: ordered rungs with per-task limits, human verb, per-workflow enable. Rungs are executed by the platform under the <code>ladder:</code> actor.</td></tr>
+        <tr><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/recommendations</span></span></td><td>Derived from FixOutcome and Problem records; apply writes a Task specification revision or a dispatch-config change and starts a before/after measurement.</td></tr><tr><td><span class="call"><span class="m POST">POST</span><span class="p">/v1/recommendations/<i>{id}</i>/apply</span></span></td><td>Derived from FixOutcome and Problem records; apply writes a Task specification revision or a dispatch-config change and starts a before/after measurement.</td></tr>
+        <tr><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/ledger?from_seq=&amp;kinds=</span></span></td><td>Raw chain read for audit and export. Includes hashes so a tenant can verify with a tool we did not write.</td></tr>
+      </tbody>
+    </table>
+    <figure>
+      <pre data-lang="http"><code># Minimal integration: create, price, dispatch, watch, land
+POST /v1/task-specs                       { "intent": "…", "acceptance_criteria": [ … ], "steps": [ … ], "class": "i-" }
+# returns { "id": "spec_8f1", "rev": 1, "plan": { … }, "cost": { "estimate": 3.40 } }
+
+POST /v1/workflows                        { "task_spec": "spec_8f1", "rev": 1, "intake": "http" }
+# returns { "id": "wf_9c", "webhook": "…", "secret_ref": "urn:secret:org_7f/intake/wf_9c" }
+
+POST /v1/workflows/wf_9c/dispatch         { "count": 12 }
+# returns { "tasks": [ "t-1001", … ] }
+
+GET  /v1/event-stream?workflow=wf_9c      (SSE)
+# task.status.changed · problem.raised · command.applied · task.completed
+
+POST /v1/tasks/t-1007/commands            { "verb": "extend", "args": { "pct": 50 } }
+# returns { "policy": { "decision": "allow" }, "effects": [ … ] }</code></pre>
+      <figcaption>Listing 4 · Five calls cover the full loop. Nothing here requires a client library; every body is JSON and every id is opaque.</figcaption>
+    </figure>
+  </section></sc-if>
+
+  <sc-if value="{{ show.contracts }}" hint-placeholder-val="{{ false }}"><section class="sec" id="contracts"><span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>The two contracts we own</span>
+    <h2>Dispatch and State, specified so adapters can be swapped and tested</h2>
+    <div class="summary">Dispatch and State are the two boundaries we design ourselves. Each has a conformance suite with a deliberate breakage that proves it can fail.</div>
+    <p class="lead">Part B5 names these as the only boundaries without a public standard. Everything else adopts one. These are the shapes the control plane depends on.</p>
+    <div class="grid2" style="align-items:start">
+      <div style="border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:4px 14px"><div style="display:flex;align-items:center;gap:10px;padding:10px 0 4px"><span class="kicker">Dispatch · request</span><span style="flex:1"></span><span style="font-family:var(--font-mono);font-size:10.5px;color:var(--faint)">control plane → adapter</span></div>
+        <div class="attr"><span><span class="n">task_id</span><span class="t">string</span></span><span><span class="d">The task this run executes.</span><span class="e">t-0217</span></span></div>
+        <div class="attr"><span><span class="n">spec_rev</span><span class="t">integer</span></span><span><span class="d">Task specification revision pinned for the whole run.</span><span class="e">2</span></span></div>
+        <div class="attr"><span><span class="n">class</span><span class="t">enum</span></span><span><span class="d">Model class requested; never a vendor.</span><span class="e">i-</span></span></div>
+        <div class="attr"><span><span class="n">ceiling</span><span class="t">money</span></span><span><span class="d">Hard cap for this task. The adapter stops the unit at this number.</span><span class="e">"6.00"</span></span></div>
+        <div class="attr"><span><span class="n">timeout_s</span><span class="t">integer</span></span><span><span class="d">Per-tool call ceiling in seconds.</span><span class="e">45</span></span></div>
+        <div class="attr"><span><span class="n">secrets</span><span class="t">array of urn</span></span><span><span class="d">Secret references the sandbox may resolve. Values never transit.</span><span class="e">["urn:secret:org_7f/litellm/i"]</span></span></div>
+        <div class="attr"><span><span class="n">storage</span><span class="t">StorageBinding</span></span><span><span class="d">Where artifacts land.</span><span class="e">org binding</span></span></div>
+        <div class="attr"><span><span class="n">identity</span><span class="t">token</span></span><span><span class="d">RFC 8693 exchanged token with the act chain.</span><span class="e">exp ≤ 15m</span></span></div>
+        <div class="attr"><span><span class="n">idempotency_key</span><span class="t">string</span></span><span><span class="d">Derived from (workflow, intake event id, index). Replays return the original result.</span><span class="e">wf_9c:evt_a91:7</span></span></div>
+        <div class="attr"><span><span class="n">correlation</span><span class="t">object</span></span><span><span class="d">Attributes every emitted span must carry. Parentage is not relied upon.</span><span class="e">{ task.id, spec.id, org_id, project_id }</span></span></div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:4px 14px"><div style="display:flex;align-items:center;gap:10px;padding:10px 0 4px"><span class="kicker">Dispatch · result</span><span style="flex:1"></span><span style="font-family:var(--font-mono);font-size:10.5px;color:var(--faint)">adapter → control plane · exactly one</span></div>
+        <div class="attr"><span><span class="n">task_id</span><span class="t">string</span></span><span><span class="d">Echoed.</span><span class="e">t-0217</span></span></div>
+        <div class="attr"><span><span class="n">outcome</span><span class="t">enum</span></span><span><span class="d">completed · failed · cancelled · timeout · over_ceiling</span><span class="e">completed</span></span></div>
+        <div class="attr"><span><span class="n">spent</span><span class="t">money</span></span><span><span class="d">Actual spend. Must be ≤ ceiling unless outcome is over_ceiling.</span><span class="e">"3.10"</span></span></div>
+        <div class="attr"><span><span class="n">artifacts</span><span class="t">array of digest</span></span><span><span class="d">Content addresses of what was written to storage.</span><span class="e">["sha256:9f0e…"]</span></span></div>
+        <div class="attr"><span><span class="n">evidence</span><span class="t">in-toto statement</span></span><span><span class="d">Provenance attestation, DSSE-signed.</span><span class="e">subject · predicate · tree_hash</span></span></div>
+        <div class="attr"><span><span class="n">problem</span><span class="t">Problem · optional</span></span><span><span class="d">RFC 9457 detail when outcome is not completed.</span><span class="e">urn:cellplane:problem:tool-timeout</span></span></div>
+        <div class="attr"><span><span class="n">partial</span><span class="t">object · optional</span></span><span><span class="d">Where to resume from on restart.</span><span class="e">{ step_idx: 2, checkpoint_ref }</span></span></div>
+      </div>
+    </div>
+    <table class="cp-table" style="margin-top:12px"><thead><tr><th style="width:22%">State contract</th><th>Rule</th></tr></thead><tbody>
+      <tr><td>Write</td><td>Single writer per <code>(org_id, project_id)</code> partition, held by a lease (TTL 10s, renewed at 3s). Every write returns <code>(seq, hash)</code>. A write whose <code>prev_hash</code> is not the head is rejected, never merged.</td></tr>
+      <tr><td>Read · projection</td><td>Current state of tasks at a <code>seq</code>. What the UI subscribes to.</td></tr>
+      <tr><td>Read · range</td><td><code>from_seq</code> + <code>kinds[]</code>. What the Planner, Recommendations and export consume.</td></tr>
+      <tr><td>Retention</td><td>Per partition. Erasure drops the partition and writes a tombstone in the org chain.</td></tr>
+    </tbody></table>
+    <table class="cp-table">
+      <thead><tr><th style="width:22%">Conformance check</th><th>Deliberate breakage that proves it can fail</th></tr></thead>
+      <tbody>
+        <tr><td>budget ceiling terminates</td><td>Dispatch with <code>ceiling: 0.01</code>; adapter must return <code>over_ceiling</code> with <code>spent ≤ 0.02</code>. Recording the overrun instead of stopping fails the check.</td></tr>
+        <tr><td>Cancel is fast and clean</td><td>Cancel at step 2 of 5; result within 10s; no span or spend after <code>cancelled_at</code>.</td></tr>
+        <tr><td>Correlation without parentage</td><td>Strip <code>TRACEPARENT</code> from the environment; every emitted span still carries <code>task.id</code>.</td></tr>
+        <tr><td>Chain rejects tampering</td><td>Edit body of seq 100 in the store; verification of seq 101 fails; read API returns a typed <code>ledger-integrity</code> problem.</td></tr>
+        <tr><td>Partition isolation</td><td>Saturate org A's writer; org B's p99 write latency is unchanged within tolerance.</td></tr>
+        <tr><td>Second adapter</td><td>The same suite passes against a second Dispatch adapter (queue + state machine) and a second State adapter (relational). Design rule 3.</td></tr>
+      </tbody>
+    </table>
+  </section></sc-if>
+
+  <sc-if value="{{ show.events }}" hint-placeholder-val="{{ false }}"><section class="sec" id="events"><span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Events and streams</span>
+    <h2>One envelope in, one envelope out, scoped by the token</h2>
+    <div class="summary">One CloudEvents envelope in and out, with scope extensions. Streams resume by Ledger seq, so a dropped connection loses nothing.</div>
+    <p class="lead">CloudEvents 1.0 with a fixed extension set. Intake producers send this shape; the control plane emits this shape. Streams are SSE with resumable <code>Last-Event-ID</code> = Ledger <code>seq</code>.</p>
+    <table class="cp-table">
+      <thead><tr><th style="width:30%">Stream</th><th style="width:22%">Scope</th><th>Contains</th></tr></thead>
+      <tbody>
+        <tr><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/event-stream</span></span></td><td>token's <code>project_id</code></td><td>All task, problem, command, ladder and recommendation events in the project. The UI's single subscription.</td></tr>
+        <tr><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/event-stream?workflow=</span></span></td><td>narrower</td><td>Filtered server-side; same envelope.</td></tr><tr><td><span class="call"><span class="p" style="color:var(--muted)">· ?task=</span></span></td><td>narrower</td><td>Filtered server-side; same envelope.</td></tr>
+        <tr><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/orgs/<i>{id}</i>/stream</span></span></td><td>org-admin</td><td>Binding verifications, membership changes, policy bundle loads, retention jobs.</td></tr>
+        <tr><td><span class="call"><span class="m POST">POST</span><span class="p">/v1/intake/<i>{workflow}</i></span></span></td><td>signed webhook</td><td>Inbound CloudEvent; <code>id</code> becomes the dispatch idempotency root. Duplicate <code>id</code> → 200 with the prior tasks.</td></tr>
+      </tbody>
+    </table>
+    <figure>
+      <pre><code>{ "specversion": "1.0", "type": "cellplane.task.status.changed", "source": "/prj_a1/workflows/wf_9c",
+  "id": "evt_18420", "time": "2026-09-10T14:02:11Z", "subject": "t-0217",
+  // extensions, always present
+  "orgid": "org_7f", "projectid": "prj_a1", "seq": 184201,
+  "data": { "from": "running", "to": "stuck", "problem": { "type": "urn:cellplane:problem:tool-timeout" } } }</code></pre>
+      <figcaption>Listing 5 · <code>seq</code> lets a disconnected client resume exactly; the UI's "stale 42s · commands queue" banner is this reconnect path.</figcaption>
+    </figure>
+  </section></sc-if>
+
+  <sc-if value="{{ show.problems }}" hint-placeholder-val="{{ false }}"><section class="sec" id="problems"><span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Problem types</span>
+    <h2>Every error is typed, none is parsed from prose</h2>
+    <div class="summary">Every non-2xx is an RFC 9457 problem with a stable type URI and a stated next step. Task-level problems use the same registry.</div>
+    <p class="lead">RFC 9457 <code>application/problem+json</code> on every non-2xx. The <code>type</code> URI is stable and resolvable at <code>/v1/problem-types/{name}</code>. Task-level problems (the Lenses) use the same registry.</p>
+    <table class="cp-table"><thead><tr><th style="width:9%">HTTP</th><th style="width:42%">type</th><th>When · what to do</th></tr></thead><tbody>
+      <tr><td>400</td><td class="urn"><code>urn:cellplane:problem:schema-invalid</code></td><td>Body fails JSON Schema 2020-12. <code>errors[]</code> lists JSON Pointers. Fix and resend.</td></tr>
+      <tr><td>401</td><td class="urn"><code>urn:cellplane:problem:token-invalid</code></td><td>Expired, wrong audience, or issuer not bound to the org. Re-authenticate.</td></tr>
+      <tr><td>403</td><td class="urn"><code>urn:cellplane:problem:policy-denied</code></td><td>Policy returned deny; <code>decision</code> and <code>bundle</code> included. Not retryable without a change.</td></tr>
+      <tr><td>404</td><td class="urn"><code>urn:cellplane:problem:not-in-scope</code></td><td>Resource exists nowhere the token can see. Same response whether missing or foreign, by design.</td></tr>
+      <tr><td>409</td><td class="urn"><code>urn:cellplane:problem:verb-not-applicable</code></td><td>Verb not valid for the task's current status (e.g. approve on a running task). <code>allowed[]</code> lists valid verbs.</td></tr>
+      <tr><td>409</td><td class="urn"><code>urn:cellplane:problem:idempotency-conflict</code></td><td>Same key, different body. Use a new key.</td></tr>
+      <tr><td>402</td><td class="urn"><code>urn:cellplane:problem:budget-ceiling</code></td><td>Project or org ceiling would be exceeded by this dispatch. <code>remaining</code> included.</td></tr>
+      <tr><td>422</td><td class="urn"><code>urn:cellplane:problem:binding-unverified</code></td><td>An org binding (router, storage, policy) has not passed conformance. <code>binding</code> and <code>verification</code> run id included.</td></tr>
+      <tr><td>423</td><td class="urn"><code>urn:cellplane:problem:workflow-paused</code></td><td>Dispatch refused because the workflow is paused. Resume first.</td></tr>
+      <tr><td>429</td><td class="urn"><code>urn:cellplane:problem:rate-limited</code></td><td><code>Retry-After</code> and <code>RateLimit-*</code> headers present.</td></tr>
+      <tr><td>503</td><td class="urn"><code>urn:cellplane:problem:ledger-integrity</code></td><td>Partition failed hash verification; org is read-only until a user resolves. Alerts org admins.</td></tr>
+      <tr><td>503</td><td class="urn"><code>urn:cellplane:problem:adapter-unavailable</code></td><td>A bound adapter is down; <code>boundary</code> named. Other tenants unaffected.</td></tr>
+    </tbody></table>
+    <figure><pre><code>HTTP/1.1 409 Conflict
+Content-Type: application/problem+json
+
+{ "type": "urn:cellplane:problem:verb-not-applicable", "title": "Verb not applicable",
+  "status": 409, "detail": "approve is only valid for parked tasks; t-0217 is stuck",
+  "instance": "/v1/tasks/t-0217/commands/cmd_3a", "allowed": ["nudge","redefine","escalate","extend","restart","cancel"] }</code></pre></figure>
+  </section></sc-if>
+
+<sc-if value="{{ show.troubleshoot }}" hint-placeholder-val="{{ false }}"><section class="sec" id="troubleshoot"><span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Troubleshooting</span>
+    <h2>Symptom, cause, fix</h2>
+    <div class="summary">Symptom first, then cause, then the one command that fixes it. Organised by the tier where the symptom shows up.</div>
+    <p class="lead">Start from what you see. Each row names the cause the platform reports (never guessed from prose) and the one action that clears it. <code>cp doctor</code> runs the checks in the first two tables for you.</p>
+    <h3>Tasks and workflows</h3>
+    <table class="cp-table"><thead><tr><th style="width:26%">Symptom</th><th style="width:34%">Cause the platform reports</th><th>Fix</th></tr></thead><tbody>
+      <tr><td>All tasks <code>waiting · queue</code></td><td>Dispatch queue depth over <code>limits.dispatch_queue_per_ws</code>, or the workflow is paused</td><td><code>cp queue</code> to see depth; <code>cp resume wf</code> if paused; otherwise wait or raise the limit at the project</td></tr>
+      <tr><td>Tasks <code>waiting · dependency</code> for minutes</td><td>Upstream task is stuck or exhausted; stall threshold not yet reached</td><td><code>cp open c-…</code> follows the ⇠ link; fix the upstream, or <code>cp fix c-… --skip</code> to proceed without it</td></tr>
+      <tr><td>Same task cycles stuck → running → stuck</td><td>Ladder rung resolves the symptom, not the cause; <code>FixOutcome</code> recurs</td><td>Playbook limit ends the loop; then <code>cp fix --redefine</code>. If it recurs across tasks, apply the Recommendation</td></tr>
+      <tr><td>Task <code>exhausted</code>, person glyph</td><td>Every rung fired to its limit with no resolution</td><td>One human verb is suggested (redefine, rollback, split, grant, answer). Take it or cancel</td></tr>
+      <tr><td>Evaluation FAIL on work that looks right</td><td>A acceptance criteria clause is unmeasurable or the approval gate was structurally green (A7-2)</td><td><code>cp spec edit</code> to make the clause checkable; the failed clause is marked ✕ in the sheet</td></tr>
+      <tr><td>Dispatch returns 422 <code>binding-unverified</code></td><td>An org binding (router, storage, policy) failed or never ran conformance</td><td><code>cp org verify --binding router</code>; fix the binding; re-run</td></tr>
+    </tbody></table>
+    <h3>Budget</h3>
+    <table class="cp-table"><thead><tr><th style="width:26%">Symptom</th><th style="width:34%">Cause</th><th>Fix</th></tr></thead><tbody>
+      <tr><td>Task stuck <code>budget-ceiling</code></td><td>Per-task ceiling reached; the unit stopped, nothing else did</td><td><code>cp fix c-… --raise-ceiling 50</code>, or let the <code>auto-extend</code> rung do it once</td></tr>
+      <tr><td>Dispatch refused, 402 with <code>remaining</code></td><td>Workflow or sandbox ceiling would be exceeded</td><td><code>cp budget set --project … --ceiling</code> (admin), or dispatch fewer tasks</td></tr>
+      <tr><td>Every dispatch refused across sandboxes</td><td>Org ceiling reached</td><td>Org admin raises it at the IdP-bound billing account; the gateway virtual key is the enforcement point</td></tr>
+      <tr><td>Spend recorded past the budget ceiling</td><td>Router binding is recording, not enforcing (A4 recommendation)</td><td>Binding fails conformance and is disabled until the gateway refuses over-ceiling requests</td></tr>
+    </tbody></table>
+    <h3>Access and streams</h3>
+    <table class="cp-table"><thead><tr><th style="width:26%">Symptom</th><th style="width:34%">Cause</th><th>Fix</th></tr></thead><tbody>
+      <tr><td>401 <code>token-invalid</code></td><td>Expired, wrong audience, or issuer not bound to the org</td><td><code>cp login</code> again; for systems check the exchange audience is <code>cellplane</code></td></tr>
+      <tr><td>404 on a resource you can see in the UI</td><td>Token lacks that <code>project_id</code>; missing and foreign look identical by design</td><td>Ask a project admin for membership; <code>cp whoami</code> shows your scopes</td></tr>
+      <tr><td>403 <code>policy-denied</code> on approve</td><td>Separation of duties: you authored the Task specification</td><td>Another approver, or change the bundle if the rule is wrong</td></tr>
+      <tr><td>Stream keeps dropping</td><td>Idle proxy timeout or SSE limit per project reached</td><td>Reconnect with <code>Last-Event-ID</code>; the UI does this and shows "stale · commands queue". Raise <code>limits.sse_per_ws</code> if hit</td></tr>
+      <tr><td>Commands queued but never applied</td><td>Client offline; queue flushes on reconnect and records <code>policy: pending → allow</code></td><td>Check the Activity ledger; queued commands carry the original idempotency key</td></tr>
+    </tbody></table>
+    <h3>Onboarding and platform</h3>
+    <table class="cp-table"><thead><tr><th style="width:26%">Symptom</th><th style="width:34%">Cause</th><th>Fix</th></tr></thead><tbody>
+      <tr><td>Org stays <code>provisioning</code></td><td>One of the eight steps failed its acceptance criteria; the step's problem is on the org stream</td><td><code>cp org status</code> names the step; fix and re-run that step only (idempotent)</td></tr>
+      <tr><td>Storage step fails on ListBucket</td><td>Tenant role is broader than the prefix; the platform requires deny outside the prefix</td><td>Scope the role to <code>bucket/prefix/*</code></td></tr>
+      <tr><td>Router step fails "ceiling not enforced"</td><td>Virtual key has no hard cap</td><td>Set a hard budget on the key at the gateway; re-verify</td></tr>
+      <tr><td>Adapter conformance fails after an upgrade</td><td>Suite version moved; the adapter passed N, not N+1</td><td>Canary org shows the failing check; pin the previous adapter version until fixed</td></tr>
+      <tr><td>Org read-only, 503 <code>ledger-integrity</code></td><td>A partition failed hash verification at boot or on write</td><td><code>cp ledger verify --org</code> locates the first bad seq; restore that partition from the last verified export; the tombstone records the repair</td></tr>
+    </tbody></table>
+  </section></sc-if>
+
+  <sc-if value="{{ show.operate }}" hint-placeholder-val="{{ false }}"><section class="sec" id="operate"><span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Start, run, maintain</span>
+    <h2>Operating the control plane for many tenants</h2>
+    <div class="summary">Stateless replicas, one writer per partition, ceilings at four levels, per-tenant rate limits and telemetry. One config file.</div>
+    <div class="grid3">
+      <div class="tile"><b>Start</b><p>One container image, one config file, all tenant state external. Boot order: Config store → Ledger head verification per partition → adapter conformance (fast subset) → HTTP/SSE listeners. A failed partition verification starts the service in <code>read-only</code> for that org and raises <code>ledger-integrity</code>; other orgs are unaffected.</p></div>
+      <div class="tile"><b>Run</b><p>Stateless API replicas behind a load balancer; SSE sticks by <code>project_id</code> hash. One State writer per partition holds a lease (TTL 10s, renewed at 3s); replicas forward writes to the lease holder. Ladder execution is a scheduled job per project, bounded by the Playbook limits, actor <code>ladder:</code>.</p></div>
+      <div class="tile"><b>Maintain</b><p>Config migrations are additive only; Ledger is never migrated, only re-projected. Adapter upgrades run conformance in a canary org before rollout. Retention job per partition nightly: export to tenant storage, verify, then trim. Every job writes evidence.</p></div>
+    </div>
+    <table class="cp-table">
+      <thead><tr><th style="width:24%">Concern</th><th style="width:38%">Mechanism</th><th>Per-tenant guarantee</th></tr></thead>
+      <tbody>
+        <tr><td>Rate limits</td><td>Token bucket per <code>(org, ws, principal)</code>; headers <code>RateLimit-*</code> (IETF draft); 429 with RFC 9457 body and <code>Retry-After</code></td><td>One tenant's burst cannot consume another's quota; limits are org-configurable within platform caps.</td></tr>
+        <tr><td>Budget</td><td>Ceilings at four levels: task, workflow, project, org. Enforced at the gateway (virtual key) and re-checked by Policy before dispatch</td><td>Exceeding any level terminates the unit at that level. Recording is not enforcing.</td></tr>
+        <tr><td>Noisy neighbour</td><td>Per-partition writer; per-org SSE fan-out pool; per-class router binding</td><td>p99 read latency for org B is unchanged under org A saturation (conformance check §7).</td></tr>
+        <tr><td>Backpressure</td><td>Dispatch queue depth per project; above threshold new dispatch returns 202 + <code>queued</code> and the UI shows tasks as <code>waiting · queue</code></td><td>No silent drops. Queue depth is a read model.</td></tr>
+        <tr><td>Health</td><td><code>GET /healthz</code> (process) · <code>GET /readyz</code> (adapters + lease) · <code>GET /v1/orgs/{id}/health</code> (that org's bindings)</td><td>A tenant sees only their own binding health.</td></tr>
+        <tr><td>Observability</td><td>OTLP export to the platform collector and, if bound, to the org's own collector. Spans carry all four scope ids as attributes</td><td>Tenant traces are filterable by <code>org_id</code> at their collector; the platform never forwards another org's spans.</td></tr>
+        <tr><td>Secrets rotation</td><td>Handles resolve at use; rotation is the tenant's vault's job. The platform re-resolves on 401 from an adapter and records <code>rotation_at</code></td><td>Zero platform involvement in value custody.</td></tr>
+        <tr><td>Backup and export</td><td><code>POST /v1/orgs/{id}/export</code> → signed tarball of the org's Ledger partitions + config to their storage binding, with a verification script</td><td>Portable and verifiable with a tool we did not write.</td></tr>
+        <tr><td>Erasure</td><td><code>DELETE /v1/orgs/{id}</code> after export: partitions dropped, keys scheduled for destruction, tombstone written to the platform chain</td><td>Provable deletion; tombstone retains only <code>org_id</code> and timestamps.</td></tr>
+      </tbody>
+    </table>
+    <figure>
+      <pre><code># cellplane.yaml — the only file the service reads; everything else is in the stores it points at
+listen: ":8443"
+config_store:  { kind: postgres,  dsn_ref: "urn:secret:platform/pg" }
+ledger:  { kind: postgres,  dsn_ref: "urn:secret:platform/pg", partition_by: [org_id, project_id] }
+object_default: { kind: s3, endpoint: "https://s3.platform.internal", bucket: "cellplane" }
+identity:  { issuer: "https://id.platform.example", audience: "cellplane", spiffe_trust_domain: "cellplane" }
+policy:  { kind: opa, url: "http://opa:8181", bundle_root: "cellplane/" }
+telemetry:  { otlp: "http://otel-collector:4317" }
+dispatch:  { kind: temporal, address: "temporal:7233", namespace_per: project }
+ladder:  { tick_s: 2, outcome_after_ticks: 12, max_parallel_per_ws: 8 }
+limits:  { rps_per_principal: 20, sse_per_ws: 200, dispatch_queue_per_ws: 500 }</code></pre>
+      <figcaption>Listing 6 · Adapter <code>kind</code> is the swap point. Changing <code>dispatch.kind</code> to a second adapter is a config change plus a conformance run, not a code change.</figcaption>
+    </figure>
+  </section></sc-if>
+
+  <sc-if value="{{ show.versioning }}" hint-placeholder-val="{{ false }}"><section class="sec" id="versioning"><span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Versioning and compatibility</span>
+    <h2>Additive by default, breaking by new major</h2>
+    <div class="summary">Additive by default. Paths carry /v1, events version by suffix only on breaking change, the Ledger is never rewritten.</div>
+    <table class="cp-table">
+      <thead><tr><th style="width:26%">Surface</th><th>Rule</th></tr></thead>
+      <tbody>
+        <tr><td>HTTP paths</td><td><code>/v1</code> in the path. A new major runs alongside the old for one retention window. Deprecations announced in <code>Sunset</code> and <code>Deprecation</code> headers (RFC 8594).</td></tr>
+        <tr><td>Bodies</td><td>Unknown fields ignored on input, never emitted on output without a version bump. All schemas published as JSON Schema 2020-12 at <code>/v1/schemas/{name}</code>.</td></tr>
+        <tr><td>Events</td><td><code>type</code> is versioned by suffix only when the <code>data</code> shape breaks: <code>cellplane.task.status.changed.v2</code>. Consumers subscribe by prefix.</td></tr>
+        <tr><td>Problem types</td><td>Registry at <code>/v1/problem-types</code>. New types are additive; a type is never repurposed. Retired types remain resolvable.</td></tr>
+        <tr><td>Adapters</td><td>Conformance suite version travels with the adapter registration. An adapter passing suite N is not assumed to pass N+1.</td></tr>
+        <tr><td>Ledger</td><td>Record envelope carries <code>schema_rev</code>. Projections are rebuilt from the chain; the chain itself is never rewritten.</td></tr>
+      </tbody>
+    </table>
+  </section></sc-if>
+
+<sc-if value="{{ show.appendix }}" hint-placeholder-val="{{ false }}"><section class="sec" id="appendix"><span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Appendix · Standards</span>
+    <h2>Every standard we adopt, and why</h2>
+    <div class="summary">Every standard the platform adopts, one line on why, and the boundary it governs. Nothing here is a product.</div>
+    <p class="lead">Design rule 2: where a standard exists, adopt it whole. This is the list. Products appear nowhere here; they belong in adapter columns.</p>
+    <table class="cp-table"><thead><tr><th style="width:30%">Standard</th><th style="width:26%">Boundary it governs</th><th>Why this one</th></tr></thead><tbody>
+      <tr><td>OpenID Connect · OAuth 2.0</td><td>Identity (users)</td><td>Every tenant IdP already speaks it; roles arrive as claims, no user store of ours</td></tr>
+      <tr><td>OAuth 2.0 Token Exchange · RFC 8693</td><td>Identity (agents, systems)</td><td>Delegation stays explicit in the <code>act</code> chain instead of being flattened into a service account</td></tr>
+      <tr><td>SPIFFE / SPIRE</td><td>Workflow identity</td><td>Tasks get verifiable identity without secrets in the image</td></tr>
+      <tr><td>S3 API · SigV4</td><td>Object storage</td><td>Universal; tenant-owned buckets plug in with a scoped role</td></tr>
+      <tr><td>OpenAI-compatible completions</td><td>Model access</td><td>Every router and most local servers expose it; per-class virtual keys carry the budget ceiling</td></tr>
+      <tr><td>Agent Client Protocol</td><td>Agent runtime</td><td>Any ACP agent can be a task; the control plane can attach to a live session</td></tr>
+      <tr><td>Model Context Protocol</td><td>Tools</td><td>Tool servers are registered, allow-listed per project, never linked into the core</td></tr>
+      <tr><td>Agent Skills spec</td><td>Capability packaging</td><td>Templates and skills share one packaging so they can be published and forked</td></tr>
+      <tr><td>CloudEvents 1.0</td><td>Intake and outbound events</td><td>One envelope both directions; scope ids ride as extensions</td></tr>
+      <tr><td>A2A messaging</td><td>Agent-to-agent intake</td><td>Another agent's request is just another intake source</td></tr>
+      <tr><td>RFC 5545 recurrence rules</td><td>Schedules</td><td>Calendar semantics people already know; overlap handling is defined</td></tr>
+      <tr><td>JSON Schema 2020-12</td><td>Task specification validation, API bodies</td><td>Schemas published at <code>/v1/schemas</code>; any validator works</td></tr>
+      <tr><td>Rego / OPA decision API</td><td>Policy</td><td>Deterministic refusal before spend; one input shape makes engines swappable</td></tr>
+      <tr><td>OTLP · GenAI semantic conventions</td><td>Telemetry</td><td>Tenant collectors receive spans with the four scope ids; correlation by attribute, not parentage</td></tr>
+      <tr><td>in-toto · DSSE</td><td>Provenance</td><td>Evidence verifiable with tools we did not write</td></tr>
+      <tr><td>RFC 9457 problem details</td><td>Errors</td><td>Typed, machine-readable, stable type URIs; never parsed from prose</td></tr>
+      <tr><td>Idempotency-Key convention</td><td>Every externally triggered action</td><td>Safe replay for intakes, dispatch and commands</td></tr>
+      <tr><td>IETF RateLimit headers · RFC 8594 Sunset</td><td>Limits and deprecation</td><td>Clients learn limits and end-of-life from headers, not docs</td></tr>
+      <tr><td>OCI Runtime Spec</td><td>Isolation</td><td>A unit of work runs isolated; the microVM adapter can change without the core noticing</td></tr>
+    </tbody></table>
+  </section></sc-if>
+
+  <sc-if value="{{ show.open }}" hint-placeholder-val="{{ false }}"><section class="sec" id="open"><span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Open decisions</span>
+    <h2>Not decided here, and what would decide it</h2>
+    <div class="summary">What is not decided, and the measurement that would decide it.</div>
+    <table class="cp-table">
+      <thead><tr><th style="width:36%">Question</th><th>Evidence that would settle it</th></tr></thead>
+      <tbody>
+        <tr><td>Project = Temporal namespace, or one namespace per org with project as a search attribute?</td><td>Namespace count limits and per-namespace overhead at 1,000 projects; measured on the chosen durable-execution adapter and on the second adapter.</td></tr>
+        <tr><td>Relational Ledger vs append-only log store for the chain</td><td>Write p99 at 5k records/s across 200 partitions, plus range-read cost for a 7-day Recommendations window. Both adapters must pass §7.</td></tr>
+        <tr><td>Tenant-owned model router: do we require the gateway's virtual-key semantics, or accept any OpenAI-compatible endpoint and enforce ceiling in Dispatch?</td><td>Whether Dispatch-side enforcement can stop spend within one request of the budget ceiling for streaming completions. If not, the gateway contract is mandatory.</td></tr>
+        <tr><td>Bulk destructive confirmation: second operator, or time-delay with undo?</td><td>Operator study on the v3 UI: rate of cancelled-in-error under each; ledger records make this measurable.</td></tr>
+        <tr><td>Cross-project read for org admins by default, or opt-in per project?</td><td>Tenant compliance requirements gathered at onboarding; default to opt-in until three tenants ask otherwise.</td></tr>
+      </tbody>
+    </table>
+  </section></sc-if>
+
+  <sc-if value="{{ show.router_principles }}" hint-placeholder-val="{{ false }}"><section class="sec" id="router_principles">
+    <span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Router · Principles</span>
+    <h2>Six rules the router inherits from the architecture</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="tile" style="padding:12px 14px;border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:6px;background:var(--surface)"><div style="font-weight:600;font-size:13px">The UI never talks to a product</div><p style="font-size:12.5px;color:var(--muted)">It talks to the Dispatch, State, Telemetry and Policy interfaces. LiteLLM, Temporal, Langfuse and Firecracker appear only as today's adapters.</p></div>
+      <div class="tile" style="padding:12px 14px;border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:6px;background:var(--surface)"><div style="font-weight:600;font-size:13px">Every command is a typed intent</div><p style="font-size:12.5px;color:var(--muted)">Nudge, Redefine, Escalate, Extend, Restart, Reassign, Cancel, Approve, Reject, Return. No free-form prompts cross the boundary from the phone.</p></div>
+      <div class="tile" style="padding:12px 14px;border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:6px;background:var(--surface)"><div style="font-weight:600;font-size:13px">Cross-cutting concerns are applied, not requested</div><p style="font-size:12.5px;color:var(--muted)">Identity, budget, policy, provenance and idempotency are stamped on every command by the router. The client cannot omit them.</p></div>
+      <div class="tile" style="padding:12px 14px;border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:6px;background:var(--surface)"><div style="font-weight:600;font-size:13px">The grader stays invisible</div><p style="font-size:12.5px;color:var(--muted)">The user sees the Evaluator criterion; the agent never does. Redefine edits the Task specification, then the Planner re-runs. The UI never pushes a criterion into a session.</p></div>
+      <div class="tile" style="padding:12px 14px;border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:6px;background:var(--surface)"><div style="font-weight:600;font-size:13px">Errors are RFC 9457, never prose</div><p style="font-size:12.5px;color:var(--muted)">Each stuck reason in the UI maps to a problem type URI. The lens grid is a group-by on <code>type</code>.</p></div>
+      <div class="tile" style="padding:12px 14px;border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:6px;background:var(--surface)"><div style="font-weight:600;font-size:13px">Correlation rides on attributes</div><p style="font-size:12.5px;color:var(--muted)">Per recommendation A7-1, the UI joins on <code>task.id</code> and <code>spec.id</code> resource attributes, never on trace parentage.</p></div>
+    </div>
+  </section></sc-if>
+
+  <sc-if value="{{ show.router_object_model }}" hint-placeholder-val="{{ false }}"><section class="sec" id="router_object_model">
+    <span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Router · Object model</span>
+    <h2>The nouns, and the standard term for each</h2>
+    <p style="color:var(--muted);max-width:66ch">Left column is what the UI shows. Middle is the platform's core or capability that owns it. Right is the vocabulary the rest of the ecosystem uses, so integrators recognise the shape.</p>
+    <table class="cp-table">
+      <thead><tr><th style="width:18%">UI noun</th><th style="width:22%">Owner</th><th style="width:30%">Ecosystem term</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Workflow</strong></td><td>Task specification (core)</td><td>Task / Job (A2A <em>Task</em>)</td><td>Declared intent, acceptance criteria, steps. One Task specification fans out to many tasks.</td></tr>
+        <tr><td><strong>Task</strong></td><td>Dispatch (B5)</td><td>Run · Session (ACP <em>session</em>) · Agent instance</td><td>One microVM, one unit of work, one result. Identity of a task is stable across restarts; the VM id is not.</td></tr>
+        <tr><td><strong>Plan step</strong></td><td>Planner (core)</td><td>Step · Node (graph)</td><td>Board stages are a projection of step kinds: Intake → Build → Verify → Gate → Done.</td></tr>
+        <tr><td><strong>Turn</strong></td><td>Agent runtime (ACP)</td><td><code>session/prompt</code> · turn</td><td>Nudge is a new turn with the same intent. Cancel is <code>session/cancel</code>.</td></tr>
+        <tr><td><strong>Tool call</strong></td><td>Tool access (MCP)</td><td><code>tools/call</code> · function call</td><td>Timeouts and 429/503 surface as tool-call problem types.</td></tr>
+        <tr><td><strong>Model group</strong></td><td>Model access</td><td>Model class · route (OpenAI-compatible <code>model</code>)</td><td>Callers request a class (<code>f-</code>, <code>i-</code>, <code>b-</code>, <code>cli-</code>), never a vendor. Reassign changes the class.</td></tr>
+        <tr><td><strong>Ceiling</strong></td><td>Budget (cross-cutting)</td><td>Budget · spend cap</td><td>Exceeding it terminates the unit. Extend raises it +50% via a scoped virtual key.</td></tr>
+        <tr><td><strong>Verdict</strong></td><td>Evaluator (core)</td><td>Evaluation · grader score · assertion</td><td>PASS / FAIL against the criterion. The lens "Evaluation FAIL" is a projection on verdict history.</td></tr>
+        <tr><td><strong>Gate</strong></td><td>Policy · approve.service</td><td>Human-in-the-loop · approval · interrupt</td><td>Parked tasks. Approve / Reject / Return with note. Policy refusals (OPA) are deterministic and pre-spend.</td></tr>
+        <tr><td><strong>Timeline event</strong></td><td>Telemetry (OTLP)</td><td>Span event · GenAI semconv</td><td>Read from the trace store by <code>task.id</code> attribute.</td></tr>
+        <tr><td><strong>Recommendation</strong></td><td>Ledger (core)</td><td>Insight · recurring failure class</td><td>Derived: group stuck problem types by Task specification over the ledger window.</td></tr>
+        <tr><td><strong>Group</strong></td><td>Control plane only</td><td>Saved view · collection</td><td>Client-side set of task ids. Not a platform object. Persist per operator identity.</td></tr>
+      </tbody>
+    </table>
+  </section></sc-if>
+
+  <sc-if value="{{ show.router_topology }}" hint-placeholder-val="{{ false }}"><section class="sec" id="router_topology">
+    <span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Router · Topology</span>
+    <h2>Where the router sits</h2>
+    <figure style="margin:0">
+      <div style="display:grid;grid-template-columns:1fr auto 1fr auto 1fr;gap:8px;align-items:stretch">
+        <div style="padding:12px 14px;border:1px solid var(--border);border-radius:6px;background:var(--surface);display:flex;flex-direction:column;gap:6px"><span class="kicker" style="color:var(--muted)">Clients</span><div style="font-weight:600;font-size:13px">Cell-Plane mobile · web front · CLI</div><p style="font-size:12px;color:var(--muted)">Read models over SSE. Typed commands over HTTPS. OIDC identity.</p></div>
+        <div style="display:grid;place-items:center;color:var(--faint);font-family:var(--font-mono)">→</div>
+        <div style="padding:12px 14px;border:1px solid var(--accent);border-top:2px solid var(--accent);border-radius:6px;background:var(--surface);display:flex;flex-direction:column;gap:6px"><span class="kicker">Router</span><div style="font-weight:600;font-size:13px">Command + query API</div><p style="font-size:12px;color:var(--muted)">Stamps identity, idempotency key, budget scope. Asks Policy. Emits CloudEvents. Maps errors to RFC 9457.</p></div>
+        <div style="display:grid;place-items:center;color:var(--faint);font-family:var(--font-mono)">→</div>
+        <div style="padding:12px 14px;border:1px solid var(--border);border-radius:6px;background:var(--surface);display:flex;flex-direction:column;gap:6px"><span class="kicker" style="color:var(--muted)">Capabilities</span><div style="font-weight:600;font-size:13px">Dispatch · State · Telemetry · Policy · Model access · Durable execution</div><p style="font-size:12px;color:var(--muted)">Adapters today: Firecracker + goose/ACP, JSONL ledger, Langfuse/OTLP, OPA, LiteLLM, Temporal.</p></div>
+      </div>
+      <figcaption>Figure 1 · The router is the only component the clients know. It imports interfaces, never implementations (B1 rule 1).</figcaption>
+    </figure>
+    <div class="callout" style="padding:12px 14px;border-left:2px solid var(--accent);background:var(--accent-bg);border-radius:0 6px 6px 0"><p style="font-size:13px"><strong>Why a router and not direct calls.</strong> Three of the seven cross-cutting concerns (identity, idempotency, policy-before-spend) are absent or unwired today (A6). The router is where they become non-optional for every client, including this one.</p></div>
+  </section></sc-if>
+
+  <sc-if value="{{ show.router_read_models }}" hint-placeholder-val="{{ false }}"><section class="sec" id="router_read_models">
+    <span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Router · Read models</span>
+    <h2>Queries the five views need</h2>
+    <p style="color:var(--muted);max-width:66ch">All reads are projections. None require the client to join across stores. Each view maps to one endpoint plus one stream.</p>
+    <table class="cp-table">
+      <thead><tr><th style="width:12%">View</th><th style="width:34%">Endpoint</th><th>Projection</th></tr></thead>
+      <tbody>
+        <tr><td>Tasks</td><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/tasks?workflow=&amp;status=&amp;q=</span></span></td><td>Ledger current-state row per task, joined with latest problem (if any) and spend from the budget scope. Sorted stuck → parked → waiting → running → done.</td></tr>
+        <tr><td>Board</td><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/tasks?groupBy=stage</span></span></td><td>Same rows, bucketed by the kind of the current plan step. Stage is a Planner attribute on the step, not a UI heuristic.</td></tr>
+        <tr><td>Lenses</td><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/problems/summary</span></span></td><td>Count of open problems by <code>type</code>, by Task specification. Each type carries its <code>suggestedAction</code>.</td></tr>
+        <tr><td>Cost</td><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/budget?by=class|task specification</span></span></td><td>Spend vs ceiling from the gateway spend ledger, keyed by virtual key scope.</td></tr>
+        <tr><td>Loop</td><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/recommendations</span></span></td><td>Recurring problem types per Task specification over a window, with proposal, applied state, before/after recurrence.</td></tr>
+        <tr><td>Detail</td><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/tasks/<i>{id}</i></span></span></td><td>Task specification (intent, acceptance criteria, steps), plan position, budget, problem, and span events filtered by the <code>task.id</code> attribute.</td></tr><tr><td></td><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/tasks/<i>{id}</i>/events</span></span></td><td>Task specification (intent, acceptance criteria, steps), plan position, budget, problem, and span events filtered by the <code>task.id</code> attribute.</td></tr>
+        <tr><td>Live</td><td><code>GET /v1/event-stream</code> (SSE, CloudEvents)</td><td>One event per state transition. Client applies deltas; no polling.</td></tr>
+      </tbody>
+    </table>
+    <figure>
+      <pre><code>{
+  "id": "t-0217",
+  "task_spec": { "id": "spec_8f1", "kind": "codebase-refactor" },
+  // running | waiting | stuck | parked | done | cancelled
+  "status": "stuck",
+  "step": { "index": 2, "of": 5, "name": "Fix errors, no escape hatches", "stage": "build" },
+  "route": { "class": "cli-", "group": "claude-code-cli" },
+  "budget": { "spent": 3.10, "ceiling": 6.00, "currency": "USD" },
+  // RFC 9457, absent when healthy
+  "problem": {
+    "type": "urn:cellplane:problem:evaluation-failed-repeat",
+    "title": "Identical diff resubmitted after FAIL",
+    "detail": "Two consecutive FAIL verdicts with identical tree hash",
+    "suggestedAction": "redefine",
+    "occurredAt": "2026-09-04T14:02:11Z"
+  },
+  "session": { "protocol": "acp", "id": "sess_9f2…", "runtime": "goose/1.46.0" },
+  "isolation": { "unit": "sbx-1217", "spec": "oci-runtime" },
+  "attributes": { "task.id": "t-0217", "spec.id": "spec_8f1" }
+}</code></pre>
+      <figcaption>Listing 1 · Task read model. Every field is sourced from a named capability; nothing is computed in the client.</figcaption>
+    </figure>
+  </section></sc-if>
+
+  <sc-if value="{{ show.router_commands }}" hint-placeholder-val="{{ false }}"><section class="sec" id="router_commands">
+    <span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Router · Commands</span>
+    <h2>The ten operator intents, and what each routes to</h2>
+    <p style="color:var(--muted);max-width:66ch">One endpoint, one envelope, ten verbs. The router validates the verb against the task's current status, asks Policy, stamps identity and idempotency, then calls exactly one capability.</p>
+    <table class="cp-table">
+      <thead><tr><th style="width:13%">Verb</th><th style="width:20%">Valid from</th><th style="width:26%">Capability call</th><th>Semantics</th></tr></thead>
+      <tbody>
+        <tr><td><code>nudge</code></td><td>stuck · waiting</td><td>Agent runtime · <code>session/prompt</code></td><td>New turn, same intent and acceptance criteria. Cheapest action; increments <code>nudges</code>. Nudge count feeds the Loop.</td></tr>
+        <tr><td><code>redefine</code></td><td>any non-done</td><td>State · write Task specification rev; Planner · replan; Dispatch · resume from checkpoint</td><td>Edits intent, acceptance criteria or steps. Creates a new Task specification revision; the Ledger keeps the chain.</td></tr>
+        <tr><td><code>escalate</code></td><td>stuck · running</td><td>Model access · route to <code>i-escalate</code></td><td>Class change with a higher ceiling. Budget scope re-issued.</td></tr>
+        <tr><td><code>extend</code></td><td>stuck (budget) · running</td><td>Budget · raise ceiling on the scoped virtual key</td><td>+50% by default. Bulk from the Cost view.</td></tr>
+        <tr><td><code>restart</code></td><td>stuck · waiting</td><td>Dispatch · terminate unit; dispatch again with same <code>task.id</code></td><td>Fresh sandbox (microVM), resume at the last checkpointed step. Idempotency key prevents double-dispatch.</td></tr>
+        <tr><td><code>reassign</code></td><td>any non-done</td><td>Model access · set class</td><td>Caller names a class, never a vendor. Ceiling follows the class contract.</td></tr>
+        <tr><td><code>cancel</code></td><td>any non-done</td><td>Agent runtime · <code>session/cancel</code>; Dispatch · terminate</td><td>Measured today: turn ends in ~8s against a 45s operation.</td></tr>
+        <tr><td><code>approve</code></td><td>parked</td><td>Durable execution · signal gate; approve.service</td><td>Releases the approval gate. Actor identity recorded in the Ledger.</td></tr>
+        <tr><td><code>reject</code></td><td>parked</td><td>Durable execution · signal; Dispatch · terminate</td><td>Ends the unit. Verdict recorded as operator rejection, not Evaluation FAIL.</td></tr>
+        <tr><td><code>return</code></td><td>parked</td><td>Durable execution · signal with note</td><td>Task stays parked; note becomes a Task specification annotation the agent reads on the next turn.</td></tr>
+      </tbody>
+    </table>
+    <figure>
+      <pre><code>POST /v1/tasks/t-0217/commands
+// required; router rejects replays with 200 + prior result
+Idempotency-Key: 7d2c…
+// operator identity; delegated agent actors use token exchange
+Authorization: Bearer &lt;OIDC token&gt;
+
+{ "verb": "redefine",
+  "task_spec": { "acceptance_criteria": "tsc --strict exits 0 · no new @ts-ignore · tests pass · diff differs from last FAIL" },
+  "reason": "loop on identical diff" }
+
+202 Accepted
+{ "commandId": "cmd_41a…", "task": "t-0217", "accepted": true,
+  "policy": { "decision": "allow", "engine": "opa", "bundle": "tasks/v3" },
+  "effects": [ "document.revision:spec_8f1@7", "planner.replan", "dispatch.resume" ] }</code></pre>
+      <figcaption>Listing 2 · Command envelope. Bulk actions send the same body to <code>POST /v1/commands</code> with a <code>tasks: [...]</code> array; the response carries one result per task.</figcaption>
+    </figure>
+    <div class="callout" style="padding:12px 14px;border-left:2px solid var(--park);background:rgba(47,111,196,.08);border-radius:0 6px 6px 0"><p style="font-size:13px"><strong>Policy runs before spend.</strong> A <code>deny</code> returns <code>403</code> with a problem of type <code>urn:cellplane:problem:policy-denied</code> and the Rego rule id. The UI shows this as a parked task with Approve / Return, not as an error toast.</p></div>
+  </section></sc-if>
+
+  <sc-if value="{{ show.router_problem_types }}" hint-placeholder-val="{{ false }}"><section class="sec" id="router_problem_types">
+    <span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Router · Problem types</span>
+    <h2>The lens grid is a registry of problem types</h2>
+    <p style="color:var(--muted);max-width:66ch">Each stuck reason is an RFC 9457 <code>type</code> URI with a fixed suggested action. Adding a lens means registering a type, not shipping UI.</p>
+    <table class="cp-table">
+      <thead><tr><th style="width:38%">Type URI (suffix)</th><th style="width:14%">Lens</th><th style="width:14%">Suggested</th><th>Raised by</th></tr></thead>
+      <tbody>
+        <tr><td><code>budget-ceiling</code></td><td>Over budget ceiling</td><td>extend</td><td>Budget, when the scoped key terminates spend</td></tr>
+        <tr><td><code>tool-timeout</code> · <code>upstream-unavailable</code> · <code>rate-limited</code> · <code>lock-paused</code></td><td>Timed out</td><td>restart</td><td>Tool access (MCP result error) or Dispatch runtime ceiling</td></tr>
+        <tr><td><code>evaluation-failed</code> · <code>evaluation-failed-repeat</code> · <code>schema-drift</code></td><td>Evaluation FAIL</td><td>redefine</td><td>Evaluator verdict history; Task specification validation (JSON Schema 2020-12)</td></tr>
+        <tr><td><code>no-progress</code> · <code>hypothesis-loop</code> · <code>occurrence-overlap</code> · <code>merge-conflict</code> · <code>batch-pending</code></td><td>No progress</td><td>nudge → escalate</td><td>Dispatch progress monitor; scheduler (RFC 5545); batch adapter</td></tr>
+        <tr><td><code>policy-denied</code></td><td>Policy refused</td><td>approve / return</td><td>Policy (OPA decision)</td></tr>
+        <tr><td><code>approval-required</code></td><td>Awaiting approval</td><td>approve</td><td>Durable execution gate step</td></tr>
+        <tr><td><code>trace-unlinked</code></td><td>Trace unlinked</td><td>nudge</td><td>Telemetry, when a span lacks <code>task.id</code> (A7-1)</td></tr>
+        <tr><td><em>(status only)</em></td><td>Waiting</td><td>—</td><td>Dispatch lease / queue / dependency wait. Not a problem; self-resolving.</td></tr>
+      </tbody>
+    </table>
+  </section></sc-if>
+
+  <sc-if value="{{ show.router_events }}" hint-placeholder-val="{{ false }}"><section class="sec" id="router_events">
+    <span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Router · Events</span>
+    <h2>One stream, CloudEvents envelope, GenAI attributes</h2>
+    <p style="color:var(--muted);max-width:66ch">The live view is a subscription, not a poll. Every state transition is emitted once with the same <code>task.id</code> attribute the trace store uses, so the timeline and the fleet map agree by construction.</p>
+    <figure>
+      <pre><code>{ "specversion": "1.0",
+  // also: problem.raised, problem.cleared, command.applied, budget.updated, verdict.recorded, spec.revised
+  "type": "cellplane.task.status.changed",
+  "source": "/dispatch/firecracker",
+  "id": "evt_c8…", "time": "2026-09-04T14:02:11Z",
+  "subject": "t-0217",
+  "data": { "from": "running", "to": "stuck",
+            "problem": { "type": "urn:cellplane:problem:evaluation-failed-repeat" } },
+  "gen_ai.agent.id": "goose/1.46.0", "task.id": "t-0217", "spec.id": "spec_8f1" }</code></pre>
+      <figcaption>Listing 3 · Event envelope. Intake sources (git event, HTTP, schedule, A2A) emit the same shape inbound; the router emits it outbound.</figcaption>
+    </figure>
+  </section></sc-if>
+
+  <sc-if value="{{ show.router_the_loop }}" hint-placeholder-val="{{ false }}"><section class="sec" id="router_the_loop">
+    <span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Router · The loop</span>
+    <h2>Recommendations and proposals are Ledger queries with a write-back</h2>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1px;border:1px solid var(--border);background:var(--border);border-radius:6px;overflow:hidden">
+      <div class="tile" style="padding:10px 12px;background:var(--surface)"><span class="kicker" style="color:var(--muted)">Observe</span><p style="font-size:12px;margin-top:4px">Every <code>problem.raised</code> is appended to the Ledger with type, Task specification, spend at failure.</p></div>
+      <div class="tile" style="padding:10px 12px;background:var(--surface)"><span class="kicker" style="color:var(--muted)">Detect</span><p style="font-size:12px;margin-top:4px">A recommendation is any (Task specification, type) pair with recurrence ≥ 2 in the window.</p></div>
+      <div class="tile" style="padding:10px 12px;background:var(--surface)"><span class="kicker" style="color:var(--muted)">Propose</span><p style="font-size:12px;margin-top:4px">Each type has a proposal template targeting Task specification, dispatch config, or schedule.</p></div>
+      <div class="tile" style="padding:10px 12px;background:var(--surface)"><span class="kicker" style="color:var(--muted)">Apply</span><p style="font-size:12px;margin-top:4px">Operator-only. Writes a Task specification revision; provenance record names actor and prior hash.</p></div>
+      <div class="tile" style="padding:10px 12px;background:var(--surface)"><span class="kicker" style="color:var(--muted)">Measure</span><p style="font-size:12px;margin-top:4px">Recurrence since the revision vs before. Revert is a further revision, never a delete.</p></div>
+    </div>
+    <table class="cp-table">
+      <thead><tr><th style="width:36%">Endpoint</th><th>Behaviour</th></tr></thead>
+      <tbody>
+        <tr><td><span class="call"><span class="m GET">GET</span><span class="p">/v1/recommendations?window=7d</span></span></td><td>Grouped Ledger read. Includes <code>count</code>, <code>costLost</code>, <code>nudges</code>, <code>proposal</code>, <code>applied</code>, <code>recurrence.before / since</code>.</td></tr>
+        <tr><td><span class="call"><span class="m POST">POST</span><span class="p">/v1/recommendations/<i>{id}</i>/apply</span></span></td><td>Command. Routes to State (Task specification revision) or dispatch config. Policy-checked. Returns the new revision id.</td></tr>
+        <tr><td><span class="call"><span class="m POST">POST</span><span class="p">/v1/recommendations/<i>{id}</i>/dismiss</span></span></td><td>Operator judgement recorded in the Ledger; the recommendation is suppressed for the window.</td></tr>
+        <tr><td><span class="call"><span class="m POST">POST</span><span class="p">/v1/task-specs/<i>{id}</i>/revisions/<i>{rev}</i>/revert</span></span></td><td>New revision equal to the prior content. The chain stays intact.</td></tr>
+      </tbody>
+    </table>
+    <div class="callout" style="padding:12px 14px;border-left:2px solid var(--accent);background:var(--accent-bg);border-radius:0 6px 6px 0"><p style="font-size:13px"><strong>Guardrail.</strong> The loop proposes edits to what the agent is <em>asked</em> (intent, steps) and how it is <em>run</em> (ceiling, class, backoff). It never edits the Evaluator criterion by itself; a acceptance criteria change is a user command with a provenance record, so the grader stays outside the graded system (B1 rule 6).</p></div>
+  </section></sc-if>
+
+  <sc-if value="{{ show.router_cross_cutting_on_every_call }}" hint-placeholder-val="{{ false }}"><section class="sec" id="router_cross_cutting_on_every_call">
+    <span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Router · Cross-cutting on every call</span>
+    <h2>What the router stamps, and what the client must send</h2>
+    <table class="cp-table">
+      <thead><tr><th style="width:16%">Concern</th><th style="width:36%">Client sends</th><th>Router applies</th></tr></thead>
+      <tbody>
+        <tr><td>Identity</td><td>OIDC bearer token</td><td>Resolves actor; delegated agent actors via OAuth 2.0 Token Exchange. Actor appears on every Ledger record.</td></tr>
+        <tr><td>Idempotency</td><td><code>Idempotency-Key</code> header per command</td><td>Keyed lease. Replays return the original result. Required, not optional.</td></tr>
+        <tr><td>Policy</td><td>nothing</td><td>OPA decision before any capability call. Deny is a typed problem.</td></tr>
+        <tr><td>Budget</td><td>nothing</td><td>Command effects that change spend re-issue a scoped virtual key with the new ceiling.</td></tr>
+        <tr><td>Provenance</td><td>nothing</td><td>Every Task specification revision and command gets an in-toto style attestation: actor, prior hash, new hash.</td></tr>
+        <tr><td>Telemetry</td><td>optional <code>traceparent</code></td><td>Emits spans with <code>task.id</code>, <code>spec.id</code>, <code>command.id</code> attributes. Never relies on parentage.</td></tr>
+        <tr><td>Errors</td><td>—</td><td>All non-2xx bodies are <code>application/problem+json</code>.</td></tr>
+      </tbody>
+    </table>
+  </section></sc-if>
+
+  <sc-if value="{{ show.router_open_decisions }}" hint-placeholder-val="{{ false }}"><section class="sec" id="router_open_decisions">
+    <span class="kicker" style="display:flex;gap:10px;align-items:center"><span style="color:var(--faint)">{{ pageNum }}</span>Router · Open decisions</span>
+    <h2>Not decided here, and what would decide it</h2>
+    <table class="cp-table">
+      <thead><tr><th style="width:34%">Question</th><th>Evidence that would settle it</th></tr></thead>
+      <tbody>
+        <tr><td>Does <code>redefine</code> resume from checkpoint or restart the unit?</td><td>Measure whether goose honours a mid-session Task specification change via ACP without a fresh session. If not, redefine = revision + restart.</td></tr>
+        <tr><td>Where does stage live: Planner attribute or step-name heuristic?</td><td>Planner output schema. The UI currently infers stage from step names; that is a placeholder.</td></tr>
+        <tr><td>Is the event stream per-operator or fleet-wide?</td><td>Event volume at 500 tasks. If &gt; 20 events/s, filter server-side by Task specification or group.</td></tr>
+        <tr><td>Saved groups: client state or Ledger object?</td><td>Whether groups need to be shared across users. If yes, they become a Task specification-like object with identity.</td></tr>
+        <tr><td>Approve via router or direct to approve.service?</td><td>approve.service is Tailscale-bound today. Routing through the router adds identity and idempotency it lacks (A6).</td></tr>
+      </tbody>
+    </table>
+  </section></sc-if>
+
+      <div style="display:flex;justify-content:space-between;gap:12px;padding-top:8px;flex-wrap:wrap">
+        <sc-if value="{{ hasPrev }}" hint-placeholder-val="{{ false }}"><button onClick="{{ goPrev }}" style="height:56px;padding:0 16px;border-radius:6px;border:1px solid var(--border);background:var(--surface);text-align:left;display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:220px" style-hover="border-color:var(--border2)"><span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint)">‹ Previous</span><span style="font-weight:600;font-size:14px">{{ prevLabel }}</span></button></sc-if>
+        <span style="flex:1"></span>
+        <sc-if value="{{ hasNext }}" hint-placeholder-val="{{ true }}"><button onClick="{{ goNext }}" style="height:56px;padding:0 16px;border-radius:6px;border:1px solid var(--accent);background:var(--accent-bg);text-align:right;display:flex;flex-direction:column;justify-content:center;gap:2px;min-width:220px" style-hover="background:var(--accent);color:var(--accent-ink)"><span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;opacity:.7">Next ›</span><span style="font-weight:600;font-size:14px">{{ nextLabel }}</span></button></sc-if>
+      </div>
+    </main>
+
+    <aside class="rail" style="position:sticky;top:76px;align-self:start;display:flex;flex-direction:column;gap:12px">
+      <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)">Where you are</span>
+      <div style="font-family:var(--font-mono);font-size:11px;color:var(--muted)">{{ groupLabel }} · {{ pageNum }}</div>
+      <div style="font-size:12.5px;line-height:1.55;color:var(--muted)"><sc-for list="{{ here }}" as="l" hint-placeholder-count="3"><div style="padding:3px 0;border-left:2px solid var(--border);padding-left:10px;margin-left:1px">{{ l.text }}</div></sc-for></div>
+      <sc-if value="{{ hasNext }}" hint-placeholder-val="{{ true }}"><div style="margin-top:6px;padding-top:10px;border-top:1px solid var(--border)"><span style="font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint)">Next</span><a href="#" onClick="{{ goNextLink }}" style="display:block;margin-top:4px;font-size:13px;font-weight:600;text-decoration:none">{{ nextLabel }} ›</a><div style="font-size:12px;color:var(--muted);margin-top:2px">{{ nextWhy }}</div></div></sc-if>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;tableDensity&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;compact&quot;],&quot;default&quot;:&quot;comfortable&quot;,&quot;tsType&quot;:&quot;'comfortable'|'compact'&quot;,&quot;section&quot;:&quot;Tables&quot;},&quot;fieldsAsList&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Tables&quot;},&quot;startPage&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;quick&quot;,&quot;onboarding&quot;,&quot;shape&quot;,&quot;data&quot;,&quot;lifecycle&quot;,&quot;identity&quot;,&quot;events&quot;,&quot;contracts&quot;,&quot;standards&quot;,&quot;problems&quot;,&quot;troubleshoot&quot;,&quot;operate&quot;,&quot;versioning&quot;,&quot;appendix&quot;,&quot;open&quot;],&quot;default&quot;:&quot;quick&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Navigation&quot;}}">
+class Component extends DCLogic {
+  state = { theme: 'dark', active: 'quick', tab: 'cli' };
+  GROUPS = [
+    ['Start', [['quick', 'Quickstart'], ['onboarding', 'Onboarding an organisation']]],
+    ['Build', [['shape', 'Shape of the service'], ['data', 'Data model'], ['lifecycle', 'Lifecycle API'], ['identity', 'Identity and authorisation'], ['events', 'Events and streams'], ['contracts', 'Dispatch and State'], ['standards', 'Bring your own adapter']]],
+    ['Run', [['problems', 'Problem types'], ['troubleshoot', 'Troubleshooting'], ['operate', 'Start, run, maintain'], ['versioning', 'Versioning'], ['appendix', 'Appendix · Standards'], ['open', 'Open decisions']]],
+    ['Router', [['router_principles', 'Principles'], ['router_object_model', 'Object model'], ['router_topology', 'Topology'], ['router_read_models', 'Read models'], ['router_commands', 'Commands'], ['router_problem_types', 'Problem types'], ['router_events', 'Events'], ['router_the_loop', 'The loop'], ['router_cross_cutting_on_every_call', 'Cross-cutting on every call'], ['router_open_decisions', 'Open decisions']]]
+  ];
+  TOC = this.GROUPS.flatMap(([, items]) => items);
+  HERE = {
+    quick: ['Six steps from sign-in to results.', 'Price appears at step 3, first landing at step 4.', 'CLI by default; Node and HTTP behind tabs.'],
+    onboarding: ['Eight calls bind an organisation.', 'Each has a machine-checked done.', 'Secrets are handles, never values.'],
+    shape: ['Four scope tiers, all in the token.', 'Every row, event and span carries them.', 'Hard isolation at org, soft at project.'],
+    data: ['Fifteen entities across three stores.', 'Ledger is hash-chained per partition.', 'Graph and Recommendations are derived.'],
+    lifecycle: ['Project-level surface.', 'Five calls cover the loop.', 'Per-task verbs live in the Router guide.'],
+    identity: ['Three principal kinds, one token.', 'Four roles with separation of duties.', 'One policy input shape.'],
+    events: ['One CloudEvents envelope in and out.', 'Resume by Ledger seq.', 'Signed webhooks for intake.'],
+    contracts: ['Dispatch and State are ours to design.', 'Six conformance checks each.', 'A second adapter proves the seam.'],
+    standards: ['Per-boundary contract a tenant must speak.', 'Default adapter and swap candidates.', 'Enabled only after conformance.'],
+    problems: ['Twelve typed problems with HTTP codes.', 'Stable type URIs.', 'Same registry as the Lenses.'],
+    troubleshoot: ['Symptom → cause → fix.', 'Grouped by where it shows up.', 'cp doctor runs the first checks.'],
+    operate: ['Boot, run, maintain for many tenants.', 'Ceilings at four levels.', 'One config file, adapters by kind.'],
+    versioning: ['Additive by default.', '/v1 in paths, suffix on breaking events.', 'Ledger never rewritten.'],
+    appendix: ['Every standard, one line each.', 'Boundary it governs and why.', 'No products here.'],
+    open: ['Five undecided questions.', 'Each with the evidence that settles it.', 'Revisited as adapters are measured.'],
+    router_principles: ['Six rules the router inherits from the architecture.', 'Per-task commands and read models.', 'Standards named per seam.'],
+    router_object_model: ['The nouns, and the standard term for each.', 'Per-task commands and read models.', 'Standards named per seam.'],
+    router_topology: ['Where the router sits.', 'Per-task commands and read models.', 'Standards named per seam.'],
+    router_read_models: ['Queries the five views need.', 'Per-task commands and read models.', 'Standards named per seam.'],
+    router_commands: ['The ten operator intents, and what each routes to.', 'Per-task commands and read models.', 'Standards named per seam.'],
+    router_problem_types: ['The lens grid is a registry of problem types.', 'Per-task commands and read models.', 'Standards named per seam.'],
+    router_events: ['One stream, CloudEvents envelope, GenAI attributes.', 'Per-task commands and read models.', 'Standards named per seam.'],
+    router_the_loop: ['Recommendations and proposals are Ledger queries with a write-back.', 'Per-task commands and read models.', 'Standards named per seam.'],
+    router_cross_cutting_on_every_call: ['What the router stamps, and what the client must send.', 'Per-task commands and read models.', 'Standards named per seam.'],
+    router_open_decisions: ['Not decided here, and what would decide it.', 'Per-task commands and read models.', 'Standards named per seam.']
+  };
+  NEXTWHY = { router_principles: 'Next seam of the router.', router_object_model: 'Next seam of the router.', router_topology: 'Next seam of the router.', router_read_models: 'Next seam of the router.', router_commands: 'Next seam of the router.', router_problem_types: 'Next seam of the router.', router_events: 'Next seam of the router.', router_the_loop: 'Next seam of the router.', router_cross_cutting_on_every_call: 'Next seam of the router.', router_open_decisions: 'Next seam of the router.', quick: 'How an organisation gets its own identity, storage and routers.', onboarding: 'The scope model everything else assumes.', shape: 'What is stored, where, and with what key.', data: 'The calls that move a Task specification to completed tasks.', lifecycle: 'Who can make those calls.', identity: 'How state changes reach you.', events: 'The two contracts underneath.', contracts: 'Swapping any adapter for your own.', standards: 'What an error looks like.', problems: 'What to do when you see one.', troubleshoot: 'Running the service itself.', operate: 'Keeping clients working across releases.', versioning: 'The standards, in one place.', appendix: 'What is still open.' };
+  applyFieldsList() { const on = !!this.props.fieldsAsList; document.querySelectorAll('.cp-table td.fields code').forEach(el => { if (!el.dataset.src) el.dataset.src = el.textContent; el.textContent = on ? el.dataset.src.split(' · ').join('\n') : el.dataset.src; }); }
+  componentDidUpdate() { this.applyFieldsList(); }
+  async componentDidMount() {
+    document.body.dataset.theme = this.state.theme;
+    if (this.props.startPage && this.TOC.some(([k]) => k === this.props.startPage)) this.setState({ active: this.props.startPage });
+    setTimeout(() => this.applyFieldsList(), 0);
+    this.code = await import('./cellplane-code.js'); this.code.enhanceCode(document);
+    const h = (location.hash || '').slice(1); if (this.TOC.some(([id]) => id === h)) this.setState({ active: h });
+    this.onHash = () => { const id = (location.hash || '').slice(1); if (this.TOC.some(([x]) => x === id) && id !== this.state.active) this.go(id); };
+    window.addEventListener('hashchange', this.onHash);
+  }
+  componentWillUnmount() { window.removeEventListener('hashchange', this.onHash); }
+  componentDidUpdate() { if (this.code) requestAnimationFrame(() => this.code.enhanceCode(document)); }
+  go(id) { this.setState({ active: id }); try { history.replaceState(null, '', '#' + id); } catch (e) {} window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  renderVals() {
+    const a = this.state.active, i = this.TOC.findIndex(([id]) => id === a), show = {}; this.TOC.forEach(([id]) => show[id] = id === a);
+    return {
+      themeIcon: this.state.theme === 'dark' ? '◐' : '◑', toggleTheme: () => { const theme = this.state.theme === 'dark' ? 'light' : 'dark'; document.body.dataset.theme = theme; this.setState({ theme }); },
+      tabCli: this.state.tab === 'cli', tabNode: this.state.tab === 'node', tabHttp: this.state.tab === 'http',
+      tabs: [['cli', 'CLI'], ['node', 'Node'], ['http', 'HTTP']].map(([k, label]) => ({ label, bg: this.state.tab === k ? 'var(--surface3)' : 'transparent', color: this.state.tab === k ? 'var(--text)' : 'var(--muted)', onClick: () => this.setState({ tab: k }) })),
+      show, pageNum: String(i + 1).padStart(2, '0') + ' / ' + this.TOC.length,
+      groups: this.GROUPS.map(([label, items]) => ({ label, items: items.map(([id, l]) => ({ id, label: l, onClick: e => { e.preventDefault(); this.go(id); }, cls: a === id ? 'on' : '' })) })),
+      groupLabel: (this.GROUPS.find(([, items]) => items.some(([id]) => id === a)) || [''])[0], here: (this.HERE[a] || []).map(text => ({ text })), nextWhy: this.NEXTWHY[a] || '', goNextLink: e => { e.preventDefault(); if (i < this.TOC.length - 1) this.go(this.TOC[i + 1][0]); },
+      hasPrev: i > 0, hasNext: i < this.TOC.length - 1, prevLabel: i > 0 ? this.TOC[i - 1][1] : '', nextLabel: i < this.TOC.length - 1 ? this.TOC[i + 1][1] : '', goPrev: () => this.go(this.TOC[i - 1][0]), goNext: () => this.go(this.TOC[i + 1][0]),
+      toc: this.TOC.map(([id, label], k) => ({ id, label, num: String(k + 1).padStart(2, '0'), onClick: e => { e.preventDefault(); this.go(id); }, cls: a === id ? 'on' : '', border: a === id ? 'var(--text)' : 'var(--border)', bg: a === id ? 'var(--surface2)' : 'var(--surface)', color: a === id ? 'var(--text)' : 'var(--muted)' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

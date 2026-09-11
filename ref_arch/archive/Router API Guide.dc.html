@@ -38,7 +38,7 @@ figcaption{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--m
     <div style="display:flex;align-items:center;gap:8px"><span style="width:10px;height:10px;border-radius:2px;background:var(--accent)"></span><span class="kicker" style="color:var(--text)">Cell-Plane</span><span class="kicker" style="color:var(--faint)">· Integration</span></div>
     <h1 style="font-size:34px;line-height:1.1;text-wrap:balance">Router API guide: how the control plane meets the agentic stack</h1>
     <p style="color:var(--muted);font-size:15px;max-width:60ch;text-wrap:pretty">The mobile control plane is a thin client. It owns no agent state. Everything it shows is a read model over the Ledger and the trace store; everything it does is a typed command routed through the platform's existing capability interfaces. This guide names those seams, the objects that cross them, and the vocabulary they use.</p>
-    <div style="display:flex;gap:18px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)"><span>Audience · platform + front-end engineers</span><span>Status · proposal, not measured</span><span>Standards · ACP · MCP · A2A · CloudEvents · OTLP GenAI · RFC 9457 · RFC 5545</span></div>
+    <div style="display:flex;gap:18px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted)"><span>Audience · platform + front-end engineers</span><span>Status · proposal, not measured</span><span>Standards · ACP · MCP · A2A · CloudEvents · OTLP GenAI · RFC 9457 · RFC 5545</span><span>Companion · <a href="Control Plane API Guide.dc.html">Control Plane API guide</a> (tenancy, onboarding, operations)</span></div>
   </div>
 
   <section style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px">
@@ -48,9 +48,9 @@ figcaption{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--m
       <div class="tile" style="padding:12px 14px;border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:6px;background:var(--surface)"><div style="font-weight:600;font-size:13px">The UI never talks to a product</div><p style="font-size:12.5px;color:var(--muted)">It talks to the Dispatch, State, Telemetry and Policy interfaces. LiteLLM, Temporal, Langfuse and Firecracker appear only as today's adapters.</p></div>
       <div class="tile" style="padding:12px 14px;border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:6px;background:var(--surface)"><div style="font-weight:600;font-size:13px">Every command is a typed intent</div><p style="font-size:12.5px;color:var(--muted)">Nudge, Redefine, Escalate, Extend, Restart, Reassign, Cancel, Approve, Reject, Return. No free-form prompts cross the boundary from the phone.</p></div>
       <div class="tile" style="padding:12px 14px;border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:6px;background:var(--surface)"><div style="font-weight:600;font-size:13px">Cross-cutting concerns are applied, not requested</div><p style="font-size:12.5px;color:var(--muted)">Identity, budget, policy, provenance and idempotency are stamped on every command by the router. The client cannot omit them.</p></div>
-      <div class="tile" style="padding:12px 14px;border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:6px;background:var(--surface)"><div style="font-weight:600;font-size:13px">The grader stays invisible</div><p style="font-size:12.5px;color:var(--muted)">The operator sees the Judge criterion; the agent never does. Redefine edits the Document, then the Planner re-runs. The UI never pushes a criterion into a session.</p></div>
+      <div class="tile" style="padding:12px 14px;border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:6px;background:var(--surface)"><div style="font-weight:600;font-size:13px">The grader stays invisible</div><p style="font-size:12.5px;color:var(--muted)">The user sees the Evaluator criterion; the agent never does. Redefine edits the Task specification, then the Planner re-runs. The UI never pushes a criterion into a session.</p></div>
       <div class="tile" style="padding:12px 14px;border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:6px;background:var(--surface)"><div style="font-weight:600;font-size:13px">Errors are RFC 9457, never prose</div><p style="font-size:12.5px;color:var(--muted)">Each stuck reason in the UI maps to a problem type URI. The lens grid is a group-by on <code>type</code>.</p></div>
-      <div class="tile" style="padding:12px 14px;border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:6px;background:var(--surface)"><div style="font-weight:600;font-size:13px">Correlation rides on attributes</div><p style="font-size:12.5px;color:var(--muted)">Per finding A7-1, the UI joins on <code>cell.id</code> and <code>document.id</code> resource attributes, never on trace parentage.</p></div>
+      <div class="tile" style="padding:12px 14px;border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:6px;background:var(--surface)"><div style="font-weight:600;font-size:13px">Correlation rides on attributes</div><p style="font-size:12.5px;color:var(--muted)">Per recommendation A7-1, the UI joins on <code>task.id</code> and <code>spec.id</code> resource attributes, never on trace parentage.</p></div>
     </div>
   </section>
 
@@ -61,18 +61,18 @@ figcaption{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--m
     <table>
       <thead><tr><th style="width:18%">UI noun</th><th style="width:22%">Owner</th><th style="width:30%">Ecosystem term</th><th>Notes</th></tr></thead>
       <tbody>
-        <tr><td><strong>Workload</strong></td><td>Document (core)</td><td>Task / Job (A2A <em>Task</em>)</td><td>Declared intent, definition of done, steps. One Document fans out to many cells.</td></tr>
-        <tr><td><strong>Cell</strong></td><td>Dispatch (B5)</td><td>Run · Session (ACP <em>session</em>) · Agent instance</td><td>One microVM, one unit of work, one result. Identity of a cell is stable across restarts; the VM id is not.</td></tr>
+        <tr><td><strong>Workflow</strong></td><td>Task specification (core)</td><td>Task / Job (A2A <em>Task</em>)</td><td>Declared intent, acceptance criteria, steps. One Task specification fans out to many tasks.</td></tr>
+        <tr><td><strong>Task</strong></td><td>Dispatch (B5)</td><td>Run · Session (ACP <em>session</em>) · Agent instance</td><td>One microVM, one unit of work, one result. Identity of a task is stable across restarts; the VM id is not.</td></tr>
         <tr><td><strong>Plan step</strong></td><td>Planner (core)</td><td>Step · Node (graph)</td><td>Board stages are a projection of step kinds: Intake → Build → Verify → Gate → Done.</td></tr>
         <tr><td><strong>Turn</strong></td><td>Agent runtime (ACP)</td><td><code>session/prompt</code> · turn</td><td>Nudge is a new turn with the same intent. Cancel is <code>session/cancel</code>.</td></tr>
         <tr><td><strong>Tool call</strong></td><td>Tool access (MCP)</td><td><code>tools/call</code> · function call</td><td>Timeouts and 429/503 surface as tool-call problem types.</td></tr>
         <tr><td><strong>Model group</strong></td><td>Model access</td><td>Model class · route (OpenAI-compatible <code>model</code>)</td><td>Callers request a class (<code>f-</code>, <code>i-</code>, <code>b-</code>, <code>cli-</code>), never a vendor. Reassign changes the class.</td></tr>
         <tr><td><strong>Ceiling</strong></td><td>Budget (cross-cutting)</td><td>Budget · spend cap</td><td>Exceeding it terminates the unit. Extend raises it +50% via a scoped virtual key.</td></tr>
-        <tr><td><strong>Verdict</strong></td><td>Judge (core)</td><td>Evaluation · grader score · assertion</td><td>PASS / FAIL against the criterion. The lens "Judge FAIL" is a projection on verdict history.</td></tr>
-        <tr><td><strong>Gate</strong></td><td>Policy · approve.service</td><td>Human-in-the-loop · approval · interrupt</td><td>Parked cells. Approve / Reject / Return with note. Policy refusals (OPA) are deterministic and pre-spend.</td></tr>
-        <tr><td><strong>Timeline event</strong></td><td>Telemetry (OTLP)</td><td>Span event · GenAI semconv</td><td>Read from the trace store by <code>cell.id</code> attribute.</td></tr>
-        <tr><td><strong>Finding</strong></td><td>Ledger (core)</td><td>Insight · recurring failure class</td><td>Derived: group stuck problem types by Document over the ledger window.</td></tr>
-        <tr><td><strong>Group</strong></td><td>Control plane only</td><td>Saved view · collection</td><td>Client-side set of cell ids. Not a platform object. Persist per operator identity.</td></tr>
+        <tr><td><strong>Verdict</strong></td><td>Evaluator (core)</td><td>Evaluation · grader score · assertion</td><td>PASS / FAIL against the criterion. The lens "Evaluation FAIL" is a projection on verdict history.</td></tr>
+        <tr><td><strong>Gate</strong></td><td>Policy · approve.service</td><td>Human-in-the-loop · approval · interrupt</td><td>Parked tasks. Approve / Reject / Return with note. Policy refusals (OPA) are deterministic and pre-spend.</td></tr>
+        <tr><td><strong>Timeline event</strong></td><td>Telemetry (OTLP)</td><td>Span event · GenAI semconv</td><td>Read from the trace store by <code>task.id</code> attribute.</td></tr>
+        <tr><td><strong>Recommendation</strong></td><td>Ledger (core)</td><td>Insight · recurring failure class</td><td>Derived: group stuck problem types by Task specification over the ledger window.</td></tr>
+        <tr><td><strong>Group</strong></td><td>Control plane only</td><td>Saved view · collection</td><td>Client-side set of task ids. Not a platform object. Persist per operator identity.</td></tr>
       </tbody>
     </table>
   </section>
@@ -100,73 +100,73 @@ figcaption{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--m
     <table>
       <thead><tr><th style="width:12%">View</th><th style="width:34%">Endpoint</th><th>Projection</th></tr></thead>
       <tbody>
-        <tr><td>Cells</td><td><code>GET /v1/cells?document=&amp;status=&amp;q=</code></td><td>Ledger current-state row per cell, joined with latest problem (if any) and spend from the budget scope. Sorted stuck → parked → waiting → running → done.</td></tr>
-        <tr><td>Board</td><td><code>GET /v1/cells?groupBy=stage</code></td><td>Same rows, bucketed by the kind of the current plan step. Stage is a Planner attribute on the step, not a UI heuristic.</td></tr>
-        <tr><td>Lenses</td><td><code>GET /v1/problems/summary</code></td><td>Count of open problems by <code>type</code>, by Document. Each type carries its <code>suggestedAction</code>.</td></tr>
-        <tr><td>Cost</td><td><code>GET /v1/budget?by=class|document</code></td><td>Spend vs ceiling from the gateway spend ledger, keyed by virtual key scope.</td></tr>
-        <tr><td>Loop</td><td><code>GET /v1/findings</code></td><td>Recurring problem types per Document over a window, with proposal, applied state, before/after recurrence.</td></tr>
-        <tr><td>Detail</td><td><code>GET /v1/cells/{id}</code> · <code>GET /v1/cells/{id}/events</code></td><td>Document (intent, DoD, steps), plan position, budget, problem, and span events filtered by the <code>cell.id</code> attribute.</td></tr>
-        <tr><td>Live</td><td><code>GET /v1/stream</code> (SSE, CloudEvents)</td><td>One event per state transition. Client applies deltas; no polling.</td></tr>
+        <tr><td>Tasks</td><td><code>GET /v1/tasks?task specification=&amp;status=&amp;q=</code></td><td>Ledger current-state row per task, joined with latest problem (if any) and spend from the budget scope. Sorted stuck → parked → waiting → running → done.</td></tr>
+        <tr><td>Board</td><td><code>GET /v1/tasks?groupBy=stage</code></td><td>Same rows, bucketed by the kind of the current plan step. Stage is a Planner attribute on the step, not a UI heuristic.</td></tr>
+        <tr><td>Lenses</td><td><code>GET /v1/problems/summary</code></td><td>Count of open problems by <code>type</code>, by Task specification. Each type carries its <code>suggestedAction</code>.</td></tr>
+        <tr><td>Cost</td><td><code>GET /v1/budget?by=class|task specification</code></td><td>Spend vs ceiling from the gateway spend ledger, keyed by virtual key scope.</td></tr>
+        <tr><td>Loop</td><td><code>GET /v1/recommendations</code></td><td>Recurring problem types per Task specification over a window, with proposal, applied state, before/after recurrence.</td></tr>
+        <tr><td>Detail</td><td><code>GET /v1/tasks/{id}</code> · <code>GET /v1/tasks/{id}/events</code></td><td>Task specification (intent, acceptance criteria, steps), plan position, budget, problem, and span events filtered by the <code>task.id</code> attribute.</td></tr>
+        <tr><td>Live</td><td><code>GET /v1/event-stream</code> (SSE, CloudEvents)</td><td>One event per state transition. Client applies deltas; no polling.</td></tr>
       </tbody>
     </table>
     <figure>
       <pre><code>{
-  "id": "c-0217",
-  "document": { "id": "doc-refactor-strict", "kind": "codebase-refactor" },
+  "id": "t-0217",
+  "task specification": { "id": "doc-refactor-strict", "kind": "codebase-refactor" },
   "status": "stuck",                       // running | waiting | stuck | parked | done | cancelled
   "step": { "index": 2, "of": 5, "name": "Fix errors, no escape hatches", "stage": "build" },
   "route": { "class": "cli-", "group": "claude-code-cli" },
   "budget": { "spent": 3.10, "ceiling": 6.00, "currency": "USD" },
   "problem": {                             // RFC 9457, absent when healthy
-    "type": "urn:cellplane:problem:judge-fail-repeat",
+    "type": "urn:cellplane:problem:evaluation-failed-repeat",
     "title": "Identical diff resubmitted after FAIL",
     "detail": "Two consecutive FAIL verdicts with identical tree hash",
     "suggestedAction": "redefine",
     "occurredAt": "2026-09-04T14:02:11Z"
   },
   "session": { "protocol": "acp", "id": "sess_9f2…", "runtime": "goose/1.46.0" },
-  "isolation": { "unit": "fc-cell@1217", "spec": "oci-runtime" },
-  "attributes": { "cell.id": "c-0217", "document.id": "doc-refactor-strict" }
+  "isolation": { "unit": "sbx-1217", "spec": "oci-runtime" },
+  "attributes": { "task.id": "t-0217", "spec.id": "doc-refactor-strict" }
 }</code></pre>
-      <figcaption>Listing 1 · Cell read model. Every field is sourced from a named capability; nothing is computed in the client.</figcaption>
+      <figcaption>Listing 1 · Task read model. Every field is sourced from a named capability; nothing is computed in the client.</figcaption>
     </figure>
   </section>
 
   <section style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px;break-before:page">
     <span class="kicker">05 · Commands</span>
     <h2 style="font-size:22px">The ten operator intents, and what each routes to</h2>
-    <p style="color:var(--muted);max-width:66ch">One endpoint, one envelope, ten verbs. The router validates the verb against the cell's current status, asks Policy, stamps identity and idempotency, then calls exactly one capability.</p>
+    <p style="color:var(--muted);max-width:66ch">One endpoint, one envelope, ten verbs. The router validates the verb against the task's current status, asks Policy, stamps identity and idempotency, then calls exactly one capability.</p>
     <table>
       <thead><tr><th style="width:13%">Verb</th><th style="width:20%">Valid from</th><th style="width:26%">Capability call</th><th>Semantics</th></tr></thead>
       <tbody>
-        <tr><td><code>nudge</code></td><td>stuck · waiting</td><td>Agent runtime · <code>session/prompt</code></td><td>New turn, same intent and DoD. Cheapest action; increments <code>nudges</code>. Nudge count feeds the Loop.</td></tr>
-        <tr><td><code>redefine</code></td><td>any non-done</td><td>State · write Document rev; Planner · replan; Dispatch · resume from checkpoint</td><td>Edits intent, DoD or steps. Creates a new Document revision; the Ledger keeps the chain.</td></tr>
+        <tr><td><code>nudge</code></td><td>stuck · waiting</td><td>Agent runtime · <code>session/prompt</code></td><td>New turn, same intent and acceptance criteria. Cheapest action; increments <code>nudges</code>. Nudge count feeds the Loop.</td></tr>
+        <tr><td><code>redefine</code></td><td>any non-done</td><td>State · write Task specification rev; Planner · replan; Dispatch · resume from checkpoint</td><td>Edits intent, acceptance criteria or steps. Creates a new Task specification revision; the Ledger keeps the chain.</td></tr>
         <tr><td><code>escalate</code></td><td>stuck · running</td><td>Model access · route to <code>i-escalate</code></td><td>Class change with a higher ceiling. Budget scope re-issued.</td></tr>
         <tr><td><code>extend</code></td><td>stuck (budget) · running</td><td>Budget · raise ceiling on the scoped virtual key</td><td>+50% by default. Bulk from the Cost view.</td></tr>
-        <tr><td><code>restart</code></td><td>stuck · waiting</td><td>Dispatch · terminate unit; dispatch again with same <code>cell.id</code></td><td>Fresh microVM, resume at the last checkpointed step. Idempotency key prevents double-dispatch.</td></tr>
+        <tr><td><code>restart</code></td><td>stuck · waiting</td><td>Dispatch · terminate unit; dispatch again with same <code>task.id</code></td><td>Fresh sandbox (microVM), resume at the last checkpointed step. Idempotency key prevents double-dispatch.</td></tr>
         <tr><td><code>reassign</code></td><td>any non-done</td><td>Model access · set class</td><td>Caller names a class, never a vendor. Ceiling follows the class contract.</td></tr>
         <tr><td><code>cancel</code></td><td>any non-done</td><td>Agent runtime · <code>session/cancel</code>; Dispatch · terminate</td><td>Measured today: turn ends in ~8s against a 45s operation.</td></tr>
-        <tr><td><code>approve</code></td><td>parked</td><td>Durable execution · signal gate; approve.service</td><td>Releases the human gate. Actor identity recorded in the Ledger.</td></tr>
-        <tr><td><code>reject</code></td><td>parked</td><td>Durable execution · signal; Dispatch · terminate</td><td>Ends the unit. Verdict recorded as operator rejection, not Judge FAIL.</td></tr>
-        <tr><td><code>return</code></td><td>parked</td><td>Durable execution · signal with note</td><td>Cell stays parked; note becomes a Document annotation the agent reads on the next turn.</td></tr>
+        <tr><td><code>approve</code></td><td>parked</td><td>Durable execution · signal gate; approve.service</td><td>Releases the approval gate. Actor identity recorded in the Ledger.</td></tr>
+        <tr><td><code>reject</code></td><td>parked</td><td>Durable execution · signal; Dispatch · terminate</td><td>Ends the unit. Verdict recorded as operator rejection, not Evaluation FAIL.</td></tr>
+        <tr><td><code>return</code></td><td>parked</td><td>Durable execution · signal with note</td><td>Task stays parked; note becomes a Task specification annotation the agent reads on the next turn.</td></tr>
       </tbody>
     </table>
     <figure>
-      <pre><code>POST /v1/cells/c-0217/commands
+      <pre><code>POST /v1/tasks/t-0217/commands
 Idempotency-Key: 7d2c…                    // required; router rejects replays with 200 + prior result
 Authorization: Bearer &lt;OIDC token&gt;         // operator identity; delegated agent actors use token exchange
 
 { "verb": "redefine",
-  "document": { "dod": "tsc --strict exits 0 · no new @ts-ignore · tests pass · diff differs from last FAIL" },
+  "task specification": { "acceptance_criteria": "tsc --strict exits 0 · no new @ts-ignore · tests pass · diff differs from last FAIL" },
   "reason": "loop on identical diff" }
 
 202 Accepted
-{ "commandId": "cmd_41a…", "cell": "c-0217", "accepted": true,
-  "policy": { "decision": "allow", "engine": "opa", "bundle": "cells/v3" },
+{ "commandId": "cmd_41a…", "task": "t-0217", "accepted": true,
+  "policy": { "decision": "allow", "engine": "opa", "bundle": "tasks/v3" },
   "effects": [ "document.revision:doc-refactor-strict@7", "planner.replan", "dispatch.resume" ] }</code></pre>
-      <figcaption>Listing 2 · Command envelope. Bulk actions send the same body to <code>POST /v1/commands</code> with a <code>cells: [...]</code> array; the response carries one result per cell.</figcaption>
+      <figcaption>Listing 2 · Command envelope. Bulk actions send the same body to <code>POST /v1/commands</code> with a <code>tasks: [...]</code> array; the response carries one result per task.</figcaption>
     </figure>
-    <div class="callout" style="padding:12px 14px;border-left:2px solid var(--park);background:rgba(47,111,196,.08);border-radius:0 6px 6px 0"><p style="font-size:13px"><strong>Policy runs before spend.</strong> A <code>deny</code> returns <code>403</code> with a problem of type <code>urn:cellplane:problem:policy-denied</code> and the Rego rule id. The UI shows this as a parked cell with Approve / Return, not as an error toast.</p></div>
+    <div class="callout" style="padding:12px 14px;border-left:2px solid var(--park);background:rgba(47,111,196,.08);border-radius:0 6px 6px 0"><p style="font-size:13px"><strong>Policy runs before spend.</strong> A <code>deny</code> returns <code>403</code> with a problem of type <code>urn:cellplane:problem:policy-denied</code> and the Rego rule id. The UI shows this as a parked task with Approve / Return, not as an error toast.</p></div>
   </section>
 
   <section style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px;break-before:page">
@@ -176,13 +176,13 @@ Authorization: Bearer &lt;OIDC token&gt;         // operator identity; delegated
     <table>
       <thead><tr><th style="width:38%">Type URI (suffix)</th><th style="width:14%">Lens</th><th style="width:14%">Suggested</th><th>Raised by</th></tr></thead>
       <tbody>
-        <tr><td><code>budget-ceiling</code></td><td>Over ceiling</td><td>extend</td><td>Budget, when the scoped key terminates spend</td></tr>
-        <tr><td><code>tool-timeout</code> · <code>upstream-unavailable</code> · <code>rate-limited</code> · <code>lock-held</code></td><td>Timed out</td><td>restart</td><td>Tool access (MCP result error) or Dispatch runtime ceiling</td></tr>
-        <tr><td><code>judge-fail</code> · <code>judge-fail-repeat</code> · <code>schema-drift</code></td><td>Judge FAIL</td><td>redefine</td><td>Judge verdict history; Document validation (JSON Schema 2020-12)</td></tr>
+        <tr><td><code>budget-ceiling</code></td><td>Over budget ceiling</td><td>extend</td><td>Budget, when the scoped key terminates spend</td></tr>
+        <tr><td><code>tool-timeout</code> · <code>upstream-unavailable</code> · <code>rate-limited</code> · <code>lock-paused</code></td><td>Timed out</td><td>restart</td><td>Tool access (MCP result error) or Dispatch runtime ceiling</td></tr>
+        <tr><td><code>evaluation-failed</code> · <code>evaluation-failed-repeat</code> · <code>schema-drift</code></td><td>Evaluation FAIL</td><td>redefine</td><td>Evaluator verdict history; Task specification validation (JSON Schema 2020-12)</td></tr>
         <tr><td><code>no-progress</code> · <code>hypothesis-loop</code> · <code>occurrence-overlap</code> · <code>merge-conflict</code> · <code>batch-pending</code></td><td>No progress</td><td>nudge → escalate</td><td>Dispatch progress monitor; scheduler (RFC 5545); batch adapter</td></tr>
         <tr><td><code>policy-denied</code></td><td>Policy refused</td><td>approve / return</td><td>Policy (OPA decision)</td></tr>
         <tr><td><code>approval-required</code></td><td>Awaiting approval</td><td>approve</td><td>Durable execution gate step</td></tr>
-        <tr><td><code>trace-unlinked</code></td><td>Trace unlinked</td><td>nudge</td><td>Telemetry, when a span lacks <code>cell.id</code> (A7-1)</td></tr>
+        <tr><td><code>trace-unlinked</code></td><td>Trace unlinked</td><td>nudge</td><td>Telemetry, when a span lacks <code>task.id</code> (A7-1)</td></tr>
         <tr><td><em>(status only)</em></td><td>Waiting</td><td>—</td><td>Dispatch lease / queue / dependency wait. Not a problem; self-resolving.</td></tr>
       </tbody>
     </table>
@@ -191,40 +191,40 @@ Authorization: Bearer &lt;OIDC token&gt;         // operator identity; delegated
   <section style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px">
     <span class="kicker">07 · Events</span>
     <h2 style="font-size:22px">One stream, CloudEvents envelope, GenAI attributes</h2>
-    <p style="color:var(--muted);max-width:66ch">The live view is a subscription, not a poll. Every state transition is emitted once with the same <code>cell.id</code> attribute the trace store uses, so the timeline and the fleet map agree by construction.</p>
+    <p style="color:var(--muted);max-width:66ch">The live view is a subscription, not a poll. Every state transition is emitted once with the same <code>task.id</code> attribute the trace store uses, so the timeline and the fleet map agree by construction.</p>
     <figure>
       <pre><code>{ "specversion": "1.0",
-  "type": "cellplane.cell.status.changed",     // also: problem.raised, problem.cleared, command.applied,
+  "type": "cellplane.task.status.changed",     // also: problem.raised, problem.cleared, command.applied,
   "source": "/dispatch/firecracker",           //       budget.updated, verdict.recorded, document.revised
   "id": "evt_c8…", "time": "2026-09-04T14:02:11Z",
-  "subject": "c-0217",
+  "subject": "t-0217",
   "data": { "from": "running", "to": "stuck",
-            "problem": { "type": "urn:cellplane:problem:judge-fail-repeat" } },
-  "gen_ai.agent.id": "goose/1.46.0", "cell.id": "c-0217", "document.id": "doc-refactor-strict" }</code></pre>
+            "problem": { "type": "urn:cellplane:problem:evaluation-failed-repeat" } },
+  "gen_ai.agent.id": "goose/1.46.0", "task.id": "t-0217", "spec.id": "doc-refactor-strict" }</code></pre>
       <figcaption>Listing 3 · Event envelope. Intake sources (git event, HTTP, schedule, A2A) emit the same shape inbound; the router emits it outbound.</figcaption>
     </figure>
   </section>
 
   <section style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px;break-before:page">
     <span class="kicker">08 · The loop</span>
-    <h2 style="font-size:22px">Findings and proposals are Ledger queries with a write-back</h2>
+    <h2 style="font-size:22px">Recommendations and proposals are Ledger queries with a write-back</h2>
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1px;border:1px solid var(--border);background:var(--border);border-radius:6px;overflow:hidden">
-      <div class="tile" style="padding:10px 12px;background:var(--surface)"><span class="kicker" style="color:var(--muted)">Observe</span><p style="font-size:12px;margin-top:4px">Every <code>problem.raised</code> is appended to the Ledger with type, Document, spend at failure.</p></div>
-      <div class="tile" style="padding:10px 12px;background:var(--surface)"><span class="kicker" style="color:var(--muted)">Detect</span><p style="font-size:12px;margin-top:4px">A finding is any (Document, type) pair with recurrence ≥ 2 in the window.</p></div>
-      <div class="tile" style="padding:10px 12px;background:var(--surface)"><span class="kicker" style="color:var(--muted)">Propose</span><p style="font-size:12px;margin-top:4px">Each type has a proposal template targeting Document, dispatch config, or schedule.</p></div>
-      <div class="tile" style="padding:10px 12px;background:var(--surface)"><span class="kicker" style="color:var(--muted)">Apply</span><p style="font-size:12px;margin-top:4px">Operator-only. Writes a Document revision; provenance record names actor and prior hash.</p></div>
+      <div class="tile" style="padding:10px 12px;background:var(--surface)"><span class="kicker" style="color:var(--muted)">Observe</span><p style="font-size:12px;margin-top:4px">Every <code>problem.raised</code> is appended to the Ledger with type, Task specification, spend at failure.</p></div>
+      <div class="tile" style="padding:10px 12px;background:var(--surface)"><span class="kicker" style="color:var(--muted)">Detect</span><p style="font-size:12px;margin-top:4px">A recommendation is any (Task specification, type) pair with recurrence ≥ 2 in the window.</p></div>
+      <div class="tile" style="padding:10px 12px;background:var(--surface)"><span class="kicker" style="color:var(--muted)">Propose</span><p style="font-size:12px;margin-top:4px">Each type has a proposal template targeting Task specification, dispatch config, or schedule.</p></div>
+      <div class="tile" style="padding:10px 12px;background:var(--surface)"><span class="kicker" style="color:var(--muted)">Apply</span><p style="font-size:12px;margin-top:4px">Operator-only. Writes a Task specification revision; provenance record names actor and prior hash.</p></div>
       <div class="tile" style="padding:10px 12px;background:var(--surface)"><span class="kicker" style="color:var(--muted)">Measure</span><p style="font-size:12px;margin-top:4px">Recurrence since the revision vs before. Revert is a further revision, never a delete.</p></div>
     </div>
     <table>
       <thead><tr><th style="width:36%">Endpoint</th><th>Behaviour</th></tr></thead>
       <tbody>
-        <tr><td><code>GET /v1/findings?window=7d</code></td><td>Grouped Ledger read. Includes <code>count</code>, <code>costLost</code>, <code>nudges</code>, <code>proposal</code>, <code>applied</code>, <code>recurrence.before / since</code>.</td></tr>
-        <tr><td><code>POST /v1/findings/{id}/apply</code></td><td>Command. Routes to State (Document revision) or dispatch config. Policy-checked. Returns the new revision id.</td></tr>
-        <tr><td><code>POST /v1/findings/{id}/dismiss</code></td><td>Operator judgement recorded in the Ledger; the finding is suppressed for the window.</td></tr>
-        <tr><td><code>POST /v1/documents/{id}/revisions/{rev}/revert</code></td><td>New revision equal to the prior content. The chain stays intact.</td></tr>
+        <tr><td><code>GET /v1/recommendations?window=7d</code></td><td>Grouped Ledger read. Includes <code>count</code>, <code>costLost</code>, <code>nudges</code>, <code>proposal</code>, <code>applied</code>, <code>recurrence.before / since</code>.</td></tr>
+        <tr><td><code>POST /v1/recommendations/{id}/apply</code></td><td>Command. Routes to State (Task specification revision) or dispatch config. Policy-checked. Returns the new revision id.</td></tr>
+        <tr><td><code>POST /v1/recommendations/{id}/dismiss</code></td><td>Operator judgement recorded in the Ledger; the recommendation is suppressed for the window.</td></tr>
+        <tr><td><code>POST /v1/task-specs/{id}/revisions/{rev}/revert</code></td><td>New revision equal to the prior content. The chain stays intact.</td></tr>
       </tbody>
     </table>
-    <div class="callout" style="padding:12px 14px;border-left:2px solid var(--accent);background:var(--accent-bg);border-radius:0 6px 6px 0"><p style="font-size:13px"><strong>Guardrail.</strong> The loop proposes edits to what the agent is <em>asked</em> (intent, steps) and how it is <em>run</em> (ceiling, class, backoff). It never edits the Judge criterion by itself; a DoD change is an operator command with a provenance record, so the grader stays outside the graded system (B1 rule 6).</p></div>
+    <div class="callout" style="padding:12px 14px;border-left:2px solid var(--accent);background:var(--accent-bg);border-radius:0 6px 6px 0"><p style="font-size:13px"><strong>Guardrail.</strong> The loop proposes edits to what the agent is <em>asked</em> (intent, steps) and how it is <em>run</em> (ceiling, class, backoff). It never edits the Evaluator criterion by itself; a acceptance criteria change is a user command with a provenance record, so the grader stays outside the graded system (B1 rule 6).</p></div>
   </section>
 
   <section style="display:flex;flex-direction:column;gap:12px;margin-bottom:28px">
@@ -237,8 +237,8 @@ Authorization: Bearer &lt;OIDC token&gt;         // operator identity; delegated
         <tr><td>Idempotency</td><td><code>Idempotency-Key</code> header per command</td><td>Keyed lease. Replays return the original result. Required, not optional.</td></tr>
         <tr><td>Policy</td><td>nothing</td><td>OPA decision before any capability call. Deny is a typed problem.</td></tr>
         <tr><td>Budget</td><td>nothing</td><td>Command effects that change spend re-issue a scoped virtual key with the new ceiling.</td></tr>
-        <tr><td>Provenance</td><td>nothing</td><td>Every Document revision and command gets an in-toto style attestation: actor, prior hash, new hash.</td></tr>
-        <tr><td>Telemetry</td><td>optional <code>traceparent</code></td><td>Emits spans with <code>cell.id</code>, <code>document.id</code>, <code>command.id</code> attributes. Never relies on parentage.</td></tr>
+        <tr><td>Provenance</td><td>nothing</td><td>Every Task specification revision and command gets an in-toto style attestation: actor, prior hash, new hash.</td></tr>
+        <tr><td>Telemetry</td><td>optional <code>traceparent</code></td><td>Emits spans with <code>task.id</code>, <code>spec.id</code>, <code>command.id</code> attributes. Never relies on parentage.</td></tr>
         <tr><td>Errors</td><td>—</td><td>All non-2xx bodies are <code>application/problem+json</code>.</td></tr>
       </tbody>
     </table>
@@ -250,10 +250,10 @@ Authorization: Bearer &lt;OIDC token&gt;         // operator identity; delegated
     <table>
       <thead><tr><th style="width:34%">Question</th><th>Evidence that would settle it</th></tr></thead>
       <tbody>
-        <tr><td>Does <code>redefine</code> resume from checkpoint or restart the unit?</td><td>Measure whether goose honours a mid-session Document change via ACP without a fresh session. If not, redefine = revision + restart.</td></tr>
+        <tr><td>Does <code>redefine</code> resume from checkpoint or restart the unit?</td><td>Measure whether goose honours a mid-session Task specification change via ACP without a fresh session. If not, redefine = revision + restart.</td></tr>
         <tr><td>Where does stage live: Planner attribute or step-name heuristic?</td><td>Planner output schema. The UI currently infers stage from step names; that is a placeholder.</td></tr>
-        <tr><td>Is the stream per-operator or fleet-wide?</td><td>Event volume at 500 cells. If &gt; 20 events/s, filter server-side by Document or group.</td></tr>
-        <tr><td>Saved groups: client state or Ledger object?</td><td>Whether groups need to be shared across operators. If yes, they become a Document-like object with identity.</td></tr>
+        <tr><td>Is the event stream per-operator or fleet-wide?</td><td>Event volume at 500 tasks. If &gt; 20 events/s, filter server-side by Task specification or group.</td></tr>
+        <tr><td>Saved groups: client state or Ledger object?</td><td>Whether groups need to be shared across users. If yes, they become a Task specification-like object with identity.</td></tr>
         <tr><td>Approve via router or direct to approve.service?</td><td>approve.service is Tailscale-bound today. Routing through the router adds identity and idempotency it lacks (A6).</td></tr>
       </tbody>
     </table>

@@ -32,7 +32,7 @@ holds up, the remaining four are ordinary work.
 ADAPTER=dryrun python3 call.py     the cold path
 ADAPTER=second python3 call.py     the same caller, a different execution model
 python3 conformance.py dryrun      does this adapter honour the contract
-bash test.sh                       the visible gate: passed 18, failed 0
+bash test.sh                       the visible gate: passed 19, failed 0
 ```
 
 `call.py` is 37 lines and names no VMM, no runtime binary, no network mode and no resource limit.
@@ -96,7 +96,7 @@ It carries a deliberate breakage two ways. `adapters/_broken_on_purpose.py` is k
 and returns `ready` — a status no OCI runtime defines — and `test.sh` asserts conformance rejects
 it *and names the offending value*, so the check cannot quietly stop checking. Separately, the gate
 was run red before it was trusted green: with `dryrun` patched to end its lifecycle at `ready`,
-`passed 16, failed 2`; restored, `passed 18, failed 0`. Both runs are in `provenance.json`.
+`passed 17, failed 2`; restored, `passed 19, failed 0`. Both runs are in `provenance.json`.
 
 **The hidden check is not written by this area's author** and is not in this directory —
 `docs/night/hidden/3-core-agent.sh`, `hidden passed 10, failed 0`. A gate the author can tune is

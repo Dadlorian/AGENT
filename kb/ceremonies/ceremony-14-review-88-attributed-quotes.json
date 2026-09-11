@@ -1,0 +1,60 @@
+{
+  "ceremony": 14,
+  "section": "88-attributed-quotes",
+  "reviewer": "opus-5, review of the phase the improvement loop itself selected",
+  "date": "2026-09-11",
+  "numbering_note": "tools/ceremony_next.py read 14 off disk. Paired with kb/ceremonies/ceremony-14-improve-88-attributed-quotes.json. The item was chosen by `improvement_loop.py plan 1`, not by hand.",
+  "scope": "tools/named_proof.py, tools/phase.py, examples/reference/3-core-agent/README.md and provenance.json, state/lessons.jsonl. STATUS row 88.",
+  "findings": [
+    {
+      "id": "C14-001",
+      "location": "examples/reference/3-core-agent/README.md, the run block",
+      "severity": "fix",
+      "category": "correctness",
+      "finding": "The README printed `bash test.sh    the visible gate: passed 18, failed 0` while the gate had grown to 19 checks. A promise printed beside a command, wrong, in the area this repo holds up as its worked example -- and read by nothing until the tool built in this phase ran.",
+      "evidence": "tools/named_proof.py first run: `BLOCK README.md command stale bash test.sh -> promised 'passed 18, failed 0'`. Measured: passed 19, failed 0.",
+      "found_by": "the tool, on its first run, against the area its author wrote",
+      "suggested_change": "Correct the promise from the real output, and keep the check so the next one cannot drift silently."
+    },
+    {
+      "id": "C14-002",
+      "location": "examples/reference/3-core-agent/README.md, the deliberate-breakage sentence",
+      "severity": "fix",
+      "category": "evidence",
+      "finding": "While correcting C14-001 the author wrote `passed 17, failed 2` for the breakage run from memory rather than re-running it. The number happened to be right, which is worse than if it had been wrong: a guessed figure that matches is indistinguishable from a measured one in the record.",
+      "evidence": "The edit was made before the breakage was re-run; the run afterwards returned passed 17, failed 2.",
+      "found_by": "author, immediately",
+      "suggested_change": "Re-run and record the real output. A figure in a provenance record is measured or it is not there."
+    },
+    {
+      "id": "C14-003",
+      "location": "tools/prose_gate.py corpus, and everything under examples/",
+      "severity": "block",
+      "category": "completeness",
+      "finding": "Example-area prose that attributes a quote to a knowledge-base record was read by no gate at all. prose_gate.py says so in its own docstring -- \"corpus: docs/reference/cards only\" -- and that sentence had been treated as a scoping note rather than as a hole. Five attributed quotes in the one live area were unchecked.",
+      "evidence": "prose_gate.py report(): prints `corpus: docs/reference/cards only. skills/, docs/maturity/, docs/consumption/ carry the same defect class and are NOT checked here.`",
+      "found_by": "ceremony 75's lesson, once the improvement loop ranked it",
+      "suggested_change": "A second checker for the example corpus rather than widening prose_gate, since the arms differ: prose_gate types quotes against cited records, this also runs printed commands."
+    },
+    {
+      "id": "C14-004",
+      "location": "state/lessons.jsonl 75-boundary-ask-watch-steer",
+      "severity": "fix",
+      "category": "honesty",
+      "finding": "The lesson has four arms and the tool built here covers two. Closing it whole would have retired arms (b) and (d) by implication -- and (b) is the arm whose original application exposed a check that could not fail, so it is the opposite of a formality.",
+      "evidence": "The lesson's original text, preserved under sharper_check_original, enumerates (a) through (d).",
+      "found_by": "author, applying C13-006's rule from the previous ceremony",
+      "suggested_change": "Close the two arms covered, split (b) and (d) into their own ranked lesson row."
+    }
+  ],
+  "metrics": {
+    "item_selected_by": "tools/improvement_loop.py plan 1",
+    "named_proofs_found": 6,
+    "named_proofs_blocking_before_fix": 1,
+    "named_proofs_blocking_after_fix": 0,
+    "attributed_quotes_verified_exact": 5,
+    "gates_before": 21,
+    "gates_after": 23,
+    "capability_debt_after": 7
+  }
+}

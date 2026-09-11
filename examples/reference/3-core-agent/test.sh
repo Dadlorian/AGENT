@@ -65,6 +65,8 @@ check "and names the off-spec value rather than just failing" \
 
 echo "claims are cited or proposed"
 check "cards.json is structurally honest about what it covers" 'python3 check_cards.py'
+check "every knob this area declares changes something, or says it does not" \
+      'cd "$ROOT" && python3 tools/inert_check.py examples/reference/3-core-agent'
 check "the prose gate reads this area and finds nothing blocking" \
       'cd "$ROOT" && python3 tools/prose_gate.py --corpus examples/reference/3-core-agent'
 

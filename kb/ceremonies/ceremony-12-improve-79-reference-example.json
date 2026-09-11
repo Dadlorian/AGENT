@@ -7,14 +7,18 @@
   "applied": [
     {
       "finding": "C12-001",
-      "change": "`unpack` now takes `profile` and `Bundle` carries the profile it was resolved for, so the caller's one configurable word reaches the step that selects a bundle. `call.py` resolves one bundle per profile and runs a third unit under a non-default one. `conformance.py` gained an assertion that two profiles must not return the same bundle -- so the defect cannot come back silently. The interface was changed rather than the assertion weakened: the hidden check was right.",
+      "change": "`unpack` now takes `profile` and `Bundle` carries the profile it was resolved for, so the caller's one configurable word reaches the step that selects a bundle. `call.py` resolves one bundle per profile and runs a third unit under a non-default one. `conformance.py` gained an assertion that two profiles must not return the same bundle -- so the defect cannot come back silently. The interface was changed rather than the assertion weakened: the hidden check was right. Then generalised, because patching the one field leaves the class intact and the class is the finding: state/lessons.jsonl had carried the rule since ceremony 75 on 2026-09-04 and it recurred because the rule was prose a reviewer had to remember. tools/inert_check.py makes it run -- every field an area's interface declares must be declared varied (two values, observable must differ across every runnable adapter) or carried-and-not-consumed (nothing may differ), with absence from the manifest an error so it cannot be gamed by omission. Proven by --selftest, which re-plants h-10 and requires the tool to report Unit.profile inert. Wired into tools/phase.py as two blocking gates and into the area's test.sh. On its first real run it found a second inert declaration nobody had noticed: Unit.intent is read by no adapter here, and is now declared carried rather than sitting silently dead. Lesson row 12-79-reference-example records it with a sharper_check that is a command; STATUS row 88 tracks the four sharper_checks still written as prose.",
       "files": [
         "examples/reference/3-core-agent/interface.py",
         "examples/reference/3-core-agent/adapters/dryrun.py",
         "examples/reference/3-core-agent/adapters/second.py",
         "examples/reference/3-core-agent/adapters/live.py",
         "examples/reference/3-core-agent/call.py",
-        "examples/reference/3-core-agent/conformance.py"
+        "examples/reference/3-core-agent/conformance.py",
+        "tools/inert_check.py",
+        "tools/phase.py",
+        "state/lessons.jsonl",
+        "STATUS.md"
       ]
     },
     {
@@ -41,7 +45,9 @@
     {
       "finding": "C12-004",
       "change": "Restored the note's structure -- findings 3 to 7 moved back under `## Findings` -- and restored the three dropped entries under `## Not the profile's job`. The incident itself is now the fourth entry in that section, because a note written incrementally during a build is exactly the artifact that needs reading back.",
-      "files": ["docs/reference/profile-sufficiency.md"]
+      "files": [
+        "docs/reference/profile-sufficiency.md"
+      ]
     },
     {
       "finding": "C12-005",
@@ -64,14 +70,18 @@
     {
       "finding": "C12-010",
       "change": "Not resolved by changing the code, but by refusing to present one reading as sourced. Recorded as finding 11 in the note: both eager and lazy warming fit the single SandboxTemplate sentence, this area chose ready-ahead-of-demand because that is what the sentence says most plainly, and a different author would have built the other one and cited the same source. The reviewer's `warm` semantics observation is carried verbatim into the finding.",
-      "files": ["docs/reference/profile-sufficiency.md"]
+      "files": [
+        "docs/reference/profile-sufficiency.md"
+      ]
     }
   ],
   "declined": [
     {
       "finding": "C12-006",
       "why": "Belongs to the prose gate's own row, not to row 79. Fixing another tool's reporting inside an example-building phase is how a phase stops being reviewable. Recorded in the note under `Not the profile's job` so the next session finds it with its evidence attached rather than rediscovering it.",
-      "files": ["docs/reference/profile-sufficiency.md"]
+      "files": [
+        "docs/reference/profile-sufficiency.md"
+      ]
     },
     {
       "finding": "C12-007",
@@ -86,5 +96,40 @@
       "why": "Declined deliberately rather than by omission, which is what the reviewer asked for. `live.isolation` is a class attribute naming what the adapter would assert; reading it returns a description, never a result, and every method that could produce a result refuses. Making the attribute itself raise would buy nothing and would break the signature parity check that proves the three adapters are callable identically.",
       "files": []
     }
-  ]
+  ],
+  "follow_on": {
+    "note": "Found while answering the owner's question about where the reaction plan lives, after the review pair was written. Recorded here rather than in a new ceremony because it is the same class as C12-001 and C12-005.",
+    "items": [
+      {
+        "what": "tools/ceremony_check.py globbed `ceremony-*-review.json` and so could not see the suffixed records ceremonies 11 and 12 use. The scoreboard for whether the improvement loop is working had been blind since ceremony 10 while still printing `numbering ok` over the subset it could see.",
+        "fix": "Widened the glob, paired improve records by suffix, allowed several records per number (fan-out groups and STATUS-row naming), and matched lessons rows keyed by `<n>-<section>` as well as by int. It now reports 14 review records over 12 ceremony numbers.",
+        "files": [
+          "tools/ceremony_check.py"
+        ]
+      },
+      {
+        "what": "The same tool supplied a denominator of 1 for any ceremony whose review carried no `skills` metric, turning a raw finding count into a rate -- ceremony 12 printed `7.00 findings/skill` over an example area containing no skills at all.",
+        "fix": "A ceremony with no skills denominator is now counted and not rated, and the summary line says how many of the ceremonies the trend is actually over.",
+        "files": [
+          "tools/ceremony_check.py"
+        ]
+      },
+      {
+        "what": "CLAUDE.md stated findings-per-skill 'fell from 1.00 to 0.00-0.14' as present fact. Measured with the fixed tool, it rose to 0.29-0.50 at ceremony 11 -- the old reading was taken through the broken glob.",
+        "fix": "Corrected in place with the date, both readings, and the reason the window was wrong.",
+        "files": [
+          "CLAUDE.md"
+        ]
+      },
+      {
+        "what": "tools/status_check.py --freshness is a phase gate; the plain run, which carries the table checks, was wired to nothing. A row edited during row 79 sat one word over its Result budget through a green phase close.",
+        "fix": "Added `status table` as a second blocking gate. Both modes now run.",
+        "files": [
+          "tools/phase.py",
+          "STATUS.md"
+        ]
+      }
+    ],
+    "still_open": "tools/improvement_loop.py ranks skills only -- state/improvement-plan.json items are keyed by `skill`, and the target is drawn from a litmus question or a skill's open findings. Every finding in this ceremony is about a tool, a gate or an example area, so none of them could enter a plan. Widening the loop's unit is an owner decision about what the loop optimises, not a fix to make unilaterally. STATUS row 21 is still Not started."
+  }
 }

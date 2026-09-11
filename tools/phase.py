@@ -43,11 +43,17 @@ GATES = [
     ("prose",          ["python3", "tools/prose_gate.py"], True),
     ("prose self-test", ["python3", "tools/prose_gate.py", "--selftest"], True),
     ("examples",       ["python3", "tools/examples_gate.py"], True),
+    ("inert",          ["python3", "tools/inert_check.py"], True),
+    ("inert self-test", ["python3", "tools/inert_check.py", "--selftest"], True),
     ("ceremony nums",  ["python3", "tools/ceremony_next.py", "--check"], False),
     ("token patterns", ["python3", "tools/token_review.py"], False),
     ("card map",       ["python3", "tools/check_card_example_map.py"], True),
     ("ref model",      ["python3", "tools/extract_reference_model.py", "--check"], True),
     ("status",         ["python3", "tools/status_check.py", "--freshness"], True),
+    # --freshness checks staleness only. The table checks (word budgets, forbidden
+    # punctuation) live in the plain run, which was wired to nothing -- so a row edited
+    # during row 79 sat one word over budget through a green phase close. Both, now.
+    ("status table",   ["python3", "tools/status_check.py"], True),
     ("snippets",       ["python3", "tools/verify_snippets.py", "--check"], False),
     ("standards",      ["python3", "tools/standards.py", "check"], False),
 ]

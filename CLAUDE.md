@@ -166,9 +166,13 @@ Sections of work close with a **review** record and an **improve** record under 
 (`ceremony-<N>-review.json` / `-improve.json`), checked by `tools/check_ceremony.py` (every finding
 applied or declined exactly once). `tools/plant.py` plants two known defects before a review and checks
 the review caught them — a review that misses a plant is discarded and re-run. This is the mechanism
-that produced the "findings-per-skill fell from 1.00 to 0.00–0.14" trend tracked by
-`tools/ceremony_check.py`. When closing a STATUS row, the pattern is: do the work → review → improve →
-ledger record → `bash tools/checkpoint.sh "<row>: <summary>" <paths>`.
+`tools/ceremony_check.py` tracks. Re-measured 2026-09-11: findings-per-skill fell 1.00 → 0.00 over
+ceremonies 1–10 and rose to 0.29–0.50 at ceremony 11. The older "fell to 0.00–0.14" reading was
+taken while that tool's glob could not see the suffixed records ceremonies 11 and 12 use, so the
+window excluded the rise — run the command rather than quoting this line.
+
+When closing a STATUS row, the pattern is: do the work → review → improve → ledger record →
+`bash tools/checkpoint.sh "<row>: <summary>" <paths>`.
 
 ### Model routing (Part A of PASS.md, today's stack — not built by this repo)
 Callers request a *model class* (e.g. `i-claude-sonnet`), never a vendor or specific model — this is the

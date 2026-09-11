@@ -74,9 +74,23 @@ Mechanisms available in this harness, and what each actually saves:
       Constraint: a fork always runs the parent's model and effort; a model override is ignored.
 
   workflow resume (Workflow scriptPath + resumeFromRunId)
-      This is rewind. The longest unchanged prefix of agent() calls returns cached results
-      instantly; only the first edited or new call and everything after it runs live. Edit the
-      script, relaunch with the same runId, and the earlier stages are not re-run at all.
+      Replay, not rewind. The longest unchanged prefix of agent() calls returns cached results
+      instantly; only the first edited or new call and everything after it runs live. It moves a
+      workflow FORWARD without re-running finished stages. It does not restore any context.
+
+  /rewind (owner-invoked slash command, NOT callable by the model)
+      "Restore the code and/or conversation to a previous point." The genuine rewind: the
+      transcript returns to an earlier state. For token economy choose CONVERSATION ONLY, so the
+      working tree survives. Explore, fail, learn, rewind, continue in a small context -- the dead
+      ends are paid for once instead of carried at x46 forever. Precondition: every finding must
+      already be on disk, because a conversation-only rewind discards whatever lived only in the
+      transcript. The model's job is to write findings down continuously and to SAY when context
+      has filled with dead ends, since the owner cannot see that from outside.
+
+  subagent firebreak (Agent / fork, then keep only the return)
+      The prospective twin of /rewind, and model-invocable. The subagent burns its own context on
+      the iteration and returns a short answer, so the flailing never enters the parent at all.
+      Verify the artifact it produced, never its report (bridge.md section 3).
 
   continue an existing agent (SendMessage to its id)
       Keeps one agent's prefix warm across successive questions instead of paying a cold start
@@ -92,6 +106,35 @@ Mechanisms available in this harness, and what each actually saves:
 Patterns flagged: whole-file read of a large shared artifact; procedure in a prompt;
 agent self-report where a gate could decide; fan-out that does not name fork.
 ```
+
+### /rewind — the owner's lever, and what it demands of the model
+
+`/rewind` is a built-in Claude Code slash command: *"Restore the code and/or conversation to a
+previous point."* The model cannot call it. There is no rewind tool; the tool surface was searched
+and has none. It is invoked by the owner, which makes it a protocol rather than an optimisation the
+model can apply on its own.
+
+Used for token economy the choice is **conversation only, never code**: the transcript returns to an
+earlier point and the working tree stays as it is. So a session can explore, fail three times, learn,
+and be rewound to before the exploration — paying for the dead ends once instead of carrying them in
+every subsequent turn at the measured x46.
+
+**What it demands of the model: write every finding to disk as it is found, not at the end.**
+A conversation-only rewind discards everything that lives only in the transcript. A model that
+explores for twenty turns and plans to summarise later loses all of it. The repo already has the
+places — `kb/ledger.jsonl`, `STATUS.md`, `docs/`, `state/briefs/` — and the standing rule that a
+claim is cited or marked proposed. Rewind turns that discipline from good practice into the thing
+that makes the technique free.
+
+**Say when it is worth taking.** The model should tell the owner when context has filled with dead
+ends and everything durable is already written down, because the owner cannot see the difference
+between a context full of findings and a context full of failed attempts.
+
+Related but different: **the subagent firebreak.** A subagent burns its own context on the
+exploration and returns a short answer, so the flailing never enters the parent at all. Rewind is
+retrospective and owner-invoked; the firebreak is prospective and model-invoked. Use the firebreak
+for work known in advance to be iterative, and rewind when an exploration turned out to be a dead
+end nobody predicted.
 
 `python3 tools/token_review.py` flags these patterns in any agent-facing text before a workload
 is fired. It is wired into `phase.py` as non-blocking: it warns, it never stops you.

@@ -80,9 +80,23 @@ MECHANISMS = """Mechanisms available in this harness, and what each actually sav
       Constraint: a fork always runs the parent's model and effort; a model override is ignored.
 
   workflow resume (Workflow scriptPath + resumeFromRunId)
-      This is rewind. The longest unchanged prefix of agent() calls returns cached results
-      instantly; only the first edited or new call and everything after it runs live. Edit the
-      script, relaunch with the same runId, and the earlier stages are not re-run at all.
+      Replay, not rewind. The longest unchanged prefix of agent() calls returns cached results
+      instantly; only the first edited or new call and everything after it runs live. It moves a
+      workflow FORWARD without re-running finished stages. It does not restore any context.
+
+  /rewind (owner-invoked slash command, NOT callable by the model)
+      "Restore the code and/or conversation to a previous point." The genuine rewind: the
+      transcript returns to an earlier state. For token economy choose CONVERSATION ONLY, so the
+      working tree survives. Explore, fail, learn, rewind, continue in a small context -- the dead
+      ends are paid for once instead of carried at x46 forever. Precondition: every finding must
+      already be on disk, because a conversation-only rewind discards whatever lived only in the
+      transcript. The model's job is to write findings down continuously and to SAY when context
+      has filled with dead ends, since the owner cannot see that from outside.
+
+  subagent firebreak (Agent / fork, then keep only the return)
+      The prospective twin of /rewind, and model-invocable. The subagent burns its own context on
+      the iteration and returns a short answer, so the flailing never enters the parent at all.
+      Verify the artifact it produced, never its report (bridge.md section 3).
 
   continue an existing agent (SendMessage to its id)
       Keeps one agent's prefix warm across successive questions instead of paying a cold start

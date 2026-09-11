@@ -1,0 +1,197 @@
+{
+  "address": "base.1",
+  "card": "Source Control",
+  "area": "Shared Platform Services",
+  "status": "built",
+  "schema_note": "Fifth profile authored with the five fields from docs/reference/profile-sufficiency.md, and the first where the sufficiency note's remaining hedge - a card describing a practice rather than an interface - was expected to bite. It did not: git-worktree turns out to be interface-shaped, with a named verb set, a value domain, four typed refusals and a knob whose override has two levels. What is missing here is not the fields, it is a standard: see gaps. The quotes also come from outside this card's indexed source pool, which is recorded rather than glossed.",
+  "definition": {
+    "text": "Source Control at this card is the durable, versioned store of the code an agent changes, plus the mechanism that gives a concurrent run its own checkout of that store without copying it. The mechanism has a one-line subject -- \"Manage multiple working trees attached to the same repository.\" -- and a stated reason to exist: \"A git repository can support multiple working trees, allowing you to check\nout more than one branch at a time. With git worktree add a new working\ntree is associated with the repository, along with additional metadata\nthat differentiates that working tree from others in the same repository.\nThe working tree, along with this metadata, is called a \"worktree\".\" The card's second half is the gate over that store: \"CI/CD pipelines are the fundamental component of GitLab CI/CD. Pipelines are configured\nin a .gitlab-ci.yml file by using YAML keywords.\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-1-source-control-001",
+        "quote": "Manage multiple working trees attached to the same repository."
+      },
+      {
+        "id": "X-refmodel-base-1-source-control-002",
+        "quote": "A git repository can support multiple working trees, allowing you to check\nout more than one branch at a time. With git worktree add a new working\ntree is associated with the repository, along with additional metadata\nthat differentiates that working tree from others in the same repository.\nThe working tree, along with this metadata, is called a \"worktree\"."
+      },
+      {
+        "id": "X-refmodel-base-1-source-control-009",
+        "quote": "CI/CD pipelines are the fundamental component of GitLab CI/CD. Pipelines are configured\nin a .gitlab-ci.yml file by using YAML keywords."
+      }
+    ]
+  },
+  "operations": {
+    "text": "Eight verbs at the checkout boundary, named by the documentation's own synopsis rather than inferred -- \"git worktree add [-f] [--detach] [--checkout] [--lock [--reason <string>]]\n[--orphan] [(-b | -B) <new-branch>] <path> [<commit-ish>]\ngit worktree list [-v | --porcelain [-z]]\ngit worktree lock [--reason <string>] <worktree>\ngit worktree move <worktree> <new-path>\ngit worktree prune [-n] [-v] [--expire <expire>]\ngit worktree remove [-f] <worktree>\ngit worktree repair [<path>…​]\ngit worktree unlock <worktree>\" The ordering constraints, which docs/reference/profile-sufficiency.md asks for in preference to a sequence: add precedes every other verb for a given worktree and remove ends it; lock and unlock are inverses and either may be repeated; prune is the only verb that acts on worktrees nobody named, and it acts on ones already gone. The CI half has its own ordering, and it is stated as sequence plus parallelism rather than as a verb list: \"Stages, which define how to group jobs together. Stages run in sequence, while the jobs\nin a stage run in parallel. For example, an early stage could have jobs that lint and compile\ncode, while later stages could have jobs that test and deploy code. If all jobs in a stage succeed,\nthe pipeline moves on to the next stage. If any job in a stage fails, the next stage\nis not (usually) executed and the pipeline ends early.\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-1-source-control-004",
+        "quote": "git worktree add [-f] [--detach] [--checkout] [--lock [--reason <string>]]\n[--orphan] [(-b | -B) <new-branch>] <path> [<commit-ish>]\ngit worktree list [-v | --porcelain [-z]]\ngit worktree lock [--reason <string>] <worktree>\ngit worktree move <worktree> <new-path>\ngit worktree prune [-n] [-v] [--expire <expire>]\ngit worktree remove [-f] <worktree>\ngit worktree repair [<path>…​]\ngit worktree unlock <worktree>"
+      },
+      {
+        "id": "X-refmodel-base-1-source-control-011",
+        "quote": "Stages, which define how to group jobs together. Stages run in sequence, while the jobs\nin a stage run in parallel. For example, an early stage could have jobs that lint and compile\ncode, while later stages could have jobs that test and deploy code. If all jobs in a stage succeed,\nthe pipeline moves on to the next stage. If any job in a stage fails, the next stage\nis not (usually) executed and the pipeline ends early."
+      }
+    ]
+  },
+  "domain": {
+    "text": "The checkout kind is a two-value domain with a cardinality rule attached, which is the part a builder needs: \"This new worktree is called a \"linked worktree\" as opposed to the \"main\nworktree\" prepared by git-init[1] or git-clone[1].\nA repository has one main worktree (if it’s not a bare repository) and\nzero or more linked worktrees. When you are done with a linked worktree,\nremove it with git worktree remove.\" So 'how many checkouts may exist' has a precise answer -- one main, unless the repository is bare and then none, plus any number of linked -- and the main one is not interchangeable with the others (it cannot be removed; see `failures`). The gate's outcome domain is stated through its effect rather than as a list of statuses: \"Stages, which define how to group jobs together. Stages run in sequence, while the jobs\nin a stage run in parallel. For example, an early stage could have jobs that lint and compile\ncode, while later stages could have jobs that test and deploy code. If all jobs in a stage succeed,\nthe pipeline moves on to the next stage. If any job in a stage fails, the next stage\nis not (usually) executed and the pipeline ends early.\" A stage either succeeds wholly and the next one starts, or it fails and the pipeline ends early.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-1-source-control-003",
+        "quote": "This new worktree is called a \"linked worktree\" as opposed to the \"main\nworktree\" prepared by git-init[1] or git-clone[1].\nA repository has one main worktree (if it’s not a bare repository) and\nzero or more linked worktrees. When you are done with a linked worktree,\nremove it with git worktree remove."
+      },
+      {
+        "id": "X-refmodel-base-1-source-control-011",
+        "quote": "Stages, which define how to group jobs together. Stages run in sequence, while the jobs\nin a stage run in parallel. For example, an early stage could have jobs that lint and compile\ncode, while later stages could have jobs that test and deploy code. If all jobs in a stage succeed,\nthe pipeline moves on to the next stage. If any job in a stage fails, the next stage\nis not (usually) executed and the pipeline ends early."
+      }
+    ]
+  },
+  "failures": {
+    "text": "Four typed refusals, each with the condition that raises it and the override that defeats it -- and they are the most concretely specified failures of any card profiled here so far. Adding: \"By default, add refuses to create a new worktree when\n<commit-ish> is a branch name and is already checked out by\nanother worktree, or if <path> is already assigned to some\nworktree but is missing (for instance, if <path> was deleted\nmanually). This option overrides these safeguards. To add a missing but\nlocked worktree path, specify --force twice.\" Moving: \"move refuses to move a locked worktree unless --force is specified\ntwice. If the destination is already assigned to some other worktree but is\nmissing (for instance, if <new-path> was deleted manually), then --force\nallows the move to proceed; use --force twice if the destination is locked.\" Removing: \"remove refuses to remove an unclean worktree unless --force is used.\nTo remove a locked worktree, specify --force twice.\" Creating the branch that a new checkout will sit on: \"By default, -b refuses to create a new branch if it already\nexists. -B overrides this safeguard, resetting <new-branch> to\n<commit-ish>.\" Two things are worth reading off this set rather than left implicit. The refusals are *safeguards with a stated escape*, not errors -- so a platform that decides source control for a caller is choosing which safeguards to keep, and the honest default is to keep all of them. And the override is graded: one --force defeats an unclean or already-assigned worktree, two defeat a lock. A lock is therefore a stronger statement than uncommitted work, which is a design fact a builder would otherwise invent. Proposed: what a path that has never run must return is unanswered here too, because this repo has built no adapter at this card. Sixth card, same answer.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-1-source-control-005",
+        "quote": "By default, add refuses to create a new worktree when\n<commit-ish> is a branch name and is already checked out by\nanother worktree, or if <path> is already assigned to some\nworktree but is missing (for instance, if <path> was deleted\nmanually). This option overrides these safeguards. To add a missing but\nlocked worktree path, specify --force twice."
+      },
+      {
+        "id": "X-refmodel-base-1-source-control-006",
+        "quote": "move refuses to move a locked worktree unless --force is specified\ntwice. If the destination is already assigned to some other worktree but is\nmissing (for instance, if <new-path> was deleted manually), then --force\nallows the move to proceed; use --force twice if the destination is locked."
+      },
+      {
+        "id": "X-refmodel-base-1-source-control-007",
+        "quote": "remove refuses to remove an unclean worktree unless --force is used.\nTo remove a locked worktree, specify --force twice."
+      },
+      {
+        "id": "X-refmodel-base-1-source-control-008",
+        "quote": "By default, -b refuses to create a new branch if it already\nexists. -B overrides this safeguard, resetting <new-branch> to\n<commit-ish>."
+      }
+    ]
+  },
+  "vocabulary": {
+    "text": "The configurable words here come with their step named by construction, because each belongs to one subcommand -- which is exactly what card 3.3's profile could not supply for its own knob and what docs/reference/profile-sufficiency.md added this field to capture. The synopsis binds each word to its verb: \"git worktree add [-f] [--detach] [--checkout] [--lock [--reason <string>]]\n[--orphan] [(-b | -B) <new-branch>] <path> [<commit-ish>]\ngit worktree list [-v | --porcelain [-z]]\ngit worktree lock [--reason <string>] <worktree>\ngit worktree move <worktree> <new-path>\ngit worktree prune [-n] [-v] [--expire <expire>]\ngit worktree remove [-f] <worktree>\ngit worktree repair [<path>…​]\ngit worktree unlock <worktree>\" And the words that matter have graded rather than boolean values. --force at add, move and remove is a two-level knob: \"remove refuses to remove an unclean worktree unless --force is used.\nTo remove a locked worktree, specify --force twice.\" -- once for unclean, twice for locked; the same grading holds at move: \"move refuses to move a locked worktree unless --force is specified\ntwice. If the destination is already assigned to some other worktree but is\nmissing (for instance, if <new-path> was deleted manually), then --force\nallows the move to proceed; use --force twice if the destination is locked.\" Branch creation is the exception where the second level is a different flag rather than a repeated one: \"By default, -b refuses to create a new branch if it already\nexists. -B overrides this safeguard, resetting <new-branch> to\n<commit-ish>.\" Proposed: this repo has built no adapter at this card, so no mapping from its own `intent:` / `profile:` vocabulary onto any of these has been chosen -- sixth card with that same half proposed.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-1-source-control-004",
+        "quote": "git worktree add [-f] [--detach] [--checkout] [--lock [--reason <string>]]\n[--orphan] [(-b | -B) <new-branch>] <path> [<commit-ish>]\ngit worktree list [-v | --porcelain [-z]]\ngit worktree lock [--reason <string>] <worktree>\ngit worktree move <worktree> <new-path>\ngit worktree prune [-n] [-v] [--expire <expire>]\ngit worktree remove [-f] <worktree>\ngit worktree repair [<path>…​]\ngit worktree unlock <worktree>"
+      },
+      {
+        "id": "X-refmodel-base-1-source-control-007",
+        "quote": "remove refuses to remove an unclean worktree unless --force is used.\nTo remove a locked worktree, specify --force twice."
+      },
+      {
+        "id": "X-refmodel-base-1-source-control-006",
+        "quote": "move refuses to move a locked worktree unless --force is specified\ntwice. If the destination is already assigned to some other worktree but is\nmissing (for instance, if <new-path> was deleted manually), then --force\nallows the move to proceed; use --force twice if the destination is locked."
+      },
+      {
+        "id": "X-refmodel-base-1-source-control-008",
+        "quote": "By default, -b refuses to create a new branch if it already\nexists. -B overrides this safeguard, resetting <new-branch> to\n<commit-ish>."
+      }
+    ]
+  },
+  "swap_axis": {
+    "text": "What a second implementation must differ on for a swap at this card to be real. Not the hosting provider, and not the CI vendor: both are behind the same two operations a run actually performs, which are 'give me a checkout' and 'tell me whether the change passes'. The axis is *whether the per-run checkout shares one repository or is an independent copy*, and the documentation states the distinction as a named pair: \"This new worktree is called a \"linked worktree\" as opposed to the \"main\nworktree\" prepared by git-init[1] or git-clone[1].\nA repository has one main worktree (if it’s not a bare repository) and\nzero or more linked worktrees. When you are done with a linked worktree,\nremove it with git worktree remove.\" The difference is observable rather than cosmetic, and the observable is a refusal: \"By default, add refuses to create a new worktree when\n<commit-ish> is a branch name and is already checked out by\nanother worktree, or if <path> is already assigned to some\nworktree but is missing (for instance, if <path> was deleted\nmanually). This option overrides these safeguards. To add a missing but\nlocked worktree path, specify --force twice.\" Two linked worktrees cannot hold the same branch, so a second run asking for a branch a first run already has is refused; two independent clones have no such constraint and both succeed. That is a behaviour a caller reads back, which is the test a swap has to pass -- and it is the same shape as card 3.3's warm-pool pair, where the difference was also a lifecycle the caller could observe rather than a label. The CI half has no swap axis sourced here at all, because only one vendor was captured; that is in gaps.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-1-source-control-003",
+        "quote": "This new worktree is called a \"linked worktree\" as opposed to the \"main\nworktree\" prepared by git-init[1] or git-clone[1].\nA repository has one main worktree (if it’s not a bare repository) and\nzero or more linked worktrees. When you are done with a linked worktree,\nremove it with git worktree remove."
+      },
+      {
+        "id": "X-refmodel-base-1-source-control-005",
+        "quote": "By default, add refuses to create a new worktree when\n<commit-ish> is a branch name and is already checked out by\nanother worktree, or if <path> is already assigned to some\nworktree but is missing (for instance, if <path> was deleted\nmanually). This option overrides these safeguards. To add a missing but\nlocked worktree path, specify --force twice."
+      }
+    ]
+  },
+  "standards": [],
+  "tools": [
+    {
+      "name": "Git",
+      "kind": "open-source",
+      "note": "the versioned store and the per-run checkout mechanism this card's whole evidence base describes. In use here: this repository is a git repository and tools/checkpoint.sh commits and pushes to origin as the repo's own close discipline.",
+      "in_use_here": true,
+      "evidence": {
+        "text": "Its own documentation states the mechanism: \"Manage multiple working trees attached to the same repository.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-base-1-source-control-001",
+            "quote": "Manage multiple working trees attached to the same repository."
+          }
+        ]
+      }
+    },
+    {
+      "name": "GitLab CI/CD",
+      "kind": "hosted",
+      "note": "one implementation of the gate half, and the only one captured for this card. Not in use here; it is cited because the CI half needed a source, not because it is the pick.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "It declares the gate inside the repository it gates: \"CI/CD pipelines are the fundamental component of GitLab CI/CD. Pipelines are configured\nin a .gitlab-ci.yml file by using YAML keywords.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-base-1-source-control-009",
+            "quote": "CI/CD pipelines are the fundamental component of GitLab CI/CD. Pipelines are configured\nin a .gitlab-ci.yml file by using YAML keywords."
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The two halves of this card differ in how settled they are, and the difference is the whole tradeoff. The store half is effectively monocultural: one implementation's documentation is the de facto specification, its vocabulary is precise, and its refusals are graded -- everything quoted in `failures` and `vocabulary` above comes from it. The gate half is vendor-specific: the shape is the same everywhere (a file in the repository declares jobs grouped into stages, started by an event) but there is no cross-vendor specification, so a claim about it is a claim about one product. \"CI/CD pipelines are the fundamental component of GitLab CI/CD. Pipelines are configured\nin a .gitlab-ci.yml file by using YAML keywords.\" and \"Pipelines can run automatically for specific events, like when pushing to a branch,\ncreating a merge request, or on a schedule. When needed, you can also run pipelines manually.\" are GitLab's statements, and they are quoted as such. The real tradeoff for a platform is therefore asymmetric: the store can be treated as a stable interface and depended on, while the gate has to be treated as an adapter with one implementation captured and others assumed.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-base-1-source-control-009",
+        "quote": "CI/CD pipelines are the fundamental component of GitLab CI/CD. Pipelines are configured\nin a .gitlab-ci.yml file by using YAML keywords."
+      },
+      {
+        "id": "X-refmodel-base-1-source-control-010",
+        "quote": "Pipelines can run automatically for specific events, like when pushing to a branch,\ncreating a merge request, or on a schedule. When needed, you can also run pipelines manually."
+      }
+    ]
+  },
+  "usage": {
+    "text": "A caller at this card does not clone, branch, check out or configure a pipeline. It declares work; the platform gives the run a checkout and runs the gate, because the caller writes an intent and at most one word of profile rather than deciding \"decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger\". The shape worth asserting in an example built from this card is the refusal, not the happy path: that two concurrent runs asking for the same branch do not both get it, and that the one refused is told so rather than handed a second checkout of the same state.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "REF-3-02",
+        "quote": "decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger"
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "`standards` is empty, and unlike card 6.3 the reason is not a missing directory - there is no standard to name. The store half has one dominant implementation whose documentation serves as the specification, and the gate half has no cross-vendor specification at all. So an empty standards list here means a third thing: not 'no standard governs this' (the reading ten other profiles carry), and not 'a standard governs it but this repo has no folder' (card 6.3), but 'the industry has no standard here and a de facto implementation stands in'.",
+      "why_it_matters": "Three distinct situations now render identically as an empty array, and the third is the one with a real consequence: every claim on this card is a claim about a product's current behaviour, which can change without a version negotiation or a deprecation period. That is a different risk from citing a versioned specification and should not read the same.",
+      "research_query": "none for sourcing - this is a schema question: should `standards` carry a reason field distinguishing no-standard-exists from no-directory-yet from genuinely-ungoverned"
+    },
+    {
+      "what": "The quotes on this card come from outside its indexed source pool. `python3 tools/index_sources.py base.1` returns 102 usable candidates whose hosts are github.com repositories, docs.rs crate pages, GitLab docs and one agents.md row - and agents.md is the standard already cited by card 3.4 Workspace, not this card's subject. Git's own documentation at git-scm.com appears nowhere in the pool, so it was fetched directly through the gate's path.",
+      "why_it_matters": "bridge.md section 4b says the pool's value is removing the guessing about which URL to try, and for this card it pointed away from the publisher of the thing being profiled. That is a measurement about the pool rather than about the card, and the next agent on base.2 or base.4 should expect the same - the base section's questionnaire rows are the weakest in the index.",
+      "research_query": "none needed - but index_sources.py should be checked for whether the base and rail sections were generated against the same questionnaire depth as areas 1 to 7"
+    },
+    {
+      "what": "The gate half rests on one vendor. GitHub Actions is the CI this repo's own remote uses and it is not cited here; neither is any evaluation of whether the stage/job model quoted from GitLab is common across vendors or particular to it.",
+      "why_it_matters": "`swap_axis` for the gate half is therefore absent rather than answered - with one implementation captured there is nothing to rank by distance, which is precisely the failure mode the swap_axis field was added to prevent on card 3.3.",
+      "research_query": "capture GitHub Actions' workflow and job documentation and decide whether the stage/job/trigger model is a cross-vendor shape or GitLab's own"
+    },
+    {
+      "what": "This card overlaps card 3.4 Workspace, and the boundary between them is this repo's bucketing rather than a seam in the world. 3.4 covers what a unit of work reads and writes while it runs and cites agents-md; base.1 covers the durable versioned store and the per-run checkout. A worktree is both - it is the files a run reads and the store's own concurrency mechanism.",
+      "why_it_matters": "An example built from either profile alone would have to decide which card owns the checkout, and the two profiles would support opposite answers. It is the second card in this batch whose boundary is the model's rather than the evidence's; rail.1 was the first.",
+      "research_query": "none - a reference-model decision for the owner: does the per-run checkout belong to 3.4 Workspace or to base.1 Source Control"
+    },
+    {
+      "what": "No adapter has been built at this card, so `vocabulary`'s platform-mapping half and `failures`' never-run half are proposed, and nothing here is measured against a running platform.",
+      "why_it_matters": "Sixth card with the same two proposed halves, across three different kinds of card. The schema's two adapter-dependent halves cannot be closed by any amount of profiling.",
+      "research_query": "does any harness or example in this repo give a unit of work a checkout, or is cap-isolation the nearest built thing"
+    }
+  ]
+}

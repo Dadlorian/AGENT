@@ -18,9 +18,9 @@ real time. **Step 6 happens only once `ready_to_build.py` exits 0.** Building be
 |---|---|---|---|
 | 1 | Build the prose gate | R4 | **DONE** 2026-09-10, `tools/prose_gate.py`, row 87 |
 | 2 | Attempt ONE example from ONE profile | R7 | **DONE** 2026-09-10, `examples/reference/3-core-agent/`, row 79 |
-| 3 | Profile the 8 unprofiled cards | R1 | **NEXT** - 33 of 40, 7 remain |
+| 3 | Profile the 7 unprofiled cards | R1 | **NEXT** - 33 of 40 |
 | 4 | Re-point or retire the archived-facing artifacts | R5 | **DONE** 2026-09-11, rows 77 and 86 |
-| 5 | Clear the residue | R2 · R3 | open |
+| 5 | Clear the residue | R2 · R3 | **owner** - six quotes, one sitting |
 | 6 | Build the remaining areas | — | blocked until the eight hold |
 
 Steps 1 and 2 were independent and could run together. Step 3 is the one worth agents; 4 and 5
@@ -30,9 +30,9 @@ are small. Nothing before step 6 is fanned out to nine areas.
 
 | # | state | condition | measured now |
 |---|---|---|---|
-| R1 | open | every card profiled, gate green | 32 of 40 profiled, gate exit 0 |
-| R2 | open | no quote still needs a reader | 4 need a person (3 partial, 1 stitched, 0 absent) |
-| R3 | open | no undecided citation debt | 23 entries, 23 without an owner_decision |
+| R1 | open | every card profiled, gate green | 33 of 40 profiled, gate exit 0 |
+| R2 | open | no quote still needs a reader | 5 need a person (4 partial, 1 stitched) - OWNER |
+| R3 | open | no undecided citation debt | 6 entries, 1 without an owner_decision - OWNER |
 | R4 | MET | prose carries no unsourced quote or figure | gate exit 0 |
 | R5 | MET | card->example map points at the areas we will build | derived from the model by tools/build_card_example_map.py |
 | R6 | MET | the model's purpose is decided (owner) | An industry-aligned reference architecture for an agentic pl |

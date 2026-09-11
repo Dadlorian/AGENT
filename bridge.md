@@ -1,4 +1,4 @@
-# Bridge — 2026-09-10 (evening)
+# Bridge — 2026-09-11
 
 Handoff for a **design session, not a build session**. The corpus behind the reference model is
 now sound enough to reason from; what is missing is the set of principles that decide how the
@@ -13,24 +13,45 @@ figure for genuine defects was closer to 1 in 300. Re-run first, then speak.
 
 ## 1. Measured state
 
+Every number below is a command, and the command is the authority. Re-run them; do not trust this
+table.
+
 | | | command |
 |---|---|---|
-| Research corpus | 977 records — 204 fetched, 766 search-only, 7 blocked | `python3 tools/kb.py stats` |
-| Card profiles | **32 of 40** at 0 errors | `python3 tools/validate_card_profiles.py` |
-| Citations | 451 — 292 read · 16 unread · 143 internal · 0 broken | `python3 tools/knowledge_pool.py` |
-| Quotes typed | 234 — 217 exact · 7 formatting · 6 unretrievable · 3 partial · 1 stitched · 0 absent | same |
-| **Needing a human decision** | **4** | same |
-| Cards | 31 documented · 1 unread · **8 undocumented** | same |
-| Citation debt | 23 recorded, 16 of them "page retrieved, quote not found" | `docs/reference/citation-debt.json` |
-| Gates | 13/16 gates green; known-red recorded | `python3 tools/phase.py gates` |
-| STATUS | 13 live rows | `python3 tools/status_check.py --freshness` |
-| **Candidate source pool** | **3,537 usable URLs, addressed by card** | `python3 tools/index_sources.py --coverage` |
-| Ready to build | **3 of 8** conditions | `python3 tools/ready_to_build.py` |
+| Research corpus | 981 records | `python3 tools/kb.py stats` |
+| Card profiles | **33 of 40** at 0 errors | `python3 tools/validate_card_profiles.py` |
+| Citations | 449 — 293 read · 12 unread · 144 internal · 0 broken | `python3 tools/knowledge_pool.py` |
+| Quotes typed | 237 | same |
+| **Needing a human decision** | **5** (4 partial, 1 stitched) | same |
+| Cards | 32 documented · 1 unread · 7 undocumented | same |
+| Citation debt | **6 recorded, 1 undecided** (was 23 and 23) | `docs/reference/citation-debt.json` |
+| Gates | **29**, 27 green, 2 known-red recorded | `python3 tools/phase.py gates` |
+| Capability debt | 10 lessons that do not yet run | `python3 tools/improvement_loop.py plan 1` |
+| STATUS | 12 live rows, 0 stale | `python3 tools/status_check.py --freshness` |
+| Candidate source pool | 3,537 usable URLs, addressed by card | `python3 tools/index_sources.py --coverage` |
+| Ready to build | **5 of 8** conditions | `python3 tools/ready_to_build.py` |
 
-Phases `B-core-agent`, `A-cited`, `A-repair` are closed green. `python3 tools/phase.py status` is
-the authority.
+### What changed on 2026-09-11
 
----
+R7 and R5 closed; rows 21, 77 and 86 closed and archived. Nine gates were added and two
+excuses removed — `standards` now passes on its own merit rather than sitting in `KNOWN_RED`.
+
+Built, each with a self-test gate beside it that plants a defect and requires it caught:
+
+| tool | what it refuses |
+|---|---|
+| `inert_check.py` | a declared field that changes nothing — found `Unit.profile` unreachable past 18 checks |
+| `named_proof.py` | a quote attributed to a record that is not in it; a printed command whose promise is stale or unstable |
+| `grader_isolation.py` | a grader missing, inside the area it grades, or invoked by it |
+| `extract_reference_stack.py` | the stack drifting from `ref_arch/cellplane-stack.js`, or its source document going missing |
+| `ref_arch_imports.py` | a `.dc.html` importing a module that is not beside it |
+| `build_card_example_map.py` | the card→example map drifting from the model it is derived from |
+
+`tools/improvement_loop.py` gained a second unit. It ranked only skills, so a finding about a tool,
+a gate or an example area could not enter a plan at all — which is why three lessons written at
+ceremony 75 sat unread for seven days and all three recurred on 2026-09-11. It now takes
+**capability debt**: a lesson whose `sharper_check` names no tool that runs. Its stop condition is
+mechanical and it is a blocking gate.
 
 ## 2. Can you trust the knowledge pool? — the honest answer
 
@@ -101,6 +122,29 @@ kb verify. Skipping step 3 rots the back-references silently. STATUS row 82.
 **A subagent's report is not evidence.** Check the artifact. Three times this session a subagent's
 own summary miscounted its own output (4 vs 5 findings, 9 vs 7 records). The artifacts were right
 every time; the summaries were not.
+
+**One fetch path, and it is the gate's.** `tools/capture.py` walks api → markdown → service → html;
+`tools/verify_snippets.py` does a plain GET and strips tags. They do not return the same text. On
+2026-09-11 a probe through `capture.py` "recovered" 10 debt entries — which was not a discovery, it
+was the drift `stamp_verification.py`'s docstring already warns about ("two fetch paths that
+disagree is what produced 13 of 39 drifts"). Switching the stamper would have fixed ten entries by
+breaking the invariant that exists because this shortcut already cost the repo once. Re-take the
+quote from the gate's path instead. Four of the 23 entries were nothing but **a trailing period the
+page does not have**.
+
+**Assert the verdict by name, never "some finding".** Three consecutive phases wrote a planted
+defect that did not fire on the first attempt — a plant written then overwritten, an arm with no
+live corpus, a path the pattern could not match. Every one was caught only because the self-test
+required the missing verdict *by name*. `assert len(findings) > 0` would have passed all three and
+shipped arms proven by nothing.
+
+**Read what a gate does NOT flag.** Adding five fields to the card schema looked done when the gate
+went green — it was silent on the new fields because `check_profile` only ever checked three. The
+absence of an error is not the presence of a check.
+
+**Remove the excuse when the reason goes.** A gate in `phase.py`'s `KNOWN_RED` stops being a gate.
+Row 77 was not finished at "errors 0"; it was finished when `standards` came out of `KNOWN_RED` and
+passed on its own merit. Two excuses remain and both are recorded.
 
 **Nothing writes to `citation-debt.json` automatically.** An exemption list that grows quietly stops
 being debt and becomes permission. STATUS row 84 burns it down.
@@ -251,73 +295,81 @@ Scheduled is 12-of-13 internal today and has 9 `core` + 19 `primary` available. 
 exits non-zero until all hold. Opinion is how the previous seven example areas got built on an
 unproven structure and then archived.
 
-| # | Condition | How it is checked | Now |
-|---|---|---|---|
-| R1 | Every card profiled, gate green | `validate_card_profiles.py` = 40 profiles, 0 errors | 32 of 40 |
-| R2 | No quote still needs a reader | `knowledge_pool.py` → 0 need a person | 4 |
-| R3 | No undecided citation debt | every `citation-debt.json` entry carries `owner_decision` | 23 undecided |
-| R4 | Prose carries no unsourced quote or figure | `tools/prose_gate.py` exits 0 | tool does not exist |
-| R5 | Card→example map names the areas we will build | map vs `build-principles.json` | map names the archived seven |
-| R6 | The model's purpose is decided | `build-principles.json.model_purpose` | **met** |
-| R7 | One example built from a profile, gaps written down | an area under `examples/reference/` + `profile-sufficiency.md` | **met** 2026-09-10 |
-| R8 | Internal-heavy cards labelled | `build-principles.json.internal_share_policy` | **met** |
+| # | Condition | Now |
+|---|---|---|
+| R1 | Every card profiled, gate green | **33 of 40** — 7 left: 4.1, 6.1, 6.3, base.1, base.2, base.4, rail.1 |
+| R2 | No quote still needs a reader | **5** — 4 partial, 1 stitched. **Owner only** |
+| R3 | No undecided citation debt | **1 undecided** of 6 (was 23 of 23) |
+| R4 | Prose carries no unsourced quote or figure | met |
+| R5 | Card→example map names the areas we will build | met — derived from the model, gated |
+| R6 | The model's purpose is decided | met |
+| R7 | One example built from a profile, gaps written down | met — `3-core-agent`, and the answer was **no** |
+| R8 | Internal-heavy cards labelled | met |
 
-**2 of 8 met** as of 2026-09-10 evening (R6 and R8 closed by `build-principles.json`). Re-run the command; do not trust this line.
+**5 of 8.** Re-run the command; do not trust this line.
 
-Two of the eight are deliberately not machine-decidable:
+### What only the owner can close
 
-- **R6 is owner intent.** Is the reference model an *industry-aligned description*, or a description
-  of *this platform*? 31.7% of citations are this repo citing its own documents, so today it is both,
-  and the answer changes which cards can carry an example at all. Ask; do not infer.
-- **R7 is empirical, and it is the one that matters.** "The card profile is the spec" has never been
-  tested. *Closed 2026-09-10: it was tested, and it does not hold as written. The profile is a sound
-  evidence base and an incomplete specification — four of seven questions building
-  `examples/reference/3-core-agent/` from `3-3.json` needed a decision it could not supply. See
-  `docs/reference/profile-sufficiency.md`, which names what the eight new profiles should carry.* It may well hold — nobody has pulled the data to find out. The test is to build exactly one
-  area from a profile and write down what the profile failed to tell you. If the answer is "nothing",
-  R7 closes and the spec holds. If not, the missing pieces are named rather than guessed at.
+R2 and R3 are the same sitting: **six quotes, one pass**. Four are `partial` (part of the quote is
+on the page and part is not), one is `stitched` (two non-adjacent passages joined), and one is a
+quote whose verdict moved `exact` → `partial` overnight on the identical hash — page drift, not a
+repo change. No check can separate a faithful paraphrase of a page from an invented quote, because
+both share the source's vocabulary. That is why `partial` is a *needs-a-reader* bucket by design
+and not a verdict.
 
-R7 is the only condition whose failure is informative, so attempt it early even while others are open
-— just do not fan out to nine areas on its result until R1–R6 and R8 hold.
+Everything else on this list is ordinary work.
+
+### R7's answer, because it changes how you read a card profile
+
+"The card profile is the spec" was tested on 2026-09-11 by building
+`examples/reference/3-core-agent/` from `3-3.json` alone. **It does not hold.** Twelve questions
+came up; ten could not be answered from the profile and an eleventh only from prose no gate checks.
+The silences were all one kind: a card says what a boundary *is* and cites a standard for it, and
+never what it *does*. `docs/reference/profile-sufficiency.md` carries all twelve.
+
+Five fields were added to close that, and `validate_card_profiles.py` checks them exactly like the
+three it always checked: `operations`, `domain`, `failures`, `swap_axis`, `vocabulary`. Card 1.5 is
+the first authored with them, and its source filled the three that 3.3 was silent on — so they are
+not artifacts of one card kind.
 
 ---
 
 ## 6. The plan
 
-Ordered so each step protects the ones after it. `python3 tools/ready_to_build.py` is the
-scoreboard; the R-numbers are its conditions. **R6 and R8 are already closed** — the owner's
-decisions are recorded in `build-principles.json` and must not be reopened.
-
-| # | Step | Why this order | Closes |
+| # | Step | Closes | State |
 |---|---|---|---|
-| 1 | **Build the prose gate** | The last hole. Nothing reads `text`/`role`/`covers`/`note`/`gaps`, so a fabricated figure with no quote attached passes every check — that is how "$47,000 / 264-hour", "28.7x-35.2x" and a Firecracker "5-30ms" survived, each caught by hand. Close it BEFORE mass-authoring or all 8 new cards inherit the class. | R4 |
-| 2 | **Attempt ONE example from ONE profile** | The only step whose failure is informative. Write every question the profile could not answer into `docs/reference/profile-sufficiency.md`. If it answers everything, the profile IS the spec — a real finding. Can run alongside step 1. | R7 **DONE** — it does not answer everything; see `docs/reference/profile-sufficiency.md` |
-| 3 | **Profile the 8 unprofiled cards from the source pool** | Now unblocked: `python3 tools/index_sources.py <card>` gives ordered `core`/`primary` candidates per card. All 8 are marked `built` and every `built` card profiled so far produced a contradiction — expect the same. Capture-first: no citation to a record that was never fetched. | R1 |
-| 4 | **Re-point or retire the five archived-facing artifacts** | `card-example-map.json` maps all 40 cards to the ARCHIVED seven while `build-principles.json` names nine, and `check_card_example_map.py` passes on the dead one. A build session following that map builds toward deleted work. | R5 |
-| 5 | **Clear the residue** | 4 quotes needing a reader; 23 debt entries with no `owner_decision` — most can be re-sourced from the pool rather than decided, since 16 are blog-tier "quote not found" and the same question usually has a `core` candidate. | R2 · R3 |
-| 6 | **Build the remaining areas** | Only once `ready_to_build.py` exits 0. Fan out here and nowhere earlier. | — |
+| 1 | Build the prose gate | R4 | **DONE** 2026-09-10, `tools/prose_gate.py` |
+| 2 | Attempt ONE example from ONE profile | R7 | **DONE** 2026-09-11 — it does not hold; see `profile-sufficiency.md` |
+| 3 | **Profile the 7 unprofiled cards** | R1 | **NEXT** |
+| 4 | Re-point or retire the archived-facing artifacts | R5 | **DONE** 2026-09-11, rows 77 and 86 |
+| 5 | Clear the residue | R2 · R3 | **owner** — six quotes, one sitting |
+| 6 | Build the remaining 8 areas | — | blocked until `ready_to_build.py` exits 0 |
 
-Steps 1 and 2 are independent and can run together. Step 3 is the one worth agents; steps 4 and 5
-are small. Nothing before step 6 should be fanned out to nine areas.
+Step 3 is the whole of what a session can do alone. It is known-doable: page capture was proven to
+work on 2026-09-11 (156,792 characters of the A2A specification, HTTP 200, through the `api` rung),
+`python3 tools/index_sources.py <card>` gives ordered core/primary candidates per card, and the
+five-field schema now has two card kinds behind it.
 
-**The loop that works**, proven across three closed phases on 2026-09-10:
+**The loop that works**, unchanged:
 
 ```
 python3 tools/phase.py open <name>
-   4-6 parallel agents, SPLIT BY FILE so no two touch the same one
-python3 tools/phase.py close <name>      green closes; two reds stop the phase, leave the evidence
+   do the work
+python3 tools/phase.py close <name>      29 gates decide; two reds stop the phase
 ```
 
-Then, always, the post-batch sequence from section 3 — merge-research → build_egress_log →
-re-derive every `egress_ref` → merge+rebuild → reconcile → kb verify → `stamp_verification.py
---fetch` → `validate_card_profiles.py`. Skipping the re-derive rots the back-references silently.
+Then the post-batch sequence from section 3 — capture → record → merge-research →
+build_egress_log → re-derive every `egress_ref` → **stamp_verification --fetch → merge-research
+again** → validate_card_profiles. That second merge is not optional: stamps are written into the
+per-lens shards under `kb/research/`, not into the merged `kb/research.jsonl`, so reading the merged
+file straight after a fetch shows every new record unstamped and reads exactly like a failed fetch.
 
 ---
 
 ## 7. Starter prompt
 
-One prompt. It points rather than restates — every rule it would repeat is already in the five
-files it names, and duplication is the thing this repo is optimising against.
+One prompt. It points rather than restates — every rule it would repeat is already in the files it
+names, and duplication is the thing this repo is optimising against.
 
 ```
 Design-and-evidence repo for a target agentic platform. Nothing runs as an app.
@@ -325,36 +377,44 @@ Design-and-evidence repo for a target agentic platform. Nothing runs as an app.
 You are the shared prefix every fork inherits: what you read costs that much, times every
 agent, times every turn. Read these five and stop.
 
-    NEXTSTEP.md                      the plan, and which step is next
-    bridge.md sections 3, 3b, 4b     the traps that cost real time
-    state/briefs/one-three-one.md    the token cost model, measured
-    docs/reference/cards/3-3.json    the profile you build from
-    examples/reference/README.md     what an area is
+    NEXTSTEP.md                            the plan, and which step is next
+    bridge.md sections 1, 3, 3b, 4b        measured state, and the traps that cost real time
+    state/briefs/one-three-one.md          the token cost model, measured
+    docs/reference/profile-sufficiency.md  what a card profile will NOT tell you
+    docs/reference/cards/1-5.json          a profile authored with all five fields
 
-Then: python3 tools/ready_to_build.py
+Then: python3 tools/ready_to_build.py        5 of 8; it is the scoreboard
 
-JOB - STATUS row 79, which is R7, which is bridge.md section 6 step 2. Build ONE area under
-examples/reference/ from a card profile, and write every question the profile could NOT
-answer into docs/reference/profile-sufficiency.md. That file is the deliverable; the example
-is only the instrument. Do not fan out to nine areas.
+JOB - STATUS row 80, which is R1, which is bridge.md section 6 step 3. Profile the seven
+unprofiled cards: 4.1, 6.1, 6.3, base.1, base.2, base.4, rail.1. One card per phase, not
+seven at once. Page capture works; this was proven on 2026-09-11.
 
-Run it as a loop, not a checklist:
+Per card:
 
-    python3 tools/ceremony_next.py                     the number, read off disk
-    python3 tools/phase.py open 79-reference-example
-        build the area
-    python3 tools/phase.py close 79-reference-example  16 gates decide, two reds stop it
-    ceremony pair -> check_ceremony.py -> ledger -> bash tools/checkpoint.sh
+    python3 tools/phase.py open 80-card-<addr>
+    python3 tools/index_sources.py <addr>          ordered core/primary candidates
+    python3 tools/capture.py --json <url>          NEVER WebFetch
+        write kb/research/<lens>.jsonl, then the profile with all five new fields
+    python3 tools/kb.py merge-research
+    python3 tools/build_egress_log.py              then re-derive every egress_ref
+    python3 tools/stamp_verification.py --fetch
+    python3 tools/kb.py merge-research             AGAIN - stamps land in the shards, not the merge
+    python3 tools/validate_card_profiles.py
+    python3 tools/phase.py close 80-card-<addr>    29 gates decide
 
-Four things that will bite you and are not obvious from the files:
-- A subagent's report is not evidence. Check the artifact it produced.
-- Every claim is cited to a kb record with a verbatim quote, or marked proposed. Verdicts
-  are typed, never boolean; report "N need a human", never a percentage.
-- Put iterate-until-green work behind a subagent so its failures never reach your context,
-  and write findings to disk as you find them, not at the end.
-- New evidence comes from tools/index_sources.py and tools/index_glossary.py, never search.
-  Nothing in either is evidence until capture -> record -> stamp_verification.py --fetch.
+Five things that will bite you and are not obvious from the files:
+- One fetch path, and it is the gate's. tools/capture.py and the gate disagree by design;
+  quoting capture's output is how 13 of 39 drifts happened. Build the quote from what
+  tools/verify_snippets.py's fetcher returns.
+- Assert every verdict BY NAME in a self-test. "Some finding appeared" passes a plant that
+  never fired, and that happened three times in one session.
+- Read what a gate does NOT flag. Silence is not coverage.
+- A record's snippet is shared by every citation of it. Narrowing it to fit one quote
+  breaks the others, and only the validator will tell you.
+- Six quotes need a person (4 partial, 1 stitched, 1 drifted). They are R2 and R3 and they
+  are NOT yours - surface them, do not decide them.
 
 Name every claim by its STATUS row id. Do not reopen docs/reference/build-principles.json.
-checkpoint.sh commits and pushes - set CLAUDE_SESSION_URL first.
+checkpoint.sh commits and pushes - set CLAUDE_SESSION_URL first, and pass real paths: it
+refuses now, but a wrong path used to report "nothing to commit" for a phase of 26 files.
 ```

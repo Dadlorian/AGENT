@@ -1,0 +1,224 @@
+{
+  "address": "6.1",
+  "card": "Telemetry",
+  "area": "Observe",
+  "status": "built",
+  "schema_note": "Second profile authored with the five fields docs/reference/profile-sufficiency.md proposed (operations, domain, failures, swap_axis, vocabulary), after 1.5. The note named this card explicitly as the re-test for `failures` and `swap_axis`, so it was taken before the remaining five. Both are sourced here, and `swap_axis` is sourced outright rather than proposed as it was on 1.5 - the standard states its own scope limit, which is what a swap axis needs. The fields are additive; no existing profile changes.",
+  "definition": {
+    "text": "Telemetry at this card is the wire contract by which a run's traces, metrics and logs leave whatever produced them and arrive somewhere that can store and query them. The standard states its own subject matter directly -- \"The OpenTelemetry Protocol (OTLP) specification describes the encoding, transport, and delivery mechanism of telemetry data between telemetry sources, intermediate nodes such as collectors and telemetry backends.\" The card is the delivery mechanism, not the meaning of what is delivered: the attribute layer that says what an agent span means is a separate standard, and a moving one (see gaps).",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-6-1-telemetry-001",
+        "quote": "The OpenTelemetry Protocol (OTLP) specification describes the encoding, transport, and delivery mechanism of telemetry data between telemetry sources, intermediate nodes such as collectors and telemetry backends."
+      }
+    ]
+  },
+  "operations": {
+    "text": "One operation. The specification is explicit that the whole protocol defines a single request/response type -- \"OTLP is a request/response style protocol: the clients send requests, and the server replies with corresponding responses. This document defines one request and response type: Export.\" The four per-signal messages are four payload shapes of that one operation rather than four operations: \"the client starts sending telemetry data using unary requests using Export*ServiceRequest messages (ExportLogsServiceRequest for logs, ExportMetricsServiceRequest for metrics, ExportTraceServiceRequest for traces, ExportProfilesServiceRequest for profiles).\" This is the narrowest operation set of any card profiled so far, and it makes the second half of this field -- the order the verbs occur in, which docs/reference/profile-sufficiency.md required because a swap test needs an order to stand on -- vacuous here. A single idempotent-in-shape operation has no verb order, so what a conformance check can assert at this card is the request/response acknowledgement cycle rather than a sequence of calls. That is a property of a one-verb boundary, not a silence in the source, and it is recorded in gaps as a limit of the field rather than of the card.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-6-1-telemetry-002",
+        "quote": "OTLP is a request/response style protocol: the clients send requests, and the server replies with corresponding responses. This document defines one request and response type: Export."
+      },
+      {
+        "id": "X-refmodel-6-1-telemetry-015",
+        "quote": "the client starts sending telemetry data using unary requests using Export*ServiceRequest messages (ExportLogsServiceRequest for logs, ExportMetricsServiceRequest for metrics, ExportTraceServiceRequest for traces, ExportProfilesServiceRequest for profiles)."
+      }
+    ]
+  },
+  "domain": {
+    "text": "Two fields the card names have enumerated values. First, the response outcome: three, not two -- \"The response MUST be the appropriate message (see below for the specific message to use in the Full Success, Partial Success and Failure cases).\" A caller tells full from partial acceptance by a field rather than by the status code, because \"The server MUST leave the partial_success field unset in case of a successful response.\", and partial acceptance carries its own prohibition: \"The client MUST NOT retry the request when it receives a partial success response where the partial_success is populated.\" Second, the attribute that says what an agent span was doing: \"gen_ai.operation.name has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.\" The well-known values are chat, create_agent, embeddings, execute_tool, generate_content, invoke_agent, invoke_workflow, retrieval and text_completion, quoted here as the value table's own cells in page order -- \"chat Chat completion operation such as OpenAI Chat API create_agent Create GenAI agent embeddings Embeddings operation such as OpenAI Create embeddings API execute_tool Execute a tool\" The gate normalises whitespace, so that table's structure does not survive into the quote; the run of text is contiguous on the page and is not stitched from separate passages.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-6-1-telemetry-014",
+        "quote": "The response MUST be the appropriate message (see below for the specific message to use in the Full Success, Partial Success and Failure cases)."
+      },
+      {
+        "id": "X-refmodel-6-1-telemetry-003",
+        "quote": "The server MUST leave the partial_success field unset in case of a successful response."
+      },
+      {
+        "id": "X-refmodel-6-1-telemetry-004",
+        "quote": "The client MUST NOT retry the request when it receives a partial success response where the partial_success is populated."
+      },
+      {
+        "id": "X-refmodel-6-1-telemetry-011",
+        "quote": "gen_ai.operation.name has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used."
+      },
+      {
+        "id": "X-refmodel-6-1-telemetry-012",
+        "quote": "chat Chat completion operation such as OpenAI Chat API create_agent Create GenAI agent embeddings Embeddings operation such as OpenAI Create embeddings API execute_tool Execute a tool"
+      }
+    ]
+  },
+  "failures": {
+    "text": "The standard types its failures and makes the caller's obligation part of the type rather than a matter of taste -- \"When the server returns an error, it falls into 2 broad categories: retryable and non-retryable:\" The consequence is a data-loss decision the specification makes explicitly: \"Non-retryable errors indicate that telemetry data processing failed, and the client MUST NOT retry sending the same telemetry data. The client MUST drop the telemetry data.\" One status code is named outright, and it is classified: \"If the limit is exceeded, the gRPC server implementations MUST report a RESOURCE_EXHAUSTED code as a non-retryable error.\" A retryable error is signalled with Unavailable and a non-retryable one is recommended to use InvalidArgument; those two names sit in the specification's prose around the sample code and are not quoted here, so treat them as pointers to the source rather than as sourced text. Proposed, and the reason it is proposed: what a path that has never run must return -- the half of this field docs/reference/profile-sufficiency.md added after card 3.3 -- cannot be answered from evidence at this card, because this repo has built no adapter at 6.1 and the standard has no opinion about an unimplemented exporter. See gaps.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-6-1-telemetry-005",
+        "quote": "When the server returns an error, it falls into 2 broad categories: retryable and non-retryable:"
+      },
+      {
+        "id": "X-refmodel-6-1-telemetry-006",
+        "quote": "Non-retryable errors indicate that telemetry data processing failed, and the client MUST NOT retry sending the same telemetry data. The client MUST drop the telemetry data."
+      },
+      {
+        "id": "X-refmodel-6-1-telemetry-016",
+        "quote": "If the limit is exceeded, the gRPC server implementations MUST report a RESOURCE_EXHAUSTED code as a non-retryable error."
+      }
+    ]
+  },
+  "vocabulary": {
+    "text": "Two configurable words, and the step each applies at -- the distinction docs/reference/profile-sufficiency.md added after a knob was built unreachable on card 3.3. Compression is a closed set applied at the transport, per hop: \"All server components MUST support the following transport compression options: No compression, denoted by none. Gzip compression, denoted by gzip.\" The backend is selected by an exporter setting, which means it is chosen once at process start and not per span or per call: \"OTEL_EXPORTER_OTLP_ENDPOINT=\"https://cloud.langfuse.com/api/public/otel\"\" Neither is a knob this platform adds; both belong to the standard and its backends. Proposed: this repo has not built an adapter at this card, so no mapping from its own `intent:` / `profile:` vocabulary onto either word has been chosen -- the same join card 1.5 and card 3.3 could not supply either, now three cards with the same shape of gap.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-6-1-telemetry-007",
+        "quote": "All server components MUST support the following transport compression options: No compression, denoted by none. Gzip compression, denoted by gzip."
+      },
+      {
+        "id": "X-refmodel-6-1-telemetry-017",
+        "quote": "OTEL_EXPORTER_OTLP_ENDPOINT=\"https://cloud.langfuse.com/api/public/otel\""
+      }
+    ]
+  },
+  "swap_axis": {
+    "text": "What a second implementation must differ on for a swap at this card to be real. Not the instrumentation library: the backend itself states that side is interchangeable -- \"Any OpenTelemetry compatible instrumentation can be used to export traces to Langfuse.\" Not the backend vendor either, which is the counter-intuitive half: two backends that both accept OTLP are, from the caller's side, the relabelling the standard exists to make possible. The axis is where the export decision is made, because the standard scopes its own guarantee to a single hop and says so -- \"Note: this protocol is concerned with the reliability of delivery between one pair of client/server nodes and aims to ensure that no data is lost in transit between the client and the server. Many telemetry collection systems have intermediary nodes that the data must travel across until reaching the final destination (e.g. application -> agent -> collector -> backend). End-to-end delivery guarantees in such systems is outside of the scope of OTLP.\" So a direct exporter and a collector-mediated one differ in something the caller can read back: with an intermediate node in the path, an acknowledged Export no longer means the backend holds the data, and the delivery guarantee the caller was relying on is out of the standard's scope. The transport pair is the weaker second axis: \"This specification defines how OTLP is implemented over gRPC and HTTP transports and specifies Protocol Buffers schema that is used for the payloads.\" -- same operation, different concurrency and acknowledgement model. This field is sourced here, where on card 1.5 it was proposed; the difference is that OTLP states its own scope limit, and a scope limit is exactly what a swap axis is made of.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-6-1-telemetry-010",
+        "quote": "Any OpenTelemetry compatible instrumentation can be used to export traces to Langfuse."
+      },
+      {
+        "id": "X-refmodel-6-1-telemetry-018",
+        "quote": "Note: this protocol is concerned with the reliability of delivery between one pair of client/server nodes and aims to ensure that no data is lost in transit between the client and the server. Many telemetry collection systems have intermediary nodes that the data must travel across until reaching the final destination (e.g. application -> agent -> collector -> backend). End-to-end delivery guarantees in such systems is outside of the scope of OTLP."
+      },
+      {
+        "id": "X-refmodel-6-1-telemetry-008",
+        "quote": "This specification defines how OTLP is implemented over gRPC and HTTP transports and specifies Protocol Buffers schema that is used for the payloads."
+      }
+    ]
+  },
+  "standards": [
+    {
+      "id": "otlp",
+      "role": "governs the wire: what one telemetry payload looks like, the single operation that moves it, the three response outcomes, the typed failure categories, and the compression a hop must support.",
+      "covers": "does not govern what the attributes inside a payload mean -- that is the GenAI semantic conventions below -- and explicitly does not govern end-to-end delivery across intermediate nodes, which is the scope limit this card's swap axis rests on.",
+      "evidence": {
+        "text": "The specification states its own subject as the encoding, transport and delivery of telemetry between sources, collectors and backends: \"The OpenTelemetry Protocol (OTLP) specification describes the encoding, transport, and delivery mechanism of telemetry data between telemetry sources, intermediate nodes such as collectors and telemetry backends.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-6-1-telemetry-001",
+            "quote": "The OpenTelemetry Protocol (OTLP) specification describes the encoding, transport, and delivery mechanism of telemetry data between telemetry sources, intermediate nodes such as collectors and telemetry backends."
+          }
+        ]
+      }
+    },
+    {
+      "id": "genai-semantic-conventions",
+      "role": "governs the meaning of an agent span: which attributes it carries and, for the attribute naming the operation, a closed set of well-known values a caller may branch on.",
+      "covers": "does not govern transport, delivery or failure handling; and the page this card could reach declares itself no longer the canonical home for these attributes, which is recorded in gaps.",
+      "evidence": {
+        "text": "The operation attribute's value set is closed with a MUST rather than advisory: \"gen_ai.operation.name has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-6-1-telemetry-011",
+            "quote": "gen_ai.operation.name has the following list of well-known values. If one of them applies, then the respective value MUST be used; otherwise, a custom value MAY be used."
+          }
+        ]
+      }
+    }
+  ],
+  "tools": [
+    {
+      "name": "Langfuse",
+      "kind": "open-source",
+      "note": "the tool the reference model names at this card. Reachable as a plain OTLP endpoint rather than through a proprietary ingest API, which is what makes it swappable without touching the caller. Not in use here: this repo is stdlib-only and has built no adapter at this card.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "It receives the standard wire format at a documented OTLP endpoint: \"Langfuse can operate as an OpenTelemetry Backend to receive traces on the /api/public/otel (OTLP) endpoint. In addition to the Langfuse SDKs and native integrations, this OpenTelemetry endpoint is designed to increase compatibility with frameworks, libraries, and languages beyond the SDKs and native integrations.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-6-1-telemetry-009",
+            "quote": "Langfuse can operate as an OpenTelemetry Backend to receive traces on the /api/public/otel (OTLP) endpoint. In addition to the Langfuse SDKs and native integrations, this OpenTelemetry endpoint is designed to increase compatibility with frameworks, libraries, and languages beyond the SDKs and native integrations."
+          }
+        ]
+      }
+    },
+    {
+      "name": "OpenTelemetry Collector",
+      "kind": "open-source",
+      "note": "the intermediate node the standard names in its own scope limit. It is the second implementation on this card's swap axis rather than an alternative backend: inserting it changes what an acknowledged Export means. Not in use here.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "The standard names the collector as an intermediary node and puts delivery across it outside its own scope: \"Note: this protocol is concerned with the reliability of delivery between one pair of client/server nodes and aims to ensure that no data is lost in transit between the client and the server. Many telemetry collection systems have intermediary nodes that the data must travel across until reaching the final destination (e.g. application -> agent -> collector -> backend). End-to-end delivery guarantees in such systems is outside of the scope of OTLP.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-6-1-telemetry-018",
+            "quote": "Note: this protocol is concerned with the reliability of delivery between one pair of client/server nodes and aims to ensure that no data is lost in transit between the client and the server. Many telemetry collection systems have intermediary nodes that the data must travel across until reaching the final destination (e.g. application -> agent -> collector -> backend). End-to-end delivery guarantees in such systems is outside of the scope of OTLP."
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The options differ less than the tool list suggests, and that is the point of the card. A standard wire format makes backends substitutable -- \"Langfuse can operate as an OpenTelemetry Backend to receive traces on the /api/public/otel (OTLP) endpoint. In addition to the Langfuse SDKs and native integrations, this OpenTelemetry endpoint is designed to increase compatibility with frameworks, libraries, and languages beyond the SDKs and native integrations.\" -- and makes the instrumentation side substitutable too -- \"Any OpenTelemetry compatible instrumentation can be used to export traces to Langfuse.\" So the genuine tradeoff is not which backend, it is how much of the meaning a caller is willing to put in attributes governed by a convention that is still moving, versus in the transport layer that is stable for traces, metrics and logs. The transport half of this card is settled and quotable. The agent-specific half is the part whose canonical home changed while this profile was being written (gaps).",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-6-1-telemetry-009",
+        "quote": "Langfuse can operate as an OpenTelemetry Backend to receive traces on the /api/public/otel (OTLP) endpoint. In addition to the Langfuse SDKs and native integrations, this OpenTelemetry endpoint is designed to increase compatibility with frameworks, libraries, and languages beyond the SDKs and native integrations."
+      },
+      {
+        "id": "X-refmodel-6-1-telemetry-010",
+        "quote": "Any OpenTelemetry compatible instrumentation can be used to export traces to Langfuse."
+      }
+    ]
+  },
+  "usage": {
+    "text": "A caller at this card does not choose an exporter, a backend, a transport, a compression or an attribute set. This repo's planning layer treats telemetry as one of the concerns it decides for the caller, who writes an intent and at most one word of profile rather than deciding \"decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger\". The consequence for the example this card would feed: the caller emits nothing explicitly, and what a conformance check can assert is that the platform emitted it -- not that the caller asked.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "REF-3-02",
+        "quote": "decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger"
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "The correlation half of this card is uncited. W3C Trace Context is the mechanism by which a run id survives a hop, and https://www.w3.org/TR/trace-context/ returned HTTP 403 through the gate's own fetch path, so nothing here is sourced about propagation. The card names traces; how two spans in one run are tied together is therefore asserted nowhere and quoted nowhere.",
+      "why_it_matters": "cap-telemetry's rule is that run ids live on explicit attributes set at dispatch rather than on trace parentage. That is a claim about propagation, and this profile cannot support or contradict it from evidence.",
+      "research_query": "capture W3C Trace Context through a host the gate's fetcher is not refused by -- the datatracker or a mirror -- and source traceparent/tracestate propagation for card 6.1"
+    },
+    {
+      "what": "The GenAI attribute vocabulary is sourced from a page that declares itself no longer maintained; X-refmodel-6-1-telemetry-013 records the page's own line, which `gaps` cannot cite because a gap carries no evidence field: \"Generative AI (GenAI) attributes have moved to the OpenTelemetry GenAI semantic conventions repository.\" The canonical repository's landing page returns GitHub navigation chrome rather than document text through the gate's fetcher, so the current conventions could not be captured from their own home.",
+      "why_it_matters": "domain and half of landscape rest on this page. A value set quoted from a page that says it has moved is a citation whose subject may have changed since -- the one kind of drift the verification stamp cannot detect, because the stamp proves the quote is on that page, not that the page is still authoritative.",
+      "research_query": "capture the raw markdown of the GenAI semantic conventions repository's gen-ai docs -- raw.githubusercontent.com rather than the GitHub HTML view -- and re-source gen_ai.operation.name's value set from its canonical home"
+    },
+    {
+      "what": "No adapter has been built at this card in this repo, so `failures` cannot say what a path that has never run must return, and `vocabulary` records what the standard offers a caller rather than what this platform maps onto it.",
+      "why_it_matters": "Three cards now -- 3.3, 1.5 and 6.1 -- have the same shape of gap in the same two fields. That repetition is evidence about the schema rather than about any one card: the join between this platform's vocabulary and a standard's is not sourceable from the standard, and it will stay proposed on every card until an adapter exists.",
+      "research_query": "does any harness, skill or example in this repo emit or export telemetry, or is cap-telemetry the nearest built thing"
+    },
+    {
+      "what": "`operations` has one verb, so the field's second half -- the order the verbs occur in -- has nothing to hold. The field was specified after card 3.3, whose four-verb lifecycle made order the load-bearing question.",
+      "why_it_matters": "It is the first measured limit of the five-field schema rather than of a card: the field assumes a multi-verb boundary. A conformance check at this card has to assert the acknowledgement cycle instead, and a reader who takes an empty order half as a silence in the source will be wrong.",
+      "research_query": "none needed -- this is a schema finding for docs/reference/profile-sufficiency.md, not a missing source"
+    },
+    {
+      "what": "The reference model's own subtitle for this card, in docs/reference/reference-model.json, is \"Langfuse - logs, metrics, traces\", but every quote this profile rests on is transport-level. Nothing sourced here says what a run must emit: which spans, which metrics, at what granularity.",
+      "why_it_matters": "An example built from this profile could move a payload correctly and still emit the wrong thing, and the profile would not catch it. It is the same shape as card 3.3's silence about verbs: the card says what the boundary is and not what crosses it.",
+      "research_query": "source the GenAI semantic conventions' span and metric definitions -- which spans an agent run must emit and which metrics -- rather than only the attribute registry"
+    }
+  ]
+}

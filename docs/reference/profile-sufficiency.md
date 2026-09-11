@@ -187,6 +187,44 @@ which of the recommendations below travel, and which may be an artifact of this 
 > an administrative reason rather than an evidential one, since the reference stack names the pick
 > at that port and cannot be cited until STATUS row 89 closes.
 
+> **Narrowed again, 2026-09-11, on card 6.1 Telemetry** — the card this note named above as the
+> re-test for `failures` and `swap_axis`. Both are sourced, and `swap_axis` is sourced *outright*
+> for the first time, which 1.5 could not manage. The mechanism generalises, so it is worth stating:
+> OTLP states its own **scope limit** — it guarantees delivery for one client/server hop and puts
+> end-to-end delivery across intermediate nodes outside its scope. A scope limit is what a swap axis
+> is made of. The sharper instruction is therefore not "what must a second implementation differ on"
+> but **"where does this card's standard say what it does not guarantee"** — that is the boundary two
+> implementations can sit on opposite sides of while both conform. On 6.1 it made the axis
+> collector-in-path versus direct-export, and it ruled out both obvious candidates: the
+> instrumentation library (the backend's own docs call that side interchangeable) and the backend
+> vendor (two OTLP backends are, from the caller's side, exactly the relabelling the standard exists
+> to permit).
+>
+> **The first measured limit of the five-field schema itself rather than of a card.** 6.1 has one
+> operation, Export. So `operations`' second half — *and the order they occur in*, added because card
+> 3.3's four-verb lifecycle made order the load-bearing question — has nothing to hold. A one-verb
+> boundary has no verb order, and a reader who takes the empty half as a silence in the source will
+> be wrong. The field wants rewording: the verb set, **and the order where there is more than one
+> verb**, plus what a conformance check may assert instead when there is not.
+>
+> **`vocabulary`'s platform-mapping half is now 0 for 3.** On 3.3, 1.5 and 6.1 alike the standard
+> supplies the configurable words and their legal values, and nothing supplies the join between those
+> and this repo's own `intent:` / `profile:` vocabulary — because that join belongs to an adapter, and
+> no adapter exists at any of the three cards. Three of three is a measurement rather than a hedge:
+> that half stays `proposed` on every card until something is built, and it should be read as a
+> statement about this repo rather than about the sources.
+>
+> **A tooling finding, recorded because no gate would have said it.**
+> `schemas/card-profile.schema.json` declares `additionalProperties: false` and did not list the five
+> fields, so the schema *forbade* exactly what `validate_card_profiles.py` had been checking since they
+> were added — and 1-5.json was the only profile in violation. Nothing enforces that schema: it is
+> referenced by `docs/reference/cards/BRIEF.md` and by no tool, so the contradiction sat green. The
+> five fields plus `schema_note` were added to it as optional properties on 2026-09-11 — additive,
+> `required` unchanged, all 33 prior profiles still conforming, checked by a plant that rejected
+> 1-5.json against the old property set by all six field names. The finding to keep is not the fix:
+> **this repo has a declared shape with no gate behind it**, which is the same shape of defect as a
+> `KNOWN_RED` excuse — something that reads as coverage and is not.
+
 A second area, built from a profile of a different kind, would settle it. That is one area of work,
 not nine, and it is worth doing before eight profiles are authored against a schema this note
 proposes on the strength of one.

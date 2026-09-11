@@ -78,3 +78,4 @@
 | 74 | Phase 10: consumption pattern | examples/run and examples/ask tests green through four doors | Done | superseded by row 79, areas archived | 2026-09-10 172f84a |
 | 75 | Phase 11: user-view examples | docs/examples/index.md shows seven green visible and hidden checks | Done | superseded by row 79, areas archived | 2026-09-10 172f84a |
 | 82 | Egress log integrity | reconcile_egress.py checks egress_ref matches its own log entry | Done | reconcile_egress exits zero, chain reconciled | 2026-09-10 172f84a |
+| 90 | Agent run cost model | state/briefs/one-three-one.md carries the measured cost model | Done | cache read re-billed 46 times per token | 2026-09-10 15a9acc |

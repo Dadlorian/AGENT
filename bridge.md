@@ -24,6 +24,8 @@ figure for genuine defects was closer to 1 in 300. Re-run first, then speak.
 | Citation debt | 23 recorded, 16 of them "page retrieved, quote not found" | `docs/reference/citation-debt.json` |
 | Gates | 9 of 11 green; two known-red and recorded | `python3 tools/phase.py gates` |
 | STATUS | 14 open rows | `python3 tools/status_check.py --freshness` |
+| **Candidate source pool** | **3,537 usable URLs, addressed by card** | `python3 tools/index_sources.py --coverage` |
+| Ready to build | **2 of 8** conditions | `python3 tools/ready_to_build.py` |
 
 Phases `B-core-agent`, `A-cited`, `A-repair` are closed green. `python3 tools/phase.py status` is
 the authority.
@@ -180,6 +182,66 @@ shortlist and never a citation — the profiles now do this properly. Check befo
 
 ---
 
+## 4b. The source pool — where new evidence comes from
+
+`docs/reference/REF-ARCH-INDEX.md` is 5,828 URLs that four model runs proposed against a
+244-question questionnaire. Two properties make it the missing piece rather than another pile:
+
+**It is already addressed by card.** Question ids are `<area>.<card>.<n>` — `3.1.1`…`3.1.10` are
+ten questions about card 3.1 Harness — and the index's sections are the model's own areas
+(`8` → `base`, `10` → `rail`). So it is not a corpus to map onto the architecture later; it is
+research already pointed at it. That is why it closes the gap the previous sessions kept circling.
+
+**It carries a trust band, and the band predicts whether the gate can use the source.**
+
+| band | tier | rows | |
+|---|---|---:|---|
+| `core` | T1 | 435 | standards body / formal spec |
+| `primary` | T2 | 1,702 | primary implementation / official docs |
+| `research` | T3 | 2,045 | engineering or security research |
+| `WILD` | U | 1,646 | **untiered, unknown — dropped** |
+
+Measured on 2026-09-10: every citation that survived repair came from `core`/`primary`
+(`modelcontextprotocol.io`, `datatracker.ietf.org`, `gvisor.dev`, `docs.litellm.ai`). All 23
+entries in `citation-debt.json` came from the other end — blogs, Medium 403s, arXiv bodies.
+Four `core` candidates for card 1.5 were fetched through the gate's own path and returned 132K,
+35K, 157K and 5K of readable text.
+
+### The trap, written down so it is not re-derived
+
+Ordering is **three independent axes**. The index's `Bucket` column folds two of them together:
+
+```
+trust    core > primary > research; WILD dropped
+dated    whether the page carries a date — A FACT, NOT A QUALITY
+recency  only meaningful for a page that HAS a date
+```
+
+`Bucket` B3 means "older **or undated**". Filtering to B1/B2 is the obvious move and it is wrong:
+it deletes **362 of the 435 `core` rows, and 317 of those are dropped purely for being undated**.
+A living specification carries no dateline — that is what a current standard looks like. Undated
+ranks *ahead* of dated-but-old and is never dropped. `tools/index_sources.py` encodes this.
+
+```
+python3 tools/index_sources.py 1.5            ordered candidates, unfetchable hosts flagged
+python3 tools/index_sources.py --coverage     usable candidates per card
+```
+
+**Nothing in the index is evidence.** These are URLs a model suggested; no page has been opened.
+They enter exactly like everything else: capture → record → `stamp_verification.py --fetch` → gate.
+What the pool removes is the guessing about *which* URL to try, which is where the bad sources came
+from in the first place.
+
+### What it covers
+
+Every card has a pool, and the cards we are blocked on are the best supplied. The 8 unprofiled:
+1.5 (42 core) · rail.1 (18) · 6.1 (22) · 6.3 (15) · base.1 (2 core, 60 primary) · base.2 (5) ·
+base.4 (2, 48) · 4.1 (6). The internal-heavy cards have external evidence waiting too — 1.2
+Scheduled is 12-of-13 internal today and has 9 `core` + 19 `primary` available. Four cards have
+**zero** `core`: 2.3, 4.3, 7.1, rail.5 — know that before leaning on them.
+
+---
+
 ## 5. Definition of ready to build
 
 **Ready is a command, not an opinion.** `python3 tools/ready_to_build.py` prints these eight and
@@ -193,11 +255,11 @@ unproven structure and then archived.
 | R3 | No undecided citation debt | every `citation-debt.json` entry carries `owner_decision` | 23 undecided |
 | R4 | Prose carries no unsourced quote or figure | `tools/prose_gate.py` exits 0 | tool does not exist |
 | R5 | Card→example map names the areas we will build | map vs `build-principles.json` | map names the archived seven |
-| R6 | The model's purpose is decided | `build-principles.json.model_purpose` | not recorded |
+| R6 | The model's purpose is decided | `build-principles.json.model_purpose` | **met** |
 | R7 | One example built from a profile, gaps written down | an area under `examples/reference/` + `profile-sufficiency.md` | none |
-| R8 | Internal-heavy cards labelled | `build-principles.json.internal_share_policy` | not recorded |
+| R8 | Internal-heavy cards labelled | `build-principles.json.internal_share_policy` | **met** |
 
-**0 of 8 met** as of 2026-09-10 evening.
+**2 of 8 met** as of 2026-09-10 evening (R6 and R8 closed by `build-principles.json`). Re-run the command; do not trust this line.
 
 Two of the eight are deliberately not machine-decidable:
 
@@ -216,21 +278,33 @@ R7 is the only condition whose failure is informative, so attempt it early even 
 
 ## 6. The plan
 
-Ordered so that each step protects the ones after it. `python3 tools/ready_to_build.py` is the
-scoreboard; the R-numbers below are its conditions.
+Ordered so each step protects the ones after it. `python3 tools/ready_to_build.py` is the
+scoreboard; the R-numbers are its conditions. **R6 and R8 are already closed** — the owner's
+decisions are recorded in `build-principles.json` and must not be reopened.
 
 | # | Step | Why this order | Closes |
 |---|---|---|---|
-| 1 | **Owner decides the model's purpose and the area set** | Everything downstream depends on it, and neither is a research question. Industry description or platform description? Nine region areas or seven journey areas or something else? | R6 |
-| 2 | **Attempt ONE example from ONE profile** | The only step whose failure is informative. Write every question the profile could not answer into `profile-sufficiency.md`. If it answers everything, the profile IS the spec — a real finding, and R7 closes cheaply. | R7 |
-| 3 | **Build the prose gate** | The largest open hole: nothing reads `text`/`role`/`covers`/`note`, which is how two invented statistics passed every gate. Close it before mass-authoring, or every new area inherits the class. | R4 |
-| 4 | **Re-point or retire the five archived-facing artifacts** | A passing gate on a dead mapping will silently validate the wrong thing. | R5 |
-| 5 | **Profile the 8 remaining cards, capture-first** | All eight are marked `built`; every `built` card profiled so far produced a contradiction. | R1 |
-| 6 | **Clear the residue** | 4 quotes needing a reader, 23 undecided debt entries, internal-share policy. | R2 · R3 · R8 |
-| 7 | **Build the remaining areas** | Only once `ready_to_build.py` exits 0. A workflow can fan this out; nothing before step 7 should be fanned out. | — |
+| 1 | **Build the prose gate** | The last hole. Nothing reads `text`/`role`/`covers`/`note`/`gaps`, so a fabricated figure with no quote attached passes every check — that is how "$47,000 / 264-hour", "28.7x-35.2x" and a Firecracker "5-30ms" survived, each caught by hand. Close it BEFORE mass-authoring or all 8 new cards inherit the class. | R4 |
+| 2 | **Attempt ONE example from ONE profile** | The only step whose failure is informative. Write every question the profile could not answer into `docs/reference/profile-sufficiency.md`. If it answers everything, the profile IS the spec — a real finding. Can run alongside step 1. | R7 |
+| 3 | **Profile the 8 unprofiled cards from the source pool** | Now unblocked: `python3 tools/index_sources.py <card>` gives ordered `core`/`primary` candidates per card. All 8 are marked `built` and every `built` card profiled so far produced a contradiction — expect the same. Capture-first: no citation to a record that was never fetched. | R1 |
+| 4 | **Re-point or retire the five archived-facing artifacts** | `card-example-map.json` maps all 40 cards to the ARCHIVED seven while `build-principles.json` names nine, and `check_card_example_map.py` passes on the dead one. A build session following that map builds toward deleted work. | R5 |
+| 5 | **Clear the residue** | 4 quotes needing a reader; 23 debt entries with no `owner_decision` — most can be re-sourced from the pool rather than decided, since 16 are blog-tier "quote not found" and the same question usually has a `core` candidate. | R2 · R3 |
+| 6 | **Build the remaining areas** | Only once `ready_to_build.py` exits 0. Fan out here and nowhere earlier. | — |
 
-Steps 1 and 2 can run together — 2 needs only the area shape from 1. Steps 3–6 are independent of
-each other. Step 7 is gated on all of them.
+Steps 1 and 2 are independent and can run together. Step 3 is the one worth agents; steps 4 and 5
+are small. Nothing before step 6 should be fanned out to nine areas.
+
+**The loop that works**, proven across three closed phases on 2026-09-10:
+
+```
+python3 tools/phase.py open <name>
+   4-6 parallel agents, SPLIT BY FILE so no two touch the same one
+python3 tools/phase.py close <name>      green closes; two reds stop the phase, leave the evidence
+```
+
+Then, always, the post-batch sequence from section 3 — merge-research → build_egress_log →
+re-derive every `egress_ref` → merge+rebuild → reconcile → kb verify → `stamp_verification.py
+--fetch` → `validate_card_profiles.py`. Skipping the re-derive rots the back-references silently.
 
 ---
 
@@ -239,20 +313,36 @@ each other. Step 7 is gated on all of them.
 ```
 Design-and-evidence repo for a target agentic platform. Nothing runs as an app.
 
-Read bridge.md first — it is the whole handoff. Then run:
+Read bridge.md first - it is the whole handoff. Sections 3, 3b and 4b are the traps that cost
+real time; read them before your first edit. Then run:
 
     python3 tools/ready_to_build.py
 
-8 conditions, exits 1 until all hold, reads 0 of 8 today. That output is your task list and
-your progress report. Report it verbatim, not as prose.
+8 conditions, exits 1 until all hold, reads 2 of 8 today. That output is your task list and your
+progress report. Report it verbatim, never as prose.
 
-JOB: work bridge.md section 6, steps 1-6. Stop when ready_to_build.py exits 0 and report.
-Do not build the example areas (step 7).
+JOB: work bridge.md section 6, steps 1-5. Stop when ready_to_build.py exits 0 and report.
+Do NOT build the example areas (step 6).
 
-Decisions already made, in docs/reference/build-principles.json — do not reopen them.
-Traps that cost real time, in bridge.md section 3 — read before your first edit.
-Card evidence, in docs/reference/knowledge-pool.md. Authoring rule, in docs/reference/cards/BRIEF.md.
+NEW EVIDENCE COMES FROM THE SOURCE POOL, NOT FROM SEARCH:
+    python3 tools/index_sources.py <card>       ordered core/primary candidates for that card
+It is addressed by card already. Nothing in it is evidence - capture, write a record, then
+python3 tools/stamp_verification.py --fetch, then cite. Never WebFetch.
+
+THE RULES THAT ARE NOT NEGOTIABLE
+- Citable means checked. A quote is valid only if the stamp found it on the page.
+- Verdicts are typed, never boolean: exact / formatting / unretrievable / partial / stitched /
+  absent. Report "N quotes need a human", never a percentage.
+- Source text is a record's snippet or read - never its claim. Treat `read` with the same
+  suspicion as `claim`: contiguous page text or nothing.
+- A contradicted record is left as it is and reported. Patching it to fit destroys the finding.
+- A subagent's report is not evidence. Check the artifact it produced.
+- Undated is not old. Never filter a source out for having no date.
+
+Decisions already made: docs/reference/build-principles.json - do not reopen them.
+Card evidence: docs/reference/knowledge-pool.md. Authoring rule: docs/reference/cards/BRIEF.md.
 
 Close each step with python3 tools/phase.py open/close <name>. Two reds stop a phase; leave the
-evidence rather than forcing a third try. checkpoint.sh commits and pushes.
+evidence rather than forcing a third try. checkpoint.sh commits and pushes - set
+CLAUDE_SESSION_URL first so the commit carries your session, not a previous one.
 ```

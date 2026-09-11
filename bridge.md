@@ -18,20 +18,51 @@ table.
 
 | | | command |
 |---|---|---|
-| Research corpus | 981 records | `python3 tools/kb.py stats` |
-| Card profiles | **33 of 40** at 0 errors | `python3 tools/validate_card_profiles.py` |
-| Citations | 449 — 293 read · 12 unread · 144 internal · 0 broken | `python3 tools/knowledge_pool.py` |
-| Quotes typed | 237 | same |
-| **Needing a human decision** | **5** (4 partial, 1 stitched) | same |
-| Cards | 32 documented · 1 unread · 7 undocumented | same |
+| Research corpus | 1,094 records | `python3 tools/kb.py stats` |
+| Card profiles | **40 of 40** at 0 errors | `python3 tools/validate_card_profiles.py` |
+| Citations | 632 — 467 read · 14 unread · 151 internal · 0 broken | `python3 tools/knowledge_pool.py` |
+| Quotes typed | 343 | same |
+| **Needing a human decision** | **2** card-cited partials — and read section 3 before treating this as progress from 5 | same |
+| Cards | 39 documented · 1 unread · 0 undocumented | same |
 | Citation debt | **6 recorded, 1 undecided** (was 23 and 23) | `docs/reference/citation-debt.json` |
 | Gates | **29**, 27 green, 2 known-red recorded | `python3 tools/phase.py gates` |
 | Capability debt | 10 lessons that do not yet run | `python3 tools/improvement_loop.py plan 1` |
-| STATUS | 12 live rows, 0 stale | `python3 tools/status_check.py --freshness` |
+| STATUS | 13 live rows, 0 stale | `python3 tools/status_check.py --freshness` |
 | Candidate source pool | 3,537 usable URLs, addressed by card | `python3 tools/index_sources.py --coverage` |
-| Ready to build | **5 of 8** conditions | `python3 tools/ready_to_build.py` |
+| Ready to build | **6 of 8** conditions | `python3 tools/ready_to_build.py` |
 
 ### What changed on 2026-09-11
+
+**R1 closed, later the same day.** The seven unprofiled cards — 6.1, 6.3, rail.1, base.1, base.2,
+base.4, 4.1 — were profiled one per `phase.py` phase, all seven phases closed with every blocking
+gate green, and `validate_card_profiles.py` now reads **40 of 40 at 0 errors**. 113 new research
+records, every one built against `verify_snippets.py`'s own fetcher before it was written, and
+`verify_snippets --check` reports **0 drift** across all 113 — against the 13-of-39 drift rate the
+same task produced on 2026-09-10 by quoting `capture.py`'s output instead. Each card also got three
+deliberate plants (a corrupted quote, a citation pointed at a record that lacks it, and a quote
+taken from the record's own `claim` field) and each plant was required to fail *by the field name*,
+not merely to exit non-zero. 21 of 21 fired.
+
+Two host rules are now known and are worth having before the next fetch: `github.com/<org>/<repo>/blob/...`
+returns navigation chrome through the gate's fetcher while `raw.githubusercontent.com` returns the
+file, and `www.w3.org` answers 403. Both are recorded on the cards that hit them.
+
+The schema was also brought into line with the gate: `schemas/card-profile.schema.json` declared
+`additionalProperties: false` and did not list the five fields `validate_card_profiles.py` had been
+checking since they were added, so the declared shape forbade what the checker required and
+`1-5.json` was the only profile in violation. The five plus `schema_note` are now optional
+properties — `required` unchanged, all prior profiles still conforming, verified by a plant that
+rejected `1-5.json` against the old property set by all six field names. Nothing enforces that
+schema, which is the finding worth keeping (see `docs/reference/profile-sufficiency.md`).
+
+**Two things that were already wrong and are now measured, both found by running commands the phase
+gates do not run.** `acceptance_check.py --check` was red before this session: the matrix was last
+written 2026-09-09 and commit `9a53ecc` added `proposed` rows to three cap- skills on 2026-09-10
+without regenerating it, so the honest figure is **13 of 16 elements, 77 of 80 sticks**, not the
+16-of-16 `CLAUDE.md` claimed (STATUS row 94). And R2's drop from 5 to 2 is a stamp-scope artifact,
+not three quotes getting read (section 3 above, STATUS row 93). Neither `acceptance` nor the pool's
+quote count is one of `phase.py`'s 29 gates, which is why seven phases closed green over both.
+
 
 R7 and R5 closed; rows 21, 77 and 86 closed and archived. Nine gates were added and two
 excuses removed — `standards` now passes on its own merit rather than sitting in `KNOWN_RED`.
@@ -148,6 +179,28 @@ passed on its own merit. Two excuses remain and both are recorded.
 
 **Nothing writes to `citation-debt.json` automatically.** An exemption list that grows quietly stops
 being debt and becomes permission. STATUS row 84 burns it down.
+
+**`stamp_verification.py --fetch` narrows a stamp to the quotes cards cite, and drops the rest.**
+`cited_quotes()` reads `docs/reference/cards/` only, so a `--fetch` rebuilds each record's
+`quote_verdicts` from the currently-cited quotes and silently discards any verdict for a quote no
+card cites. On 2026-09-11 that dropped three typed verdicts that had been seeded from the gate
+report, and `ready_to_build.py`'s R2 went from 5 needing a person to 2 **without anybody reading
+anything**. The three, recorded here because the stamp no longer carries them and their text has
+not changed:
+
+| record | verdict that was lost | page |
+|---|---|---|
+| `X-refmodel-2-3-planning-004` | `stitched` | anthropic.com/engineering/building-effective-agents |
+| `X-refmodel-4-2-compute-003` | `partial` | cast.ai/blog/fractional-gpu-kubernetes |
+| `X-refmodel-7-2-experiment-008` | `partial` | agentforgehub.com/posts/shadow-mode-for-ai-agents |
+
+None was ever cited by a card profile — checked against the card files at `950a3b1`, not inferred —
+so none of the three was a card's evidence, and no card got worse. What got worse is the record:
+a quote known to be stitched or partial is now flagged nowhere, and the scoreboard reads better for
+it. STATUS row 93. **Read R2 as 2 card-cited quotes needing a reader, not as three having been
+resolved**, and if the number moves again check which measurement moved before reporting it
+(section 3b).
+
 
 ---
 

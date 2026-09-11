@@ -90,8 +90,12 @@ python3 tools/blueprint_check.py              # (read-only) docs/architecture/bl
 python3 tools/standards.py check              # (read-only) STANDARDS.md + JOURNEY.md consistency vs. skills/KB/examples/scorecard
 python3 tools/litmus_check.py check           # (read-only) litmus questionnaire coverage/citation/contamination check
 ```
-Verified 2026-09-08: `acceptance_check.py --check` → "acceptance matrix matches its sources; 16 of 16
-elements accepted, 80 of 80 sticks hold". `standards.py check` → "standards 41 ...; steps 7; errors 0;
+Re-measured 2026-09-11: `acceptance_check.py --check` → **13 of 16 elements accepted, 77 of 80 sticks
+hold**. The older "16 of 16, 80 of 80" reading was already wrong when written: commit `9a53ecc`
+(2026-09-10) added `proposed` rows to cap-work-intake, cap-provenance and cap-scheduling and did not
+regenerate the matrix, which was last written on 2026-09-09. `acceptance_check` is **not** one of
+`phase.py`'s 29 gates, so nothing surfaced the drift — run the command rather than quoting either
+number. STATUS row 94. `standards.py check` → "standards 41 ...; steps 7; errors 0;
 warnings 4" (4 warnings are pre-existing: standards cited by a skill with no matching `E-` entity yet —
 not a regression to chase blindly, but don't add a fifth).
 

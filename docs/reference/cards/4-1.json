@@ -1,0 +1,233 @@
+{
+  "address": "4.1",
+  "card": "Isolated Runtime Profiles",
+  "area": "Execution & Runtime",
+  "status": "built",
+  "schema_note": "Eighth and last profile of the batch authored with the five fields from docs/reference/profile-sufficiency.md. Its boundary against card 3.3 Runtime/Sandbox was the open question, and it turned out to be sourced rather than a matter of taste: the sandbox API's own blueprint type states that it excludes the running instance's fields. This card is the declared bundle; 3.3 is the instance. The card also produced the batch's most useful failure: a declared isolation policy that silently does nothing.",
+  "definition": {
+    "text": "An Isolated Runtime Profile is the named, reusable bundle of isolation settings a unit of work is launched under -- the declaration, not the running thing. The distinction is not this repo's; the sandbox API states it as a type boundary: \"SandboxBlueprint defines the configuration shared between Sandbox and SandboxTemplate.\nIt deliberately excludes runtime-only fields (operatingMode, lifecycle).\" So the profile holds the pod shape, volumes and network posture, and the instance holds operating mode and lifecycle, which is card 3.3. One implementation ships the same concept with a cardinality rule attached: \"This page documents every field in a sandbox policy. A policy is carried on a managed runner as the policy field, and because a cluster hosts at most one runner, one policy governs one cluster.\" The card's three runtime kinds -- containers, VMs, WASM -- are three fillings of that bundle rather than three profiles; the WASM one describes its isolation as hermeticity: \"Wasm components are a container format and type\nsystem that wrap Core Wasm instructions into typed, hermetic binaries and libraries (think: ELF).\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-001",
+        "quote": "SandboxBlueprint defines the configuration shared between Sandbox and SandboxTemplate.\nIt deliberately excludes runtime-only fields (operatingMode, lifecycle)."
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-004",
+        "quote": "This page documents every field in a sandbox policy. A policy is carried on a managed runner as the policy field, and because a cluster hosts at most one runner, one policy governs one cluster."
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-012",
+        "quote": "Wasm components are a container format and type\nsystem that wrap Core Wasm instructions into typed, hermetic binaries and libraries (think: ELF)."
+      }
+    ]
+  },
+  "operations": {
+    "text": "A profile is declared, referenced and superseded -- it is not called. That is the honest operation set, and the API's resource shape supports it: a template is a separate object from the claim that provisions against it and from the warm pool that pre-provisions from it, which is why this card has no verbs of its own beyond declaration. The one operation with stated semantics is update, and it replaces rather than merges: \"NOTE: This list is atomic. Updates to this field will replace the entire list rather than merging with existing entries.\" The ordering constraint that matters is between a profile and the instances launched under it: a profile must exist before a claim can reference it, and because updates replace whole lists, an instance launched before an update and one launched after are running different declarations with no record of the difference in the profile itself. A conformance check at this card should assert that dependency and that replacement semantics, not a call sequence.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-003",
+        "quote": "NOTE: This list is atomic. Updates to this field will replace the entire list rather than merging with existing entries."
+      }
+    ]
+  },
+  "domain": {
+    "text": "The network half of this card has a fully stated value domain, and it is the part a builder gets wrong by assuming. Isolation is declared per direction and is explicitly not absolute: \"There are two sorts of isolation for a pod: isolation for egress, and isolation for ingress.\nThey concern what connections may be established. \"Isolation\" here is not absolute, rather it\nmeans \"some restrictions apply\".\" The defaults are open in both directions: \"By default, a pod is non-isolated for egress; all outbound connections are allowed.\" and \"By default, a pod is non-isolated for ingress; all inbound connections are allowed.\" Once a direction is isolated, the allow-list is the entire permission set -- there is no implicit remainder: \"When a pod is isolated for egress, the only allowed connections from the pod are those allowed by\nthe egress list of some NetworkPolicy that applies to the pod for egress.\" And multiple policies union rather than intersect: \"The effects of those egress lists combine additively.\" So the domain of 'network posture' is not a mode with two values; it is two independent directions, each either unrestricted or restricted-to-a-union-of-allow-lists. The profile's own unstated fields also have a stated domain rather than being undefined, which is the one secure-by-default rule sourced in this whole batch: \"podTemplate describes the pod that will be created in the sandbox.\nNote: When provisioned via a SandboxTemplate (such as by a SandboxClaim or SandboxWarmPool),\nif AutomountServiceAccountToken is not specified in the PodSpec, the controller defaults it\nto false to ensure a secure-by-default environment.\"",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-005",
+        "quote": "There are two sorts of isolation for a pod: isolation for egress, and isolation for ingress.\nThey concern what connections may be established. \"Isolation\" here is not absolute, rather it\nmeans \"some restrictions apply\"."
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-006",
+        "quote": "By default, a pod is non-isolated for egress; all outbound connections are allowed."
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-009",
+        "quote": "By default, a pod is non-isolated for ingress; all inbound connections are allowed."
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-007",
+        "quote": "When a pod is isolated for egress, the only allowed connections from the pod are those allowed by\nthe egress list of some NetworkPolicy that applies to the pod for egress."
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-008",
+        "quote": "The effects of those egress lists combine additively."
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-002",
+        "quote": "podTemplate describes the pod that will be created in the sandbox.\nNote: When provisioned via a SandboxTemplate (such as by a SandboxClaim or SandboxWarmPool),\nif AutomountServiceAccountToken is not specified in the PodSpec, the controller defaults it\nto false to ensure a secure-by-default environment."
+      }
+    ]
+  },
+  "failures": {
+    "text": "The most important failure at this card is not an error, and that is exactly why it matters: a declared policy that nothing enforces silently succeeds. The requirement is on the cluster rather than provided by the API -- \"Your cluster must use a network plugin that supports NetworkPolicy enforcement.\" -- and the consequence is stated outright: \"Creating a NetworkPolicy resource without a controller that implements it will have no effect.\" There is no error, no status condition and no rejection; the resource is accepted and the isolation does not exist. This is the same defect class this repo names claimed rather than measured, appearing inside the standard itself, and it is the strongest argument in this batch for why `swap_axis` and a conformance check are not bureaucracy: a profile asserting network isolation is worth nothing without a test that a forbidden connection actually fails. The second failure is the additive rule read as a safety property: \"The effects of those egress lists combine additively.\" -- adding a policy can only widen what is permitted, so an operator tightening isolation by adding a rule has done the opposite of what they intended. Proposed: what a path that has never run must return is unanswered here too, because this repo has built no adapter at this card. Eighth card, same answer.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-010",
+        "quote": "Your cluster must use a network plugin that supports NetworkPolicy enforcement."
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-011",
+        "quote": "Creating a NetworkPolicy resource without a controller that implements it will have no effect."
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-008",
+        "quote": "The effects of those egress lists combine additively."
+      }
+    ]
+  },
+  "vocabulary": {
+    "text": "The configurable words here are the profile's fields, and the step each applies at is the distinction this card exists to make -- a word on the profile applies at launch, for every instance launched under it, and cannot be changed for an instance already running. That is the boundary the API states: \"SandboxBlueprint defines the configuration shared between Sandbox and SandboxTemplate.\nIt deliberately excludes runtime-only fields (operatingMode, lifecycle).\" So operatingMode and lifecycle are instance words (card 3.3) and everything else is profile words. Two of those have stated behaviour worth knowing before building. A list field replaces wholesale: \"NOTE: This list is atomic. Updates to this field will replace the entire list rather than merging with existing entries.\" And an omitted security field is closed rather than open: \"podTemplate describes the pod that will be created in the sandbox.\nNote: When provisioned via a SandboxTemplate (such as by a SandboxClaim or SandboxWarmPool),\nif AutomountServiceAccountToken is not specified in the PodSpec, the controller defaults it\nto false to ensure a secure-by-default environment.\" The network words are the two directions of `policyTypes`, and their step is the policy's selector rather than the profile: a pod becomes isolated because some policy selects it, so the same profile yields different isolation depending on what else exists in the cluster -- \"By default, a pod is non-isolated for egress; all outbound connections are allowed.\" Proposed: this repo has built no adapter at this card, so no mapping from its own `intent:` / `profile:` vocabulary onto these has been chosen. That is the eighth card with the same half proposed, and the interesting one, because this card is where the word `profile:` in that vocabulary would actually land.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-001",
+        "quote": "SandboxBlueprint defines the configuration shared between Sandbox and SandboxTemplate.\nIt deliberately excludes runtime-only fields (operatingMode, lifecycle)."
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-003",
+        "quote": "NOTE: This list is atomic. Updates to this field will replace the entire list rather than merging with existing entries."
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-002",
+        "quote": "podTemplate describes the pod that will be created in the sandbox.\nNote: When provisioned via a SandboxTemplate (such as by a SandboxClaim or SandboxWarmPool),\nif AutomountServiceAccountToken is not specified in the PodSpec, the controller defaults it\nto false to ensure a secure-by-default environment."
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-006",
+        "quote": "By default, a pod is non-isolated for egress; all outbound connections are allowed."
+      }
+    ]
+  },
+  "swap_axis": {
+    "text": "What a second implementation must differ on, and this card is the one where the obvious answer is the wrong one. The card's own subtitle names three runtime kinds -- containers, VMs, WASM -- and they look like the axis. They are not, for the reason card 3.3's profile already found about gVisor and Kata: swapping the runtime under one profile leaves the declaration, the call shape and the lifecycle identical. The axis is whether isolation is *declared or enforced*, and the standard states the gap itself: \"Your cluster must use a network plugin that supports NetworkPolicy enforcement.\" with the consequence \"Creating a NetworkPolicy resource without a controller that implements it will have no effect.\" So a genuine pair at this card is a profile whose network posture is enforced against one whose posture is merely recorded, and the observable is a connection: a forbidden egress that fails against the first and succeeds against the second, with identical declarations on both. A conformance check can read that, and nothing short of attempting the connection can. The secondary axis, for the profile object rather than its enforcement, is the default: a bundle whose unstated fields are closed -- \"podTemplate describes the pod that will be created in the sandbox.\nNote: When provisioned via a SandboxTemplate (such as by a SandboxClaim or SandboxWarmPool),\nif AutomountServiceAccountToken is not specified in the PodSpec, the controller defaults it\nto false to ensure a secure-by-default environment.\" -- against one whose unstated fields inherit the platform's defaults, which differ in what an incomplete profile grants.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-010",
+        "quote": "Your cluster must use a network plugin that supports NetworkPolicy enforcement."
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-011",
+        "quote": "Creating a NetworkPolicy resource without a controller that implements it will have no effect."
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-002",
+        "quote": "podTemplate describes the pod that will be created in the sandbox.\nNote: When provisioned via a SandboxTemplate (such as by a SandboxClaim or SandboxWarmPool),\nif AutomountServiceAccountToken is not specified in the PodSpec, the controller defaults it\nto false to ensure a secure-by-default environment."
+      }
+    ]
+  },
+  "standards": [],
+  "tools": [
+    {
+      "name": "Kubernetes SIG Agent Sandbox (SandboxTemplate / SandboxBlueprint)",
+      "kind": "open-source",
+      "note": "the source for what a runtime profile is and, crucially, for where it stops. Card 3.3 already names this project as a tool for the running boundary; this card cites its blueprint type for the declaration. Not in use here: this repo is stdlib-only and has built no adapter at this card.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "Its blueprint type states the profile/instance split outright: \"SandboxBlueprint defines the configuration shared between Sandbox and SandboxTemplate.\nIt deliberately excludes runtime-only fields (operatingMode, lifecycle).\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-4-1-runtime-profiles-001",
+            "quote": "SandboxBlueprint defines the configuration shared between Sandbox and SandboxTemplate.\nIt deliberately excludes runtime-only fields (operatingMode, lifecycle)."
+          }
+        ]
+      }
+    },
+    {
+      "name": "Kubernetes NetworkPolicy",
+      "kind": "open-source",
+      "note": "the network half of the profile, and the source of this card's central failure - a policy object whose enforcement is a different component's responsibility. Not in use here.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "It states that enforcement is the cluster's to provide: \"Your cluster must use a network plugin that supports NetworkPolicy enforcement.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-4-1-runtime-profiles-010",
+            "quote": "Your cluster must use a network plugin that supports NetworkPolicy enforcement."
+          }
+        ]
+      }
+    },
+    {
+      "name": "CoreWeave Sandboxes (sandbox policy)",
+      "kind": "hosted",
+      "note": "one commercial implementation of the same bundle, cited because it documents every field and carries a cardinality rule the open API does not. Not in use here; it is in public preview by its own statement.",
+      "in_use_here": false,
+      "evidence": {
+        "text": "It documents the bundle and its scope: \"This page documents every field in a sandbox policy. A policy is carried on a managed runner as the policy field, and because a cluster hosts at most one runner, one policy governs one cluster.\"",
+        "origin": "sourced",
+        "evidence": [
+          {
+            "id": "X-refmodel-4-1-runtime-profiles-004",
+            "quote": "This page documents every field in a sandbox policy. A policy is carried on a managed runner as the policy field, and because a cluster hosts at most one runner, one policy governs one cluster."
+          }
+        ]
+      }
+    }
+  ],
+  "landscape": {
+    "text": "The options differ on two axes and the visible one is the less important. The visible axis is what fills the bundle -- a container, a microVM, a WASM component, the last describing its isolation as hermeticity: \"Wasm components are a container format and type\nsystem that wrap Core Wasm instructions into typed, hermetic binaries and libraries (think: ELF).\" A platform choosing among those is choosing a startup cost and a syscall surface, and the caller sees none of it, which is precisely why card 3.3's profile concluded that an adapter pair built from that list would pass a swap test while proving nothing. The axis that decides whether a profile is worth anything is whether the declaration is enforced: \"Creating a NetworkPolicy resource without a controller that implements it will have no effect.\" That is the real tradeoff, and it is a tradeoff about the platform rather than the runtime -- a fast runtime under an unenforced network policy is less isolated than a slow one under an enforced policy, and no property of the runtime reveals which you have. The secondary tradeoff is in the defaults: closed-by-default profiles -- \"podTemplate describes the pod that will be created in the sandbox.\nNote: When provisioned via a SandboxTemplate (such as by a SandboxClaim or SandboxWarmPool),\nif AutomountServiceAccountToken is not specified in the PodSpec, the controller defaults it\nto false to ensure a secure-by-default environment.\" -- make incomplete declarations safe and make the profile the only place isolation can be loosened, which is what a platform deciding isolation for its callers needs.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-012",
+        "quote": "Wasm components are a container format and type\nsystem that wrap Core Wasm instructions into typed, hermetic binaries and libraries (think: ELF)."
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-011",
+        "quote": "Creating a NetworkPolicy resource without a controller that implements it will have no effect."
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-002",
+        "quote": "podTemplate describes the pod that will be created in the sandbox.\nNote: When provisioned via a SandboxTemplate (such as by a SandboxClaim or SandboxWarmPool),\nif AutomountServiceAccountToken is not specified in the PodSpec, the controller defaults it\nto false to ensure a secure-by-default environment."
+      }
+    ]
+  },
+  "usage": {
+    "text": "A caller at this card does not write a profile. Isolation is named explicitly among the things this repo's planning layer decides so the caller does not -- a caller writes an intent and at most one word of profile rather than deciding \"decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger\". This is the card where that one word lands, and the profile's own boundary says what the word can select: a bundle, applied at launch, not a setting on a running instance -- \"SandboxBlueprint defines the configuration shared between Sandbox and SandboxTemplate.\nIt deliberately excludes runtime-only fields (operatingMode, lifecycle).\" What an example built from this card must assert is the enforcement rather than the declaration: that a unit launched under a profile forbidding egress cannot reach the network, demonstrated by a failed connection and not by reading the profile back.",
+    "origin": "sourced",
+    "evidence": [
+      {
+        "id": "REF-3-02",
+        "quote": "decide routing, isolation, retries, model tier, budget ceiling, deadline, telemetry, provenance, the ledger"
+      },
+      {
+        "id": "X-refmodel-4-1-runtime-profiles-001",
+        "quote": "SandboxBlueprint defines the configuration shared between Sandbox and SandboxTemplate.\nIt deliberately excludes runtime-only fields (operatingMode, lifecycle)."
+      }
+    ]
+  },
+  "gaps": [
+    {
+      "what": "`standards` is empty, and for this card that is a fourth distinct reason. The two OCI directories under standards/ are both cited by card 3.3 and both govern the running instance - the runtime and the image - not the declaration. What governs the declaration is a Kubernetes API and a vendor's policy schema, neither of which is a standard. So the card whose whole subject is a *portable* bundle of isolation settings has no portable definition of that bundle.",
+      "why_it_matters": "It is the practical consequence of this card existing separately from 3.3: a profile expressed in one platform's schema does not move, so 'swap the runtime without touching the caller' holds while 'swap the platform without rewriting the profiles' does not. Four cards in this batch now have an empty standards list for four different reasons, which is the schema finding recorded on base.1 getting stronger rather than a repetition.",
+      "research_query": "is there any cross-platform schema for a sandbox profile - check the OCI runtime spec's config.json as a candidate, and whether SandboxBlueprint is proposed for wider adoption"
+    },
+    {
+      "what": "The WASM third of the card is barely sourced. One sentence from a release announcement describes components as typed and hermetic; nothing here states what a WASM component's isolation actually guarantees, what its profile fields are, or how a network posture is even expressed for a runtime with no pod and no network namespace.",
+      "why_it_matters": "The card names three runtime kinds and the network half of the profile was sourced entirely from the container model. If WASM cannot express the same posture, the three kinds are not three fillings of one bundle and the card's own framing is wrong.",
+      "research_query": "capture the WASI 0.2 specification or the component model documentation for how a component's capabilities - filesystem, network, clocks - are granted and denied, rather than the release announcement"
+    },
+    {
+      "what": "The enforcement gap is sourced but not measured, and this repo cannot measure it. X-refmodel-4-1-runtime-profiles-011 records that a policy without a controller has no effect; verifying which case a given platform is in requires attempting a forbidden connection from inside a sandbox, and every harness live adapter here is claimed rather than run (STATUS row 37).",
+      "why_it_matters": "It is the one place in this batch where a card's central claim is exactly the kind this repo already knows it cannot check, and the profile says so rather than implying the check is available. An example built from this card would assert enforcement in its dry-run adapter and prove nothing about a real cluster.",
+      "research_query": "none for sourcing - this is STATUS row 37's question, and this card is the strongest argument for closing it"
+    },
+    {
+      "what": "This card's boundary against 3.3 Runtime/Sandbox is sourced, which is worth stating because two other cards in this batch had boundaries that were not. The blueprint type excludes operatingMode and lifecycle, so declaration and instance are genuinely different objects. What is not settled is whether the reference model needs both cards: everything this profile says about the bundle could be a section of 3.3, and 3.3's own gaps already reach for the template/claim split.",
+      "why_it_matters": "Unlike rail.1, base.1 and base.4, the answer here is not 'the model is bucketing'. The distinction is real in the source. The open question is only whether it earns a separate card, which is a smaller decision and a better-evidenced one.",
+      "research_query": "none - a reference-model decision for the owner, and the only one of the four boundary questions in this batch that has sourced evidence on both sides"
+    },
+    {
+      "what": "No adapter has been built at this card, so `vocabulary`'s platform-mapping half and `failures`' never-run half are proposed - the eighth and last card of the batch with the same two halves open.",
+      "why_it_matters": "This card is where it costs most. The one word of `profile:` that this repo's caller vocabulary grants would be selected here, and card 3.3's profile-sufficiency finding 10 records that this exact knob was once built unreachable. The join between the caller's word and a profile's fields is the thing an adapter would settle, and it is unsettled on the card that needs it.",
+      "research_query": "when an adapter is built at 3.3 or 4.1, map this repo's `profile:` word onto a named bundle and record which fields it selects"
+    }
+  ]
+}

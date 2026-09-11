@@ -31,6 +31,15 @@ TIERS = (None, "core", "watch", "excluded")
 # position, so the join is unambiguous -- declared here and echoed into the output rather than
 # normalised away silently, because a mapping nobody can see is a mapping nobody can dispute.
 KEY_ALIAS = {"cross": "concerns"}
+# The source document names four tools by a shorter or longer form than the catalogue does.
+# Declared, not guessed: an undeclared variant would let an unsupported tool pass the source check
+# by accident, which is the same hole the knobs manifest closes for inert declarations.
+NAME_VARIANTS = {
+    "Open Policy Agent": ["OPA"],
+    "Apache Kafka": ["Kafka"],
+    "Kata Containers": ["Kata"],
+    "OTel Collector": ["OpenTelemetry Collector", "OTel"],
+}
 EXCLUDE_REASONS = (None, "licence", "pricing", "both")
 # T(tier, license, kind, maturity, note, verified, exclude) -- from the source's own helper
 T_FIELDS = ("tier", "license", "kind", "maturity", "note", "verified", "exclude")
@@ -142,12 +151,28 @@ def build() -> dict:
         "note": "Derived. Do not hand-edit: rerun tools/extract_reference_stack.py. Joins to "
                 "docs/reference/reference-model.json by layer key.",
         "source_claimed": src_line.group(1).strip() if src_line else None,
+        "source_resolved": str((ROOT / "ref_arch" / "uploads"
+                                / "mvp-scale-open-stack-alignment-v3.md").relative_to(ROOT))
+                           if (ROOT / "ref_arch" / "uploads"
+                               / "mvp-scale-open-stack-alignment-v3.md").is_file() else None,
+        "name_variants": NAME_VARIANTS,
         "key_aliases": KEY_ALIAS,
         "meta": export("meta", text),
         "standards": export("standards", text),
         "tools": export("tools", text),
         "layers": export("layers", text),
     }
+
+
+def source_doc() -> tuple:
+    """The document the stack cites, and whether it is actually in the repository.
+
+    Until 2026-09-11 it was not: the header named uploads/mvp-scale-open-stack-alignment-v3.md and
+    no such file existed, so 103 tools and 12 licence exclusions rested on a dangling claim. The
+    check exists so that cannot go quiet again.
+    """
+    p = ROOT / "ref_arch" / "uploads" / "mvp-scale-open-stack-alignment-v3.md"
+    return p, (p.read_text() if p.is_file() else None)
 
 
 def checks(d: dict) -> list:
@@ -194,6 +219,25 @@ def checks(d: dict) -> list:
 
     nolic = sorted({n for n, t in tools.items() if not (t.get("license") or "").strip()})
     out.append(("every tool names a licence", not nolic, nolic))
+
+    src_path, src = source_doc()
+    out.append((f"the cited source document exists ({src_path.relative_to(ROOT)})",
+                src is not None, [] if src else [str(src_path.relative_to(ROOT))]))
+    if src:
+        low = src.lower()
+        # REPORTED, NOT BLOCKING, on purpose. cellplane-stack.js is the maturer artifact -- it is
+        # what the page renders and what this tool derives from; the markdown is its stated source
+        # and may lag it. Blocking here would force a new tool to wait for the prose to catch up.
+        # What DOES block is the document being absent, above: that is the dangling-claim case.
+        ahead = sorted(n for n in tool_names
+                       if n.lower() not in low
+                       and not any(v.lower() in low for v in NAME_VARIANTS.get(n, [])))
+        out.append((f"tools ahead of the cited source (reported, never blocking): "
+                    f"{len(ahead)} of {len(tool_names)}" + (f" -- {ahead}" if ahead else ""),
+                    True, []))
+        stale_variants = sorted(n for n in NAME_VARIANTS if n not in tool_names)
+        out.append(("every declared name variant names a tool in the catalogue",
+                    not stale_variants, stale_variants))
 
     orphan = sorted(tool_names - {t for l in layers for c in l["challenges"]
                                   for k in ("picks", "alts", "excluded")

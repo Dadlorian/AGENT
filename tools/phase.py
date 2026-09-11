@@ -47,6 +47,8 @@ GATES = [
     ("inert self-test", ["python3", "tools/inert_check.py", "--selftest"], True),
     ("named proof",    ["python3", "tools/named_proof.py"], True),
     ("named proof self-test", ["python3", "tools/named_proof.py", "--selftest"], True),
+    ("grader isolation", ["python3", "tools/grader_isolation.py"], True),
+    ("grader isolation self-test", ["python3", "tools/grader_isolation.py", "--selftest"], True),
     # Lesson 72 said this tool should refuse a plan whose items did not move. The tool was
     # built and wired to nothing, so for seven days it refused nothing. Blocking on purpose:
     # a non-blocking improvement gate is the exact failure mode -- a lesson that runs and

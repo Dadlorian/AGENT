@@ -15,4 +15,4 @@
 | 85 | Ready to build | python3 tools/ready_to_build.py exits zero | Open | 3 of 8 conditions met |
 | 86 | Examples layer points at archived | No tool or doc names the archived seven areas | Open | 7 artifacts name them, 2 are gates |
 | 88 | Lessons that run | Every lessons.jsonl sharper_check is a phase.py gate, not prose | Open | 2 of 10 wired, loop ranks the rest |
-| 89 | Reference stack | Every stack claim cites a fetched record or is marked proposed | Open | Derived and gated, source doc absent |
+| 89 | Reference stack | Every stack claim cites a fetched record or is marked proposed | Open | Source present and gated, not yet kb |

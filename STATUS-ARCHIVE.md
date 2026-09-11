@@ -75,3 +75,6 @@
 | 87 | Prose gate | python3 tools/prose_gate.py exits zero and --selftest passes | Done | 1 new defect, 2 restated fabrications | 2026-09-10 26a1cd6 |
 | 88 | ref_arch glossary indexed by card | python3 tools/index_glossary.py --coverage runs clean | Done | 28 of 40 cards reached, 12 not | 2026-09-10 33fc103 |
 | 89 | Vocabulary review on the record | python3 tools/import_glossary_review.py --check exits zero | Done | 273 reviews recorded, 2 flags checked, 2 uncovered | 2026-09-10 f420d25 |
+| 74 | Phase 10: consumption pattern | examples/run and examples/ask tests green through four doors | Done | superseded by row 79, areas archived | 2026-09-10 172f84a |
+| 75 | Phase 11: user-view examples | docs/examples/index.md shows seven green visible and hidden checks | Done | superseded by row 79, areas archived | 2026-09-10 172f84a |
+| 82 | Egress log integrity | reconcile_egress.py checks egress_ref matches its own log entry | Done | reconcile_egress exits zero, chain reconciled | 2026-09-10 172f84a |

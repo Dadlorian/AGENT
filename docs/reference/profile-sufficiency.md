@@ -224,6 +224,23 @@ which of the recommendations below travel, and which may be an artifact of this 
 > 1-5.json against the old property set by all six field names. The finding to keep is not the fix:
 > **this repo has a declared shape with no gate behind it**, which is the same shape of defect as a
 > `KNOWN_RED` excuse — something that reads as coverage and is not.
+>
+> **The scope-limit instrument, refined on card 6.3 Lineage — it can return a negative, and the
+> negative is the useful half.** 6.1 found `swap_axis` by reading the standard's own scope statement.
+> Applied to OpenLineage the same read says the transport is a *configurable backend*, and that is
+> the opposite of a swap axis: what a standard declares interchangeable is precisely the relabelling
+> a swap test must not be satisfied by. The real axis was one field further in — `processingType`
+> BATCH against STREAMING, where the standard tells a consumer outright that terminal events cannot
+> be relied upon. So the instrument has two readings, and both are worth taking: **what the standard
+> says it does not guarantee gives you the axis; what the standard says is configurable gives you the
+> decoy.** A card whose `tools[]` entries differ only on something the standard calls configurable
+> has no swap axis yet.
+>
+> **`operations`' order half now has three measured shapes, and the field's wording fits one.** Card
+> 3.3: a strict lifecycle. Card 6.1: one verb, no order. Card 6.3: a partial order with a declared
+> exemption — one state may arrive before the start state, so a fixed sequence is something the
+> standard contradicts. The field should ask for the ordering *constraints* rather than the order:
+> what must precede what, what may repeat, what is exempt, and what terminates.
 
 A second area, built from a profile of a different kind, would settle it. That is one area of work,
 not nine, and it is worth doing before eight profiles are authored against a schema this note

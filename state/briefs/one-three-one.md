@@ -61,6 +61,41 @@ already implements that exact backoff, with a `flock` and a refusal on red.
 The inverse held too: research, the step every citation rests on, ran at `model: 'haiku',
 effort: 'medium'` with a retry branch for when it came back thin.
 
+## What we actually have
+
+```
+Mechanisms available in this harness, and what each actually saves:
+
+  fork (Agent subagent_type "fork")
+      Inherits the parent's full context. Saves REDISCOVERY -- the tool calls and orientation
+      turns that rebuild what the captain already knows. Does NOT save carriage: a fork pays the
+      whole inherited prefix on every one of its own turns, so three forks off a large captain
+      cost three times that prefix. Fork after the recon, from a deliberately small captain.
+      Constraint: a fork always runs the parent's model and effort; a model override is ignored.
+
+  workflow resume (Workflow scriptPath + resumeFromRunId)
+      This is rewind. The longest unchanged prefix of agent() calls returns cached results
+      instantly; only the first edited or new call and everything after it runs live. Edit the
+      script, relaunch with the same runId, and the earlier stages are not re-run at all.
+
+  continue an existing agent (SendMessage to its id)
+      Keeps one agent's prefix warm across successive questions instead of paying a cold start
+      per question. The read-once-then-ask-repeatedly shape.
+
+  per-agent tiering (Workflow agent opts.model / opts.effort)
+      The only place model AND effort are settable per call. The plain Agent tool takes a model
+      override but inherits session effort; fork takes neither.
+
+  background (run_in_background)
+      Parallelism, not a token saving. Included so it is not mistaken for one.
+
+Patterns flagged: whole-file read of a large shared artifact; procedure in a prompt;
+agent self-report where a gate could decide; fan-out that does not name fork.
+```
+
+`python3 tools/token_review.py` flags these patterns in any agent-facing text before a workload
+is fired. It is wired into `phase.py` as non-blocking: it warns, it never stops you.
+
 ## Running a 3-1-3-1
 
 1. **Recon once, in the captain.** Gather the evidence yourself. Read the artifacts, compute the

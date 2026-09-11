@@ -44,6 +44,7 @@ GATES = [
     ("prose self-test", ["python3", "tools/prose_gate.py", "--selftest"], True),
     ("examples",       ["python3", "tools/examples_gate.py"], True),
     ("ceremony nums",  ["python3", "tools/ceremony_next.py", "--check"], False),
+    ("token patterns", ["python3", "tools/token_review.py"], False),
     ("card map",       ["python3", "tools/check_card_example_map.py"], True),
     ("ref model",      ["python3", "tools/extract_reference_model.py", "--check"], True),
     ("status",         ["python3", "tools/status_check.py", "--freshness"], True),

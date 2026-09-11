@@ -45,6 +45,11 @@ GATES = [
     ("examples",       ["python3", "tools/examples_gate.py"], True),
     ("inert",          ["python3", "tools/inert_check.py"], True),
     ("inert self-test", ["python3", "tools/inert_check.py", "--selftest"], True),
+    # Lesson 72 said this tool should refuse a plan whose items did not move. The tool was
+    # built and wired to nothing, so for seven days it refused nothing. Blocking on purpose:
+    # a non-blocking improvement gate is the exact failure mode -- a lesson that runs and
+    # decides nothing. Fire a plan you intend to finish.
+    ("improvement",    ["python3", "tools/improvement_loop.py", "check"], True),
     ("ceremony nums",  ["python3", "tools/ceremony_next.py", "--check"], False),
     ("token patterns", ["python3", "tools/token_review.py"], False),
     ("card map",       ["python3", "tools/check_card_example_map.py"], True),

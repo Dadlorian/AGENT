@@ -80,6 +80,27 @@ def observe(area: Path, adapter: str, unit_kw: dict, unpack_kw: dict) -> tuple:
             sys.modules.pop(m, None)
 
 
+def document_fields(area: Path) -> dict:
+    """Keys declared by an area's entry and unit documents.
+
+    The ceremony-75 lesson this tool implements names these explicitly: "each field an entry or
+    unit document declares ... must be paired with a check that runs the same door or unit twice,
+    changing only that value". Reference areas do not carry entries/ or units/ yet, so this arm is
+    dormant rather than absent -- it engages the moment an area declares one, which is the point of
+    writing it now instead of after the next recurrence.
+    """
+    out = {}
+    for sub in ("entries", "units"):
+        for doc in sorted((area / sub).glob("*.json")) if (area / sub).is_dir() else []:
+            try:
+                data = json.loads(doc.read_text())
+            except Exception:
+                continue
+            for key in (data if isinstance(data, dict) else {}):
+                out[f"{sub}/{doc.name}.{key}"] = doc
+    return out
+
+
 def declared_fields(area: Path) -> dict:
     sys.path.insert(0, str(area))
     try:
@@ -101,8 +122,22 @@ def check(area: Path, knobs_override=None) -> list:
     knobs = knobs_override if knobs_override is not None else (cards.get("knobs") or [])
     by_field = {k.get("field"): k for k in knobs}
     fields = declared_fields(area)
+    docs = document_fields(area)
     adapters = cards.get("runnable_adapters") or ["dryrun", "second"]
     findings = []
+
+    # The document arm. A declared key with no knobs entry is the same defect as an unreachable
+    # dataclass field; it is reported the same way and cannot be silently omitted.
+    for name in sorted(docs):
+        knob = by_field.get(name)
+        if not knob:
+            findings.append({"field": name, "verdict": "undeclared",
+                             "what": f"declared in {docs[name].name} with no `knobs` entry"})
+        elif knob.get("carried"):
+            findings.append({"field": name, "verdict": "carried", "what": knob.get("why", "")})
+        else:
+            findings.append({"field": name, "verdict": "live",
+                             "what": knob.get("why", "declared as varied")})
 
     for name in sorted(fields):
         knob = by_field.get(name)
@@ -131,7 +166,7 @@ def check(area: Path, knobs_override=None) -> list:
                              "what": knob.get("why", "declared as varied"), "adapters": adapters})
 
     for f in by_field:
-        if f not in fields:
+        if f not in fields and f not in docs:
             findings.append({"field": f, "verdict": "undeclared",
                              "what": "knobs names a field the interface does not declare"})
     return findings
@@ -145,7 +180,11 @@ def report(area: Path, findings: list) -> int:
     dist = {}
     for f in findings:
         dist[f["verdict"]] = dist.get(f["verdict"], 0) + 1
-    print(f"\n{area.name}: {len(findings)} declared field(s) - "
+    docs_n = len(document_fields(area))
+    print(f"\n{area.name}: {len(findings)} declared field(s), "
+          f"{docs_n} from entry or unit documents"
+          + (" (this area declares none; that arm is dormant, not skipped)" if not docs_n else "")
+          + " - "
           + "  ".join(f"{v} {k}" for k, v in sorted(dist.items(), key=lambda x: -x[1])))
     print(f"{len(blocking)} need a person.")
     return 1 if blocking else 0
@@ -166,8 +205,26 @@ def selftest() -> int:
     print(f"  after planting:  {len(dirty)} blocking finding(s) "
           + ", ".join(f"{f['field']} {f['verdict']}" for f in dirty))
     ok = not clean and any(f["verdict"] == "inert" for f in dirty)
-    print("PASS - the check fails on an inert declaration and is green without one" if ok
-          else "FAIL - the check did not catch the planted inert declaration")
+
+    # Part two: the document arm is dormant on every live area, so it would otherwise ship having
+    # never run. Build a throwaway area that declares an entry key nobody vouches for.
+    import shutil, tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        fake = Path(tmp) / "fake-area"
+        shutil.copytree(area, fake, ignore=shutil.ignore_patterns("__pycache__", "out"))
+        (fake / "entries").mkdir(exist_ok=True)
+        (fake / "entries" / "human.json").write_text(
+            json.dumps({"door": "human", "deadline_seconds": 900}) + "\n")
+        doc_findings = check(fake, real)
+        caught = {f["field"] for f in doc_findings if f["verdict"] == "undeclared"}
+    want = {"entries/human.json.door", "entries/human.json.deadline_seconds"}
+    doc_ok = want <= caught
+    print("  document arm: planted 2 undeclared entry keys, caught "
+          f"{sorted(caught & want)}")
+    ok = ok and doc_ok
+    print("PASS - the check fails on an inert declaration and on an undeclared document key, "
+          "and is green without either" if ok
+          else "FAIL - the check did not catch a planted defect")
     return 0 if ok else 1
 
 

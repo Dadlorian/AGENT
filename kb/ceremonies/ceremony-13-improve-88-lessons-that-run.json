@@ -1,0 +1,41 @@
+{
+  "ceremony": 13,
+  "section": "88-lessons-that-run",
+  "improver": "opus-5",
+  "date": "2026-09-11",
+  "numbering_note": "Paired with kb/ceremonies/ceremony-13-review-88-lessons-that-run.json. Every finding appears exactly once.",
+  "applied": [
+    {
+      "finding": "C13-001",
+      "change": "Added `capability` as a second unit. A candidate is a row in state/lessons.jsonl whose sharper_check names no tool that exists, or names one tools/phase.py does not run -- a lesson that is written down and does not run. Plan items now carry `unit` and `kind`; skill items keep their `skill` key so nothing about the existing behaviour changed. cmd_check re-reads the lessons file for a capability item rather than trusting the improve record, because asserting a lesson now runs is exactly the move the stop condition exists to refuse. Five candidates surfaced on the first scan.",
+      "files": ["tools/improvement_loop.py", "state/improvement-plan.json"]
+    },
+    {
+      "finding": "C13-002",
+      "change": "Recorded the recurrence as data and ranked on it: the three ceremony-75 rows now carry `recurred_at: [12-79-reference-example]` with a note naming how each came back, and capability_candidates sorts recurred-first, then no-tool-at-all, then oldest. The plan of one then selected 75-run-boundary -- a lesson with demonstrated rather than argued cost -- instead of the cheapest item.",
+      "files": ["tools/improvement_loop.py", "state/lessons.jsonl"]
+    },
+    {
+      "finding": "C13-003",
+      "change": "Wired `improvement_loop.py check` into tools/phase.py as a blocking gate, with the reason in a comment: a non-blocking improvement gate is a lesson that runs and decides nothing. Proven in both directions before trusting it -- exit 1 naming three unmoved items on a plan of three, exit 0 on the fired plan of one. Gates 19 to 20.",
+      "files": ["tools/phase.py"]
+    },
+    {
+      "finding": "C13-004",
+      "change": "The stop condition is exists AND wired, so the loop measures execution rather than presence. STATUS row 88 restated on that definition: 2 of 10 wired, down from the flattering 5 of 9. The four tools that exist and are unwired (litmus_check, litmus_answers, spot_check, and improvement_loop before this ceremony) are now ranked candidates rather than an unmeasured claim -- and litmus_check turns out to be red with 3 errors nobody was seeing, which the next plan inherits.",
+      "files": ["tools/improvement_loop.py", "STATUS.md"]
+    },
+    {
+      "finding": "C13-005",
+      "change": "--selftest now plants the document arm as well as the interface arm: it copies the live area into a temp dir, adds an entries/human.json declaring `door` and `deadline_seconds` that no knobs entry vouches for, and requires both reported undeclared. Without it the arm would have shipped green having never run on any input.",
+      "files": ["tools/inert_check.py"]
+    },
+    {
+      "finding": "C13-006",
+      "change": "Closed 75-run-boundary on the two arms actually covered, kept its original text under `sharper_check_original`, and split the uncovered third into a new lesson row 12b-extension-points with its own sharper_check -- explicitly not yet a command, with what it would take and the instruction to plant a row before trusting it. The loop now ranks the remainder instead of the parent reading as finished.",
+      "files": ["state/lessons.jsonl"]
+    }
+  ],
+  "declined": [],
+  "owner_note": "The owner's correction was right and is recorded rather than smoothed over: this work was asked for one turn earlier, in almost these words, and was deferred back to them as an owner-level design decision about what the loop optimises. Widening a loop so it can take a finding as an item is not a change to what it optimises -- it is the difference between a loop that can react and one that cannot. The standing instruction is to decide and keep it additive, which is what the second attempt did."
+}

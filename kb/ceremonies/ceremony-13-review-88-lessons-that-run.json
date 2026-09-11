@@ -1,0 +1,75 @@
+{
+  "ceremony": 13,
+  "section": "88-lessons-that-run",
+  "reviewer": "opus-5, review of the improvement loop itself after the owner asked why the reaction plan did not fire",
+  "date": "2026-09-11",
+  "numbering_note": "tools/ceremony_next.py read 13 off disk. Paired with kb/ceremonies/ceremony-13-improve-88-lessons-that-run.json.",
+  "scope": "tools/improvement_loop.py, tools/inert_check.py, tools/phase.py, state/lessons.jsonl. STATUS rows 21 and 88.",
+  "findings": [
+    {
+      "id": "C13-001",
+      "location": "tools/improvement_loop.py cmd_plan, cmd_check, state/improvement-plan.json",
+      "severity": "block",
+      "category": "completeness",
+      "finding": "The loop's only unit was a skill. Plan items were keyed by `skill`, every target came from a litmus question or a skill's open findings, and cmd_check looked each item up in skill_health. A finding about a tool, a gate or an example area could not enter a plan at all -- so nothing in the repo was pulling on ceremony 75's lessons, and all three recurred seven days later.",
+      "evidence": "state/improvement-plan.json items carry a `skill` key; target_for() reads row['skill']; cmd_check does rows.get(it['skill']).",
+      "suggested_change": "Add a second unit -- capability debt -- whose stop condition is mechanical, so 'we learned something' cannot be marked done by asserting it."
+    },
+    {
+      "id": "C13-002",
+      "location": "tools/improvement_loop.py capability_candidates()",
+      "severity": "fix",
+      "category": "correctness",
+      "finding": "First cut ranked capability debt by date alone, which put the cheapest items first: lessons whose tool already existed and merely was not wired outranked the three that had actually recurred and cost a real defect.",
+      "evidence": "Plan of 3 returned lessons 66, 67-69 and 72 -- all tool-exists-unwired -- while the three ceremony-75 lessons that recurred on 2026-09-11 ranked below them.",
+      "suggested_change": "Rank demonstrated cost first: a lesson that has already recurred, then one with no tool at all, then oldest. Record the recurrence in the lesson row so the rank is data and not judgement."
+    },
+    {
+      "id": "C13-003",
+      "location": "tools/phase.py GATES",
+      "severity": "fix",
+      "category": "completeness",
+      "finding": "tools/improvement_loop.py check was built at ceremony 72 to refuse a plan whose items did not move, and was wired into nothing. For seven days it refused nothing. Lesson 72's own sharper_check named a tool that ran only when someone typed it.",
+      "evidence": "phase.py GATES contained no improvement_loop entry; the loop's own candidate scan reports lesson 72 as 'names improvement_loop but tools/phase.py runs none of them'.",
+      "suggested_change": "Wire it blocking. A non-blocking improvement gate is the same failure mode one level up."
+    },
+    {
+      "id": "C13-004",
+      "location": "STATUS.md row 88, and the count reported to the owner",
+      "severity": "fix",
+      "category": "measurement",
+      "finding": "The earlier count '5 of 9 sharper_checks executable' measured whether a tool EXISTS, not whether anything runs it. Four of those five name tools that exist and that phase.py never invokes, so the lesson does not actually run. The number flattered the state.",
+      "evidence": "Loop candidate scan: lessons 66, 67-69, 72 all 'names [tool] but tools/phase.py runs none of them'. Measured again on the stricter definition: 2 of 10.",
+      "suggested_change": "Make exists-AND-wired the stop condition, and restate the row on that definition."
+    },
+    {
+      "id": "C13-005",
+      "location": "tools/inert_check.py document arm",
+      "severity": "fix",
+      "category": "evidence",
+      "finding": "The entry/unit document arm added to satisfy ceremony 75's rule would have shipped having never executed: no live reference area declares entries/ or units/, so the code path was dormant on every real input.",
+      "evidence": "inert_check reports '0 from entry or unit documents' for the only live area.",
+      "suggested_change": "Plant it: build a throwaway area declaring entry keys nobody vouches for and require both caught, in --selftest."
+    },
+    {
+      "id": "C13-006",
+      "location": "state/lessons.jsonl 75-run-boundary",
+      "severity": "fix",
+      "category": "honesty",
+      "finding": "Pointing the lesson's sharper_check at the new tool would have closed a three-arm rule on two arms. The extension-points table arm is not covered and no live area exercises it, so closing the parent would have retired the remaining third silently -- the same shape as the defect the ceremony is about.",
+      "evidence": "The lesson names entry/unit document fields, interface-declared values, and every row of the extension-points table. inert_check covers the first two.",
+      "suggested_change": "Close what is covered, split the remainder into its own lesson row so the loop keeps ranking it."
+    }
+  ],
+  "metrics": {
+    "units_before": ["skill"],
+    "units_after": ["skill", "capability"],
+    "capability_candidates_found": 5,
+    "plan_fired": 1,
+    "plan_items_moved": 1,
+    "loop_check_refuses": "exit 1 naming 3 unmoved items on a plan of 3; exit 0 on the fired plan of 1",
+    "gates_before": 19,
+    "gates_after": 20,
+    "sharper_checks_wired": "2 of 10 on the exists-and-wired definition"
+  }
+}

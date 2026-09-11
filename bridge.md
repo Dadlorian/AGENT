@@ -60,8 +60,15 @@ gates do not run.** `acceptance_check.py --check` was red before this session: t
 written 2026-09-09 and commit `9a53ecc` added `proposed` rows to three cap- skills on 2026-09-10
 without regenerating it, so the honest figure is **13 of 16 elements, 77 of 80 sticks**, not the
 16-of-16 `CLAUDE.md` claimed (STATUS row 94). And R2's drop from 5 to 2 is a stamp-scope artifact,
-not three quotes getting read (section 3 above, STATUS row 93). Neither `acceptance` nor the pool's
-quote count is one of `phase.py`'s 29 gates, which is why seven phases closed green over both.
+not three quotes getting read (section 3 above, STATUS row 93). `blueprint_check.py` is red the same way — 15 quotes in
+`docs/architecture/blueprint.json` are not substrings of the records they cite — so
+`final_acceptance.py` reads **11 of 15**, not the 14 of 15 `CLAUDE.md` carried from 2026-09-08. All
+of it predates this session: zero pre-existing records had their `snippet` or `read` text changed
+(checked against `950a3b1`, 113 records added and none altered), and `docs/architecture/` was not
+touched. None of `acceptance`, `blueprint` or the pool's quote count is one of `phase.py`'s 29
+gates, which is why seven phases closed green over all of them. That is the finding worth keeping,
+and it is STATUS row 94: **the repo's documented full definition of done contains checks no gate
+runs**, so they drift silently between the days somebody types them.
 
 
 R7 and R5 closed; rows 21, 77 and 86 closed and archived. Nine gates were added and two

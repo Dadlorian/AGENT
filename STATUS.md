@@ -15,4 +15,4 @@
 | 88 | Lessons that run | Every lessons.jsonl sharper_check is a phase.py gate, not prose | Open | 2 of 10 wired, loop ranks the rest |
 | 89 | Reference stack | Every stack claim cites a fetched record or is marked proposed | Open | Source present and gated, not yet kb |
 | 93 | Stamp scope | An uncited quote's typed verdict survives a --fetch | Open | 3 verdicts dropped, R2 read 5 to 2 |
-| 94 | Acceptance drift | acceptance_check --check is a phase.py gate, not a manual step | Open | 13 of 16, stale since 2026-09-10 |
+| 94 | Ungated checks | Every full-DoD check is a phase.py gate, not a manual step | Open | 3 drifted red before 2026-09-11 |

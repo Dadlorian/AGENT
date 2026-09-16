@@ -84,3 +84,4 @@
 | 21 | Continuous improvement loop | tools/improvement_loop.py check passes for one fired plan | Done | Plan of one fired and moved, gate wired | 2026-09-11 662cf85 |
 | 77 | Standards and journey | python3 tools/standards.py check exits zero and both pages render | Done | 0 errors, both pages rendered | 2026-09-11 305fa08 |
 | 86 | Examples layer points at archived | No tool or doc names the archived seven areas | Done | 0 live artifacts, both gates green | 2026-09-11 305fa08 |
+| 95 | Intake protocol spec | python3 intake/check_vectors.py && python3 intake/termination.py --prove both exit 0 | Done | 18 vectors pass, bound 52 holds | 2026-09-16 8a2b0ee |

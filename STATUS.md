@@ -16,5 +16,4 @@
 | 89 | Reference stack | Every stack claim cites a fetched record or is marked proposed | Open | Source present and gated, not yet kb |
 | 93 | Stamp scope | A verdict dropped by --fetch is reported, not silently lost | Open | 3 dropped, R2 read 5 to 2 |
 | 94 | Ungated checks | Every full-DoD check is a phase.py gate, not a manual step | Open | 3 drifted red before 2026-09-11 |
-| 95 | Intake protocol spec | python3 intake/check_vectors.py && python3 intake/termination.py --prove both exit 0 | Done | 18 vectors pass, bound 52 holds |
 | 96 | Inter-answerer agreement | docs/intake/agreement.json records two answerers on one root | Open | Unmeasured, one answerer only |
